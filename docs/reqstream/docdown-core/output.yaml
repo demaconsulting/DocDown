@@ -1,0 +1,217 @@
+---
+# Software Subsystem Requirements for DocDownCore Output
+#
+# The Output subsystem prepares the scratch folder, allocates safe artifact paths,
+# writes the content, summary and manifest, maintains the completeness ledger and gaps,
+# and verifies the finished contract. These requirements decompose the system-level
+# output-contract behavior into the Output subsystem, and further into its units
+# (ScratchFolder, ExtractionSink, ContentWriter, SummaryWriter, ManifestWriter,
+# ContractVerifier) via the children links below.
+
+sections:
+  - title: DocDownCore Requirements
+    sections:
+      - title: Output Requirements
+        requirements:
+          - id: DocDownCore-Output-ArtifactLayout
+            title: The subsystem shall prepare the scratch folder and establish the fixed artifact layout.
+            justification: |
+              Consumers automate on a known folder layout. Preparing the scratch folder under a
+              caller-chosen policy, and always establishing the same layout, lets tooling locate
+              artifacts without discovery and reuse a folder safely across runs.
+            children:
+              - DocDownCore-Output-ScratchFolder-ModeRequireEmpty
+              - DocDownCore-Output-ScratchFolder-ModeCleanIfDocDownFolder
+              - DocDownCore-Output-ScratchFolder-ReuseBoundToFolder
+              - DocDownCore-Output-ScratchFolder-InventoryScopedDeletion
+              - DocDownCore-Output-ScratchFolder-RevalidatedBeforeDeletion
+              - DocDownCore-Output-ScratchFolder-ModeOverwrite
+              - DocDownCore-Output-ScratchFolder-ModeCreateUnique
+              - DocDownCore-Output-ScratchFolder-RefusalReported
+            tests:
+              - Output_ArtifactLayout_SuccessfulWrite_CreatesSummaryAndManifest
+
+          - id: DocDownCore-Output-SummaryContent
+            title: The subsystem shall write a summary containing every mandatory section describing the run.
+            justification: |
+              The summary is the human entry point to an extraction. Guaranteeing every mandatory
+              section, including the environment and the absolute scratch path, means an operator
+              always finds the same information in the same place.
+            children:
+              - DocDownCore-Output-SummaryWriter-MandatorySections
+              - DocDownCore-Output-SummaryWriter-AbsoluteScratchPath
+              - DocDownCore-Output-SummaryWriter-BackendNamed
+              - DocDownCore-Output-SummaryWriter-EnvironmentReported
+              - DocDownCore-Output-SummaryWriter-EnvironmentAttributed
+              - DocDownCore-Output-SummaryWriter-FailureExplained
+              - DocDownCore-Output-SummaryWriter-GoldenOutput
+            tests:
+              - Output_SummaryContent_Written_ContainsMandatorySections
+
+          - id: DocDownCore-Output-ManifestContent
+            title: The subsystem shall write a manifest that declares its schema version and records the run.
+            justification: |
+              Machine consumers must know how to interpret the manifest and trust its fields. A
+              declared schema version lets tooling validate compatibility, and recording the tool
+              and backend attributes the result to its producer.
+            children:
+              - DocDownCore-Output-ManifestWriter-SchemaVersion
+              - DocDownCore-Output-ManifestWriter-MachineTwin
+            tests:
+              - Output_ManifestContent_Written_ParsesWithSchemaVersion
+
+          - id: DocDownCore-Output-DocumentMetadata
+            title: >-
+              The subsystem shall write a metadata.json artifact recording what the document asserts
+              about itself, with per-field provenance and blank values omitted, always present even
+              when the document supplied nothing readable.
+            justification: |
+              A reader needs the document's own claims — creator, dates, revision — separately from
+              the orientation summary and the integrity manifest, and must be able to tell an
+              authored value from a backend-derived one. Writing metadata.json with per-field
+              provenance, omitting blank values as noise while naming interesting absences, and
+              always writing the file (saying so in a note when nothing was readable) makes those
+              claims available on demand without ever fabricating or silently dropping one.
+            tests:
+              - MetadataWriter_WriteAsync_ReportedMetadata_WritesFile
+              - MetadataWriter_WriteAsync_NoReportedMetadata_WritesSparseFile
+              - MetadataWriter_Render_PopulatedFields_EmitsValueAndSourceObjects
+              - MetadataWriter_Render_AbsentInteresting_EmitsAbsentArrayAndNote
+              - OpcMetadataMapper_From_PopulatedProperties_MapsFieldsWithProvenanceAndIsoDates
+              - OpcMetadataMapper_From_BlankValues_OmittedAsFieldsAndRecordedAbsent
+              - SummaryWriter_WriteAsync_PdfShapedMetadata_InlinesHumanAuthorNotApplication
+              - SummaryWriter_WriteAsync_OpcShapedMetadata_FallsBackToCreatorAsAuthor
+
+          - id: DocDownCore-Output-ContentDocument
+            title: The subsystem shall write the extracted content as Markdown, split into parts when appropriate.
+            justification: |
+              Consumers render and index the content, so it must be predictable text. Writing a
+              single flow or a part index according to the caller's split mode lets both whole-
+              document and per-part consumers work from the same output.
+            children:
+              - DocDownCore-Output-ContentWriter-SingleFlowDocument
+              - DocDownCore-Output-ContentWriter-PartIndex
+              - DocDownCore-Output-ContentWriter-SplitModeHonored
+              - DocDownCore-Output-ContentWriter-PageMarkers
+              - DocDownCore-Output-ExtractionSink-AllocatesPartPaths
+            tests:
+              - Output_ContentDocument_TextWritten_ProducesContentMd
+
+          - id: DocDownCore-Output-ImageResources
+            title: The subsystem shall write embedded images as deduplicated resource files with stable relative paths.
+            justification: |
+              Extractors reference images from the Markdown by relative path, and large documents
+              repeat the same image. Deduplicating identical bytes and returning a stable path keeps
+              output compact and the links valid, and a shared policy chooses meaningful, honest text
+              to seed each image's file name.
+            children:
+              - DocDownCore-Output-ExtractionSink-AllocatesImagePaths
+              - DocDownCore-Output-ExtractionSink-ImageDeduplication
+              - DocDownCore-Output-ExtractionSink-ImageSuppression
+              - DocDownCore-Output-ImageTextSelector-RanksBySource
+              - DocDownCore-Output-ImageTextSelector-GatesByConfidence
+              - DocDownCore-Output-ImageTextSelector-FiltersAutoGeneratedNames
+              - DocDownCore-Output-ImageTextSelector-IgnoresEmptyText
+              - DocDownCore-Output-ImageTextSelector-NamesProvenance
+            tests:
+              - Output_ImageResources_DuplicateBytes_AreDeduplicated
+
+          - id: DocDownCore-Output-PageResources
+            title: The subsystem shall write each rendered page under a path named by its document page number.
+            justification: |
+              Consumers correlate a rendered page image with the source page. Naming each page file
+              by its document page number makes that correspondence unambiguous and stable across
+              runs.
+            children:
+              - DocDownCore-Output-ExtractionSink-AllocatesPagePaths
+            tests:
+              - Output_PageResources_PageWritten_IsNamedByPageNumber
+
+          - id: DocDownCore-Output-CompletenessLedger
+            title: The subsystem shall maintain a completeness ledger reconciled against the artifacts on disk.
+            justification: |
+              The ledger is the machine summary of what the extraction delivered. Reconciling every
+              ledger slot against the filesystem before reporting guarantees the completeness claim
+              matches reality, which downstream trust depends on.
+            children:
+              - DocDownCore-Output-ManifestWriter-CompletenessLedger
+              - DocDownCore-Output-ManifestWriter-CompleteFlag
+              - DocDownCore-Output-ExtractionSink-RecordsReports
+            tests:
+              - Output_CompletenessLedger_TextWritten_MarksContentPresent
+
+          - id: DocDownCore-Output-GapExplanation
+            title: The subsystem shall record an explaining gap for every requested output it could not deliver.
+            justification: |
+              An absence with no explanation destroys trust in the result. Emitting a numbered gap
+              with a reason for each shortfall lets consumers decide whether the extraction is fit
+              for their purpose.
+            children:
+              - DocDownCore-Output-ManifestWriter-GapSynthesis
+              - DocDownCore-Output-ExtractionSink-AllocatesGapIdentifiers
+              - DocDownCore-Output-ContentWriter-AbsenceExplained
+              - DocDownCore-Output-SummaryWriter-GapsEnumerated
+            tests:
+              - Output_GapExplanation_MissingContent_SynthesizesExplainedGap
+
+          - id: DocDownCore-Output-PathSafety
+            title: The subsystem shall confine every allocated path to the scratch folder and reject unsafe components.
+            justification: |
+              Artifact names can originate from a hostile document. Rejecting traversal, rooted,
+              reserved-device, and over-long components keeps output inside the scratch folder and
+              portable across platforms, closing a path-injection attack surface.
+            children:
+              - DocDownCore-Output-ScratchFolder-PathContainment
+              - DocDownCore-Output-ScratchFolder-RejectsReservedNames
+              - DocDownCore-Output-ScratchFolder-RejectsOverlongPaths
+            tests:
+              - Output_PathSafety_MaliciousImageName_IsContained
+
+          - id: DocDownCore-Output-Determinism
+            title: The subsystem shall produce byte-identical artifacts for identical input at a fixed timestamp.
+            justification: |
+              Reproducibility requires that naming, summary text, and manifest JSON depend only on
+              the input and the fixed timestamp. Byte-identical output lets consumers diff runs and
+              trust that any difference reflects a real change.
+            children:
+              - DocDownCore-Output-ScratchFolder-DeterministicNaming
+              - DocDownCore-Output-SummaryWriter-DeterministicText
+              - DocDownCore-Output-ManifestWriter-DeterministicJson
+            tests:
+              - Output_Determinism_FixedTimestamp_ProducesByteIdenticalOutput
+
+          - id: DocDownCore-Output-ContractVerification
+            title: The subsystem shall verify a finished extraction against its contract and report any violation.
+            justification: |
+              The contract is only trustworthy if it can be independently checked. A verifier that
+              reports, rather than throws, every mismatch between the record and the disk gives
+              consumers objective evidence that an extraction is honest.
+            children:
+              - DocDownCore-Output-ContractVerifier-HonestExtractionPasses
+              - DocDownCore-Output-ContractVerifier-DetectsMissingArtifact
+              - DocDownCore-Output-ContractVerifier-DetectsUnlistedFile
+              - DocDownCore-Output-ContractVerifier-ReportsIncompleteVerification
+              - DocDownCore-Output-ContractVerifier-DetectsHashMismatch
+              - DocDownCore-Output-ContractVerifier-DetectsLedgerMismatch
+              - DocDownCore-Output-ContractVerifier-DetectsUnexplainedAbsence
+              - DocDownCore-Output-ContractVerifier-DetectsBackendMismatch
+              - DocDownCore-Output-ContractVerifier-ReportsRatherThanThrows
+            tests:
+              - Output_ContractVerification_HonestExtraction_ReportsNoViolations
+              - Output_ContractVerification_UnlistedFile_IsDetected
+
+          - id: DocDownCore-Output-ImageProvenance
+            title: >-
+              The subsystem shall record each image's transform from a closed vocabulary and serialize it
+              to the manifest.
+            justification: |
+              Provenance is only useful if it is comparable across runs and backends. Drawing every
+              transform from one closed vocabulary, and serializing it, keeps the claim machine-readable
+              and prevents a backend from inventing a label a consumer cannot interpret.
+            children:
+              - DocDownCore-Output-ExtractionSink-ImageTransformRecorded
+              - DocDownCore-Output-ManifestWriter-ImageTransformProjected
+              - DocDownCore-Output-ExtractionSink-ImageDescriptionRecorded
+              - DocDownCore-Output-ManifestWriter-ImageDescriptionSerialized
+            tests:
+              - Output_ImageProvenance_MixedTransforms_ManifestRecordsEachHonestly

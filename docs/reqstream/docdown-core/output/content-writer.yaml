@@ -1,0 +1,60 @@
+---
+# Software Unit Requirements for ContentWriter
+#
+# ContentWriter finalizes the Markdown content: a single flow with preserved page
+# markers, or an index over split parts, and honestly reports empty content.
+
+sections:
+  - title: DocDownCore Requirements
+    sections:
+      - title: Output Requirements
+        sections:
+          - title: ContentWriter Requirements
+            requirements:
+              - id: DocDownCore-Output-ContentWriter-SingleFlowDocument
+                title: ContentWriter shall write a single-flow document with the extracted content verbatim.
+                justification: |
+                  Consumers that want the whole document as one file must receive the content exactly as
+                  the backend produced it. Writing a single flow verbatim preserves fidelity and avoids
+                  reshaping the text.
+                tests:
+                  - ContentWriter_WriteAsync_SingleBufferedFlow_WritesContentVerbatim
+
+              - id: DocDownCore-Output-ContentWriter-PartIndex
+                title: ContentWriter shall write an index linking to each part file when content is split into parts.
+                justification: |
+                  Large documents split into parts need a navigable entry point. An index of ordered
+                  links lets a consumer traverse the parts in document order without scanning the parts
+                  folder.
+                tests:
+                  - ContentWriter_WriteAsync_MultipleParts_ProducesIndexAndPartFiles
+
+              - id: DocDownCore-Output-ContentWriter-SplitModeHonored
+                title: >-
+                  ContentWriter shall produce a concatenated document or a part index according to the
+                  caller's split mode.
+                justification: |
+                  Different consumers want either one file or discrete parts. Honoring the caller's
+                  split mode lets each choose the layout that fits their downstream tooling from the same
+                  extraction.
+                tests:
+                  - ContentWriter_WriteAsync_SingleMode_ConcatenatesPartsWithoutPartsFolder
+                  - ContentWriter_WriteAsync_PerPartMode_ProducesIndexWithPartFiles
+
+              - id: DocDownCore-Output-ContentWriter-PageMarkers
+                title: ContentWriter shall preserve page markers supplied by the backend in a single-flow document.
+                justification: |
+                  Consumers correlate extracted text with source pages. Preserving the backend's page
+                  markers keeps that page correspondence available in the flowed content without
+                  requiring separate page files.
+                tests:
+                  - ContentWriter_WriteAsync_SingleFlowWithPageMarkers_PreservesMarkers
+
+              - id: DocDownCore-Output-ContentWriter-AbsenceExplained
+                title: ContentWriter shall write the content file yet report the content absent when the flow is empty.
+                justification: |
+                  An empty content file could be mistaken for a delivered-but-empty document. Writing the
+                  file while reporting the content absent keeps the layout consistent and the
+                  completeness record honest.
+                tests:
+                  - ContentWriter_WriteAsync_EmptyFlow_WritesFileButReportsAbsent

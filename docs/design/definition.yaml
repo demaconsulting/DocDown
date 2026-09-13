@@ -5,17 +5,64 @@ resource-path:
 input-files:
   - docs/design/title.txt
   - docs/design/introduction.md
-  - docs/design/template-dot-net-library.md
-  - docs/design/template-dot-net-library/demo.md
+  - docs/design/docdown-core.md
+  - docs/design/docdown-core/detection.md
+  - docs/design/docdown-core/detection/format-sniffer.md
+  - docs/design/docdown-core/extraction.md
+  - docs/design/docdown-core/extraction/doc-down-builder.md
+  - docs/design/docdown-core/extraction/extractor-registry.md
+  - docs/design/docdown-core/extraction/extractor-selector.md
+  - docs/design/docdown-core/extraction/doc-down-engine.md
+  - docs/design/docdown-core/output.md
+  - docs/design/docdown-core/output/scratch-folder.md
+  - docs/design/docdown-core/output/extraction-sink.md
+  - docs/design/docdown-core/output/content-writer.md
+  - docs/design/docdown-core/output/summary-writer.md
+  - docs/design/docdown-core/output/manifest-writer.md
+  - docs/design/docdown-core/output/contract-verifier.md
+  - docs/design/docdown-pdf.md
+  - docs/design/docdown-pdf/pdf-document-extractor.md
+  - docs/design/docdown-pdf/pdf-text-extractor.md
+  - docs/design/docdown-pdf/pdf-image-extractor.md
+  - docs/design/docdown-pdf/pdf-doc-down-builder-extensions.md
+  - docs/design/docdown-pdf-rendering.md
+  - docs/design/docdown-pdf-rendering/pdf-page-rendering-extractor.md
+  - docs/design/docdown-pdf-rendering/page-renderer.md
+  - docs/design/docdown-pdf-rendering/pdf-rendering-doc-down-builder-extensions.md
+  - docs/design/docdown-tool.md
+  - docs/design/docdown-tool/program.md
+  - docs/design/docdown-tool/cli.md
+  - docs/design/docdown-tool/cli/context.md
+  - docs/design/docdown-tool/self-test.md
+  - docs/design/docdown-tool/self-test/validation.md
+  - docs/design/docdown-tool/self-test/self-test-adapter.md
+  - docs/design/docdown-word.md
+  - docs/design/docdown-word/word-doc-down-builder-extensions.md
+  - docs/design/docdown-word/markdown.md
+  - docs/design/docdown-word/markdown/word-markdown-writer.md
+  - docs/design/docdown-word/markdown/word-table-writer.md
+  - docs/design/docdown-word/markdown/word-content-emitter.md
+  - docs/design/docdown-word/open-xml.md
+  - docs/design/docdown-word/open-xml/word-open-xml-extractor.md
+  - docs/design/docdown-word/open-xml/word-open-xml-reader.md
+  - docs/design/docdown-word/open-xml/word-open-xml-image-reader.md
   - docs/design/ots.md
+  - docs/design/ots/apimark.md
   - docs/design/ots/buildmark.md
   - docs/design/ots/fileassert.md
+  - docs/design/ots/openxml.md
   - docs/design/ots/pandoc.md
+  - docs/design/ots/pdfpig.md
+  - docs/design/ots/pdfium.md
+  - docs/design/ots/pdftoimage.md
   - docs/design/ots/reqstream.md
   - docs/design/ots/reviewmark.md
   - docs/design/ots/sarifmark.md
+  - docs/design/ots/skiasharp.md
   - docs/design/ots/sonarmark.md
   - docs/design/ots/sysml2tools.md
+  - docs/design/ots/systemiopackaging.md
+  - docs/design/ots/testresults.md
   - docs/design/ots/versionmark.md
   - docs/design/ots/weasyprint.md
   - docs/design/ots/xunit.md

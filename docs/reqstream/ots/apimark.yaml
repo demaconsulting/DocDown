@@ -1,0 +1,24 @@
+---
+# ApiMark OTS Software Requirements
+#
+# Requirements for the ApiMark API documentation generation tool functionality.
+
+sections:
+  - title: OTS Software Requirements
+    sections:
+      - title: ApiMark Requirements
+        requirements:
+          - id: DocDown-OTS-ApiMark-DotNetGeneration
+            title: >-
+              ApiMark shall generate gradual-disclosure Markdown API reference documentation from
+              a .NET assembly and its XML documentation file.
+            justification: |
+              The packable DocDown libraries rely on ApiMark to turn each compiled assembly and its
+              XML doc comments into the api/ folder shipped inside the NuGet package: an api.md
+              index, a page per namespace, a page per type, and a page per member. If generation
+              were wrong or absent the package would ship a misleading or empty API reference, so
+              the generator itself must be evidenced. ApiMark's built-in self-validation exercises
+              this path directly and fails the build when it does not hold.
+            tags: [ots]
+            tests:
+              - ApiMark_DotNetGeneration

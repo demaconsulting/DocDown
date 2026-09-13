@@ -1,0 +1,76 @@
+---
+# System-Level Platform Requirements for DocDown.Word
+#
+# These requirements specify the platforms and frameworks the package must support.
+# DocDown.Word is 100% managed and runtime-identifier agnostic, so its platform evidence is
+# the end-to-end extraction test, which produces the full output contract and so passes on
+# every runtime the package targets.
+#
+# Test links can include a source filter prefix (e.g. "windows@", "ubuntu@", "net8.0@") to restrict
+# which test results count as evidence for a requirement. This is critical for platform and framework
+# requirements - removing these filters invalidates the evidence-based proof.
+#
+# Source filter prefixes:
+#   windows@TestName  - proves the test passed on a Windows platform
+#   ubuntu@TestName   - proves the test passed on a Linux (Ubuntu) platform
+#   macos@TestName    - proves the test passed on a macOS platform
+#   net8.0@TestName   - proves the test passed under the .NET 8 runtime
+#   net9.0@TestName   - proves the test passed under the .NET 9 runtime
+#   net10.0@TestName  - proves the test passed under the .NET 10 runtime
+
+sections:
+  - title: DocDownWord Requirements
+    requirements:
+      - id: DocDownWord-Platform-Windows
+        title: The package shall build and extract on Windows platforms.
+        tags: [system]
+        justification: |
+          Windows is a major DEMA Consulting development platform, and the managed Open XML backend
+          must read a document and produce the full output contract there.
+        tests:
+          - "windows@DocDownWord_Extract_GeneratedDocx_ProducesContractLayout"
+
+      - id: DocDownWord-Platform-Linux
+        title: The package shall build and extract on Linux platforms.
+        tags: [system]
+        justification: |
+          Linux is the primary CI/CD and container target, and the managed Open XML backend must read
+          a document and produce the full output contract there.
+        tests:
+          - "ubuntu@DocDownWord_Extract_GeneratedDocx_ProducesContractLayout"
+
+      - id: DocDownWord-Platform-MacOS
+        title: The package shall build and extract on macOS platforms.
+        tags: [system]
+        justification: |
+          macOS support serves developers on Apple platforms, and the managed Open XML backend must
+          read a document and produce the full output contract there.
+        tests:
+          - "macos@DocDownWord_Extract_GeneratedDocx_ProducesContractLayout"
+
+      - id: DocDownWord-Platform-Net8
+        title: The package shall support the .NET 8 runtime.
+        tags: [system]
+        justification: |
+          .NET 8 is an LTS release, and the Open XML SDK ships a real net8.0 asset the package must
+          extract on.
+        tests:
+          - "net8.0@DocDownWord_Extract_GeneratedDocx_ProducesContractLayout"
+
+      - id: DocDownWord-Platform-Net9
+        title: The package shall support the .NET 9 runtime.
+        tags: [system]
+        justification: |
+          .NET 9 support enables users to leverage the latest .NET features, and the package must
+          extract on the net9.0 runtime.
+        tests:
+          - "net9.0@DocDownWord_Extract_GeneratedDocx_ProducesContractLayout"
+
+      - id: DocDownWord-Platform-Net10
+        title: The package shall support the .NET 10 runtime.
+        tags: [system]
+        justification: |
+          .NET 10 support keeps the package current, and the Open XML SDK ships a real net10.0 asset —
+          matching this repository's target frameworks exactly.
+        tests:
+          - "net10.0@DocDownWord_Extract_GeneratedDocx_ProducesContractLayout"

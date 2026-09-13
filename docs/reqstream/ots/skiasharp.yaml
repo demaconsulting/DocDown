@@ -1,0 +1,24 @@
+---
+# SkiaSharp OTS Software Requirements
+#
+# Requirements for the SkiaSharp 2D graphics library, delivered transitively through
+# PDFtoImage via the SkiaSharp.NativeAssets.* packages. SkiaSharp holds the rasterized
+# bitmap and encodes it to PNG; its evidence comes from the rendering tests that produce and
+# compare PNG output, named exactly here rather than claimed broadly.
+
+sections:
+  - title: OTS Software Requirements
+    sections:
+      - title: SkiaSharp Requirements
+        requirements:
+          - id: DocDown-OTS-SkiaSharp
+            title: SkiaSharp shall encode a rasterized page bitmap to deterministic PNG bytes.
+            justification: |
+              The rendered page's PNG signature, header, and byte-for-byte reproducibility all come
+              from SkiaSharp's bitmap encode step. A consumer's ability to open the page image, and to
+              diff two extractions meaningfully, rests on SkiaSharp producing a valid, deterministic
+              PNG from the raster PDFium hands it.
+            tags: [ots]
+            tests:
+              - PageRenderer_Render_SinglePage_ReturnsValidPng
+              - DocDownPdfRendering_Render_Deterministic_ProducesByteIdenticalPages

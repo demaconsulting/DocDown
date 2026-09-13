@@ -1,11 +1,11 @@
 ---
-title: Template DotNet Library Trace Matrix
-subtitle: Requirements Traceability Matrix for the Template DotNet Library
+title: DocDown Trace Matrix
+subtitle: Requirements Traceability Matrix for DocDown
 author: DEMA Consulting
-description: Requirements Traceability Matrix for the Template DotNet Library
+description: Requirements Traceability Matrix for DocDown
 lang: en-US
 keywords:
-  - Template DotNet Library
+  - DocDown
   - Trace Matrix
   - Traceability
   - Requirements

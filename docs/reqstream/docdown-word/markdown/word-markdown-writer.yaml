@@ -1,0 +1,101 @@
+---
+# Software Unit Requirements for WordMarkdownWriter
+#
+# WordMarkdownWriter renders the backend-neutral document model to a single markdown flow:
+# headings, lists, inline formatting, image links, comments, footnotes, and the Document
+# Control section, escaping content that markdown would otherwise interpret.
+
+sections:
+  - title: DocDownWord Requirements
+    sections:
+      - title: Markdown Requirements
+        sections:
+          - title: WordMarkdownWriter Requirements
+            requirements:
+              - id: DocDownWord-Markdown-WordMarkdownWriter-RendersHeadings
+                title: WordMarkdownWriter shall render a heading at its level as the matching depth of hash marks.
+                justification: |
+                  A document's heading levels carry its outline, and a consumer navigating the content
+                  relies on that outline surviving. Mapping each level to the matching number of hash
+                  marks preserves the structure the document declared.
+                tests:
+                  - WordMarkdownWriter_Write_Headings_RendersHashLevels
+
+              - id: DocDownWord-Markdown-WordMarkdownWriter-RendersLists
+                title: >-
+                  WordMarkdownWriter shall render ordered and bulleted list items with the correct
+                  markers and nesting.
+                justification: |
+                  A list's meaning is in whether it is ordered and how it nests, so rendering ordered
+                  items with numbers and bulleted items with dashes, indented by level, keeps the list
+                  a list rather than a run of paragraphs.
+                tests:
+                  - WordMarkdownWriter_Write_OrderedAndBulletedLists_RendersMarkers
+
+              - id: DocDownWord-Markdown-WordMarkdownWriter-EscapesSpecialCharacters
+                title: WordMarkdownWriter shall escape characters that markdown would otherwise interpret as markup.
+                justification: |
+                  Literal text that happens to contain markdown metacharacters would render as
+                  unintended formatting. Escaping those characters keeps the rendered content faithful
+                  to the document's words.
+                tests:
+                  - WordMarkdownWriter_Write_SpecialCharacters_AreEscaped
+
+              - id: DocDownWord-Markdown-WordMarkdownWriter-RendersInlineFormatting
+                title: WordMarkdownWriter shall render bold, italic, and hyperlink runs as inline markdown.
+                justification: |
+                  Emphasis and links carry meaning a plain-text flattening would lose. Rendering bold,
+                  italic, and hyperlink runs as their markdown equivalents keeps that meaning in the
+                  content.
+                tests:
+                  - WordMarkdownWriter_Write_BoldItalicAndLink_RenderInline
+
+              - id: DocDownWord-Markdown-WordMarkdownWriter-RendersImageLink
+                title: WordMarkdownWriter shall render an image block as a markdown link to its written path.
+                justification: |
+                  An extracted image is only useful if the content points at it. Rendering each image
+                  block as a markdown image link to the path the sink returned connects the content to
+                  the images folder, using the image's descriptive text as the alt text when the
+                  document provided one.
+                tests:
+                  - WordMarkdownWriter_Write_DescriptiveImage_RendersDescriptionAsAltText
+
+              - id: DocDownWord-Markdown-WordMarkdownWriter-NeutralAltForNonDescriptive
+                title: >-
+                  WordMarkdownWriter shall emit a neutral alt text for an image that has no descriptive
+                  text, never asserting a heading or media name as its description.
+                justification: |
+                  Alt text is a claim about a picture's content, so text that only names its section or
+                  its file must not appear there. Emitting a neutral placeholder when no descriptive
+                  source was chosen keeps the content honest, even though that same text may still have
+                  seeded the image's file name.
+                tests:
+                  - WordMarkdownWriter_Write_HeadingNamedImage_KeepsNeutralAltText
+
+              - id: DocDownWord-Markdown-WordMarkdownWriter-RendersComments
+                title: WordMarkdownWriter shall render document comments under a Comments section.
+                justification: |
+                  Comments are content a reviewer added, distinct from the body. Collecting them under
+                  their own heading preserves them without interleaving them into the text they annotate.
+                tests:
+                  - WordMarkdownWriter_Write_Comments_RendersCommentsSection
+
+              - id: DocDownWord-Markdown-WordMarkdownWriter-RendersFootnotes
+                title: WordMarkdownWriter shall render footnotes as references and a Footnotes section.
+                justification: |
+                  A footnote is anchored text plus its note, and both halves matter. Rendering the
+                  reference inline and the note under a Footnotes section keeps the anchor and its
+                  content connected.
+                tests:
+                  - WordMarkdownWriter_Write_Footnotes_RendersFootnotesSection
+
+              - id: DocDownWord-Markdown-WordMarkdownWriter-PlacesDocumentControl
+                title: >-
+                  WordMarkdownWriter shall place the Document Control section after the title heading
+                  and before the body.
+                justification: |
+                  The identifying furniture a reader expects near the top — number, revision,
+                  classification — should appear where they expect it. Placing Document Control after
+                  the title and before the body puts it where a reader looks first.
+                tests:
+                  - WordMarkdownWriter_Write_DocumentControl_PlacedAfterTitleHeading

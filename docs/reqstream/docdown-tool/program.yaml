@@ -1,0 +1,108 @@
+---
+# Software Unit Requirements for Program
+#
+# Program is the tool's entry point. It reads the parsed context, dispatches in priority order,
+# prints the banner and help, runs an extraction and reports its outcome, and maps expected
+# faults to a clean non-zero exit. Program is a direct unit of the DocDown.Tool system.
+
+sections:
+  - title: DocDownTool Requirements
+    sections:
+      - title: Program Requirements
+        requirements:
+          - id: DocDownTool-Program-Version
+            title: Program shall print the tool's informational version when the version flag is given.
+            justification: |
+              A caller and a package manager both identify the tool by its version, so the version
+              query must report the informational version the assembly carries rather than a
+              hard-coded string that can drift from the package.
+            tests:
+              - Program_Run_VersionFlag_WritesInformationalVersion
+
+          - id: DocDownTool-Program-Help
+            title: Program shall print usage and the full option list when the help flag is given.
+            justification: |
+              The command line is the tool's whole interface, so its help must enumerate every option
+              the parser accepts. A help text that omits an option leaves that option undiscoverable
+              except by reading the source.
+            tests:
+              - Program_Run_HelpFlag_WritesUsageAndOptions
+
+          - id: DocDownTool-Program-PriorityDispatch
+            title: Program shall dispatch in a fixed priority order, executing only the highest-priority match.
+            justification: |
+              When a caller combines flags, the tool must behave predictably rather than run several
+              actions at once. A fixed priority — version before help before the auxiliary commands
+              before validation before extraction — makes the outcome of any flag combination
+              deterministic.
+            tests:
+              - Program_Run_PriorityOrder_VersionBeatsOtherCommands
+
+          - id: DocDownTool-Program-Extraction
+            title: >-
+              Program shall extract the requested document into the requested scratch folder and print
+              the absolute path to the produced summary.
+            justification: |
+              This is the tool's primary purpose. Printing the absolute summary path — computed
+              defensively so it is always fully qualified — gives the caller one handle to the result
+              that a later step can use without knowing how the tool assembled it.
+            tests:
+              - Program_Run_Extraction_PrintsAbsoluteSummaryPath
+
+          - id: DocDownTool-Program-StructuredFailure
+            title: >-
+              Program shall render the engine's structured failure explanation, and not throw, when an
+              extraction fails.
+            justification: |
+              The engine returns every adverse condition as data with a display-ready explanation.
+              Printing that explanation on a failed outcome, gated strictly on the failed outcome so a
+              summary path that may not exist is never printed, keeps the tool honest and its failures
+              readable.
+            tests:
+              - Program_Run_UnreadableInput_RendersStructuredFailure
+
+          - id: DocDownTool-Program-ExplicitRegistration
+            title: >-
+              Program shall build its engine by registering the managed PDF backend, the optional
+              page-rendering backend, and the Word backends through the explicit AddPdf,
+              AddPdfRendering, and AddWord seams.
+            justification: |
+              The registration the tool performs is the single fact that keeps single-file publishing
+              viable. Building the engine from explicit calls, with no reflection, makes the active
+              backends visible in the code; the rendering backend adds a native stack, so a
+              self-contained single-file publish becomes runtime-identifier specific while
+              framework-dependent installs stay portable, and the managed Word backends add no native
+              asset of their own.
+            tests:
+              - DocDownTool_Build_DefaultEngine_RegistersBackendsExplicitly
+
+          - id: DocDownTool-Program-ExpectedErrors
+            title: >-
+              Program shall treat an argument fault or an operation fault as an expected error: a
+              message to standard error, a non-zero exit, and no stack trace.
+            justification: |
+              A mistyped flag or a log file that cannot be opened is a user error, not a defect to
+              surface as a stack trace. Catching the argument and operation faults, printing only
+              their message, and returning a non-zero code keeps the tool's failures usable and easy
+              to script; any other exception is re-thrown so the runtime can record a genuine defect.
+            tests:
+              - Program_Main_UnknownArgument_WritesErrorAndReturnsOneWithoutStackTrace
+              - Program_Main_LogOpenFailure_ReturnsOneWithoutStackTrace
+
+          - id: DocDownTool-Program-ListBackends
+            title: Program shall list each registered backend with its formats, capabilities, and availability.
+            justification: |
+              Diagnosing a deployment means seeing what is registered and usable without running an
+              extraction. Reporting each backend's identity, formats, capabilities, and availability
+              answers that directly from the engine's backend status.
+            tests:
+              - Program_Run_ListBackends_ListsPdf
+
+          - id: DocDownTool-Program-Verify
+            title: Program shall run the contract verifier against an existing scratch folder on request.
+            justification: |
+              A consumer that received a scratch folder needs to confirm it agrees with its manifest
+              independently of the run that produced it. Exposing the verifier as a command, reporting
+              each violation or a clean result, provides that confirmation.
+            tests:
+              - DocDownTool_Verify_ValidScratch_ReportsNoViolations

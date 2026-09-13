@@ -1,0 +1,140 @@
+---
+# Software Unit Requirements for ExtractorSelector
+#
+# ExtractorSelector is a pure function that chooses a backend for a detected format
+# from a candidate list, honoring caller overrides, availability, and capabilities,
+# and producing a full decision trace.
+
+sections:
+  - title: DocDownCore Requirements
+    sections:
+      - title: Extraction Requirements
+        sections:
+          - title: ExtractorSelector Requirements
+            requirements:
+              - id: DocDownCore-Extraction-ExtractorSelector-FormatFilter
+                title: ExtractorSelector shall consider only candidates that support the detected format.
+                justification: |
+                  A backend that cannot read the format would fail or corrupt the extraction. Filtering
+                  by supported format first ensures only viable candidates are ranked and that an
+                  unsupported format fails with a clear reason.
+                tests:
+                  - ExtractorSelector_Select_CandidateForOtherFormat_ClassifiedFormatNotSupported
+                  - ExtractorSelector_Select_NoCandidateSupportsFormat_FailsNoExtractorForFormat
+
+              - id: DocDownCore-Extraction-ExtractorSelector-PackageHint
+                title: >-
+                  ExtractorSelector shall name the DocDown package that provides the missing backend
+                  when no registered extractor supports a well-known format.
+                justification: |
+                  Detection deliberately recognizes more formats than Core can extract, so a user who
+                  hands DocDown a .docx will always reach this failure. Naming the provider turns a
+                  dead end into a lead: "No extractor is registered for 'docx'. Core does not extract
+                  this format itself; that capability comes from the separate
+                  DemaConsulting.DocDown.Word extractor package, which a host registers with the
+                  engine." A bare "unsupported" would read as "DocDown cannot do this at all". The
+                  remedy is a statement of fact, not an instruction: the extractor packages are not
+                  published, so telling the user to install one would command an action that cannot
+                  succeed, and phrasing that expires on publication day is avoided so no code change
+                  is needed then. The legacy binary Office formats (.doc, .xls, .ppt, .vsd) are
+                  deliberately absent from the table and carry a remedy of their own stating that
+                  DocDown does not support them, because no package will ever extract one and
+                  naming a provider would be a promise nothing can keep. The table is a naming map
+                  only and adds no dependency to
+                  Core.
+                tests:
+                  - ExtractorSelector_Select_DocxWithNoMatchingExtractor_RemedyNamesWordPackage
+                  - ExtractorSelector_Select_LegacyFormatWithNoBackend_RemedyStatesFormatUnsupported
+                  - ExtractorSelector_Select_EveryLegacyFormat_RemedyStatesFormatUnsupported
+                  - ExtractorSelector_Select_UnmappedFormatWithNoMatchingExtractor_UsesGenericRemedy
+                  - ExtractorSelector_Select_WellKnownFormatWithNoBackend_RemedyNeverInstructsInstallation
+                  - DocDownCore_ExtractAsync_DocxWithoutWordBackend_FailsHonestlyNamingThePackage
+                  - DocDownCore_ExtractAsync_DocWithoutWordBackend_FailsNoExtractorNamingLegacyFormat
+
+              - id: DocDownCore-Extraction-ExtractorSelector-OverrideHonored
+                title: ExtractorSelector shall select the caller-named backend when the caller specifies an override.
+                justification: |
+                  A caller naming a backend is expressing a deliberate policy. Honoring that override,
+                  even over a higher-priority alternative, respects the caller's authority over which
+                  backend runs.
+                tests:
+                  - ExtractorSelector_Select_OverrideNamesLowerPriority_SelectsNamedBackend
+
+              - id: DocDownCore-Extraction-ExtractorSelector-OverrideNeverFallsBack
+                title: >-
+                  ExtractorSelector shall fail rather than substitute another backend when a named override
+                  cannot run.
+                justification: |
+                  Silently substituting a different backend for a named one would produce results the
+                  caller never authorized. Failing instead preserves reproducibility and the caller's
+                  explicit intent.
+                tests:
+                  - ExtractorSelector_Select_OverrideNamesUnavailable_FailsAndNeverFallsBack
+                  - ExtractorSelector_Select_OverrideNamesFormatMismatch_FailsRequestedExtractorNotApplicable
+
+              - id: DocDownCore-Extraction-ExtractorSelector-AvailabilityFilter
+                title: ExtractorSelector shall exclude unavailable candidates and record the reason in the trace.
+                justification: |
+                  An unavailable backend cannot extract, but the operator still needs to know it was
+                  considered. Excluding it while recording why keeps the selection honest and
+                  diagnosable when no backend can run.
+                tests:
+                  - ExtractorSelector_Select_UnavailableCandidate_ExcludedWithReasonInTrace
+                  - ExtractorSelector_Select_AllCandidatesUnavailable_FailsNoAvailableExtractor
+
+              - id: DocDownCore-Extraction-ExtractorSelector-RequiredCapabilities
+                title: ExtractorSelector shall incorporate caller-required capabilities when matching candidates.
+                justification: |
+                  Callers may demand specific capabilities such as image or page extraction. Folding
+                  those requirements into the match ensures the chosen backend can actually deliver
+                  what the caller asked for.
+                tests:
+                  - ExtractorSelector_Select_RequireCapabilitiesSatisfied_AddsToRequiredAndSelects
+
+              - id: DocDownCore-Extraction-ExtractorSelector-HardCapabilityFailure
+                title: ExtractorSelector shall fail when no candidate can satisfy a caller-required capability.
+                justification: |
+                  A required capability is a hard constraint, not a preference. Failing when nothing can
+                  satisfy it prevents the pipeline from silently returning a result that omits what the
+                  caller insisted upon.
+                tests:
+                  - ExtractorSelector_Select_RequireCapabilitiesUnsatisfiable_FailsRequiredCapabilitiesUnavailable
+
+              - id: DocDownCore-Extraction-ExtractorSelector-RankOrdering
+                title: ExtractorSelector shall rank candidates so the highest-fidelity satisfier is selected.
+                justification: |
+                  When several backends qualify, the caller deserves the richest result the environment
+                  can produce. Ranking full satisfiers ahead of partial ones, then by satisfied
+                  capabilities and priority, encodes that preference.
+                tests:
+                  - ExtractorSelector_Select_FullSatisfierVersusHigherPriorityPartial_SelectsFullSatisfier
+                  - ExtractorSelector_Select_AmongPartials_GreaterSatisfiedCountBeatsPriority
+                  - ExtractorSelector_Select_EqualFidelityAndCount_HigherPriorityWins
+
+              - id: DocDownCore-Extraction-ExtractorSelector-DeterministicTieBreak
+                title: ExtractorSelector shall break ranking ties deterministically by backend identifier.
+                justification: |
+                  Two equally ranked backends must still yield one stable choice. Breaking ties by
+                  identifier guarantees the same winner on every run, which reproducibility and
+                  auditing depend on.
+                tests:
+                  - ExtractorSelector_Select_EqualPriorityFullSatisfiers_LowerIdentifierWins
+
+              - id: DocDownCore-Extraction-ExtractorSelector-CandidateTrace
+                title: ExtractorSelector shall produce a trace with a verdict for every candidate, selected first.
+                justification: |
+                  Operators diagnosing an unexpected choice need the verdict for each alternative in a
+                  stable order. A complete trace with the selected candidate first makes the decision
+                  transparent and comparable across runs.
+                tests:
+                  - ExtractorSelector_Select_MultipleCandidates_TraceHasVerdictPerCandidateSelectedFirst
+
+              - id: DocDownCore-Extraction-ExtractorSelector-Repeatability
+                title: ExtractorSelector shall produce identical results and trace order for equal inputs.
+                justification: |
+                  As a pure function, the selector must not depend on candidate ordering or hidden
+                  state. Producing identical results and trace order for equal inputs is the foundation
+                  of the library's deterministic selection guarantee.
+                tests:
+                  - ExtractorSelector_Select_EqualInputsRepeated_ProduceIdenticalResults
+                  - ExtractorSelector_Select_ShuffledCandidateOrder_ProducesSameWinnerAndTraceOrder

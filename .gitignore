@@ -90,11 +90,21 @@ __pycache__/
 # Generated documentation
 **/generated/
 
+# ApiMark generated API reference. ApiMark writes src/<project>/api/ after every build and
+# packs it into the NuGet package; it is build output regenerated from the assembly and its
+# XML doc comments, so it is never committed. Also excluded from markdownlint
+# (.markdownlint-cli2.yaml) and cspell (.cspell.yaml) for the same reason.
+src/*/api/
+
 # Test results
 TestResults/
 *.trx
 *.xml
 coverage.opencover.xml
+
+# Preserved failing-test TRX archive (created by build.ps1 on test failure, outside TestResults/**
+# so it is never counted by the ReqStream gate); diagnostic only, not committed.
+test-history/
 
 # VersionMark captures (generated during CI/CD)
 versionmark-*.json

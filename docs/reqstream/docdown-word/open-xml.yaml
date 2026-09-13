@@ -1,0 +1,74 @@
+---
+# Software Subsystem Requirements for DocDownWord OpenXml
+#
+# The OpenXml subsystem is the managed backend: the extractor the engine selects, the reader
+# that turns the Open XML DOM into the backend-neutral model, and the image reader that yields
+# each embedded image's bytes and provenance. These requirements decompose into the
+# WordOpenXmlExtractor, WordOpenXmlReader, and WordOpenXmlImageReader units via children.
+
+sections:
+  - title: DocDownWord Requirements
+    sections:
+      - title: OpenXml Requirements
+        requirements:
+          - id: DocDownWord-OpenXml-Extraction
+            title: >-
+              The subsystem shall orchestrate a managed extraction: declare its capabilities, read the
+              document, emit the content, and explain every shortfall only it can explain.
+            justification: |
+              The extractor is the backend the engine selects and invokes, so it owns the whole
+              managed extraction path — capabilities and availability, metadata and environment facts,
+              content emission and split handling, and the force-PNG, empty-document, and
+              page-rendering gaps that only this backend can name.
+            children:
+              - DocDownWord-OpenXml-WordOpenXmlExtractor-DeclaresCapabilities
+              - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsStructuralGap
+              - DocDownWord-OpenXml-WordOpenXmlExtractor-ExplainsUnhonoredForcePng
+              - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsEmptyDocumentGap
+              - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsPageRenderingGap
+              - DocDownWord-OpenXml-WordOpenXmlExtractor-SplitsPerPart
+              - DocDownWord-OpenXml-WordOpenXmlExtractor-WritesVectorImageWithCaveat
+              - DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests
+            tests:
+              - WordOpenXmlExtractor_Descriptor_HasPriority10AndCapabilities
+
+          - id: DocDownWord-OpenXml-Reading
+            title: >-
+              The subsystem shall read the Open XML document into the backend-neutral model, mapping
+              structure and detecting the conditions the model must record.
+            justification: |
+              The reader is where a .docx becomes the model the rest of the package works on, so it
+              maps headings, lists, tables, fields, comments, footnotes, and Document Control, accepts
+              tracked changes, detects the protected container, and surfaces the document metadata.
+            children:
+              - DocDownWord-OpenXml-WordOpenXmlReader-ReadsStructuredBlocks
+              - DocDownWord-OpenXml-WordOpenXmlReader-BuildsDocumentControl
+              - DocDownWord-OpenXml-WordOpenXmlReader-OmitsFurnitureAsDiagnostic
+              - DocDownWord-OpenXml-WordOpenXmlReader-DeduplicatesHeaders
+              - DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedRevisions
+              - DocDownWord-OpenXml-WordOpenXmlReader-DetectsPasswordProtected
+              - DocDownWord-OpenXml-WordOpenXmlReader-CollectsComments
+              - DocDownWord-OpenXml-WordOpenXmlReader-SurfacesMetadata
+              - DocDownWord-OpenXml-WordOpenXmlReader-ReportsProducerPageCount
+              - DocDownWord-OpenXml-WordOpenXmlReader-ReusesDeduplicatedImagePath
+              - DocDownWord-OpenXml-WordOpenXmlReader-SelectsImageText
+              - DocDownWord-OpenXml-WordOpenXmlReader-ReadsCaptionStructurally
+              - DocDownWord-OpenXml-WordOpenXmlReader-HeadingNamesButNeutralAlt
+            tests:
+              - WordOpenXmlReader_Read_HeadingsListsAndTables_ProducesStructuredBlocks
+
+          - id: DocDownWord-OpenXml-Images
+            title: >-
+              The subsystem shall yield each embedded image's bytes with a passthrough transform and an
+              honest media type.
+            justification: |
+              An Open XML image part is a complete image file, so the image reader passes its bytes
+              through unchanged, leaves the pixel dimensions unstated because the stored extent is a
+              display size, and reports the part's own media type — including the vector metafile types
+              that carry a readability caveat.
+            children:
+              - DocDownWord-OpenXml-WordOpenXmlImageReader-YieldsPassthroughImages
+              - DocDownWord-OpenXml-WordOpenXmlImageReader-RecordsPassthroughProvenance
+              - DocDownWord-OpenXml-WordOpenXmlImageReader-ReportsVectorMediaType
+            tests:
+              - WordOpenXmlImageReader_Read_Png_YieldsPassthroughWithNullDimensions

@@ -1,0 +1,59 @@
+---
+# Software Unit Requirements for PdfTextExtractor
+#
+# PdfTextExtractor turns a page's positioned glyphs into markdown paragraphs in reading
+# order, places the links to that page's images, marks page boundaries, and reports
+# honestly when a page carries no glyphs at all.
+
+sections:
+  - title: DocDownPdf Requirements
+    sections:
+      - title: PdfTextExtractor Requirements
+        requirements:
+          - id: DocDownPdf-PdfTextExtractor-ReadingOrder
+            title: PdfTextExtractor shall emit a page's text as paragraphs in the order a reader would read them.
+            justification: |
+              Glyphs are stored in the order a producer painted them, which on a multi-column page
+              interleaves text a reader would take in sequence. Restoring reading order is what makes
+              the output usable as prose rather than as a transcript of drawing operations.
+            tests:
+              - PdfTextExtractor_Extract_SingleTextPage_RendersParagraphsInReadingOrder
+
+          - id: DocDownPdf-PdfTextExtractor-AvoidsRawPageText
+            title: >-
+              PdfTextExtractor shall produce word and paragraph structure that the parser's raw page
+              text does not provide.
+            justification: |
+              The raw page text is a single undifferentiated run in paint order. Emitting it would be
+              cheap and would look like text while being wrong in ways a downstream consumer cannot
+              detect, which is the worst combination available.
+            tests:
+              - PdfTextExtractor_Extract_AnyPage_ProducesStructureRawPageTextDoesNot
+              - PdfTextExtractor_Extract_UntaggedDocument_EmitsParagraphsWithoutInventedHeadings
+
+          - id: DocDownPdf-PdfTextExtractor-MarksPageBoundaries
+            title: PdfTextExtractor shall mark where each source page's content begins.
+            justification: |
+              A consumer that finds a passage in the output frequently needs to cite the page it came
+              from. Marking the boundaries keeps that mapping available without a second pass over
+              the source document.
+            tests:
+              - PdfTextExtractor_Extract_MultiplePages_EmitsAPageMarkerPerPage
+
+          - id: DocDownPdf-PdfTextExtractor-LinksImages
+            title: PdfTextExtractor shall link each extracted image from the page it was found on.
+            justification: |
+              An image written to disk but never referenced is invisible to a consumer reading the
+              content document, and one linked under the wrong page is worse than unlinked because it
+              asserts a false relationship.
+            tests:
+              - PdfTextExtractor_Extract_ExtractedImages_LinksThemUnderTheirOwnPage
+
+          - id: DocDownPdf-PdfTextExtractor-ReportsNoTextLayer
+            title: PdfTextExtractor shall report whether any extracted page carried a glyph at all.
+            justification: |
+              Producing no text because a page had none is a different fact from producing no text
+              because the layout could not be resolved. Reporting the distinction is what lets the
+              caller explain a scanned document instead of merely showing an empty result.
+            tests:
+              - PdfTextExtractor_Extract_PageWithNoGlyphs_ReportsNoGlyphsPresent

@@ -1,0 +1,44 @@
+---
+# Software Unit Requirements for WordOpenXmlImageReader
+#
+# WordOpenXmlImageReader resolves a document's embedded image parts and yields each one's
+# bytes with an honest transform hint: a passthrough transform, unstated pixel dimensions, and
+# the part's own media type.
+
+sections:
+  - title: DocDownWord Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: WordOpenXmlImageReader Requirements
+            requirements:
+              - id: DocDownWord-OpenXml-WordOpenXmlImageReader-YieldsPassthroughImages
+                title: >-
+                  WordOpenXmlImageReader shall yield an embedded image's bytes unchanged with a
+                  passthrough transform hint.
+                justification: |
+                  An Open XML image part is already a complete image file, so the honest transform is to
+                  pass the bytes through unchanged. Marking the hint passthrough records that no
+                  re-encoding took place.
+                tests:
+                  - WordOpenXmlImageReader_Read_Png_YieldsPassthroughWithNullDimensions
+
+              - id: DocDownWord-OpenXml-WordOpenXmlImageReader-RecordsPassthroughProvenance
+                title: >-
+                  WordOpenXmlImageReader shall leave the pixel dimensions unstated because the stored
+                  extent is a display size.
+                justification: |
+                  A drawing's stored extent is a display size in EMUs, not a pixel count, so reporting
+                  it as pixel dimensions would be false. Leaving the dimensions unstated keeps the
+                  machine-readable record true to what the document actually declares.
+                tests:
+                  - WordOpenXmlImageReader_Read_Png_YieldsPassthroughWithNullDimensions
+
+              - id: DocDownWord-OpenXml-WordOpenXmlImageReader-ReportsVectorMediaType
+                title: WordOpenXmlImageReader shall report the media type of a vector metafile image part.
+                justification: |
+                  A consumer deciding whether an image is usable needs its media type, and a vector
+                  metafile is exactly the case that carries a readability caveat. Reporting the part's
+                  own media type is what lets the extractor add that caveat honestly.
+                tests:
+                  - WordOpenXmlImageReader_Read_Emf_ReportsVectorMediaType

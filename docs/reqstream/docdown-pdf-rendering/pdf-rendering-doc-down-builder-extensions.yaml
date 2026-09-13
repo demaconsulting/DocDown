@@ -1,0 +1,60 @@
+---
+# Software Unit Requirements for PdfRenderingDocDownBuilderExtensions
+#
+# PdfRenderingDocDownBuilderExtensions is the one visible edge from a host to this package:
+# the explicit, reflection-free call that adds the rendering backend to a DocDown builder,
+# carrying no native rasterizer type on its public surface.
+
+sections:
+  - title: DocDownPdfRendering Requirements
+    sections:
+      - title: PdfRenderingDocDownBuilderExtensions Requirements
+        requirements:
+          - id: DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-RegistersExtractor
+            title: >-
+              PdfRenderingDocDownBuilderExtensions shall add exactly one page-rendering extractor to
+              the builder it is called on.
+            justification: |
+              A host builds an engine expecting the backends it asked for and no others. Adding exactly
+              one rendering extractor is what makes the resulting engine's behavior predictable from
+              the host's own code.
+            tests:
+              - AddPdfRendering_OnBuilder_RegistersRenderingExtractor
+
+          - id: DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-ReflectionFree
+            title: >-
+              PdfRenderingDocDownBuilderExtensions shall register the extractor without reflection or
+              assembly scanning.
+            justification: |
+              Registration by scanning makes the active backend set a property of what happens to be on
+              disk, which cannot be reviewed and defeats single-file publishing. A reflection-free
+              factory registration keeps the edge explicit and the publish path viable.
+            tests:
+              - AddPdfRendering_OnBuilder_RegistersRenderingExtractor
+
+          - id: DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-ReturnsBuilderForChaining
+            title: PdfRenderingDocDownBuilderExtensions shall return the builder it was called on.
+            justification: |
+              A host that registers several backends should express that as one readable configuration
+              sequence — AddPdf().AddPdfRendering() — rather than as disconnected statements.
+            tests:
+              - AddPdfRendering_OnBuilder_ReturnsSameBuilderForChaining
+
+          - id: DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-RejectsNullBuilder
+            title: PdfRenderingDocDownBuilderExtensions shall reject a missing builder at the point of the call.
+            justification: |
+              Failing where the mistake was made names the offending call site rather than deferring
+              the failure to build time against configuration the host wrote correctly.
+            tests:
+              - AddPdfRendering_NullBuilder_Throws
+
+          - id: DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-NoNativeTypeOnSurface
+            title: >-
+              PdfRenderingDocDownBuilderExtensions and the package's public types shall expose no
+              PDFtoImage, PDFium, or SkiaSharp type on their public API surface.
+            justification: |
+              Keeping the native rasterizer's types off the public surface lets a host reference the
+              registration seam without dragging the native library's types into its own compilation,
+              which is the whole reason this is a separate, opt-in package.
+            tests:
+              - PublicApi_AllPublicMembers_ExposeNoNativeRendererTypes

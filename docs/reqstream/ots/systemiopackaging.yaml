@@ -1,0 +1,28 @@
+---
+# System.IO.Packaging OTS Software Requirements
+#
+# Requirements for System.IO.Packaging, the Open Packaging Conventions (OPC) container
+# implementation the Open XML SDK sits on: it is the Zip-based package reader that opens a
+# .docx and exposes its parts and relationships. It reaches DocDown.Word transitively through
+# the SDK and, like the SDK, is a fully managed runtime library whose evidence comes from the
+# extraction tests that open a document.
+
+sections:
+  - title: OTS Software Requirements
+    sections:
+      - title: System.IO.Packaging Requirements
+        requirements:
+          - id: DocDown-OTS-SystemIoPackaging
+            title: >-
+              System.IO.Packaging shall open a WordprocessingML package and expose its parts and
+              relationships without requiring native binaries.
+            justification: |
+              A .docx is an OPC package — a Zip container of XML parts joined by relationships — and
+              every structured read the SDK performs begins by opening that package and resolving a
+              relationship to a part. That the package reader is fully managed is what keeps the whole
+              read path deployable anywhere the runtime is. Its evidence is the named tests that open a
+              generated package and read its parts, not a broad coverage claim.
+            tags: [ots]
+            tests:
+              - DocDownWord_Extract_GeneratedDocx_ProducesContractLayout
+              - WordOpenXmlReader_Read_HeadingsListsAndTables_ProducesStructuredBlocks

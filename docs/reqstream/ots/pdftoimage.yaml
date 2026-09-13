@@ -1,0 +1,27 @@
+---
+# PDFtoImage OTS Software Requirements
+#
+# Requirements for the PDFtoImage managed rasterization API that DocDown.Pdf.Rendering is
+# built on. Like PdfPig, PDFtoImage is a runtime library shipped to consumers rather than a
+# build-time tool, so its evidence comes from the rendering tests that exercise it
+# transitively - the exact tests are named here rather than claimed broadly.
+
+sections:
+  - title: OTS Software Requirements
+    sections:
+      - title: PDFtoImage Requirements
+        requirements:
+          - id: DocDown-OTS-PDFtoImage
+            title: >-
+              PDFtoImage shall rasterize a PDF page to an in-memory image at a requested DPI through a
+              managed API, serializing its native calls.
+            justification: |
+              DocDown.Pdf.Rendering's rendered-pages capability is delivered entirely through
+              PDFtoImage's managed rasterization API, which wraps the native PDFium renderer and
+              SkiaSharp encoder and serializes every native call behind a lock. The capability is only
+              as truthful as PDFtoImage's ability to turn a page and a DPI into image bytes.
+            tags: [ots]
+            tests:
+              - PageRenderer_Render_SinglePage_ReturnsValidPng
+              - PdfPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs
+              - DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages

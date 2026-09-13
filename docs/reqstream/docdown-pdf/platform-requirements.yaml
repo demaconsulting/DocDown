@@ -1,0 +1,71 @@
+---
+# System-Level Platform Requirements for DocDown.Pdf
+#
+# These requirements specify the platforms and frameworks the package must support.
+# They ensure the package works across the required execution environments.
+#
+# Test links can include a source filter prefix (e.g. "windows@", "ubuntu@", "net8.0@") to restrict
+# which test results count as evidence for a requirement. This is critical for platform and framework
+# requirements - removing these filters invalidates the evidence-based proof.
+#
+# Source filter prefixes:
+#   windows@TestName  - proves the test passed on a Windows platform
+#   ubuntu@TestName   - proves the test passed on a Linux (Ubuntu) platform
+#   macos@TestName    - proves the test passed on a macOS platform
+#   net8.0@TestName   - proves the test passed under the .NET 8 runtime
+#   net9.0@TestName   - proves the test passed under the .NET 9 runtime
+#   net10.0@TestName  - proves the test passed under the .NET 10 runtime
+
+sections:
+  - title: DocDownPdf Requirements
+    requirements:
+      - id: DocDownPdf-Platform-Windows
+        title: The package shall build and run on Windows platforms.
+        tags: [system]
+        justification: |
+          DEMA Consulting libraries must support Windows as a major development platform.
+        tests:
+          # Tests link to "windows" to ensure results come from Windows platform
+          - "windows@DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout"
+
+      - id: DocDownPdf-Platform-Linux
+        title: The package shall build and run on Linux platforms.
+        tags: [system]
+        justification: |
+          DEMA Consulting libraries must support Linux for CI/CD and containerized environments.
+        tests:
+          # Tests link to "ubuntu" to ensure results come from Linux platform
+          - "ubuntu@DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout"
+
+      - id: DocDownPdf-Platform-MacOS
+        title: The package shall build and run on macOS platforms.
+        tags: [system]
+        justification: |
+          DEMA Consulting libraries must support macOS for developers using Apple platforms.
+        tests:
+          # Tests link to "macos" to ensure results come from macOS platform
+          - "macos@DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout"
+
+      - id: DocDownPdf-Platform-Net8
+        title: The package shall support the .NET 8 runtime.
+        tags: [system]
+        justification: |
+          .NET 8 is an LTS release providing long-term stability for enterprise users.
+        tests:
+          - "net8.0@DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout"
+
+      - id: DocDownPdf-Platform-Net9
+        title: The package shall support the .NET 9 runtime.
+        tags: [system]
+        justification: |
+          .NET 9 support enables users to leverage the latest .NET features.
+        tests:
+          - "net9.0@DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout"
+
+      - id: DocDownPdf-Platform-Net10
+        title: The package shall support the .NET 10 runtime.
+        tags: [system]
+        justification: |
+          .NET 10 support ensures the package remains compatible with the latest .NET ecosystem.
+        tests:
+          - "net10.0@DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout"

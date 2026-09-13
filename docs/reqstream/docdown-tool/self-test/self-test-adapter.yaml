@@ -1,0 +1,48 @@
+---
+# Software Unit Requirements for SelfTestAdapter
+#
+# SelfTestAdapter maps Core's dependency-free self-test records into the DemaConsulting.TestResults
+# object model, so DemaConsulting.TestResults is referenced only by the tool and never by Core.
+
+sections:
+  - title: DocDownTool Requirements
+    sections:
+      - title: SelfTest Requirements
+        sections:
+          - title: SelfTestAdapter Requirements
+            requirements:
+              - id: DocDownTool-SelfTestAdapter-MapsOutcomes
+                title: >-
+                  SelfTestAdapter shall map a passed case to a passed outcome and a failed case to a
+                  failed outcome.
+                justification: |
+                  The emitted results file is only useful if a pass reads as a pass and a failure as a
+                  failure. Mapping each executed status to its corresponding outcome is the minimum the
+                  adapter must get right for the results to mean anything.
+                tests:
+                  - SelfTestAdapter_ToTestOutcome_Passed_ReturnsPassed
+                  - SelfTestAdapter_ToTestOutcome_Failed_ReturnsFailed
+
+              - id: DocDownTool-SelfTestAdapter-SkippedIsNotExecuted
+                title: >-
+                  SelfTestAdapter shall map a skipped case to a not-executed outcome, distinct from a
+                  failure.
+                justification: |
+                  A skip means the case could not run here, which is neither a pass nor a failure.
+                  Mapping it to not-executed is what lets the traceability tooling ignore it as
+                  evidence rather than count it as a fail, so a benign skip produces no false alarm and
+                  satisfies nothing.
+                tests:
+                  - SelfTestAdapter_ToTestOutcome_Skipped_ReturnsNotExecuted
+
+              - id: DocDownTool-SelfTestAdapter-PreservesMetadata
+                title: >-
+                  SelfTestAdapter shall preserve the case name, category, duration, and message on the
+                  mapped result.
+                justification: |
+                  A reader of the results file groups and diagnoses by these fields, so the adapter
+                  must carry the case name, its category as the class, the run duration, and any skip
+                  reason or failure detail through to the result rather than discarding them.
+                tests:
+                  - SelfTestAdapter_ToTestResult_PreservesNameCategoryDurationAndMessage
+                  - SelfTestAdapter_ToTestResult_FailedCase_CarriesMessage

@@ -1,0 +1,40 @@
+---
+# TestResults OTS Software Requirements
+#
+# Requirements for the DemaConsulting.TestResults library, a runtime dependency referenced only
+# by DemaConsulting.DocDown.Tool. It models a test-results collection and serializes it to TRX and
+# JUnit. It is exercised transitively by the tool's --validate path, so its evidence comes from the
+# tool's own tests rather than from a dedicated OTS test project.
+
+sections:
+  - title: OTS Software Requirements
+    sections:
+      - title: TestResults Requirements
+        requirements:
+          - id: DocDown-OTS-TestResults
+            title: TestResults shall model a test-results collection and serialize it to TRX and JUnit.
+            justification: |
+              The tool's --validate command builds a TestResults collection from the self-test outcomes
+              and serializes it so a traceability pipeline can consume it. The two well-formed-output
+              tests below drive that serialization end to end and re-parse the emitted file, which is
+              direct transitive evidence that the library models the collection and serializes both
+              formats correctly. This claim is deliberately narrow: the tests exercise only the subset
+              of the model the tool uses (a named collection of results carrying name, class name, code
+              base, duration, outcome, and error message), not the serializers' full schema surface.
+            tags: [ots]
+            tests:
+              - DocDownTool_Validate_ResultsTrx_ProducesWellFormedTrx
+              - DocDownTool_Validate_ResultsXml_ProducesWellFormedJUnit
+
+          - id: DocDown-OTS-TestResults-Outcomes
+            title: TestResults shall represent a not-executed outcome distinct from a failure.
+            justification: |
+              The tool maps a skipped self-test to a not-executed outcome so a traceability pipeline
+              ignores it as evidence rather than counting it as a failure. The tests below prove the
+              model carries a not-executed outcome that round-trips through TRX and is distinct from a
+              failure, which is the property the tool relies on. No broader claim about the outcome
+              enumeration is made.
+            tags: [ots]
+            tests:
+              - DocDownTool_Validate_SkippedPdfRenderCase_RecordedAsNotExecuted
+              - SelfTestAdapter_ToTestOutcome_Skipped_ReturnsNotExecuted

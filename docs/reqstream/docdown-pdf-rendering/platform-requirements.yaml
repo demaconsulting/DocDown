@@ -1,0 +1,67 @@
+---
+# System-Level Platform Requirements for DocDown.Pdf.Rendering
+#
+# These requirements specify the platforms and frameworks the package must support.
+# Because this package carries a native rasterization stack (PDFium/SkiaSharp), the
+# platform evidence is the end-to-end render test, which produces a real PNG and so
+# only passes where the native binary for that runtime actually loaded.
+#
+# Test links can include a source filter prefix (e.g. "windows@", "ubuntu@", "net8.0@") to restrict
+# which test results count as evidence for a requirement. This is critical for platform and framework
+# requirements - removing these filters invalidates the evidence-based proof.
+
+sections:
+  - title: DocDownPdfRendering Requirements
+    requirements:
+      - id: DocDownPdfRendering-Platform-Windows
+        title: The package shall build and render pages on Windows platforms.
+        tags: [system]
+        justification: |
+          Windows is a major DEMA Consulting development platform, and the PDFium native asset for the
+          Windows runtime identifiers must load and rasterize there.
+        tests:
+          - "windows@DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages"
+
+      - id: DocDownPdfRendering-Platform-Linux
+        title: The package shall build and render pages on Linux platforms.
+        tags: [system]
+        justification: |
+          Linux is the primary CI/CD and container target, and the PDFium native asset for the Linux
+          runtime identifiers must load and rasterize there.
+        tests:
+          - "ubuntu@DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages"
+
+      - id: DocDownPdfRendering-Platform-MacOS
+        title: The package shall build and render pages on macOS platforms.
+        tags: [system]
+        justification: |
+          macOS support serves developers on Apple platforms, and the PDFium native asset for the
+          macOS runtime identifiers must load and rasterize there.
+        tests:
+          - "macos@DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages"
+
+      - id: DocDownPdfRendering-Platform-Net8
+        title: The package shall support the .NET 8 runtime.
+        tags: [system]
+        justification: |
+          .NET 8 is an LTS release, and PDFtoImage ships a real net8.0 asset the package must render on.
+        tests:
+          - "net8.0@DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages"
+
+      - id: DocDownPdfRendering-Platform-Net9
+        title: The package shall support the .NET 9 runtime.
+        tags: [system]
+        justification: |
+          .NET 9 support enables users to leverage the latest .NET features, and PDFtoImage ships a
+          real net9.0 asset the package must render on.
+        tests:
+          - "net9.0@DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages"
+
+      - id: DocDownPdfRendering-Platform-Net10
+        title: The package shall support the .NET 10 runtime.
+        tags: [system]
+        justification: |
+          .NET 10 support keeps the package current, and PDFtoImage ships a real net10.0 asset the
+          package must render on — matching this repository's target frameworks exactly.
+        tests:
+          - "net10.0@DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages"

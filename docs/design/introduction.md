@@ -1,15 +1,16 @@
 # Introduction
 
-This document provides the detailed design for the Template DotNet Library, a .NET library
-demonstrating best practices for DEMA Consulting DotNet Libraries.
+This document provides the detailed design for DocDown, a family of .NET libraries and a
+command-line tool that extract useful information from documents of many types into a scratch
+folder, in a predictable layout designed to be fed to multimodal AI agents.
 
 ## Purpose
 
 The purpose of this document is to serve as the design entry point and provide detailed design
-specifications for the Template DotNet Library system. This documentation enables formal code
-review by providing implementation specifications, supports compliance auditing by maintaining
-clear traceability from requirements through design to code, aids maintenance by documenting
-system structure and interactions, and ensures quality assurance through detailed technical
+specifications for the DocDown software. This documentation enables formal code review by
+providing implementation specifications, supports compliance auditing by maintaining clear
+traceability from requirements through design to code, aids maintenance by documenting system
+structure and interactions, and ensures quality assurance through detailed technical
 specifications.
 
 This document is intended for:
@@ -19,32 +20,140 @@ This document is intended for:
 - Compliance auditors tracing requirements through design to implementation
 - Quality assurance teams validating system behavior
 
+## The Output Contract
+
+The output contract is the invariant that motivates the decomposition of the whole product, so it
+is stated here rather than inside any one system chapter.
+
+Every extraction, regardless of source format, produces the same five artifacts in the scratch
+folder:
+
+- **`summary.txt`** — a human- and LLM-readable write-up of what was extracted and where,
+  including the absolute path to the scratch folder.
+- **`manifest.json`** — the machine-readable twin of `summary.txt`.
+- **`metadata.json`** — what the document asserts about itself, with per-field provenance and blank
+  values omitted; always written.
+- **`content.md`** — the textual content as markdown, linking to the extracted images.
+- **`images/` and `pages/`** — extracted image resources and optional rendered page images.
+
+Three principles constrain every design decision in this document:
+
+- **The output layout is invariant; the output content is best-effort and
+  environment-dependent.** What can be extracted legitimately varies with the operating system,
+  the installed applications, and the available native binaries. A consumer may therefore rely on
+  the *shape* of the output without relying on its completeness.
+- **Reporting is always honest.** Whatever was not extracted is stated explicitly, with a reason.
+  An absence is never merely implied by a missing folder, because a missing folder is
+  indistinguishable from a folder that was legitimately empty.
+- **Extractors are registered explicitly.** No reflection or assembly scanning is used to
+  discover extractors, so the command-line tool can be published as a single-file executable.
+
 ## Scope
 
-This document covers the detailed design of the Template DotNet Library system and its constituent
-software items, specifically:
+This document covers the detailed design of the DocDown systems and their constituent software
+items, specifically:
 
-- **TemplateDotNetLibrary (System)** — The complete .NET library template system
-- **Demo (Unit)** — Demonstration greeting class providing example functionality
+- **DocDown.Core (System)** — Shared abstractions and the implementation of the output contract,
+  organized into three subsystems
+- **Detection (Subsystem)** — Identifies a document's format and the evidence behind the
+  identification
+  - **FormatSniffer (Unit)** — Names a format from the file extension, falling back to a
+    leading-byte content signature
+- **Extraction (Subsystem)** — Registration, capability negotiation, deterministic selection, and
+  pipeline orchestration
+  - **DocDownBuilder (Unit)** — Fluent builder that collects registrations and produces an engine
+  - **ExtractorRegistry (Unit)** — Immutable snapshot of registered extractors with cached
+    availability
+  - **ExtractorSelector (Unit)** — Pure ranking function that chooses the best extractor and records
+    the decision
+  - **DocDownEngine (Unit)** — Public facade that orchestrates one extraction end to end
+- **Output (Subsystem)** — The sole write path: scratch preparation, path containment, and artifact
+  serialization
+  - **ScratchFolder (Unit)** — Owns the output directory and the path-safety gate
+  - **ExtractionSink (Unit)** — Allocates every path, writes bytes, and records the honesty stream
+  - **ContentWriter (Unit)** — Finalizes `content.md` and any `parts/` files
+  - **SummaryWriter (Unit)** — Serializes the human-readable `summary.txt`
+  - **ManifestWriter (Unit)** — Serializes `manifest.json` and reconciles the completeness ledger
+  - **ContractVerifier (Unit)** — Reconciles a scratch folder against its own manifest
+- **DocDown.Pdf (System)** — PDF text, embedded-image, and document-metadata extraction; flat, with
+  no subsystems, because there is one architectural boundary here rather than several
+  - **PdfDocumentExtractor (Unit)** — The backend the engine selects: capabilities, availability,
+    metadata, delegation, and the degradation gaps only a PDF reader can explain
+  - **PdfTextExtractor (Unit)** — Renders a page's glyphs into markdown paragraphs in reading
+    order, with image links and page markers
+  - **PdfImageExtractor (Unit)** — Writes the embedded images, labeling how each was produced and
+    accounting for every one it could not deliver
+  - **PdfDocDownBuilderExtensions (Unit)** — The reflection-free registration seam
+- **DocDown.Pdf.Rendering (System)** — Optional PDF page rendering (rasterization); flat, with no
+  subsystems, and the first and only DocDown package that carries native binaries
+  - **PdfPageRenderingExtractor (Unit)** — The superset backend the engine selects when rendering is
+    requested: declares the four capabilities, delegates the managed aspects, rasterizes the pages,
+    and isolates each page's faults into a counted gap
+  - **PageRenderer (Unit)** — The single native-interop seam: rasterizes one page to PNG behind a
+    process-wide lock and answers a cheap, non-throwing availability probe
+  - **PdfRenderingDocDownBuilderExtensions (Unit)** — The reflection-free registration seam,
+    carrying no native-rasterizer type on its surface
+- **DocDown.Tool (System)** — The `docdown` command-line tool; two subsystems and one direct unit
+  - **Program (Unit, direct)** — The entry point: priority-ordered dispatch, banner and help,
+    explicit engine registration, extraction and reporting, and the auxiliary list-backends and
+    verify commands
+  - **Cli (Subsystem)** — Command-line parsing, validation, option mapping, and output routing
+    - **Context (Unit)** — The parsed arguments and the silence-aware console and log channels
+  - **SelfTest (Subsystem)** — The `--validate` self-validation
+    - **Validation (Unit)** — The validation driver: environment header, in-process command checks,
+      the backend self-test union, and TRX/JUnit output
+    - **SelfTestAdapter (Unit)** — Maps Core's dependency-free self-test records into the TestResults
+      model
+- **DocDown.Word (System)** — Word text, real tables, embedded-image, document-control, and
+  document-metadata extraction; two subsystems (Markdown, OpenXml) and one direct unit
+  - **WordDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
+    Word backend
+  - **Markdown (Subsystem)** — The reader-neutral document model and its projection onto markdown
+    - **WordMarkdownWriter (Unit)** — Renders the model to a markdown flow: headings, lists, inline
+      formatting, images, comments, footnotes, and the Document Control section
+    - **WordTableWriter (Unit)** — Renders a table model as a GFM table, counting every flattened cell
+    - **WordContentEmitter (Unit)** — The model-to-sink emission path
+  - **OpenXml (Subsystem)** — The managed backend that reads a `.docx` through the Open XML SDK
+    - **WordOpenXmlExtractor (Unit)** — The managed backend the engine selects: capabilities, split
+      modes, and the shortfalls only it can explain
+    - **WordOpenXmlReader (Unit)** — Turns the Open XML DOM into the backend-neutral model
+    - **WordOpenXmlImageReader (Unit)** — Yields each embedded image's bytes with passthrough
+      provenance
 
 The following OTS items are also covered:
 
 - **BuildMark** — build-notes documentation tool
 - **FileAssert** — document assertion tool
+- **Open XML SDK** — managed WordprocessingML reader/writer, a runtime dependency of DocDown.Word
+  shipped to consumers rather than a build-time tool
 - **Pandoc** — Markdown-to-HTML conversion tool
+- **PdfPig** — managed PDF parser, a runtime dependency of DocDown.Pdf shipped to consumers rather
+  than a build-time tool
+- **PDFium** — native PDF page rasterizer, a runtime dependency delivered transitively through
+  PDFtoImage to the optional DocDown.Pdf.Rendering package; the only native binary DocDown depends on
+- **PDFtoImage** — managed page-rasterization API, the runtime dependency of DocDown.Pdf.Rendering
+  that wraps PDFium and SkiaSharp
 - **ReqStream** — requirements traceability tool
 - **ReviewMark** — file review enforcement tool
 - **SarifMark** — SARIF report conversion tool
+- **SkiaSharp** — 2D graphics library that encodes rasterized pages to PNG, a runtime dependency
+  delivered transitively through PDFtoImage
 - **SonarMark** — SonarCloud quality report tool
 - **SysML2Tools** — architecture model lint and diagram rendering tool
+- **System.IO.Packaging** — managed Open Packaging Conventions container reader that opens a `.docx`,
+  reaching DocDown.Word transitively through the Open XML SDK
+- **TestResults** — test-results serialization library, the one runtime dependency of DocDown.Tool
 - **VersionMark** — tool-version documentation tool
 - **WeasyPrint** — HTML-to-PDF conversion tool
 - **xUnit** — unit-testing framework
 
-Version applicability: This design applies to all versions of the Template DotNet Library.
+Version applicability: This design applies to all versions of DocDown.
 
 The following topics are explicitly excluded from this design documentation:
 
+- The remaining format-specific extraction libraries (Excel, PowerPoint, Visio, and HTML), which are
+  planned but not yet implemented; each will be added to this document as a system when it is
+  delivered
 - External library internals and third-party OTS components
 - Build pipeline configuration and CI/CD processes
 - Deployment, packaging, and distribution mechanisms
@@ -60,10 +169,48 @@ diagram or the prose below.
 
 ![Software Structure](SoftwareStructureView.svg)
 
-This template demonstrates a minimal system structure with no subsystems — it contains only the
-`Demo` unit directly under the system level. In more complex implementations, subsystems would
-organize related units and provide architectural boundaries with well-defined interfaces and
-responsibilities.
+DocDown.Core is organized into three subsystems that form a one-directional pipeline: **Detection**
+identifies a document's format, **Extraction** registers backends and selects the best available one,
+and **Output** is the sole write path that produces the invariant scratch-folder layout. Each
+subsystem is a distinct architectural boundary with its own public surface, and the subsystems
+collaborate only through immutable value types. Twelve software units sit under these subsystems; a
+larger set of supporting value, contract, and enumeration types is documented inline within each
+subsystem's design document rather than as separate units.
+
+DocDown.Pdf sits alongside DocDown.Core as the second system and the first real extraction backend. It
+is flat - four units, no subsystems - because it spans one architectural boundary, the PDF, rather
+than several. It depends on DocDown.Core for the extraction contract and on the PdfPig OTS parser for
+PDF structure, and a host joins the two with a single explicit registration call.
+
+DocDown.Pdf.Rendering is the third system: the optional page-rendering backend, and the first and
+only DocDown package that carries native binaries. It too is flat - three units, no subsystems -
+because it spans one boundary, rasterization. It depends on DocDown.Core for the contract and on
+DocDown.Pdf for the managed text/image/metadata extraction it delegates to, and it wraps the
+PDFtoImage OTS API (with its transitive PDFium and SkiaSharp native stack) in a single native-interop
+seam. Because the engine selects one backend, it declares the full superset of capabilities and is
+chosen over the managed backend only when page rendering is requested; a host that never registers it
+never loads a native binary.
+
+DocDown.Tool is the fourth system: the `docdown` command-line tool, a thin executable shell over
+DocDown.Core and the registered backends. It has two subsystems - Cli, which owns the command line,
+and SelfTest, which drives the `--validate` self-validation - plus Program, the entry point, as a
+direct unit. It registers its backends explicitly - `AddPdf().AddPdfRendering().AddWord()` - so it can
+be published as a single-file executable; because the rendering backend carries a native stack, a
+self-contained single-file publish is runtime-identifier specific and trimming and AOT are left off as
+unverified, while a framework-dependent `dotnet tool install -g` stays portable across runtime
+identifiers. It is the only package that references the DemaConsulting.TestResults OTS library, which
+keeps DocDown.Core free of runtime dependencies.
+
+DocDown.Word is the fifth system: the Word extraction backend, and the second family of formats after
+PDF. Unlike the flat PDF systems it has two subsystems - Markdown, which owns the reader-neutral
+document model and its projection onto markdown; and OpenXml, the fully managed backend that reads a
+`.docx` through the Open XML SDK - plus WordDocDownBuilderExtensions, the registration seam, as a
+direct unit. It
+depends on DocDown.Core for the contract and on the Open XML SDK (with its transitive
+System.IO.Packaging container reader) for document structure, and it is 100% managed and
+runtime-identifier agnostic: it ships no native asset, and it therefore declares no rendered-pages
+capability. The legacy binary `.doc` format is not supported by DocDown at all, so the package ships
+one backend and the engine has one candidate for a Word document.
 
 ## Folder Layout
 
@@ -71,13 +218,144 @@ The source code folder structure mirrors the software structure organization, wi
 and descriptions as follows:
 
 ```text
-src/DemaConsulting.TemplateDotNetLibrary/
-└── Demo.cs                     — Demonstration greeting class implementing template functionality
+src/DemaConsulting.DocDown.Core/
+├── Detection/
+│   ├── FormatSniffer.cs            — Unit: names a format from the file extension, falling back to a content signature
+│   ├── DocumentFormat.cs           — Value type: format identifier and media type, with well-known formats
+│   ├── DetectionBasis.cs           — Enum: the kind of evidence a detection is based on
+│   └── FormatDetection.cs          — Value type: detected format plus basis and confidence
+├── Extraction/
+│   ├── DocDownBuilder.cs           — Unit: fluent builder collecting registrations and defaults
+│   ├── ExtractorRegistry.cs        — Unit: immutable snapshot of registered extractors with cached availability
+│   ├── ExtractorSelector.cs        — Unit: pure ranking function that selects the best extractor
+│   ├── DocDownEngine.cs            — Unit: public facade that orchestrates one extraction end to end
+│   ├── IDocumentExtractor.cs       — Interface: the backend contract implemented by extractor packages
+│   ├── IExtractionContext.cs       — Interface: the context handed to a backend during extraction
+│   ├── ExtractionContext.cs        — Internal: the concrete extraction context
+│   ├── ExtractorAvailability.cs    — Value type: probed availability and effective capabilities
+│   ├── ExtractorCapabilities.cs    — Flags enum: the capabilities a backend can provide
+│   ├── ExtractorDescriptor.cs      — Value type: immutable snapshot of a backend's identity and abilities
+│   ├── ExtractorCandidate.cs       — Value type: a descriptor paired with its current availability
+│   ├── BackendStatus.cs            — Value type: flattened backend status for reporting
+│   ├── SelectionMode.cs            — Enum: automatic versus caller-override selection
+│   ├── SelectionResult.cs          — Value type: the selection outcome, trace, and any failure
+│   ├── CandidateOutcome.cs         — Enum: the per-candidate selection classification
+│   ├── CandidateVerdict.cs         — Value type: one candidate's verdict and reason
+│   ├── ExtractionOutcome.cs        — Enum: succeeded, degraded, or failed
+│   ├── ExtractionFailureKind.cs    — Enum: the kind of extraction failure
+│   ├── ExtractionFailure.cs        — Value type: a structured failure with a displayable explanation
+│   ├── ExtractionDiagnostic.cs     — Value type: a coded, located diagnostic
+│   ├── DiagnosticSeverity.cs       — Enum: info, warning, or error
+│   ├── DiagnosticCodes.cs          — Internal static: the Core diagnostic-code constants
+│   ├── ExtractionOptions.cs        — Options: mutable request configuration with a Clone method
+│   ├── ScratchFolderMode.cs        — Enum: the scratch-folder preparation policy
+│   ├── ContentSplitMode.cs         — Enum: the content-split policy
+│   ├── ImageOutputMode.cs          — Enum: the image-output policy
+│   ├── PageRange.cs                — Value type: an inclusive page range
+│   ├── DocumentSource.cs           — Source: a file- or stream-backed document input
+│   ├── DocumentInfo.cs             — Value type: extractor-reported document metadata
+│   ├── DocumentMetadata.cs         — Value type: what a document asserts about itself, with per-field provenance
+│   ├── OpcMetadataMapper.cs        — Mapper: shared OPC core-property snapshot to DocumentMetadata
+│   ├── ExtractionResult.cs         — Result: the full outcome returned to the caller
+│   ├── ISelfValidating.cs          — Interface: opt-in self-test contribution by a backend
+│   ├── SelfTestCase.cs             — Value type: a named, runnable self-test case
+│   ├── SelfTestContext.cs          — Context: the working folder and cancellation for a self-test
+│   ├── SelfTestResult.cs           — Value type: a self-test status, message, and duration
+│   └── SelfTestStatus.cs           — Enum: passed, failed, or skipped
+└── Output/
+    ├── ScratchFolder.cs            — Unit: owns the output directory and the path-safety gate
+    ├── ExtractionSink.cs           — Unit: allocates every path, writes bytes, and records the honesty stream
+    ├── ContentWriter.cs            — Unit: finalizes content.md and any parts/ files
+    ├── SummaryWriter.cs            — Unit: serializes the human-readable summary.txt
+    ├── ManifestWriter.cs           — Unit: serializes manifest.json and reconciles the completeness ledger
+    ├── MetadataWriter.cs           — Writer (supporting type): serializes metadata.json, the document's self-reported metadata
+    ├── ContractVerifier.cs         — Unit: reconciles a scratch folder against its own manifest
+    ├── IExtractionSink.cs          — Interface: the write surface handed to a backend
+    ├── ImageHint.cs                — Value type: extractor-supplied image metadata hint
+    ├── ContentPart.cs              — Value type: a content part (page, sheet, slide, section, attachment)
+    ├── ContentPartKind.cs          — Enum: the kind of a content part
+    ├── ExtractionGap.cs            — Value type: an enumerated gap with a mandatory reason
+    ├── GapKind.cs                  — Enum: the kind of a gap
+    ├── GapScope.cs                 — Enum: why content is missing (not attempted, unavailable, partial, failed)
+    ├── ArtifactLedger.cs           — Value type: the completeness ledger of the six core artifacts
+    ├── ArtifactEntry.cs            — Value type: one ledger entry (path, status, counts)
+    ├── ArtifactStatus.cs           — Enum: present, partial, or absent
+    ├── ExtractionEnvironment.cs    — Value type: operating system, runtime, and environment facts
+    ├── EnvironmentFact.cs          — Value type: one environment fact
+    ├── ContractViolation.cs        — Value type: a contract-verification finding
+    ├── ExtractionManifest.cs       — DTO graph: the manifest.json serialization model
+    ├── DocDownJsonContext.cs       — Source-gen: the trim- and AOT-safe JSON serializer context
+    └── ScratchFolderException.cs   — Exception: a structured scratch-folder refusal
 ```
 
-This flat folder structure reflects the single-unit nature of this template system. As the system
-grows with additional subsystems and units, the folder structure will expand to mirror the
-software architecture with subsystem-specific folders containing their respective units.
+The folder structure mirrors the three-subsystem software architecture. Each subsystem folder holds
+its software-unit source files together with the supporting value, contract, and enumeration types the
+subsystem defines; the supporting types are documented inline within their subsystem's design document
+rather than as separate units.
+
+The PDF extraction package mirrors the same organization. It is flat, so every source file is a unit:
+
+```text
+src/DemaConsulting.DocDown.Pdf/
+├── PdfDocumentExtractor.cs         — Unit: orchestrates an extraction; also holds this package's diagnostic codes
+├── PdfTextExtractor.cs             — Unit: renders a page's glyphs into markdown in reading order
+├── PdfImageExtractor.cs            — Unit: writes embedded images and accounts for those it cannot deliver
+└── PdfDocDownBuilderExtensions.cs  — Unit: the reflection-free AddPdf registration seam
+```
+
+The optional page-rendering package mirrors the same flat organization; every source file is a unit:
+
+```text
+src/DemaConsulting.DocDown.Pdf.Rendering/
+├── PdfPageRenderingExtractor.cs            — Unit: superset backend; delegates managed aspects, rasterizes pages
+├── PageRenderer.cs                         — Unit: the single native-interop seam behind a process-wide lock
+└── PdfRenderingDocDownBuilderExtensions.cs — Unit: the reflection-free AddPdfRendering registration seam
+```
+
+The command-line tool has two subsystems and one direct unit, mirroring the same organization:
+
+```text
+src/DemaConsulting.DocDown.Tool/
+├── Program.cs                      — Unit: entry point, priority dispatch, banner/help, extraction and reporting
+├── Cli/
+│   └── Context.cs                  — Unit: parsed arguments, option mapping, and silence-aware console/log output
+└── SelfTest/
+    ├── Validation.cs               — Unit: the --validate driver: header, in-process checks, self-test union, TRX/JUnit
+    └── SelfTestAdapter.cs          — Unit: maps Core self-test records into the TestResults model
+```
+
+The Word extraction package has two subsystems and one direct unit. Each subsystem folder holds its
+software-unit source files together with the supporting model, contract, and enumeration types the
+subsystem defines; the supporting types are documented inline within their subsystem's design document
+rather than as separate units:
+
+```text
+src/DemaConsulting.DocDown.Word/
+├── WordDocDownBuilderExtensions.cs — Unit: the reflection-free AddWord registration seam
+├── Markdown/
+│   ├── WordMarkdownWriter.cs        — Unit: renders the document model to a markdown flow
+│   ├── WordTableWriter.cs           — Unit: renders a table model as a GFM table, counting flattened cells
+│   ├── WordContentEmitter.cs        — Unit: the model-to-sink emission path
+│   ├── WordDocumentModel.cs         — Value type: the reader-neutral document model
+│   ├── WordBlock.cs                 — Value type: one content block (heading, paragraph, list item, table, image)
+│   ├── WordBlockKind.cs             — Enum: the kind of a content block
+│   ├── WordInline.cs                — Value type: an inline run with bold/italic/link
+│   ├── WordListInfo.cs              — Value type: a list item's level and ordered/bulleted kind
+│   ├── WordTableModel.cs            — Value type: a table's rows, header flag, and flatten counts
+│   └── WordDiagnosticCodes.cs       — Internal static: the WORD diagnostic-code constants
+└── OpenXml/
+    ├── WordOpenXmlExtractor.cs      — Unit: the managed backend the engine selects and invokes
+    ├── WordOpenXmlReader.cs         — Unit: turns the Open XML DOM into the backend-neutral model
+    ├── WordOpenXmlImageReader.cs    — Unit: yields embedded image bytes with passthrough provenance
+    └── WordExtractionException.cs   — Exception: a structured Word extraction failure
+```
+
+## Code Coverage Policy
+
+`[ExcludeFromCodeCoverage]` is applied only to interop adapters — the thin seams that call into
+native binaries or out-of-process applications and cannot be exercised in continuous integration.
+It is never applied to decision logic, so that reported coverage remains an honest measure of what
+the test suite actually verifies.
 
 ## Document Conventions
 
@@ -103,6 +381,5 @@ Each software item has corresponding artifacts in parallel directory trees:
 
 ## References
 
-- Template DotNet Library User Guide — the compiled User Guide document for this repository.
-- Template DotNet Library Repository — the TemplateDotNetLibrary source repository hosted on
-  GitHub.
+- DocDown User Guide — the compiled User Guide document for this repository.
+- DocDown Repository — the DocDown source repository hosted on GitHub.

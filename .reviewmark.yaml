@@ -14,6 +14,8 @@ needs-review:
   - "docs/verification/**/*.md"  # Verification documentation files
   - "docs/user_guide/**/*.md"    # User guide documentation
   - "docs/sysml2/**/*.sysml"     # SysML2 architecture model
+  - "test/DemaConsulting.DocDown.Core.Tests/golden/**/*.txt"  # Golden summary.txt outputs (reviewed artifact)
+  - "test/DemaConsulting.DocDown.Word.Tests/golden/**/*.txt"  # Golden summary.txt outputs (reviewed artifact)
   - "!**/obj/**"                  # Exclude build output
   - "!**/bin/**"                  # Exclude build output
   - "!node_modules/**"           # Exclude npm dependencies
@@ -25,7 +27,7 @@ needs-review:
 # and an index.json before enforcement (--enforce flag) can be enabled in the pipeline.
 evidence-source:
   type: url
-  location: https://raw.githubusercontent.com/demaconsulting/TemplateDotNetLibrary/reviews/index.json
+  location: https://raw.githubusercontent.com/demaconsulting/DocDown/reviews/index.json
 
 # Global context shown to every reviewer for orientation (not fingerprinted).
 context:
@@ -45,74 +47,918 @@ reviews:
 
   # Decomposition Review (only one per repository)
   - id: Decomposition
-    title: Review that TemplateDotNetLibrary Decomposition Addresses the Stated Purpose
+    title: Review that DocDown Decomposition Addresses the Stated Purpose
     context:
       - "README.md"
       - "docs/user_guide/**/*.md"
     paths:
       - "requirements.yaml"                                         # root requirements file
+      - "docs/reqstream/quality.yaml"                               # repository-level quality requirements
       - "docs/design/introduction.md"                               # design introduction
       - "docs/sysml2/**/*.sysml"                                    # SysML2 model (authoritative structure)
 
-  # TemplateDotNetLibrary-Architecture Review (one per system)
-  - id: TemplateDotNetLibrary-Architecture
-    title: Review that TemplateDotNetLibrary Architecture Satisfies Requirements
+  # DocDownCore-Architecture Review (one per system)
+  - id: DocDownCore-Architecture
+    title: Review that DocDown.Core Architecture Satisfies Requirements
     context:
       - "README.md"
       - "docs/user_guide/**/*.md"
     paths:
-      - "docs/reqstream/template-dot-net-library.yaml"                      # system requirements
+      - "docs/reqstream/docdown-core.yaml"                      # system requirements
       - "docs/design/introduction.md"                                           # design introduction
-      - "docs/design/template-dot-net-library.md"                               # system design
+      - "docs/design/docdown-core.md"                               # system design
       - "docs/verification/introduction.md"                                    # verification introduction
-      - "docs/verification/template-dot-net-library.md"                        # system verification
-      - "test/DemaConsulting.TemplateDotNetLibrary.Tests/TemplateDotNetLibraryTests.cs"  # integration tests
+      - "docs/verification/docdown-core.md"                        # system verification
+      - "test/DemaConsulting.DocDown.Core.Tests/DocDownCoreTests.cs"  # integration tests
+      - "src/DemaConsulting.DocDown.Core/NamespaceDoc.cs"             # namespace documentation
 
-  # TemplateDotNetLibrary-Design Review (one per system)
-  - id: TemplateDotNetLibrary-Design
-    title: Review that TemplateDotNetLibrary Design is Consistent and Complete
+  # DocDownCore-Design Review (one per system)
+  - id: DocDownCore-Design
+    title: Review that DocDown.Core Design is Consistent and Complete
     context:
-      - "docs/reqstream/template-dot-net-library.yaml"
+      - "docs/reqstream/docdown-core.yaml"
     paths:
-      - "docs/reqstream/template-dot-net-library/platform-requirements.yaml"  # platform requirements
+      - "docs/reqstream/docdown-core/platform-requirements.yaml"  # platform requirements
       - "docs/design/introduction.md"                                       # design introduction
-      - "docs/design/template-dot-net-library.md"                           # system design
-      - "docs/design/template-dot-net-library/**/*.md"                      # all system design documents
+      - "docs/design/docdown-core.md"                           # system design
+      - "docs/design/docdown-core/**/*.md"                      # all system design documents
       - "docs/design/ots.md"                                                # OTS overview
 
-  # TemplateDotNetLibrary-Verification Review (one per system)
-  - id: TemplateDotNetLibrary-Verification
-    title: Review that TemplateDotNetLibrary Verification is Consistent and Complete
+  # DocDownCore-Verification Review (one per system)
+  - id: DocDownCore-Verification
+    title: Review that DocDown.Core Verification is Consistent and Complete
     context:
-      - "docs/reqstream/template-dot-net-library.yaml"
+      - "docs/reqstream/docdown-core.yaml"
     paths:
       - "docs/verification/introduction.md"                                 # verification introduction
-      - "docs/verification/template-dot-net-library.md"                     # system verification
-      - "docs/verification/template-dot-net-library/**/*.md"               # all verification documents
+      - "docs/verification/docdown-core.md"                     # system verification
+      - "docs/verification/docdown-core/**/*.md"               # all verification documents
       - "docs/verification/ots.md"                                          # OTS overview
 
-  # TemplateDotNetLibrary-AllRequirements Review (one per system)
-  - id: TemplateDotNetLibrary-AllRequirements
-    title: Review that All TemplateDotNetLibrary Requirements are Complete
+  # DocDownCore-AllRequirements Review (one per system)
+  - id: DocDownCore-AllRequirements
+    title: Review that All DocDown.Core Requirements are Complete
     context:
-      - "docs/design/template-dot-net-library.md"
-      - "docs/reqstream/template-dot-net-library.yaml"
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
     paths:
-      - "requirements.yaml"                                                 # root requirements file
-      - "docs/reqstream/**/*.yaml"                                          # all requirements files
+      - "docs/reqstream/docdown-core/**/*.yaml"                             # subsystem/unit requirements files
 
-  # TemplateDotNetLibrary-Demo Review (one per unit)
-  - id: TemplateDotNetLibrary-Demo
-    title: Review that TemplateDotNetLibrary Demo Implementation is Correct
+  # DocDownCore-Detection Subsystem Review (one per subsystem)
+  # D8: the subsystem's inline supporting-type source files are reviewed here because they
+  # are documented in the subsystem design doc (not in unit docs), so the subsystem review is
+  # the matching compliance question for their source. Unit source files are deliberately
+  # excluded (Hierarchical Scope: only unit reviews include unit implementation). The list is
+  # explicit so a future unit .cs file cannot be silently absorbed by a glob.
+  - id: DocDownCore-Detection
+    title: Review that DocDown.Core Detection Satisfies Subsystem Requirements
     context:
-      - "docs/design/template-dot-net-library.md"
-      - "docs/reqstream/template-dot-net-library.yaml"
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
     paths:
-      - "docs/reqstream/template-dot-net-library/demo.yaml"                 # unit requirements
-      - "docs/design/template-dot-net-library/demo.md"                     # unit design
-      - "docs/verification/template-dot-net-library/demo.md"               # unit verification
-      - "src/DemaConsulting.TemplateDotNetLibrary/Demo.cs"                  # unit source
-      - "test/DemaConsulting.TemplateDotNetLibrary.Tests/DemoTests.cs"      # unit tests
+      - "docs/reqstream/docdown-core/detection.yaml"                                  # subsystem requirements
+      - "docs/design/docdown-core/detection.md"                                       # subsystem design
+      - "docs/verification/docdown-core/detection.md"                                 # subsystem verification
+      - "test/DemaConsulting.DocDown.Core.Tests/Detection/DetectionTests.cs"          # subsystem tests
+      - "src/DemaConsulting.DocDown.Core/Detection/DocumentFormat.cs"                 # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Detection/DetectionBasis.cs"                 # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Detection/FormatDetection.cs"                # supporting type (D8)
+
+  # DocDownCore-Extraction Subsystem Review (one per subsystem)
+  # D8: subsystem-documented supporting-type source files are reviewed here; unit source
+  # files are excluded (Hierarchical Scope). Explicit list to prevent silent absorption.
+  - id: DocDownCore-Extraction
+    title: Review that DocDown.Core Extraction Satisfies Subsystem Requirements
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/extraction.yaml"                                 # subsystem requirements
+      - "docs/design/docdown-core/extraction.md"                                      # subsystem design
+      - "docs/verification/docdown-core/extraction.md"                                # subsystem verification
+      - "test/DemaConsulting.DocDown.Core.Tests/Extraction/ExtractionTests.cs"        # subsystem tests
+      - "src/DemaConsulting.DocDown.Core/Extraction/IDocumentExtractor.cs"            # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/IExtractionContext.cs"            # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractionContext.cs"             # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractorAvailability.cs"         # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractorCapabilities.cs"         # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractorDescriptor.cs"           # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractorCandidate.cs"            # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/BackendStatus.cs"                 # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/SelectionMode.cs"                 # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/SelectionResult.cs"               # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/CandidateOutcome.cs"              # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/CandidateVerdict.cs"              # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractionOutcome.cs"             # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractionFailureKind.cs"         # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractionFailure.cs"             # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractionDiagnostic.cs"          # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/DiagnosticSeverity.cs"            # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/DiagnosticCodes.cs"               # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractionOptions.cs"             # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/ScratchFolderMode.cs"             # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/ContentSplitMode.cs"              # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/ImageOutputMode.cs"               # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/PageRange.cs"                     # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/DocumentSource.cs"                # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/DocumentInfo.cs"                  # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/DocumentMetadata.cs"              # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/OpcMetadataMapper.cs"             # supporting type (D8)
+      - "test/DemaConsulting.DocDown.Core.Tests/Extraction/OpcMetadataMapperTests.cs"  # supporting-type tests
+      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractionResult.cs"              # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/ISelfValidating.cs"               # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/SelfTestCase.cs"                  # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/SelfTestContext.cs"               # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/SelfTestResult.cs"                # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/SelfTestStatus.cs"                # supporting type (D8)
+
+  # DocDownCore-Output Subsystem Review (one per subsystem)
+  # D8: subsystem-documented supporting-type source files are reviewed here; unit source
+  # files are excluded (Hierarchical Scope). Explicit list to prevent silent absorption.
+  - id: DocDownCore-Output
+    title: Review that DocDown.Core Output Satisfies Subsystem Requirements
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/output.yaml"                                     # subsystem requirements
+      - "docs/design/docdown-core/output.md"                                          # subsystem design
+      - "docs/verification/docdown-core/output.md"                                    # subsystem verification
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/OutputTests.cs"                # subsystem tests
+      - "src/DemaConsulting.DocDown.Core/Output/IExtractionSink.cs"                   # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ImageHint.cs"                         # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ImageTransform.cs"                    # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ImageTextSource.cs"                   # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ImageTextConfidence.cs"               # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ImageTextCandidate.cs"                # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/SelectedImageText.cs"                 # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ContentPart.cs"                       # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ContentPartKind.cs"                   # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ExtractionGap.cs"                     # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/GapKind.cs"                           # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/GapScope.cs"                          # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ArtifactLedger.cs"                    # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ArtifactEntry.cs"                     # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ArtifactStatus.cs"                    # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ExtractionEnvironment.cs"             # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/EnvironmentFact.cs"                   # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ContractViolation.cs"                 # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ExtractionManifest.cs"                # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/DocDownJsonContext.cs"                # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ScratchFolderException.cs"            # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/ArtifactInventory.cs"                 # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Output/MetadataWriter.cs"                    # supporting type (D8)
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/MetadataWriterTests.cs"        # supporting-type tests
+
+  # DocDownCore-Detection-FormatSniffer Review (one per unit)
+  - id: DocDownCore-Detection-FormatSniffer
+    title: Review that DocDown.Core Detection FormatSniffer Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/detection.md"
+      - "docs/reqstream/docdown-core/detection.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/detection/format-sniffer.yaml"                   # unit requirements
+      - "docs/design/docdown-core/detection/format-sniffer.md"                        # unit design
+      - "docs/verification/docdown-core/detection/format-sniffer.md"                  # unit verification
+      - "src/DemaConsulting.DocDown.Core/Detection/FormatSniffer.cs"                  # unit source
+      - "test/DemaConsulting.DocDown.Core.Tests/Detection/FormatSnifferTests.cs"      # unit tests
+
+  # DocDownCore-Extraction-DocDownBuilder Review (one per unit)
+  - id: DocDownCore-Extraction-DocDownBuilder
+    title: Review that DocDown.Core Extraction DocDownBuilder Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/extraction.md"
+      - "docs/reqstream/docdown-core/extraction.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/extraction/doc-down-builder.yaml"                # unit requirements
+      - "docs/design/docdown-core/extraction/doc-down-builder.md"                     # unit design
+      - "docs/verification/docdown-core/extraction/doc-down-builder.md"               # unit verification
+      - "src/DemaConsulting.DocDown.Core/Extraction/DocDownBuilder.cs"                # unit source
+      - "test/DemaConsulting.DocDown.Core.Tests/Extraction/DocDownBuilderTests.cs"    # unit tests
+
+  # DocDownCore-Extraction-ExtractorRegistry Review (one per unit)
+  - id: DocDownCore-Extraction-ExtractorRegistry
+    title: Review that DocDown.Core Extraction ExtractorRegistry Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/extraction.md"
+      - "docs/reqstream/docdown-core/extraction.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/extraction/extractor-registry.yaml"             # unit requirements
+      - "docs/design/docdown-core/extraction/extractor-registry.md"                  # unit design
+      - "docs/verification/docdown-core/extraction/extractor-registry.md"            # unit verification
+      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractorRegistry.cs"            # unit source
+      - "test/DemaConsulting.DocDown.Core.Tests/Extraction/ExtractorRegistryTests.cs"  # unit tests
+
+  # DocDownCore-Extraction-ExtractorSelector Review (one per unit)
+  - id: DocDownCore-Extraction-ExtractorSelector
+    title: Review that DocDown.Core Extraction ExtractorSelector Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/extraction.md"
+      - "docs/reqstream/docdown-core/extraction.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/extraction/extractor-selector.yaml"             # unit requirements
+      - "docs/design/docdown-core/extraction/extractor-selector.md"                  # unit design
+      - "docs/verification/docdown-core/extraction/extractor-selector.md"            # unit verification
+      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractorSelector.cs"            # unit source
+      - "test/DemaConsulting.DocDown.Core.Tests/Extraction/ExtractorSelectorTests.cs"  # unit tests
+
+  # DocDownCore-Extraction-DocDownEngine Review (one per unit)
+  - id: DocDownCore-Extraction-DocDownEngine
+    title: Review that DocDown.Core Extraction DocDownEngine Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/extraction.md"
+      - "docs/reqstream/docdown-core/extraction.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/extraction/doc-down-engine.yaml"                # unit requirements
+      - "docs/design/docdown-core/extraction/doc-down-engine.md"                     # unit design
+      - "docs/verification/docdown-core/extraction/doc-down-engine.md"               # unit verification
+      - "src/DemaConsulting.DocDown.Core/Extraction/DocDownEngine.cs"                # unit source
+      - "test/DemaConsulting.DocDown.Core.Tests/Extraction/DocDownEngineTests.cs"    # unit tests
+
+  # DocDownCore-Output-ScratchFolder Review (one per unit)
+  - id: DocDownCore-Output-ScratchFolder
+    title: Review that DocDown.Core Output ScratchFolder Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/output.md"
+      - "docs/reqstream/docdown-core/output.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/output/scratch-folder.yaml"                     # unit requirements
+      - "docs/design/docdown-core/output/scratch-folder.md"                          # unit design
+      - "docs/verification/docdown-core/output/scratch-folder.md"                    # unit verification
+      - "src/DemaConsulting.DocDown.Core/Output/ScratchFolder.cs"                    # unit source
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/ScratchFolderTests.cs"        # unit tests
+
+  # DocDownCore-Output-ExtractionSink Review (one per unit)
+  - id: DocDownCore-Output-ExtractionSink
+    title: Review that DocDown.Core Output ExtractionSink Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/output.md"
+      - "docs/reqstream/docdown-core/output.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/output/extraction-sink.yaml"                    # unit requirements
+      - "docs/design/docdown-core/output/extraction-sink.md"                         # unit design
+      - "docs/verification/docdown-core/output/extraction-sink.md"                   # unit verification
+      - "src/DemaConsulting.DocDown.Core/Output/ExtractionSink.cs"                   # unit source
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/ExtractionSinkTests.cs"       # unit tests
+
+  # DocDownCore-Output-ContentWriter Review (one per unit)
+  - id: DocDownCore-Output-ContentWriter
+    title: Review that DocDown.Core Output ContentWriter Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/output.md"
+      - "docs/reqstream/docdown-core/output.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/output/content-writer.yaml"                     # unit requirements
+      - "docs/design/docdown-core/output/content-writer.md"                          # unit design
+      - "docs/verification/docdown-core/output/content-writer.md"                    # unit verification
+      - "src/DemaConsulting.DocDown.Core/Output/ContentWriter.cs"                    # unit source
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/ContentWriterTests.cs"        # unit tests
+
+  # DocDownCore-Output-SummaryWriter Review (one per unit)
+  - id: DocDownCore-Output-SummaryWriter
+    title: Review that DocDown.Core Output SummaryWriter Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/output.md"
+      - "docs/reqstream/docdown-core/output.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/output/summary-writer.yaml"                     # unit requirements
+      - "docs/design/docdown-core/output/summary-writer.md"                          # unit design
+      - "docs/verification/docdown-core/output/summary-writer.md"                    # unit verification
+      - "src/DemaConsulting.DocDown.Core/Output/SummaryWriter.cs"                    # unit source
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/SummaryWriterTests.cs"        # unit tests
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/SummaryWriterGoldenTests.cs"  # golden output tests
+      - "test/DemaConsulting.DocDown.Core.Tests/golden/summary-rendered-pages-no-images.txt"  # golden output
+      - "test/DemaConsulting.DocDown.Core.Tests/golden/summary-embedded-images.txt"  # golden output
+      - "test/DemaConsulting.DocDown.Core.Tests/golden/summary-degraded-gap.txt"  # golden output
+      - "test/DemaConsulting.DocDown.Core.Tests/golden/summary-rendering-not-registered-dd0301.txt"  # golden output
+
+  # DocDownCore-Output-ManifestWriter Review (one per unit)
+  - id: DocDownCore-Output-ManifestWriter
+    title: Review that DocDown.Core Output ManifestWriter Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/output.md"
+      - "docs/reqstream/docdown-core/output.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/output/manifest-writer.yaml"                    # unit requirements
+      - "docs/design/docdown-core/output/manifest-writer.md"                         # unit design
+      - "docs/verification/docdown-core/output/manifest-writer.md"                   # unit verification
+      - "src/DemaConsulting.DocDown.Core/Output/ManifestWriter.cs"                   # unit source
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/ManifestWriterTests.cs"       # unit tests
+
+  # DocDownCore-Output-ContractVerifier Review (one per unit)
+  - id: DocDownCore-Output-ContractVerifier
+    title: Review that DocDown.Core Output ContractVerifier Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/output.md"
+      - "docs/reqstream/docdown-core/output.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/output/contract-verifier.yaml"                  # unit requirements
+      - "docs/design/docdown-core/output/contract-verifier.md"                       # unit design
+      - "docs/verification/docdown-core/output/contract-verifier.md"                 # unit verification
+      - "src/DemaConsulting.DocDown.Core/Output/ContractVerifier.cs"                 # unit source
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/ContractVerifierTests.cs"     # unit tests
+
+  # DocDownCore-Output-ImageTextSelector Review (one per unit)
+  - id: DocDownCore-Output-ImageTextSelector
+    title: Review that DocDown.Core Output ImageTextSelector Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/output.md"
+      - "docs/reqstream/docdown-core/output.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/output/image-text-selector.yaml"                # unit requirements
+      - "docs/design/docdown-core/output/image-text-selector.md"                     # unit design
+      - "docs/verification/docdown-core/output/image-text-selector.md"               # unit verification
+      - "src/DemaConsulting.DocDown.Core/Output/ImageTextSelector.cs"                # unit source
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/ImageTextSelectorTests.cs"    # unit tests
+
+  # TestSupport Review (D9 / formal-review M6)
+  # Repo-level, un-prefixed id: DemaConsulting.DocDown.TestSupport is shared test infrastructure used by
+  # DocDown.Core and DocDown.Pdf, and by the future DocDown.Tool and Office packages, so a
+  # system-prefixed id would have become wrong in Increment 3, which added DocDown.Pdf as the second
+  # consumer. Repo-level, un-prefixed ids already exist for repo-level concerns (Purpose, Decomposition,
+  # OTS-*), and software-items.md uses the same reasoning for the fixed repo-level test/OtsSoftwareTests/
+  # name. The standard is silent on test infrastructure, so this placement rationale is recorded here.
+  - id: TestSupport
+    title: Review that Shared Test Support Infrastructure is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+    paths:
+      - "test/DemaConsulting.DocDown.TestSupport/**/*.cs"                  # shared test support source
+
+  # === DocDownPdf review-sets ===
+  # DocDownPdf is a flat system: it has no subsystems, so its units are *direct* units whose
+  # context is the parent system design doc plus the parent system requirements - two entries,
+  # not the four a unit nested under a subsystem carries. Every .cs path is listed explicitly,
+  # never by glob, matching the deliberate DocDownCore precedent: a glob would silently absorb a
+  # future unit's source file into the wrong review-set. Globs are used only for the markdown and
+  # YAML doc trees.
+
+  # DocDownPdf-Architecture Review (one per system)
+  - id: DocDownPdf-Architecture
+    title: Review that DocDown.Pdf Architecture Satisfies Requirements
+    context:
+      - "README.md"
+      - "docs/user_guide/**/*.md"
+    paths:
+      - "docs/reqstream/docdown-pdf.yaml"                                   # system requirements
+      - "docs/design/introduction.md"                                       # design introduction
+      - "docs/design/docdown-pdf.md"                                        # system design
+      - "docs/verification/introduction.md"                                 # verification introduction
+      - "docs/verification/docdown-pdf.md"                                  # system verification
+      - "test/DemaConsulting.DocDown.Pdf.Tests/DocDownPdfTests.cs"          # integration tests
+      - "test/DemaConsulting.DocDown.Pdf.Tests/TestData/PdfFixtures.cs"     # generated test fixtures
+      - "src/DemaConsulting.DocDown.Pdf/NamespaceDoc.cs"                    # namespace documentation
+
+  # DocDownPdf-Design Review (one per system)
+  - id: DocDownPdf-Design
+    title: Review that DocDown.Pdf Design is Consistent and Complete
+    context:
+      - "docs/reqstream/docdown-pdf.yaml"
+    paths:
+      - "docs/reqstream/docdown-pdf/platform-requirements.yaml"             # platform requirements
+      - "docs/design/introduction.md"                                       # design introduction
+      - "docs/design/docdown-pdf.md"                                        # system design
+      - "docs/design/docdown-pdf/**/*.md"                                   # all system design documents
+      - "docs/design/ots.md"                                                # OTS overview
+
+  # DocDownPdf-Verification Review (one per system)
+  - id: DocDownPdf-Verification
+    title: Review that DocDown.Pdf Verification is Consistent and Complete
+    context:
+      - "docs/reqstream/docdown-pdf.yaml"
+    paths:
+      - "docs/verification/introduction.md"                                 # verification introduction
+      - "docs/verification/docdown-pdf.md"                                  # system verification
+      - "docs/verification/docdown-pdf/**/*.md"                             # all verification documents
+      - "docs/verification/ots.md"                                          # OTS overview
+
+  # DocDownPdf-AllRequirements Review (one per system)
+  - id: DocDownPdf-AllRequirements
+    title: Review that All DocDown.Pdf Requirements are Complete
+    context:
+      - "docs/design/docdown-pdf.md"
+      - "docs/reqstream/docdown-pdf.yaml"
+    paths:
+      - "docs/reqstream/docdown-pdf/**/*.yaml"                              # unit requirements files
+
+  # DocDownPdf-PdfDocumentExtractor Unit Review (one per unit)
+  - id: DocDownPdf-PdfDocumentExtractor
+    title: Review that DocDown.Pdf PdfDocumentExtractor Implementation is Correct
+    context:
+      - "docs/design/docdown-pdf.md"
+      - "docs/reqstream/docdown-pdf.yaml"
+    paths:
+      - "docs/reqstream/docdown-pdf/pdf-document-extractor.yaml"            # unit requirements
+      - "docs/design/docdown-pdf/pdf-document-extractor.md"                 # unit design
+      - "docs/verification/docdown-pdf/pdf-document-extractor.md"           # unit verification
+      - "src/DemaConsulting.DocDown.Pdf/PdfDocumentExtractor.cs"            # unit source
+      - "test/DemaConsulting.DocDown.Pdf.Tests/PdfDocumentExtractorTests.cs"  # unit tests
+      - "test/DemaConsulting.DocDown.Pdf.Tests/PdfDateParsingTests.cs"      # unit date-parsing tests
+
+  # DocDownPdf-PdfTextExtractor Unit Review (one per unit)
+  - id: DocDownPdf-PdfTextExtractor
+    title: Review that DocDown.Pdf PdfTextExtractor Implementation is Correct
+    context:
+      - "docs/design/docdown-pdf.md"
+      - "docs/reqstream/docdown-pdf.yaml"
+    paths:
+      - "docs/reqstream/docdown-pdf/pdf-text-extractor.yaml"                # unit requirements
+      - "docs/design/docdown-pdf/pdf-text-extractor.md"                     # unit design
+      - "docs/verification/docdown-pdf/pdf-text-extractor.md"               # unit verification
+      - "src/DemaConsulting.DocDown.Pdf/PdfTextExtractor.cs"                # unit source
+      - "test/DemaConsulting.DocDown.Pdf.Tests/PdfTextExtractorTests.cs"    # unit tests
+
+  # DocDownPdf-PdfImageExtractor Unit Review (one per unit)
+  - id: DocDownPdf-PdfImageExtractor
+    title: Review that DocDown.Pdf PdfImageExtractor Implementation is Correct
+    context:
+      - "docs/design/docdown-pdf.md"
+      - "docs/reqstream/docdown-pdf.yaml"
+    paths:
+      - "docs/reqstream/docdown-pdf/pdf-image-extractor.yaml"               # unit requirements
+      - "docs/design/docdown-pdf/pdf-image-extractor.md"                    # unit design
+      - "docs/verification/docdown-pdf/pdf-image-extractor.md"              # unit verification
+      - "src/DemaConsulting.DocDown.Pdf/PdfImageExtractor.cs"               # unit source
+      - "test/DemaConsulting.DocDown.Pdf.Tests/PdfImageExtractorTests.cs"   # unit tests
+
+  # DocDownPdf-PdfDocDownBuilderExtensions Unit Review (one per unit)
+  - id: DocDownPdf-PdfDocDownBuilderExtensions
+    title: Review that DocDown.Pdf PdfDocDownBuilderExtensions Implementation is Correct
+    context:
+      - "docs/design/docdown-pdf.md"
+      - "docs/reqstream/docdown-pdf.yaml"
+    paths:
+      - "docs/reqstream/docdown-pdf/pdf-doc-down-builder-extensions.yaml"   # unit requirements
+      - "docs/design/docdown-pdf/pdf-doc-down-builder-extensions.md"        # unit design
+      - "docs/verification/docdown-pdf/pdf-doc-down-builder-extensions.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Pdf/PdfDocDownBuilderExtensions.cs"     # unit source
+      - "test/DemaConsulting.DocDown.Pdf.Tests/PdfDocDownBuilderExtensionsTests.cs"  # unit tests
+
+  # === DocDownPdfRendering review-sets ===
+  # DocDown.Pdf.Rendering is the optional page-rendering system. It is flat - three units, no
+  # subsystems - so its unit sets are direct units carrying two context entries (system design +
+  # system requirements), never the four-entry unit-under-subsystem shape. Every .cs path is listed
+  # explicitly, never by glob.
+
+  # DocDownPdfRendering-Architecture Review (one per system)
+  - id: DocDownPdfRendering-Architecture
+    title: Review that DocDown.Pdf.Rendering Architecture Satisfies Requirements
+    context:
+      - "README.md"
+      - "docs/user_guide/**/*.md"
+    paths:
+      - "docs/reqstream/docdown-pdf-rendering.yaml"                        # system requirements
+      - "docs/design/introduction.md"                                      # design introduction
+      - "docs/design/docdown-pdf-rendering.md"                             # system design
+      - "docs/verification/introduction.md"                                # verification introduction
+      - "docs/verification/docdown-pdf-rendering.md"                       # system verification
+      - "test/DemaConsulting.DocDown.Pdf.Rendering.Tests/DocDownPdfRenderingTests.cs"  # integration tests
+      - "test/DemaConsulting.DocDown.Pdf.Rendering.Tests/TestData/RenderingFixtures.cs"  # generated test fixtures
+      - "test/DemaConsulting.DocDown.Pdf.Rendering.Tests/TestData/Png.cs"  # test PNG inspector
+      - "src/DemaConsulting.DocDown.Pdf.Rendering/NamespaceDoc.cs"         # namespace documentation
+
+  # DocDownPdfRendering-Design Review (one per system)
+  - id: DocDownPdfRendering-Design
+    title: Review that DocDown.Pdf.Rendering Design is Consistent and Complete
+    context:
+      - "docs/reqstream/docdown-pdf-rendering.yaml"
+    paths:
+      - "docs/reqstream/docdown-pdf-rendering/platform-requirements.yaml"  # platform requirements
+      - "docs/design/introduction.md"                                      # design introduction
+      - "docs/design/docdown-pdf-rendering.md"                             # system design
+      - "docs/design/docdown-pdf-rendering/**/*.md"                        # all system design documents
+      - "docs/design/ots.md"                                               # OTS overview
+
+  # DocDownPdfRendering-Verification Review (one per system)
+  - id: DocDownPdfRendering-Verification
+    title: Review that DocDown.Pdf.Rendering Verification is Consistent and Complete
+    context:
+      - "docs/reqstream/docdown-pdf-rendering.yaml"
+    paths:
+      - "docs/verification/introduction.md"                                # verification introduction
+      - "docs/verification/docdown-pdf-rendering.md"                       # system verification
+      - "docs/verification/docdown-pdf-rendering/**/*.md"                  # all verification documents
+      - "docs/verification/ots.md"                                         # OTS overview
+
+  # DocDownPdfRendering-AllRequirements Review (one per system)
+  - id: DocDownPdfRendering-AllRequirements
+    title: Review that All DocDown.Pdf.Rendering Requirements are Complete
+    context:
+      - "docs/design/docdown-pdf-rendering.md"
+      - "docs/reqstream/docdown-pdf-rendering.yaml"
+    paths:
+      - "docs/reqstream/docdown-pdf-rendering/**/*.yaml"                   # unit requirements files
+
+  # DocDownPdfRendering-PdfPageRenderingExtractor Unit Review (one per unit)
+  - id: DocDownPdfRendering-PdfPageRenderingExtractor
+    title: Review that DocDown.Pdf.Rendering PdfPageRenderingExtractor Implementation is Correct
+    context:
+      - "docs/design/docdown-pdf-rendering.md"
+      - "docs/reqstream/docdown-pdf-rendering.yaml"
+    paths:
+      - "docs/reqstream/docdown-pdf-rendering/pdf-page-rendering-extractor.yaml"   # unit requirements
+      - "docs/design/docdown-pdf-rendering/pdf-page-rendering-extractor.md"        # unit design
+      - "docs/verification/docdown-pdf-rendering/pdf-page-rendering-extractor.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Pdf.Rendering/PdfPageRenderingExtractor.cs"    # unit source
+      - "test/DemaConsulting.DocDown.Pdf.Rendering.Tests/PdfPageRenderingExtractorTests.cs"  # unit tests
+
+  # DocDownPdfRendering-PageRenderer Unit Review (one per unit)
+  - id: DocDownPdfRendering-PageRenderer
+    title: Review that DocDown.Pdf.Rendering PageRenderer Implementation is Correct
+    context:
+      - "docs/design/docdown-pdf-rendering.md"
+      - "docs/reqstream/docdown-pdf-rendering.yaml"
+    paths:
+      - "docs/reqstream/docdown-pdf-rendering/page-renderer.yaml"          # unit requirements
+      - "docs/design/docdown-pdf-rendering/page-renderer.md"               # unit design
+      - "docs/verification/docdown-pdf-rendering/page-renderer.md"         # unit verification
+      - "src/DemaConsulting.DocDown.Pdf.Rendering/PageRenderer.cs"         # unit source
+      - "test/DemaConsulting.DocDown.Pdf.Rendering.Tests/PageRendererTests.cs"  # unit tests
+
+  # DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions Unit Review (one per unit)
+  - id: DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions
+    title: Review that DocDown.Pdf.Rendering PdfRenderingDocDownBuilderExtensions Implementation is Correct
+    context:
+      - "docs/design/docdown-pdf-rendering.md"
+      - "docs/reqstream/docdown-pdf-rendering.yaml"
+    paths:
+      - "docs/reqstream/docdown-pdf-rendering/pdf-rendering-doc-down-builder-extensions.yaml"   # unit requirements
+      - "docs/design/docdown-pdf-rendering/pdf-rendering-doc-down-builder-extensions.md"        # unit design
+      - "docs/verification/docdown-pdf-rendering/pdf-rendering-doc-down-builder-extensions.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Pdf.Rendering/PdfRenderingDocDownBuilderExtensions.cs"      # unit source
+      - "test/DemaConsulting.DocDown.Pdf.Rendering.Tests/PdfRenderingDocDownBuilderExtensionsTests.cs"  # unit tests
+
+  # === DocDownTool review-sets ===
+  # DocDownTool is the docdown command-line tool. It has two subsystems (Cli, SelfTest) and one
+  # direct unit (Program). System sets follow the DocDownPdf shape; subsystem and unit-under-subsystem
+  # sets follow the DocDownCore shape, with the unit-under-subsystem sets carrying the four context
+  # entries the Context Files table requires. Every .cs path is listed explicitly, never by glob. The
+  # subsystems have no inline supporting-type .cs files, so the subsystem sets carry only docs.
+
+  # DocDownTool-Architecture Review (one per system)
+  - id: DocDownTool-Architecture
+    title: Review that DocDown.Tool Architecture Satisfies Requirements
+    context:
+      - "README.md"
+      - "docs/user_guide/**/*.md"
+    paths:
+      - "docs/reqstream/docdown-tool.yaml"                                  # system requirements
+      - "docs/design/introduction.md"                                       # design introduction
+      - "docs/design/docdown-tool.md"                                       # system design
+      - "docs/verification/introduction.md"                                 # verification introduction
+      - "docs/verification/docdown-tool.md"                                 # system verification
+      - "test/DemaConsulting.DocDown.Tool.Tests/DocDownToolTests.cs"        # integration tests
+      - "test/DemaConsulting.DocDown.Tool.Tests/CliHarness.cs"              # shared test harness
+      - "test/DemaConsulting.DocDown.Tool.Tests/TestData/ToolPdfFixtures.cs"  # generated test fixtures
+
+  # DocDownTool-Design Review (one per system)
+  - id: DocDownTool-Design
+    title: Review that DocDown.Tool Design is Consistent and Complete
+    context:
+      - "docs/reqstream/docdown-tool.yaml"
+    paths:
+      - "docs/reqstream/docdown-tool/platform-requirements.yaml"            # platform requirements
+      - "docs/design/introduction.md"                                       # design introduction
+      - "docs/design/docdown-tool.md"                                       # system design
+      - "docs/design/docdown-tool/**/*.md"                                  # all system design documents
+      - "docs/design/ots.md"                                                # OTS overview
+
+  # DocDownTool-Verification Review (one per system)
+  - id: DocDownTool-Verification
+    title: Review that DocDown.Tool Verification is Consistent and Complete
+    context:
+      - "docs/reqstream/docdown-tool.yaml"
+    paths:
+      - "docs/verification/introduction.md"                                 # verification introduction
+      - "docs/verification/docdown-tool.md"                                 # system verification
+      - "docs/verification/docdown-tool/**/*.md"                            # all verification documents
+      - "docs/verification/ots.md"                                          # OTS overview
+
+  # DocDownTool-AllRequirements Review (one per system)
+  - id: DocDownTool-AllRequirements
+    title: Review that All DocDown.Tool Requirements are Complete
+    context:
+      - "docs/design/docdown-tool.md"
+      - "docs/reqstream/docdown-tool.yaml"
+    paths:
+      - "docs/reqstream/docdown-tool/**/*.yaml"                             # subsystem/unit requirements files
+
+  # DocDownTool-Program Unit Review (direct unit, two context entries)
+  - id: DocDownTool-Program
+    title: Review that DocDown.Tool Program Implementation is Correct
+    context:
+      - "docs/design/docdown-tool.md"
+      - "docs/reqstream/docdown-tool.yaml"
+    paths:
+      - "docs/reqstream/docdown-tool/program.yaml"                          # unit requirements
+      - "docs/design/docdown-tool/program.md"                               # unit design
+      - "docs/verification/docdown-tool/program.md"                         # unit verification
+      - "src/DemaConsulting.DocDown.Tool/Program.cs"                        # unit source
+      - "test/DemaConsulting.DocDown.Tool.Tests/ProgramTests.cs"            # unit tests
+
+  # DocDownTool-Cli Subsystem Review (one per subsystem)
+  - id: DocDownTool-Cli
+    title: Review that DocDown.Tool Cli Satisfies Subsystem Requirements
+    context:
+      - "docs/design/docdown-tool.md"
+      - "docs/reqstream/docdown-tool.yaml"
+    paths:
+      - "docs/reqstream/docdown-tool/cli.yaml"                              # subsystem requirements
+      - "docs/design/docdown-tool/cli.md"                                   # subsystem design
+      - "docs/verification/docdown-tool/cli.md"                             # subsystem verification
+
+  # DocDownTool-SelfTest Subsystem Review (one per subsystem)
+  - id: DocDownTool-SelfTest
+    title: Review that DocDown.Tool SelfTest Satisfies Subsystem Requirements
+    context:
+      - "docs/design/docdown-tool.md"
+      - "docs/reqstream/docdown-tool.yaml"
+    paths:
+      - "docs/reqstream/docdown-tool/self-test.yaml"                        # subsystem requirements
+      - "docs/design/docdown-tool/self-test.md"                             # subsystem design
+      - "docs/verification/docdown-tool/self-test.md"                       # subsystem verification
+
+  # DocDownTool-Cli-Context Unit Review (unit under subsystem, four context entries)
+  - id: DocDownTool-Cli-Context
+    title: Review that DocDown.Tool Cli Context Implementation is Correct
+    context:
+      - "docs/design/docdown-tool.md"
+      - "docs/reqstream/docdown-tool.yaml"
+      - "docs/design/docdown-tool/cli.md"
+      - "docs/reqstream/docdown-tool/cli.yaml"
+    paths:
+      - "docs/reqstream/docdown-tool/cli/context.yaml"                      # unit requirements
+      - "docs/design/docdown-tool/cli/context.md"                           # unit design
+      - "docs/verification/docdown-tool/cli/context.md"                     # unit verification
+      - "src/DemaConsulting.DocDown.Tool/Cli/Context.cs"                    # unit source
+      - "test/DemaConsulting.DocDown.Tool.Tests/Cli/ContextTests.cs"        # unit tests
+
+  # DocDownTool-SelfTest-Validation Unit Review (unit under subsystem, four context entries)
+  - id: DocDownTool-SelfTest-Validation
+    title: Review that DocDown.Tool SelfTest Validation Implementation is Correct
+    context:
+      - "docs/design/docdown-tool.md"
+      - "docs/reqstream/docdown-tool.yaml"
+      - "docs/design/docdown-tool/self-test.md"
+      - "docs/reqstream/docdown-tool/self-test.yaml"
+    paths:
+      - "docs/reqstream/docdown-tool/self-test/validation.yaml"            # unit requirements
+      - "docs/design/docdown-tool/self-test/validation.md"                 # unit design
+      - "docs/verification/docdown-tool/self-test/validation.md"           # unit verification
+      - "src/DemaConsulting.DocDown.Tool/SelfTest/Validation.cs"           # unit source
+      - "test/DemaConsulting.DocDown.Tool.Tests/SelfTest/ValidationTests.cs"  # unit tests
+
+  # DocDownTool-SelfTest-SelfTestAdapter Unit Review (unit under subsystem, four context entries)
+  - id: DocDownTool-SelfTest-SelfTestAdapter
+    title: Review that DocDown.Tool SelfTest SelfTestAdapter Implementation is Correct
+    context:
+      - "docs/design/docdown-tool.md"
+      - "docs/reqstream/docdown-tool.yaml"
+      - "docs/design/docdown-tool/self-test.md"
+      - "docs/reqstream/docdown-tool/self-test.yaml"
+    paths:
+      - "docs/reqstream/docdown-tool/self-test/self-test-adapter.yaml"     # unit requirements
+      - "docs/design/docdown-tool/self-test/self-test-adapter.md"          # unit design
+      - "docs/verification/docdown-tool/self-test/self-test-adapter.md"    # unit verification
+      - "src/DemaConsulting.DocDown.Tool/SelfTest/SelfTestAdapter.cs"      # unit source
+      - "test/DemaConsulting.DocDown.Tool.Tests/SelfTest/SelfTestAdapterTests.cs"  # unit tests
+
+  # === DocDownWord review-sets ===
+  # DocDownWord is the Word extraction system. Like DocDownTool it has more than one subsystem
+  # (Markdown, OpenXml) and one direct unit (WordDocDownBuilderExtensions). System sets follow
+  # the DocDownPdf shape; subsystem and unit-under-subsystem sets follow the DocDownCore shape, with
+  # the unit-under-subsystem sets carrying the four context entries the Context Files table requires.
+  # Every .cs path is listed explicitly, never by glob, so a future unit source file cannot be
+  # silently absorbed. The Markdown subsystem documents its supporting-type .cs files
+  # inline, so those files are reviewed in the subsystem set (D8); OpenXml's only supporting-type
+  # file is the shared exception type, because every other OpenXml source file is a unit.
+
+  # DocDownWord-Architecture Review (one per system)
+  - id: DocDownWord-Architecture
+    title: Review that DocDown.Word Architecture Satisfies Requirements
+    context:
+      - "README.md"
+      - "docs/user_guide/**/*.md"
+    paths:
+      - "docs/reqstream/docdown-word.yaml"                                  # system requirements
+      - "docs/design/introduction.md"                                       # design introduction
+      - "docs/design/docdown-word.md"                                       # system design
+      - "docs/verification/introduction.md"                                 # verification introduction
+      - "docs/verification/docdown-word.md"                                 # system verification
+      - "test/DemaConsulting.DocDown.Word.Tests/DocDownWordTests.cs"        # integration tests
+      - "test/DemaConsulting.DocDown.Word.Tests/WordGoldenTests.cs"         # golden output tests
+      - "test/DemaConsulting.DocDown.Word.Tests/TestData/DocxFixtures.cs"   # generated test fixtures
+      - "test/DemaConsulting.DocDown.Word.Tests/TestData/WordTestHarness.cs"  # shared test harness
+      - "src/DemaConsulting.DocDown.Word/NamespaceDoc.cs"                   # namespace documentation
+      - "test/DemaConsulting.DocDown.Word.Tests/golden/summary-word-openxml-simple.txt"  # golden output
+      - "test/DemaConsulting.DocDown.Word.Tests/golden/summary-word-openxml-tables-and-images.txt"  # golden output
+      - "test/DemaConsulting.DocDown.Word.Tests/golden/summary-word-openxml-merged-cells-gap.txt"  # golden output
+      - "test/DemaConsulting.DocDown.Word.Tests/golden/summary-word-openxml-document-control.txt"  # golden output
+
+  # DocDownWord-Design Review (one per system)
+  - id: DocDownWord-Design
+    title: Review that DocDown.Word Design is Consistent and Complete
+    context:
+      - "docs/reqstream/docdown-word.yaml"
+    paths:
+      - "docs/reqstream/docdown-word/platform-requirements.yaml"            # platform requirements
+      - "docs/design/introduction.md"                                       # design introduction
+      - "docs/design/docdown-word.md"                                       # system design
+      - "docs/design/docdown-word/**/*.md"                                  # all system design documents
+      - "docs/design/ots.md"                                                # OTS overview
+
+  # DocDownWord-Verification Review (one per system)
+  - id: DocDownWord-Verification
+    title: Review that DocDown.Word Verification is Consistent and Complete
+    context:
+      - "docs/reqstream/docdown-word.yaml"
+    paths:
+      - "docs/verification/introduction.md"                                 # verification introduction
+      - "docs/verification/docdown-word.md"                                 # system verification
+      - "docs/verification/docdown-word/**/*.md"                            # all verification documents
+      - "docs/verification/ots.md"                                          # OTS overview
+
+  # DocDownWord-AllRequirements Review (one per system)
+  - id: DocDownWord-AllRequirements
+    title: Review that All DocDown.Word Requirements are Complete
+    context:
+      - "docs/design/docdown-word.md"
+      - "docs/reqstream/docdown-word.yaml"
+    paths:
+      - "docs/reqstream/docdown-word/**/*.yaml"                             # platform/subsystem/unit requirements files
+
+  # DocDownWord-WordDocDownBuilderExtensions Unit Review (direct unit, two context entries)
+  - id: DocDownWord-WordDocDownBuilderExtensions
+    title: Review that DocDown.Word WordDocDownBuilderExtensions Implementation is Correct
+    context:
+      - "docs/design/docdown-word.md"
+      - "docs/reqstream/docdown-word.yaml"
+    paths:
+      - "docs/reqstream/docdown-word/word-doc-down-builder-extensions.yaml"  # unit requirements
+      - "docs/design/docdown-word/word-doc-down-builder-extensions.md"       # unit design
+      - "docs/verification/docdown-word/word-doc-down-builder-extensions.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Word/WordDocDownBuilderExtensions.cs"    # unit source
+      - "test/DemaConsulting.DocDown.Word.Tests/WordDocDownBuilderExtensionsTests.cs"  # unit tests
+
+  # DocDownWord-Markdown Subsystem Review (one per subsystem)
+  # D8: the subsystem's inline supporting-type source files are reviewed here because they are
+  # documented in the subsystem design doc (not in unit docs). Unit source files are excluded
+  # (Hierarchical Scope). Explicit list to prevent silent absorption.
+  - id: DocDownWord-Markdown
+    title: Review that DocDown.Word Markdown Satisfies Subsystem Requirements
+    context:
+      - "docs/design/docdown-word.md"
+      - "docs/reqstream/docdown-word.yaml"
+    paths:
+      - "docs/reqstream/docdown-word/markdown.yaml"                         # subsystem requirements
+      - "docs/design/docdown-word/markdown.md"                             # subsystem design
+      - "docs/verification/docdown-word/markdown.md"                       # subsystem verification
+      - "test/DemaConsulting.DocDown.Word.Tests/Markdown/WordDiagnosticCodesTests.cs"  # supporting-type tests
+      - "src/DemaConsulting.DocDown.Word/Markdown/WordDocumentModel.cs"    # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Word/Markdown/WordBlock.cs"            # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Word/Markdown/WordBlockKind.cs"        # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Word/Markdown/WordInline.cs"           # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Word/Markdown/WordListInfo.cs"         # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Word/Markdown/WordTableModel.cs"       # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Word/Markdown/WordDiagnosticCodes.cs"  # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Word/Markdown/NamespaceDoc.cs"         # namespace documentation
+
+  # DocDownWord-OpenXml Subsystem Review (one per subsystem)
+  # D8: the subsystem's one inline supporting-type source file — the shared exception type Core
+  # surfaces — is reviewed here; unit source files are excluded (Hierarchical Scope).
+  - id: DocDownWord-OpenXml
+    title: Review that DocDown.Word OpenXml Satisfies Subsystem Requirements
+    context:
+      - "docs/design/docdown-word.md"
+      - "docs/reqstream/docdown-word.yaml"
+    paths:
+      - "docs/reqstream/docdown-word/open-xml.yaml"                        # subsystem requirements
+      - "docs/design/docdown-word/open-xml.md"                            # subsystem design
+      - "docs/verification/docdown-word/open-xml.md"                      # subsystem verification
+      - "src/DemaConsulting.DocDown.Word/OpenXml/WordExtractionException.cs"  # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Word/OpenXml/NamespaceDoc.cs"          # namespace documentation
+
+  # DocDownWord-Markdown-WordMarkdownWriter Unit Review (unit under subsystem, four context entries)
+  - id: DocDownWord-Markdown-WordMarkdownWriter
+    title: Review that DocDown.Word Markdown WordMarkdownWriter Implementation is Correct
+    context:
+      - "docs/design/docdown-word.md"
+      - "docs/reqstream/docdown-word.yaml"
+      - "docs/design/docdown-word/markdown.md"
+      - "docs/reqstream/docdown-word/markdown.yaml"
+    paths:
+      - "docs/reqstream/docdown-word/markdown/word-markdown-writer.yaml"   # unit requirements
+      - "docs/design/docdown-word/markdown/word-markdown-writer.md"        # unit design
+      - "docs/verification/docdown-word/markdown/word-markdown-writer.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Word/Markdown/WordMarkdownWriter.cs"   # unit source
+      - "test/DemaConsulting.DocDown.Word.Tests/Markdown/WordMarkdownWriterTests.cs"  # unit tests
+
+  # DocDownWord-Markdown-WordTableWriter Unit Review (unit under subsystem, four context entries)
+  - id: DocDownWord-Markdown-WordTableWriter
+    title: Review that DocDown.Word Markdown WordTableWriter Implementation is Correct
+    context:
+      - "docs/design/docdown-word.md"
+      - "docs/reqstream/docdown-word.yaml"
+      - "docs/design/docdown-word/markdown.md"
+      - "docs/reqstream/docdown-word/markdown.yaml"
+    paths:
+      - "docs/reqstream/docdown-word/markdown/word-table-writer.yaml"      # unit requirements
+      - "docs/design/docdown-word/markdown/word-table-writer.md"           # unit design
+      - "docs/verification/docdown-word/markdown/word-table-writer.md"     # unit verification
+      - "src/DemaConsulting.DocDown.Word/Markdown/WordTableWriter.cs"      # unit source
+      - "test/DemaConsulting.DocDown.Word.Tests/Markdown/WordTableWriterTests.cs"  # unit tests
+
+  # DocDownWord-Markdown-WordContentEmitter Unit Review (unit under subsystem, four context entries)
+  - id: DocDownWord-Markdown-WordContentEmitter
+    title: Review that DocDown.Word Markdown WordContentEmitter Implementation is Correct
+    context:
+      - "docs/design/docdown-word.md"
+      - "docs/reqstream/docdown-word.yaml"
+      - "docs/design/docdown-word/markdown.md"
+      - "docs/reqstream/docdown-word/markdown.yaml"
+    paths:
+      - "docs/reqstream/docdown-word/markdown/word-content-emitter.yaml"   # unit requirements
+      - "docs/design/docdown-word/markdown/word-content-emitter.md"        # unit design
+      - "docs/verification/docdown-word/markdown/word-content-emitter.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Word/Markdown/WordContentEmitter.cs"   # unit source
+
+  # DocDownWord-OpenXml-WordOpenXmlExtractor Unit Review (unit under subsystem, four context entries)
+  - id: DocDownWord-OpenXml-WordOpenXmlExtractor
+    title: Review that DocDown.Word OpenXml WordOpenXmlExtractor Implementation is Correct
+    context:
+      - "docs/design/docdown-word.md"
+      - "docs/reqstream/docdown-word.yaml"
+      - "docs/design/docdown-word/open-xml.md"
+      - "docs/reqstream/docdown-word/open-xml.yaml"
+    paths:
+      - "docs/reqstream/docdown-word/open-xml/word-open-xml-extractor.yaml"  # unit requirements
+      - "docs/design/docdown-word/open-xml/word-open-xml-extractor.md"       # unit design
+      - "docs/verification/docdown-word/open-xml/word-open-xml-extractor.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Word/OpenXml/WordOpenXmlExtractor.cs"    # unit source
+      - "test/DemaConsulting.DocDown.Word.Tests/OpenXml/WordOpenXmlExtractorTests.cs"  # unit tests
+
+  # DocDownWord-OpenXml-WordOpenXmlReader Unit Review (unit under subsystem, four context entries)
+  - id: DocDownWord-OpenXml-WordOpenXmlReader
+    title: Review that DocDown.Word OpenXml WordOpenXmlReader Implementation is Correct
+    context:
+      - "docs/design/docdown-word.md"
+      - "docs/reqstream/docdown-word.yaml"
+      - "docs/design/docdown-word/open-xml.md"
+      - "docs/reqstream/docdown-word/open-xml.yaml"
+    paths:
+      - "docs/reqstream/docdown-word/open-xml/word-open-xml-reader.yaml"    # unit requirements
+      - "docs/design/docdown-word/open-xml/word-open-xml-reader.md"         # unit design
+      - "docs/verification/docdown-word/open-xml/word-open-xml-reader.md"   # unit verification
+      - "src/DemaConsulting.DocDown.Word/OpenXml/WordOpenXmlReader.cs"      # unit source
+      - "test/DemaConsulting.DocDown.Word.Tests/OpenXml/WordOpenXmlReaderTests.cs"  # unit tests
+
+  # DocDownWord-OpenXml-WordOpenXmlImageReader Unit Review (unit under subsystem, four context entries)
+  - id: DocDownWord-OpenXml-WordOpenXmlImageReader
+    title: Review that DocDown.Word OpenXml WordOpenXmlImageReader Implementation is Correct
+    context:
+      - "docs/design/docdown-word.md"
+      - "docs/reqstream/docdown-word.yaml"
+      - "docs/design/docdown-word/open-xml.md"
+      - "docs/reqstream/docdown-word/open-xml.yaml"
+    paths:
+      - "docs/reqstream/docdown-word/open-xml/word-open-xml-image-reader.yaml"  # unit requirements
+      - "docs/design/docdown-word/open-xml/word-open-xml-image-reader.md"       # unit design
+      - "docs/verification/docdown-word/open-xml/word-open-xml-image-reader.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Word/OpenXml/WordOpenXmlImageReader.cs"    # unit source
+      - "test/DemaConsulting.DocDown.Word.Tests/OpenXml/WordOpenXmlImageReaderTests.cs"  # unit tests
+
+  # OTS-ApiMark Review (one per OTS item)
+  - id: OTS-ApiMark
+    title: Review that ApiMark Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/apimark.yaml"                                   # OTS requirements
+      - "docs/design/ots/apimark.md"                                        # OTS integration design
+      - "docs/verification/ots/apimark.md"                                 # OTS verification
 
   # OTS-BuildMark Review (one per OTS item)
   - id: OTS-BuildMark
@@ -138,6 +984,46 @@ reviews:
       - "docs/design/ots/pandoc.md"                                       # OTS integration design
       - "docs/verification/ots/pandoc.md"                                 # OTS verification
 
+  # OTS-OpenXml Review (one per OTS item)
+  - id: OTS-OpenXml
+    title: Review that Open XML SDK Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/openxml.yaml"                                  # OTS requirements
+      - "docs/design/ots/openxml.md"                                       # OTS integration design
+      - "docs/verification/ots/openxml.md"                                 # OTS verification
+
+  # OTS-SystemIoPackaging Review (one per OTS item)
+  - id: OTS-SystemIoPackaging
+    title: Review that System.IO.Packaging Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/systemiopackaging.yaml"                        # OTS requirements
+      - "docs/design/ots/systemiopackaging.md"                             # OTS integration design
+      - "docs/verification/ots/systemiopackaging.md"                       # OTS verification
+
+  # OTS-PdfPig Review (one per OTS item)
+  - id: OTS-PdfPig
+    title: Review that PdfPig Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/pdfpig.yaml"                                   # OTS requirements
+      - "docs/design/ots/pdfpig.md"                                       # OTS integration design
+      - "docs/verification/ots/pdfpig.md"                                 # OTS verification
+
+  # OTS-PDFium Review (one per OTS item)
+  - id: OTS-PDFium
+    title: Review that PDFium Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/pdfium.yaml"                                   # OTS requirements
+      - "docs/design/ots/pdfium.md"                                       # OTS integration design
+      - "docs/verification/ots/pdfium.md"                                 # OTS verification
+
+  # OTS-PDFtoImage Review (one per OTS item)
+  - id: OTS-PDFtoImage
+    title: Review that PDFtoImage Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/pdftoimage.yaml"                               # OTS requirements
+      - "docs/design/ots/pdftoimage.md"                                   # OTS integration design
+      - "docs/verification/ots/pdftoimage.md"                             # OTS verification
+
   # OTS-ReqStream Review (one per OTS item)
   - id: OTS-ReqStream
     title: Review that ReqStream Provides Required Functionality
@@ -162,6 +1048,14 @@ reviews:
       - "docs/design/ots/sarifmark.md"                                     # OTS integration design
       - "docs/verification/ots/sarifmark.md"                              # OTS verification
 
+  # OTS-SkiaSharp Review (one per OTS item)
+  - id: OTS-SkiaSharp
+    title: Review that SkiaSharp Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/skiasharp.yaml"                                # OTS requirements
+      - "docs/design/ots/skiasharp.md"                                     # OTS integration design
+      - "docs/verification/ots/skiasharp.md"                              # OTS verification
+
   # OTS-SonarMark Review (one per OTS item)
   - id: OTS-SonarMark
     title: Review that SonarMark Provides Required Functionality
@@ -177,6 +1071,14 @@ reviews:
       - "docs/reqstream/ots/sysml2tools.yaml"                              # OTS requirements
       - "docs/design/ots/sysml2tools.md"                                   # OTS integration design
       - "docs/verification/ots/sysml2tools.md"                            # OTS verification
+
+  # OTS-TestResults Review (one per OTS item)
+  - id: OTS-TestResults
+    title: Review that TestResults Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/testresults.yaml"                              # OTS requirements
+      - "docs/design/ots/testresults.md"                                   # OTS integration design
+      - "docs/verification/ots/testresults.md"                            # OTS verification
 
   # OTS-VersionMark Review (one per OTS item)
   - id: OTS-VersionMark

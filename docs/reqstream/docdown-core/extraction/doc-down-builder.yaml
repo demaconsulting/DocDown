@@ -1,0 +1,70 @@
+---
+# Software Unit Requirements for DocDownBuilder
+#
+# DocDownBuilder registers extraction backends and default options, then builds an
+# immutable engine snapshot. It is the host's configuration entry point.
+
+sections:
+  - title: DocDownCore Requirements
+    sections:
+      - title: Extraction Requirements
+        sections:
+          - title: DocDownBuilder Requirements
+            requirements:
+              - id: DocDownCore-Extraction-DocDownBuilder-RegisterInstance
+                title: DocDownBuilder shall register a supplied backend instance so it appears on the built engine.
+                justification: |
+                  The simplest way for a host to add a backend is to hand over a ready instance.
+                  Carrying that instance through to the built engine gives the host direct, explicit
+                  control over which backends run.
+                tests:
+                  - DocDownBuilder_AddExtractor_Instance_AppearsOnBuiltEngine
+
+              - id: DocDownCore-Extraction-DocDownBuilder-RegisterFactory
+                title: DocDownBuilder shall register a backend factory and materialize it once when the engine is built.
+                justification: |
+                  Some backends are expensive or must be created lazily. Accepting a factory and
+                  materializing it exactly once at build time lets a host defer construction while
+                  keeping a single, stable instance per engine.
+                tests:
+                  - DocDownBuilder_AddExtractor_Factory_IsMaterializedOnceAtBuild
+
+              - id: DocDownCore-Extraction-DocDownBuilder-ConfigureDefaults
+                title: DocDownBuilder shall apply caller-configured default options to the built engine.
+                justification: |
+                  Hosts want one place to set extraction defaults for every call. Applying configured
+                  defaults at build time gives callers a predictable baseline they can still override
+                  per extraction.
+                tests:
+                  - DocDownBuilder_ConfigureDefaults_RenderPages_ProducesPageGapByDefault
+
+              - id: DocDownCore-Extraction-DocDownBuilder-RejectDuplicateIds
+                title: DocDownBuilder shall reject a configuration that registers two backends with the same identifier.
+                justification: |
+                  Backend identifiers must be unique for selection and override to be deterministic. Rejecting
+                  duplicates at build time surfaces the misconfiguration immediately rather than
+                  producing an ambiguous engine.
+                tests:
+                  - DocDownBuilder_Build_DuplicateIds_ThrowsArgumentException
+
+              - id: DocDownCore-Extraction-DocDownBuilder-ImmutableSnapshot
+                title: DocDownBuilder shall build an engine whose configuration is unaffected by later builder mutation.
+                justification: |
+                  A host may keep configuring a builder after building an engine. Snapshotting the
+                  configuration at build time ensures an already-built engine keeps behaving
+                  identically no matter what the builder does next.
+                tests:
+                  - DocDownBuilder_Build_MutatedAfterBuild_DoesNotAffectSnapshot
+                  - DocDownBuilder_Build_CalledTwiceWithMoreRegistrations_ProducesIndependentEngines
+
+              - id: DocDownCore-Extraction-DocDownBuilder-RejectNullArguments
+                title: DocDownBuilder shall reject null registration and configuration arguments.
+                justification: |
+                  A null instance, factory, configuration action, or factory result is a programming
+                  error. Rejecting it at the point of the mistake surfaces the fault clearly instead of
+                  failing obscurely later during extraction.
+                tests:
+                  - DocDownBuilder_AddExtractor_NullInstance_ThrowsArgumentNullException
+                  - DocDownBuilder_AddExtractor_NullFactory_ThrowsArgumentNullException
+                  - DocDownBuilder_ConfigureDefaults_NullAction_ThrowsArgumentNullException
+                  - DocDownBuilder_Build_FactoryReturnsNull_ThrowsArgumentException

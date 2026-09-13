@@ -1,0 +1,23 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DemaConsulting.DocDown.Core/DemaConsulting.DocDown.Core.csproj" />
+    <Project Path="src/DemaConsulting.DocDown.Excel/DemaConsulting.DocDown.Excel.csproj" />
+    <Project Path="src/DemaConsulting.DocDown.Pdf/DemaConsulting.DocDown.Pdf.csproj" />
+    <Project Path="src/DemaConsulting.DocDown.Pdf.Rendering/DemaConsulting.DocDown.Pdf.Rendering.csproj" />
+    <Project Path="src/DemaConsulting.DocDown.PowerPoint/DemaConsulting.DocDown.PowerPoint.csproj" />
+    <Project Path="src/DemaConsulting.DocDown.Tool/DemaConsulting.DocDown.Tool.csproj" />
+    <Project Path="src/DemaConsulting.DocDown.Visio/DemaConsulting.DocDown.Visio.csproj" />
+    <Project Path="src/DemaConsulting.DocDown.Word/DemaConsulting.DocDown.Word.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/DemaConsulting.DocDown.Core.Tests/DemaConsulting.DocDown.Core.Tests.csproj" />
+    <Project Path="test/DemaConsulting.DocDown.Excel.Tests/DemaConsulting.DocDown.Excel.Tests.csproj" />
+    <Project Path="test/DemaConsulting.DocDown.Pdf.Rendering.Tests/DemaConsulting.DocDown.Pdf.Rendering.Tests.csproj" />
+    <Project Path="test/DemaConsulting.DocDown.Pdf.Tests/DemaConsulting.DocDown.Pdf.Tests.csproj" />
+    <Project Path="test/DemaConsulting.DocDown.PowerPoint.Tests/DemaConsulting.DocDown.PowerPoint.Tests.csproj" />
+    <Project Path="test/DemaConsulting.DocDown.Tool.Tests/DemaConsulting.DocDown.Tool.Tests.csproj" />
+    <Project Path="test/DemaConsulting.DocDown.TestSupport/DemaConsulting.DocDown.TestSupport.csproj" />
+    <Project Path="test/DemaConsulting.DocDown.Visio.Tests/DemaConsulting.DocDown.Visio.Tests.csproj" />
+    <Project Path="test/DemaConsulting.DocDown.Word.Tests/DemaConsulting.DocDown.Word.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,67 @@
+---
+# System-Level Platform Requirements for DocDown.Tool
+#
+# These requirements specify the platforms and frameworks the tool must support.
+#
+# Test links can include a source filter prefix (e.g. "windows@", "ubuntu@", "net8.0@") to restrict
+# which test results count as evidence for a requirement. This is critical for platform and framework
+# requirements - removing these filters invalidates the evidence-based proof.
+#
+# Source filter prefixes:
+#   windows@TestName  - proves the test passed on a Windows platform
+#   ubuntu@TestName   - proves the test passed on a Linux (Ubuntu) platform
+#   macos@TestName    - proves the test passed on a macOS platform
+#   net8.0@TestName   - proves the test passed under the .NET 8 runtime
+#   net9.0@TestName   - proves the test passed under the .NET 9 runtime
+#   net10.0@TestName  - proves the test passed under the .NET 10 runtime
+
+sections:
+  - title: DocDownTool Requirements
+    requirements:
+      - id: DocDownTool-Platform-Windows
+        title: The tool shall build and run on Windows platforms.
+        tags: [system]
+        justification: |
+          DEMA Consulting tools must support Windows as a major development platform.
+        tests:
+          - "windows@DocDownTool_Extract_GeneratedPdf_PrintsAbsoluteSummaryPathAndExitsZero"
+
+      - id: DocDownTool-Platform-Linux
+        title: The tool shall build and run on Linux platforms.
+        tags: [system]
+        justification: |
+          DEMA Consulting tools must support Linux for CI/CD and containerized environments.
+        tests:
+          - "ubuntu@DocDownTool_Extract_GeneratedPdf_PrintsAbsoluteSummaryPathAndExitsZero"
+
+      - id: DocDownTool-Platform-MacOS
+        title: The tool shall build and run on macOS platforms.
+        tags: [system]
+        justification: |
+          DEMA Consulting tools must support macOS for developers using Apple platforms.
+        tests:
+          - "macos@DocDownTool_Extract_GeneratedPdf_PrintsAbsoluteSummaryPathAndExitsZero"
+
+      - id: DocDownTool-Platform-Net8
+        title: The tool shall support the .NET 8 runtime.
+        tags: [system]
+        justification: |
+          .NET 8 is an LTS release providing long-term stability for enterprise users.
+        tests:
+          - "net8.0@DocDownTool_Extract_GeneratedPdf_PrintsAbsoluteSummaryPathAndExitsZero"
+
+      - id: DocDownTool-Platform-Net9
+        title: The tool shall support the .NET 9 runtime.
+        tags: [system]
+        justification: |
+          .NET 9 support enables users to leverage the latest .NET features.
+        tests:
+          - "net9.0@DocDownTool_Extract_GeneratedPdf_PrintsAbsoluteSummaryPathAndExitsZero"
+
+      - id: DocDownTool-Platform-Net10
+        title: The tool shall support the .NET 10 runtime.
+        tags: [system]
+        justification: |
+          .NET 10 support ensures the tool remains compatible with the latest .NET ecosystem.
+        tests:
+          - "net10.0@DocDownTool_Extract_GeneratedPdf_PrintsAbsoluteSummaryPathAndExitsZero"

@@ -1,0 +1,46 @@
+---
+# Software Subsystem Requirements for DocDownTool SelfTest
+#
+# The SelfTest subsystem drives the --validate command: it exercises the tool's own
+# functionality and the union of self-test cases every registered backend contributes, and it
+# adapts Core's dependency-free self-test records into the TestResults model for TRX/JUnit
+# serialization. These requirements decompose into the Validation and SelfTestAdapter units.
+
+sections:
+  - title: DocDownTool Requirements
+    sections:
+      - title: SelfTest Requirements
+        requirements:
+          - id: DocDownTool-SelfTest-Validation
+            title: >-
+              The subsystem shall drive self-validation: print an environment header, run the tool's
+              own functionality and the backend self-test union, and write the results file.
+            justification: |
+              An operator confirming the tool works where it is installed needs one command that
+              exercises both the tool's commands and each backend's own cases, reports the outcome
+              legibly, and leaves a machine-readable artifact. Doing all of that in the validation
+              driver keeps the self-test a single, repeatable operation, and the backend self-test
+              union now spans the PDF, page-rendering, and Word backends the tool registers.
+            children:
+              - DocDownTool-Validation-Header
+              - DocDownTool-Validation-RunsUnion
+              - DocDownTool-Validation-WritesResults
+              - DocDownTool-Validation-Outcome
+            tests:
+              - DocDownTool_Validate_ResultsTrx_ProducesWellFormedTrx
+
+          - id: DocDownTool-SelfTest-Adaptation
+            title: >-
+              The subsystem shall adapt Core's self-test records into the test-results model, mapping
+              a skipped case to a not-executed outcome distinct from a failure.
+            justification: |
+              Core defines its self-test contract as plain records so it carries no NuGet dependency,
+              which means the mapping into the results model must live in the tool. Mapping a skip to
+              not-executed — not to a pass and not to a failure — is what keeps a skip honest as
+              evidence.
+            children:
+              - DocDownTool-SelfTestAdapter-MapsOutcomes
+              - DocDownTool-SelfTestAdapter-SkippedIsNotExecuted
+              - DocDownTool-SelfTestAdapter-PreservesMetadata
+            tests:
+              - SelfTestAdapter_ToTestOutcome_Skipped_ReturnsNotExecuted

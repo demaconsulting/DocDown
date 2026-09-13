@@ -1,11 +1,11 @@
 ---
-title: Template DotNet Library Verification Design Document
-subtitle: A .NET Reference Implementation for Libraries
+title: DocDown Verification Design Document
+subtitle: Document extraction for LLM consumption
 author: DEMA Consulting
-description: Verification design document for the Template DotNet Library
+description: Verification design document for DocDown
 lang: en-US
 keywords:
-  - Template DotNet Library
+  - DocDown
   - .NET
   - Library
   - Verification

@@ -1,0 +1,83 @@
+### Context Verification Design
+
+This document describes the unit-level verification strategy for `Context`, which owns the parsed
+command-line arguments and the tool's output channels.
+
+### Verification Approach
+
+`Context` is verified through unit tests in `Cli/ContextTests.cs` in
+`DemaConsulting.DocDown.Tool.Tests`, with method names beginning with `Context_`. Each test constructs
+a `Context` from an argument array through the `Create` factory and asserts on the result: the parsed
+choices, the projected `ExtractionOptions`, the console-and-log routing, and the argument faults
+raised for malformed input. The log-flush scenario reads the log with a shared file handle while the
+writer is still open, which is what proves the write reached disk immediately rather than at dispose.
+
+### Test Environment
+
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Filesystem**: temporary log files; standard output redirected to a `StringWriter` for the silence
+  scenario
+- **Isolation**: each test owns its arguments and any temporary log, deleting it on completion
+
+### Acceptance Criteria
+
+Per IEC 62304 §5.5.2, a `Context` unit test run passes when a written line reaches the console only
+when not silent and always reaches the log; when a log line is flushed immediately; when an error sets
+the exit code even under silence and no error leaves it zero; when the extraction flags project onto
+the options and the scratch-policy token maps to its mode; and when an unknown argument, a malformed
+page range, an unknown image mode, and an out-of-range heading depth are each rejected with an
+argument fault.
+
+### Test Scenarios
+
+#### Silence suppresses the console but not the log
+
+**Test**: `Context_WriteLine_SilentMode_SuppressesConsoleButWritesLog`
+
+Proves a written line is absent from a redirected console under silence but present in the log.
+Evidence for `DocDownTool-Context-Output`.
+
+#### Log lines are flushed immediately
+
+**Test**: `Context_Create_LogFile_WritesLinesWithAutoFlush`
+
+Proves a written line is readable from the log, through a shared handle, before the context is
+disposed. Evidence for `DocDownTool-Context-Logging`.
+
+#### An error sets the exit code even under silence
+
+**Tests**: `Context_WriteError_SilentMode_StillSetsExitCodeOne`, `Context_ExitCode_NoErrors_ReturnsZero`
+
+Prove the error flag is set unconditionally so a silenced failure still exits non-zero, and that a run
+with no error reports success. Evidence for `DocDownTool-Context-ErrorFlag`.
+
+#### Option mapping
+
+**Tests**: `Context_BuildExtractionOptions_Flags_MapOntoOptions`,
+`Context_BuildExtractionOptions_ScratchPolicyToken_MapsToMode`
+
+Prove each extraction flag projects onto its `ExtractionOptions` member — including `--require-pages`
+adding the rendered-pages capability requirement — and that each scratch-policy token maps to its
+mode. Evidence for `DocDownTool-Context-OptionMapping`.
+
+#### An unknown argument is rejected
+
+**Test**: `Context_Create_UnknownArgument_ThrowsArgumentException`
+
+Proves an unrecognized argument raises an argument fault. Evidence for
+`DocDownTool-Context-UnknownArgument`.
+
+#### A malformed option value is rejected
+
+**Tests**: `Context_Create_MalformedPageRange_ThrowsArgumentException`,
+`Context_Create_UnknownImageMode_ThrowsArgumentException`
+
+Prove a page range that is not two numbers and an unknown image mode are each rejected with an
+argument fault at parse time. Evidence for `DocDownTool-Context-OptionValidation`.
+
+#### An out-of-range heading depth is rejected
+
+**Test**: `Context_Create_DepthOutOfRange_ThrowsArgumentException`
+
+Proves a heading depth outside the supported range is rejected rather than clamped. Evidence for
+`DocDownTool-Context-Depth`.

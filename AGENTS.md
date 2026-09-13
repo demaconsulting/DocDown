@@ -1,21 +1,28 @@
 # Project Overview
 
-> **Downstream customization required**: Replace the `TODO` values below with
-> values specific to the target repository. These values are the canonical source
-> for project-wide template placeholders used throughout the repository.
+These values are the canonical source for project-wide placeholders used
+throughout the repository.
 
-- **project-name**: TODO — repository/project name (e.g., `ReqStream`)
-- **organization**: TODO — organization name for document authorship (e.g., `DEMA Consulting`)
-- **project-tagline**: TODO — document subtitle; 4–8 words, noun phrase, no period
-  (e.g., `Requirements traceability for .NET projects`)
-- **description**: TODO — full project description, may be multiple sentences
-- **languages**: TODO — programming languages used (e.g., `C#`, `C++`)
-- **technologies**: TODO — key technologies and frameworks (e.g., `.NET`, `CMake`)
+- **project-name**: DocDown
+- **organization**: DEMA Consulting
+- **project-tagline**: Document extraction for LLM consumption
+- **description**: DocDown is a family of .NET libraries and a command-line tool
+  that extract useful information from documents of many types (PDF, Word, Excel,
+  PowerPoint, Visio, HTML) into a scratch folder, in a predictable layout designed
+  to be fed to multimodal AI agents. Every extraction, regardless of source format,
+  produces the same five artifacts: `summary.txt` (a human- and LLM-readable
+  write-up of what was extracted and where, including the absolute path to the
+  scratch folder), `manifest.json` (its machine-readable twin), `metadata.json`
+  (what the document asserts about itself — creator, dates, and the like — with
+  per-field provenance), `content.md` (the textual content as markdown, linking to
+  extracted images), and the `images/` and `pages/` resource folders. The output
+  layout is invariant; the extracted content is best-effort and environment-dependent,
+  and whatever could not be extracted is reported explicitly with a reason rather
+  than silently omitted.
+- **languages**: C#
+- **technologies**: .NET
 
 # Project Structure
-
-> **Downstream customization required**: Replace `{project}` and
-> `{test-project}` with the actual source and test project folder names.
 
 ```text
 ├── docs/
@@ -31,10 +38,22 @@
 │   ├── user_guide/
 │   └── verification/
 ├── src/
-│   └── {project}/
+│   ├── DemaConsulting.DocDown.Core/
+│   ├── DemaConsulting.DocDown.Pdf/
+│   ├── DemaConsulting.DocDown.Pdf.Rendering/
+│   ├── DemaConsulting.DocDown.Word/
+│   └── DemaConsulting.DocDown.Tool/
 └── test/
-    └── {test-project}/
+    ├── DemaConsulting.DocDown.Core.Tests/
+    ├── DemaConsulting.DocDown.Pdf.Tests/
+    ├── DemaConsulting.DocDown.Pdf.Rendering.Tests/
+    ├── DemaConsulting.DocDown.Word.Tests/
+    ├── DemaConsulting.DocDown.Tool.Tests/
+    └── DemaConsulting.DocDown.TestSupport/
 ```
+
+Additional libraries (`DocDown.Excel`, `DocDown.PowerPoint`, `DocDown.Visio`, `DocDown.Html`) are
+planned; each is added under `src/` with a matching `test/` project as it is implemented.
 
 # Language and Spelling (ALL Agents)
 

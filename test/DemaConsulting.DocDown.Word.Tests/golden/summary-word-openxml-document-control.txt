@@ -1,0 +1,62 @@
+DocDown Extraction Summary
+==========================
+
+A Word document titled "Control Board Resources"; extracted 150 characters of text.
+
+Scratch folder  : <scratch-folder>
+Source document : <source-document>
+Detected format : docx (application/vnd.openxmlformats-officedocument.wordprocessingml.document) - detected by file extension
+Extracted (UTC) : 2026-01-02T03:04:05Z
+Status          : SUCCEEDED  - all requested content was extracted.
+
+All paths below are relative to the scratch folder shown above.
+
+Backend
+-------
+  Selected  : word-openxml - Word (Open XML SDK)      [selected automatically]
+  Fidelity  : best-effort
+  Why       : satisfies 2 of 2 requested capabilities.
+
+Environment
+-----------
+  Operating system   : <operating-system>
+  Runtime            : <runtime>
+  Runtime identifier : <runtime-identifier>
+  DocDown.Word:
+    word.backend       : Open XML SDK (managed) (available)
+    word.pageRendering : not provided by this extractor (NOT available)
+
+Document metadata
+-----------------
+  Author          : DocDown Test Suite
+  See metadata.json for the document's full self-reported metadata.
+
+Layout
+------
+  summary.txt          this file
+  manifest.json        machine-readable form of this summary
+  metadata.json        what the document asserts about itself
+  content.md           PRESENT
+  images/              not present - none were found
+  pages/               not present - none were found
+
+What WAS extracted
+------------------
+  content.md   150 characters of text.
+               Contains 1 heading.
+
+What was NOT extracted
+----------------------
+  No gaps: everything requested was extracted.
+
+Completeness
+------------
+  content.md : COMPLETE
+  images/    : COMPLETE   (0 of 0)
+  pages/     : COMPLETE   (0 of 0)
+  Every absence above is explained by a numbered gap. There are no unexplained gaps.
+
+Diagnostics (0 warnings, 0 errors)
+----------------------------------
+  [WORD0009] 1 header or footer part containing only page-numbering fields was omitted from document control
+             because that furniture is structural repetition rather than document content.

@@ -1,0 +1,162 @@
+---
+# Software Unit Requirements for WordOpenXmlReader
+#
+# WordOpenXmlReader turns the Open XML document into the backend-neutral model: it maps
+# headings, lists, tables, fields, comments, footnotes, and Document Control, accepts tracked
+# changes, detects the protected container, and surfaces the document metadata.
+
+sections:
+  - title: DocDownWord Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: WordOpenXmlReader Requirements
+            requirements:
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-ReadsStructuredBlocks
+                title: >-
+                  WordOpenXmlReader shall map styled paragraphs, lists, and tables into the model's
+                  structured blocks.
+                justification: |
+                  The reader is where a .docx becomes the model the rest of the package works on, so it
+                  must map heading styles, ordered and bulleted lists, and genuine table grids into
+                  blocks the writers can render rather than a flat run of text.
+                tests:
+                  - WordOpenXmlReader_Read_HeadingsListsAndTables_ProducesStructuredBlocks
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-BuildsDocumentControl
+                title: >-
+                  WordOpenXmlReader shall build a Document Control section from a header carrying a
+                  revision and a classification.
+                justification: |
+                  A document's identifying furniture lives in its headers and footers. Building the
+                  Document Control section from the surviving header content is what surfaces the
+                  number, revision, and classification a reader expects near the top.
+                tests:
+                  - WordOpenXmlReader_Read_HeaderWithRevisionAndClassification_ProducesDocumentControlSection
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-OmitsFurnitureAsDiagnostic
+                title: >-
+                  WordOpenXmlReader shall omit a header or footer carrying only page-numbering fields,
+                  counting it as page furniture rather than emitting a document-control section.
+                justification: |
+                  A footer that is only a page number carries nothing a single-flow document can use,
+                  and page numbers are meaningless without pages. Omitting furniture detected by its
+                  field instruction — never by a regex over rendered text — drops no document content,
+                  so the reader records it as a furniture count the emitter surfaces as an
+                  informational diagnostic, not a gap, keeping the Document Control section meaningful
+                  without falsely degrading the run.
+                tests:
+                  - WordOpenXmlReader_Read_FooterWithOnlyPageNumberFields_OmitsAsFurniture
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-DeduplicatesHeaders
+                title: WordOpenXmlReader shall emit an identical header shared across sections only once.
+                justification: |
+                  The same header repeated across every section is one piece of furniture, not many.
+                  Deduplicating identical headers keeps the Document Control section a concise statement
+                  rather than a repetition.
+                tests:
+                  - WordOpenXmlReader_Read_IdenticalHeaderAcrossSections_EmittedOnce
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedRevisions
+                title: >-
+                  WordOpenXmlReader shall render tracked changes in the accepted-revisions view and
+                  record that a view was chosen.
+                justification: |
+                  A document under revision has two readings, and only one can be rendered. Keeping
+                  insertions, dropping deletions, and recording the choice with a count produces the
+                  text a reader would see with changes accepted while keeping the decision visible.
+                tests:
+                  - WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewWithDiagnostic
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-DetectsPasswordProtected
+                title: >-
+                  WordOpenXmlReader shall detect an encrypted document by its container signature and
+                  raise a structured failure.
+                justification: |
+                  An encrypted .docx is an OLE compound file, not a Zip package, and cannot be opened.
+                  Detecting that signature and raising a Word extraction exception — which Core renders
+                  as a structured failure — keeps a protected document from aborting a batch run.
+                tests:
+                  - WordOpenXmlReader_Read_PasswordProtected_ThrowsWordExtractionException
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-CollectsComments
+                title: WordOpenXmlReader shall collect a comment's author and text.
+                justification: |
+                  A comment is content a reviewer added, and both its author and its text matter.
+                  Collecting both is what lets the writer render a faithful Comments section.
+                tests:
+                  - WordOpenXmlReader_Read_Comment_CollectsAuthorAndText
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-SurfacesMetadata
+                title: >-
+                  WordOpenXmlReader shall surface the document's declared title and author, and nothing
+                  where the document declares nothing.
+                justification: |
+                  Metadata drives downstream routing, and a blank value is a different claim from an
+                  absent one. Surfacing the declared title and author, and leaving a blank value
+                  unstated, keeps those decisions on facts.
+                tests:
+                  - WordOpenXmlReader_Read_Metadata_TitleAndAuthorSurfaced
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-ReportsProducerPageCount
+                title: >-
+                  WordOpenXmlReader shall report the producer-stated page count from the document's
+                  extended properties, and none where it is absent.
+                justification: |
+                  A Word document does not paginate itself, so a computed page count would be a
+                  fabrication. Reporting only the producer's own extended-properties value, and nothing
+                  where it is absent, keeps the page count honest.
+                tests:
+                  - WordOpenXmlReader_Read_ProducerPageCount_FromExtendedProperties
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-ReusesDeduplicatedImagePath
+                title: >-
+                  WordOpenXmlReader shall reuse a single written path for an image that appears in both
+                  a header and the body.
+                justification: |
+                  A logo that appears in the header and the body is one image, and writing it twice
+                  would waste space and imply two figures. Reusing the deduplicated path keeps one
+                  image one file and one link target.
+                tests:
+                  - WordOpenXmlReader_Read_HeaderWithLogo_ReusesDeduplicatedImagePath
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-SelectsImageText
+                title: >-
+                  WordOpenXmlReader shall choose an image's naming and description text from the author
+                  description, title, and object name, ignoring the auto-generated drawing name.
+                justification: |
+                  An image is far more useful when its file name and alt text describe it, so the reader
+                  gathers the author's alt-text description, the drawing title, and the picture object
+                  name and hands them to the shared policy. It never reads the auto-generated
+                  wp:docPr/@name, which is a placeholder rather than a description.
+                tests:
+                  - WordOpenXmlReader_Read_ImageWithDescription_UsesDescriptionForNameAltAndManifest
+                  - WordOpenXmlReader_Read_ImageWithTitleOnly_UsesTitleAsDescriptive
+                  - WordOpenXmlReader_Read_ImageWithObjectName_UsesPictureNameNotDocPrName
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-ReadsCaptionStructurally
+                title: >-
+                  WordOpenXmlReader shall read an adjacent caption's text, including its SEQ field number,
+                  through the field-aware walker.
+                justification: |
+                  A figure caption describes its image and carries a SEQ-numbered label. Reading the
+                  adjacent Caption-styled paragraph through the same field-aware walk the body uses
+                  surfaces the number as a field result, structurally, rather than by matching digits in
+                  rendered text.
+                tests:
+                  - WordOpenXmlReader_Read_ImageWithCaption_ReadsSeqNumberStructurally
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-HeadingNamesButNeutralAlt
+                title: >-
+                  WordOpenXmlReader shall let a nearby heading name an image and record it in the manifest
+                  with its source, but never assert the heading as the image's alt text, falling back to
+                  the media name when nothing describes the image.
+                justification: |
+                  A section heading locates a picture but does not describe it, so presenting it as alt
+                  text would imply a description the document never gave. The reader may use the heading
+                  to seed the file name and records it honestly in the manifest as a heading-sourced
+                  description, yet leaves the alt text neutral; when no source describes the image at all,
+                  it falls back to the media name with no description.
+                tests:
+                  - WordOpenXmlReader_Read_ImageWithOnlyHeading_NamesFromHeadingButKeepsNeutralAlt
+                  - WordOpenXmlReader_Read_ImageWithNoSources_FallsBackToMediaNameWithoutDescription

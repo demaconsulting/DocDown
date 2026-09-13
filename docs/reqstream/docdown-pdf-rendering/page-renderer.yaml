@@ -1,0 +1,60 @@
+---
+# Software Unit Requirements for PageRenderer
+#
+# PageRenderer is the single native-interop seam: it rasterizes one page to a PNG behind a
+# process-wide lock (PDFium is not thread-safe) and answers a cheap, non-throwing question
+# about whether the native stack can load for the current runtime identifier.
+
+sections:
+  - title: DocDownPdfRendering Requirements
+    sections:
+      - title: PageRenderer Requirements
+        requirements:
+          - id: DocDownPdfRendering-PageRenderer-RendersPageToPng
+            title: PageRenderer shall rasterize one page of a PDF to valid PNG bytes at a requested DPI.
+            justification: |
+              This unit is the only place the native rasterizer is called, so the promise that a page
+              becomes a real, decodable PNG at the requested resolution lives here. Everything upstream
+              depends on this producing genuine image bytes rather than an opaque buffer.
+            tests:
+              - PageRenderer_Render_SinglePage_ReturnsValidPng
+
+          - id: DocDownPdfRendering-PageRenderer-ProbeCheapAndNonThrowing
+            title: >-
+              PageRenderer shall report whether the native stack can load for the current runtime
+              identifier, cheaply and without throwing.
+            justification: |
+              The extractor's availability probe is only as cheap and safe as this check. Loading the
+              native once and caching the result, without throwing on a missing binary, is what lets a
+              plain extraction avoid native cost and lets an unavailable stack be reported rather than
+              crash selection.
+            tests:
+              - PageRenderer_ProbeAvailability_DeployedNativeStack_ReportsAvailableWithoutThrowing
+
+          - id: DocDownPdfRendering-PageRenderer-ReportsUnavailableWithReason
+            title: PageRenderer shall carry a non-empty reason on an unavailable probe result.
+            justification: |
+              An unavailable native stack reported without a cause turns a fixable environment problem
+              into a mystery. Requiring a reason on the unavailable result is what guarantees the
+              extractor can surface a displayable explanation.
+            tests:
+              - NativeProbeResult_Unavailable_CarriesReason
+              - NativeProbeResult_Unavailable_EmptyReason_Throws
+
+          - id: DocDownPdfRendering-PageRenderer-SerializesNativeCalls
+            title: PageRenderer shall serialize every native rasterization call process-wide.
+            justification: |
+              PDFium is not thread-safe, so two concurrent renders would corrupt shared native state.
+              A single process-wide lock guarantees exactly one rasterization runs at a time, which
+              concurrent renders must observe by all succeeding.
+            tests:
+              - PageRenderer_Render_ConcurrentCalls_AllProduceValidPng
+
+          - id: DocDownPdfRendering-PageRenderer-RejectsNullDocument
+            title: PageRenderer shall reject a missing document at the point of the call.
+            justification: |
+              Failing where the mistake was made names the offending caller. A null document is a
+              programming error, not a render fault, so it is rejected up front rather than carried
+              into the native call.
+            tests:
+              - PageRenderer_Render_NullPdf_Throws

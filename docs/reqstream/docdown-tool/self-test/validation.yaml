@@ -1,0 +1,57 @@
+---
+# Software Unit Requirements for Validation
+#
+# Validation is the --validate driver. It prints a markdown environment header, runs the tool's
+# own functionality in-process against a captured log, runs the union of self-test cases every
+# registered backend contributes, prints per-test results, and writes the outcome as TRX or JUnit.
+
+sections:
+  - title: DocDownTool Requirements
+    sections:
+      - title: SelfTest Requirements
+        sections:
+          - title: Validation Requirements
+            requirements:
+              - id: DocDownTool-Validation-Header
+                title: >-
+                  Validation shall print a header, at the requested heading depth, reporting the tool
+                  version, machine name, operating system, runtime, and a UTC timestamp.
+                justification: |
+                  A self-validation result is only interpretable against the environment that produced
+                  it, so the header must record that environment. Honoring the requested heading depth
+                  lets the output nest inside a larger generated document without editing.
+                tests:
+                  - Validation_Run_Header_HonorsDepthAndReportsEnvironment
+
+              - id: DocDownTool-Validation-RunsUnion
+                title: >-
+                  Validation shall run Core's self-test cases and each registered backend's cases as
+                  one union.
+                justification: |
+                  The tool builds its engine from an explicit registration, so a self-validation
+                  should exercise exactly what is registered — Core's cases plus every backend's own
+                  cases — rather than a fixed list that could drift from the real configuration.
+                tests:
+                  - Validation_Run_DefaultEngine_RunsCoreAndPdfSelfTestUnion
+
+              - id: DocDownTool-Validation-WritesResults
+                title: >-
+                  Validation shall write the results as TRX for a .trx file and JUnit for a .xml file,
+                  and report an error for any other extension.
+                justification: |
+                  The results file is consumed by traceability tooling that expects one of two known
+                  formats, so the extension selects the serializer. An unsupported extension is a
+                  caller error to report rather than a format to guess.
+                tests:
+                  - Validation_Run_ResultsTrx_WritesFile
+                  - Validation_Run_ResultsXml_WritesWellFormedJUnit
+                  - Validation_Run_UnsupportedResultsExtension_WritesError
+
+              - id: DocDownTool-Validation-Outcome
+                title: Validation shall exit zero when no case failed, treating a skip as not a failure.
+                justification: |
+                  The exit code is the self-validation's headline result, so it must reflect failures
+                  only. A case skipped because its capability is unavailable here is not a failure and
+                  must not make the run report one.
+                tests:
+                  - Validation_Run_AllPass_ExitCodeZero

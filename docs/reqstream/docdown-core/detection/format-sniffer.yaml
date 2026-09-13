@@ -1,0 +1,72 @@
+---
+# Software Unit Requirements for FormatSniffer
+#
+# FormatSniffer identifies a document's format from its file-name extension and,
+# failing that, from its leading content bytes, while leaving the source stream
+# untouched.
+
+sections:
+  - title: DocDownCore Requirements
+    sections:
+      - title: Detection Requirements
+        sections:
+          - title: FormatSniffer Requirements
+            requirements:
+              - id: DocDownCore-Detection-FormatSniffer-ExtensionPrimary
+                title: FormatSniffer shall identify the format from the file-name extension as the primary signal.
+                justification: |
+                  The caller already possesses the document and named it, so the name is the best
+                  statement of intent available. Sniffing the bytes would change only which parser
+                  runs, not whether hostile bytes are parsed, and a wrongly-named file is rejected
+                  honestly by the decoder that receives it. Trusting the extension also means
+                  detection never opens, unpacks, or parses the document. The recognized vocabulary
+                  includes the legacy binary Office formats (.doc, .xls, .ppt, .vsd), which are
+                  detectable by extension even though Core cannot extract them, so the engine can
+                  report a format-specific failure rather than an unrecognized-format one.
+                tests:
+                  - FormatSniffer_Detect_ExtensionContradictsContent_TrustsExtension
+                  - FormatSniffer_Detect_VsdxExtensionWithoutSignature_IdentifiesVsdxByExtension
+                  - FormatSniffer_Detect_LegacyBinaryExtension_IdentifiesByExtension
+                  - FormatSniffer_Detect_UpperCaseLogExtension_IdentifiesTextCaseInsensitively
+
+              - id: DocDownCore-Detection-FormatSniffer-ContentSignature
+                title: >-
+                  FormatSniffer shall fall back to a leading-byte content signature when the file
+                  name has no extension or an unrecognized one.
+                justification: |
+                  A document handed over as a stream may carry no name at all, or a name whose
+                  extension this library does not know. A cheap, bounded check of the leading bytes
+                  recovers the common cases rather than abandoning the input as unknown.
+                tests:
+                  - FormatSniffer_Detect_PdfSignatureWithoutFileName_IdentifiesPdfByContentSignature
+                  - FormatSniffer_Detect_PdfSignatureWithUnknownExtension_FallsBackToContentSignature
+                  - FormatSniffer_Detect_HtmlRootElement_IdentifiesHtmlByContentSignature
+
+              - id: DocDownCore-Detection-FormatSniffer-UnknownFormat
+                title: FormatSniffer shall report an unknown format when neither extension nor content is recognized.
+                justification: |
+                  Inventing a format for unrecognizable input would send it to a backend that
+                  mis-reads it. Reporting unknown lets the pipeline fail cleanly instead of producing
+                  corrupt output.
+                tests:
+                  - FormatSniffer_Detect_UnrecognizedContentNoFileName_ReportsUnknown
+                  - FormatSniffer_Detect_EmptyStreamUnknownExtension_ReportsUnknown
+
+              - id: DocDownCore-Detection-FormatSniffer-BasisAndConfidence
+                title: FormatSniffer shall report the detection basis and a confidence for each result.
+                justification: |
+                  The manifest must record how the format was determined, not merely what it was.
+                  Reporting the basis distinguishes a trusted extension match from a content-signature
+                  fallback so callers, and later readers of manifest.json, can see the evidence.
+                tests:
+                  - FormatSniffer_Detect_ExtensionMatch_ReportsExtensionBasisAndHighConfidence
+
+              - id: DocDownCore-Detection-FormatSniffer-StreamPositionRestored
+                title: FormatSniffer shall restore the source stream position after inspecting it.
+                justification: |
+                  The same stream is read again during extraction. Restoring its position, even when
+                  detection began at a non-zero offset, keeps inspection transparent to every later
+                  reader and prevents silent data loss.
+                tests:
+                  - FormatSniffer_Detect_ContentFallbackFromOffset_RestoresStreamPosition
+                  - FormatSniffer_Detect_ExtensionMatchFromOffset_LeavesStreamPositionUntouched

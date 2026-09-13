@@ -1,0 +1,133 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- NuGet Tool Package Configuration -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>docdown</ToolCommandName>
+    <PackageId>DemaConsulting.DocDown.Tool</PackageId>
+    <Version>0.0.0</Version>
+    <Authors>DEMA Consulting</Authors>
+    <Company>DEMA Consulting</Company>
+    <Description>The docdown command-line tool for DEMA Consulting DocDown document extraction</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/demaconsulting/DocDown</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/demaconsulting/DocDown</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>Icon.png</PackageIcon>
+    <PackageTags>docdown;dotnet-tool</PackageTags>
+    <Copyright>Copyright DEMA Consulting</Copyright>
+    <Title>DocDown Tool</Title>
+    <Product>DemaConsulting.DocDown.Tool</Product>
+
+    <!-- Single-file publish configuration for the per-RID release matrix. These properties are
+         inert during an ordinary build and pack; they take effect only when the project is
+         published with a runtime identifier and the single-file publish switches. Explicit
+         registration keeps assembly trimming and single-file packaging viable because no extractor
+         is discovered by reflection or assembly scanning. -->
+    <RollForward>Major</RollForward>
+
+    <!-- API Documentation Configuration -->
+    <!-- ApiMark is disabled for the tool. Every type in this project is internal, so ApiMark's
+         default Public visibility filter finds nothing: running
+         'apimark dotnet' with the assembly and xml-doc options against the
+         Release build reports "Found 0 types across 0 namespace(s)" and emits a single api.md
+         containing an empty namespace table and the path-convention boilerplate. Packing that
+         would ship a hollow artifact, so generation is switched off rather than enabled. The
+         tool's user-facing surface is its command line, documented in the User Guide and README.
+         Widening ApiMarkVisibility to expose internals was rejected: internal types are not a
+         consumer contract. -->
+    <DisableApiMark>true</DisableApiMark>
+
+    <!-- Symbol Package Configuration -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <!-- Code Quality Configuration -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+
+    <!-- SBOM Configuration -->
+    <GenerateSBOM>true</GenerateSBOM>
+    <SBOMPackageName>$(PackageId)</SBOMPackageName>
+    <SBOMPackageVersion>$(Version)</SBOMPackageVersion>
+    <SBOMPackageSupplier>Organization: $(Company)</SBOMPackageSupplier>
+  </PropertyGroup>
+
+  <!-- Runtime Dependencies -->
+  <ItemGroup>
+    <!-- DemaConsulting.TestResults enters the dependency graph only here, in the tool: the SelfTest
+         subsystem adapts Core's dependency-free self-test records into this package's TestResults
+         object model and serializes them to TRX or JUnit. DocDown.Core and DocDown.Pdf remain free
+         of it, so Core keeps its zero-runtime-NuGet-dependency posture. The package is MIT-licensed
+         and has no transitive runtime dependencies of its own. -->
+    <PackageReference Include="DemaConsulting.TestResults" Version="1.10.0" />
+  </ItemGroup>
+
+  <!-- Build Tool Dependencies -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Sbom.Targets" Version="4.1.5" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.400" PrivateAssets="All" />
+  </ItemGroup>
+
+  <!-- Code Analysis Dependencies -->
+  <ItemGroup>
+    <!-- Analyzer packages use child-element form to configure both PrivateAssets and IncludeAssets:
+         - PrivateAssets="all" prevents these build-time analyzers from becoming transitive dependencies
+           in packages that consume this tool.
+         - IncludeAssets lists all asset types (including 'analyzers' and 'buildtransitive') to ensure
+           Roslyn analyzers and MSBuild targets are fully activated during the build. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.400">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.33.0.1635">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DemaConsulting.DocDown.Tool.Tests" />
+  </ItemGroup>
+
+  <!-- Project References -->
+  <ItemGroup>
+    <ProjectReference Include="..\DemaConsulting.DocDown.Core\DemaConsulting.DocDown.Core.csproj" />
+    <ProjectReference Include="..\DemaConsulting.DocDown.Pdf\DemaConsulting.DocDown.Pdf.csproj" />
+    <!-- The optional page-rendering backend. It is the only reference that carries a native stack
+         (PDFium/SkiaSharp) into the tool. Adding it keeps 'dotnet tool install -g' working on every
+         runtime identifier from one package (the framework-dependent tool resolves the correct
+         runtimes/<rid>/native asset at run time), but a self-contained single-file publish becomes
+         RID-specific and needs 'dotnet publish -r <rid>'. PublishTrimmed/AOT stay off because this
+         stack's trim/AOT compatibility is unverified. -->
+    <ProjectReference Include="..\DemaConsulting.DocDown.Pdf.Rendering\DemaConsulting.DocDown.Pdf.Rendering.csproj" />
+    <!-- The Word backend package. It is 100% managed and runtime-identifier agnostic, so it adds no
+         native asset and does not affect the tool's publish story. -->
+    <ProjectReference Include="..\DemaConsulting.DocDown.Word\DemaConsulting.DocDown.Word.csproj" />
+    <!-- The Visio, PowerPoint, and Excel backend packages. Each is 100% managed and
+         runtime-identifier agnostic (the Visio and PowerPoint COM backends reach Microsoft Office
+         through late-bound IDispatch with no interop assembly), so none adds a native asset or
+         affects the tool's publish story. -->
+    <ProjectReference Include="..\DemaConsulting.DocDown.Visio\DemaConsulting.DocDown.Visio.csproj" />
+    <ProjectReference Include="..\DemaConsulting.DocDown.PowerPoint\DemaConsulting.DocDown.PowerPoint.csproj" />
+    <ProjectReference Include="..\DemaConsulting.DocDown.Excel\DemaConsulting.DocDown.Excel.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\Icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

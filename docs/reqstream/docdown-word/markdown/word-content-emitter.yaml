@@ -1,0 +1,39 @@
+---
+# Software Unit Requirements for WordContentEmitter
+#
+# WordContentEmitter is the single emission path: it writes the model's
+# content (single-flow or per-part), the images, the diagnostics, and the gaps through the
+# sink, so every output the model implies is produced in one place.
+
+sections:
+  - title: DocDownWord Requirements
+    sections:
+      - title: Markdown Requirements
+        sections:
+          - title: WordContentEmitter Requirements
+            requirements:
+              - id: DocDownWord-Markdown-WordContentEmitter-EmitsModelContent
+                title: >-
+                  WordContentEmitter shall emit a document model's content through the sink in the
+                  requested split form, driven only by the model.
+                justification: |
+                  Emission that depends only on the model, and never on how the model was read, is
+                  what keeps the output contract in one testable place and lets a hand-built model
+                  prove a mapping decision without a document behind it.
+                tests:
+                  - WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1
+
+              - id: DocDownWord-Markdown-WordContentEmitter-ReportsGapsAndDiagnostics
+                title: >-
+                  WordContentEmitter shall report the diagnostics and counted gaps the model records,
+                  returning whether the outcome degraded.
+                justification: |
+                  A model carries the facts about what could not be fully represented and the expected
+                  decisions it made. Genuine loss — flattened cells, an unhonored output mode — is
+                  emitted as a counted gap that degrades the outcome, while an expected non-loss such as
+                  an empty or page-furniture-only header or footer is emitted as an informational
+                  diagnostic that does not degrade the run. Reporting each through the shared path,
+                  gap-versus-diagnostic by whether anything was actually lost, is what keeps the
+                  extraction honest without over-reporting a degrade.
+                tests:
+                  - WordOpenXmlExtractor_Extract_MergedCells_ReportsCountedStructuralGap

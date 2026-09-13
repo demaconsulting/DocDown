@@ -1,11 +1,11 @@
 ---
-title: Template DotNet Library Review Plan
-subtitle: File Review Plan for the Template DotNet Library
+title: DocDown Review Plan
+subtitle: File Review Plan for DocDown
 author: DEMA Consulting
-description: File Review Plan for the Template DotNet Library
+description: File Review Plan for DocDown
 lang: en-US
 keywords:
-  - Template DotNet Library
+  - DocDown
   - Review Plan
   - File Reviews
   - .NET

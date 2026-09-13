@@ -1,0 +1,55 @@
+---
+# Software Subsystem Requirements for DocDownTool Cli
+#
+# The Cli subsystem owns the command line: it parses arguments, validates them, projects the
+# extraction flags onto the engine's options, and routes every line the tool emits to the
+# console and an optional log. These requirements decompose into the Context unit via children.
+
+sections:
+  - title: DocDownTool Requirements
+    sections:
+      - title: Cli Requirements
+        requirements:
+          - id: DocDownTool-Cli-Output
+            title: >-
+              The subsystem shall route output to the console and an optional log file, suppressing
+              the console when silence is requested while always recording an error.
+            justification: |
+              The tool serves both an interactive user and an automated caller that captures a log.
+              Suppressing the console under silence but always writing the log keeps both consumers
+              served from one code path, and recording an error unconditionally means a silenced run
+              still reports failure through its exit code.
+            children:
+              - DocDownTool-Context-Output
+              - DocDownTool-Context-Logging
+              - DocDownTool-Context-ErrorFlag
+            tests:
+              - Context_WriteLine_SilentMode_SuppressesConsoleButWritesLog
+              - Context_WriteError_SilentMode_StillSetsExitCodeOne
+
+          - id: DocDownTool-Cli-OptionMapping
+            title: >-
+              The subsystem shall parse the command line and project the extraction flags onto the
+              engine's extraction options.
+            justification: |
+              A flag is only meaningful if it changes the extraction, so the subsystem must translate
+              each accepted flag into the corresponding engine option and leave every unset option at
+              its default. Mapping only options the engine supports keeps the command line honest.
+            children:
+              - DocDownTool-Context-OptionMapping
+            tests:
+              - Context_BuildExtractionOptions_Flags_MapOntoOptions
+
+          - id: DocDownTool-Cli-ArgumentValidation
+            title: The subsystem shall reject an unrecognized or malformed argument with an argument fault.
+            justification: |
+              An argument the parser cannot honor must fail fast and by name rather than be silently
+              ignored, which would let a caller believe an option took effect when it did not.
+              Rejecting it with an argument fault produces the clean, message-only error the tool
+              reports to the user.
+            children:
+              - DocDownTool-Context-UnknownArgument
+              - DocDownTool-Context-OptionValidation
+              - DocDownTool-Context-Depth
+            tests:
+              - Context_Create_UnknownArgument_ThrowsArgumentException

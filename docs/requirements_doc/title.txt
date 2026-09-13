@@ -1,11 +1,11 @@
 ---
-title: Template DotNet Library Requirements
-subtitle: Requirements Specification for the Template DotNet Library
+title: DocDown Requirements
+subtitle: Requirements Specification for DocDown
 author: DEMA Consulting
-description: Requirements Specification for the Template DotNet Library
+description: Requirements Specification for DocDown
 lang: en-US
 keywords:
-  - Template DotNet Library
+  - DocDown
   - Requirements
   - Specification
   - .NET

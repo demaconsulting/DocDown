@@ -8,10 +8,60 @@
 root-tags: [system, quality]
 includes:
   - docs/reqstream/quality.yaml
-  - docs/reqstream/template-dot-net-library.yaml
-  - docs/reqstream/template-dot-net-library/demo.yaml
-  - docs/reqstream/template-dot-net-library/platform-requirements.yaml
+  - docs/reqstream/docdown-core.yaml
+  - docs/reqstream/docdown-core/platform-requirements.yaml
+  - docs/reqstream/docdown-core/detection.yaml
+  - docs/reqstream/docdown-core/detection/format-sniffer.yaml
+  - docs/reqstream/docdown-core/extraction.yaml
+  - docs/reqstream/docdown-core/extraction/doc-down-builder.yaml
+  - docs/reqstream/docdown-core/extraction/extractor-registry.yaml
+  - docs/reqstream/docdown-core/extraction/extractor-selector.yaml
+  - docs/reqstream/docdown-core/extraction/doc-down-engine.yaml
+  - docs/reqstream/docdown-core/output.yaml
+  - docs/reqstream/docdown-core/output/scratch-folder.yaml
+  - docs/reqstream/docdown-core/output/extraction-sink.yaml
+  - docs/reqstream/docdown-core/output/content-writer.yaml
+  - docs/reqstream/docdown-core/output/summary-writer.yaml
+  - docs/reqstream/docdown-core/output/manifest-writer.yaml
+  - docs/reqstream/docdown-core/output/contract-verifier.yaml
+  - docs/reqstream/docdown-core/output/image-text-selector.yaml
+  - docs/reqstream/docdown-pdf.yaml
+  - docs/reqstream/docdown-pdf/platform-requirements.yaml
+  - docs/reqstream/docdown-pdf/pdf-document-extractor.yaml
+  - docs/reqstream/docdown-pdf/pdf-text-extractor.yaml
+  - docs/reqstream/docdown-pdf/pdf-image-extractor.yaml
+  - docs/reqstream/docdown-pdf/pdf-doc-down-builder-extensions.yaml
+  - docs/reqstream/docdown-pdf-rendering.yaml
+  - docs/reqstream/docdown-pdf-rendering/platform-requirements.yaml
+  - docs/reqstream/docdown-pdf-rendering/pdf-page-rendering-extractor.yaml
+  - docs/reqstream/docdown-pdf-rendering/page-renderer.yaml
+  - docs/reqstream/docdown-pdf-rendering/pdf-rendering-doc-down-builder-extensions.yaml
+  - docs/reqstream/docdown-tool.yaml
+  - docs/reqstream/docdown-tool/platform-requirements.yaml
+  - docs/reqstream/docdown-tool/program.yaml
+  - docs/reqstream/docdown-tool/cli.yaml
+  - docs/reqstream/docdown-tool/cli/context.yaml
+  - docs/reqstream/docdown-tool/self-test.yaml
+  - docs/reqstream/docdown-tool/self-test/validation.yaml
+  - docs/reqstream/docdown-tool/self-test/self-test-adapter.yaml
+  - docs/reqstream/docdown-word.yaml
+  - docs/reqstream/docdown-word/platform-requirements.yaml
+  - docs/reqstream/docdown-word/word-doc-down-builder-extensions.yaml
+  - docs/reqstream/docdown-word/markdown.yaml
+  - docs/reqstream/docdown-word/markdown/word-markdown-writer.yaml
+  - docs/reqstream/docdown-word/markdown/word-table-writer.yaml
+  - docs/reqstream/docdown-word/markdown/word-content-emitter.yaml
+  - docs/reqstream/docdown-word/open-xml.yaml
+  - docs/reqstream/docdown-word/open-xml/word-open-xml-extractor.yaml
+  - docs/reqstream/docdown-word/open-xml/word-open-xml-reader.yaml
+  - docs/reqstream/docdown-word/open-xml/word-open-xml-image-reader.yaml
+  - docs/reqstream/ots/apimark.yaml
   - docs/reqstream/ots/xunit.yaml
+  - docs/reqstream/ots/pdfpig.yaml
+  - docs/reqstream/ots/pdftoimage.yaml
+  - docs/reqstream/ots/pdfium.yaml
+  - docs/reqstream/ots/skiasharp.yaml
+  - docs/reqstream/ots/testresults.yaml
   - docs/reqstream/ots/reqstream.yaml
   - docs/reqstream/ots/buildmark.yaml
   - docs/reqstream/ots/versionmark.yaml
@@ -22,3 +72,5 @@ includes:
   - docs/reqstream/ots/pandoc.yaml
   - docs/reqstream/ots/weasyprint.yaml
   - docs/reqstream/ots/fileassert.yaml
+  - docs/reqstream/ots/openxml.yaml
+  - docs/reqstream/ots/systemiopackaging.yaml

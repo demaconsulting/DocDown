@@ -1,0 +1,153 @@
+---
+# Software Subsystem Requirements for DocDownCore Extraction
+#
+# The Extraction subsystem registers backends, probes their availability, selects one
+# for the detected format, and orchestrates the extraction pipeline. These requirements
+# decompose the system-level registration, selection, failure, and self-validation
+# behavior into the Extraction subsystem, and further into its units (DocDownBuilder,
+# ExtractorRegistry, ExtractorSelector, DocDownEngine) via the children links below.
+
+sections:
+  - title: DocDownCore Requirements
+    sections:
+      - title: Extraction Requirements
+        requirements:
+          - id: DocDownCore-Extraction-ExplicitRegistration
+            title: The subsystem shall expose exactly the backends the host registered, in registration order.
+            justification: |
+              Hosts govern their supply chain by choosing which backends participate. Exposing
+              only the registered backends, in a stable order, gives the host deterministic
+              control over which software runs against its documents.
+            children:
+              - DocDownCore-Extraction-DocDownBuilder-RegisterInstance
+              - DocDownCore-Extraction-DocDownBuilder-RegisterFactory
+              - DocDownCore-Extraction-DocDownBuilder-RejectDuplicateIds
+              - DocDownCore-Extraction-DocDownBuilder-RejectNullArguments
+              - DocDownCore-Extraction-ExtractorRegistry-DescriptorExposure
+              - DocDownCore-Extraction-ExtractorRegistry-LookupById
+            tests:
+              - Extraction_ExplicitRegistration_RegisteredBackends_AppearInEngine
+
+          - id: DocDownCore-Extraction-AvailabilityProbing
+            title: >-
+              The subsystem shall probe each backend's availability, treat a failing probe as
+              unavailable, and record the reason.
+            justification: |
+              A backend that depends on missing native components must not abort the run when
+              invoked. Probing availability up front, and containing a probe that itself throws,
+              lets selection skip unusable backends and tell the operator why.
+            children:
+              - DocDownCore-Extraction-ExtractorRegistry-ProbeCaching
+              - DocDownCore-Extraction-ExtractorRegistry-ProbeFailureContainment
+              - DocDownCore-Extraction-ExtractorRegistry-RefreshAvailability
+              - DocDownCore-Extraction-ExtractorRegistry-CandidateEnumeration
+              - DocDownCore-Extraction-ExtractorSelector-AvailabilityFilter
+            tests:
+              - Extraction_AvailabilityProbing_ThrowingProbe_TreatedAsUnavailable
+
+          - id: DocDownCore-Extraction-DeterministicSelection
+            title: >-
+              The subsystem shall select a backend as a deterministic function of the detected
+              format, the options, and the available candidates.
+            justification: |
+              Reproducible extraction demands that the same inputs always pick the same backend,
+              including when the caller names an override. Determinism lets consumers rely on a
+              stable choice and audit it, independent of registration order.
+            children:
+              - DocDownCore-Extraction-ExtractorSelector-RankOrdering
+              - DocDownCore-Extraction-ExtractorSelector-DeterministicTieBreak
+              - DocDownCore-Extraction-ExtractorSelector-Repeatability
+              - DocDownCore-Extraction-ExtractorSelector-OverrideHonored
+              - DocDownCore-Extraction-ExtractorSelector-OverrideNeverFallsBack
+            tests:
+              - Extraction_DeterministicSelection_EqualInputs_ProduceEqualSelection
+
+          - id: DocDownCore-Extraction-SelectionExplained
+            title: The subsystem shall produce a trace explaining the verdict for every candidate backend.
+            justification: |
+              When the selected backend surprises an operator, they need to see why each
+              alternative lost. A per-candidate trace makes the selection auditable and turns a
+              support question into a self-service diagnosis.
+            children:
+              - DocDownCore-Extraction-ExtractorSelector-CandidateTrace
+            tests:
+              - Extraction_SelectionExplained_MultipleCandidates_TraceCoversEveryCandidate
+
+          - id: DocDownCore-Extraction-CapabilityNegotiation
+            title: >-
+              The subsystem shall match a backend against the requested capabilities and select
+              the best partial satisfier when no full satisfier is available.
+            justification: |
+              Environments vary in which capabilities they can provide. Negotiating capabilities
+              lets an extraction proceed with the richest achievable result rather than failing
+              because one optional capability is missing.
+            children:
+              - DocDownCore-Extraction-ExtractorSelector-FormatFilter
+              - DocDownCore-Extraction-ExtractorSelector-RequiredCapabilities
+              - DocDownCore-Extraction-ExtractorSelector-HardCapabilityFailure
+            tests:
+              - Extraction_CapabilityNegotiation_RenderRequestedButUnavailable_SelectsPartialSatisfier
+
+          - id: DocDownCore-Extraction-Orchestration
+            title: The subsystem shall run the detection, selection, extraction, and output pipeline end to end.
+            justification: |
+              The value of the library is the whole pipeline, not its parts. Orchestrating the
+              fixed sequence in one place guarantees each stage receives the previous stage's
+              result and that the output contract is always produced.
+            children:
+              - DocDownCore-Extraction-DocDownEngine-PipelineOrder
+              - DocDownCore-Extraction-DocDownEngine-Cancellation
+              - DocDownCore-Extraction-DocDownEngine-RejectNullArguments
+            tests:
+              - Extraction_Orchestration_TextDocument_RunsPipelineEndToEnd
+
+          - id: DocDownCore-Extraction-StructuredFailure
+            title: >-
+              The subsystem shall return a coded structured failure instead of throwing when extraction cannot
+              proceed.
+            justification: |
+              Automation must branch on why an extraction failed. Returning a coded failure,
+              rather than an exception, lets a pipeline distinguish an unsupported format from a
+              missing backend and respond appropriately without crashing.
+            children:
+              - DocDownCore-Extraction-DocDownEngine-FailureReturned
+              - DocDownCore-Extraction-DocDownEngine-FailureArtifacts
+              - DocDownCore-Extraction-ExtractorSelector-PackageHint
+            tests:
+              - Extraction_StructuredFailure_NoAvailableBackend_ReturnsFailureWithCode
+
+          - id: DocDownCore-Extraction-OptionIsolation
+            title: The subsystem shall snapshot the caller's options so later mutation cannot affect an extraction.
+            justification: |
+              Callers share and mutate option objects across concurrent extractions. Snapshotting
+              options at build and call time keeps each extraction reproducible and safe against a
+              caller editing the object mid-run.
+            children:
+              - DocDownCore-Extraction-DocDownBuilder-ConfigureDefaults
+              - DocDownCore-Extraction-DocDownBuilder-ImmutableSnapshot
+              - DocDownCore-Extraction-DocDownEngine-OptionsSnapshot
+            tests:
+              - Extraction_OptionIsolation_BuilderMutatedAfterBuild_DoesNotAffectEngine
+
+          - id: DocDownCore-Extraction-ExtractorIsolation
+            title: The subsystem shall contain a fault thrown by a backend and convert it into a structured failure.
+            justification: |
+              Third-party backends process untrusted documents and can throw unexpectedly. Isolating
+              that fault protects the host process and the output contract, turning a backend crash
+              into a reportable, coded failure.
+            children:
+              - DocDownCore-Extraction-DocDownEngine-ExtractorIsolation
+            tests:
+              - Extraction_ExtractorIsolation_BackendThrows_BecomesStructuredFailure
+
+          - id: DocDownCore-Extraction-SelfValidationSeam
+            title: The subsystem shall expose Core's own self-test cases together with each backend's cases.
+            justification: |
+              Deployed environments differ from the build machine, so operators need to validate
+              the contract where it runs. Surfacing Core and backend self-tests through one seam
+              lets a host confirm correctness on demand.
+            children:
+              - DocDownCore-Extraction-DocDownEngine-SelfTestCases
+              - DocDownCore-Extraction-DocDownEngine-BackendStatus
+            tests:
+              - Extraction_SelfValidationSeam_Engine_ExposesCoreAndBackendCases

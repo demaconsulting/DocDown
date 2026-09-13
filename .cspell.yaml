@@ -14,11 +14,21 @@ language: en
 
 # Project-specific technical terms and tool names
 words:
+  - bitstream
   - buildmark
+  - containerless
   - DEMA
   - Dema
+  - docdown
   - FileAssert
   - fileassert
+  - multimodal
+  - NFKD
+  - presentationml
+  - seekable
+  - spreadsheetml
+  - Visio
+  - wordprocessingml
   - xunit
   - Pandoc
   - Qube
@@ -35,6 +45,132 @@ words:
   - weasyprint
   - netstandard
   - yamlfix
+  # Increment 2 (DocDown.Core) technical terms and intentional test identifiers
+  - branchable
+  - dedup
+  - descr
+  - nuspec
+  - héllo
+  - invariantly
+  - libtxt
+  - officedocument
+  - openxmlformats
+  - pdfer
+  - precomposed
+  - rescan
+  - runnerup
+  - seekability
+  - selftest
+  - subfolders
+  - texter
+  - titleless
+  - triaging
+  - unrequested
+  - unsignatured
+  - unsuffixed
+  - wordprocessing
+  - wrongformat
+  # Increment 3 (DocDown.Pdf) technical terms: PDF stream-filter names and PdfPig API
+  # names (PdfPig spells its layout-analysis types with British 'Neighbour'), the
+  # PdfPig package identifier, and the solution-file extension.
+  - CCITT
+  - Docstrum
+  - Flate
+  - JBIG
+  - Neighbour
+  - pdfpig
+  - rasterizing
+  - slnx
+  # Increment 4 (DocDown.Tool): the TestResults OTS item's package/file token
+  - testresults
+  # Increment 0 (legacy Office binary formats): the IANA media-type token for legacy .doc
+  # (application/msword), the parallel of the already-listed modern OOXML media-type tokens.
+  - msword
+  # Increment 5 (DocDown.Pdf.Rendering): the PDFtoImage/PDFium/SkiaSharp native stack, its authors
+  # and native-asset names, the rasterization vocabulary, and the packaging/runtime terms the
+  # native-binary consequences section uses.
+  - PDFtoImage
+  - PDFium
+  - SkiaSharp
+  - Skia
+  - bblanchon
+  - sungaila
+  - HarfBuzz
+  - HarfBuzzSharp
+  - rasterize
+  - rasterizes
+  - rasterized
+  - rasterizer
+  - rasterization
+  - Ghostscript
+  - systemd
+  - musl
+  - riscv
+  - loongarch
+  - nupkg
+  - snupkg
+  - deps
+  - loadability
+  - unrenderable
+  - overclaiming
+  - bitness
+  - nologo
+  - Pngs
+  - PDFR
+  - IHDR
+  - Pdfbox
+  # Increment 6 (DocDown.Word): Open XML field-instruction keywords used for structural furniture
+  # detection, the backend identifier token, and descriptive vocabulary introduced by the mapping.
+  - openxml
+  - inlines
+  - passthroughs
+  - unextractable
+  - twoparts
+  - NUMPAGES
+  - PAGEREF
+  - SECTIONPAGES
+  - SECTIONPAGESNUM
+  # Increment 6 (DocDown.Word) pass 2 — companion artifact prose and the System.IO.Packaging
+  # OTS file/token. All genuine technical or English terms, not misspellings.
+  - systemiopackaging
+  - parameterless
+  - Postconditions
+  - misalign
+  - strikethrough
+  - overclaimed
+  - scriptable
+  - goldens
+  - metacharacters
+  - renderable
+  - misdetection
+  # Office formats pass (DocDown.Visio, DocDown.PowerPoint, DocDown.Excel): the macro-enabled Visio
+  # drawing extension and its IANA media-type token, the PowerPoint host process name, and the Visio
+  # automation ProgID/method tokens. All genuine technical or product names, not misspellings.
+  - vsdm
+  - POWERPNT
+  - macroenabled
+  - OpenEx
+  - InvisibleApp
+  - finalizers
+  - informationally
+  - IDOK
+
+  # ApiMark integration: the ApiMark package/tool token and the source-language names appearing in
+  # its self-validation test identifiers and its feature list. All genuine technical or product
+  # names, not misspellings.
+  - apimark
+  - ANTLR
+  - VHDL
+  - Vhdl
+
+# Ignore the raster and PDF payloads the PDF test fixtures build documents from. These are
+# generated binary data expressed as text so the repository stays free of committed binaries:
+# base64 image bytes, and PDF object syntax appended after a '\n' escape (which the checker
+# reads as 'nendobj', 'nstartxref', and similar). They are data, not prose, so no spelling
+# judgement applies to them.
+ignoreRegExpList:
+  - "/[A-Za-z0-9+/]{40,}={0,2}/g"
+  - "/\\\\n(endobj|endstream|startxref|trailer|xref|stream)/g"
 
 # Exclude common build artifacts, dependencies, and vendored third-party code
 ignorePaths:
@@ -45,6 +181,11 @@ ignorePaths:
   - "**/third-party/**"
   - "**/3rd-party/**"
   - "**/generated/**"
+  - "**/TestResults/**"
+  # ApiMark generated API reference (src/<project>/api/). This is build output, regenerated
+  # from the assembly and its XML doc comments and packed into the NuGet package; it is not
+  # authored prose, so no spelling judgement applies and no word list is being widened.
+  - "**/api/**"
   - "**/AGENT_REPORT_*.md"
   - "**/.agent-logs/**"
   - "**/bin/**"

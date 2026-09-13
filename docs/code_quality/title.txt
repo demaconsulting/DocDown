@@ -1,11 +1,11 @@
 ---
-title: Template DotNet Library Code Quality Report
+title: DocDown Code Quality Report
 subtitle: Code Quality Analysis Report
 author: DEMA Consulting
-description: Code Quality Analysis Report for Template DotNet Library
+description: Code Quality Analysis Report for DocDown
 lang: en-US
 keywords:
-  - Template DotNet Library
+  - DocDown
   - Code Quality
   - Analysis
   - .NET

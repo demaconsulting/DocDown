@@ -1,11 +1,11 @@
 ---
-title: Template DotNet Library Software Design Document
-subtitle: A .NET Reference Implementation for Libraries
+title: DocDown Software Design Document
+subtitle: Document extraction for LLM consumption
 author: DEMA Consulting
-description: Detailed design document for the Template DotNet Library
+description: Detailed design document for DocDown
 lang: en-US
 keywords:
-  - Template DotNet Library
+  - DocDown
   - .NET
   - Library
   - Design

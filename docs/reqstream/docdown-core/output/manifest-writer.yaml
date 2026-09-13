@@ -1,0 +1,97 @@
+---
+# Software Unit Requirements for ManifestWriter
+#
+# ManifestWriter produces the machine-readable manifest.json, reconciles the
+# completeness ledger against disk, synthesizes gaps for unexplained absences, and
+# serializes deterministically.
+
+sections:
+  - title: DocDownCore Requirements
+    sections:
+      - title: Output Requirements
+        sections:
+          - title: ManifestWriter Requirements
+            requirements:
+              - id: DocDownCore-Output-ManifestWriter-SchemaVersion
+                title: ManifestWriter shall declare the manifest schema version.
+                justification: |
+                  Machine consumers must know how to interpret the manifest and refuse an incompatible
+                  one. Declaring the schema version lets tooling validate compatibility before acting on
+                  the contents.
+                tests:
+                  - ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionOnePointOne
+
+              - id: DocDownCore-Output-ManifestWriter-MachineTwin
+                title: ManifestWriter shall record the producing tool and selected backend in the manifest.
+                justification: |
+                  The manifest is the machine twin of the summary and the basis for programmatic
+                  attribution. Recording the tool and backend lets automation trace, reproduce, or
+                  distrust results from a specific producer.
+                tests:
+                  - ManifestWriter_WriteAsync_SuccessfulRun_RecordsToolAndBackend
+
+              - id: DocDownCore-Output-ManifestWriter-CompletenessLedger
+                title: ManifestWriter shall reconcile the completeness ledger against disk and record every ledger slot.
+                justification: |
+                  The ledger is trusted only if it matches reality. Reconciling each slot against the
+                  filesystem, and recording every slot, guarantees the completeness claim reflects what
+                  was actually written.
+                tests:
+                  - ManifestWriter_Reconcile_TextWritten_MarksLedgerSlotsAndContentPresent
+                  - ManifestWriter_WriteAsync_LedgerBlock_ContainsEverySlot
+
+              - id: DocDownCore-Output-ManifestWriter-GapSynthesis
+                title: >-
+                  ManifestWriter shall synthesize an explaining gap for any partial or absent artifact that
+                  has none.
+                justification: |
+                  A partial or absent artifact with no explanation is a silent loss. Synthesizing a gap
+                  with a diagnostic for any unexplained absence enforces the invariant that every
+                  absence is accounted for.
+                tests:
+                  - ManifestWriter_Reconcile_UnexplainedAbsence_SynthesizesGapWithDiagnostic
+                  - ManifestWriter_WriteAsync_SynthesizedGap_AppearsInManifestWithReason
+
+              - id: DocDownCore-Output-ManifestWriter-CompleteFlag
+                title: ManifestWriter shall set the complete flag to reflect whether any gaps remain.
+                justification: |
+                  Consumers gate downstream processing on a single completeness signal. Deriving the
+                  complete flag strictly from the presence of gaps gives them one honest, unambiguous
+                  indicator.
+                tests:
+                  - ManifestWriter_WriteAsync_CompleteFlag_EqualsWhetherGapsAreEmpty
+
+              - id: DocDownCore-Output-ManifestWriter-DeterministicJson
+                title: >-
+                  ManifestWriter shall serialize byte-identical JSON without a byte-order mark for identical
+                  content.
+                justification: |
+                  Reproducible output and clean diffs require stable serialization. Emitting
+                  byte-identical, BOM-free JSON for the same content lets consumers detect real changes
+                  rather than encoding or ordering noise.
+                tests:
+                  - ManifestWriter_WriteAsync_SameContentTwice_ProducesByteIdenticalNoBomJson
+
+              - id: DocDownCore-Output-ManifestWriter-ImageTransformProjected
+                title: ManifestWriter shall project every image transform value to its camelCase manifest string.
+                justification: |
+                  The manifest documents a vocabulary consumers branch on, so every value the library can
+                  record must actually appear there and no documented value may be unreachable. Projecting
+                  every member, and rejecting any that has no projection, keeps the documented and the
+                  producible sets identical by construction rather than by review.
+                tests:
+                  - ManifestWriter_Write_DecodedToPngImage_SerializesCamelCaseTransform
+                  - ManifestWriter_TransformString_EveryImageTransformValue_Projects
+
+              - id: DocDownCore-Output-ManifestWriter-ImageDescriptionSerialized
+                title: >-
+                  ManifestWriter shall serialize an image's description and its provenance, recording an
+                  explicit absence when there is none.
+                justification: |
+                  The manifest is the machine record of what a document said about each image. Serializing
+                  the description together with its source lets a reader tell an authored description apart
+                  from a mere contextual hint, and recording an explicit null when there is none keeps the
+                  absence honest rather than fabricating a description.
+                tests:
+                  - ManifestWriter_Write_ImageWithDescription_SerializesDescriptionAndSource
+                  - ManifestWriter_Write_ImageWithoutDescription_SerializesNullDescription

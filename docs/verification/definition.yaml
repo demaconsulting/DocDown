@@ -5,17 +5,64 @@ resource-path:
 input-files:
   - docs/verification/title.txt
   - docs/verification/introduction.md
-  - docs/verification/template-dot-net-library.md
-  - docs/verification/template-dot-net-library/demo.md
+  - docs/verification/docdown-core.md
+  - docs/verification/docdown-core/detection.md
+  - docs/verification/docdown-core/detection/format-sniffer.md
+  - docs/verification/docdown-core/extraction.md
+  - docs/verification/docdown-core/extraction/doc-down-builder.md
+  - docs/verification/docdown-core/extraction/extractor-registry.md
+  - docs/verification/docdown-core/extraction/extractor-selector.md
+  - docs/verification/docdown-core/extraction/doc-down-engine.md
+  - docs/verification/docdown-core/output.md
+  - docs/verification/docdown-core/output/scratch-folder.md
+  - docs/verification/docdown-core/output/extraction-sink.md
+  - docs/verification/docdown-core/output/content-writer.md
+  - docs/verification/docdown-core/output/summary-writer.md
+  - docs/verification/docdown-core/output/manifest-writer.md
+  - docs/verification/docdown-core/output/contract-verifier.md
+  - docs/verification/docdown-pdf.md
+  - docs/verification/docdown-pdf/pdf-document-extractor.md
+  - docs/verification/docdown-pdf/pdf-text-extractor.md
+  - docs/verification/docdown-pdf/pdf-image-extractor.md
+  - docs/verification/docdown-pdf/pdf-doc-down-builder-extensions.md
+  - docs/verification/docdown-pdf-rendering.md
+  - docs/verification/docdown-pdf-rendering/pdf-page-rendering-extractor.md
+  - docs/verification/docdown-pdf-rendering/page-renderer.md
+  - docs/verification/docdown-pdf-rendering/pdf-rendering-doc-down-builder-extensions.md
+  - docs/verification/docdown-tool.md
+  - docs/verification/docdown-tool/program.md
+  - docs/verification/docdown-tool/cli.md
+  - docs/verification/docdown-tool/cli/context.md
+  - docs/verification/docdown-tool/self-test.md
+  - docs/verification/docdown-tool/self-test/validation.md
+  - docs/verification/docdown-tool/self-test/self-test-adapter.md
+  - docs/verification/docdown-word.md
+  - docs/verification/docdown-word/word-doc-down-builder-extensions.md
+  - docs/verification/docdown-word/markdown.md
+  - docs/verification/docdown-word/markdown/word-markdown-writer.md
+  - docs/verification/docdown-word/markdown/word-table-writer.md
+  - docs/verification/docdown-word/markdown/word-content-emitter.md
+  - docs/verification/docdown-word/open-xml.md
+  - docs/verification/docdown-word/open-xml/word-open-xml-extractor.md
+  - docs/verification/docdown-word/open-xml/word-open-xml-reader.md
+  - docs/verification/docdown-word/open-xml/word-open-xml-image-reader.md
   - docs/verification/ots.md
+  - docs/verification/ots/apimark.md
   - docs/verification/ots/buildmark.md
   - docs/verification/ots/fileassert.md
+  - docs/verification/ots/openxml.md
   - docs/verification/ots/pandoc.md
+  - docs/verification/ots/pdfpig.md
+  - docs/verification/ots/pdfium.md
+  - docs/verification/ots/pdftoimage.md
   - docs/verification/ots/reqstream.md
   - docs/verification/ots/reviewmark.md
   - docs/verification/ots/sarifmark.md
+  - docs/verification/ots/skiasharp.md
   - docs/verification/ots/sonarmark.md
   - docs/verification/ots/sysml2tools.md
+  - docs/verification/ots/systemiopackaging.md
+  - docs/verification/ots/testresults.md
   - docs/verification/ots/versionmark.md
   - docs/verification/ots/weasyprint.md
   - docs/verification/ots/xunit.md

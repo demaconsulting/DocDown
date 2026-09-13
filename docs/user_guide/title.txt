@@ -1,13 +1,13 @@
 ---
-title: Template DotNet Library User Guide
-subtitle: A .NET Reference Implementation for Libraries
+title: DocDown User Guide
+subtitle: Document extraction for LLM consumption
 author: DEMA Consulting
-description: A .NET Reference Implementation for Libraries
+description: User guide for DocDown document extraction
 lang: en-US
 keywords:
-  - Template DotNet Library
+  - DocDown
   - .NET
   - Library
   - Documentation
-  - Best Practices
+  - Document Extraction
 ---

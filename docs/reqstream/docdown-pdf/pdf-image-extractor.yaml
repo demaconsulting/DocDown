@@ -1,0 +1,117 @@
+---
+# Software Unit Requirements for PdfImageExtractor
+#
+# PdfImageExtractor writes a document's embedded images through the sink. It chooses an
+# encoding per image, states honestly how each was produced, and accounts by count and
+# by reason for every image it could not deliver.
+
+sections:
+  - title: DocDownPdf Requirements
+    sections:
+      - title: PdfImageExtractor Requirements
+        requirements:
+          - id: DocDownPdf-PdfImageExtractor-JpegPassthrough
+            title: >-
+              PdfImageExtractor shall write an image already stored as a complete JPEG file without
+              altering its bytes.
+            justification: |
+              A JPEG stored inside a document is already the file a consumer wants. Decoding and
+              re-encoding it would cost quality and time for no gain, and would make any claim that
+              the output is the document's own image untrue.
+            tests:
+              - PdfImageExtractor_AddImage_DctImage_SetsPassthroughTransformHint
+
+          - id: DocDownPdf-PdfImageExtractor-DecodesToPng
+            title: >-
+              PdfImageExtractor shall produce a usable image file from an image stored as compressed
+              samples rather than as a file.
+            justification: |
+              Most embedded images are compressed sample buffers, not image files; writing those bytes
+              out would produce something no consumer can open. Converting them is the only way the
+              image reaches the consumer at all.
+            tests:
+              - PdfImageExtractor_AddImage_FlateImage_SetsDecodedToPngTransformHint
+
+          - id: DocDownPdf-PdfImageExtractor-WritesJpeg2000WithCaveat
+            title: >-
+              PdfImageExtractor shall write an image stored as a JPEG 2000 codestream unchanged, under
+              an extension describing those bytes, together with a caveat that the format is not
+              widely readable.
+            justification: |
+              The bytes of a JPEG 2000 image are a real image file, so writing them is truthful and
+              gives a consumer something to work with where no decoder is available. Withholding the
+              file would lose content that some tooling can read; writing it without the caveat would
+              imply a readability the format does not have. Delivering it with the caveat is the only
+              option that is both useful and honest.
+            tests:
+              - PdfImageExtractor_AddImage_JpxImage_WritesJp2PassthroughWithCaveat
+              - DocDownPdf_Extract_Jpeg2000Image_WritesJp2PassthroughWithReadabilityCaveat
+
+          - id: DocDownPdf-PdfImageExtractor-RecordsTransformProvenance
+            title: PdfImageExtractor shall report, for every image it writes, how it produced the bytes.
+            justification: |
+              Only this unit knows whether it copied the document's bytes or produced new ones. A
+              consumer judging whether an extracted image can stand for the original depends on that
+              answer being reported rather than assumed, and reported per image rather than per run.
+            tests:
+              - PdfImageExtractor_AddImage_DctImage_SetsPassthroughTransformHint
+              - PdfImageExtractor_AddImage_FlateImage_SetsDecodedToPngTransformHint
+
+          - id: DocDownPdf-PdfImageExtractor-ReportsImageHints
+            title: >-
+              PdfImageExtractor shall report each image's dimensions, source page, and a stable
+              reference identifying it within the document.
+            justification: |
+              Provenance is what lets a reader of the output find the image back in the source
+              document. A reference that changes between runs would also make the output
+              non-reproducible, so stability is part of the requirement rather than a detail of it.
+            tests:
+              - PdfImageExtractor_AddImage_AnyImage_PopulatesHintProvenanceFields
+
+          - id: DocDownPdf-PdfImageExtractor-ReportsUndecodableEncodings
+            title: >-
+              PdfImageExtractor shall report a counted gap naming the encoding of every image it could
+              not decode.
+            justification: |
+              An image this extractor cannot decode is the case where silence would be easiest and
+              most damaging: the output would look complete while missing content. Naming the encoding
+              and the count tells a reader both how much was lost and whether a different tool would
+              recover it.
+            tests:
+              - PdfImageExtractor_Extract_UndecodableEncoding_ReportsCountedGapAndWritesNothingForIt
+              - PdfImageExtractor_Extract_NothingWritten_ReportsUnavailableScope
+
+          - id: DocDownPdf-PdfImageExtractor-ExplainsUnhonoredForcePng
+            title: >-
+              PdfImageExtractor shall explain, with a counted gap, every image for which the requested
+              PNG output could not be produced.
+            justification: |
+              The file on disk already describes its own bytes truthfully, so nothing is mislabeled.
+              What is missing without the explanation is the reason: a caller who asked for PNG and
+              received JPEG would otherwise have to infer why, and might conclude the option was
+              ignored rather than unachievable.
+            tests:
+              - PdfImageExtractor_Extract_ForcePngWithJpeg_ReportsUnhonoredModeGap
+              - PdfImageExtractor_Extract_ForcePngWithJpxImage_ReportsUnhonoredModeGapNamingJpx
+              - PdfImageExtractor_Extract_ForcePngWithFlateImage_ReportsNoUnhonoredGap
+
+          - id: DocDownPdf-PdfImageExtractor-HonorsSuppression
+            title: PdfImageExtractor shall attempt no image extraction when embedded images are disabled.
+            justification: |
+              A caller who disabled images asked for none to be attempted, not merely for none to be
+              kept. Attempting and discarding would spend the decoding cost the caller declined and
+              would produce a second, redundant account of a decision already recorded.
+            tests:
+              - PdfImageExtractor_Extract_ImagesDisabled_AttemptsNothing
+
+          - id: DocDownPdf-PdfImageExtractor-HonorsSizeLimits
+            title: >-
+              PdfImageExtractor shall skip an image exceeding a requested size or dimension limit and
+              report the skip separately from a decoding failure.
+            justification: |
+              A size skip is undone by relaxing an option the caller chose; a decoding failure is a
+              property of the document. Reporting them as one condition would tell a reader to try a
+              remedy that cannot work, or hide one that would.
+            tests:
+              - PdfImageExtractor_Extract_ImageOverByteLimit_ReportsSizeGapDistinctFromDecodeGap
+              - PdfImageExtractor_Extract_ImageOverDimensionLimit_SkipsWithCountedGap

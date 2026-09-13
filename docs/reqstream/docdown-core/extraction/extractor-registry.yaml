@@ -1,0 +1,75 @@
+---
+# Software Unit Requirements for ExtractorRegistry
+#
+# ExtractorRegistry holds the materialized backends, exposes their descriptors,
+# resolves them by identifier, and caches availability probe results.
+
+sections:
+  - title: DocDownCore Requirements
+    sections:
+      - title: Extraction Requirements
+        sections:
+          - title: ExtractorRegistry Requirements
+            requirements:
+              - id: DocDownCore-Extraction-ExtractorRegistry-DescriptorExposure
+                title: ExtractorRegistry shall expose a descriptor for each backend in registration order.
+                justification: |
+                  Selection and reporting need a stable, order-preserving view of the registered
+                  backends. Exposing descriptors in registration order makes the engine's behavior
+                  predictable and auditable by the host.
+                tests:
+                  - ExtractorRegistry_Descriptors_TwoExtractors_ExposedInRegistrationOrder
+
+              - id: DocDownCore-Extraction-ExtractorRegistry-LookupById
+                title: >-
+                  ExtractorRegistry shall resolve a backend by its identifier and reject unknown,
+                  null, or empty identifiers.
+                justification: |
+                  Honoring a caller override and running the selected backend both require looking it
+                  up by id. Failing clearly on an unknown, null, or empty id turns a lookup mistake
+                  into an immediate, diagnosable error. Null and empty are distinct code paths in the
+                  guard and each carries a different exception type, so each is proven separately.
+                tests:
+                  - ExtractorRegistry_Resolve_KnownId_ReturnsRegisteredInstance
+                  - ExtractorRegistry_Resolve_UnknownId_ThrowsKeyNotFoundException
+                  - ExtractorRegistry_Resolve_EmptyId_ThrowsArgumentException
+                  - ExtractorRegistry_Resolve_NullId_ThrowsArgumentNullException
+
+              - id: DocDownCore-Extraction-ExtractorRegistry-ProbeCaching
+                title: ExtractorRegistry shall probe each backend's availability once and cache the result.
+                justification: |
+                  Availability probes can be expensive or touch native resources. Probing once and
+                  caching the result keeps selection fast and avoids repeatedly disturbing the
+                  environment during a single run.
+                tests:
+                  - ExtractorRegistry_GetCandidates_RepeatedCalls_ProbesOnce
+
+              - id: DocDownCore-Extraction-ExtractorRegistry-ProbeFailureContainment
+                title: >-
+                  ExtractorRegistry shall treat a throwing availability probe as unavailable and record a
+                  diagnostic.
+                justification: |
+                  A backend whose probe itself throws must not abort the run. Containing the fault as
+                  an unavailable candidate, with a recorded diagnostic, lets selection continue and
+                  tells the operator which backend misbehaved.
+                tests:
+                  - ExtractorRegistry_GetCandidates_ThrowingProbe_ContainedAsUnavailableWithDiagnostic
+                  - ExtractorRegistry_GetCandidates_UnavailableBackend_RecordsInfoDiagnostic
+
+              - id: DocDownCore-Extraction-ExtractorRegistry-RefreshAvailability
+                title: ExtractorRegistry shall re-probe availability on demand after the cache is refreshed.
+                justification: |
+                  A missing native component may be installed while a host process is running.
+                  Allowing an explicit refresh lets the host pick up a newly available backend without
+                  restarting.
+                tests:
+                  - ExtractorRegistry_RefreshAvailability_AfterCaching_ReprobesOnNextEnumeration
+
+              - id: DocDownCore-Extraction-ExtractorRegistry-CandidateEnumeration
+                title: ExtractorRegistry shall yield exactly one candidate per backend regardless of availability.
+                justification: |
+                  Selection and its trace must consider every backend, including unavailable ones, so
+                  the trace can explain why each was excluded. One candidate per backend keeps that
+                  enumeration complete and unambiguous.
+                tests:
+                  - ExtractorRegistry_GetCandidates_MixedAvailability_YieldsOneCandidatePerExtractor

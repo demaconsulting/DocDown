@@ -1,0 +1,273 @@
+---
+# Software System Requirements for DocDown.Pdf
+#
+# These requirements describe the externally visible behavior of the PDF extraction
+# package from the perspective of a host that registers it, without specifying
+# implementation details. Each decomposes into unit requirements linked below via
+# children, and is proven by system-level tests.
+
+sections:
+  - title: DocDownPdf Requirements
+    requirements:
+      - id: DocDownPdf-Registration
+        title: >-
+          The system shall register its PDF extractor through a single extension method without
+          reflection or assembly scanning.
+        tags: [system]
+        justification: |
+          A host must be able to read its own dependency graph off its own code. Registration
+          that happens because a package is present on disk makes the set of active backends a
+          deployment accident rather than a decision, which cannot be audited; one explicit call
+          keeps the edge from host to backend visible and reviewable.
+        children:
+          - DocDownPdf-PdfDocDownBuilderExtensions-RegistersExtractor
+          - DocDownPdf-PdfDocDownBuilderExtensions-ReflectionFree
+          - DocDownPdf-PdfDocDownBuilderExtensions-ReturnsBuilderForChaining
+          - DocDownPdf-PdfDocDownBuilderExtensions-RejectsNullBuilder
+        tests:
+          - DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout
+
+      - id: DocDownPdf-TextContent
+        title: The system shall extract the textual content of a PDF into the content document in reading order.
+        tags: [system]
+        justification: |
+          A PDF stores positioned glyphs in the order a producer chose to paint them, which for a
+          multi-column page is not the order a human reads them. Consumers feeding the output to
+          a language model need the reading order, because text delivered in paint order is
+          misleading in a way that is hard to detect downstream.
+        children:
+          - DocDownPdf-PdfTextExtractor-ReadingOrder
+          - DocDownPdf-PdfTextExtractor-AvoidsRawPageText
+          - DocDownPdf-PdfTextExtractor-MarksPageBoundaries
+          - DocDown-OTS-PdfPig-TextExtraction
+        tests:
+          - DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout
+          - DocDownPdf_Extract_MultiPagePdf_ReportsPageCountAndAllText
+
+      - id: DocDownPdf-EmbeddedImages
+        title: The system shall extract embedded images into the images folder and link them from the content document.
+        tags: [system]
+        justification: |
+          Much of a document's information is carried in its figures, and a text-only extraction
+          silently discards it. Writing the images out and linking them from the content keeps a
+          consumer's view of the document complete rather than textually complete.
+        children:
+          - DocDownPdf-PdfImageExtractor-JpegPassthrough
+          - DocDownPdf-PdfImageExtractor-DecodesToPng
+          - DocDownPdf-PdfImageExtractor-WritesJpeg2000WithCaveat
+          - DocDownPdf-PdfTextExtractor-LinksImages
+          - DocDownPdf-PdfImageExtractor-ReportsImageHints
+          - DocDown-OTS-PdfPig-ImageExtraction
+        tests:
+          - DocDownPdf_Extract_DctImage_RoundTripsByteIdenticalAsPassthrough
+          - DocDownPdf_Extract_FlateImage_IsLabeledDecodedToPng
+          - DocDownPdf_Extract_Jpeg2000Image_WritesJp2PassthroughWithReadabilityCaveat
+
+      - id: DocDownPdf-ImageProvenance
+        title: >-
+          The system shall state, for every image it extracts, whether the bytes were passed through
+          unchanged or decoded and re-encoded.
+        tags: [system]
+        justification: |
+          A consumer deciding whether an extracted image is usable as evidence of the original
+          needs to know whether it is the original. Describing a re-encoding as an unchanged copy
+          would be false in the machine-readable record, and a record that is false anywhere is
+          hard to rely on anywhere.
+        children:
+          - DocDownPdf-PdfImageExtractor-RecordsTransformProvenance
+        tests:
+          - DocDownPdf_Extract_DctImage_RoundTripsByteIdenticalAsPassthrough
+          - DocDownPdf_Extract_FlateImage_IsLabeledDecodedToPng
+          - DocDownPdf_Extract_Jpeg2000Image_WritesJp2PassthroughWithReadabilityCaveat
+
+      - id: DocDownPdf-DocumentMetadata
+        title: The system shall report the document title, author, and page count.
+        tags: [system]
+        justification: |
+          Downstream indexing and routing decisions are made on document metadata before any
+          content is read. Reporting what the document itself declares, and reporting nothing
+          where it declares nothing, lets those decisions be made on facts rather than guesses.
+        children:
+          - DocDownPdf-PdfDocumentExtractor-ReportsDocumentInfo
+          - DocDown-OTS-PdfPig-DocumentMetadata
+        tests:
+          - DocDownPdf_Extract_MultiPagePdf_ReportsPageCountAndAllText
+
+      - id: DocDownPdf-DeclaredCapabilities
+        title: The system shall declare exactly the text, embedded-image, and document-metadata capabilities.
+        tags: [system]
+        justification: |
+          Backend selection negotiates over declared capabilities, so a declaration that
+          overstates what a backend can deliver causes the wrong backend to be chosen and the
+          shortfall to surface only as missing output. Declaring exactly what is deliverable
+          keeps selection honest before any work begins.
+        children:
+          - DocDownPdf-PdfDocumentExtractor-DeclaresCapabilities
+          - DocDownPdf-PdfDocumentExtractor-ProbeIsCheapAndSafe
+        tests:
+          - DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout
+
+      - id: DocDownPdf-NoPageRendering
+        title: >-
+          The system shall not declare the rendered-pages capability, and shall explain where that
+          capability lives when page rendering is requested.
+        tags: [system]
+        justification: |
+          This package ships no renderer, and a caller who asked for rendered pages deserves to
+          learn why none arrived rather than to find an empty folder. Naming the class of package
+          that provides the capability, as a statement of fact rather than an instruction, is
+          useful today and stays true when such a package is published.
+        children:
+          - DocDownPdf-PdfDocumentExtractor-ReportsRenderGap
+          - DocDownPdf-PdfDocumentExtractor-ReportsEnvironmentFacts
+        tests:
+          - DocDownPdf_Extract_PagesRequested_DegradesWithDD0301AndNamesPackageClass
+
+      - id: DocDownPdf-ManagedOnly
+        title: The system shall ship no native assets and no runtime-identifier-specific dependencies.
+        tags: [system]
+        justification: |
+          A package carrying native assets must be built, tested, and shipped per platform, and
+          fails at run time on any platform it was not built for. Staying fully managed makes the
+          package deployable anywhere the runtime is, which is the property that lets extraction
+          run identically in a container, on a developer machine, and in CI.
+        children:
+          - DocDown-OTS-PdfPig
+        tests:
+          - DocDownPdf_Package_BuildOutput_ContainsNoNativeAssets
+          - DocDownPdf_Package_Nupkg_ContainsNoNativeAssets
+
+      - id: DocDownPdf-ContainedDependency
+        title: The system shall expose no third-party PDF-library type on its public API surface.
+        tags: [system]
+        justification: |
+          The underlying parser is pre-1.0 and changes its public API on minor versions. If its
+          types reached this package's surface, every such change would become a breaking change
+          for every consumer; confining them keeps the parser replaceable without a consumer ever
+          noticing.
+        tests:
+          - DocDownPdf_PublicApi_AllPublicMembers_ExposeNoPdfPigTypes
+
+      - id: DocDownPdf-NoTextLayerDegradation
+        title: The system shall degrade with an explicit gap when a PDF contains no extractable text layer.
+        tags: [system]
+        justification: |
+          Scanned documents are a common case, not an edge case, and an empty content document is
+          indistinguishable from a broken extractor. Saying plainly that the pages carry no text
+          layer turns a mystery into a fact the caller can act on.
+        children:
+          - DocDownPdf-PdfTextExtractor-ReportsNoTextLayer
+          - DocDownPdf-PdfDocumentExtractor-ReportsNoTextLayerGap
+        tests:
+          - DocDownPdf_Extract_ScannedPdfWithNoTextLayer_DegradesWithHonestGap
+
+      - id: DocDownPdf-ProtectedDocument
+        title: >-
+          The system shall report a structured failure, without an exception reaching the caller, when a
+          PDF is encrypted or otherwise protected.
+        tags: [system]
+        justification: |
+          Batch pipelines process documents they did not choose, and a protected document must not
+          be able to abort the run. A structured, coded failure that still writes the full output
+          layout lets the pipeline record the outcome and continue.
+        children:
+          - DocDownPdf-PdfDocumentExtractor-MapsParserFailures
+          - DocDown-OTS-PdfPig-ProtectedDocuments
+        tests:
+          - DocDownPdf_Extract_EncryptedPdf_FailsStructurallyAndWritesFullLayout
+
+      - id: DocDownPdf-MalformedDocument
+        title: >-
+          The system shall report a structured failure, without an exception reaching the caller, when a
+          PDF is malformed.
+        tags: [system]
+        justification: |
+          Corrupted and truncated documents are routine in real corpora. Treating them as data
+          rather than as faults keeps a batch run's results complete and its failures attributable
+          to the specific document that caused them.
+        children:
+          - DocDownPdf-PdfDocumentExtractor-MapsParserFailures
+        tests:
+          - DocDownPdf_Extract_MalformedPdf_FailsStructurallyAndWritesFullLayout
+
+      - id: DocDownPdf-EmptyDocument
+        title: The system shall complete with explicit gaps when a PDF contains no pages.
+        tags: [system]
+        justification: |
+          A document with no pages is valid and yields nothing, which is a different fact from a
+          failure and from an unexplained empty result. Completing with the reason stated lets a
+          caller distinguish the three without inspecting the source document.
+        children:
+          - DocDownPdf-PdfDocumentExtractor-ReportsEmptyDocumentGap
+        tests:
+          - DocDownPdf_Extract_ZeroPagePdf_CompletesWithExplicitGaps
+
+      - id: DocDownPdf-PageRange
+        title: The system shall restrict extraction to a requested page range.
+        tags: [system]
+        justification: |
+          Callers working with large documents need a bounded slice, and extracting the whole
+          document and discarding the remainder wastes time and produces output that contradicts
+          the request. Honoring the range makes the cost proportional to what was asked for.
+        children:
+          - DocDownPdf-PdfDocumentExtractor-HonorsPageRange
+        tests:
+          - DocDownPdf_Extract_PageRangeRequested_RestrictsToRange
+
+      - id: DocDownPdf-ImageOutput
+        title: >-
+          The system shall honor the requested image output mode, reporting a counted gap for any image it
+          could not produce in that form.
+        tags: [system]
+        justification: |
+          A caller who standardizes on one image format needs to know when that was not achieved,
+          because a silently different format breaks the very uniformity the request was for.
+          Delivering the image truthfully labeled, and explaining which ones defeated the request,
+          is more useful than either refusing the image or mislabeling it.
+        children:
+          - DocDownPdf-PdfImageExtractor-ExplainsUnhonoredForcePng
+          - DocDownPdf-PdfImageExtractor-HonorsSuppression
+          - DocDownPdf-PdfImageExtractor-HonorsSizeLimits
+        tests:
+          - DocDownPdf_Extract_ForcePngWithJpegImage_ExplainsUnhonoredMode
+          - DocDownPdf_Extract_ImagesDisabled_SuppressesImagesWithGap
+          - DocDownPdf_Extract_ImageOverSizeLimit_ReportsSeparateSkipGap
+
+      - id: DocDownPdf-GapReporting
+        title: The system shall report every absent or partial artifact as an explained, counted gap.
+        tags: [system]
+        justification: |
+          The value of the output rests on a consumer being able to trust that what is absent is
+          listed. An image dropped because its encoding could not be decoded is exactly the case
+          where silence would be easiest and most damaging, so it must be counted and its reason
+          named.
+        children:
+          - DocDownPdf-PdfImageExtractor-ReportsUndecodableEncodings
+        tests:
+          - DocDownPdf_Extract_UndecodableImage_ReportsCountedGapNamingEncoding
+          - DocDownPdf_Extract_AnyOutcome_ReportedGapsMatchFilesystem
+
+      - id: DocDownPdf-Determinism
+        title: >-
+          The system shall produce byte-identical artifacts across repeated extractions of the same
+          document in the same environment.
+        tags: [system]
+        justification: |
+          Reproducible output is what lets a consumer diff two extractions and conclude that the
+          document changed. Without it every re-extraction looks like a change, and the diff
+          becomes useless as a signal.
+        tests:
+          - DocDownPdf_Extract_SameDocumentTwice_ProducesByteIdenticalArtifacts
+
+      - id: DocDownPdf-SelfValidation
+        title: The system shall contribute self-validation cases describing its own extraction behavior.
+        tags: [system]
+        justification: |
+          An operator needs to confirm a backend actually works where it is installed, not merely
+          that it is present. Cases the backend contributes about itself - including an honest skip
+          for a capability it does not claim - make that confirmation available on demand.
+        children:
+          - DocDownPdf-PdfDocumentExtractor-ContributesSelfTests
+          - DocDown-OTS-PdfPig-DocumentCreation
+        tests:
+          - DocDownPdf_SelfValidation_RegisteredEngine_ReportsPdfCases

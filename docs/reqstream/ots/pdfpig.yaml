@@ -1,0 +1,92 @@
+---
+# PdfPig OTS Software Requirements
+#
+# Requirements for the PdfPig managed PDF parser, which DocDown.Pdf is built on.
+# Unlike this repository's other OTS items, PdfPig is a runtime library shipped to
+# consumers rather than a build-time tool, so its evidence comes from the DocDown.Pdf
+# extraction tests that exercise it transitively.
+
+sections:
+  - title: OTS Software Requirements
+    sections:
+      - title: PdfPig Requirements
+        requirements:
+          - id: DocDown-OTS-PdfPig
+            title: PdfPig shall parse PDF documents without requiring native binaries.
+            justification: |
+              DocDown.Pdf's central design promise is that it is deployable anywhere the .NET runtime
+              is, with no per-platform build and no native asset to locate at run time. That promise
+              rests entirely on the parser being fully managed, so it is the first property to state
+              and the one every other requirement here assumes.
+            tags: [ots]
+            tests:
+              - DocDownPdf_Package_BuildOutput_ContainsNoNativeAssets
+              - DocDownPdf_Package_Nupkg_ContainsNoNativeAssets
+              - DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout
+
+          - id: DocDown-OTS-PdfPig-TextExtraction
+            title: >-
+              PdfPig shall expose a document's glyphs with the position information needed to recover
+              reading order.
+            justification: |
+              A PDF stores glyphs in paint order. Recovering the order a human reads them requires the
+              position of each glyph, not just its character, so the parser must surface geometry and
+              not merely text.
+            tags: [ots]
+            tests:
+              - PdfTextExtractor_Extract_SingleTextPage_RendersParagraphsInReadingOrder
+              - PdfTextExtractor_Extract_AnyPage_ProducesStructureRawPageTextDoesNot
+
+          - id: DocDown-OTS-PdfPig-ImageExtraction
+            title: >-
+              PdfPig shall enumerate a page's embedded images, expose their stored bytes and encoding,
+              and convert decodable images to a usable format.
+            justification: |
+              Honest image extraction needs three things from the parser: the list of images, the
+              encoding of each so the right decision can be taken, and a conversion for the encodings
+              that are not themselves image files. Any one missing would force this package either to
+              drop images or to write bytes a consumer cannot open.
+            tags: [ots]
+            tests:
+              - PdfImageExtractor_AddImage_DctImage_SetsPassthroughTransformHint
+              - PdfImageExtractor_AddImage_FlateImage_SetsDecodedToPngTransformHint
+              - PdfImageExtractor_AddImage_JpxImage_WritesJp2PassthroughWithCaveat
+              - PdfImageExtractor_Extract_UndecodableEncoding_ReportsCountedGapAndWritesNothingForIt
+
+          - id: DocDown-OTS-PdfPig-DocumentMetadata
+            title: PdfPig shall expose a document's information dictionary and its page count.
+            justification: |
+              The document-metadata capability this package declares is satisfied entirely from what
+              the parser reads out of the document, so the capability is only as truthful as the
+              parser's access to it.
+            tags: [ots]
+            tests:
+              - PdfDocumentExtractor_ExtractAsync_DocumentWithMetadata_ReportsTitleAuthorAndPageCount
+              - DocDownPdf_Extract_MultiPagePdf_ReportsPageCountAndAllText
+
+          - id: DocDown-OTS-PdfPig-ProtectedDocuments
+            title: >-
+              PdfPig shall signal an encrypted or structurally invalid document rather than returning
+              partial or corrupt content.
+            justification: |
+              A parser that returned whatever it could scrape from an unreadable document would make
+              honest reporting impossible: this package would report a successful extraction of
+              content that is not what the document says. A clear signal is what lets the failure be
+              structured and attributed.
+            tags: [ots]
+            tests:
+              - PdfDocumentExtractor_ExtractAsync_EncryptedDocument_PropagatesParserFaultForCore
+              - PdfDocumentExtractor_ExtractAsync_MalformedDocument_PropagatesParserFaultForCore
+
+          - id: DocDown-OTS-PdfPig-DocumentCreation
+            title: PdfPig shall build PDF documents suitable for use as test fixtures.
+            justification: |
+              Generating every fixture at test time is what keeps this repository text-only and free
+              of any question about the provenance or licensing of a checked-in sample document. That
+              approach depends on the parser's writer, so the writer is a required feature rather than
+              a convenience.
+            tags: [ots]
+            tests:
+              - DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout
+              - DocDownPdf_Extract_DctImage_RoundTripsByteIdenticalAsPassthrough
+              - PdfDocumentExtractor_GetSelfTestCases_DeployedBackend_ReturnsParseAndRenderingCases

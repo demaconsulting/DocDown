@@ -1,0 +1,49 @@
+---
+# Software Unit Requirements for PdfDocDownBuilderExtensions
+#
+# PdfDocDownBuilderExtensions is the one visible edge from a host to this package: the
+# explicit, reflection-free call that adds the PDF backend to a DocDown builder.
+
+sections:
+  - title: DocDownPdf Requirements
+    sections:
+      - title: PdfDocDownBuilderExtensions Requirements
+        requirements:
+          - id: DocDownPdf-PdfDocDownBuilderExtensions-RegistersExtractor
+            title: >-
+              PdfDocDownBuilderExtensions shall add exactly one PDF extractor, declaring the PDF format
+              and its supported capabilities, to the builder it is called on.
+            justification: |
+              A host builds an engine expecting the backends it asked for and no others. Adding
+              exactly one, with the declared format and capabilities the engine ranks on, is what
+              makes the resulting engine's behavior predictable from the host's own code.
+            tests:
+              - PdfDocDownBuilderExtensions_AddPdf_EmptyBuilder_RegistersTheSinglePdfExtractor
+
+          - id: DocDownPdf-PdfDocDownBuilderExtensions-ReflectionFree
+            title: >-
+              PdfDocDownBuilderExtensions shall register the extractor without reflection or assembly
+              scanning.
+            justification: |
+              Registration by scanning makes the active backend set a property of what happens to be
+              on disk, which cannot be reviewed or reproduced. Keeping the call reflection-free means
+              a reader of the host's code can enumerate its backends exactly.
+            tests:
+              - PdfDocDownBuilderExtensions_AddPdf_RegistrationSurface_UsesNoReflection
+              - PdfDocDownBuilderExtensions_AddPdf_TwoEngines_EachReceivesItsOwnExtractor
+
+          - id: DocDownPdf-PdfDocDownBuilderExtensions-ReturnsBuilderForChaining
+            title: PdfDocDownBuilderExtensions shall return the builder it was called on.
+            justification: |
+              A host that registers several backends should be able to express that as one readable
+              configuration sequence rather than as a series of disconnected statements.
+            tests:
+              - PdfDocDownBuilderExtensions_AddPdf_AnyBuilder_ReturnsTheSameBuilderForChaining
+
+          - id: DocDownPdf-PdfDocDownBuilderExtensions-RejectsNullBuilder
+            title: PdfDocDownBuilderExtensions shall reject a missing builder at the point of the call.
+            justification: |
+              Failing where the mistake was made names the offending call site. Deferring the failure
+              to build time would report it against configuration the host wrote correctly.
+            tests:
+              - PdfDocDownBuilderExtensions_AddPdf_NullBuilder_ThrowsArgumentNullException

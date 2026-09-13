@@ -1,0 +1,103 @@
+---
+# Software Unit Requirements for WordOpenXmlExtractor
+#
+# WordOpenXmlExtractor is the managed backend the engine selects and invokes. It declares
+# what it can deliver, reads the document, emits the content through the shared emitter, and
+# explains every shortfall only this backend can explain.
+
+sections:
+  - title: DocDownWord Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: WordOpenXmlExtractor Requirements
+            requirements:
+              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-DeclaresCapabilities
+                title: >-
+                  WordOpenXmlExtractor shall declare the modern Word format, the higher selection
+                  priority, and the text, embedded-image, document-metadata, and document-structure
+                  capabilities.
+                justification: |
+                  Selection ranks backends on what they declare before any document is opened.
+                  Declaring exactly the deliverable capabilities and the higher priority is what makes
+                  this managed backend the chosen reader for every .docx and keeps a shortfall
+                  negotiated up front rather than discovered as missing output.
+                tests:
+                  - WordOpenXmlExtractor_Descriptor_HasPriority10AndCapabilities
+
+              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsStructuralGap
+                title: >-
+                  WordOpenXmlExtractor shall report a counted structural gap when a table's merged or
+                  nested cells were flattened.
+                justification: |
+                  GFM cannot express a merged or nested cell, so the flattening is real and must be
+                  owned. Reporting it as a counted, reason-bearing structural gap is what turns the
+                  table writer's flatten count into an honest statement in the output.
+                tests:
+                  - WordOpenXmlExtractor_Extract_MergedCells_ReportsCountedStructuralGap
+
+              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ExplainsUnhonoredForcePng
+                title: >-
+                  WordOpenXmlExtractor shall write the source bytes and explain a counted gap when PNG
+                  output was requested but cannot be produced.
+                justification: |
+                  This package ships no imaging stack, so a force-PNG request cannot be honored by
+                  re-encoding. Writing the source bytes and explaining which images defeated the request
+                  is more useful than refusing the image or mislabeling its format.
+                tests:
+                  - WordOpenXmlExtractor_Extract_ForcePng_ExplainsUnhonoredMode
+
+              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsEmptyDocumentGap
+                title: WordOpenXmlExtractor shall degrade with an explicit gap when the document carries no text.
+                justification: |
+                  An empty content document is indistinguishable from a broken extractor. Stating
+                  plainly that the document carried no extractable text turns a mystery into a fact the
+                  caller can act on.
+                tests:
+                  - WordOpenXmlExtractor_Extract_EmptyDocument_DegradesWithNoTextGap
+
+              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsPageRenderingGap
+                title: >-
+                  WordOpenXmlExtractor shall degrade with a reasoned gap when page rendering is
+                  requested, and report the page-rendering environment fact.
+                justification: |
+                  This backend declares no rendered-pages capability, so a page-rendering request
+                  cannot be satisfied. Reporting a declarative gap that names where the capability would
+                  live, and stating the fact as an environment fact, is honest without directing the
+                  reader to obtain anything.
+                tests:
+                  - WordOpenXmlExtractor_Extract_PagesRequested_DegradesWithReasonedGap
+
+              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-SplitsPerPart
+                title: >-
+                  WordOpenXmlExtractor shall split the content into per-part files at each top-level
+                  heading when per-part output is requested.
+                justification: |
+                  Core writes a single flow unless the extractor adds parts, so honoring a per-part
+                  request means this backend must inspect the option and split the content itself at
+                  every Heading 1.
+                tests:
+                  - WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1
+
+              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-WritesVectorImageWithCaveat
+                title: >-
+                  WordOpenXmlExtractor shall write an EMF or WMF vector image unchanged, with a
+                  readability caveat.
+                justification: |
+                  A vector metafile's stored bytes are a complete image file, so writing them through
+                  loses nothing. Adding the caveat that many viewers cannot open a metafile is the
+                  honest complement.
+                tests:
+                  - WordOpenXmlExtractor_Extract_VectorImage_WritesAsIsWithCaveat
+
+              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests
+                title: >-
+                  WordOpenXmlExtractor shall contribute self-test cases, including an honest skip for the
+                  page-rendering capability it does not claim.
+                justification: |
+                  An operator needs to confirm the backend works where it is deployed. A round-trip case
+                  that builds and reads a document proves the SDK is genuinely functional, and a skipped
+                  page-rendering case keeps a capability the backend does not claim from being reported
+                  as a pass or a failure.
+                tests:
+                  - WordOpenXmlExtractor_SelfValidation_ReportsCases

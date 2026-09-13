@@ -51,5 +51,10 @@ ignores:
   - "**/third-party/**"
   - "**/3rd-party/**"
   - "**/generated/**"
+  - "**/TestResults/**"
+  # ApiMark generated API reference (src/<project>/api/). This is build output, regenerated
+  # from the assembly and its XML doc comments and packed into the NuGet package; it is not
+  # authored documentation and no rule is being relaxed for authored files.
+  - "**/api/**"
   - "**/AGENT_REPORT_*.md"
   - "**/.agent-logs/**"

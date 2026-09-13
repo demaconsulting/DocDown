@@ -1,0 +1,78 @@
+---
+# Software Unit Requirements for PdfPageRenderingExtractor
+#
+# PdfPageRenderingExtractor is the superset backend: it declares the four capabilities,
+# probes the native stack cheaply, delegates the managed aspects to the base PDF backend,
+# rasterizes the requested pages, and isolates every per-page failure into a counted gap.
+
+sections:
+  - title: DocDownPdfRendering Requirements
+    sections:
+      - title: PdfPageRenderingExtractor Requirements
+        requirements:
+          - id: DocDownPdfRendering-PdfPageRenderingExtractor-DeclaresCapabilities
+            title: >-
+              PdfPageRenderingExtractor shall declare the PDF format and the text, embedded-image,
+              document-metadata, and rendered-pages capabilities.
+            justification: |
+              Selection ranks a single winner over declared capabilities. Declaring the full superset
+              is what makes this backend selectable when rendering is requested; declaring less would
+              let the managed backend win and no page would ever render.
+            tests:
+              - PdfPageRenderingExtractor_Descriptor_DeclaresFullSupersetCapabilities
+
+          - id: DocDownPdfRendering-PdfPageRenderingExtractor-ProbeIsCheapAndSafe
+            title: >-
+              PdfPageRenderingExtractor shall report availability from a cheap, non-throwing probe that
+              does not rasterize.
+            justification: |
+              The probe is consulted on every engine build, including for plain extractions. It must
+              answer whether the native stack can load without paying rasterization cost or throwing,
+              so a plain extraction is never taxed by a capability it did not request.
+            tests:
+              - PdfPageRenderingExtractor_ProbeAvailability_DeployedStack_ReportsAvailableWithoutThrowing
+
+          - id: DocDownPdfRendering-PdfPageRenderingExtractor-DelegatesManagedAspects
+            title: >-
+              PdfPageRenderingExtractor shall obtain text, embedded images, and document metadata by
+              delegating to the managed PDF backend with rendering suppressed.
+            justification: |
+              Re-implementing the managed aspects would duplicate faithful, well-tested behavior and
+              risk divergence. Delegating with rendering suppressed reuses one source of truth and
+              keeps this unit focused on rasterization alone.
+            tests:
+              - PdfPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs
+
+          - id: DocDownPdfRendering-PdfPageRenderingExtractor-WritesRenderedPages
+            title: >-
+              PdfPageRenderingExtractor shall write a valid PNG image for each rendered page through
+              the sink.
+            justification: |
+              The rendered page is the artifact this package adds. Writing it through the sink, named
+              by its document page number, is what makes the mapping from output file to source page
+              unambiguous and the image a real, decodable PNG.
+            tests:
+              - PdfPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs
+              - DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages
+
+          - id: DocDownPdfRendering-PdfPageRenderingExtractor-IsolatesPageFailures
+            title: >-
+              PdfPageRenderingExtractor shall isolate a per-page rasterization failure into a counted
+              gap and continue with the remaining pages, without throwing to the caller.
+            justification: |
+              One unrenderable page must not abort a whole extraction or reach the caller as an
+              exception. Catching each page's fault, naming the page in a counted gap, and continuing
+              is what keeps the run honest and alive.
+            tests:
+              - PdfPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsCountedGapWithoutThrowing
+
+          - id: DocDownPdfRendering-PdfPageRenderingExtractor-ContributesSelfTests
+            title: >-
+              PdfPageRenderingExtractor shall contribute a render round-trip self-test case named
+              distinctly from the managed backend's cases.
+            justification: |
+              An operator needs to confirm the native stack genuinely rasterizes where it is installed.
+              A distinctly named case that renders a document the backend builds itself provides that
+              confirmation without colliding with the managed backend's own case names.
+            tests:
+              - PdfPageRenderingExtractor_GetSelfTestCases_DeployedStack_ContributesPassingRenderCase

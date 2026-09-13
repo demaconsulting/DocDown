@@ -1,0 +1,67 @@
+---
+# Software Subsystem Requirements for DocDownCore Detection
+#
+# The Detection subsystem determines a document's format from its file name and,
+# where the name yields nothing, its leading content bytes. These requirements
+# decompose the system-level format-detection behavior into the responsibility of
+# the Detection subsystem, and further into its single unit (FormatSniffer) via the
+# children links below.
+
+sections:
+  - title: DocDownCore Requirements
+    sections:
+      - title: Detection Requirements
+        requirements:
+          - id: DocDownCore-Detection-FormatIdentification
+            title: >-
+              The subsystem shall identify the document format from the file extension,
+              falling back to content signatures.
+            justification: |
+              Routing a document to a capable backend depends on naming its format. The caller
+              already possesses the document and named it, so the extension is the primary signal;
+              a bounded leading-byte check recovers input that arrives unnamed or with an
+              extension this library does not recognize. Detection never opens or parses the
+              document to reach its answer.
+            children:
+              - DocDownCore-Detection-FormatSniffer-ExtensionPrimary
+              - DocDownCore-Detection-FormatSniffer-ContentSignature
+            tests:
+              - Detection_FormatIdentification_PdfSignature_IdentifiesPdf
+              - Detection_FormatIdentification_HtmlSignature_IdentifiesHtml
+              - Detection_FormatIdentification_TextExtension_IdentifiesText
+              - Detection_FormatIdentification_DocxExtension_IdentifiesDocxByExtension
+
+          - id: DocDownCore-Detection-DetectionBasisReported
+            title: The subsystem shall report the basis on which it identified the format.
+            justification: |
+              The manifest must record how the format was determined, not merely what it was.
+              Reporting whether the format came from the file extension or from a content
+              signature keeps that evidence available to downstream code, to operators, and to
+              anyone auditing an extraction after the fact.
+            children:
+              - DocDownCore-Detection-FormatSniffer-BasisAndConfidence
+            tests:
+              - Detection_DetectionBasisReported_PdfExtension_ReportsExtensionBasis
+              - Detection_DetectionBasisReported_PdfSignature_ReportsContentSignatureBasis
+
+          - id: DocDownCore-Detection-UnknownFormatReported
+            title: The subsystem shall report an unknown format when it cannot identify the content.
+            justification: |
+              Guessing a format for unrecognized input would send it to a backend that mis-reads
+              it. Honestly reporting unknown lets the pipeline fail cleanly with a diagnostic
+              instead of producing corrupt output.
+            children:
+              - DocDownCore-Detection-FormatSniffer-UnknownFormat
+            tests:
+              - Detection_UnknownFormatReported_UnrecognizedContent_ReportsUnknown
+
+          - id: DocDownCore-Detection-NonDestructiveInspection
+            title: The subsystem shall restore the source stream to its original position after inspection.
+            justification: |
+              Detection runs before extraction on the same stream. Leaving the read position
+              moved would corrupt the subsequent extraction, so inspection must be transparent
+              to every later reader of the stream.
+            children:
+              - DocDownCore-Detection-FormatSniffer-StreamPositionRestored
+            tests:
+              - Detection_NonDestructiveInspection_SeekableStream_RestoresStreamPosition

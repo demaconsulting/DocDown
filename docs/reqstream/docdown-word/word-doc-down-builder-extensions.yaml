@@ -1,0 +1,40 @@
+---
+# Software Unit Requirements for WordDocDownBuilderExtensions
+#
+# WordDocDownBuilderExtensions is the one visible edge from a host to this package: the
+# explicit, reflection-free call that adds the Word backend to a DocDown builder. It is a
+# direct unit of the DocDown.Word system.
+
+sections:
+  - title: DocDownWord Requirements
+    sections:
+      - title: WordDocDownBuilderExtensions Requirements
+        requirements:
+          - id: DocDownWord-WordDocDownBuilderExtensions-RegistersOpenXmlBackend
+            title: >-
+              WordDocDownBuilderExtensions shall add the managed Open XML Word backend, and only that
+              backend, to the builder it is called on.
+            justification: |
+              A host that asks for Word support wants documents handled deterministically on every
+              platform it deploys to. Adding the one managed backend as a deferred factory is what
+              gives the resulting engine that reach from a single call in the host's own code, and
+              asserting that nothing else was registered keeps a second backend from re-entering the
+              package without anyone deciding it should.
+            tests:
+              - AddWord_OnBuilder_RegistersOpenXmlBackend
+
+          - id: DocDownWord-WordDocDownBuilderExtensions-ReturnsBuilderForChaining
+            title: WordDocDownBuilderExtensions shall return the builder it was called on.
+            justification: |
+              A host that registers several backends should be able to express that as one readable
+              configuration sequence rather than as a series of disconnected statements.
+            tests:
+              - AddWord_ReturnsSameBuilderForChaining
+
+          - id: DocDownWord-WordDocDownBuilderExtensions-RejectsNullBuilder
+            title: WordDocDownBuilderExtensions shall reject a missing builder at the point of the call.
+            justification: |
+              Failing where the mistake was made names the offending call site. Deferring the failure
+              to build time would report it against configuration the host wrote correctly.
+            tests:
+              - AddWord_NullBuilder_Throws

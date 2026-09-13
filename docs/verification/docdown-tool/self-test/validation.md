@@ -1,0 +1,62 @@
+### Validation Verification Design
+
+This document describes the unit-level verification strategy for `Validation`, the `--validate`
+driver.
+
+### Verification Approach
+
+`Validation` is verified through unit tests in `SelfTest/ValidationTests.cs` in
+`DemaConsulting.DocDown.Tool.Tests`, with method names beginning with `Validation_`. Each test drives
+`docdown --validate` in-process against a captured log, and — where a results file is requested — over
+a real emitted file whose existence and contents are then asserted. The engine and the PDF backend are
+real, so the self-test union the driver runs is exactly the one the shipped tool runs.
+
+### Test Environment
+
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Filesystem**: a per-test `TempScratch` folder holds the requested results file
+- **Isolation**: each test owns its captured log and results file
+
+### Acceptance Criteria
+
+Per IEC 62304 §5.5.2, a `Validation` unit test run passes when the header honors the requested heading
+depth and reports the environment; when the run executes Core's and the PDF backend's cases as one
+union, showing the always-skipped page-rendering case as a skip; when a requested TRX or JUnit results
+file is written as well-formed XML carrying the named self-test cases with correct per-result outcomes
+and run-level counts consistent with those results, and an unsupported extension is reported as an
+error; and when an all-pass run exits zero.
+
+### Test Scenarios
+
+#### The header honors depth and reports the environment
+
+**Test**: `Validation_Run_Header_HonorsDepthAndReportsEnvironment`
+
+Proves the header is emitted at the requested heading depth and names the machine and a UTC timestamp.
+Evidence for `DocDownTool-Validation-Header`.
+
+#### The self-test union runs Core and PDF cases
+
+**Test**: `Validation_Run_DefaultEngine_RunsCoreAndPdfSelfTestUnion`
+
+Proves the run includes a Core case, the PDF parse round trip, and the PDF page-rendering case shown
+as a skip rather than a failure. Evidence for `DocDownTool-Validation-RunsUnion`.
+
+#### The results file is written, and an unsupported extension is an error
+
+**Tests**: `Validation_Run_ResultsTrx_WritesFile`, `Validation_Run_ResultsXml_WritesWellFormedJUnit`,
+`Validation_Run_UnsupportedResultsExtension_WritesError`
+
+Prove that a requested `.trx` and `.xml` results file is written and reported, that each re-parses as
+well-formed XML carrying the named self-test cases, that a passing case is recorded as passed and the
+always-skipped `pdf.pageRendering` case as not-executed and not as a failure, and that the run-level
+counts in the file are consistent with the individual results; and that a `.json` results file is
+rejected as an unsupported format with a non-zero exit. Evidence for
+`DocDownTool-Validation-WritesResults`.
+
+#### An all-pass run exits zero
+
+**Test**: `Validation_Run_AllPass_ExitCodeZero`
+
+Proves a run whose only non-passing result is a benign skip exits zero and reports no failure. Evidence
+for `DocDownTool-Validation-Outcome`.

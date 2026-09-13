@@ -1,0 +1,89 @@
+---
+# Software Unit Requirements for Context
+#
+# Context owns the parsed command-line arguments and every output channel the tool writes to.
+# It follows the DEMA house pattern: a private constructor with a Create factory, a nested
+# argument parser, and silence-aware WriteLine/WriteError routing with an optional log file.
+
+sections:
+  - title: DocDownTool Requirements
+    sections:
+      - title: Cli Requirements
+        sections:
+          - title: Context Requirements
+            requirements:
+              - id: DocDownTool-Context-Output
+                title: >-
+                  Context shall write output to the console unless silence is requested, and always to
+                  the log file when one is open.
+                justification: |
+                  Silence exists so an automated caller can capture output in a log without cluttering
+                  a console, so the console write is what silence suppresses while the log write is
+                  not. Routing both through one method keeps the two destinations from drifting apart.
+                tests:
+                  - Context_WriteLine_SilentMode_SuppressesConsoleButWritesLog
+
+              - id: DocDownTool-Context-Logging
+                title: Context shall write log lines to the requested log file with immediate flushing.
+                justification: |
+                  A log is often read while the tool is still running, or after it terminates
+                  abruptly, so a buffered log could lose the very lines that explain a failure.
+                  Flushing each line immediately keeps the log a faithful record up to the last thing
+                  the tool did.
+                tests:
+                  - Context_Create_LogFile_WritesLinesWithAutoFlush
+
+              - id: DocDownTool-Context-ErrorFlag
+                title: >-
+                  Context shall record that an error occurred whenever an error is written, even under
+                  silence, and shall report success otherwise.
+                justification: |
+                  The exit code is how automation learns an outcome, so a silenced run that hit an
+                  error must still exit non-zero. Setting the error flag unconditionally when an error
+                  is written, independently of whether the console showed it, keeps the exit code
+                  truthful.
+                tests:
+                  - Context_WriteError_SilentMode_StillSetsExitCodeOne
+                  - Context_ExitCode_NoErrors_ReturnsZero
+
+              - id: DocDownTool-Context-OptionMapping
+                title: Context shall project the parsed extraction flags onto a fresh extraction options instance.
+                justification: |
+                  Only options the caller actually set should be written, so an unspecified option
+                  keeps the engine default rather than being forced to a value the caller never chose.
+                  Building the options in one place makes the mapping testable in isolation from an
+                  extraction.
+                tests:
+                  - Context_BuildExtractionOptions_Flags_MapOntoOptions
+                  - Context_BuildExtractionOptions_ScratchPolicyToken_MapsToMode
+
+              - id: DocDownTool-Context-UnknownArgument
+                title: Context shall reject an unrecognized argument with an argument fault.
+                justification: |
+                  An argument the parser does not know must not be silently dropped, which would hide a
+                  typo behind an apparently successful run. Failing with an argument fault names the
+                  offending token so the user can correct it.
+                tests:
+                  - Context_Create_UnknownArgument_ThrowsArgumentException
+
+              - id: DocDownTool-Context-OptionValidation
+                title: >-
+                  Context shall reject a malformed value for an option that takes one, with an argument
+                  fault.
+                justification: |
+                  An option value the tool cannot interpret — a page range that is not two numbers, an
+                  image mode that is not a known token — is a user error that must surface at parse
+                  time rather than be misinterpreted later. Rejecting it by name keeps the failure
+                  local to the mistake.
+                tests:
+                  - Context_Create_MalformedPageRange_ThrowsArgumentException
+                  - Context_Create_UnknownImageMode_ThrowsArgumentException
+
+              - id: DocDownTool-Context-Depth
+                title: Context shall reject a heading depth outside the supported range with an argument fault.
+                justification: |
+                  The heading depth drives markdown structure and only a bounded range is meaningful,
+                  so a value outside it is a mistake to reject at parse time rather than to clamp
+                  silently, which would produce output the caller did not ask for.
+                tests:
+                  - Context_Create_DepthOutOfRange_ThrowsArgumentException
