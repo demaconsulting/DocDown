@@ -21,6 +21,7 @@ sections:
                   what keeps the output contract in one testable place and lets a hand-built model
                   prove a mapping decision without a document behind it.
                 tests:
+                  - WordContentEmitter_Emit_BodyWithComments_ReportsOutlineAndSucceeds
                   - WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1
 
               - id: DocDownWord-Markdown-WordContentEmitter-ReportsGapsAndDiagnostics
@@ -36,4 +37,6 @@ sections:
                   gap-versus-diagnostic by whether anything was actually lost, is what keeps the
                   extraction honest without over-reporting a degrade.
                 tests:
+                  - WordContentEmitter_Emit_ChartsFound_ReportsCountedGapAndDegrades
+                  - WordContentEmitter_Emit_RenderPagesRequested_ReportsPagesGapAndDegrades
                   - WordOpenXmlExtractor_Extract_MergedCells_ReportsCountedStructuralGap

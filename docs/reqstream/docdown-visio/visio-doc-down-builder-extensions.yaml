@@ -1,0 +1,52 @@
+---
+# Software Unit Requirements for VisioDocDownBuilderExtensions
+#
+# VisioDocDownBuilderExtensions is the one visible edge from a host to this package: the explicit,
+# reflection-free call that adds the Visio backends to a DocDown builder. It is a direct unit of the
+# DocDown.Visio system.
+
+sections:
+  - title: DocDownVisio Requirements
+    sections:
+      - title: VisioDocDownBuilderExtensions Requirements
+        requirements:
+          - id: DocDownVisio-VisioDocDownBuilderExtensions-RegistersBothBackends
+            title: >-
+              VisioDocDownBuilderExtensions shall add both the managed Open Packaging backend and the COM
+              automation backend to the builder it is called on.
+            justification: |
+              A host that asks for Visio support wants a drawing's page names, shape text, and directed
+              topology handled deterministically on every platform and its pages rendered where Microsoft
+              Visio is present. Adding both backends as deferred factories from a single call is what gives
+              the resulting engine that reach: the managed backend is the guaranteed content path, and the
+              COM backend adds the render when the environment can supply it.
+            tests:
+              - AddVisio_RegistersOpenXmlAndComBackends
+
+          - id: DocDownVisio-VisioDocDownBuilderExtensions-OrdersManagedAboveCom
+            title: >-
+              VisioDocDownBuilderExtensions shall register the managed backend at a higher selection
+              priority than the COM backend.
+            justification: |
+              Talking to Microsoft Visio is expensive and environment-dependent, so it must be reached
+              only when rendering is actually requested. Giving the managed backend the higher priority is
+              what makes it the chosen reader for every extraction that does not ask for rendered pages,
+              leaving the COM backend selected only when its rendering is the reason to pay that cost.
+            tests:
+              - AddVisio_ManagedBackend_HasHigherPriorityThanCom
+
+          - id: DocDownVisio-VisioDocDownBuilderExtensions-ReturnsBuilderForChaining
+            title: VisioDocDownBuilderExtensions shall return the builder it was called on.
+            justification: |
+              A host that registers several backends should be able to express that as one readable
+              configuration sequence rather than as a series of disconnected statements.
+            tests:
+              - AddVisio_ReturnsSameBuilder
+
+          - id: DocDownVisio-VisioDocDownBuilderExtensions-RejectsNullBuilder
+            title: VisioDocDownBuilderExtensions shall reject a missing builder at the point of the call.
+            justification: |
+              Failing where the mistake was made names the offending call site. Deferring the failure to
+              build time would report it against configuration the host wrote correctly.
+            tests:
+              - AddVisio_NullBuilder_Throws

@@ -1,0 +1,196 @@
+---
+# Software Unit Requirements for ExcelContentEmitter
+#
+# ExcelContentEmitter is the single emission path: it writes the workbook model's worksheet parts and
+# chart parts, the grid tables and verbatim listings, the shape annotations, the images, the content
+# outline, the diagnostics, and the gaps through the sink, so every output the model implies is
+# produced in one place.
+
+sections:
+  - title: DocDownExcel Requirements
+    sections:
+      - title: Markdown Requirements
+        sections:
+          - title: ExcelContentEmitter Requirements
+            requirements:
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-EmitsModelContent
+                title: >-
+                  ExcelContentEmitter shall emit a workbook model's content through the sink, one
+                  content part per worksheet, driven only by the model.
+                justification: |
+                  Emission that depends only on the model, and never on how the model was read, is what
+                  keeps the output contract in one testable place and lets a hand-built model prove a
+                  mapping decision without a workbook behind it.
+                tests:
+                  - ExcelContentEmitter_Emit_TwoSheets_WritesTitledSheetParts
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-WritesSheetParts
+                title: >-
+                  ExcelContentEmitter shall write each worksheet as a titled Sheet content part that
+                  carries each cell's address and value.
+                justification: |
+                  A workbook stays navigable and a cited fact keeps its sheet identity only if each
+                  worksheet becomes its own titled part. The address-and-value listing under it is the
+                  lossless ledger a reader cites from.
+                tests:
+                  - ExcelContentEmitter_Emit_TwoSheets_WritesTitledSheetParts
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-RendersFormula
+                title: >-
+                  ExcelContentEmitter shall render a computed cell's formula alongside its value and
+                  address in the listing.
+                justification: |
+                  The formula states the relationship and the value states one evaluation of it, so the
+                  listing writes both — the address, the verbatim value, and the formula — so neither
+                  half of a computed cell is lost.
+                tests:
+                  - ExcelContentEmitter_Emit_FormulaCell_RendersFormulaValueAndAddress
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-RendersGridTable
+                title: >-
+                  ExcelContentEmitter shall render a grid table in addition to the listing only when the
+                  populated region is dense and table-shaped.
+                justification: |
+                  A grid table restores the row and column relationships a reader would otherwise rebuild
+                  mentally, but only for a region that is genuinely a table; a sparse scatter or a
+                  single-column list gains nothing from a table that a listing does not already give, and
+                  a pathologically wide region is left to the listing so the output stays readable.
+                tests:
+                  - ExcelContentEmitter_Emit_DenseGrid_RendersTableAndListing
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-ElidesLongCellsInTableOnly
+                title: >-
+                  ExcelContentEmitter shall elide a long or multi-line value in the grid table only, keep
+                  its full verbatim value in the listing, and note the elision when one occurred.
+                justification: |
+                  A Markdown table cannot hold a very long or multi-line value, so eliding it in the
+                  table keeps the table readable; the full value is always present verbatim in the
+                  listing below, and a note near the table names the cause and where the value actually
+                  is, so the elision reads as a formatting limit rather than a loss and the
+                  verbatim-full-length guarantee is never weakened.
+                tests:
+                  - ExcelContentEmitter_Emit_LongCell_ElidedInTableVerbatimInListing
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-NotesMergedRanges
+                title: >-
+                  ExcelContentEmitter shall state a worksheet's merged cell ranges as a note beside the
+                  grid table.
+                justification: |
+                  A merge stores its value only in the anchor cell and a GFM table cannot visually span
+                  cells, so the merged ranges are stated as a note rather than spanned, keeping the fact
+                  that a range was merged visible without misrepresenting the grid.
+                tests:
+                  - ExcelContentEmitter_Emit_MergedRanges_StatedAsNote
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-EmitsChartParts
+                title: >-
+                  ExcelContentEmitter shall write each chart a worksheet shows as its own Chart content
+                  part after the sheet, and name the chart under the sheet.
+                justification: |
+                  A chart's cached data becomes its own part written straight after the sheet that shows
+                  it, so hundreds of plotted points do not bury the sheet's cells; the worksheet part
+                  still names the chart so a reader who opens only that part learns the chart exists.
+                tests:
+                  - ExcelContentEmitter_Emit_SheetWithChart_WritesChartPartAfterSheet
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-ReportsChartGaps
+                title: >-
+                  ExcelContentEmitter shall report a counted gap for each chart that could not be read,
+                  cached no data, or was bounded, and report nothing for a chart-free workbook.
+                justification: |
+                  Before this backend read charts, a chart vanished from the output while the summary
+                  claimed everything was extracted. A workbook whose chart yields no data must say so as
+                  a counted gap, one whose chart was bounded must say how much it dropped, and a
+                  chart-free workbook must stay a clean success.
+                tests:
+                  - ExcelContentEmitter_Emit_ChartWithoutCache_ReportsGap
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-WritesShapeText
+                title: >-
+                  ExcelContentEmitter shall write a worksheet's drawing-shape text under its own heading,
+                  after the cells and before the images.
+                justification: |
+                  Callouts and labels carry part numbers, warnings, and legend keys that exist in no
+                  cell, so a reader of the listing alone would never see them. Writing them under their
+                  own heading keeps their provenance as drawing-layer text rather than cell content
+                  obvious.
+                tests:
+                  - ExcelContentEmitter_Emit_ShapeText_WritesUnderTheSheet
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-LinksImages
+                title: >-
+                  ExcelContentEmitter shall write a workbook's embedded images through the sink and link
+                  each from the worksheet that shows it, only when a path was returned.
+                justification: |
+                  A worksheet's pictures are linked inline at their point of occurrence, mirroring the
+                  Word convention, and a link is emitted only when the sink returned a path so a
+                  suppressed, size-skipped, or deduplicated-away image never leaves a link pointing at
+                  nothing.
+                tests:
+                  - ExcelContentEmitter_Emit_SheetImage_LinksInlineFromSheet
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-ReportsVectorImageCaveat
+                title: >-
+                  ExcelContentEmitter shall write an EMF or WMF vector image unchanged and record the
+                  readability caveat as an informational diagnostic.
+                justification: |
+                  A vector metafile's bytes are a complete image file, written and counted as extracted;
+                  because no better environment would yield more, the caveat that many viewers cannot
+                  render a metafile is informational and must not degrade the run.
+                tests:
+                  - ExcelContentEmitter_Emit_VectorImage_WritesWithInfoCaveat
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-ReportsEmptyWorkbookGap
+                title: ExcelContentEmitter shall degrade with a counted gap when the workbook has no worksheets.
+                justification: |
+                  An empty content document is indistinguishable from a broken extractor. Stating plainly
+                  that the workbook carried no worksheets turns a mystery into a fact the caller can act
+                  on.
+                tests:
+                  - ExcelContentEmitter_Emit_EmptyWorkbook_ReportsGap
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-NotesEmptySheet
+                title: >-
+                  ExcelContentEmitter shall note an empty worksheet as an informational diagnostic that
+                  does not degrade the run.
+                justification: |
+                  A worksheet with no populated cells is an expected authoring artifact, not a loss, so
+                  it is noted informationally and never raised as a gap, keeping a complete extraction
+                  from being falsely reported as degraded.
+                tests:
+                  - ExcelContentEmitter_Emit_EmptySheet_NotesInformationalDiagnostic
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-StaysSilentOnPageRequest
+                title: >-
+                  ExcelContentEmitter shall not answer a page-rendering request with a gap, because a
+                  workbook has no page grid to render.
+                justification: |
+                  A page-rendering request applies to nothing on a non-paginated workbook, so the emitter
+                  reports no shortfall; the engine records the non-applicability itself, so the emitter
+                  stays silent rather than reporting a loss for a request it cannot lose.
+                tests:
+                  - ExcelContentEmitter_Emit_RenderPagesRequested_StaysSilent
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-ReportsContentFeatures
+                title: >-
+                  ExcelContentEmitter shall report a content outline counting the model's worksheets,
+                  cells, formulas, images, charts, drawing annotations, and cached chart points.
+                justification: |
+                  The counts come from the model the reader built, and give a reader deciding whether to
+                  open the parts an honest shape of the workbook — one small table or tens of thousands
+                  of cells — that a character count could never convey.
+                tests:
+                  - ExcelContentEmitter_Emit_Workbook_ReportsContentFeatures
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-ReportsGapsAndDiagnostics
+                title: >-
+                  ExcelContentEmitter shall report the diagnostics and counted gaps the model implies,
+                  returning whether the outcome degraded.
+                justification: |
+                  Genuine loss — an empty workbook, an uncached chart, a size-skipped image — is emitted
+                  as a counted gap that degrades the outcome, while an expected non-loss such as an empty
+                  sheet or a vector-image caveat is emitted as an informational diagnostic that does not.
+                  Reporting each through the shared path, gap-versus-diagnostic by whether anything was
+                  actually lost, is what keeps the extraction honest without over-reporting a degrade.
+                tests:
+                  - ExcelContentEmitter_Emit_EmptyWorkbook_ReportsGap

@@ -12,6 +12,21 @@ sections:
         sections:
           - title: DocDownEngine Requirements
             requirements:
+              - id: DocDownCore-Extraction-DocDownEngine-RenderRequestApplicability
+                title: >-
+                  DocDownEngine shall treat page rendering as a request, degrading with a counted pages
+                  gap only when the format is paginated, and honoring it with silence when it is not.
+                justification: |
+                  A caller who requests rendered pages must be told plainly when they cannot be
+                  produced, but a non-paginated format has no page grid and no environment could ever
+                  make it render, so treating its missing pages as a shortfall would be a false failure.
+                  Degrading a paginated format with a counted gap that names who could have rendered,
+                  while recording an informational diagnostic and neither gap nor degradation for a
+                  non-paginated one, keeps the completeness signal honest in both directions.
+                tests:
+                  - DocDownEngine_ExtractAsync_NonPaginatedFormat_RenderRequest_SucceedsSilently
+                  - DocDownBuilder_ConfigureDefaults_RenderPages_ProducesPageGapByDefault
+
               - id: DocDownCore-Extraction-DocDownEngine-PipelineOrder
                 title: >-
                   DocDownEngine shall run the extraction stages in a fixed order and not invoke a backend for

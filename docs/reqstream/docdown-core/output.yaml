@@ -82,6 +82,21 @@ sections:
               - SummaryWriter_WriteAsync_PdfShapedMetadata_InlinesHumanAuthorNotApplication
               - SummaryWriter_WriteAsync_OpcShapedMetadata_FallsBackToCreatorAsAuthor
 
+          - id: DocDownCore-Output-ContentOutline
+            title: >-
+              The subsystem shall record the counted structural features of the extracted content and
+              surface them as the summary's content outline and the manifest's machine-readable twin.
+            justification: |
+              A character count tells a reader how much text there is and nothing about what it is, so
+              an agent asked to find (say) author-attributed reviewer comments cannot tell they exist.
+              Accumulating each reported feature under its label, dropping zero counts as noise, and
+              rendering the surviving features as a one-line outline in summary.txt and as the
+              contentFeatures array in manifest.json makes the structure of content.md discoverable
+              from the same source, without parsing the markdown.
+            tests:
+              - ExtractionSink_ReportContentFeature_RepeatedLabels_AccumulateAndDropZeroCounts
+              - SummaryWriter_WriteAsync_WithContentFeatures_OpensWithGistAndOutlinesContent
+
           - id: DocDownCore-Output-ContentDocument
             title: The subsystem shall write the extracted content as Markdown, split into parts when appropriate.
             justification: |

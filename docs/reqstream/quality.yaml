@@ -67,16 +67,24 @@ sections:
           - DocDown-OTS-ReviewMark-DirectoryOverride
 
       - id: Quality-DocumentationGeneration
-        title: The repository shall rely on Pandoc and WeasyPrint to generate HTML and PDF documentation.
+        title: >-
+          The repository shall rely on Pandoc, WeasyPrint, and ApiMark to generate its HTML
+          documentation, its PDF documentation, and the Markdown API reference shipped in each library
+          package.
         tags: [quality]
         justification: |
           Documentation generation depends on Pandoc's format conversion and
-          WeasyPrint's PDF rendering. This grouping requirement links those OTS
+          WeasyPrint's PDF rendering for the requirements, design, and verification
+          documents, and on ApiMark to turn each packable assembly and its XML doc
+          comments into the api/ Markdown API reference shipped inside the NuGet
+          package. All three are documentation generators whose evidence is a
+          self-validation check, so this grouping requirement links their OTS
           requirements to the quality root so they participate in orphan detection
           without being falsely reported as disconnected from library functionality.
         children:
           - DocDown-OTS-Pandoc
           - DocDown-OTS-WeasyPrint
+          - DocDown-OTS-ApiMark-DotNetGeneration
 
       - id: Quality-RequirementsTraceability
         title: >-

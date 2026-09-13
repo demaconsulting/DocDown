@@ -57,16 +57,17 @@ see content that was promised and never written.
 
 **Forward — everything the manifest claims must exist on disk.** `VerifyListedResources` checks each
 listed image and page for existence, exact recorded size, and recomputed SHA-256 (`DD0715` /
-`DD0716`), and each listed part for existence (`DD0715`). It then checks the three fixed root
+`DD0716`), and each listed part for existence (`DD0715`). It then checks the four fixed root
 artifacts through `VerifyClaimedRootArtifact`: when the completeness ledger claims `summary.txt`,
-`manifest.json`, or `content.md` is `present` or `partial` and the file is absent, that is `DD0715`
-in the same direction as a missing image. These three cannot appear in the manifest's resource
+`manifest.json`, `metadata.json`, or `content.md` is `present` or `partial` and the file is absent,
+that is `DD0715`
+in the same direction as a missing image. These four cannot appear in the manifest's resource
 arrays — the manifest cannot list itself by hash — so the ledger is where their claim lives.
 
 **Reverse — every file on disk must be accounted for by the manifest.** `VerifyNoUnlistedFiles`
 walks **every file beneath the scratch root at any depth**, converts each to a forward-slash relative
 path so the comparison is platform-neutral, and reports `DD0717` for anything not in the accounted
-set. That set — the three fixed root artifacts plus the manifest's image, page, and part paths — is
+set. That set — the four fixed root artifacts plus the manifest's image, page, and part paths — is
 defined once, in `ArtifactInventory`, and is the same set `ScratchFolder` uses to decide what it may
 delete on a destructive reuse; holding it in one place is what stops the two controls from drifting
 into different ideas of "accounted for". The walk is deliberately exhaustive

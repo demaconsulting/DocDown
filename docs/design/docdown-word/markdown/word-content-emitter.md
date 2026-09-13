@@ -67,6 +67,16 @@ by the contract verifier as an unexplained absence.
   the reader counted any empty or page-furniture-only parts. Emits the rendering-unavailable gap
   through `ReportRenderingUnavailableGap` when `options.RenderPages` is set, so a request meets the
   backend-specific reason alongside Core's own engine-level gap.
+- **`ReportChartsNotExtracted`** (private) — emits `WORD0010 ChartsNotExtracted` (warning) with a
+  counted `GapKind.Text`/`Unavailable` gap when the model reports embedded charts, because a Word
+  chart anchors through a graphic frame carrying no image blip, so neither the text walk nor the
+  image walk sees it and its plotted data would otherwise vanish from a document claiming a complete
+  extraction. This backend deliberately does **not** recover chart data: unlike the Excel and
+  PowerPoint backends, which read a chart's cached data series and emit them as Core
+  `ContentPartKind.Chart` parts (see _Output Subsystem Design_), the Word backend reports the charts
+  as a gap and points the remedy at the source workbook. The image, table, and embedded-image
+  handling here is likewise the Word-specific application of the product-wide sink contract, not a
+  behavior unique to Word.
 - **`ReportTableDiagnostics`** (private) — enumerates every `Table` block (body plus document
   control), accumulates the flattened-cell count and the assumed-header flag, and emits
   `WORD0004 TableHeaderAssumed` (informational), `WORD0003 EmptyTableSkipped` (informational,

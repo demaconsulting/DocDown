@@ -1,0 +1,70 @@
+---
+# Software Subsystem Requirements for DocDownPowerPoint OpenXml
+#
+# The OpenXml subsystem is the managed backend: the guaranteed content path. It is the extractor the
+# engine selects for an extraction that does not request rendering, the reader that turns the Open XML
+# presentation package into the backend-neutral model — preserving slide order and each slide's title,
+# text, and speaker notes — and the image reader that resolves each embedded image's bytes and slide
+# association. These requirements decompose into the PowerPointOpenXmlExtractor, PowerPointOpenXmlReader,
+# and PowerPointOpenXmlImageReader units via children.
+
+sections:
+  - title: DocDownPowerPoint Requirements
+    sections:
+      - title: OpenXml Requirements
+        requirements:
+          - id: DocDownPowerPoint-OpenXml-Extraction
+            title: >-
+              The subsystem shall orchestrate a managed extraction: declare its capabilities, probe
+              unconditionally, read the deck, emit the content, and contribute self-tests.
+            justification: |
+              The managed extractor is the backend the engine selects for a content extraction, so it
+              owns the whole managed path — capabilities and the plain statement that this extractor does
+              not render, the unconditional availability probe, the buffer-and-open of the deck,
+              delegation to the reader and emitter, and the self-test cases that describe its own
+              behavior.
+            children:
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-DeclaresCapabilities
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-DeclaresPageRenderingNotProvided
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ProbesUnconditionally
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-OrchestratesExtraction
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ContributesSelfTests
+            tests:
+              - PowerPointOpenXmlExtractor_Descriptor_MatchesContract
+
+          - id: DocDownPowerPoint-OpenXml-Reading
+            title: >-
+              The subsystem shall read the presentation package into the backend-neutral model,
+              preserving slide order and extracting each slide's title, body text, and speaker notes.
+            justification: |
+              The reader is where a .pptx becomes the model the rest of the package works on, so it walks
+              slides in presentation order, separates the title placeholder from the body shapes, reads
+              the notes slide's body placeholder so the narration is recovered from the file itself, and
+              counts the charts the deck embeds so they can be reported rather than dropped. It wraps a package it
+              cannot open or a missing presentation part so Core sees a structured failure.
+            children:
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-PreservesSlideOrder
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExtractsTitle
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExtractsBodyText
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExtractsSpeakerNotes
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-YieldsNullNotesWhenAbsent
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-CountsCharts
+            tests:
+              - PowerPointOpenXmlReader_Read_DeckWithNotes_ReturnsSlidesInOrder
+
+          - id: DocDownPowerPoint-OpenXml-Images
+            title: >-
+              The subsystem shall resolve each embedded image's bytes and record which slides reference
+              it, distinguishing a slide reference from template furniture.
+            justification: |
+              An Open XML image part stores a complete image file, so the image reader passes its bytes
+              through unchanged, deduplicates by package part, and gathers pictures from slides, notes,
+              layouts, and masters so the deck's shared logos are not missed. Recording every referring
+              slide, and flagging an image reached only through a layout or master as template furniture
+              rather than fabricating a slide, is what lets a reader tell "on slides 3 and 7" from
+              "template furniture."
+            children:
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlImageReader-YieldsEmbeddedImages
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlImageReader-RecordsSlideAssociation
+            tests:
+              - PowerPointOpenXmlReader_Read_DeckWithImage_ExtractsEmbeddedImage

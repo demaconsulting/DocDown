@@ -57,6 +57,29 @@ concurrent `ExtractAsync` calls targeting *different* scratch folders. Two concu
 The extractor receives only the `DocumentSource` and an `IExtractionContext`; it is never given
 `scratchFolder` or any absolute path, which is the load-bearing isolation invariant of the library.
 
+#### Page rendering is a request, not a promise
+
+Step 8's Core-derived gaps include how the engine answers a `RenderPages` request the selected backend
+cannot meet, and the answer depends on whether the format is paginated:
+
+- **Paginated format the backend cannot render** (`PageRenderingApplicable` is true, but the effective
+  capabilities lack `RenderedPages`) — the run **degrades** with a counted `pages` gap
+  (`GapScope.Unavailable`) plus `DD0301` and a degraded-capability diagnostic, and the gap names any
+  registered-but-unavailable backend that *could* have rendered this format, so the reader learns
+  precisely which backend would have delivered pages and why it did not.
+- **Non-paginated format** (`PageRenderingApplicable` is false) — the request is honored with
+  **silence**: an informational `DD0303` diagnostic records that page rendering applied to nothing
+  because the format has no page grid, **no gap is emitted, and the run is not degraded**. This is the
+  deliberate application of the rule that *an absence no environment could ever fill is not a
+  shortfall* — no host, however configured, would make a non-paginated format paginate, so treating
+  its missing pages as a gap would be a false failure. Consistently, the `RenderedPages` capability is
+  masked out of the selection-fit comparison for such a format, so a legitimately inapplicable
+  capability never reads as a missing one.
+
+A render request that *was* applicable and supported but yielded zero pages is the third case: a
+`PartiallyExtracted` `pages` gap with `DD0302`, because there the environment could have produced pages
+and did not.
+
 #### Error Handling
 
 The engine **returns failures rather than throwing them**. Exceptions are reserved for programming

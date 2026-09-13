@@ -1,0 +1,68 @@
+---
+# Software Subsystem Requirements for DocDownVisio Com
+#
+# The Com subsystem is the rendering seam: the full-superset extractor that reuses the managed backend's
+# content and topology extraction and adds a rendered image of each page by driving Microsoft Visio over
+# late-bound COM, the availability probe that keeps that environment-dependent backend honest, and the
+# real automation adapter that is the single untestable boundary. These requirements decompose into the
+# VisioComExtractor, VisioComAvailability, and VisioAutomation units via children.
+
+sections:
+  - title: DocDownVisio Requirements
+    sections:
+      - title: Com Requirements
+        requirements:
+          - id: DocDownVisio-Com-Rendering
+            title: >-
+              The subsystem shall produce a full extraction — page names, shape text, the directed
+              topology, metadata, and a rendered image of each page — by delegating the managed aspects
+              and adding the rendered pages.
+            justification: |
+              The engine selects exactly one backend, so a rendering-only backend would lose selection to
+              the managed backend and never render. The COM backend therefore declares the full superset
+              and delivers it: rather than re-implement the topology extraction, it runs the managed
+              backend against the same sink with rendering suppressed and adds the rendered pages the
+              managed backend cannot, reconciling the two backends' rendering statements so the composed
+              report is internally consistent.
+            children:
+              - DocDownVisio-Com-VisioComExtractor-DeclaresCapabilities
+              - DocDownVisio-Com-VisioComExtractor-DelegatesManagedContent
+              - DocDownVisio-Com-VisioComExtractor-ReconcilesRenderingFacts
+              - DocDownVisio-Com-VisioComExtractor-RendersEveryPage
+              - DocDownVisio-Com-VisioComExtractor-IsolatesPageRenderFailures
+              - DocDownVisio-Com-VisioComExtractor-ProbesHonestly
+            tests:
+              - VisioComExtractor_Extract_ViaStub_WritesTopologyAndRendersEveryPage
+
+          - id: DocDownVisio-Com-Availability
+            title: >-
+              The subsystem shall probe rendering availability cheaply and without side effects, reporting
+              unavailable with a declarative reason where Microsoft Visio cannot be reached.
+            justification: |
+              Availability probing must not open a drawing, launch an application, or throw, and it must
+              run everywhere CI does. Checking the operating system first and then, on Windows, whether the
+              Visio ProgID is registered is what lets the probe report unavailable off Windows or without
+              Visio with a reason that states a fact rather than instructing an installation.
+            children:
+              - DocDownVisio-Com-VisioComAvailability-ProbesWithoutSideEffects
+              - DocDownVisio-Com-VisioComAvailability-ReportsDeclarativeReason
+            tests:
+              - VisioComAvailability_Probe_OffWindows_IsUnavailable
+
+          - id: DocDownVisio-Com-Automation
+            title: >-
+              The subsystem shall confine every interaction with Microsoft Visio to a single adapter that
+              opens a drawing read-only, exports each foreground page to a PNG, and tears its session down
+              on every path.
+            justification: |
+              The one thing that cannot be exercised cross-platform is talking to Visio, so it is isolated
+              behind a narrow seam: a single Windows-only adapter holds no extraction or gap policy and
+              runs a whole session — open read-only, export every foreground page, release — inside one
+              call, so no COM object outlives it. Its correctness in a deployed environment is proven by
+              release-time self-tests rather than by CI.
+            children:
+              - DocDownVisio-Com-VisioAutomation-RendersEachPageAtRequestedDpi
+              - DocDownVisio-Com-VisioAutomation-ProducesPerPageResults
+              - DocDownVisio-Com-VisioAutomation-ReleasesItsSession
+            tests:
+              - VisioComExtractor_Extract_PassesRenderDpiToAutomation

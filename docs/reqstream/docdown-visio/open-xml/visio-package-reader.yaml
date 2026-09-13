@@ -1,0 +1,110 @@
+---
+# Software Unit Requirements for VisioPackageReader
+#
+# VisioPackageReader reads a Visio drawing's Open Packaging container directly with System.IO.Packaging —
+# because DocumentFormat.OpenXml has zero Visio types — and produces the backend-neutral document model:
+# page names, shape text, the shapes' master classification, and the directed connector topology.
+#
+# NOTE ON FORWARD-TRACE: two of this unit's requirements cover behavior that EXCEEDS the Visio intent —
+# ResolvesMasterNames (classifying a text-less shape by its master type) and RecoversSymbolFontGlyphs
+# (mapping a Wingdings arrow byte to its Unicode equivalent). The intent asked for page names, shape
+# text, and the directed edges. These are covered because they are genuinely tested; they are not
+# invented to retro-justify untested code. See the developer report.
+
+sections:
+  - title: DocDownVisio Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: VisioPackageReader Requirements
+            requirements:
+              - id: DocDownVisio-OpenXml-VisioPackageReader-SurfacesPageNames
+                title: VisioPackageReader shall read the name of every page from the pages collection.
+                justification: |
+                  Engineers navigate and cite a drawing by page name, so the reader reads the pages
+                  collection and carries each page's declared name into the model, making the name
+                  available to the rest of the package as the page's identity.
+                tests:
+                  - VisioPackageReader_Read_WashSystem_SurfacesPageName
+
+              - id: DocDownVisio-OpenXml-VisioPackageReader-ExtractsShapeText
+                title: VisioPackageReader shall read the text of every shape that carries text.
+                justification: |
+                  A shape's text is its identity, recoverable from the page-contents part with no render,
+                  so the reader reads each shape's text run and carries it verbatim into the model,
+                  preserving the multi-line fittings lists and valve-positioning tables shapes carry.
+                tests:
+                  - VisioPackageReader_Read_WashSystem_ExtractsShapeText
+
+              - id: DocDownVisio-OpenXml-VisioPackageReader-ResolvesDirectedTopology
+                title: >-
+                  VisioPackageReader shall resolve each connector's begin and end records into a directed
+                  connection between the two shapes, in the direction the records name.
+                justification: |
+                  The topology is the engineering content, and its direction is carried by which connector
+                  cell — the begin end or the end end — names each shape. Resolving the connect records into
+                  a real directed edge between shapes, regardless of the order the records appear, and
+                  yielding one edge per connector for parallel connectors, is what turns the drawing's own
+                  wiring into recoverable content.
+                tests:
+                  - VisioPackageReader_Read_WashSystem_ResolvesDirectedTopology
+
+              - id: DocDownVisio-OpenXml-VisioPackageReader-PreservesPageOrder
+                title: VisioPackageReader shall return the pages in the order the drawing declares them.
+                justification: |
+                  The order of the pages is part of how a reader navigates a multi-page drawing, so the
+                  reader walks the pages in declaration order and returns them in that order rather than in
+                  package-part order.
+                tests:
+                  - VisioPackageReader_Read_TwoPages_ReturnsPagesInOrder
+
+              - id: DocDownVisio-OpenXml-VisioPackageReader-ScopesEdgesToOwnPage
+                title: >-
+                  VisioPackageReader shall resolve each page's connections against only that page's shapes,
+                  so a shape id reused on another page does not cross-link.
+                justification: |
+                  A shape id is page-local, so a drawing that reuses the same id on two pages must not have
+                  one page's connector resolve to the other page's shape. Resolving each page's connectors
+                  against only that page's shape map is what keeps every edge inside the page that owns it.
+                tests:
+                  - VisioPackageReader_Read_MultiplePagesReusingShapeIds_ReportOnlyOwnEdges
+
+              - id: DocDownVisio-OpenXml-VisioPackageReader-ResolvesMasterNames
+                title: >-
+                  VisioPackageReader shall carry the name of the master each shape was instantiated from,
+                  where the drawing declares one, and carry none where it does not.
+                justification: |
+                  A schematic's text-less shapes are still classified by whoever drew them: a shape drawn
+                  from a named master is that type by the drawing's own statement, which is recoverable
+                  fact, not inference. The reader reads the master collection and carries each shape's
+                  master name verbatim — falling back to the master's universal name where only that is
+                  present, and carrying none for a shape with no master, a dangling master reference, or a
+                  drawing with no masters part. This exceeds the intent's three bullets and is covered
+                  because it is tested.
+                tests:
+                  - VisioPackageReader_Read_MasterTypedSchematic_ResolvesMasterNames
+
+              - id: DocDownVisio-OpenXml-VisioPackageReader-RecoversSymbolFontGlyphs
+                title: >-
+                  VisioPackageReader shall recover a symbol-font code point to its Unicode equivalent only
+                  when the run's font declares that symbol font, and never alter text in any other font.
+                justification: |
+                  A Wingdings arrow is stored as a byte that decodes to an unrelated Latin letter, so a
+                  valve-positioning table reads as gibberish unless the glyph is recovered — but the
+                  recovery is gated on the run's declared font, because a blind replacement would corrupt
+                  genuine text in a normal font. The mapping is deliberately minimal, covering only the
+                  code point whose symbol-font provenance and Unicode equivalent are both documented. This
+                  exceeds the intent and is covered because it is tested.
+                tests:
+                  - VisioPackageReader_Read_SymbolFontRun_RecoversArrowWithoutCorruptingText
+
+              - id: DocDownVisio-OpenXml-VisioPackageReader-YieldsEmptyPageCleanly
+                title: >-
+                  VisioPackageReader shall yield a page that carries no shapes with recoverable text and no
+                  connections as an empty page rather than a failure.
+                justification: |
+                  An empty page is an expected authoring artifact, not a loss of content, so the reader
+                  returns it as a page with no shapes and no connections rather than treating the absence as
+                  an error, leaving the emitter to note it informationally.
+                tests:
+                  - VisioPackageReader_Read_EmptyPage_YieldsNoShapesOrConnections

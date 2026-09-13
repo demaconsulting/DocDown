@@ -1,0 +1,63 @@
+---
+# Software Unit Requirements for ExcelChartReader
+#
+# ExcelChartReader reads the charts a worksheet shows into the model, recovering each chart's cached
+# data series — the numbers as last plotted — rather than the formulas that produced them.
+
+sections:
+  - title: DocDownExcel Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: ExcelChartReader Requirements
+            requirements:
+              - id: DocDownExcel-OpenXml-ExcelChartReader-ReadsCachedSeries
+                title: >-
+                  ExcelChartReader shall read a chart's title, axis titles, and each series' cached values
+                  as last plotted.
+                justification: |
+                  A consumer that cannot recalculate the workbook can use only the cached values, so the
+                  cache is what the reader recovers; the axis titles turn a column of numbers into a
+                  measured quantity, so they are read alongside the values.
+                tests:
+                  - ExcelChartReader_ReadChartData_SingleSeries_ReadsTitlesAxesAndValues
+
+              - id: DocDownExcel-OpenXml-ExcelChartReader-PreservesSparseIndices
+                title: ExcelChartReader shall preserve a cache's declared point indices rather than assuming them dense.
+                justification: |
+                  A cache omits a point whose source cell was empty, so a series can be genuinely sparse;
+                  carrying each point's declared index keeps a sparse cache honestly sparse instead of
+                  silently shifting later values into the wrong rows.
+                tests:
+                  - ExcelChartReader_ReadChartData_SparseIndices_PreservesDeclaredIndices
+
+              - id: DocDownExcel-OpenXml-ExcelChartReader-ReadsEverySeries
+                title: ExcelChartReader shall read every series a chart plots, including a combination chart's.
+                justification: |
+                  A combination chart's series can differ in unit, precision, and length, so reading every
+                  series — not just the first — is what keeps a multi-series chart's data complete rather
+                  than dropping all but one plotted quantity.
+                tests:
+                  - ExcelChartReader_ReadChartData_MultipleSeries_ReadsEverySeries
+
+              - id: DocDownExcel-OpenXml-ExcelChartReader-KeepsReferenceWhenCacheMissing
+                title: >-
+                  ExcelChartReader shall keep a series' source reference and yield no points when the
+                  chart caches no values.
+                justification: |
+                  A chart saved without a value cache still names its source range, which a reader can use
+                  to find the cells; keeping the reference while yielding no points lets the emitter report
+                  the missing cache honestly rather than dropping the chart.
+                tests:
+                  - ExcelChartReader_ReadChartData_MissingCache_KeepsReferenceAndYieldsNoPoints
+
+              - id: DocDownExcel-OpenXml-ExcelChartReader-ReportsAutomaticTitle
+                title: >-
+                  ExcelChartReader shall report a chart's automatic title as generated rather than
+                  authored.
+                justification: |
+                  A chart whose title the host application derives from the sole series name is not an
+                  authored title, so marking it as automatic lets the output say the title was generated
+                  rather than implying an author wrote it.
+                tests:
+                  - ExcelChartReader_ReadChartData_AutomaticTitle_ReportsSeriesNameAsGenerated

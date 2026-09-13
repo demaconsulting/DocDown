@@ -1,0 +1,60 @@
+---
+# Software Unit Requirements for VisioImageReader
+#
+# VisioImageReader resolves the embedded images of a Visio drawing to their bytes and provenance,
+# directly from the Open Packaging container because DocumentFormat.OpenXml has zero Visio types, and
+# records which page references each image so the association survives extraction.
+
+sections:
+  - title: DocDownVisio Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: VisioImageReader Requirements
+            requirements:
+              - id: DocDownVisio-OpenXml-VisioImageReader-YieldsEmbeddedImages
+                title: >-
+                  VisioImageReader shall follow every internal image relationship to its media part and
+                  yield the bytes unchanged, deduplicated by package part.
+                justification: |
+                  A foreign-data image stores a complete image file in a media part, so the reader passes
+                  its bytes through unchanged as a passthrough and yields each distinct media part once,
+                  even when several pages share it, so a shared image is written and named once rather than
+                  duplicated.
+                tests:
+                  - VisioImageReader_Collect_PageImageAndThumbnail_YieldsImageOnlyWithPage
+
+              - id: DocDownVisio-OpenXml-VisioImageReader-RecordsPageAssociation
+                title: >-
+                  VisioImageReader shall record every page that references an image and the per-page order
+                  of the images each page shows.
+                justification: |
+                  An image is only citable back to the page it appears on if the association is recorded,
+                  so an image relationship on a page-contents part records that page's index as a referrer,
+                  a media part shared across pages records every referring page, and the per-page ordered
+                  occurrences are kept so the emitter can link each image inline under its page section.
+                tests:
+                  - VisioImageReader_Collect_PageImageAndThumbnail_YieldsImageOnlyWithPage
+
+              - id: DocDownVisio-OpenXml-VisioImageReader-FlagsTemplateFurniture
+                title: >-
+                  VisioImageReader shall flag an image reached only through a master as template-referenced
+                  rather than giving it a fabricated page.
+                justification: |
+                  An image relationship on a master part records template furniture, not page content, so
+                  flagging it as template-referenced rather than assigning it a page number is what lets a
+                  reader tell "on page 2" from "master furniture" from "true orphan".
+                tests:
+                  - VisioImageReader_Collect_MasterImage_FlagsTemplateWithoutPage
+
+              - id: DocDownVisio-OpenXml-VisioImageReader-ExcludesThumbnail
+                title: >-
+                  VisioImageReader shall exclude the package thumbnail from the embedded images it reports.
+                justification: |
+                  The package thumbnail is referenced from the package root by a thumbnail relationship,
+                  not an image relationship on a page or master, and it is document furniture rather than
+                  embedded content — reporting it as an embedded image would itself be dishonest — so it is
+                  excluded both by following only image relationships and, as a safeguard, by its
+                  document-properties path.
+                tests:
+                  - VisioImageReader_Collect_PageImageAndThumbnail_YieldsImageOnlyWithPage

@@ -1,0 +1,39 @@
+---
+# Software Unit Requirements for VisioComAvailability
+#
+# VisioComAvailability probes whether the Visio COM automation backend can run in the current
+# environment: it checks the operating system first and then, on Windows, whether the Visio.Application
+# ProgID is registered. It opens no drawing, launches no application, and never throws.
+
+sections:
+  - title: DocDownVisio Requirements
+    sections:
+      - title: Com Requirements
+        sections:
+          - title: VisioComAvailability Requirements
+            requirements:
+              - id: DocDownVisio-Com-VisioComAvailability-ProbesWithoutSideEffects
+                title: >-
+                  VisioComAvailability shall answer the probe cheaply and without side effects, opening no
+                  drawing, launching no application, and never throwing.
+                justification: |
+                  Availability probing carries strict obligations: it must be well under the contract's
+                  time bound, side-effect free, and non-throwing. Checking the operating system first and
+                  then a registry lookup for the ProgID — treating any fault as "not registered" — is what
+                  keeps the probe within those obligations while still telling the truth about whether
+                  Visio can be reached.
+                tests:
+                  - VisioComAvailability_Probe_NeverInstructsInstallation
+
+              - id: DocDownVisio-Com-VisioComAvailability-ReportsDeclarativeReason
+                title: >-
+                  VisioComAvailability shall report unavailable off Windows or without Microsoft Visio
+                  registered, with a declarative reason that instructs no installation.
+                justification: |
+                  Rendering is environment-dependent, so off Windows or without Visio the probe must report
+                  unavailable rather than let the backend be selected and fail. The reason states a fact
+                  about the environment — naming the operating system, or that Visio is not registered —
+                  that the reader cannot act on, never an installation instruction, matching the
+                  library-wide convention.
+                tests:
+                  - VisioComAvailability_Probe_OffWindows_IsUnavailable

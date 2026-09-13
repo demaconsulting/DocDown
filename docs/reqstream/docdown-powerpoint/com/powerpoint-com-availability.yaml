@@ -1,0 +1,39 @@
+---
+# Software Unit Requirements for PowerPointComAvailability
+#
+# PowerPointComAvailability probes whether the PowerPoint COM automation backend can run in the current
+# environment: it checks the operating system first and then, on Windows, whether the PowerPoint.Application
+# ProgID is registered. It opens no deck, launches no application, and never throws.
+
+sections:
+  - title: DocDownPowerPoint Requirements
+    sections:
+      - title: Com Requirements
+        sections:
+          - title: PowerPointComAvailability Requirements
+            requirements:
+              - id: DocDownPowerPoint-Com-PowerPointComAvailability-ProbesWithoutSideEffects
+                title: >-
+                  PowerPointComAvailability shall answer the probe cheaply and without side effects,
+                  opening no deck, launching no application, and never throwing.
+                justification: |
+                  Availability probing carries strict obligations: it must be well under the contract's
+                  time bound, side-effect free, and non-throwing. Checking the operating system first and
+                  then a registry lookup for the ProgID — treating any fault as "not registered" — is what
+                  keeps the probe within those obligations while still telling the truth about whether
+                  PowerPoint can be reached.
+                tests:
+                  - PowerPointComAvailability_Probe_NeverThrowsAndNeverInstructsInstallation
+
+              - id: DocDownPowerPoint-Com-PowerPointComAvailability-ReportsDeclarativeReason
+                title: >-
+                  PowerPointComAvailability shall report unavailable off Windows or without Microsoft
+                  PowerPoint registered, with a declarative reason that instructs no installation.
+                justification: |
+                  Rendering is environment-dependent, so off Windows or without PowerPoint the probe must
+                  report unavailable rather than let the backend be selected and fail. The reason states a
+                  fact about the environment — naming the operating system, or that PowerPoint is not
+                  registered — that the reader cannot act on, never an installation instruction, matching
+                  the library-wide convention.
+                tests:
+                  - PowerPointComAvailability_Probe_OffWindows_IsUnavailable

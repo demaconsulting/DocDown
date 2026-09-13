@@ -19,7 +19,7 @@ sections:
                   one. Declaring the schema version lets tooling validate compatibility before acting on
                   the contents.
                 tests:
-                  - ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionOnePointOne
+                  - ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionOnePointTwo
 
               - id: DocDownCore-Output-ManifestWriter-MachineTwin
                 title: ManifestWriter shall record the producing tool and selected backend in the manifest.

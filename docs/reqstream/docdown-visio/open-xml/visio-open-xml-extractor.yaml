@@ -1,0 +1,78 @@
+---
+# Software Unit Requirements for VisioOpenXmlExtractor
+#
+# VisioOpenXmlExtractor is the managed backend the engine selects for a content extraction. It declares
+# what it can deliver, probes unconditionally, records the environment facts, buffers and opens the
+# drawing, hands the stream to VisioPackageReader, delegates emission to VisioContentEmitter, and
+# contributes the self-tests that describe its own behavior.
+
+sections:
+  - title: DocDownVisio Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: VisioOpenXmlExtractor Requirements
+            requirements:
+              - id: DocDownVisio-OpenXml-VisioOpenXmlExtractor-DeclaresCapabilities
+                title: >-
+                  VisioOpenXmlExtractor shall declare the modern Visio formats, the higher selection
+                  priority, and the text, embedded-image, document-metadata, and document-structure
+                  capabilities.
+                justification: |
+                  Selection ranks backends on what they declare before any drawing is opened. Declaring
+                  exactly the deliverable capabilities and the higher priority is what makes this managed
+                  backend the chosen reader for every content extraction and keeps a shortfall negotiated
+                  up front rather than discovered as missing output.
+                tests:
+                  - VisioOpenXmlExtractor_Descriptor_MatchesContract
+
+              - id: DocDownVisio-OpenXml-VisioOpenXmlExtractor-DeclaresPageRenderingNotProvided
+                title: >-
+                  VisioOpenXmlExtractor shall not declare the rendered-pages capability and shall record
+                  that this extractor does not provide rendering.
+                justification: |
+                  Rasterizing a page needs a renderer this package's managed backend deliberately does not
+                  ship, so declaring rendered-pages would cause the managed backend to be chosen for a
+                  render it cannot deliver. Recording the fact plainly through an environment fact — and
+                  leaving rendering to the COM backend — states the boundary at the descriptor rather than
+                  discovering it as a missing pages folder.
+                tests:
+                  - VisioOpenXmlExtractor_Descriptor_MatchesContract
+
+              - id: DocDownVisio-OpenXml-VisioOpenXmlExtractor-ProbesUnconditionally
+                title: >-
+                  VisioOpenXmlExtractor shall answer the availability probe unconditionally, performing no
+                  I/O.
+                justification: |
+                  Nothing about this backend is environment-dependent — no native binary and no external
+                  application — so there is nothing to probe: System.IO.Packaging is a managed assembly
+                  that ships inside the package, and the probe reports available everywhere the package
+                  loads, which is what makes the topology recoverable on any machine and in CI.
+                tests:
+                  - VisioOpenXmlExtractor_ProbeAvailability_AlwaysAvailable
+
+              - id: DocDownVisio-OpenXml-VisioOpenXmlExtractor-OrchestratesExtraction
+                title: >-
+                  VisioOpenXmlExtractor shall record its environment facts, buffer and open the drawing,
+                  read it into the model, and delegate emission to the shared emitter.
+                justification: |
+                  The extractor owns orchestration: it records what parsed the drawing and that this
+                  extractor does not render, buffers the source because a stream is not guaranteed seekable
+                  and the package reader must seek, hands the reader a seekable stream, and returns degraded
+                  when the emitter reported any gap — writing no bytes itself, because the sink is the only
+                  output channel.
+                tests:
+                  - DocDownVisio_Extract_Vsdx_SelectsOpenXml
+
+              - id: DocDownVisio-OpenXml-VisioOpenXmlExtractor-ContributesSelfTests
+                title: >-
+                  VisioOpenXmlExtractor shall contribute self-test cases, including a topology round-trip
+                  and an honest skip for the page-rendering capability it does not claim.
+                justification: |
+                  An operator needs to confirm the backend works where it is deployed. A round-trip case
+                  that builds a drawing with two labeled shapes and a directed edge, reads it back, and
+                  confirms the connection resolved proves the topology path is genuinely functional, and a
+                  skipped page-rendering case keeps a capability the managed backend does not claim —
+                  rendering belongs to the COM backend — from reading as a failure.
+                tests:
+                  - VisioOpenXmlExtractor_SelfTestCases_RoundTripPassesAndRenderingSkipped

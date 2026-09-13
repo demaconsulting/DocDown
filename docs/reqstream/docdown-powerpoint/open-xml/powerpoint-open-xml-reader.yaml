@@ -1,0 +1,86 @@
+---
+# Software Unit Requirements for PowerPointOpenXmlReader
+#
+# PowerPointOpenXmlReader is the one place that touches the Open XML object model. It walks slides in
+# presentation order, separates the title placeholder from the body shapes, reads the notes slide's body
+# placeholder so the narration is recovered from the file itself, counts the charts the deck embeds, and
+# wraps a package it cannot open so Core sees a structured failure.
+
+sections:
+  - title: DocDownPowerPoint Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: PowerPointOpenXmlReader Requirements
+            requirements:
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-PreservesSlideOrder
+                title: >-
+                  PowerPointOpenXmlReader shall return the slides in presentation order, each with its
+                  1-based ordinal.
+                justification: |
+                  A deck's argument is sequential, so the reader walks the presentation's slide-id list
+                  rather than the package parts, which are unordered. Carrying each slide's 1-based
+                  ordinal is what lets every later artifact — an image association, a render, a citation —
+                  refer to the slide by the position the author chose.
+                tests:
+                  - PowerPointOpenXmlReader_Read_DeckWithNotes_ReturnsSlidesInOrder
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExtractsTitle
+                title: >-
+                  PowerPointOpenXmlReader shall read a slide's title from its title placeholder, and
+                  leave the title unset when the slide has none.
+                justification: |
+                  A slide's title is the heading a reader navigates by, and it lives in the title (or
+                  centered-title) placeholder, distinct from the body shapes. Reading it from that
+                  placeholder keeps the title available as a heading, and leaving it unset for a
+                  title-less slide avoids fabricating one from arbitrary body text.
+                tests:
+                  - PowerPointOpenXmlReader_Read_DeckWithNotes_ReturnsSlidesInOrder
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExtractsBodyText
+                title: >-
+                  PowerPointOpenXmlReader shall read a slide's body text as a sequence of lines from its
+                  non-title shapes, dropping blank paragraphs.
+                justification: |
+                  The words on a slide are its assertions and are recoverable from the file with no
+                  render, so the reader joins each paragraph's text runs into one line, keeps the
+                  non-blank lines of every non-title shape in reading order, and separates them from the
+                  title, so a run-split line reads as one line and the body is captured whole.
+                tests:
+                  - PowerPointOpenXmlReader_Read_Slide_ExtractsBodyTextLines
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExtractsSpeakerNotes
+                title: >-
+                  PowerPointOpenXmlReader shall read a slide's speaker notes from the notes slide's body
+                  placeholder.
+                justification: |
+                  Speaker notes are the narration no render can supply, so the reader reads them from the
+                  file itself — from the notes slide's body placeholder only, so the slide-number and date
+                  furniture on the notes slide do not contaminate the narration — joining the paragraphs
+                  into the notes text attached to the slide.
+                tests:
+                  - PowerPointOpenXmlReader_Read_Slide_ExtractsSpeakerNotes
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-YieldsNullNotesWhenAbsent
+                title: >-
+                  PowerPointOpenXmlReader shall leave a slide's notes unset when the slide carries no
+                  speaker notes.
+                justification: |
+                  A slide with no notes must be distinguishable from one whose notes were missed, so the
+                  reader yields no notes text rather than an empty string, letting the emitter count the
+                  genuine whole-deck absence and report it honestly.
+                tests:
+                  - PowerPointOpenXmlReader_Read_DeckWithoutNotes_YieldsNullNotes
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-CountsCharts
+                title: >-
+                  PowerPointOpenXmlReader shall count the DrawingML chart parts the deck's slides and
+                  their notes embed.
+                justification: |
+                  A chart on a slide is anchored through a graphic frame that carries no image blip and no
+                  text body, so neither the shape walk nor the image walk sees it and the chart would
+                  leave no trace at all in the output. Counting the parts is what lets the emitter state
+                  plainly that the deck contains charts this backend does not read, instead of dropping
+                  them in silence.
+                tests:
+                  - PowerPointContentEmitter_Emit_DeckWithCharts_ReportsCountedGap

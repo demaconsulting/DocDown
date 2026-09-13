@@ -1,0 +1,314 @@
+---
+# Software System Requirements for DocDown.Visio
+#
+# These requirements describe the externally visible behavior of the Visio extraction package from the
+# perspective of a host that registers it, without specifying implementation details. Each decomposes
+# into subsystem and unit requirements linked below via children, and is proven by system-level tests.
+# DocDown.Visio has three subsystems (Com, Markdown, OpenXml) and one direct unit
+# (VisioDocDownBuilderExtensions).
+#
+# A Visio drawing is an engineering schematic, so these requirements are traced forward from the Visio
+# intent: its meaning is carried by which shapes exist, what they are labeled, which page they belong
+# to, and — above all — how they are connected. For every page of a modern drawing the package must
+# extract the page name (engineers navigate and cite by page name), the text of every shape that carries
+# text, and the directed connections between shapes resolved into a readable topology
+# (source shape -> target shape), because the topology IS the engineering content. This must work with
+# no Visio installation present, so the logical content is recoverable on any machine and in CI. Spatial
+# arrangement cannot be recovered from the XML, so the package additionally renders each page to an image
+# when Microsoft Visio is available; when rendering is unavailable it says so as a counted gap naming the
+# reason. The legacy binary format must be refused honestly.
+#
+# NOTE ON FORWARD-TRACE (see the developer report for the full findings): the shipped implementation
+# EXCEEDS the intent in the topology area — it records the provenance of every endpoint label
+# (authored text vs master type vs bare shape id) and recovers symbol-font glyphs. The intent asked
+# only for the directed source-to-target edges. Those additional behaviors are covered here because they
+# are genuinely tested, but the requirement DocDownVisio-TopologyProvenance states plainly that the
+# intent did not call for them; no requirement is invented to retro-justify untested code.
+
+sections:
+  - title: DocDownVisio Requirements
+    requirements:
+      - id: DocDownVisio-Registration
+        title: >-
+          The system shall register its Visio backends through an explicit extension method without
+          reflection or assembly scanning.
+        tags: [system]
+        justification: |
+          A host must be able to read its own dependency graph off its own code. Registration that
+          happens because a package is present on disk makes the set of active backends a deployment
+          accident rather than a decision, which cannot be audited; one explicit call keeps the edge
+          from host to backend visible and reviewable. Visio registers two backends — a guaranteed
+          managed content backend and an environment-dependent rendering backend — so the single call
+          must add both without hiding either.
+        children:
+          - DocDownVisio-VisioDocDownBuilderExtensions-RegistersBothBackends
+          - DocDownVisio-VisioDocDownBuilderExtensions-OrdersManagedAboveCom
+          - DocDownVisio-VisioDocDownBuilderExtensions-ReturnsBuilderForChaining
+          - DocDownVisio-VisioDocDownBuilderExtensions-RejectsNullBuilder
+        tests:
+          - AddVisio_RegistersOpenXmlAndComBackends
+
+      - id: DocDownVisio-Extraction
+        title: >-
+          The system shall extract each page of a drawing as content — its name, its shape text, and the
+          directed connections between its shapes — along with its images and metadata, into the DocDown
+          output contract.
+        tags: [system]
+        justification: |
+          The package exists to turn a drawing into the invariant DocDown output layout so a downstream
+          agent sees the same artifacts it sees for every other format. A schematic's meaning is carried
+          by which shapes exist, what they are labeled, which page they belong to, and how they are
+          connected, so extracting that from the file itself — rather than a picture of the drawing — is
+          what makes the schematic's logical content recoverable on any machine and in CI.
+        children:
+          - DocDownVisio-OpenXml-Extraction
+          - DocDownVisio-OpenXml-Reading
+          - DocDownVisio-Markdown-ModelEmission
+        tests:
+          - DocDownVisio_Extract_Vsdx_SelectsOpenXml
+
+      - id: DocDownVisio-PageNames
+        title: The system shall extract the name of every page.
+        tags: [system]
+        justification: |
+          Engineers navigate and cite a drawing by page name, so a page's name is the first thing that
+          makes its content findable. A backend that dropped the page names would leave a reader unable
+          to say which page a shape or a connection belongs to, so the name of every page is surfaced as
+          the heading of that page's content.
+        children:
+          - DocDownVisio-OpenXml-VisioPackageReader-SurfacesPageNames
+          - DocDownVisio-Markdown-VisioContentEmitter-WritesPageName
+        tests:
+          - DocDownVisio_Extract_TwoPages_SurfacesEveryPageName
+
+      - id: DocDownVisio-ShapeText
+        title: The system shall extract the text of every shape that carries text.
+        tags: [system]
+        justification: |
+          Labels carry the identity of the modeled things: a shape's text is the part number, the
+          designation, or the name whoever drew the schematic gave it. That text is recoverable from the
+          file with no rendering, so it is extracted from the drawing itself as the guaranteed outcome no
+          environment can take away, preserved intact including the multi-line fittings lists and
+          valve-positioning tables shapes carry.
+        children:
+          - DocDownVisio-OpenXml-VisioPackageReader-ExtractsShapeText
+          - DocDownVisio-Markdown-VisioContentEmitter-WritesShapeText
+        tests:
+          - VisioPackageReader_Read_WashSystem_ExtractsShapeText
+
+      - id: DocDownVisio-Topology
+        title: >-
+          The system shall resolve the drawing's connectors into directed connections between shapes and
+          render them as a readable source-to-target topology.
+        tags: [system]
+        justification: |
+          A list of disconnected strings is not a schematic: the topology is the engineering content. The
+          direction is carried by which connector record — the begin end or the end end — names each
+          shape, so a connector that reads "Inlet Tank at its begin, Transfer Pump at its end" becomes the
+          directed edge "Inlet Tank -> Transfer Pump". Resolving each connector into a real directed edge
+          between named shapes, page by page, is what turns the drawing's own wiring into content a reader
+          and an agent can follow.
+        children:
+          - DocDownVisio-OpenXml-VisioPackageReader-ResolvesDirectedTopology
+          - DocDownVisio-Markdown-VisioContentEmitter-RendersDirectedTopology
+        tests:
+          - DocDownVisio_Extract_WashSystem_RecoversDirectedTopology
+
+      - id: DocDownVisio-TopologyProvenance
+        title: >-
+          The system shall record, for every rendered topology endpoint, whether its label is the shape's
+          own text, its master type, or only a shape id, and report that provenance so a reader can tell
+          an authored name from a classification from an admission of ignorance.
+        tags: [system]
+        justification: |
+          The Visio intent asks for the directed source-to-target edges and no more; recording the
+          provenance of each endpoint label is an additional honesty measure this backend provides, not a
+          behavior the intent called for, and it is documented here because it is genuinely tested rather
+          than to retro-justify the code. It earns its place: a schematic's topology is unreadable when
+          most endpoints render as a bare shape id, but the cure must not be invention. A label derived
+          from a shape's master type — which the drawing itself asserts — is rendered parenthesized and
+          paired with the shape id so it can never be mistaken for a name anyone authored, and the
+          convention plus the endpoint coverage counts are published so the distinction survives into the
+          manifest a consumer reads.
+        children:
+          - DocDownVisio-Markdown-TopologyLabeling
+        tests:
+          - VisioShapeLabeler_Convention_DescribesEveryRenderedForm
+
+      - id: DocDownVisio-NoInstallationRequired
+        title: >-
+          The system shall recover a drawing's page names, shape text, and directed topology with no
+          Visio installation present.
+        tags: [system]
+        justification: |
+          The schematic's logical content must be recoverable on any machine and in CI, where no Office
+          application is installed. The managed backend reads the Open Packaging container directly with
+          a managed assembly and probes available unconditionally, so the guaranteed content path never
+          depends on an environment: a drawing's topology is recovered identically on a developer's
+          Windows machine and on a headless Linux CI host.
+        children:
+          - DocDownVisio-OpenXml-VisioOpenXmlExtractor-ProbesUnconditionally
+        tests:
+          - DocDownVisio_Extract_Vsdx_SelectsOpenXml
+
+      - id: DocDownVisio-PageRendering
+        title: >-
+          The system shall render each page to an image when Microsoft Visio is available, and otherwise
+          state plainly through the managed backend that this extractor does not provide rendering.
+        tags: [system]
+        justification: |
+          Spatial arrangement — layout, grouping, relative position — is itself engineering meaning and
+          cannot be fully recovered from the file's XML, so the rendered appearance of each page is the
+          richer outcome and must be captured when Visio is available. Rendering is delivered by the COM
+          backend, chosen only when rendering is requested and Visio is present; the managed backend ships
+          no renderer, so it states the fact declaratively rather than fabricating a page. Rendering is
+          the richer outcome and content extraction is the guaranteed one; the two are not alternatives
+          that hide each other.
+        children:
+          - DocDownVisio-OpenXml-VisioOpenXmlExtractor-DeclaresPageRenderingNotProvided
+          - DocDownVisio-Com-Rendering
+          - DocDownVisio-Com-Automation
+        tests:
+          - VisioComExtractor_Extract_ViaStub_WritesTopologyAndRendersEveryPage
+
+      - id: DocDownVisio-RenderingUnavailableGap
+        title: >-
+          The system shall degrade with a counted pages gap naming the reason when page rendering is
+          requested but Microsoft Visio is not available, while still delivering the directed topology.
+        tags: [system]
+        justification: |
+          When rendering is unavailable the package must say so explicitly as a counted gap naming the
+          reason, never omit it silently — an absence a reader might otherwise mistake for a page that was
+          never there. So a render request on a host without Visio degrades the run with a counted pages
+          gap, and the guaranteed content — the page names, shape text, and directed topology the managed
+          backend delivers with no installation — is still written in full, keeping rendering the richer
+          outcome and content extraction the one that cannot be taken away.
+        tests:
+          - DocDownVisio_Extract_RenderRequestedWithoutVisio_DegradesWithCountedPagesGapButKeepsTopology
+
+      - id: DocDownVisio-PageRenderFidelity
+        title: >-
+          The system shall report, as a counted gap naming the pages, any page the renderer could not
+          produce, and continue with the remaining pages.
+        tags: [system]
+        justification: |
+          Rendering is worthwhile only if its shortfalls are honest: a page that dropped out of the pages
+          folder silently is exactly the failure the output contract forbids. Isolating each page's export
+          so one unrenderable page becomes a counted, named gap rather than aborting the run keeps a
+          partially rendered drawing a stated fact and lets the rest of the drawing still render, with the
+          logical topology still present for every page.
+        children:
+          - DocDownVisio-Com-VisioComExtractor-IsolatesPageRenderFailures
+        tests:
+          - VisioComExtractor_Extract_PageRenderFails_ReportsCountedGap
+
+      - id: DocDownVisio-RenderingAvailability
+        title: >-
+          The system shall report the rendering backend as unavailable, with a declarative reason that
+          instructs no installation, where Microsoft Visio cannot be reached.
+        tags: [system]
+        justification: |
+          Rendering is environment-dependent, so honesty must be enforced at selection: off Windows or
+          without Microsoft Visio registered, the COM backend must report unavailable rather than be
+          selected and fail. The reason states a fact about the environment the reader cannot act on — it
+          never instructs an installation — matching the library-wide convention, so a machine without
+          Visio produces an honest selection outcome instead of a broken render.
+        children:
+          - DocDownVisio-Com-Availability
+          - DocDownVisio-Com-VisioComExtractor-ProbesHonestly
+        tests:
+          - VisioComAvailability_Probe_NeverInstructsInstallation
+
+      - id: DocDownVisio-EmbeddedImages
+        title: >-
+          The system shall write a drawing's embedded images into the images folder, link them from the
+          page that shows them, and record which page each belongs to, excluding the package thumbnail.
+        tags: [system]
+        justification: |
+          A drawing can embed a photograph or a raster diagram through a foreign-data shape, and a
+          text-only extraction discards it silently. Writing the images out, linking them inline under
+          the page section, and recording the page association — distinguishing a page reference from
+          template furniture on a master, and excluding the package thumbnail which is document furniture
+          rather than embedded content — keeps a consumer's view of the drawing complete and keeps an
+          image citable back to the page it appears on.
+        children:
+          - DocDownVisio-OpenXml-Images
+          - DocDownVisio-Markdown-VisioContentEmitter-LinksImages
+        tests:
+          - VisioContentEmitter_Emit_WithRasterImages_WritesThroughSink
+
+      - id: DocDownVisio-VectorImages
+        title: >-
+          The system shall write an EMF or WMF vector image unchanged, with an informational caveat that
+          many viewers cannot render it.
+        tags: [system]
+        justification: |
+          A vector metafile's stored bytes are a complete image file, so writing them through loses
+          nothing the drawing carried. Recording the readability caveat — that many viewers and image
+          libraries cannot open a metafile — is the honest complement, and because this backend ships no
+          metafile rasterizer no better environment would yield more, so it is informational rather than a
+          gap and a well-formed vector-bearing drawing does not degrade.
+        children:
+          - DocDownVisio-Markdown-VisioContentEmitter-ReportsVectorImageCaveat
+        tests:
+          - DocDownVisio_Extract_PageWithVectorImage_Succeeds
+
+      - id: DocDownVisio-EmptyDrawing
+        title: The system shall degrade with an explicit counted gap when a drawing contains no pages.
+        tags: [system]
+        justification: |
+          A drawing with no pages has no content to write, and an empty content document is
+          indistinguishable from a broken extractor. Saying plainly that the drawing carried no pages
+          turns a mystery into a fact the caller can act on.
+        children:
+          - DocDownVisio-Markdown-VisioContentEmitter-ReportsEmptyDrawingGap
+        tests:
+          - VisioContentEmitter_Emit_EmptyDrawing_ReportsGap
+
+      - id: DocDownVisio-DeclaredCapabilities
+        title: >-
+          The system shall declare, for its managed backend, the text, embedded-image,
+          document-metadata, and document-structure capabilities and not the rendered-pages capability;
+          and, for its COM backend, that full set including rendered-pages.
+        tags: [system]
+        justification: |
+          Backend selection negotiates over declared capabilities, so a declaration that overstates what
+          a backend can deliver causes the wrong backend to be chosen and the shortfall to surface only
+          as missing output. The managed backend ships no renderer, so it declares exactly what it can
+          deliver and not rendered-pages; the COM backend is a full superset that delivers all of it,
+          declared so the engine selects it only when rendering is actually requested. Declaring exactly
+          what each can deliver keeps selection honest before any work begins.
+        children:
+          - DocDownVisio-OpenXml-VisioOpenXmlExtractor-DeclaresCapabilities
+          - DocDownVisio-Com-VisioComExtractor-DeclaresCapabilities
+        tests:
+          - VisioOpenXmlExtractor_Descriptor_MatchesContract
+
+      - id: DocDownVisio-LegacyFormatRefusal
+        title: >-
+          The system shall refuse a legacy binary Visio drawing with a structured failure whose remedy
+          promises no capability, and without an exception reaching the caller.
+        tags: [system]
+        justification: |
+          This package reads Open Packaging drawings and nothing else, and DocDown does not support the
+          legacy binary formats at all — no future version and no different installation will ever extract
+          a .vsd. A caller who hands the engine one therefore deserves a plain statement of that fact with
+          the full output layout still written — not an exception, not a silent omission, and not a remedy
+          pointing at a package, an installation, or an environment that will never deliver the
+          capability.
+        tests:
+          - DocDownVisio_Extract_LegacyVsd_FailsWithUnsupportedFormatRemedy
+
+      - id: DocDownVisio-SelfValidation
+        title: The system shall contribute self-validation cases describing its own extraction behavior.
+        tags: [system]
+        justification: |
+          An operator needs to confirm the backends actually work where they are deployed, not merely
+          that they are present. The managed backend contributes a round-trip case that builds a drawing
+          with a directed edge, reads it back, and confirms the connection resolved — proving the topology
+          path is genuinely functional — plus an honest skip for the page-rendering capability it does not
+          claim, so that confirmation is available on demand where the deployment runs the self-test tool.
+        children:
+          - DocDownVisio-OpenXml-VisioOpenXmlExtractor-ContributesSelfTests
+        tests:
+          - VisioOpenXmlExtractor_SelfTestCases_RoundTripPassesAndRenderingSkipped

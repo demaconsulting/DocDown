@@ -30,11 +30,21 @@ shape carries:
 - `extractor` (id, display name, package, capabilities, priority, fidelity) and `selection` (mode,
   required and satisfied capabilities, the candidate trace).
 - `environment` (operating system, architecture, runtime, identifier, facts) and `document` metadata.
-- `artifacts` — the completeness ledger, one entry per core artifact with its status and counts.
-- `images`, `pages`, and **`parts`** (added alongside images and pages), each listing the produced
-  resources; images record a `references` count for the SHA-256 deduplication, and a `description` with
-  its `descriptionSource` provenance when the document offered text about the image (both `null`
-  otherwise).
+  This is the **full, untrimmed** environment block — including the available-but-unused backend facts
+  the summary elides — so `manifest.json` is where the complete provenance is read.
+- `contentFeatures` — the counted structural features of the extracted content (headings, tables,
+  comments, sheets, charts, and the like), the machine-readable twin of the summary's content outline;
+  empty when the backend reported none.
+- `artifacts` — the completeness ledger, one entry per root artifact and resource folder (`summary`,
+  `manifest`, `metadata`, `content`, `images`, `pages`) with its status and counts.
+- `images`, `pages`, and **`parts`**, each listing the produced resources. `images` carries the full
+  **per-image inventory** the summary no longer prints — pixel dimensions, `sizeBytes`, `sha256`, the
+  `sourcePage`/`sourcePages` and `referencedByTemplate` image-to-unit association, `sourceRef`,
+  `transform`, a `references` count for the SHA-256 deduplication, and a `description` with its
+  `descriptionSource` provenance when the document offered text about the image (both `null`
+  otherwise). `parts` records each part's `kind` (`page`, `sheet`, `slide`, `section`, `attachment`, or
+  `chart`), Core-assigned `ordinal`, `title`, and `characterCount`; a `chart` part is a data object
+  whose cached data series an extractor recovered.
 - `gaps`, `diagnostics`, `requestedOptions`, and `failure` (null on success).
 
 The manifest deliberately does **not** include a `derivedFrom` field; the convert-to-PDF delegation

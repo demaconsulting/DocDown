@@ -1,0 +1,25 @@
+---
+# Software Unit Requirements for ExcelDrawingTextReader
+#
+# ExcelDrawingTextReader reads the text carried by the drawing shapes floating over a worksheet —
+# callouts, labels, and annotations that live in the drawing layer and in no cell.
+
+sections:
+  - title: DocDownExcel Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: ExcelDrawingTextReader Requirements
+            requirements:
+              - id: DocDownExcel-OpenXml-ExcelDrawingTextReader-CollectsShapeText
+                title: >-
+                  ExcelDrawingTextReader shall collect the text of every shape in a worksheet's drawing,
+                  in drawing order, including shapes nested inside groups.
+                justification: |
+                  A shape's text exists only in the drawing part, so a backend that reads cells and
+                  pictures alone drops it while reporting a complete extraction — the same failure as a
+                  dropped chart, in a quieter place. Shapes are read in drawing order, a grouped callout is
+                  flattened because a reader looking at the sheet reads it no differently, a shape with no
+                  text contributes nothing, and a shape's paragraphs join into one readable annotation.
+                tests:
+                  - ExcelContentEmitter_Emit_ShapeText_WritesUnderTheSheet

@@ -26,9 +26,15 @@ driven by a single extractor on a single logical flow, matching the interface co
 - **`_parts`** (`List<RecordedPart>`) — Buffered content parts in call order.
 - **`_allocatedPaths`** (`HashSet<string>`) — Allocated relative paths, used to resolve collisions.
 - **`_content`** (`StringBuilder`) — Buffered single-flow markdown, accumulated across calls.
-- **`_diagnostics`, `_gaps`, `_environmentFacts`, `_foundCounts`** (collections) — The honesty stream
-  in emission order.
-- **`_documentInfo`** (`DocumentInfo?`) — The most recent reported metadata (last write wins).
+- **`_diagnostics`, `_gaps`, `_environmentFacts`, `_foundCounts`, `_contentFeatures`** (collections) —
+  The honesty stream in emission order. `_contentFeatures` accumulates the counted structural features
+  (headings, tables, comments, sheets, charts) under their label, dropping any zero count, and feeds
+  both the summary's content outline and the manifest's `contentFeatures` twin.
+- **`_documentInfo`** (`DocumentInfo?`) — The most recent reported orientation metadata (last write wins).
+- **`_documentMetadata`** (`DocumentMetadata?`) — The most recent reported **self-reported** document
+  metadata (last write wins), consumed by `MetadataWriter` for `metadata.json` and by the summary's
+  document-metadata block. It is kept distinct from `_documentInfo` so the document's own claims never
+  blend with the orientation counts.
 - **`_nextImageOrdinal`, `_nextPartOrdinal`, `_nextGapNumber`** (`int`) — Monotonic 1-based
   allocators.
 
@@ -37,7 +43,13 @@ path, provenance, size, SHA-256, and (for parts) kind/ordinal/title/markdown/cha
 `RecordedImage.Transform` is an `ImageTransform` rather than free text, so the recorded provenance is
 drawn from the one closed vocabulary described in _Output Subsystem Design_. `RecordedImage.Description`
 and `RecordedImage.DescriptionSource` carry the human-meaningful text a document offered about the image
-and its provenance, both taken from the hint and left absent when the hint carries none.
+and its provenance, both taken from the hint and left absent when the hint carries none. The image-to-unit
+association is likewise recorded from the hint: `SourcePages` (every 1-based page, slide, or worksheet
+that references the image) and `ReferencedByTemplate` (set when a PowerPoint layout or master, or a
+Visio master, references it) let the PowerPoint, Visio, and Excel backends surface which slide, page, or
+sheet each embedded image belongs to, and tell a template-borne logo apart from a true orphan. The
+`RecordedPart.Kind` is a `ContentPartKind`, which now includes `Chart` for a recovered chart's cached
+data series.
 
 `ImageHint` carries an optional `Transform` (`ImageTransform?`): `null` means the extractor made no
 claim and accepts the passthrough default.
@@ -64,8 +76,12 @@ claim and accepts the passthrough default.
   allocates the real ordinal in call order (ignoring the extractor's advisory `Ordinal`), derives the
   path `parts/{ordinal:D4}-{kind}-{slug}.md` (or `parts/{ordinal:D4}-{kind}.md` for an empty slug),
   validates it now, and buffers the part for `ContentWriter`.
-- **`ReportDocumentInfo` / `ReportDiagnostic` / `ReportGap` / `ReportEnvironmentFact` / `ReportFound`** —
-  record the honesty stream. `ReportGap` overwrites any caller-supplied `Id` with a dense `GAP-n`, and
+- **`ReportDocumentInfo` / `ReportDocumentMetadata` / `ReportContentFeature` / `ReportDiagnostic` /
+  `ReportGap` / `ReportEnvironmentFact` / `ReportFound`** —
+  record the honesty stream. `ReportDocumentMetadata` captures the document's own self-reported claims
+  for `metadata.json`; `ReportContentFeature` accumulates a counted feature under its label (rejecting a
+  blank label or negative count, and silently dropping a zero count so the outline never prints "0
+  tables"). `ReportGap` overwrites any caller-supplied `Id` with a dense `GAP-n`, and
   substitutes a Core-authored reason (plus a `DD0701`-adjacent warning) if the gap arrives with no
   reason, so a gap is never silent. `ReportFound` records the ledger denominators (for example "4
   found").
@@ -87,8 +103,9 @@ rather than accepted, upholding the no-silent-absence invariant.
 #### Dependencies
 
 - **ScratchFolder** — the containment gate and byte/text writer. See _ScratchFolder Design_.
-- **ExtractionOptions**, **ImageHint**, **ContentPart**, **ExtractionGap**, **ExtractionDiagnostic**,
-  **DocumentInfo**, **EnvironmentFact**, **GapKind** (supporting types).
+- **ExtractionOptions**, **ImageHint**, **ContentPart**, **ContentFeature**, **ExtractionGap**,
+  **ExtractionDiagnostic**, **DocumentInfo**, **DocumentMetadata**, **EnvironmentFact**, **GapKind**
+  (supporting types).
 - `System.Security.Cryptography` (SHA-256), `System.Globalization` — no runtime NuGet dependencies.
 
 #### Callers

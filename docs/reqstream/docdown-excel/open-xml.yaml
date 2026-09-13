@@ -1,0 +1,98 @@
+---
+# Software Subsystem Requirements for DocDownExcel OpenXml
+#
+# The OpenXml subsystem is the managed backend: the extractor the engine selects, the reader that
+# turns the Open XML spreadsheet package into the backend-neutral model, the image reader that
+# yields each embedded image's bytes and sheet association, the chart reader that recovers each
+# chart's cached data, and the drawing-text reader that recovers each shape's annotation text. These
+# requirements decompose into the ExcelOpenXmlExtractor, ExcelOpenXmlReader, ExcelOpenXmlImageReader,
+# ExcelChartReader, and ExcelDrawingTextReader units via children.
+
+sections:
+  - title: DocDownExcel Requirements
+    sections:
+      - title: OpenXml Requirements
+        requirements:
+          - id: DocDownExcel-OpenXml-Extraction
+            title: >-
+              The subsystem shall orchestrate a managed extraction: declare its capabilities, probe
+              unconditionally, read the workbook, emit the content, and contribute self-tests.
+            justification: |
+              The extractor is the backend the engine selects and invokes, so it owns the whole managed
+              extraction path — capabilities and the non-applicable page-rendering declaration, the
+              unconditional availability probe, the buffer-and-open of the workbook, delegation to the
+              reader and emitter, and the self-test cases that describe its own behavior.
+            children:
+              - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-DeclaresCapabilities
+              - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-DeclaresPageRenderingNotApplicable
+              - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-ProbesUnconditionally
+              - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-OrchestratesExtraction
+              - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-ContributesSelfTests
+            tests:
+              - ExcelOpenXmlExtractor_Descriptor_MatchesContract
+
+          - id: DocDownExcel-OpenXml-Reading
+            title: >-
+              The subsystem shall read the spreadsheet package into the backend-neutral model,
+              preserving every cell's value and formula verbatim and each sheet's identity and
+              addressing.
+            justification: |
+              The reader is where an .xlsx becomes the model the rest of the package works on, so it
+              resolves shared strings, keeps only cells that carry a value or a formula, never truncates
+              a value, retains the formula alongside its computed value, and carries each worksheet's
+              name and each cell's address so a fact stays citable.
+            children:
+              - DocDownExcel-OpenXml-ExcelOpenXmlReader-PreservesVerbatimValues
+              - DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsNumericValuesVerbatim
+              - DocDownExcel-OpenXml-ExcelOpenXmlReader-KeepsFormulaAndValue
+              - DocDownExcel-OpenXml-ExcelOpenXmlReader-PreservesSheetIdentity
+              - DocDownExcel-OpenXml-ExcelOpenXmlReader-DropsEmptyCells
+            tests:
+              - ExcelOpenXmlReader_Read_TwoSheetWorkbook_ReturnsSheetsInOrderWithNames
+
+          - id: DocDownExcel-OpenXml-Images
+            title: >-
+              The subsystem shall resolve each embedded image's bytes and record which worksheet
+              references it.
+            justification: |
+              An Open XML image part stores a complete image file, so the image reader passes its bytes
+              through unchanged, deduplicates by package part, and records the 1-based tab index of
+              every worksheet that references an image so the sheet association survives extraction.
+            children:
+              - DocDownExcel-OpenXml-ExcelOpenXmlImageReader-YieldsEmbeddedImages
+              - DocDownExcel-OpenXml-ExcelOpenXmlImageReader-RecordsSheetAssociation
+            tests:
+              - ExcelOpenXmlReader_Read_ImageWorkbook_ExtractsEmbeddedImage
+
+          - id: DocDownExcel-OpenXml-ChartReading
+            title: >-
+              The subsystem shall recover each chart's cached data series — the numbers as last plotted
+              — and keep the source reference alongside them.
+            justification: |
+              A chart part stores the formula reference naming the source range and the cached values as
+              last plotted; a consumer that cannot recalculate the workbook can use only the latter, so
+              the cache is what the chart reader recovers, keeping the reference alongside purely so a
+              reader can still find the source range. A name-driven walk covers every plot type, and a
+              chart part that cannot be parsed is returned as a reason rather than thrown.
+            children:
+              - DocDownExcel-OpenXml-ExcelChartReader-ReadsCachedSeries
+              - DocDownExcel-OpenXml-ExcelChartReader-PreservesSparseIndices
+              - DocDownExcel-OpenXml-ExcelChartReader-ReadsEverySeries
+              - DocDownExcel-OpenXml-ExcelChartReader-KeepsReferenceWhenCacheMissing
+              - DocDownExcel-OpenXml-ExcelChartReader-ReportsAutomaticTitle
+            tests:
+              - ExcelChartReader_ReadChartData_SingleSeries_ReadsTitlesAxesAndValues
+
+          - id: DocDownExcel-OpenXml-ShapeReading
+            title: >-
+              The subsystem shall recover the text of the drawing shapes floating over a worksheet, in
+              drawing order.
+            justification: |
+              Callouts and labels live in the drawing part and in no cell, so a reader that walks cells
+              and pictures alone drops them. Reading each shape's text — including shapes nested inside
+              groups, and joining a shape's paragraphs into one readable annotation — recovers text that
+              would otherwise vanish while the extraction reported itself complete.
+            children:
+              - DocDownExcel-OpenXml-ExcelDrawingTextReader-CollectsShapeText
+            tests:
+              - ExcelContentEmitter_Emit_ShapeText_WritesUnderTheSheet

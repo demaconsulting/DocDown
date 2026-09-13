@@ -1,0 +1,11 @@
+package DocDownVisio {
+    part def VisioContentEmitter {
+        doc /* The single emission path: writes a read drawing model through the sink as per-page content in document order — the page name, the informative shape text, and the directed connector topology rendered as a readable source-to-target edge list — plus the inline images, the content outline, the topology-labeling convention and endpoint coverage, and the honest counted gaps the model and options imply. */
+
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Visio/Markdown/VisioContentEmitter.cs */
+        comment testRef /* Test: test/DemaConsulting.DocDown.Visio.Tests/Markdown/VisioContentEmitterTests.cs */
+        comment designRef /* Design: docs/design/docdown-visio/markdown/visio-content-emitter.md */
+        comment verificationRef /* Verification: docs/verification/docdown-visio/markdown/visio-content-emitter.md */
+        comment reqRef /* Requirements: docs/reqstream/docdown-visio/markdown/visio-content-emitter.yaml */
+    }
+}

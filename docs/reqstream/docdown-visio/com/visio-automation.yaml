@@ -1,0 +1,52 @@
+---
+# Software Unit Requirements for VisioAutomation
+#
+# VisioAutomation is the real COM automation adapter: the single unit that talks to Microsoft Visio over
+# late-bound IDispatch. It is the whole untestable COM boundary and is deliberately mechanical, holding
+# no extraction or gap policy. Its behavior is exercised at the seam in CI through an injected stub, and
+# its correctness in a deployed environment is proven by release-time self-tests. The requirements below
+# name the observable seam contract the adapter must satisfy; the real adapter's read-only open, single
+# session, and page export are documented in the design and verification and proven by the release-time
+# self-test cases, not by CI.
+
+sections:
+  - title: DocDownVisio Requirements
+    sections:
+      - title: Com Requirements
+        sections:
+          - title: VisioAutomation Requirements
+            requirements:
+              - id: DocDownVisio-Com-VisioAutomation-RendersEachPageAtRequestedDpi
+                title: >-
+                  VisioAutomation shall render each foreground page at the caller's requested resolution.
+                justification: |
+                  The rendered appearance is the richer outcome, and the caller chose the resolution, so
+                  the adapter exports each page at the requested DPI rather than a fixed one, cropping to
+                  the drawing extent. The resolution reaching the seam is proven in CI; the export at that
+                  resolution is proven by the release-time self-tests.
+                tests:
+                  - VisioComExtractor_Extract_PassesRenderDpiToAutomation
+
+              - id: DocDownVisio-Com-VisioAutomation-ProducesPerPageResults
+                title: >-
+                  VisioAutomation shall return one result per foreground page in document order, each
+                  carrying either the page's PNG bytes or a per-page failure reason.
+                justification: |
+                  A single unrenderable page must degrade the run rather than abort it, so the adapter
+                  isolates each page's export and returns exactly one result per page — PNG bytes when it
+                  succeeded, a failure reason when it did not — letting the extractor turn a failure into a
+                  counted gap while the remaining pages still render.
+                tests:
+                  - VisioComExtractor_Extract_PageRenderFails_ReportsCountedGap
+
+              - id: DocDownVisio-Com-VisioAutomation-ReleasesItsSession
+                title: >-
+                  VisioAutomation shall own its Visio session and release it, so no COM object outlives the
+                  render and the owning process does not leak.
+                justification: |
+                  A whole session — open read-only, export every foreground page, close, release — runs
+                  inside one call, so no COM object outlives it and the owning process does not leak. The
+                  extractor's disposal of the seam after each render is proven in CI; the deterministic
+                  session teardown is proven by the release-time self-tests.
+                tests:
+                  - VisioComExtractor_Extract_ViaStub_WritesTopologyAndRendersEveryPage

@@ -1,0 +1,155 @@
+---
+# Software Unit Requirements for VisioContentEmitter
+#
+# VisioContentEmitter is the single emission path: it writes a read drawing model's per-page content —
+# the page name, the shape text, and the directed connector topology — plus its inline images, its
+# diagnostics, and the honest counted gaps the model and options imply, through the sink.
+
+sections:
+  - title: DocDownVisio Requirements
+    sections:
+      - title: Markdown Requirements
+        sections:
+          - title: VisioContentEmitter Requirements
+            requirements:
+              - id: DocDownVisio-Markdown-VisioContentEmitter-WritesPageName
+                title: VisioContentEmitter shall write each page's name as its heading.
+                justification: |
+                  Engineers navigate and cite a drawing by page name, so each page becomes a section whose
+                  heading is the page's own name, letting a reader find the page and say which shapes and
+                  connections belong to it.
+                tests:
+                  - VisioContentEmitter_Emit_RendersDirectedTopologyWithShapeText
+
+              - id: DocDownVisio-Markdown-VisioContentEmitter-WritesShapeText
+                title: >-
+                  VisioContentEmitter shall write each page's informative shape text under its page
+                  heading.
+                justification: |
+                  A shape's text is its identity — the part number, designation, or name whoever drew the
+                  schematic gave it — recoverable from the file with no render, so the emitter writes each
+                  page's shape text under the page's heading, keeping the labels searchable and citable
+                  independent of whether the page was ever rendered.
+                tests:
+                  - VisioContentEmitter_Emit_RendersDirectedTopologyWithShapeText
+
+              - id: DocDownVisio-Markdown-VisioContentEmitter-RendersDirectedTopology
+                title: >-
+                  VisioContentEmitter shall render each page's directed connections as a readable
+                  source-to-target edge list.
+                justification: |
+                  The topology is the engineering content, so each page's connections are rendered as a
+                  directed graph — "Inlet Tank -> Transfer Pump" — under the page heading, turning the
+                  drawing's own wiring into content a reader and an agent can follow.
+                tests:
+                  - VisioContentEmitter_Emit_RendersDirectedTopologyWithShapeText
+
+              - id: DocDownVisio-Markdown-VisioContentEmitter-OmitsBareCalloutNumbers
+                title: >-
+                  VisioContentEmitter shall omit shapes whose text is a bare callout number from the shape
+                  listing and count what it omitted.
+                justification: |
+                  Engineering drawings label callouts with bare numbers that key into a legend rendered
+                  graphically; listed as components they read as equipment named "1", which is noise and
+                  actively misleading. Requiring a letter keeps every part number, designation, and name
+                  while dropping the bare callouts, and counting what was dropped keeps the omission visible
+                  rather than silent.
+                tests:
+                  - VisioContentEmitter_Emit_BareCalloutNumbers_OmittedAndCounted
+
+              - id: DocDownVisio-Markdown-VisioContentEmitter-PreservesMultiLineShapeText
+                title: >-
+                  VisioContentEmitter shall keep a shape's multi-line text intact and inside the list item
+                  it belongs to, truncating nothing.
+                justification: |
+                  A shape's text is often a fittings list or a valve-positioning table, not a single label,
+                  and those lines are exactly what makes Visio text valuable. Emitted flat they would
+                  collapse into the preceding item unpredictably, so continuation lines are indented and
+                  hard-broken to stay inside their item and preserve the authored line structure, and
+                  nothing is truncated.
+                tests:
+                  - VisioContentEmitter_Emit_MultiLineShapeText_StaysInsideItsListItem
+
+              - id: DocDownVisio-Markdown-VisioContentEmitter-OmitsEdgesBetweenUnnamedShapes
+                title: >-
+                  VisioContentEmitter shall omit a connection whose endpoints are both unidentified and
+                  count what it omitted.
+                justification: |
+                  An edge whose two endpoints are both a bare shape id names nothing a reader can use, so it
+                  is dropped rather than cluttering the topology; every edge with at least one meaningful
+                  endpoint is kept, and the count of the omitted edges is stated so the omission stays
+                  visible.
+                tests:
+                  - VisioContentEmitter_Emit_EdgeBetweenUnnamedShapes_OmittedAndCounted
+
+              - id: DocDownVisio-Markdown-VisioContentEmitter-LinksImages
+                title: >-
+                  VisioContentEmitter shall write a drawing's embedded images through the sink and link
+                  each from the page that shows it, only when a path was returned.
+                justification: |
+                  A page's images are linked inline at their point of occurrence, mirroring the Word
+                  convention, and a link is emitted only when the sink returned a path so a suppressed,
+                  size-skipped, or deduplicated-away image never leaves a link pointing at nothing.
+                tests:
+                  - VisioContentEmitter_Emit_AutoImageLinks_ResolveOnDisk
+
+              - id: DocDownVisio-Markdown-VisioContentEmitter-ReportsVectorImageCaveat
+                title: >-
+                  VisioContentEmitter shall write an EMF or WMF vector image unchanged and record the
+                  readability caveat as an informational diagnostic, opening no images gap.
+                justification: |
+                  A vector metafile's bytes are a complete image file, written and counted as extracted;
+                  because this backend ships no metafile rasterizer no better environment would yield more,
+                  so the caveat that many viewers cannot render a metafile is informational and must not
+                  degrade the run.
+                tests:
+                  - VisioContentEmitter_Emit_VectorImage_WritesWithInfoCaveat
+
+              - id: DocDownVisio-Markdown-VisioContentEmitter-ReportsEmptyDrawingGap
+                title: >-
+                  VisioContentEmitter shall degrade with a counted gap when the drawing has no pages.
+                justification: |
+                  An empty content document is indistinguishable from a broken extractor. Stating plainly
+                  that the drawing carried no pages, and writing empty content rather than nothing, turns a
+                  mystery into a fact the caller can act on.
+                tests:
+                  - VisioContentEmitter_Emit_EmptyDrawing_ReportsGap
+
+              - id: DocDownVisio-Markdown-VisioContentEmitter-SplitsLargeDrawings
+                title: >-
+                  VisioContentEmitter shall write the drawing as one content flow or as one part per page,
+                  honoring the content-split mode.
+                justification: |
+                  A single flow keeps a small drawing in one readable file, while a large drawing reads
+                  better as one part per page under a parts folder; honoring the caller's split mode lets
+                  the same emission path serve both without a second implementation, and the inline image
+                  links resolve on disk under either mode.
+                tests:
+                  - VisioContentEmitter_Emit_PerPart_WritesPageParts
+
+              - id: DocDownVisio-Markdown-VisioContentEmitter-StatesConventionInContent
+                title: >-
+                  VisioContentEmitter shall state the endpoint-labeling convention in the content whenever
+                  a rendered label is not the shape's own text, and omit it when every label is authored
+                  text.
+                justification: |
+                  A human reading content.md alone must not mistake a master-type label for a name anyone
+                  authored, so the one-line convention is stated in the content exactly when a
+                  parenthesized type or a bare id appears; when every endpoint carries the shape's own text
+                  there is nothing to explain, so the note is omitted to avoid noise.
+                tests:
+                  - VisioContentEmitter_Emit_NonTextLabelsPresent_StatesConventionInContent
+
+              - id: DocDownVisio-Markdown-VisioContentEmitter-ReportsEndpointCoverage
+                title: >-
+                  VisioContentEmitter shall publish the labeling convention and the counts of endpoint
+                  occurrences resolved by text, by master type, and not at all, as informational
+                  diagnostics, and report neither when the drawing has no connections.
+                justification: |
+                  The convention must survive machine reading of the manifest, not only a human eye on the
+                  content, and the coverage counts let a consumer judge how readable the edge list really is
+                  rather than take it on trust. An endpoint the drawing names only by id is a property of
+                  the document, not a failure of extraction, so it is counted informationally and never
+                  reported as a gap; a drawing with no connections reports no labeling diagnostics at all.
+                tests:
+                  - VisioContentEmitter_Emit_WithConnections_ReportsHonestEndpointCoverage

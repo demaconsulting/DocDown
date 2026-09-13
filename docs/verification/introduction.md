@@ -8,7 +8,8 @@ folder, in a predictable layout designed to be fed to multimodal AI agents.
 
 The purpose of this document is to serve as the verification design entry point and document how
 requirements will be tested across all software items in this repository, covering the
-DocDown.Core, DocDown.Pdf, DocDown.Pdf.Rendering, DocDown.Tool, and DocDown.Word systems. This
+DocDown.Core, DocDown.Pdf, DocDown.Pdf.Rendering, DocDown.Tool, DocDown.Word, DocDown.Excel,
+DocDown.PowerPoint, and DocDown.Visio systems. This
 documentation enables formal review by mapping every requirement to named test scenarios, supports
 compliance auditing by providing clear traceability from requirements through verification design
 to tests, and ensures test completeness can be assessed without reading implementation code.
@@ -90,6 +91,62 @@ constituent software items, specifically:
     - **WordOpenXmlReader (Unit)** — Turns the Open XML DOM into the backend-neutral model
     - **WordOpenXmlImageReader (Unit)** — Yields each embedded image's bytes with passthrough
       provenance
+- **DocDown.Excel (System)** — Workbook worksheet, cell-value (verbatim), formula, chart, drawing
+  annotation, embedded-image, and document-metadata extraction; deliberately never renders; two
+  subsystems and one direct unit
+  - **ExcelDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
+    Excel backend
+  - **Markdown (Subsystem)** — The projection of the workbook model onto markdown
+    - **ExcelContentEmitter (Unit)** — The model-to-sink emission path: sheet and chart parts, the
+      verbatim listing and additive grid table, and the honest gap policy
+    - **ExcelChartWriter (Unit)** — Renders a chart's cached data series as a bounded table
+  - **OpenXml (Subsystem)** — The managed backend that reads an `.xlsx` through the Open XML SDK
+    - **ExcelOpenXmlExtractor (Unit)** — The managed backend the engine selects: capabilities,
+      page-rendering non-applicability, and orchestration
+    - **ExcelOpenXmlReader (Unit)** — Turns the spreadsheet package into the backend-neutral model
+    - **ExcelOpenXmlImageReader (Unit)** — Yields each embedded image's bytes and worksheet association
+    - **ExcelChartReader (Unit)** — Recovers each chart's cached data series
+    - **ExcelDrawingTextReader (Unit)** — Recovers the text of the drawing shapes over a worksheet
+- **DocDown.PowerPoint (System)** — Slide text, slide-title, speaker-notes, slide-order, embedded-image,
+  and document-metadata extraction, plus a rendered image of each slide when Microsoft PowerPoint is
+  available; three subsystems (Com, Markdown, OpenXml) and one direct unit
+  - **PowerPointDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
+    PowerPoint backends
+  - **Com (Subsystem)** — The rendering seam, active where Microsoft PowerPoint is installed
+    - **PowerPointComExtractor (Unit)** — Delegates content to the managed backend and adds a rendered
+      image of each slide over late-bound COM
+    - **PowerPointComAvailability (Unit)** — The cheap, side-effect-free rendering-availability probe
+    - **PowerPointAutomation (Unit)** — The real COM automation adapter, proven by release-time self-tests
+  - **Markdown (Subsystem)** — The projection of the deck model onto markdown
+    - **PowerPointContentEmitter (Unit)** — The model-to-sink emission path: per-slide title, text, and
+      speaker notes, and the honest gaps
+  - **OpenXml (Subsystem)** — The guaranteed managed backend that reads a `.pptx` through the Open XML SDK
+    - **PowerPointOpenXmlExtractor (Unit)** — The managed backend the engine selects: capabilities,
+      the not-provided rendering statement, and orchestration
+    - **PowerPointOpenXmlReader (Unit)** — Turns the presentation package into the backend-neutral model
+    - **PowerPointOpenXmlImageReader (Unit)** — Yields each embedded image's bytes and slide association
+- **DocDown.Visio (System)** — Page-name, shape-text, and directed-connector-topology extraction, plus
+  embedded-image and document-metadata extraction and a rendered image of each page when Microsoft Visio
+  is available; three subsystems (Com, Markdown, OpenXml) and one direct unit
+  - **VisioDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
+    Visio backends
+  - **Com (Subsystem)** — The rendering seam, active where Microsoft Visio is installed
+    - **VisioComExtractor (Unit)** — Delegates content to the managed backend and adds a rendered
+      image of each page over late-bound COM
+    - **VisioComAvailability (Unit)** — The cheap, side-effect-free rendering-availability probe
+    - **VisioAutomation (Unit)** — The real COM automation adapter, proven by release-time self-tests
+  - **Markdown (Subsystem)** — The projection of the drawing model onto markdown
+    - **VisioContentEmitter (Unit)** — The model-to-sink emission path: per-page name, shape text, the
+      directed topology, and the honest gaps
+    - **VisioShapeLabeler (Unit)** — Decides how each topology endpoint is named from what the drawing
+      says about it
+  - **OpenXml (Subsystem)** — The guaranteed managed backend that reads a `.vsdx`/`.vsdm` through
+    `System.IO.Packaging`
+    - **VisioOpenXmlExtractor (Unit)** — The managed backend the engine selects: capabilities,
+      the not-provided rendering statement, and orchestration
+    - **VisioPackageReader (Unit)** — Turns the Visio package into the backend-neutral model, resolving
+      page names, shape text, and the directed topology
+    - **VisioImageReader (Unit)** — Yields each embedded image's bytes and page association
 
 The following OTS items are also covered:
 
@@ -125,7 +182,7 @@ Version applicability: This verification design applies to all versions of DocDo
 
 The following topics are explicitly excluded from this verification documentation:
 
-- The remaining format-specific extraction libraries (Excel, PowerPoint, Visio, and HTML), which are
+- The remaining format-specific extraction library (HTML), which is
   planned but not yet implemented
 - Build pipeline and CI/CD process testing
 - Infrastructure and hosting environment testing

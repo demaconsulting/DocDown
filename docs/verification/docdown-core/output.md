@@ -82,6 +82,17 @@ nothing. The shared OPC mapper applies omit-empty, the interesting-absence list,
 ISO-8601 date normalization once for every OPC backend. Evidence for
 `DocDownCore-Output-DocumentMetadata`.
 
+#### The content outline names the structure of content.md
+
+**Tests**: `ExtractionSink_ReportContentFeature_RepeatedLabels_AccumulateAndDropZeroCounts`,
+`SummaryWriter_WriteAsync_WithContentFeatures_OpensWithGistAndOutlinesContent`
+
+Proves the subsystem accumulates the counted structural features a backend reports — folding repeated
+labels together and dropping any zero count — and renders the surviving features as the summary's
+one-line content outline (the machine-readable twin is the manifest's `contentFeatures` array), so a
+reader learns that (for example) author-attributed comments are present without parsing the markdown.
+Evidence for `DocDownCore-Output-ContentOutline`.
+
 #### Text content produces a Markdown document
 
 **Test**: `Output_ContentDocument_TextWritten_ProducesContentMd`

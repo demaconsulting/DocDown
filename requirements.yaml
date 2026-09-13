@@ -55,6 +55,45 @@ includes:
   - docs/reqstream/docdown-word/open-xml/word-open-xml-extractor.yaml
   - docs/reqstream/docdown-word/open-xml/word-open-xml-reader.yaml
   - docs/reqstream/docdown-word/open-xml/word-open-xml-image-reader.yaml
+  - docs/reqstream/docdown-excel.yaml
+  - docs/reqstream/docdown-excel/platform-requirements.yaml
+  - docs/reqstream/docdown-excel/excel-doc-down-builder-extensions.yaml
+  - docs/reqstream/docdown-excel/markdown.yaml
+  - docs/reqstream/docdown-excel/markdown/excel-content-emitter.yaml
+  - docs/reqstream/docdown-excel/markdown/excel-chart-writer.yaml
+  - docs/reqstream/docdown-excel/open-xml.yaml
+  - docs/reqstream/docdown-excel/open-xml/excel-open-xml-extractor.yaml
+  - docs/reqstream/docdown-excel/open-xml/excel-open-xml-reader.yaml
+  - docs/reqstream/docdown-excel/open-xml/excel-open-xml-image-reader.yaml
+  - docs/reqstream/docdown-excel/open-xml/excel-chart-reader.yaml
+  - docs/reqstream/docdown-excel/open-xml/excel-drawing-text-reader.yaml
+  - docs/reqstream/docdown-powerpoint.yaml
+  - docs/reqstream/docdown-powerpoint/platform-requirements.yaml
+  - docs/reqstream/docdown-powerpoint/powerpoint-doc-down-builder-extensions.yaml
+  - docs/reqstream/docdown-powerpoint/com.yaml
+  - docs/reqstream/docdown-powerpoint/com/powerpoint-com-extractor.yaml
+  - docs/reqstream/docdown-powerpoint/com/powerpoint-com-availability.yaml
+  - docs/reqstream/docdown-powerpoint/com/powerpoint-automation.yaml
+  - docs/reqstream/docdown-powerpoint/markdown.yaml
+  - docs/reqstream/docdown-powerpoint/markdown/powerpoint-content-emitter.yaml
+  - docs/reqstream/docdown-powerpoint/open-xml.yaml
+  - docs/reqstream/docdown-powerpoint/open-xml/powerpoint-open-xml-extractor.yaml
+  - docs/reqstream/docdown-powerpoint/open-xml/powerpoint-open-xml-reader.yaml
+  - docs/reqstream/docdown-powerpoint/open-xml/powerpoint-open-xml-image-reader.yaml
+  - docs/reqstream/docdown-visio.yaml
+  - docs/reqstream/docdown-visio/platform-requirements.yaml
+  - docs/reqstream/docdown-visio/visio-doc-down-builder-extensions.yaml
+  - docs/reqstream/docdown-visio/com.yaml
+  - docs/reqstream/docdown-visio/com/visio-com-extractor.yaml
+  - docs/reqstream/docdown-visio/com/visio-com-availability.yaml
+  - docs/reqstream/docdown-visio/com/visio-automation.yaml
+  - docs/reqstream/docdown-visio/markdown.yaml
+  - docs/reqstream/docdown-visio/markdown/visio-content-emitter.yaml
+  - docs/reqstream/docdown-visio/markdown/visio-shape-labeler.yaml
+  - docs/reqstream/docdown-visio/open-xml.yaml
+  - docs/reqstream/docdown-visio/open-xml/visio-open-xml-extractor.yaml
+  - docs/reqstream/docdown-visio/open-xml/visio-package-reader.yaml
+  - docs/reqstream/docdown-visio/open-xml/visio-image-reader.yaml
   - docs/reqstream/ots/apimark.yaml
   - docs/reqstream/ots/xunit.yaml
   - docs/reqstream/ots/pdfpig.yaml

@@ -1,0 +1,90 @@
+---
+# Software Unit Requirements for VisioComExtractor
+#
+# VisioComExtractor is the full-superset rendering backend: it produces page names, shape text, the
+# directed topology, and metadata by delegating to the managed Open Packaging backend, then rasterizes
+# each page to a PNG through Microsoft Visio over late-bound COM. Everything apart from talking to Visio
+# is exercised cross-platform by injecting a stub IVisioAutomation.
+
+sections:
+  - title: DocDownVisio Requirements
+    sections:
+      - title: Com Requirements
+        sections:
+          - title: VisioComExtractor Requirements
+            requirements:
+              - id: DocDownVisio-Com-VisioComExtractor-DeclaresCapabilities
+                title: >-
+                  VisioComExtractor shall declare the full capability set including rendered-pages, at a
+                  lower selection priority than the managed backend.
+                justification: |
+                  The engine selects exactly one backend, so a backend that advertised only rendered-pages
+                  would lose selection to the managed backend and never render. Declaring the full superset
+                  — text, embedded images, document metadata, document structure, and rendered-pages — at
+                  the lower priority is what makes this backend chosen only when rendering is requested and
+                  keeps the deterministic managed backend the default.
+                tests:
+                  - VisioComExtractor_Descriptor_MatchesContract
+
+              - id: DocDownVisio-Com-VisioComExtractor-DelegatesManagedContent
+                title: >-
+                  VisioComExtractor shall produce the page names, shape text, and directed topology by
+                  delegating to the managed backend with rendering suppressed, then add the rendered pages.
+                justification: |
+                  Re-implementing the topology extraction in the rendering backend would create a second,
+                  divergent content path. Running the managed backend against the same sink with rendering
+                  forced off — so it writes the guaranteed content but not a rendering gap this backend
+                  answers itself — and then adding the rendered pages is what keeps a drawing's content
+                  identical whether or not it was rendered.
+                tests:
+                  - VisioComExtractor_Extract_ViaStub_WritesTopologyAndRendersEveryPage
+
+              - id: DocDownVisio-Com-VisioComExtractor-ReconcilesRenderingFacts
+                title: >-
+                  VisioComExtractor shall suppress the delegated managed backend's "rendering not provided"
+                  fact and emit the authoritative renderer fact, so the composed report is consistent.
+                justification: |
+                  The managed backend, unaware a rendering host is composing its output, unconditionally
+                  reports that page rendering is not provided — a statement a successful COM run makes
+                  false. Dropping that one contradictory fact through a composing sink while emitting the
+                  authoritative "rendered by Microsoft Visio" fact is what keeps the composed report
+                  internally consistent without losing any other honest fact or gap.
+                tests:
+                  - VisioComExtractor_Extract_ViaStub_SuppressesContradictoryPageRenderingFact
+
+              - id: DocDownVisio-Com-VisioComExtractor-RendersEveryPage
+                title: >-
+                  VisioComExtractor shall render every foreground page through the automation seam at the
+                  caller's requested resolution and add each as a page.
+                justification: |
+                  The rendered appearance is the richer outcome and the caller chose the resolution, so the
+                  backend passes the requested resolution through to the automation seam and adds each
+                  rendered page through the sink, capturing the spatial arrangement the XML cannot recover.
+                tests:
+                  - VisioComExtractor_Extract_PassesRenderDpiToAutomation
+
+              - id: DocDownVisio-Com-VisioComExtractor-IsolatesPageRenderFailures
+                title: >-
+                  VisioComExtractor shall turn a page the renderer could not produce into a counted pages
+                  gap naming it, while continuing with the remaining pages.
+                justification: |
+                  A page that dropped out of the pages folder silently is exactly the failure the output
+                  contract forbids. Isolating each page's export so one unrenderable page becomes a counted,
+                  named gap and a diagnostic — rather than aborting the run — keeps a partially rendered
+                  drawing a stated fact while the rest of the drawing still renders and every page's logical
+                  topology remains present.
+                tests:
+                  - VisioComExtractor_Extract_PageRenderFails_ReportsCountedGap
+
+              - id: DocDownVisio-Com-VisioComExtractor-ProbesHonestly
+                title: >-
+                  VisioComExtractor shall probe unavailable without throwing where no automation adapter is
+                  present or Microsoft Visio cannot be reached, and never instruct an installation.
+                justification: |
+                  Constructing the extractor must never launch Visio, and where no automation adapter is
+                  present the backend cannot work regardless of the machine, so it reports unavailable
+                  without throwing. Otherwise it defers to the environment check. No reason it returns ever
+                  instructs an installation, matching the library-wide convention.
+                tests:
+                  - VisioComExtractor_NullFactory_ProbesUnavailable
+                  - VisioComExtractor_PublicCtor_ProbeDoesNotThrowAndNeverInstructsInstallation

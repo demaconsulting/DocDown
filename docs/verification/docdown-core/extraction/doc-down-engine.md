@@ -55,6 +55,17 @@ member and asserts none holds the scratch path under some other name. A member a
 innocently named — fails this test rather than silently leaking the path. Evidence for
 `DocDownCore-Extraction-DocDownEngine-PipelineOrder`.
 
+##### A page-render request degrades a paginated format but stays silent for a non-paginated one
+
+**Tests**: `DocDownEngine_ExtractAsync_NonPaginatedFormat_RenderRequest_SucceedsSilently`,
+`DocDownBuilder_ConfigureDefaults_RenderPages_ProducesPageGapByDefault`
+
+Proves page rendering is treated as a request: when the selected backend cannot render a **paginated**
+format, the run degrades with a counted `pages` gap; when the format is **non-paginated**, the request
+is honored with silence — an informational `DD0303` diagnostic records that it applied to nothing, no
+gap is emitted, and the run does not degrade, because an absence no environment could ever fill is not a
+shortfall. Evidence for `DocDownCore-Extraction-DocDownEngine-RenderRequestApplicability`.
+
 ##### Options are cloned before reaching the backend
 
 **Test**: `DocDownEngine_ExtractAsync_CallerOptions_AreClonedBeforeReachingBackend`

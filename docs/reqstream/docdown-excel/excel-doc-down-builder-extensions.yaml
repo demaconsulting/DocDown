@@ -1,0 +1,41 @@
+---
+# Software Unit Requirements for ExcelDocDownBuilderExtensions
+#
+# ExcelDocDownBuilderExtensions is the one visible edge from a host to this package: the explicit,
+# reflection-free call that adds the Excel backend to a DocDown builder. It is a direct unit of the
+# DocDown.Excel system.
+
+sections:
+  - title: DocDownExcel Requirements
+    sections:
+      - title: ExcelDocDownBuilderExtensions Requirements
+        requirements:
+          - id: DocDownExcel-ExcelDocDownBuilderExtensions-RegistersOpenXmlBackend
+            title: >-
+              ExcelDocDownBuilderExtensions shall add the managed Open XML Excel backend, and only that
+              backend, to the builder it is called on.
+            justification: |
+              A host that asks for Excel support wants workbooks handled deterministically on every
+              platform it deploys to. Adding the one managed backend as a deferred factory is what gives
+              the resulting engine that reach from a single call in the host's own code, and asserting
+              that nothing else was registered keeps a second backend from re-entering the package
+              without anyone deciding it should — the workbook intent offers no rendering, so there is
+              deliberately no second, environment-dependent backend.
+            tests:
+              - AddExcel_RegistersSingleOpenXmlBackend
+
+          - id: DocDownExcel-ExcelDocDownBuilderExtensions-ReturnsBuilderForChaining
+            title: ExcelDocDownBuilderExtensions shall return the builder it was called on.
+            justification: |
+              A host that registers several backends should be able to express that as one readable
+              configuration sequence rather than as a series of disconnected statements.
+            tests:
+              - AddExcel_ReturnsSameBuilder
+
+          - id: DocDownExcel-ExcelDocDownBuilderExtensions-RejectsNullBuilder
+            title: ExcelDocDownBuilderExtensions shall reject a missing builder at the point of the call.
+            justification: |
+              Failing where the mistake was made names the offending call site. Deferring the failure to
+              build time would report it against configuration the host wrote correctly.
+            tests:
+              - AddExcel_NullBuilder_Throws

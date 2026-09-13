@@ -1,0 +1,68 @@
+---
+# Software Unit Requirements for ExcelOpenXmlReader
+#
+# ExcelOpenXmlReader is the one place that touches the Open XML spreadsheet object model. It walks
+# each worksheet in workbook order, resolves shared strings, keeps only cells that carry a value or a
+# formula, and never truncates a value.
+
+sections:
+  - title: DocDownExcel Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: ExcelOpenXmlReader Requirements
+            requirements:
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-PreservesVerbatimValues
+                title: >-
+                  ExcelOpenXmlReader shall preserve a cell's text value verbatim at full length, never
+                  truncating a long prose block.
+                justification: |
+                  A cell holding a page of pasted prose must survive intact, because losing length is
+                  exactly the failure the Excel intent forbids. Shared-string and inline-string cells
+                  resolve to their complete text, with rich-text runs concatenated into the whole value.
+                tests:
+                  - ExcelOpenXmlReader_Read_LongProseCell_PreservedVerbatimAtFullLength
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsNumericValuesVerbatim
+                title: >-
+                  ExcelOpenXmlReader shall read a numeric or other typed cell value exactly as stored, at
+                  full precision.
+                justification: |
+                  A number, date serial, or error is taken exactly as stored so no precision is lost to a
+                  reformat; substituting a formatted rendering for the stored value would lose the exact
+                  quantity the workbook exists to carry.
+                tests:
+                  - ExcelOpenXmlReader_Read_NumericCells_ReadVerbatim
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-KeepsFormulaAndValue
+                title: >-
+                  ExcelOpenXmlReader shall keep a computed cell's formula alongside its cached value and
+                  its address.
+                justification: |
+                  The formula states the engineering relationship and the value states one evaluation of
+                  it, so both are retained on the cell model — the formula without its leading equals, the
+                  value verbatim, and the A1 address — so a fact stays both readable and citable.
+                tests:
+                  - ExcelOpenXmlReader_Read_FormulaCell_KeepsFormulaAndValueAndAddress
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-PreservesSheetIdentity
+                title: >-
+                  ExcelOpenXmlReader shall return the worksheets in workbook order, each carrying the
+                  name shown on its tab.
+                justification: |
+                  A worksheet's tab name is the citable identity of a sheet, and the workbook order is the
+                  order a reader sees, so the reader carries both — a fact extracted from a sheet can be
+                  traced back to the sheet that holds it.
+                tests:
+                  - ExcelOpenXmlReader_Read_TwoSheetWorkbook_ReturnsSheetsInOrderWithNames
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-DropsEmptyCells
+                title: >-
+                  ExcelOpenXmlReader shall keep only cells that carry a value or a formula, yielding a
+                  worksheet with no cells when none do.
+                justification: |
+                  A cell with neither a value nor a formula contributes nothing, so a sparse sheet yields
+                  only its real content and a genuinely empty sheet yields a sheet with no cells rather
+                  than a grid of blanks the emitter would have to strip.
+                tests:
+                  - ExcelOpenXmlReader_Read_EmptySheet_YieldsSheetWithNoCells

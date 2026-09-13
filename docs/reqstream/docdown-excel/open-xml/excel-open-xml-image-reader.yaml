@@ -1,0 +1,35 @@
+---
+# Software Unit Requirements for ExcelOpenXmlImageReader
+#
+# ExcelOpenXmlImageReader resolves a workbook's embedded image parts from the drawing part attached to
+# each worksheet, yields each image's bytes with a passthrough transform, and records which worksheet
+# references each image.
+
+sections:
+  - title: DocDownExcel Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: ExcelOpenXmlImageReader Requirements
+            requirements:
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlImageReader-YieldsEmbeddedImages
+                title: >-
+                  ExcelOpenXmlImageReader shall yield each embedded image's bytes unchanged, deduplicated
+                  by package part.
+                justification: |
+                  An Open XML image part stores a complete image file byte-for-byte, so the honest
+                  transform is to pass the bytes through unchanged; deduplicating by package-part identity
+                  yields an image reused across sheets once, and the sink deduplicates again by content.
+                tests:
+                  - ExcelOpenXmlReader_Read_ImageWorkbook_ExtractsEmbeddedImage
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlImageReader-RecordsSheetAssociation
+                title: >-
+                  ExcelOpenXmlImageReader shall record the 1-based tab index of every worksheet that
+                  references an image, and the per-worksheet ordered occurrences.
+                justification: |
+                  A picture shown on two sheets records both, so the sheet association survives extraction
+                  and an image stays citable to the sheets it appears on; the per-worksheet ordered
+                  occurrences let the emitter link each picture inline under its worksheet section.
+                tests:
+                  - ExcelOpenXmlReader_Read_ImageWorkbook_RecordsSheetAssociation

@@ -6,9 +6,12 @@
 package DocDownCore {
     view SoftwareStructureView {
         expose DocDownCore;
+        expose DocDownExcel;
         expose DocDownPdf;
         expose DocDownPdfRendering;
+        expose DocDownPowerPoint;
         expose DocDownTool;
+        expose DocDownVisio;
         expose DocDownWord;
     }
 
@@ -76,6 +79,66 @@ package DocDownWord {
     }
 
     view OpenXmlView {
+        expose OpenXml;
+    }
+}
+
+// DocDownExcel is the Excel extraction system. Like DocDownWord it has more than one
+// subsystem (Markdown, OpenXml) and one direct unit (ExcelDocDownBuilderExtensions),
+// so it carries a system view plus a view per subsystem. The design documents embed the
+// system view (DocDownExcelView.svg).
+package DocDownExcel {
+    view DocDownExcelView {
+        expose DocDownExcelSystem;
+    }
+
+    view ExcelMarkdownView {
+        expose Markdown;
+    }
+
+    view ExcelOpenXmlView {
+        expose OpenXml;
+    }
+}
+
+// DocDownPowerPoint is the PowerPoint extraction system. It has three subsystems (Com, Markdown,
+// OpenXml) and one direct unit (PowerPointDocDownBuilderExtensions), so it carries a system view plus a
+// view per subsystem. The design documents embed the system view (DocDownPowerPointView.svg).
+package DocDownPowerPoint {
+    view DocDownPowerPointView {
+        expose DocDownPowerPointSystem;
+    }
+
+    view PowerPointComView {
+        expose Com;
+    }
+
+    view PowerPointMarkdownView {
+        expose Markdown;
+    }
+
+    view PowerPointOpenXmlView {
+        expose OpenXml;
+    }
+}
+
+// DocDownVisio is the Visio extraction system. Like DocDownPowerPoint it has three subsystems (Com,
+// Markdown, OpenXml) and one direct unit (VisioDocDownBuilderExtensions), so it carries a system view
+// plus a view per subsystem. The design documents embed the system view (DocDownVisioView.svg).
+package DocDownVisio {
+    view DocDownVisioView {
+        expose DocDownVisioSystem;
+    }
+
+    view VisioComView {
+        expose Com;
+    }
+
+    view VisioMarkdownView {
+        expose Markdown;
+    }
+
+    view VisioOpenXmlView {
         expose OpenXml;
     }
 }

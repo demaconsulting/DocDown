@@ -96,6 +96,7 @@ sections:
               result and that the output contract is always produced.
             children:
               - DocDownCore-Extraction-DocDownEngine-PipelineOrder
+              - DocDownCore-Extraction-DocDownEngine-RenderRequestApplicability
               - DocDownCore-Extraction-DocDownEngine-Cancellation
               - DocDownCore-Extraction-DocDownEngine-RejectNullArguments
             tests:

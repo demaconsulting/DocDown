@@ -51,6 +51,7 @@ sections:
           extraction is incomplete or fails.
         children:
           - DocDownCore-Output-SummaryContent
+          - DocDownCore-Output-ContentOutline
         tests:
           - DocDownCore_Extract_Summary_ContainsAbsoluteScratchPath
           - DocDownCore_Extract_Summary_NamesSelectedBackend

@@ -1,0 +1,60 @@
+---
+# Software Subsystem Requirements for DocDownExcel Markdown
+#
+# The Markdown subsystem owns the projection of the backend-neutral workbook model onto markdown:
+# the content emitter that drives every output the model implies, and the chart writer that renders
+# a chart's cached series as a table. These requirements decompose into the ExcelContentEmitter and
+# ExcelChartWriter units via children.
+
+sections:
+  - title: DocDownExcel Requirements
+    sections:
+      - title: Markdown Requirements
+        requirements:
+          - id: DocDownExcel-Markdown-ModelEmission
+            title: >-
+              The subsystem shall emit a workbook model's worksheet parts, chart parts, images,
+              content outline, diagnostics, and gaps through one path that is independent of how the
+              model was read.
+            justification: |
+              Reading a workbook and rendering what was read are separate concerns. Holding every
+              emission decision in one path, driven only by the model, is what makes each mapping
+              decision testable from a hand-built model with no workbook behind it, and what keeps the
+              output contract from acquiring a second, divergent implementation.
+            children:
+              - DocDownExcel-Markdown-ExcelContentEmitter-EmitsModelContent
+              - DocDownExcel-Markdown-ExcelContentEmitter-WritesSheetParts
+              - DocDownExcel-Markdown-ExcelContentEmitter-RendersFormula
+              - DocDownExcel-Markdown-ExcelContentEmitter-RendersGridTable
+              - DocDownExcel-Markdown-ExcelContentEmitter-ElidesLongCellsInTableOnly
+              - DocDownExcel-Markdown-ExcelContentEmitter-NotesMergedRanges
+              - DocDownExcel-Markdown-ExcelContentEmitter-EmitsChartParts
+              - DocDownExcel-Markdown-ExcelContentEmitter-ReportsChartGaps
+              - DocDownExcel-Markdown-ExcelContentEmitter-WritesShapeText
+              - DocDownExcel-Markdown-ExcelContentEmitter-LinksImages
+              - DocDownExcel-Markdown-ExcelContentEmitter-ReportsVectorImageCaveat
+              - DocDownExcel-Markdown-ExcelContentEmitter-ReportsEmptyWorkbookGap
+              - DocDownExcel-Markdown-ExcelContentEmitter-NotesEmptySheet
+              - DocDownExcel-Markdown-ExcelContentEmitter-StaysSilentOnPageRequest
+              - DocDownExcel-Markdown-ExcelContentEmitter-ReportsContentFeatures
+              - DocDownExcel-Markdown-ExcelContentEmitter-ReportsGapsAndDiagnostics
+            tests:
+              - ExcelContentEmitter_Emit_TwoSheets_WritesTitledSheetParts
+
+          - id: DocDownExcel-Markdown-ChartRendering
+            title: >-
+              The subsystem shall render a chart's cached data as a table of categories against series
+              values, stating an unreadable, uncached, or bounded chart in the rendering itself.
+            justification: |
+              A chart's cached series is the only form in which a chart's information survives into a
+              text extraction. Rendering it as a table with a leading point-index column lets a reader
+              consume it with no knowledge of the chart grammar, and stating every shortfall in the
+              part itself keeps a chart that yielded less than its full data honest rather than silently
+              partial.
+            children:
+              - DocDownExcel-Markdown-ExcelChartWriter-RendersCachedSeries
+              - DocDownExcel-Markdown-ExcelChartWriter-StatesUnreadableAndUncached
+              - DocDownExcel-Markdown-ExcelChartWriter-BoundsPlottedPoints
+              - DocDownExcel-Markdown-ExcelChartWriter-DescribesChartUnderSheet
+            tests:
+              - ExcelChartWriter_Render_SingleSeries_RendersLabelingAndTable

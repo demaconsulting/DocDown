@@ -46,6 +46,42 @@ input-files:
   - docs/verification/docdown-word/open-xml/word-open-xml-extractor.md
   - docs/verification/docdown-word/open-xml/word-open-xml-reader.md
   - docs/verification/docdown-word/open-xml/word-open-xml-image-reader.md
+  - docs/verification/docdown-excel.md
+  - docs/verification/docdown-excel/excel-doc-down-builder-extensions.md
+  - docs/verification/docdown-excel/markdown.md
+  - docs/verification/docdown-excel/markdown/excel-content-emitter.md
+  - docs/verification/docdown-excel/markdown/excel-chart-writer.md
+  - docs/verification/docdown-excel/open-xml.md
+  - docs/verification/docdown-excel/open-xml/excel-open-xml-extractor.md
+  - docs/verification/docdown-excel/open-xml/excel-open-xml-reader.md
+  - docs/verification/docdown-excel/open-xml/excel-open-xml-image-reader.md
+  - docs/verification/docdown-excel/open-xml/excel-chart-reader.md
+  - docs/verification/docdown-excel/open-xml/excel-drawing-text-reader.md
+  - docs/verification/docdown-powerpoint.md
+  - docs/verification/docdown-powerpoint/powerpoint-doc-down-builder-extensions.md
+  - docs/verification/docdown-powerpoint/com.md
+  - docs/verification/docdown-powerpoint/com/powerpoint-com-extractor.md
+  - docs/verification/docdown-powerpoint/com/powerpoint-com-availability.md
+  - docs/verification/docdown-powerpoint/com/powerpoint-automation.md
+  - docs/verification/docdown-powerpoint/markdown.md
+  - docs/verification/docdown-powerpoint/markdown/powerpoint-content-emitter.md
+  - docs/verification/docdown-powerpoint/open-xml.md
+  - docs/verification/docdown-powerpoint/open-xml/powerpoint-open-xml-extractor.md
+  - docs/verification/docdown-powerpoint/open-xml/powerpoint-open-xml-reader.md
+  - docs/verification/docdown-powerpoint/open-xml/powerpoint-open-xml-image-reader.md
+  - docs/verification/docdown-visio.md
+  - docs/verification/docdown-visio/visio-doc-down-builder-extensions.md
+  - docs/verification/docdown-visio/com.md
+  - docs/verification/docdown-visio/com/visio-com-extractor.md
+  - docs/verification/docdown-visio/com/visio-com-availability.md
+  - docs/verification/docdown-visio/com/visio-automation.md
+  - docs/verification/docdown-visio/markdown.md
+  - docs/verification/docdown-visio/markdown/visio-content-emitter.md
+  - docs/verification/docdown-visio/markdown/visio-shape-labeler.md
+  - docs/verification/docdown-visio/open-xml.md
+  - docs/verification/docdown-visio/open-xml/visio-open-xml-extractor.md
+  - docs/verification/docdown-visio/open-xml/visio-package-reader.md
+  - docs/verification/docdown-visio/open-xml/visio-image-reader.md
   - docs/verification/ots.md
   - docs/verification/ots/apimark.md
   - docs/verification/ots/buildmark.md

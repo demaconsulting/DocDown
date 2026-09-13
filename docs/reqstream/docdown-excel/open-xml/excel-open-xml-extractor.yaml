@@ -1,0 +1,73 @@
+---
+# Software Unit Requirements for ExcelOpenXmlExtractor
+#
+# ExcelOpenXmlExtractor is the managed backend the engine selects and invokes. It declares what it
+# can deliver, probes unconditionally, reads the workbook, emits the content through the shared
+# emitter, and contributes the self-tests that describe its own behavior.
+
+sections:
+  - title: DocDownExcel Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: ExcelOpenXmlExtractor Requirements
+            requirements:
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlExtractor-DeclaresCapabilities
+                title: >-
+                  ExcelOpenXmlExtractor shall declare the modern Excel format, the higher selection
+                  priority, and the text, embedded-image, document-metadata, and document-structure
+                  capabilities.
+                justification: |
+                  Selection ranks backends on what they declare before any workbook is opened. Declaring
+                  exactly the deliverable capabilities and the higher priority is what makes this managed
+                  backend the chosen reader for every .xlsx and keeps a shortfall negotiated up front
+                  rather than discovered as missing output.
+                tests:
+                  - ExcelOpenXmlExtractor_Descriptor_MatchesContract
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlExtractor-DeclaresPageRenderingNotApplicable
+                title: >-
+                  ExcelOpenXmlExtractor shall not declare the rendered-pages capability and shall report
+                  that page rendering is not applicable to a non-paginated workbook.
+                justification: |
+                  A workbook has no page grid to rasterize, so a page-rendering request applies to
+                  nothing rather than being merely unavailable. Reporting this lets the engine honor a
+                  page request against a spreadsheet with silence rather than a false shortfall, which is
+                  the positive design decision not to render Excel expressed at the descriptor.
+                tests:
+                  - ExcelOpenXmlExtractor_Descriptor_MatchesContract
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlExtractor-ProbesUnconditionally
+                title: >-
+                  ExcelOpenXmlExtractor shall answer the availability probe unconditionally, performing no
+                  I/O.
+                justification: |
+                  Nothing about this backend is environment-dependent — no native binary and no external
+                  application — so there is nothing to probe: the Open XML SDK is a managed assembly that
+                  ships inside the package, and the probe reports available everywhere the package loads.
+                tests:
+                  - ExcelOpenXmlExtractor_ProbeAvailability_AlwaysAvailable
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlExtractor-OrchestratesExtraction
+                title: >-
+                  ExcelOpenXmlExtractor shall record its environment facts, buffer and open the workbook,
+                  read it into the model, and delegate emission to the shared emitter.
+                justification: |
+                  The extractor owns orchestration: it records what parsed the workbook and that a
+                  workbook is non-paginated, buffers the source because a stream is not guaranteed
+                  seekable, hands the reader a seekable stream, and returns degraded when the emitter
+                  reported any gap — writing no bytes itself, because the sink is the only output channel.
+                tests:
+                  - DocDownExcel_Extract_Xlsx_SelectsOpenXml
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlExtractor-ContributesSelfTests
+                title: >-
+                  ExcelOpenXmlExtractor shall contribute self-test cases, including an honest skip for the
+                  page-rendering capability it does not claim.
+                justification: |
+                  An operator needs to confirm the backend works where it is deployed. A round-trip case
+                  that builds and reads a workbook proves the SDK is genuinely functional, and a skipped
+                  page-rendering case keeps a capability the backend does not claim — because a workbook
+                  is non-paginated — from being reported as a pass or a failure.
+                tests:
+                  - ExcelOpenXmlExtractor_SelfTestCases_RoundTripPassesAndRenderingSkipped

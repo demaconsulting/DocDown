@@ -13,7 +13,8 @@ in-memory extraction report as the fixed-shape plain-text document that is the h
 
 `SummaryWriter` is a `static class` with no state. It reads an `ExtractionReport` (outcome, source,
 detection, selection, environment, options, timestamp, and any failure), the `ArtifactLedger`, the
-recorded images, gaps, and diagnostics, and composes them into a `StringBuilder` written through the
+recorded images, content features, self-reported document metadata, gaps, and diagnostics, and composes
+them into a `StringBuilder` written through the
 scratch-folder gate.
 
 #### On-disk format
@@ -31,24 +32,42 @@ omitted):
 4. **Failure** — present **only** when `Outcome == Failed`; it contains `Failure.Explanation`
    **verbatim**.
 5. **Backend** — the selected backend, its fidelity, and why it was chosen.
-6. **Environment** — operating system, runtime, and the environment facts. Contributed facts are
+6. **Environment** — operating system and architecture, runtime, runtime identifier, and the
+   environment facts. This block is a **trimmed** view: every backend-contributed fact is kept, but of
+   the candidate-availability facts only those reporting something missing are shown, and any
+   available-but-unused backend facts are elided with an explicit count (`N other registered backends
+   were available but did not run; see manifest.json.`) so the omission is visible rather than silent —
+   the full, untrimmed environment block lives in `manifest.json`. Contributed facts are
    **grouped under the component that reported them** (for example `DocDown.Pdf` and
    `DocDown.Pdf.Rendering`), preserving first-seen source order and per-source emission order, each
    with an availability suffix. Grouping keeps a component's honest statement — such as a capability
    it does not offer — from reading as a whole-run failure, and scales to the multi-backend case.
-7. **Layout** — one line per core artifact and its on-disk **presence** (`PRESENT` / `not present` /
-   `ABSENT`).
-8. **What WAS extracted** — the content, images, and pages actually produced.
-9. **What was NOT extracted** — one indented block per gap, numbered `[GAP-n]`, with its reason,
-   impact, and remedy.
-10. **Completeness** — the per-artifact **completeness** status, ending — when the ledger
+7. **Document metadata** — the document's own self-reported claims: the author and modified date
+   inlined for orientation (or an explicit line when the document supplied neither), always naming
+   `metadata.json` as the place the full self-reported metadata is read from. The inlined values are
+   read from the authored metadata, never from the manifest's possibly derived title, so a heuristic
+   value can never leak into this block.
+8. **Layout** — one line per root artifact and resource folder (`summary.txt`, `manifest.json`,
+   `metadata.json`, `content.md`, `images/`, `pages/`) and its on-disk **presence** (`PRESENT` /
+   `not present` / `ABSENT`). `metadata.json` is written on every run, so it is always named here.
+9. **What WAS extracted** — the concrete outputs: `content.md`'s character count **and** a one-line
+   **content outline** of the structure it carries (`Contains 3 headings, 2 tables, 53 comments, …`),
+   counted from the model and drawn from the same content features the manifest records, so an agent
+   can tell that (say) author-attributed comments are present without reading the whole file; an
+   **aggregate** description of the images (how many, how many bytes, the unit range they span, and how
+   many carry no unit number and why) that ends by pointing at `manifest.json` for the per-image
+   inventory rather than printing one line per image; and the rendered-page and content-part counts.
+   When nothing was produced it says so explicitly.
+10. **What was NOT extracted** — one indented block per gap, numbered `[GAP-n]`, with its reason,
+    impact, and remedy.
+11. **Completeness** — the per-artifact **completeness** status, ending — when the ledger
     reconciliation succeeded — with the literal line `Every absence above is explained by a numbered
     gap. There are no unexplained gaps.` Completeness uses a vocabulary (`COMPLETE` / `PARTIAL` /
     `MISSING`) deliberately **disjoint** from the Layout section's presence vocabulary, so no single
     word carries two senses. In particular an empty-but-expected folder reads `not present` in Layout
     (on-disk truth: the folder is not created when empty) and `COMPLETE (0 of 0)` in Completeness
     (nothing is missing) without the two lines contradicting each other.
-11. **Diagnostics** — the coded diagnostics, with a count of warnings and errors.
+12. **Diagnostics** — the coded diagnostics, with a count of warnings and errors.
 
 #### Key Methods
 
@@ -56,10 +75,15 @@ omitted):
   section in order and writes it through `ScratchFolder.WriteTextAsync`.
 
 Private appenders implement the sections one-to-one: `AppendTitleAndHeader`, `AppendFailure`,
-`AppendBackend`, `AppendEnvironment`, `AppendLayout`, `AppendWhatWasExtracted`,
+`AppendBackend`, `AppendEnvironment`, `AppendDocumentMetadata`, `AppendLayout`,
+`AppendWhatWasExtracted`,
 `AppendWhatWasNotExtracted`, `AppendCompleteness`, and `AppendDiagnostics`. `AppendEnvironment`
 delegates contributed facts to `AppendEnvironmentFactGroups`, which buckets facts by their `Source`
-component while preserving first-seen source order and per-source emission order. Shared helpers wrap
+component while preserving first-seen source order and per-source emission order.
+`AppendWhatWasExtracted` delegates to `AppendContentOutline` (the one-line `Contains …` summary of the
+recorded content features) and `AppendImageSummary` (the aggregate image description that replaces the
+per-image inventory, now carried only in `manifest.json`). `AppendDocumentMetadata` inlines the author
+and modified date and always names `metadata.json` for the rest. Shared helpers wrap
 long values under a label (`AppendWrapped`), and map statuses and scopes to their human phrases —
 `FolderLayoutPhrase`/`ContentLayoutPhrase` render the **presence** vocabulary for Layout, and
 `FolderCompletenessPhrase`/`ContentCompletenessPhrase` render the disjoint **completeness** vocabulary

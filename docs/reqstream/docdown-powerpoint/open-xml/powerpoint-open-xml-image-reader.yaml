@@ -1,0 +1,44 @@
+---
+# Software Unit Requirements for PowerPointOpenXmlImageReader
+#
+# PowerPointOpenXmlImageReader resolves the embedded images of a presentation to their bytes and
+# provenance, across every part that can carry a picture — slides, their notes, and the slide layouts
+# and masters — and records which slides reference each image so the association survives extraction.
+# It has no dedicated test class; its contract is what reaches the model, proved through the reader tests
+# that read image decks and the emitter tests that render the inline links.
+
+sections:
+  - title: DocDownPowerPoint Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: PowerPointOpenXmlImageReader Requirements
+            requirements:
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlImageReader-YieldsEmbeddedImages
+                title: >-
+                  PowerPointOpenXmlImageReader shall yield each distinct embedded image's bytes
+                  unchanged, deduplicated by package part, gathered from slides, notes, layouts, and
+                  masters.
+                justification: |
+                  An Open XML image part stores a complete image file byte-for-byte, so every image is a
+                  passthrough. A deck reuses a single media part across many slides and keeps its logos on
+                  layouts and masters, so gathering pictures from slides, notes, layouts, and masters and
+                  deduplicating by package-part identity is what stops the reader under-extracting or
+                  writing a shared part more than once. Naming candidates come from the referencing
+                  picture's own description, title, and object name.
+                tests:
+                  - PowerPointOpenXmlReader_Read_DeckWithImage_ExtractsEmbeddedImage
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlImageReader-RecordsSlideAssociation
+                title: >-
+                  PowerPointOpenXmlImageReader shall record every slide that references an image, expose
+                  each slide's images in reading order, and flag an image reached only through a layout
+                  or master as template furniture.
+                justification: |
+                  A reader must be able to tell "on slides 3 and 7" from "template furniture" from "true
+                  orphan," so a part referenced by several slides records every referring slide, a part
+                  reached only through a layout or master is flagged as template-referenced rather than
+                  given a fabricated slide, and each slide's ordered image occurrences are returned so the
+                  emitter can link each one inline at its point of occurrence.
+                tests:
+                  - PowerPointOpenXmlReader_Read_DeckWithImage_RecordsSlideAssociation
