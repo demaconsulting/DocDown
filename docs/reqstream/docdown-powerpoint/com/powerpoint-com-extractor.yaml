@@ -102,3 +102,20 @@ sections:
                 tests:
                   - PowerPointComExtractor_NullFactory_ProbesUnavailable
                   - PowerPointComExtractor_PublicCtor_ProbeDoesNotThrowAndNeverInstructsInstallation
+
+              - id: DocDownPowerPoint-Com-PowerPointComExtractor-ContributesComSelfTests
+                title: >-
+                  PowerPointComExtractor shall contribute a release-time availability case and a
+                  release-time case that renders a slide it builds itself through the real COM
+                  adapter, each skipping with a stated reason where Microsoft PowerPoint is absent.
+                justification: |
+                  The COM adapter cannot be exercised in CI, so the only evidence that it genuinely
+                  rasterizes in a deployed environment is a case that builds a synthetic single-slide
+                  deck and renders it through the shipping adapter, asserting a real PNG of plausible
+                  size came back and that the PowerPoint process the render started is gone
+                  afterwards. Because rendering is environment-dependent, an environment without
+                  PowerPoint must produce a stated skip rather than a failure, so self-validation
+                  stays green on a machine that legitimately cannot render.
+                tests:
+                  - PowerPointComExtractor_GetSelfTestCases_ReturnsAvailabilityAndRenderCases
+                  - PowerPointComExtractor_RenderSelfTest_UnavailableBackend_SkipsWithReason

@@ -171,6 +171,48 @@ public class PowerPointComExtractorTests
         Assert.Contains(sink.EnvironmentFacts, fact => fact.Key == "pages.renderer" && fact.Available == true);
     }
 
+    /// <summary>
+    ///     Proves the backend contributes both release-time cases: the availability probe and the
+    ///     end-to-end render that actually drives Microsoft PowerPoint.
+    /// </summary>
+    [Fact]
+    public void PowerPointComExtractor_GetSelfTestCases_ReturnsAvailabilityAndRenderCases()
+    {
+        var extractor = new PowerPointComExtractor();
+
+        var cases = extractor.GetSelfTestCases().ToList();
+
+        Assert.Equal(
+            ["powerpoint.com.available", "powerpoint.com.render"],
+            cases.Select(candidate => candidate.Name));
+        Assert.All(cases, candidate => Assert.Equal("powerpoint-com", candidate.Category));
+    }
+
+    /// <summary>
+    ///     Proves the render case reports a reasoned skip — never a failure and never a launched
+    ///     application — where the backend cannot run, which is every machine without Microsoft
+    ///     PowerPoint.
+    /// </summary>
+    [Fact]
+    public void PowerPointComExtractor_RenderSelfTest_UnavailableBackend_SkipsWithReason()
+    {
+        // Arrange: a backend with no adapter, which probes unavailable on every platform, exactly as
+        // the real backend does on a machine without PowerPoint
+        using var work = new TempScratch();
+        var engine = new DocDownBuilder()
+            .AddExtractor(new PowerPointComExtractor(automationFactory: null))
+            .Build();
+
+        // Act: run the contributed render case
+        var renderCase = Assert.Single(
+            engine.GetSelfTestCases(), candidate => candidate.Name == "powerpoint.com.render");
+        var result = renderCase.Run(new SelfTestContext(work.Path, Ct));
+
+        // Assert: skipped with a stated reason, so an absent PowerPoint is never a failure
+        Assert.Equal(SelfTestStatus.Skipped, result.Status);
+        Assert.False(string.IsNullOrWhiteSpace(result.Message));
+    }
+
     /// <summary>Writes a fixture to disk and returns its path.</summary>
     private static string WriteFixture(TempScratch temp, string name, byte[] bytes)
     {

@@ -65,5 +65,6 @@ sections:
               - DocDownVisio-Com-VisioAutomation-RendersEachPageAtRequestedDpi
               - DocDownVisio-Com-VisioAutomation-ProducesPerPageResults
               - DocDownVisio-Com-VisioAutomation-ReleasesItsSession
+              - DocDownVisio-Com-VisioComExtractor-ContributesComSelfTests
             tests:
               - VisioComExtractor_Extract_PassesRenderDpiToAutomation

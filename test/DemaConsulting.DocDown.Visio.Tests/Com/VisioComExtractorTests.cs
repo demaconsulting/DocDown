@@ -168,6 +168,46 @@ public class VisioComExtractorTests
         Assert.Contains(sink.EnvironmentFacts, fact => fact.Key == "pages.renderer" && fact.Available == true);
     }
 
+    /// <summary>
+    ///     Proves the backend contributes both release-time cases: the availability probe and the
+    ///     end-to-end render that actually drives Microsoft Visio.
+    /// </summary>
+    [Fact]
+    public void VisioComExtractor_GetSelfTestCases_ReturnsAvailabilityAndRenderCases()
+    {
+        var extractor = new VisioComExtractor();
+
+        var cases = extractor.GetSelfTestCases().ToList();
+
+        Assert.Equal(["visio.com.available", "visio.com.render"], cases.Select(candidate => candidate.Name));
+        Assert.All(cases, candidate => Assert.Equal("visio-com", candidate.Category));
+    }
+
+    /// <summary>
+    ///     Proves the render case reports a reasoned skip — never a failure and never a launched
+    ///     application — where the backend cannot run, which is every machine without Microsoft
+    ///     Visio.
+    /// </summary>
+    [Fact]
+    public void VisioComExtractor_RenderSelfTest_UnavailableBackend_SkipsWithReason()
+    {
+        // Arrange: a backend with no adapter, which probes unavailable on every platform, exactly as
+        // the real backend does on a machine without Visio
+        using var work = new TempScratch();
+        var engine = new DocDownBuilder()
+            .AddExtractor(new VisioComExtractor(automationFactory: null))
+            .Build();
+
+        // Act: run the contributed render case
+        var renderCase = Assert.Single(
+            engine.GetSelfTestCases(), candidate => candidate.Name == "visio.com.render");
+        var result = renderCase.Run(new SelfTestContext(work.Path, Ct));
+
+        // Assert: skipped with a stated reason, so an absent Visio is never a failure
+        Assert.Equal(SelfTestStatus.Skipped, result.Status);
+        Assert.False(string.IsNullOrWhiteSpace(result.Message));
+    }
+
     /// <summary>Writes a fixture to disk and returns its path.</summary>
     private static string WriteFixture(TempScratch temp, string name, byte[] bytes)
     {

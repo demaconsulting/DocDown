@@ -41,8 +41,28 @@ state.
 - **`ReportSlideFailureNote`** (private) — records a single slide's render failure as a plain note.
 - **`CreateDefaultAutomation`** (private) — constructs the real `PowerPointAutomation` adapter,
   guarding the Windows-only type so it is never constructed off Windows.
-- **`GetSelfTestCases`** / **`RunAvailable`** — contribute the `powerpoint.com.available` case, which
-  passes where PowerPoint is registered on Windows and skips cleanly elsewhere.
+- **`GetSelfTestCases`** / **`RunAvailable`** / **`RunRender`** — contribute two release-time cases.
+  `powerpoint.com.available` passes where PowerPoint is registered on Windows and skips cleanly
+  elsewhere. `powerpoint.com.render` walks through the door the availability case only knocks on: it
+  builds a synthetic single-slide deck in the self-test work folder, renders it through the real
+  `PowerPointAutomation` at 96 DPI, and passes only when exactly one slide came back carrying
+  non-empty PNG bytes with the PNG signature and plausible pixel dimensions, and the PowerPoint
+  process the render started has exited within a short grace period. It skips with a reason naming
+  Microsoft PowerPoint off Windows or where the probe reports unavailable, and reports every fault as
+  a failure message rather than an exception. It deletes its deck on every path.
+- **`RenderExclusively`** (private) — holds a machine-wide gate across the render, because PowerPoint
+  automation is single-instance: two self-tests running at once would share one host, so one
+  session's quit would tear the application out from under the other and each would see the other's
+  process. Waiting is bounded, and a case that cannot get the gate skips with that reason. The
+  adapter's own watchdog still bounds the render itself.
+- **`BuildSelfTestDeck`** and its element builders (private) — synthesize the render case's deck:
+  theme, slide master, blank layout, one widescreen slide carrying an invented title line, and the
+  slide size. The deck is built rather than committed so the case ships no document of its own, and
+  it is deliberately complete because PowerPoint refuses to open a deck missing any of that
+  furniture.
+- **`DescribeRenderShortfall`** / **`DescribeProcessShortfall`** / **`IsPng`** / `ReadPngDimensions`
+  (private) — judge what the render returned and whether the owned host was released, as plain
+  descriptions the case turns into a failure message.
 
 ### Error Handling
 

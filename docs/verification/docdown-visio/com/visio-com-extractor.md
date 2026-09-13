@@ -79,3 +79,20 @@ render. Evidence for `DocDownVisio-Com-VisioComExtractor-ReportsPageRenderFailur
 Prove that a null adapter factory makes the backend probe unavailable on every platform without
 throwing, that the public constructor probes without throwing, and that no reason instructs an
 installation. Evidence for `DocDownVisio-Com-VisioComExtractor-ProbesHonestly`.
+
+#### Both release-time COM cases are contributed, and the render case skips where Visio is absent
+
+**Tests**: `VisioComExtractor_GetSelfTestCases_ReturnsAvailabilityAndRenderCases`,
+`VisioComExtractor_RenderSelfTest_UnavailableBackend_SkipsWithReason`
+
+Prove the backend contributes exactly `visio.com.available` and `visio.com.render` under its own
+category, and that the render case reports a reasoned skip — never a failure and never a launched
+application — where the backend probes unavailable, which is every machine without Microsoft Visio.
+Evidence for `DocDownVisio-Com-VisioComExtractor-ContributesComSelfTests`.
+
+The passing side of `visio.com.render` is release-time evidence, not CI evidence: on a machine with
+Microsoft Visio installed, `docdown --validate` builds a synthetic single-page drawing, renders it
+through the real adapter, and reports `[PASS] visio.com.render`. That run is the only place the COM
+boundary — activation, read-only open, export resolution, PNG export, and forced session teardown —
+is exercised end to end, and it is recorded in the release validation results rather than in a CI
+test run.

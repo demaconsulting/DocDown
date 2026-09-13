@@ -652,3 +652,30 @@ If you use results files in a traceability pipeline, include the platform in the
 platform-filtered requirement can match it plainly, for example
 `docdown-validate-windows.trx`, `docdown-validate-ubuntu.trx`, or
 `docdown-validate-macos.trx`.
+
+### What the cases cover
+
+Each registered backend contributes its own cases. A case that cannot run in the current environment
+is reported as `[SKIP]` with the reason, never as a failure, so `--validate` exits 0 on a machine
+that legitimately cannot run it:
+
+- `DocDownTool_Version` and `DocDownTool_Help` — the tool's own commands respond.
+- `core.layout-invariance` and `core.manifest-schema` — every extraction writes the invariant output
+  layout and a valid manifest.
+- `pdf.parseRoundTrip`, `word.openxml.parseRoundTrip`, `visio.openxml.parseRoundTrip`,
+  `powerpoint.openxml.parseRoundTrip`, and `excel.openxml.parseRoundTrip` — each managed backend
+  reads a document it built itself.
+- `pdf-rendering.renderRoundTrip` — the native PDF rasterizer renders a page it built itself.
+- `pdf.pageRendering`, `word.pageRendering`, `visio.pageRendering`, `powerpoint.pageRendering`, and
+  `excel.pageRendering` — always skipped: these backends state that they do not render pages.
+- `visio.com.available` and `powerpoint.com.available` — Microsoft Visio and Microsoft PowerPoint can
+  be reached over COM on this machine.
+- `visio.com.render` — Microsoft Visio renders a synthetic single-page drawing to a PNG through COM,
+  and the Visio process the render started is gone afterwards.
+- `powerpoint.com.render` — Microsoft PowerPoint renders a synthetic single-slide deck to a PNG
+  through COM, and the PowerPoint process the render started is gone afterwards.
+
+The two COM render cases build their own documents, render them through the same automation path an
+extraction uses, and check that a real image of plausible size came back. On a machine without the
+Microsoft Office application — including every non-Windows machine — the matching cases skip with a
+reason naming the missing application.

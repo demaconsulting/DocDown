@@ -64,5 +64,6 @@ sections:
               - DocDownPowerPoint-Com-PowerPointAutomation-RendersEachSlideAtRequestedDpi
               - DocDownPowerPoint-Com-PowerPointAutomation-ProducesPerSlideResults
               - DocDownPowerPoint-Com-PowerPointAutomation-ReleasesItsSession
+              - DocDownPowerPoint-Com-PowerPointComExtractor-ContributesComSelfTests
             tests:
               - PowerPointComExtractor_Extract_PassesRenderDpiToAutomation

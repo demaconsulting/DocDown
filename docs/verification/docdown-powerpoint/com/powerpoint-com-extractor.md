@@ -82,3 +82,21 @@ still render. Evidence for
 Prove that a null adapter factory makes the backend probe unavailable on every platform without
 throwing, that the public constructor probes without throwing, and that no reason instructs an
 installation. Evidence for `DocDownPowerPoint-Com-PowerPointComExtractor-ProbesHonestly`.
+
+#### Both release-time COM cases are contributed, and the render case skips where PowerPoint is absent
+
+**Tests**: `PowerPointComExtractor_GetSelfTestCases_ReturnsAvailabilityAndRenderCases`,
+`PowerPointComExtractor_RenderSelfTest_UnavailableBackend_SkipsWithReason`
+
+Prove the backend contributes exactly `powerpoint.com.available` and `powerpoint.com.render` under
+its own category, and that the render case reports a reasoned skip — never a failure and never a
+launched application — where the backend probes unavailable, which is every machine without
+Microsoft PowerPoint. Evidence for
+`DocDownPowerPoint-Com-PowerPointComExtractor-ContributesComSelfTests`.
+
+The passing side of `powerpoint.com.render` is release-time evidence, not CI evidence: on a machine
+with Microsoft PowerPoint installed, `docdown --validate` builds a synthetic single-slide deck,
+renders it through the real adapter, and reports `[PASS] powerpoint.com.render`. That run is the only
+place the COM boundary — activation, read-only open, point-to-pixel conversion, PNG export, and
+forced session teardown — is exercised end to end, and it is recorded in the release validation
+results rather than in a CI test run.
