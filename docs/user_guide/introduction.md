@@ -28,6 +28,72 @@ reference distributed with the NuGet packages.
 - [REF-1] Continuous Compliance Methodology
   (<https://github.com/demaconsulting/ContinuousCompliance>)
 
+# Quick Start
+
+Two audiences, two short paths. Both produce the same output layout.
+
+## Library consumer
+
+Install the package for the format you read, register that one backend, extract, and branch on the
+outcome:
+
+```bash
+dotnet add package DemaConsulting.DocDown.Word
+```
+
+```csharp
+using System;
+using System.Threading;
+using DocDown.Core;
+using DocDown.Word;
+
+var engine = new DocDownBuilder()
+    .AddWord() // .docx - text, tables, images; no page images
+    .Build();
+
+var result = await engine.ExtractAsync(
+    documentPath: "contracts/sample-agreement.docx",
+    scratchFolder: "scratch/sample-agreement",
+    options: null,
+    cancellationToken: CancellationToken.None);
+
+if (result.Outcome == ExtractionOutcome.Unreadable)
+{
+    Console.Error.WriteLine(result.Failure?.Explanation);
+    return 1;
+}
+
+Console.WriteLine(result.SummaryPath);  // paste this summary.txt into the model context window
+
+foreach (var note in result.Notes)
+{
+    Console.WriteLine($"Note: {note.Message}");
+}
+
+return 0;
+```
+
+Swap `AddWord()` for `AddExcel()`, `AddPdf()`, `AddPowerPoint()`, or `AddVisio()` — one call per
+format package you reference. Nothing else changes.
+
+## Command-line user
+
+```bash
+dotnet tool install -g DemaConsulting.DocDown.Tool
+docdown --input sample-agreement.docx --scratch ./out
+```
+
+The tool prints the absolute path to the produced `summary.txt` and exits `0`. On an unreadable
+document or a bad argument it prints the failure explanation and exits `1`.
+
+## Outcomes in one paragraph
+
+An extraction ends as `Produced` — the invariant output layout was written — or `Unreadable` — the
+document or the scratch folder could not be read, and the failure explanation says why. A produced
+extraction may still carry notes: short factual messages about a step DocDown attempted but could
+not finish. Notes are not failures. The rest of this guide fills in the detail behind those two
+outcomes.
+
 # The Output Contract
 
 When DocDown produces an extraction, it writes the same five artifacts under the scratch folder:
@@ -124,6 +190,40 @@ ensures compliance evidence is generated automatically on every CI run.
 
 # Installation
 
+Install one package per format you actually read. Each format package brings
+`DemaConsulting.DocDown.Core` with it, so Core is referenced directly only when writing a new
+backend.
+
+| Format | Package (all prefixed `DemaConsulting.`) | Optional extra | Platform note |
+| --- | --- | --- | --- |
+| PDF `.pdf` | `DocDown.Pdf` | `DocDown.Pdf.Rendering` for page images | Managed; the add-on has native binaries |
+| Word `.docx` | `DocDown.Word` | — | Managed; every platform |
+| Excel `.xlsx` | `DocDown.Excel` | — | Managed; a workbook is not paginated |
+| PowerPoint `.pptx` | `DocDown.PowerPoint` | — | Slide images need Windows and PowerPoint |
+| Visio `.vsdx`, `.vsdm` | `DocDown.Visio` | — | Page images need Windows and Visio |
+| Any format, from a shell | `DocDown.Tool` | — | Global or local tool manifest install |
+| Your own backend | `DocDown.Core` | — | Abstractions only; extracts nothing itself |
+
+## Supported and unsupported formats
+
+| Format | Extensions | Package | Text, tables, images | Page images |
+| --- | --- | --- | --- | --- |
+| PDF | `.pdf` | `DocDown.Pdf` | Yes | With `DocDown.Pdf.Rendering` |
+| Word | `.docx` | `DocDown.Word` | Yes | No |
+| Excel | `.xlsx` | `DocDown.Excel` | Yes | Not applicable; not paginated |
+| PowerPoint | `.pptx` | `DocDown.PowerPoint` | Yes | Windows, with PowerPoint |
+| Visio | `.vsdx`, `.vsdm` | `DocDown.Visio` | Yes | Windows, with Visio |
+
+Formats DocDown recognizes but does not extract today:
+
+| Format | Extensions | What happens |
+| --- | --- | --- |
+| Legacy binary Office | `.doc`, `.xls`, `.ppt`, `.vsd` | Recognized, then refused as unsupported (`Unreadable`) |
+| HTML | `.html`, `.htm` | Recognized; `DocDown.Html` is planned and not yet available |
+| Anything else | — | Reported as an unrecognized format rather than guessed at |
+
+## Installing the packages
+
 Install the libraries using the .NET CLI:
 
 ```bash
@@ -162,10 +262,12 @@ dotnet add package DemaConsulting.DocDown.PowerPoint
 dotnet add package DemaConsulting.DocDown.Visio
 ```
 
-Install the command-line tool globally (or with `--local` in a tool manifest):
+Install the command-line tool globally, or into a local tool manifest so the version travels with
+the repository:
 
 ```bash
-dotnet tool install -g DemaConsulting.DocDown.Tool
+dotnet tool install -g DemaConsulting.DocDown.Tool          # global
+dotnet tool install --local DemaConsulting.DocDown.Tool     # local tool manifest
 ```
 
 ## API Documentation
@@ -222,6 +324,8 @@ foreach (var note in result.Notes)
 {
     Console.WriteLine(note.Message);
 }
+
+return 0;
 ```
 
 `AddPdf()` is the entire registration surface for the managed PDF reader. Registration is explicit
@@ -330,7 +434,7 @@ using DocDown.Core;
 using DocDown.Word;
 
 var engine = new DocDownBuilder()
-    .AddWord()
+    .AddWord() // .docx - text, tables, images; no page images
     .Build();
 
 var result = await engine.ExtractAsync(
@@ -533,6 +637,36 @@ The rendering limits match the PowerPoint package in spirit:
   author record.
 
 ## Backends and how one is chosen
+
+A host that handles every format registers the full menu. Each line says what it buys, so a host
+that reads only some formats deletes the lines it does not need:
+
+```csharp
+using System;
+using DocDown.Core;
+using DocDown.Excel;
+using DocDown.Pdf;
+using DocDown.Pdf.Rendering;
+using DocDown.PowerPoint;
+using DocDown.Visio;
+using DocDown.Word;
+
+var engine = new DocDownBuilder()
+    .AddPdf()          // .pdf  - text, embedded images, metadata
+    .AddPdfRendering() // .pdf  - page images (adds native binaries)
+    .AddWord()         // .docx - text, tables, images; no page images
+    .AddExcel()        // .xlsx - cells, formulas, charts; workbooks are never rendered
+    .AddPowerPoint()   // .pptx - slide text and notes; slide images need PowerPoint
+    .AddVisio()        // .vsdx, .vsdm - shape text and connections; page images need Visio
+    .Build();
+
+Console.WriteLine(engine.Extractors.Count); // 8 — AddPowerPoint and AddVisio register two each
+```
+
+Register only the formats you need — each call is one visible edge to one package. Slide and page
+images are produced by driving Microsoft Office over COM, so they are Windows-only and require that
+application to be installed. Without it the managed backend still extracts the text, and
+`summary.txt` records that pages were not rendered.
 
 Across all the format packages, `docdown --list-backends` reports eight registered backends:
 

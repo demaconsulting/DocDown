@@ -88,6 +88,48 @@ public sealed class DocDownEngine
     ///     A convenience overload that builds a <see cref="DocumentSource"/> from the file path and
     ///     delegates to the stream-agnostic overload; all pipeline behavior is identical.
     /// </remarks>
+    /// <example>
+    ///     A complete extraction, from registration to reading the produced paths and notes.
+    ///     <code language="csharp">
+    ///     using System;
+    ///     using System.Threading;
+    ///     using DocDown.Core;
+    ///     using DocDown.Pdf;
+    ///
+    ///     var engine = new DocDownBuilder()
+    ///         .AddPdf() // .pdf - text, embedded images, metadata
+    ///         .Build();
+    ///
+    ///     // RenderPages asks for rasterized page images. A backend that can render pages is
+    ///     // preferred when one is registered; when none is, the layout is still produced and a
+    ///     // note records that pages were not rendered.
+    ///     var options = new ExtractionOptions { RenderPages = true };
+    ///
+    ///     var result = await engine.ExtractAsync(
+    ///         "invoices/sample-invoice.pdf",
+    ///         "scratch/sample-invoice",
+    ///         options,
+    ///         CancellationToken.None);
+    ///
+    ///     if (result.Outcome == ExtractionOutcome.Produced)
+    ///     {
+    ///         Console.WriteLine(result.SummaryPath);   // absolute path to summary.txt
+    ///         Console.WriteLine(result.ManifestPath);  // absolute path to manifest.json
+    ///         Console.WriteLine(result.ContentPath);   // content.md, relative to the scratch folder
+    ///         Console.WriteLine($"{result.ImagePaths.Count} images, {result.PagePaths.Count} pages");
+    ///
+    ///         foreach (var note in result.Notes)
+    ///         {
+    ///             Console.WriteLine($"Note: {note.Message}");
+    ///         }
+    ///     }
+    ///     else
+    ///     {
+    ///         // Unreadable: the document or the scratch folder could not be read.
+    ///         Console.Error.WriteLine(result.Failure?.Explanation);
+    ///     }
+    ///     </code>
+    /// </example>
     public ValueTask<ExtractionResult> ExtractAsync(
         string documentPath, string scratchFolder, ExtractionOptions? options = null, CancellationToken cancellationToken = default)
     {

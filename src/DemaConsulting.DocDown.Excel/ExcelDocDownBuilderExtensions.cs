@@ -34,6 +34,19 @@ public static class ExcelDocDownBuilderExtensions
     ///     legacy binary <c>.xls</c> format is not supported by DocDown at all, so one call yields one
     ///     backend. Side effect: mutates <paramref name="builder"/>'s registration list.
     /// </remarks>
+    /// <example>
+    ///     <code language="csharp">
+    ///     using System;
+    ///     using DocDown.Core;
+    ///     using DocDown.Excel;
+    ///
+    ///     var engine = new DocDownBuilder()
+    ///         .AddExcel() // .xlsx - cells, formulas, charts; workbooks are never rendered
+    ///         .Build();
+    ///
+    ///     Console.WriteLine(engine.Extractors.Count); // 1 — the managed Open XML Excel backend
+    ///     </code>
+    /// </example>
     public static DocDownBuilder AddExcel(this DocDownBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

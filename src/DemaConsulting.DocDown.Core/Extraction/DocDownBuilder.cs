@@ -25,6 +25,72 @@ namespace DocDown.Core;
 ///         thread; the engine it builds is safe for concurrent use.
 ///     </para>
 /// </remarks>
+/// <example>
+///     The minimum viable extraction: register the one backend the application needs, build the
+///     engine, extract, and branch on the outcome.
+///     <code language="csharp">
+///     using System;
+///     using System.Threading;
+///     using DocDown.Core;
+///     using DocDown.Word;
+///
+///     // Register only the backends this application needs; nothing else is discovered.
+///     var engine = new DocDownBuilder()
+///         .AddWord() // .docx - text, tables, images; no page images
+///         .Build();
+///
+///     var result = await engine.ExtractAsync(
+///         documentPath: "contracts/sample-agreement.docx",
+///         scratchFolder: "scratch/sample-agreement",
+///         options: null,
+///         cancellationToken: CancellationToken.None);
+///
+///     if (result.Outcome == ExtractionOutcome.Unreadable)
+///     {
+///         // The document or the scratch folder could not be read; the explanation says why.
+///         Console.Error.WriteLine(result.Failure?.Explanation);
+///     }
+///     else
+///     {
+///         // Produced: the invariant output layout was written under the scratch folder.
+///         Console.WriteLine(result.SummaryPath);   // absolute path to summary.txt
+///         Console.WriteLine(result.ManifestPath);  // absolute path to manifest.json
+///
+///         // Notes can appear on a produced extraction; each is a short factual message.
+///         foreach (var note in result.Notes)
+///         {
+///             Console.WriteLine($"Note: {note.Message}");
+///         }
+///     }
+///     </code>
+///     When a host handles several formats, register the full menu and delete the lines it does not
+///     need — each line states what it buys:
+///     <code language="csharp">
+///     using System;
+///     using DocDown.Core;
+///     using DocDown.Excel;
+///     using DocDown.Pdf;
+///     using DocDown.Pdf.Rendering;
+///     using DocDown.PowerPoint;
+///     using DocDown.Visio;
+///     using DocDown.Word;
+///
+///     var engine = new DocDownBuilder()
+///         .AddPdf()          // .pdf  - text, embedded images, metadata
+///         .AddPdfRendering() // .pdf  - page images (adds native binaries)
+///         .AddWord()         // .docx - text, tables, images; no page images
+///         .AddExcel()        // .xlsx - cells, formulas, charts; workbooks are never rendered
+///         .AddPowerPoint()   // .pptx - slide text and notes; slide images need PowerPoint
+///         .AddVisio()        // .vsdx, .vsdm - shape text and connections; page images need Visio
+///         .Build();
+///
+///     Console.WriteLine(engine.Extractors.Count); // 8 — AddPowerPoint and AddVisio register two each
+///     </code>
+///     Register only the formats you need — each call is one visible edge to one package. Slide and
+///     page images are produced by driving Microsoft Office over COM, so they are Windows-only and
+///     require that application to be installed. Without it the managed backend still extracts the
+///     text, and <c>summary.txt</c> records that pages were not rendered.
+/// </example>
 public sealed class DocDownBuilder
 {
     /// <summary>

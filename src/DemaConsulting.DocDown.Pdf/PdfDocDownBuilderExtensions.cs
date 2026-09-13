@@ -33,6 +33,19 @@ public static class PdfDocDownBuilderExtensions
     ///     builder keeps the call chainable alongside other backends. Side effect: mutates
     ///     <paramref name="builder"/>'s registration list.
     /// </remarks>
+    /// <example>
+    ///     <code language="csharp">
+    ///     using System;
+    ///     using DocDown.Core;
+    ///     using DocDown.Pdf;
+    ///
+    ///     var engine = new DocDownBuilder()
+    ///         .AddPdf() // .pdf - text, embedded images, metadata
+    ///         .Build();
+    ///
+    ///     Console.WriteLine(engine.Extractors.Count); // 1 — the managed PDF backend
+    ///     </code>
+    /// </example>
     public static DocDownBuilder AddPdf(this DocDownBuilder builder)
     {
         // Reject a null builder at the point of the call so the error names this extension method

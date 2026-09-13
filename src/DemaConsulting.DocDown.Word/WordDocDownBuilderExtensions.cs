@@ -34,6 +34,19 @@ public static class WordDocDownBuilderExtensions
     ///     one backend and no environment-dependent second answer. Side effect: mutates
     ///     <paramref name="builder"/>'s registration list.
     /// </remarks>
+    /// <example>
+    ///     <code language="csharp">
+    ///     using System;
+    ///     using DocDown.Core;
+    ///     using DocDown.Word;
+    ///
+    ///     var engine = new DocDownBuilder()
+    ///         .AddWord() // .docx - text, tables, images; no page images
+    ///         .Build();
+    ///
+    ///     Console.WriteLine(engine.Extractors.Count); // 1 — the managed Open XML Word backend
+    ///     </code>
+    /// </example>
     public static DocDownBuilder AddWord(this DocDownBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

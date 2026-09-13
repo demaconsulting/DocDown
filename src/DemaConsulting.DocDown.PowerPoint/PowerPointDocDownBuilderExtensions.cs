@@ -40,6 +40,19 @@ public static class PowerPointDocDownBuilderExtensions
     ///     records a plain-language note when a requested slide render cannot be completed. Side
     ///     effect: mutates <paramref name="builder"/>'s registration list.
     /// </remarks>
+    /// <example>
+    ///     <code language="csharp">
+    ///     using System;
+    ///     using DocDown.Core;
+    ///     using DocDown.PowerPoint;
+    ///
+    ///     var engine = new DocDownBuilder()
+    ///         .AddPowerPoint() // .pptx - slide text and notes; slide images need PowerPoint
+    ///         .Build();
+    ///
+    ///     Console.WriteLine(engine.Extractors.Count); // 2 — the Open XML and COM backends
+    ///     </code>
+    /// </example>
     public static DocDownBuilder AddPowerPoint(this DocDownBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

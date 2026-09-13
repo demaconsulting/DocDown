@@ -16,9 +16,141 @@ predictable scratch-folder layout for multimodal AI agents and other automation.
 read, what was counted, and any plain-language notes about steps that could not be completed; it
 does not judge whether document content is acceptable.
 
+## Which Package Do I Need?
+
+Install one package per format you actually read. Each format package brings
+`DemaConsulting.DocDown.Core` with it, so you only reference Core directly when you are writing your
+own backend.
+
+| Format | Package (all prefixed `DemaConsulting.`) | Optional extra | Platform note |
+| --- | --- | --- | --- |
+| PDF `.pdf` | `DocDown.Pdf` | `DocDown.Pdf.Rendering` for page images | Managed; the add-on has native binaries |
+| Word `.docx` | `DocDown.Word` | — | Managed; every platform |
+| Excel `.xlsx` | `DocDown.Excel` | — | Managed; a workbook is not paginated |
+| PowerPoint `.pptx` | `DocDown.PowerPoint` | — | Slide images need Windows and PowerPoint |
+| Visio `.vsdx`, `.vsdm` | `DocDown.Visio` | — | Page images need Windows and Visio |
+| Any format, from a shell | `DocDown.Tool` | — | Global or local tool manifest install |
+| Your own backend | `DocDown.Core` | — | Abstractions only; extracts nothing itself |
+
+```bash
+dotnet add package DemaConsulting.DocDown.Pdf            # .pdf
+dotnet add package DemaConsulting.DocDown.Pdf.Rendering  # optional: rasterize PDF pages
+dotnet add package DemaConsulting.DocDown.Word           # .docx
+dotnet add package DemaConsulting.DocDown.Excel          # .xlsx
+dotnet add package DemaConsulting.DocDown.PowerPoint     # .pptx
+dotnet add package DemaConsulting.DocDown.Visio          # .vsdx, .vsdm
+```
+
+Install the command-line tool globally, or into a local tool manifest so the version travels with
+the repository:
+
+```bash
+dotnet tool install -g DemaConsulting.DocDown.Tool          # global
+dotnet tool install --local DemaConsulting.DocDown.Tool     # local tool manifest
+```
+
+Only `DemaConsulting.DocDown.Pdf.Rendering` carries native binaries (PDFium and SkiaSharp, via
+PDFtoImage). A framework-dependent reference works on every supported runtime identifier; a
+self-contained single-file build of that package must be published per runtime identifier with
+`dotnet publish -r <rid>`.
+
+## Quick Start
+
+### Library
+
+Register only the backend you need, extract, and branch on the outcome. Nothing else is discovered:
+registration is explicit and reflection-free, which is what keeps single-file publishing viable.
+
+```csharp
+using System;
+using System.Threading;
+using DocDown.Core;
+using DocDown.Word;
+
+var engine = new DocDownBuilder()
+    .AddWord() // .docx - text, tables, images; no page images
+    .Build();
+
+var result = await engine.ExtractAsync(
+    documentPath: "contracts/sample-agreement.docx",
+    scratchFolder: "scratch/sample-agreement",
+    options: null,
+    cancellationToken: CancellationToken.None);
+
+if (result.Outcome == ExtractionOutcome.Unreadable)
+{
+    Console.Error.WriteLine(result.Failure?.Explanation);
+    return 1;
+}
+
+Console.WriteLine(result.SummaryPath);  // paste this summary.txt into the model context window
+
+foreach (var note in result.Notes)
+{
+    Console.WriteLine($"Note: {note.Message}");
+}
+
+return 0;
+```
+
+Swap `AddWord()` for `AddExcel()`, `AddPdf()`, `AddPowerPoint()`, or `AddVisio()` — one call per
+format package you reference. The same example works for a workbook or a deck with no other change.
+The annotated full menu is in *Registering Several Backends*, below.
+
+### Command Line
+
+```bash
+dotnet tool install -g DemaConsulting.DocDown.Tool
+docdown --input sample-agreement.docx --scratch ./out
+```
+
+The tool prints the absolute path to the produced `summary.txt`, exits `0` when the output layout
+was written, and exits `1` on an unreadable document or a bad argument.
+
+## Outcomes and Notes
+
+Every extraction ends in exactly one of two outcomes:
+
+- **`Produced`** — the invariant output layout was written under the scratch folder.
+- **`Unreadable`** — the document could not be read, or the scratch folder was refused.
+  `result.Failure.Explanation` says why, and the CLI exits `1`.
+
+`result.Notes` may contain entries on a **produced** extraction: each note is a short factual message
+about a step DocDown attempted but could not finish, such as pages that were not rendered because no
+renderer was registered. Notes are not failures, and a produced extraction with notes still exits
+`0`.
+
+## Supported Formats
+
+| Format | Extensions | Package | Text, tables, images | Page images |
+| --- | --- | --- | --- | --- |
+| PDF | `.pdf` | `DocDown.Pdf` | Yes | With `DocDown.Pdf.Rendering` |
+| Word | `.docx` | `DocDown.Word` | Yes | No |
+| Excel | `.xlsx` | `DocDown.Excel` | Yes | Not applicable; not paginated |
+| PowerPoint | `.pptx` | `DocDown.PowerPoint` | Yes | Windows, with PowerPoint |
+| Visio | `.vsdx`, `.vsdm` | `DocDown.Visio` | Yes | Windows, with Visio |
+
+Not supported today:
+
+| Format | Extensions | What happens |
+| --- | --- | --- |
+| Legacy binary Office | `.doc`, `.xls`, `.ppt`, `.vsd` | Recognized, then refused as unsupported (`Unreadable`) |
+| HTML | `.html`, `.htm` | Recognized; `DocDown.Html` is planned and not yet available |
+| Anything else | — | Reported as an unrecognized format rather than guessed at |
+
 ## The Output Contract
 
 When DocDown produces an extraction, it writes the same five artifacts under the scratch folder:
+
+```text
+out/
+├── summary.txt      # what was extracted and where — paste this into the model context window
+├── manifest.json    # machine-readable twin of summary.txt
+├── metadata.json    # what the document asserts about itself, with provenance
+├── content.md       # textual content as markdown, linking into images/
+├── images/          # extracted embedded images
+└── pages/           # rendered page images, when requested and available
+```
 
 - **`summary.txt`** — the short human- and agent-readable summary of what was extracted and where,
   including the absolute scratch path. It opens with a plain-English gist, records the Scratch,
@@ -48,133 +180,30 @@ DocDown reports extraction details in only two ways:
    complete. A note carries only a message and no extra classification or follow-up fields, and it
    never characterizes the document.
 
-Outcomes are equally simple:
-
-- **`Produced`** — the invariant output layout was written.
-- **`Unreadable`** — the document could not be read or the scratch folder was refused. The failure
-  explanation says why, and the CLI exits `1`.
-
 The scratch folder is an explicit boundary. DocDown writes fixed artifact names beneath that root
 and refuses unsafe or unusable scratch targets rather than guessing at another location.
 
 Extractors are registered explicitly rather than discovered by reflection or assembly scanning, so
 the command-line tool can be published as a single-file executable.
 
-## Project Status
+### What to expect
 
-Eight packages are implemented and under active development:
-`DemaConsulting.DocDown.Core`, the shared abstractions and output contract;
-`DemaConsulting.DocDown.Pdf`, which extracts text, embedded images, and document metadata from
-PDFs; `DemaConsulting.DocDown.Pdf.Rendering`, an optional add-on that rasterizes PDF pages to
-images; `DemaConsulting.DocDown.Word`, which extracts text, real tables, embedded images, document
-control, and metadata from Word documents; `DemaConsulting.DocDown.Excel`, which extracts every
-worksheet's cell values, preserves formulas, recovers each chart's cached data series, and extracts
-embedded images; `DemaConsulting.DocDown.PowerPoint`, which extracts slide text, titles, speaker
-notes, and embedded images; `DemaConsulting.DocDown.Visio`, which extracts page names, shape text,
-connector topology, and embedded images; and `DemaConsulting.DocDown.Tool`, the `docdown`
-command-line tool.
+Extraction is best-effort and environment-dependent. `ExtractAsync` also has an overload taking a
+`DocumentSource` instead of a path, for documents that are not on disk; both take the scratch
+folder, an optional `ExtractionOptions`, and a `CancellationToken`. On produced extractions,
+`result.Notes` is an `IReadOnlyList<ExtractionNote>`; notes replace the earlier absence-report
+collection.
 
-`DocDown.Pdf` is fully managed and ships no native assets, so it does not render pages by itself.
-When pages are requested without the rendering package, extraction still produces the layout and a
-note says page rendering was not completed. `DocDown.Pdf.Rendering` is the one package that carries
-native binaries (PDFium and SkiaSharp, via PDFtoImage): a framework-dependent install works on
-supported runtime identifiers, but a self-contained single-file build is runtime-identifier
-specific and must be published with `dotnet publish -r <rid>`.
+For paginated formats, if page rendering was requested but no renderer is available, the layout is
+still produced and a note explains that pages were not rendered. For a non-paginated format such as
+an Excel workbook, a page request is honored with silence. When no reader matches a detected format,
+the failure explanation names the format and, for a well-known format, the package that provides its
+extractor or states that a legacy binary Office format is unsupported.
 
-`DocDown.Word` and `DocDown.Excel` are fully managed and read `.docx` and `.xlsx` on every platform
-with no native dependency. Neither renders pages. `DocDown.PowerPoint` and `DocDown.Visio` extract
-on every platform through managed backends and additionally rasterize slides and pages to PNG on
-Windows when the corresponding Microsoft Office application is installed. Without it, the managed
-content is still produced and, when page rendering was requested, a note records that the request
-could not be completed. DocDown does not support the legacy binary Office formats (`.doc`, `.xls`,
-`.ppt`, `.vsd`); it recognizes them and says so plainly. `DocDown.Html` is planned and not yet
-available.
+## Registering Several Backends
 
-## Features
-
-- **Uniform Output Layout**: The same five artifacts for every produced extraction
-- **Inventory-First Reporting**: Explicit counts, including `0` for features the extractor checked
-- **Plain Notes**: Message-only extraction notes with no diagnostic taxonomy or acceptability
-  judgment
-- **Deterministic Reader Selection**: Detect format, keep available readers, prefer a page renderer
-  when pages were requested and one is available, then break ties by priority and extractor id
-- **PDF Extraction**: Text in reading order, embedded images, and document metadata, with no native
-  dependency in the base package
-- **Word Extraction**: Text, genuine GitHub-Flavored-Markdown tables, embedded images, a Document
-  Control section drawn from headers and footers, and document metadata for `.docx`
-- **Excel Extraction**: Every worksheet's cell values reproduced verbatim at full length, formulas
-  preserved, chart caches surfaced as data tables, and embedded images linked from `content.md`
-- **PowerPoint Extraction**: Slide text, titles, speaker notes, and embedded images linked from
-  `content.md` at each slide that shows them
-- **Visio Extraction**: Page names, shape text, connector topology, and embedded images linked from
-  `content.md` under the page that shows them
-- **Optional Page Rendering**: PDF pages, PowerPoint slides, and Visio pages can be rasterized when
-  the matching renderer is available and pages were requested
-- **Per-Field Metadata Provenance**: `metadata.json` records where each metadata value came from
-- **Reflection-Free Registration**: Explicit extractor registration, suitable for single-file
-  publishing
-- **Multi-Platform Support**: Builds and runs on Windows, Linux, and macOS
-- **Multi-Runtime Support**: Targets .NET 8, 9, and 10
-- **xUnit v3**: Modern unit testing with xUnit framework version 3
-- **Comprehensive CI/CD**: GitHub Actions workflows with quality checks and builds
-- **Linting Enforcement**: markdownlint, cspell, and yamllint enforced on every CI run
-- **Continuous Compliance**: Compliance evidence generated automatically on every CI run, following
-  the [Continuous Compliance][link-continuous-compliance] methodology
-- **SonarCloud Integration**: Quality gate and security analysis on every build
-- **Documentation Generation**: Automated build notes, user guide, code quality reports,
-  requirements, justifications, and trace matrix
-- **Requirements Traceability**: Requirements linked to passing tests with an auto-generated trace
-  matrix
-
-## Installation
-
-Install the libraries using the .NET CLI:
-
-```bash
-dotnet add package DemaConsulting.DocDown.Core
-dotnet add package DemaConsulting.DocDown.Pdf
-```
-
-To extract Word documents, add the Word package. Its Open XML backend is fully managed and handles
-`.docx` on every platform. The legacy binary `.doc` format is not supported by DocDown and is
-refused with a plain explanation:
-
-```bash
-dotnet add package DemaConsulting.DocDown.Word
-```
-
-To extract Excel workbooks, PowerPoint decks, or Visio diagrams, add the matching packages. All
-three are fully managed and extract content on every platform. PowerPoint and Visio additionally
-rasterize slides and pages on Windows when the corresponding Microsoft Office application is
-installed; when it is not, a page-rendering request still produces the layout and records a note.
-
-```bash
-dotnet add package DemaConsulting.DocDown.Excel
-dotnet add package DemaConsulting.DocDown.PowerPoint
-dotnet add package DemaConsulting.DocDown.Visio
-```
-
-To also rasterize PDF pages to images, add the optional rendering package. It carries native
-binaries (PDFium and SkiaSharp), so a self-contained single-file build must be published per runtime
-identifier (`dotnet publish -r <rid>`); a framework-dependent reference works on every supported
-runtime:
-
-```bash
-dotnet add package DemaConsulting.DocDown.Pdf.Rendering
-```
-
-Install the command-line tool globally:
-
-```bash
-dotnet tool install -g DemaConsulting.DocDown.Tool
-```
-
-## Library Quick Start
-
-Register the backends you want, run an extraction, and branch on the outcome. Registration is
-explicit and reflection-free — you call `Add…()` once per format package you reference, and nothing
-else is discovered or loaded — which is what keeps single-file publishing viable. Drop the lines for
-formats you do not need.
+One engine can serve every format a host handles. The full menu is below — each line says what it
+buys, so delete the lines you do not need:
 
 ```csharp
 using System;
@@ -188,74 +217,33 @@ using DocDown.Visio;
 using DocDown.Word;
 
 var engine = new DocDownBuilder()
-    .AddPdf()
-    .AddPdfRendering()
-    .AddWord()
-    .AddVisio()
-    .AddPowerPoint()
-    .AddExcel()
+    .AddPdf()          // .pdf  - text, embedded images, metadata
+    .AddPdfRendering() // .pdf  - page images (adds native binaries)
+    .AddWord()         // .docx - text, tables, images; no page images
+    .AddExcel()        // .xlsx - cells, formulas, charts; workbooks are never rendered
+    .AddPowerPoint()   // .pptx - slide text and notes; slide images need PowerPoint
+    .AddVisio()        // .vsdx, .vsdm - shape text and connections; page images need Visio
     .Build();
 
 var options = new ExtractionOptions { RenderPages = true };
 
-var result = await engine.ExtractAsync("report.pdf", "out", options, CancellationToken.None);
+var result = await engine.ExtractAsync("manuals/sample-manual.pdf", "out", options, CancellationToken.None);
 
-if (result.Outcome == ExtractionOutcome.Unreadable)
-{
-    Console.Error.WriteLine(result.Failure?.Explanation);
-    return 1;
-}
-
-Console.WriteLine("Extraction produced the output layout.");
+Console.WriteLine(result.Outcome);
 Console.WriteLine($"Summary:  {result.SummaryPath}");
 Console.WriteLine($"Manifest: {result.ManifestPath}");
 Console.WriteLine($"Content:  {result.ContentPath}");
 Console.WriteLine($"Images:   {result.ImagePaths.Count}, Pages: {result.PagePaths.Count}");
-
-foreach (var note in result.Notes)
-{
-    Console.WriteLine($"Note: {note.Message}");
-}
-
-return 0;
 ```
 
-`ExtractAsync` also has an overload taking a `DocumentSource` instead of a path, for documents that
-are not on disk; both take the scratch folder, an optional `ExtractionOptions`, and a
-`CancellationToken`. On produced extractions, `result.Notes` is an
-`IReadOnlyList<ExtractionNote>`; notes replace the earlier absence-report collection.
+Register only the formats you need — each call is one visible edge to one package. Slide and page
+images are produced by driving Microsoft Office over COM, so they are Windows-only and require that
+application to be installed. Without it the managed backend still extracts the text, and
+`summary.txt` records that pages were not rendered.
 
-### What you get on disk
-
-```text
-out/
-├── summary.txt      # what was extracted and where — paste this into the model context window
-├── manifest.json    # machine-readable twin of summary.txt
-├── metadata.json    # what the document asserts about itself, with provenance
-├── content.md       # textual content as markdown, linking into images/
-├── images/          # extracted embedded images
-└── pages/           # rendered page images, when requested and available
-```
-
-`summary.txt` is the artifact you hand to the model: it names the absolute scratch folder path,
-records the extraction status, inventories what is present, and lists any plain-language notes about
-steps DocDown could not complete. `manifest.json` carries the same story in machine-readable form,
-including `schemaVersion: "2.0"`, the `notes` array, and image provenance.
-
-### What to expect
-
-Extraction is best-effort and environment-dependent. `Produced` means the output layout was written;
-`Unreadable` means the document or scratch folder could not be read and the failure explanation says
-why. When `result.Notes` contains entries, each one is a short factual message about work DocDown
-attempted but could not finish.
-
-For paginated formats, if page rendering was requested but no renderer is available, the layout is
-still produced and a note explains that pages were not rendered. For a non-paginated format such as
-an Excel workbook, a page request is honored with silence. When no reader matches a detected format,
-the failure explanation names the format and, for a well-known format, the package that provides its
-extractor or states that a legacy binary Office format is unsupported.
-
-For the full type and member reference, see [API Documentation](#api-documentation).
+Selection stays deterministic: DocDown detects the format, keeps the readers that match it and are
+available, prefers a page renderer when pages were requested and one is available, then breaks ties
+by priority and extractor id.
 
 ## Command-Line Tool
 
@@ -296,6 +284,57 @@ Common options:
 Run `docdown --help` for the full list. Exit codes are `0` when output was produced, even if notes
 were recorded, and `1` on an unreadable document or a bad argument.
 
+## Features
+
+- **Uniform Output Layout**: The same five artifacts for every produced extraction
+- **Inventory-First Reporting**: Explicit counts, including `0` for features the extractor checked
+- **Plain Notes**: Message-only extraction notes with no diagnostic taxonomy or acceptability
+  judgment
+- **Deterministic Reader Selection**: Detect format, keep available readers, prefer a page renderer
+  when pages were requested and one is available, then break ties by priority and extractor id
+- **PDF Extraction**: Text in reading order, embedded images, and document metadata, with no native
+  dependency in the base package
+- **Word Extraction**: Text, genuine GitHub-Flavored-Markdown tables, embedded images, a Document
+  Control section drawn from headers and footers, and document metadata for `.docx`
+- **Excel Extraction**: Every worksheet's cell values reproduced verbatim at full length, formulas
+  preserved, chart caches surfaced as data tables, and embedded images linked from `content.md`
+- **PowerPoint Extraction**: Slide text, titles, speaker notes, and embedded images linked from
+  `content.md` at each slide that shows them
+- **Visio Extraction**: Page names, shape text, connector topology, and embedded images linked from
+  `content.md` under the page that shows them
+- **Optional Page Rendering**: PDF pages, PowerPoint slides, and Visio pages can be rasterized when
+  the matching renderer is available and pages were requested
+- **Per-Field Metadata Provenance**: `metadata.json` records where each metadata value came from
+- **Reflection-Free Registration**: Explicit extractor registration, suitable for single-file
+  publishing
+- **Multi-Platform Support**: Builds and runs on Windows, Linux, and macOS
+- **Multi-Runtime Support**: Targets .NET 8, 9, and 10
+- **xUnit v3**: Modern unit testing with xUnit framework version 3
+- **Comprehensive CI/CD**: GitHub Actions workflows with quality checks and builds
+- **Linting Enforcement**: markdownlint, cspell, and yamllint enforced on every CI run
+- **Continuous Compliance**: Compliance evidence generated automatically on every CI run, following
+  the [Continuous Compliance][link-continuous-compliance] methodology
+- **SonarCloud Integration**: Quality gate and security analysis on every build
+- **Documentation Generation**: Automated build notes, user guide, code quality reports,
+  requirements, justifications, and trace matrix
+- **Requirements Traceability**: Requirements linked to passing tests with an auto-generated trace
+  matrix
+
+## Project Status
+
+Eight packages are implemented and under active development: `DemaConsulting.DocDown.Core`, the
+shared abstractions and output contract; the five format packages and the one rendering add-on
+listed in the package table above; and `DemaConsulting.DocDown.Tool`, the `docdown` command-line
+tool. `DocDown.Html` is planned and not yet available.
+
+`DocDown.Pdf` is fully managed and ships no native assets, so it does not render pages by itself.
+When pages are requested without the rendering package, extraction still produces the layout and a
+note says page rendering was not completed. `DocDown.PowerPoint` and `DocDown.Visio` extract on
+every platform through managed backends and additionally rasterize slides and pages to PNG on
+Windows when the corresponding Microsoft Office application is installed; without it, the managed
+content is still produced and, when page rendering was requested, a note records that the request
+could not be completed.
+
 ## Documentation
 
 Generated documentation includes:
@@ -310,8 +349,9 @@ Generated documentation includes:
 ## API Documentation
 
 Detailed API documentation for all public types and members is distributed in the `api/` folder
-of the NuGet package. For a working end-to-end example, see
-[Library Quick Start](#library-quick-start).
+of each NuGet package. `DocDownBuilder`, `DocDownEngine.ExtractAsync`, and every `Add…()`
+registration method carry a complete, runnable example, so the sample is available offline with the
+package you installed.
 
 ## Contributing
 

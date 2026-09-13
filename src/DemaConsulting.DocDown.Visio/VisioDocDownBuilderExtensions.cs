@@ -40,6 +40,19 @@ public static class VisioDocDownBuilderExtensions
     ///     still supplies the page names, shape text, connector topology, and embedded images. Side
     ///     effect: mutates <paramref name="builder"/>'s registration list.
     /// </remarks>
+    /// <example>
+    ///     <code language="csharp">
+    ///     using System;
+    ///     using DocDown.Core;
+    ///     using DocDown.Visio;
+    ///
+    ///     var engine = new DocDownBuilder()
+    ///         .AddVisio() // .vsdx, .vsdm - shape text and connections; page images need Visio
+    ///         .Build();
+    ///
+    ///     Console.WriteLine(engine.Extractors.Count); // 2 — the Open Packaging and COM backends
+    ///     </code>
+    /// </example>
     public static DocDownBuilder AddVisio(this DocDownBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

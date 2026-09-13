@@ -36,6 +36,28 @@ public static class PdfRenderingDocDownBuilderExtensions
     ///     every other extraction. Returning the builder keeps the call chainable. Side effect:
     ///     mutates <paramref name="builder"/>'s registration list.
     /// </remarks>
+    /// <example>
+    ///     <code language="csharp">
+    ///     using System;
+    ///     using System.Threading;
+    ///     using DocDown.Core;
+    ///     using DocDown.Pdf;
+    ///     using DocDown.Pdf.Rendering;
+    ///
+    ///     var engine = new DocDownBuilder()
+    ///         .AddPdf()          // .pdf  - text, embedded images, metadata
+    ///         .AddPdfRendering() // .pdf  - page images (adds native binaries)
+    ///         .Build();
+    ///
+    ///     var result = await engine.ExtractAsync(
+    ///         "manuals/sample-manual.pdf",
+    ///         "scratch/sample-manual",
+    ///         new ExtractionOptions { RenderPages = true },
+    ///         CancellationToken.None);
+    ///
+    ///     Console.WriteLine(result.PagePaths.Count); // rendered page images under pages/
+    ///     </code>
+    /// </example>
     public static DocDownBuilder AddPdfRendering(this DocDownBuilder builder)
     {
         // Reject a null builder at the point of the call so the error names this extension method
