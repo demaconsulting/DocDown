@@ -6,82 +6,70 @@
 
 The OpenXml subsystem is the managed Word extraction backend. It reads a `.docx` package through
 the Open XML SDK, populates the shared `WordDocumentModel`, and hands the model to
-`WordContentEmitter` which routes every byte through the sink. The subsystem is fully managed,
-carries no native asset, and is deployable anywhere the .NET runtime is; it is the reason
-`DocDown.Word` can claim runtime-identifier agnosticism as a package property rather than an
-aspiration.
+`WordContentEmitter`, which routes every byte and report through the sink. The subsystem is fully
+managed, carries no native asset, and is deployable anywhere the .NET runtime is.
 
-The subsystem exists because two responsibilities are cleanly separable: the descriptor the engine
+The subsystem exists because two responsibilities are cleanly separable: the extractor the engine
 selects and probes (`WordOpenXmlExtractor`), and the SDK-to-model translation whose surface is
 substantial and whose scope is bounded (`WordOpenXmlReader`, with `WordOpenXmlImageReader`
-factored out because image resolution is scoped to a `OpenXmlPartContainer` rather than to the
+factored out because image resolution is scoped to an `OpenXmlPartContainer` rather than to the
 document as a whole).
 
 ### Interfaces
 
 | Interface | Direction | Format | Constraints |
 | --------- | --------- | ------ | ----------- |
-| `IDocumentExtractor` | Inbound, from the engine | .NET interface | `ProbeAvailability` under 50 ms, no I/O, no throw |
-| `ISelfValidating` | Inbound, from the engine | .NET interface | Enumeration is cheap; work runs only in a delegate |
-| `DocumentSource` | Inbound, from Core | .NET record | Buffered before opening because a stream may not seek |
+| `IDocumentExtractor` | Inbound, from the engine | .NET interface | Cheap no-I/O availability probe |
+| `ISelfValidating` | Inbound, from the engine | .NET interface | Enumeration is cheap; case bodies do the work |
+| `DocumentSource` | Inbound, from Core | .NET record | Buffered before opening because a stream source may not seek |
 | `IExtractionSink` | Outbound, via `WordContentEmitter` | .NET interface | The only output channel |
 | `WordDocumentModel` | Outbound, from the reader | .NET record | The pivot between reading and rendering |
-| `WordprocessingDocument` | Internal | Open XML SDK | Opened read-only; never `InnerXml`-materialized |
+| `WordprocessingDocument` | Internal | Open XML SDK | Opened read-only |
 
 ### Design
 
-**The descriptor.** `WordOpenXmlExtractor` declares `Id = "word-openxml"`, `DisplayName = "Word
-(Open XML SDK)"`, `SupportedFormats = [Docx]`, `Priority = 10`, and `Capabilities = Text |
-EmbeddedImages | DocumentMetadata | DocumentStructure`. `RenderedPages` is pointedly absent. The
-`ProbeAvailability` implementation returns `Available(Capabilities)` unconditionally, with no I/O:
-there is nothing to probe because the SDK is a managed assembly shipped inside this package.
+**The extractor descriptor.** `WordOpenXmlExtractor` declares `Id = "word-openxml"`,
+`DisplayName = "Word (Open XML SDK)"`, `SupportedFormats = [Docx]`, and `Priority = 10`.
+`ProbeAvailability()` returns `ExtractorAvailability.Available()` unconditionally, with no I/O:
+the SDK is a managed assembly shipped inside this package, so if the type can be constructed the
+extractor can run.
 
-**The self-test set.** Two cases: a `word.openxml.parseRoundTrip` case that builds a one-paragraph
-document in memory with `WordprocessingDocument.Create`, reads it back with the reader, and passes
-when the body carries content; and a `word.pageRendering` case that reports a reasoned skip
-because rendered pages are a capability this package does not claim. Building rather than
-embedding a fixture keeps the case free of a shipped binary payload and exercises the writer and
-reader together.
+**The extraction path.** `ExtractAsync()` reports two environment facts,
+`word.backend = Open XML SDK (managed)` and
+`word.pageRendering = not provided by this extractor`, buffers the source into memory, opens a
+read-only `MemoryStream`, builds a fresh `WordOpenXmlReader`, and hands the resulting model to
+`WordContentEmitter`. Normal completion returns `ExtractionOutcome.Produced`.
+
+**The self-test set.** Two cases are exposed: `word.openxml.parseRoundTrip`, which builds a
+one-paragraph document in memory with `WordprocessingDocument.Create()`, reads it back, and passes
+when the body contains content; and `word.pageRendering`, which reports a skip with a reason
+because this package does not attempt page rendering.
 
 **The reader.** `WordOpenXmlReader` opens the package read-only, walks the body once, and produces
-the model. It handles: styled paragraphs (`Heading1..9`, `Title` → `#`, with `w:outlineLvl` as the
-fallback); numbered and bulleted lists from `numbering.xml`, with the ordered/bulleted decision on
-`w:numFmt`; genuine tables built by `BuildTable` using the seven rules the writer expects
-(counting merged and nested cells so the emitter can emit `WORD0005`); images from `A:Blip`
-elements, resolved through `WordOpenXmlImageReader`; the accepted-revisions view of tracked
-changes (`w:ins` kept and counted, `w:del` dropped and counted); footnotes as `[^n]` markers with
-a trailing bodies list; and comments through the comments part. The reader detects the OLE
-compound-file signature up front — the container fronting a password-protected `.docx` — and
-raises a plain `WordExtractionException` so the message reaching the caller is the backend's own
-explanation rather than the SDK's raw package error.
+the model. It handles styled paragraphs (`Heading 1` through `Heading 9`, `Title`, and
+`w:outlineLvl`), ordered and bulleted lists from `numbering.xml`, genuine tables built from
+`w:tbl`, embedded images from `a:blip`, the accepted view of tracked changes, comment content
+through the comments part, and footnotes as inline references with trailing bodies. It also reads
+metadata from the core and extended properties.
 
-**The document-control build.** `BuildDocumentControl` is the reader's headline correctness step:
-it collects header and footer parts from every `w:sectPr`, renders each through the same walker
-with `stripFurniture: true`, and detects page-numbering furniture **structurally** by field
-instruction — `PAGE`, `NUMPAGES`, `SECTIONPAGES`, `SECTIONPAGESNUM`, matched on the instruction's
-first token so `PAGEREF` is not misclassified. Never by regex over rendered text: rendered page
-numbers are locale-dependent and format-dependent, and a text regex would misfire on documents
-where numbers look like nothing else and fire on revision strings that happen to contain digits.
-Identical rendered content across sections collapses to one entry so a header repeated on every
-section survives once; a part reduced to nothing is counted, and its reason (`contains only page
-numbering` versus `is empty`) is carried on the model for the emitter's `WORD0009` gap.
+**The document-control build.** `BuildDocumentControl()` is the reader's headline correctness
+step. It collects header and footer parts from every `w:sectPr`, renders each through the same
+block walker as the body, strips page-numbering furniture by examining the field instruction's
+first token, and deduplicates identical rendered content across sections. Empty and furniture-only
+parts are omitted from the rendered section instead of being surfaced as content.
 
-**The image reader.** `WordOpenXmlImageReader` is static and does two things: it resolves a blip's
-`r:embed` id within its containing part (so a header's image parts are resolved against the
-header, not the main part), returning a `WordImageRef` that carries the bytes, the media type, the
-preferred name, and the part URI; and it enumerates every image part of the document as
-`(byte[], ImageHint)` pairs, always claiming `ImageTransform.Passthrough` with null pixel
-dimensions. Both operations are read-only I/O over an already-open package.
+**The image reader.** `WordOpenXmlImageReader` resolves a drawing's `r:embed` relationship within
+its containing part, returning a `WordImageRef` that carries the complete part bytes, content
+type, selected name or description text, and source URI. The same helper also enumerates package
+image parts for tests, always pairing the bytes with a passthrough image hint.
 
-**Adverse cases.** The reader deliberately translates only the one condition it can recognize
-better than the SDK — the OLE compound-file signature — because a hand-written message about
-encryption is clearer than a raw `PackageException`. Every other fault (malformed package,
-truncated part, missing relationship) propagates to Core, which converts it into an
-`ExtractorFailed` failure with the full layout still written. Translating everything locally would
-duplicate that machinery and discard the SDK's own explanation of what was wrong.
+**Adverse cases.** The subsystem deliberately translates only the conditions it can name more
+clearly than the SDK. The OLE compound-file signature that fronts a password-protected `.docx`
+becomes a plain `WordExtractionException`. Other faults such as malformed packages, truncated
+parts, or missing relationships propagate to Core, which renders them as unreadable output.
+Translating everything locally would duplicate Core's failure machinery and discard the SDK's own
+explanation.
 
-**Self-containment.** No SDK type reaches the public surface: `WordOpenXmlExtractor` is public but
-its public members (from `IDocumentExtractor` and `ISelfValidating`) name Core types only;
-`WordOpenXmlReader` and `WordOpenXmlImageReader` are internal, exposed to the test project through
-`InternalsVisibleTo` for the same reason `PdfPig` types are confined to three files in
-`DocDown.Pdf`.
+**Self-containment.** No Open XML SDK type reaches the host-facing surface. The extractor is public
+because a host registers it indirectly, but its public members name Core types only; the reader and
+image reader stay internal and are exposed to tests through `InternalsVisibleTo`.

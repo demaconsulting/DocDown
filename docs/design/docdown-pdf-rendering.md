@@ -18,10 +18,13 @@ runtime-identifier agnostic.
 The system is flat: it has no subsystems, because there is one architectural boundary here —
 rasterization — rather than several. Three units divide the work.
 
-- **PdfPageRenderingExtractor** is the backend the engine selects and invokes. It declares the full
-  superset of capabilities selection ranks on; answers the cheap availability probe; delegates the
-  managed aspects to the base PDF backend; drives the rasterization of the requested pages; reports
-  the page-level gaps only it can explain; and owns this package's diagnostic codes.
+- **PdfPageRenderingExtractor** is the backend the engine selects and invokes. It exposes the stable
+  PDF-rendering identity this package uses for selection and reporting; answers the cheap
+  availability probe that reports
+  rendered-page support when the native stack is usable here; delegates the managed aspects to the
+  base PDF backend; drives the rasterization of the requested pages; reports a plain note when a
+  page it attempted could not be rasterized; and returns `Produced` unless the delegated managed
+  extraction reports `Unreadable`.
 - **PageRenderer** is the single native-interop seam. It rasterizes one page to a PNG behind a
   process-wide lock, and answers a cheap, non-throwing question about whether the native stack can
   load. It is the only place a PDFtoImage, PDFium, or SkiaSharp type appears.
@@ -32,30 +35,38 @@ rasterization — rather than several. Three units divide the work.
 ### The single-backend selection problem, and its resolution
 
 The engine selects exactly one backend for an extraction and runs only that backend. A rendering
-backend that advertised only the `renderedPages` capability would therefore lose selection to the
-managed PDF backend — which satisfies more of a typical request — and would never render a page. So
-the rendering backend cannot be a "pages-only" add-on layered onto the base backend: it must be a
-full superset that declares `text`, `embeddedImages`, `documentMetadata`, and `renderedPages`, and
-delivers all four.
+backend that produced only raster images would therefore leave the managed PDF backend's text,
+embedded-image, and metadata work undone. So the rendering backend cannot be a "pages-only" add-on
+layered onto the base backend: once selected, it must deliver the same managed artifacts the base
+backend delivers and add rendered pages on top.
 
 It delivers the first three not by re-implementing them but by **delegating to a
 `PdfDocumentExtractor`** with a cloned options object whose `RenderPages` is forced off. The managed
-backend writes the content, the images, the document info, and its own structural gaps; because
-rendering is suppressed on the delegate, it does not emit its "rendering unavailable" gap. This
-backend then rasterizes the requested pages itself and adds them. The one honest artifact of the
-delegation is that the managed backend's `pdf.pageRendering = not provided by this extractor`
-environment fact still appears in a run that did render — which is literally true of the managed
-inner backend and is complemented, not contradicted, by this backend's own `pages.renderer` fact.
+backend writes the content, the images, the document info, and its own notes; because rendering is
+suppressed on the delegate, it does not attempt rendered-page output itself. This backend then
+rasterizes the requested pages and adds them. The one honest artifact of the delegation is that the
+managed backend's `pdf.pageRendering = not provided by this extractor` environment fact still appears
+in a run that did render — which is literally true of the managed inner backend and is complemented,
+not contradicted, by this backend's own `pages.renderer` fact.
+
+Selection learns that this backend can satisfy a render request from
+`ProbeAvailability()`. When the native stack can load, the probe returns
+`ExtractorAvailability.Available(providesRenderedPages: true)`; otherwise it returns
+`ExtractorAvailability.Unavailable(reason)`. That is the only selection-time statement this package
+makes about rendered pages.
 
 ### The division of honesty between Core, the managed backend, and this package
 
-Core knows the capability accounting: that a requested capability is unavailable across all
-registered backends, that an artifact is partial or absent and must be explained. The managed
-backend knows what a PDF reader knows: which encoding an image used, whether the pages carried
-glyphs. This package supplies the third layer — the facts only a rasterizer knows: that the native
-stack could not load for this runtime identifier, that a specific page could not be rasterized and
-why. Where a page-rendering request produces a gap from more than one layer, the gaps are
-complementary rather than redundant.
+Core knows the selection-time picture: which backends were registered, which one was chosen, and
+whether any available backend in this environment could render pages. The managed backend knows what
+a PDF reader knows: which encoding an image used and whether the pages carried glyphs. This package
+supplies the third layer — the facts only a rasterizer knows.
+
+If the native stack cannot load for the current runtime identifier, this package reports that only
+through `ProbeAvailability()`, and Core handles the selection consequence before `ExtractAsync` runs.
+If rendering begins and a specific page cannot be rasterized, this package reports one short factual
+note — `Page N could not be rasterized.` — because it attempted that step and could not complete it.
+The note stays limited to that extraction fact itself.
 
 ## External Interfaces
 
@@ -70,7 +81,8 @@ complementary rather than redundant.
 
 - **`IDocumentExtractor`** is implemented by `PdfPageRenderingExtractor`. `ProbeAvailability` must be
   well under 50 ms, side-effect free, must not open the document, and must not throw; it answers a
-  cached native-loadability check and never rasterizes.
+  cached native-loadability check, returns `Available(providesRenderedPages: true)` only when page
+  rendering is usable here, and never rasterizes.
 - **`ISelfValidating`** enumeration is cheap; the render round-trip work happens only when the case's
   delegate is invoked.
 - **`IExtractionSink`** is the only output channel; no filesystem path is ever constructed here.
@@ -102,9 +114,9 @@ machine-enforced by a reflection test over the package's exported types.
   native asset is asserted against its produced `.nupkg`, not merely its build output, precisely
   because this package now exists to carry the native stack instead.
 - **Per-page fault isolation.** Each page is rasterized independently. An unsupported page, an
-  out-of-memory at a high DPI, or a native fault mid-run is caught per page, converted into a
-  counted, reason-bearing gap naming the page, and the run continues with the remaining pages. No
-  render fault reaches the caller as an exception, and the `pages/` folder is never silently empty.
+  out-of-memory at a high DPI, or a native fault mid-run is caught per page, recorded as the plain
+  note `Page N could not be rasterized.`, and the run continues with the remaining pages. No render
+  fault reaches the caller as an exception.
 - **Cheap, honest availability.** The probe loads the native once, caches the result, and never
   rasterizes, so a plain extraction pays nothing and a missing native binary is reported with a
   reason rather than discovered at render time or as a crash.
@@ -118,16 +130,16 @@ machine-enforced by a reflection test over the package's exported types.
    `ExtractAsync` with a context exposing the options, the sink, and a cancellation token.
 2. `PdfPageRenderingExtractor` buffers the source once, then delegates to a `PdfDocumentExtractor`
    with a cloned options object whose `RenderPages` is off. The managed backend writes the content,
-   images, metadata, and its structural gaps. A parser fault (encrypted, malformed, truncated)
-   propagates from the delegate to the engine, which converts it into a structured failure that
-   still writes the full layout.
+   images, metadata, inventory, and its own notes. If the delegated extractor reports
+   `Unreadable`, this backend returns `Unreadable` and does not attempt page rendering. Because
+   rendering is suppressed on the delegate and selection already handled ordinary renderer
+   unavailability, this backend adds no "renderer unavailable" note of its own.
 3. It records the authoritative `pages.renderer` environment fact.
 4. It selects the pages to render, honoring any requested range, and for each renders a PNG through
    `PageRenderer` and writes it through the sink, named by its document page number. A per-page fault
-   becomes a diagnostic (with this package's own code) and a counted gap; the run continues.
-5. It returns degraded if the delegate degraded or any page failed, otherwise the delegate's outcome.
-6. The engine adds its own derived gaps, finalizes the content, reconciles the ledger, and writes
-   `summary.txt` and `manifest.json`.
+   becomes the note `Page N could not be rasterized.`; the run continues.
+5. It returns `Produced` after the attempted page loop completes.
+6. The engine finalizes the content and writes `summary.txt` and `manifest.json`.
 
 ## Design Constraints and Native-Binary Consequences
 

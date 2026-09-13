@@ -1,9 +1,26 @@
 ---
 # Software Unit Requirements for PdfImageExtractor
 #
-# PdfImageExtractor writes a document's embedded images through the sink. It chooses an
-# encoding per image, states honestly how each was produced, and accounts by count and
-# by reason for every image it could not deliver.
+# PdfImageExtractor writes a document's embedded images through the sink. It chooses an encoding per
+# image, states honestly how each written image was produced, and records plain notes for attempted
+# image work it could not complete.
+#
+# SUPERSEDED REQUIREMENT: DocDownPdf-PdfImageExtractor-WritesJpeg2000WithCaveat
+# required a JPEG 2000 readability caveat. It is superseded, not satisfied, because DocDown now
+# reports what it extracted and where and makes no acceptability judgment; a JPEG 2000 codestream
+# written successfully as `.jp2` is counted as extracted and does not warrant a note. The
+# replacement is DocDownPdf-PdfImageExtractor-WritesJpeg2000Passthrough.
+#
+# SUPERSEDED REQUIREMENT: DocDownPdf-PdfImageExtractor-ReportsUndecodableEncodings
+# required undecodable images to be reported as counted gaps. It is superseded, not satisfied,
+# because DocDown now reports what it extracted and where and makes no acceptability judgment.
+# Attempted image work that could not complete is now described by the plain-note requirement
+# DocDownPdf-PdfImageExtractor-NotesUndecodableEncodings.
+#
+# SUPERSEDED REQUIREMENT: DocDownPdf-PdfImageExtractor-ExplainsUnhonoredForcePng
+# required unhonored PNG output to be reported as a counted gap. It is superseded, not satisfied,
+# because DocDown now reports what it extracted and where and makes no acceptability judgment. The
+# replacement is DocDownPdf-PdfImageExtractor-NotesUnhonoredForcePng.
 
 sections:
   - title: DocDownPdf Requirements
@@ -32,20 +49,15 @@ sections:
             tests:
               - PdfImageExtractor_AddImage_FlateImage_SetsDecodedToPngTransformHint
 
-          - id: DocDownPdf-PdfImageExtractor-WritesJpeg2000WithCaveat
+          - id: DocDownPdf-PdfImageExtractor-WritesJpeg2000Passthrough
             title: >-
-              PdfImageExtractor shall write an image stored as a JPEG 2000 codestream unchanged, under
-              an extension describing those bytes, together with a caveat that the format is not
-              widely readable.
+              PdfImageExtractor shall write an image stored as a JPEG 2000 codestream unchanged under
+              an extension and media type describing those bytes.
             justification: |
-              The bytes of a JPEG 2000 image are a real image file, so writing them is truthful and
-              gives a consumer something to work with where no decoder is available. Withholding the
-              file would lose content that some tooling can read; writing it without the caveat would
-              imply a readability the format does not have. Delivering it with the caveat is the only
-              option that is both useful and honest.
+              The bytes of a JPEG 2000 codestream are a real image file. Writing them unchanged keeps
+              the output truthful and preserves content a capable downstream consumer can still use.
             tests:
-              - PdfImageExtractor_AddImage_JpxImage_WritesJp2PassthroughWithCaveat
-              - DocDownPdf_Extract_Jpeg2000Image_WritesJp2PassthroughWithReadabilityCaveat
+              - PdfImageExtractor_AddImage_JpxImage_WritesJp2PassthroughWithoutExtraNote
 
           - id: DocDownPdf-PdfImageExtractor-RecordsTransformProvenance
             title: PdfImageExtractor shall report, for every image it writes, how it produced the bytes.
@@ -68,32 +80,29 @@ sections:
             tests:
               - PdfImageExtractor_AddImage_AnyImage_PopulatesHintProvenanceFields
 
-          - id: DocDownPdf-PdfImageExtractor-ReportsUndecodableEncodings
+          - id: DocDownPdf-PdfImageExtractor-NotesUndecodableEncodings
             title: >-
-              PdfImageExtractor shall report a counted gap naming the encoding of every image it could
-              not decode.
+              PdfImageExtractor shall report a plain note naming the encoding and count of every image
+              it could not decode.
             justification: |
               An image this extractor cannot decode is the case where silence would be easiest and
               most damaging: the output would look complete while missing content. Naming the encoding
-              and the count tells a reader both how much was lost and whether a different tool would
-              recover it.
+              and count tells a reader both how much was lost and what kind of image caused it.
             tests:
-              - PdfImageExtractor_Extract_UndecodableEncoding_ReportsCountedGapAndWritesNothingForIt
-              - PdfImageExtractor_Extract_NothingWritten_ReportsUnavailableScope
+              - PdfImageExtractor_Extract_UndecodableEncoding_ReportsPlainNoteAndWritesNothingForIt
 
-          - id: DocDownPdf-PdfImageExtractor-ExplainsUnhonoredForcePng
+          - id: DocDownPdf-PdfImageExtractor-NotesUnhonoredForcePng
             title: >-
-              PdfImageExtractor shall explain, with a counted gap, every image for which the requested
-              PNG output could not be produced.
+              PdfImageExtractor shall report a plain note for every image whose requested PNG output
+              could not be produced.
             justification: |
               The file on disk already describes its own bytes truthfully, so nothing is mislabeled.
-              What is missing without the explanation is the reason: a caller who asked for PNG and
-              received JPEG would otherwise have to infer why, and might conclude the option was
-              ignored rather than unachievable.
+              What is missing without the note is the reason: a caller who asked for PNG and received
+              a source encoding would otherwise have to infer why.
             tests:
-              - PdfImageExtractor_Extract_ForcePngWithJpeg_ReportsUnhonoredModeGap
-              - PdfImageExtractor_Extract_ForcePngWithJpxImage_ReportsUnhonoredModeGapNamingJpx
-              - PdfImageExtractor_Extract_ForcePngWithFlateImage_ReportsNoUnhonoredGap
+              - PdfImageExtractor_Extract_ForcePngWithJpeg_ReportsUnhonoredModeNote
+              - PdfImageExtractor_Extract_ForcePngWithJpxImage_ReportsUnhonoredModeNoteNamingJpx
+              - PdfImageExtractor_Extract_ForcePngWithFlateImage_ReportsNoUnhonoredNote
 
           - id: DocDownPdf-PdfImageExtractor-HonorsSuppression
             title: PdfImageExtractor shall attempt no image extraction when embedded images are disabled.
@@ -113,5 +122,5 @@ sections:
               property of the document. Reporting them as one condition would tell a reader to try a
               remedy that cannot work, or hide one that would.
             tests:
-              - PdfImageExtractor_Extract_ImageOverByteLimit_ReportsSizeGapDistinctFromDecodeGap
-              - PdfImageExtractor_Extract_ImageOverDimensionLimit_SkipsWithCountedGap
+              - PdfImageExtractor_Extract_ImageOverByteLimit_ReportsSizeNoteDistinctFromDecodeFailure
+              - PdfImageExtractor_Extract_ImageOverDimensionLimit_ReportsCountedSizeNote

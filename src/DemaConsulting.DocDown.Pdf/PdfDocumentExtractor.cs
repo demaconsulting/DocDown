@@ -15,11 +15,9 @@ namespace DocDown.Pdf;
 ///         and the precise boundary of what it can promise. It reads the structure a PDF already
 ///         contains — glyphs, embedded image XObjects, and the document information dictionary — and
 ///         it cannot rasterize a page, because rasterization needs a renderer this package
-///         deliberately does not ship. It therefore declares
-///         <see cref="ExtractorCapabilities.Text"/>, <see cref="ExtractorCapabilities.EmbeddedImages"/>
-///         and <see cref="ExtractorCapabilities.DocumentMetadata"/> and pointedly not
-///         <see cref="ExtractorCapabilities.RenderedPages"/>, so selection can reason about the
-///         shortfall before a caller ever sees an empty <c>pages/</c> folder.
+///         deliberately does not ship. Extraction therefore focuses on the document content this
+///         managed parser can honestly produce: markdown text, embedded-image files, and the PDF's
+///         own document metadata.
 ///     </para>
 ///     <para>
 ///         Because nothing about this backend is environment-dependent — no native binary to locate,
@@ -30,11 +28,11 @@ namespace DocDown.Pdf;
 ///     </para>
 ///     <para>
 ///         Adverse documents are not translated into results here. Core catches any exception a
-///         backend throws and converts it into a structured
-///         <see cref="ExtractionFailureKind.ExtractorFailed"/> failure with the full layout still
-///         written, so an encrypted or malformed PDF surfaces as a failed result carrying the
-///         parser's own explanation, and never as an exception reaching the caller. Instances hold no
-///         per-extraction state and are safe to register once and reuse.
+///         backend throws and converts it into an
+///         <see cref="ExtractionOutcome.Unreadable"/> result carrying the parser's explanation, so
+///         an encrypted or malformed PDF surfaces as extraction data rather than as an exception
+///         reaching the caller. Instances hold no per-extraction state and are safe to register once
+///         and reuse.
 ///     </para>
 /// </remarks>
 public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
@@ -62,19 +60,15 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
     public IReadOnlyCollection<DocumentFormat> SupportedFormats => [DocumentFormat.Pdf];
 
     /// <inheritdoc />
-    public ExtractorCapabilities Capabilities =>
-        ExtractorCapabilities.Text | ExtractorCapabilities.EmbeddedImages | ExtractorCapabilities.DocumentMetadata;
-
-    /// <inheritdoc />
     public int Priority => 0;
 
     /// <inheritdoc />
     /// <remarks>
-    ///     Always available, with the full declared capability set. There is nothing to probe: the
-    ///     parser is a managed assembly that ships inside this package, so if this type could be
-    ///     constructed the extractor can run. Performs no I/O and cannot throw.
+    ///     Always available. There is nothing to probe: the parser is a managed assembly that ships
+    ///     inside this package, so if this type could be constructed the extractor can run. Performs
+    ///     no I/O and cannot throw.
     /// </remarks>
-    public ExtractorAvailability ProbeAvailability() => ExtractorAvailability.Available(Capabilities);
+    public ExtractorAvailability ProbeAvailability() => ExtractorAvailability.Available();
 
     /// <inheritdoc />
     public async ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context)
@@ -111,10 +105,10 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
             pages, document.Information?.Title, imageResult.Images, cancellationToken);
         await sink.WriteContentAsync(textResult.Markdown, cancellationToken).ConfigureAwait(false);
 
-        // Explain every shortfall this backend knows about before handing the outcome back
-        var degraded = ReportStructuralGaps(sink, options, document, pages, textResult);
-        degraded |= imageResult.Written < imageResult.Found;
-        return degraded ? ExtractionOutcome.Degraded : ExtractionOutcome.Succeeded;
+        // Report the content inventory from the same facts used to render the output, so an empty
+        // or text-free PDF is described by counts rather than by judgment-oriented machinery
+        ReportContentFeatures(sink, options, pages, textResult, imageResult);
+        return ExtractionOutcome.Produced;
     }
 
     /// <inheritdoc />
@@ -202,98 +196,34 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
     }
 
     /// <summary>
-    ///     Reports the gaps this backend knows about that Core cannot derive for itself.
+    ///     Reports the content inventory this backend can derive exactly from the extraction walk.
     /// </summary>
     /// <param name="sink">The sink to report through.</param>
-    /// <param name="options">The effective options, consulted for the render request.</param>
-    /// <param name="document">The opened document.</param>
+    /// <param name="options">The effective options, consulted for whether embedded images were requested.</param>
     /// <param name="pages">The selected pages.</param>
     /// <param name="text">The text-extraction outcome.</param>
-    /// <returns><see langword="true"/> when any gap was reported; otherwise <see langword="false"/>.</returns>
+    /// <param name="images">The image-extraction outcome.</param>
     /// <remarks>
-    ///     Covers the three shortfalls only this backend can explain: a document with no pages, a
-    ///     document with no text layer, and a request for rendered pages this package does not
-    ///     provide. Side effect: records on the sink.
+    ///     Counts are reported from the real PDF structures the extractor walked rather than from a
+    ///     regex over the rendered markdown. Zero counts are kept only where the backend genuinely
+    ///     looked and found none, which is how an empty or scanned PDF is conveyed without treating
+    ///     ordinary document absences as failures. When embedded images were found but none were
+    ///     written, the extraction notes explain why and the image inventory stays silent rather than
+    ///     falsely claiming the document had no images. Side effect: records on the sink.
     /// </remarks>
-    private static bool ReportStructuralGaps(
-        IExtractionSink sink, ExtractionOptions options, PdfDocument document,
-        IReadOnlyList<Page> pages, PdfTextResult text)
+    private static void ReportContentFeatures(
+        IExtractionSink sink, ExtractionOptions options, IReadOnlyList<Page> pages,
+        PdfTextResult text, PdfImageResult images)
     {
-        var degraded = false;
+        sink.ReportContentFeature(new ContentFeature("pages", pages.Count, "page", LookedFor: true));
+        sink.ReportContentFeature(new ContentFeature("headings", text.HeadingCount, LookedFor: true));
+        sink.ReportContentFeature(new ContentFeature("paragraphs", text.ParagraphCount, "paragraph", LookedFor: true));
 
-        // A document with no pages has no content to be missing from; say so rather than leave the
-        // empty output to be inferred
-        if (document.NumberOfPages == 0)
+        if (options.IncludeEmbeddedImages && (images.Written > 0 || images.Found == 0))
         {
-            sink.ReportGap(new ExtractionGap(
-                string.Empty, GapKind.Structure, "content.md", GapScope.Unavailable,
-                "The PDF contains no pages, so there is no content to extract.",
-                Impact: "No text, images, or structure are available from this document."));
-            degraded = true;
+            sink.ReportContentFeature(new ContentFeature(
+                "inline images", images.Written, "inline image", LookedFor: images.Found == 0));
         }
-        else if (!text.AnyGlyphs)
-        {
-            degraded |= ReportNoTextLayerGap(sink, pages.Count);
-        }
-
-        if (options.RenderPages)
-        {
-            ReportRenderingUnavailableGap(sink);
-            degraded = true;
-        }
-
-        return degraded;
-    }
-
-    /// <summary>
-    ///     Reports that the document carries no extractable text layer.
-    /// </summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <param name="pageCount">The number of pages that were searched for glyphs.</param>
-    /// <returns>Always <see langword="true"/>, so the caller can accumulate the degraded signal.</returns>
-    /// <remarks>
-    ///     This is the scanned-document case, and it is a common case rather than an edge case: a page
-    ///     image carries no glyphs, so there is genuinely nothing for a text extractor to find. Saying
-    ///     that plainly — with the page count, so the reader knows the search was real — is materially
-    ///     more useful than an empty <c>content.md</c> a reader must diagnose. Side effect: records on
-    ///     the sink.
-    /// </remarks>
-    private static bool ReportNoTextLayerGap(IExtractionSink sink, int pageCount)
-    {
-        var pages = pageCount.ToString(CultureInfo.InvariantCulture);
-        sink.ReportDiagnostic(new ExtractionDiagnostic(
-            PdfDiagnosticCodes.NoTextLayer, DiagnosticSeverity.Warning,
-            "The PDF contains no extractable text layer."));
-        sink.ReportGap(new ExtractionGap(
-            string.Empty, GapKind.Text, "content.md", GapScope.Unavailable,
-            $"None of the {pages} extracted pages contains an extractable text layer; the document "
-            + "appears to hold scanned or purely graphical pages.",
-            Impact: "No textual content could be recovered from this document.",
-            Remedy: "Text from a scanned document comes from optical character recognition, which this "
-                  + "extractor does not perform."));
-        return true;
-    }
-
-    /// <summary>
-    ///     Reports that this backend does not rasterize pages, naming where that capability lives.
-    /// </summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <remarks>
-    ///     Core already emits its own engine-level gap for an unmet <c>renderedPages</c> request; this
-    ///     one is complementary, adding the backend-specific reason and the class of package that
-    ///     provides the capability. The wording deliberately states a fact about where the capability
-    ///     lives rather than issuing an instruction: it tells the reader nothing they could act on and
-    ///     fail at today, and it remains exactly true on the day such a package is published. Side
-    ///     effect: records on the sink.
-    /// </remarks>
-    private static void ReportRenderingUnavailableGap(IExtractionSink sink)
-    {
-        sink.ReportGap(new ExtractionGap(
-            string.Empty, GapKind.Pages, "pages/", GapScope.Unavailable,
-            "This extractor reads PDF text, embedded images, and document metadata; it does not "
-            + "rasterize pages. Rendered page images come from a separate PDF page-rendering extractor "
-            + "package, which a host registers with the engine alongside this one.",
-            Impact: "Rendered page images are not available."));
     }
 
     /// <summary>
@@ -567,38 +497,4 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
         offset = sign == '-' ? -magnitude : magnitude;
         return true;
     }
-}
-
-/// <summary>
-///     The diagnostic codes this package owns.
-/// </summary>
-/// <remarks>
-///     Core's <c>DD</c> range is internal to Core and already assigned, so a backend that emitted a
-///     <c>DD</c> code would either collide with Core's meaning or invent a second, conflicting one.
-///     A distinct <c>PDF</c> prefix makes the ownership boundary self-evident to anyone reading a
-///     manifest, and cannot collide with Core's range whatever Core adds later. Internal because the
-///     codes are a published output value, not an API consumers program against. All members are
-///     constants and thread-safe.
-/// </remarks>
-internal static class PdfDiagnosticCodes
-{
-    /// <summary>One or more embedded images use an encoding this extractor cannot decode.</summary>
-    /// <remarks>Accompanies the counted gap naming the encodings and how many images each cost.</remarks>
-    internal const string UndecodableImageEncoding = "PDF0001";
-
-    /// <summary>PNG output was requested but could not be produced for one or more images.</summary>
-    /// <remarks>Accompanies the gap explaining which images were written in their source encoding instead.</remarks>
-    internal const string ForcePngNotHonored = "PDF0002";
-
-    /// <summary>The document carries no extractable text layer.</summary>
-    /// <remarks>Accompanies the scanned-document gap, so the degradation is machine-detectable.</remarks>
-    internal const string NoTextLayer = "PDF0003";
-
-    /// <summary>One or more embedded images were written as JPEG 2000 files without being decoded.</summary>
-    /// <remarks>
-    ///     Accompanies the readability caveat. It is distinct from
-    ///     <see cref="UndecodableImageEncoding"/> because those images <em>are</em> in the output; a
-    ///     consumer filtering on that code would otherwise be told content was lost when it was not.
-    /// </remarks>
-    internal const string Jpeg2000WrittenAsIs = "PDF0004";
 }

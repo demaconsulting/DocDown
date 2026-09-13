@@ -34,8 +34,7 @@ internal static class ExcelChartWriter
     ///     context. The measured real chart carries 101 points and renders in about two kilobytes, so
     ///     500 points (roughly ten kilobytes for a single-series chart) keeps every ordinary engineering
     ///     chart complete while capping a pathological one at a size that cannot crowd out the rest of
-    ///     the workbook. Truncation is never silent: the table says what it dropped and the emitter
-    ///     reports a counted gap.
+    ///     the workbook. Truncation is never silent: the chart part itself says what it omitted.
     /// </remarks>
     internal const int MaxPlottedPoints = 500;
 
@@ -44,17 +43,17 @@ internal static class ExcelChartWriter
     private const string CategoryColumnFallback = "Category";
 
     /// <summary>
-    ///     Renders a chart to markdown and reports what the rendering contained.
+    ///     Renders a chart to markdown.
     /// </summary>
     /// <param name="chart">The chart to render. Must not be null.</param>
-    /// <returns>The markdown and the accounting the emitter needs to report gaps honestly.</returns>
+    /// <returns>The chart part markdown.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="chart"/> is <see langword="null"/>.</exception>
     /// <remarks>
     ///     Three outcomes are possible and all three are stated in the markdown itself: a chart whose
     ///     part could not be read, a chart that was read but caches no values, and a chart with data.
     ///     Pure.
     /// </remarks>
-    public static ExcelChartRender Render(ExcelChartModel chart)
+    public static string Render(ExcelChartModel chart)
     {
         ArgumentNullException.ThrowIfNull(chart);
 
@@ -68,7 +67,7 @@ internal static class ExcelChartWriter
                 .Append(chart.ReadFailureReason ?? "no reason was recorded.").Append("_\n");
             builder.Append('\n').Append("Chart part: `").Append(chart.PartUri).Append("`, on worksheet ")
                 .Append(Quoted(chart.SheetName)).Append(".\n");
-            return new ExcelChartRender(builder.ToString(), 0, 0, Truncated: false, HasData: false);
+            return builder.ToString();
         }
 
         AppendContext(builder, chart, data);
@@ -80,14 +79,14 @@ internal static class ExcelChartWriter
         {
             builder.Append('\n')
                 .Append("_This chart declares no cached data points, so no data table could be produced._\n");
-            return new ExcelChartRender(builder.ToString(), 0, 0, Truncated: false, HasData: false);
+            return builder.ToString();
         }
 
         var truncated = indices.Count > MaxPlottedPoints;
         var rendered = truncated ? MaxPlottedPoints : indices.Count;
         AppendTable(builder, data, indices, rendered);
 
-        // State the truncation in the document itself; the emitter reports it as a counted gap as well
+        // State the truncation in the document itself, where the omitted rows are already in context
         if (truncated)
         {
             builder.Append('\n').Append("_Showing the first ")
@@ -96,7 +95,7 @@ internal static class ExcelChartWriter
                 .Append(" plotted points; the remainder were omitted to bound the extracted output._\n");
         }
 
-        return new ExcelChartRender(builder.ToString(), rendered, indices.Count, truncated, HasData: true);
+        return builder.ToString();
     }
 
     /// <summary>
@@ -116,7 +115,7 @@ internal static class ExcelChartWriter
 
         var name = chart.Data?.Title is { Length: > 0 } title ? Quoted(title) : "an untitled chart";
         return chart.Data is null
-            ? $"- Chart {name} (`{chart.PartUri}`) could not be read; see the gap ledger."
+            ? $"- Chart {name} (`{chart.PartUri}`) could not be read; its chart part records the reason."
             : $"- Chart {name}{PlotTypeSuffix(chart.Data)}; its cached data is extracted as a separate chart part.";
     }
 
@@ -229,8 +228,8 @@ internal static class ExcelChartWriter
     /// <param name="rowLimit">The number of leading rows to render, which truncation may cap.</param>
     /// <remarks>
     ///     The leading point-index column mirrors the row-number column of the worksheet grid table, so
-    ///     a chart row stays addressable and a gap in the indices is visible as the gap it is. A series
-    ///     with no value at an index renders as an empty cell rather than a shifted one. Side effect:
+    ///     a chart row stays addressable and a hole in the indices stays visible as the hole it is. A
+    ///     series with no value at an index renders as an empty cell rather than a shifted one. Side effect:
     ///     appends to <paramref name="builder"/>.
     /// </remarks>
     private static void AppendTable(
@@ -364,18 +363,3 @@ internal static class ExcelChartWriter
             .Replace("\n", " ", StringComparison.Ordinal)
             .Replace("\r", " ", StringComparison.Ordinal);
 }
-
-/// <summary>
-///     What rendering one chart produced: the markdown, and the accounting the emitter reports from.
-/// </summary>
-/// <param name="Markdown">The chart part's markdown, always non-empty even when the chart carried no data.</param>
-/// <param name="RenderedPoints">The number of plotted point rows the table carries.</param>
-/// <param name="TotalPoints">The number of plotted point rows the chart declares, before any bound was applied.</param>
-/// <param name="Truncated"><see langword="true"/> when the table shows fewer points than the chart declares.</param>
-/// <param name="HasData"><see langword="true"/> when the chart yielded at least one cached point.</param>
-/// <remarks>
-///     Returned rather than reported directly so the writer stays pure and every gap is raised in one
-///     place. Immutable and thread-safe.
-/// </remarks>
-internal sealed record ExcelChartRender(
-    string Markdown, int RenderedPoints, int TotalPoints, bool Truncated, bool HasData);

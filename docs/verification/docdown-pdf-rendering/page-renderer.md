@@ -43,10 +43,11 @@ dimensions. Evidence for `DocDownPdfRendering-PageRenderer-RendersPageToPng`.
 
 #### The probe reports available without throwing
 
-**Test**: `PageRenderer_ProbeAvailability_DeployedNativeStack_ReportsAvailableWithoutThrowing`
+**Test**: `PageRenderer_ProbeAvailability_AnyEnvironment_ReflectsUsabilityWithoutThrowing`
 
-Proves the probe does not throw and reports available (with no reason) where the native stack is
-deployed. Evidence for `DocDownPdfRendering-PageRenderer-ProbeCheapAndNonThrowing`.
+Proves the probe does not throw and reports either available with no reason or unavailable with a
+reason, depending on the current environment. Evidence for
+`DocDownPdfRendering-PageRenderer-ProbeCheapAndNonThrowing`.
 
 #### An unavailable result carries a reason
 

@@ -2,9 +2,15 @@
 # Software Unit Requirements for PowerPointOpenXmlExtractor
 #
 # PowerPointOpenXmlExtractor is the managed backend the engine selects for a content extraction. It
-# declares what it can deliver, probes unconditionally, records the environment facts, buffers and opens
-# the deck, hands the stream to PowerPointOpenXmlReader, delegates emission to PowerPointContentEmitter,
-# and contributes the self-tests that describe its own behavior.
+# exposes the selection surface the engine sees, probes unconditionally, records the environment facts,
+# buffers and opens the deck, hands the stream to PowerPointOpenXmlReader, delegates emission to
+# PowerPointContentEmitter, and contributes the self-tests that describe its own behavior.
+#
+# SUPERSEDED REQUIREMENT: DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-DeclaresCapabilities
+# required the managed backend to declare a capability set. That requirement is superseded (not
+# satisfied) by DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-DescribesSelectionSurface,
+# because selection now turns on supported format, priority, page-rendering applicability, and the
+# availability result rather than a capability set.
 
 sections:
   - title: DocDownPowerPoint Requirements
@@ -13,63 +19,67 @@ sections:
         sections:
           - title: PowerPointOpenXmlExtractor Requirements
             requirements:
-              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-DeclaresCapabilities
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-DescribesSelectionSurface
                 title: >-
-                  PowerPointOpenXmlExtractor shall declare the modern PowerPoint format, the higher
-                  selection priority, and the text, embedded-image, document-metadata, and
-                  document-structure capabilities.
+                  PowerPointOpenXmlExtractor shall identify itself as the managed `.pptx` backend,
+                  keep the higher selection priority, and remain applicable to rendering requests even
+                  though it does not provide rendered pages.
                 justification: |
-                  Selection ranks backends on what they declare before any deck is opened. Declaring
-                  exactly the deliverable capabilities and the higher priority is what makes this managed
-                  backend the chosen reader for every content extraction and keeps a shortfall negotiated
-                  up front rather than discovered as missing output.
+                  Selection ranks backends before any deck is opened. Exposing the stable backend
+                  identity, supported format, higher priority, and rendering applicability is what
+                  makes this managed backend the chosen reader for default content extraction while
+                  still letting the engine consider it when a `.pptx` extraction request mentions
+                  page rendering.
                 tests:
                   - PowerPointOpenXmlExtractor_Descriptor_MatchesContract
 
-              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-DeclaresPageRenderingNotProvided
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ReportsPageRenderingNotProvided
                 title: >-
-                  PowerPointOpenXmlExtractor shall not declare the rendered-pages capability and shall
-                  record that this extractor does not provide rendering.
+                  PowerPointOpenXmlExtractor shall report itself available and shall state, through
+                  both availability and an environment fact, that this extractor does not provide
+                  rendered pages.
                 justification: |
-                  Rasterizing a slide needs a renderer this package's managed backend deliberately does
-                  not ship, so declaring rendered-pages would cause the managed backend to be chosen for
-                  a render it cannot deliver. Recording the fact plainly through an environment fact — and
-                  leaving rendering to the COM backend — states the boundary at the descriptor rather than
-                  discovering it as a missing pages folder.
+                  Rasterizing a slide needs a renderer this package's managed backend deliberately
+                  does not ship, so the probe reports available without rendered-page support and the
+                  extraction records that page rendering is not provided here. That keeps the boundary
+                  explicit rather than discovering it as a missing pages folder.
                 tests:
-                  - PowerPointOpenXmlExtractor_Descriptor_MatchesContract
+                  - PowerPointOpenXmlExtractor_ProbeAvailability_AlwaysAvailable
+                  - DocDownPowerPoint_Extract_Pptx_SelectsOpenXml
 
               - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ProbesUnconditionally
                 title: >-
                   PowerPointOpenXmlExtractor shall answer the availability probe unconditionally,
                   performing no I/O.
                 justification: |
-                  Nothing about this backend is environment-dependent — no native binary and no external
-                  application — so there is nothing to probe: the Open XML SDK is a managed assembly that
-                  ships inside the package, and the probe reports available everywhere the package loads.
+                  Nothing about this backend is environment-dependent — no native binary and no
+                  external application — so there is nothing to probe: the Open XML SDK is a managed
+                  assembly that ships inside the package, and the probe reports available everywhere
+                  the package loads.
                 tests:
                   - PowerPointOpenXmlExtractor_ProbeAvailability_AlwaysAvailable
 
               - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-OrchestratesExtraction
                 title: >-
                   PowerPointOpenXmlExtractor shall record its environment facts, buffer and open the
-                  deck, read it into the model, and delegate emission to the shared emitter.
+                  deck, read it into the model, delegate emission to the shared emitter, and return a
+                  produced outcome when the extraction completes.
                 justification: |
                   The extractor owns orchestration: it records what parsed the deck and that this
                   extractor does not render, buffers the source because a stream is not guaranteed
-                  seekable, hands the reader a seekable stream, and returns degraded when the emitter
-                  reported any gap — writing no bytes itself, because the sink is the only output channel.
+                  seekable, hands the reader a seekable stream, and writes no bytes itself because the
+                  sink is the only output channel.
                 tests:
                   - DocDownPowerPoint_Extract_Pptx_SelectsOpenXml
 
               - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ContributesSelfTests
                 title: >-
-                  PowerPointOpenXmlExtractor shall contribute self-test cases, including an honest skip
-                  for the page-rendering capability it does not claim.
+                  PowerPointOpenXmlExtractor shall contribute self-test cases, including an honest
+                  skip for slide rendering.
                 justification: |
-                  An operator needs to confirm the backend works where it is deployed. A round-trip case
-                  that builds and reads a deck proves the SDK is genuinely functional, and a skipped
-                  page-rendering case keeps a capability the managed backend does not claim — rendering
-                  belongs to the COM backend — from being reported as a pass or a failure.
+                  An operator needs to confirm the backend works where it is deployed. A round-trip
+                  case that builds and reads a deck proves the SDK is genuinely functional, and a
+                  skipped page-rendering case keeps a behavior the managed backend does not provide
+                  from being reported as a pass or a failure.
                 tests:
                   - PowerPointOpenXmlExtractor_SelfTestCases_RoundTripPassesAndRenderingSkipped

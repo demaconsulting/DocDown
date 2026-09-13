@@ -7,15 +7,13 @@ Scratch folder  : <scratch-folder>
 Source document : <source-document>
 Detected format : pdf (application/pdf) - detected by file extension
 Extracted (UTC) : 2026-01-02T03:04:05Z
-Status          : SUCCEEDED  - all requested content was extracted.
+Status          : PRODUCED  - the standard output layout was written.
 
 All paths below are relative to the scratch folder shown above.
 
 Backend
 -------
-  Selected  : pdf - PDF (PdfPig)      [selected automatically]
-  Fidelity  : best-effort
-  Why       : satisfies 1 of 1 requested capabilities.
+  Selected  : pdf - PDF (PdfPig)
 
 Environment
 -----------
@@ -23,8 +21,7 @@ Environment
   Runtime            : test-runtime 8.0
   Runtime identifier : test-rid
   DocDown.Pdf:
-    pdf.parser        : PdfPig (managed) (available)
-    pdf.pageRendering : not provided by this extractor (NOT available)
+    pdf.parser : PdfPig (managed) (available)
   DocDown.Pdf.Rendering:
     pages.renderer : PDFtoImage (PDFium/SkiaSharp, native) (available)
 
@@ -39,25 +36,14 @@ Layout
   manifest.json        machine-readable form of this summary
   metadata.json        what the document asserts about itself
   content.md           PRESENT
-  images/              not present - none were found
-  pages/               PRESENT - 2 extracted
+  images/              not present - none were written
+  pages/               PRESENT - 2 rendered
 
 What WAS extracted
 ------------------
   content.md   62 characters of text.
   pages/       2 rendered pages.
 
-What was NOT extracted
-----------------------
-  No gaps: everything requested was extracted.
-
-Completeness
-------------
-  content.md : COMPLETE
-  images/    : COMPLETE   (0 of 0)
-  pages/     : COMPLETE   (2 of 2)
-  Every absence above is explained by a numbered gap. There are no unexplained gaps.
-
-Diagnostics (0 warnings, 0 errors)
-----------------------------------
-  No diagnostics were emitted.
+Could not read
+--------------
+  Nothing was left incomplete.

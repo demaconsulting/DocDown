@@ -10,11 +10,11 @@ namespace DocDown.Visio.Com;
 ///     Core keeps its own <see cref="IExtractionContext"/> implementation internal, so this backend
 ///     supplies its own to run the managed backend against the same sink, format, environment, and
 ///     cancellation token while overriding the options — specifically to force
-///     <see cref="ExtractionOptions.RenderPages"/> off so the delegate does not emit a render gap
-///     that this backend answers itself. It also composes the delegate's output through a
-///     <see cref="ComposingDelegatedSink"/> so the delegate's "rendering not provided" fact and
-///     stale images-gap remedy do not contradict the rendering this COM run performs. Immutable
-///     after construction and safe to read from the extraction thread.
+///     <see cref="ExtractionOptions.RenderPages"/> off so the delegate does not try to render pages
+///     that this backend will render itself. It also composes the delegate's output through a
+///     <see cref="ComposingDelegatedSink"/> so the delegate's "rendering not provided" fact does not
+///     contradict the rendering this COM run performs. Immutable after construction and safe to read
+///     from the extraction thread.
 /// </remarks>
 internal sealed class DelegatedExtractionContext : IExtractionContext
 {

@@ -29,16 +29,20 @@ sections:
 
           - id: DocDownTool-Cli-OptionMapping
             title: >-
-              The subsystem shall parse the command line and project the extraction flags onto the
-              engine's extraction options.
+              The subsystem shall parse the command line and project the supported extraction flags,
+              including the current scratch-folder policy tokens, onto the engine's extraction
+              options.
             justification: |
               A flag is only meaningful if it changes the extraction, so the subsystem must translate
               each accepted flag into the corresponding engine option and leave every unset option at
-              its default. Mapping only options the engine supports keeps the command line honest.
+              its default. Restricting `--overwrite` to the two scratch policies the engine now
+              exposes keeps the command line honest.
             children:
               - DocDownTool-Context-OptionMapping
+              - DocDownTool-Context-ScratchPolicy
             tests:
-              - Context_BuildExtractionOptions_Flags_MapOntoOptions
+              - Context_BuildExtractionOptions_SupportedFlags_MapOntoOptions
+              - Context_BuildExtractionOptions_SupportedScratchPolicyToken_MapsToMode
 
           - id: DocDownTool-Cli-ArgumentValidation
             title: The subsystem shall reject an unrecognized or malformed argument with an argument fault.

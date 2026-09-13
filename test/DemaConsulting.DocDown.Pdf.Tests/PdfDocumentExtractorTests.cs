@@ -6,15 +6,15 @@ using DocDown.Pdf;
 namespace DemaConsulting.DocDown.Pdf.Tests;
 
 /// <summary>
-///     Unit tests for <see cref="PdfDocumentExtractor"/>, proving its declared identity and
-///     capabilities, the cheapness and safety of its availability probe, its document-metadata
-///     reporting, its page-range handling, its degradation gaps, and its self-test cases.
+///     Unit tests for <see cref="PdfDocumentExtractor"/>, proving its identity, its cheap and safe
+///     availability probe, its document-metadata reporting, its environment facts, its page-range
+///     handling, its zero-count inventory reporting, and its self-test cases.
 /// </summary>
 /// <remarks>
 ///     These tests drive the extractor directly against a <see cref="RecordingSink"/> and a stub
 ///     context, so what the extractor emitted — and in what order — can be asserted without running
-///     the real writers or touching the filesystem. The documents are the generated fixtures, so
-///     the unit is exercised against real PDFs rather than against a mock of a parser.
+///     the real writers or touching the filesystem. The documents are generated fixtures, so the
+///     unit is exercised against real PDFs rather than against a mock parser.
 /// </remarks>
 public class PdfDocumentExtractorTests
 {
@@ -22,7 +22,7 @@ public class PdfDocumentExtractorTests
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>
-    ///     Proves the extractor declares exactly the capabilities it can deliver (DeclaresCapabilities).
+    ///     Proves the extractor declares the supported identity and selection properties.
     /// </summary>
     [Fact]
     public void PdfDocumentExtractor_Descriptor_DeclaredProperties_MatchTheSupportedContract()
@@ -35,16 +35,10 @@ public class PdfDocumentExtractorTests
         Assert.Equal("PDF (PdfPig)", extractor.DisplayName);
         Assert.Equal([DocumentFormat.Pdf], extractor.SupportedFormats);
         Assert.Equal(0, extractor.Priority);
-
-        // Assert: the three deliverable capabilities are declared and page rendering pointedly is not
-        Assert.Equal(
-            ExtractorCapabilities.Text | ExtractorCapabilities.EmbeddedImages | ExtractorCapabilities.DocumentMetadata,
-            extractor.Capabilities);
-        Assert.False(extractor.Capabilities.HasFlag(ExtractorCapabilities.RenderedPages));
     }
 
     /// <summary>
-    ///     Proves the availability probe is unconditional, cheap, and side-effect free (ProbeIsCheapAndSafe).
+    ///     Proves the availability probe is unconditional, cheap, side-effect free, and does not offer rendering.
     /// </summary>
     [Fact]
     public void PdfDocumentExtractor_ProbeAvailability_ManagedOnlyBackend_ReportsAvailableWithoutIo()
@@ -62,16 +56,16 @@ public class PdfDocumentExtractorTests
 
         stopwatch.Stop();
 
-        // Assert: always available with the full declared set, and far inside the 50 ms budget
+        // Assert: always available, never claims page rendering, and far inside the 50 ms budget
         Assert.True(availability.IsAvailable);
         Assert.Null(availability.UnavailableReason);
-        Assert.Equal(extractor.Capabilities, availability.EffectiveCapabilities);
+        Assert.False(availability.ProvidesRenderedPages);
         Assert.True(stopwatch.Elapsed.TotalMilliseconds < 50 * 100,
             $"100 probes took {stopwatch.Elapsed.TotalMilliseconds}ms, which exceeds the per-probe budget");
     }
 
     /// <summary>
-    ///     Proves the extractor reports the document's title, author, and page count (ReportsDocumentInfo).
+    ///     Proves the extractor reports the document's title, author, and page count.
     /// </summary>
     [Fact]
     public async Task PdfDocumentExtractor_ExtractAsync_DocumentWithMetadata_ReportsTitleAuthorAndPageCount()
@@ -110,7 +104,7 @@ public class PdfDocumentExtractorTests
     }
 
     /// <summary>
-    ///     Proves a requested page range restricts what is extracted (HonorsPageRange).
+    ///     Proves a requested page range restricts what is extracted.
     /// </summary>
     [Fact]
     public async Task PdfDocumentExtractor_ExtractAsync_PageRange_ExtractsOnlyTheRequestedPages()
@@ -132,35 +126,10 @@ public class PdfDocumentExtractorTests
     }
 
     /// <summary>
-    ///     Proves a page-rendering request produces the gap naming where the capability lives (ReportsRenderGap).
+    ///     Proves a text-free scanned document still writes image-backed content and reports zero text counts.
     /// </summary>
     [Fact]
-    public async Task PdfDocumentExtractor_ExtractAsync_RenderPagesRequested_ReportsPackageClassGap()
-    {
-        // Arrange: a simple document extracted with page rendering demanded
-        var sink = new RecordingSink();
-        var options = new ExtractionOptions { RenderPages = true };
-
-        // Act: extract with a capability this backend does not provide
-        var outcome = await ExtractAsync(PdfFixtures.SimpleText(), sink, options);
-
-        // Assert: the run degrades and the gap names the class of package that provides rendering
-        Assert.Equal(ExtractionOutcome.Degraded, outcome);
-        var gap = Assert.Single(sink.Gaps, candidate => candidate.Kind == GapKind.Pages);
-        Assert.Equal("pages/", gap.Target);
-        Assert.Equal(GapScope.Unavailable, gap.Scope);
-        Assert.Contains("page-rendering extractor package", gap.Reason, StringComparison.Ordinal);
-
-        // Assert: the wording states a fact rather than issuing an instruction that cannot succeed
-        Assert.DoesNotContain("install", gap.Reason, StringComparison.OrdinalIgnoreCase);
-        Assert.Null(gap.Remedy);
-    }
-
-    /// <summary>
-    ///     Proves a document with no text layer is reported rather than silently emptied (ReportsNoTextLayer).
-    /// </summary>
-    [Fact]
-    public async Task PdfDocumentExtractor_ExtractAsync_NoTextLayer_ReportsCodedGapAndDegrades()
+    public async Task PdfDocumentExtractor_ExtractAsync_NoTextLayer_WritesImageBackedContentWithZeroTextCounts()
     {
         // Arrange: a purely graphical page carrying no glyphs at all
         var sink = new RecordingSink();
@@ -168,19 +137,42 @@ public class PdfDocumentExtractorTests
         // Act: extract the scanned document
         var outcome = await ExtractAsync(PdfFixtures.NoTextLayer(), sink);
 
-        // Assert: the run degrades with a coded diagnostic and a gap that explains the absence
-        Assert.Equal(ExtractionOutcome.Degraded, outcome);
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "PDF0003");
-        var gap = Assert.Single(sink.Gaps, candidate => candidate.Kind == GapKind.Text);
-        Assert.Equal("content.md", gap.Target);
-        Assert.Contains("text layer", gap.Reason, StringComparison.Ordinal);
+        // Assert: the extraction still produces output, but no headings or paragraphs were counted
+        Assert.Equal(ExtractionOutcome.Produced, outcome);
+        var content = Assert.Single(sink.ContentWrites);
+        Assert.Contains("<!-- docdown:page 1 -->", content, StringComparison.Ordinal);
+        Assert.Contains("](images/0001-image.png)", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("quick brown fox", content, StringComparison.Ordinal);
+        Assert.Empty(sink.Notes);
+        Assert.Collection(
+            sink.ContentFeatures,
+            feature =>
+            {
+                Assert.Equal("pages", feature.Label);
+                Assert.Equal(1, feature.Count);
+            },
+            feature =>
+            {
+                Assert.Equal("headings", feature.Label);
+                Assert.Equal(0, feature.Count);
+            },
+            feature =>
+            {
+                Assert.Equal("paragraphs", feature.Label);
+                Assert.Equal(0, feature.Count);
+            },
+            feature =>
+            {
+                Assert.Equal("inline images", feature.Label);
+                Assert.Equal(1, feature.Count);
+            });
     }
 
     /// <summary>
-    ///     Proves a document with no pages completes with an explanation rather than throwing.
+    ///     Proves a document with no pages completes with explicit zero-count inventory rather than throwing.
     /// </summary>
     [Fact]
-    public async Task PdfDocumentExtractor_ExtractAsync_ZeroPageDocument_ReportsStructureGapWithoutThrowing()
+    public async Task PdfDocumentExtractor_ExtractAsync_ZeroPageDocument_ReportsZeroCountInventoryWithoutThrowing()
     {
         // Arrange: a valid document declaring no pages
         var sink = new RecordingSink();
@@ -188,14 +180,40 @@ public class PdfDocumentExtractorTests
         // Act: extract the empty document
         var outcome = await ExtractAsync(PdfFixtures.ZeroPage(), sink);
 
-        // Assert: no exception, a degraded outcome, and a gap that states why there is no content
-        Assert.Equal(ExtractionOutcome.Degraded, outcome);
-        var gap = Assert.Single(sink.Gaps, candidate => candidate.Kind == GapKind.Structure);
-        Assert.Contains("no pages", gap.Reason, StringComparison.Ordinal);
+        // Assert: no exception, a produced outcome, title-only content, and zero-count inventory
+        Assert.Equal(ExtractionOutcome.Produced, outcome);
+        Assert.Equal(0, Assert.Single(sink.DocumentInfos).PageCount);
+        var content = Assert.Single(sink.ContentWrites);
+        Assert.StartsWith("# DocDown Empty", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("<!-- docdown:page", content, StringComparison.Ordinal);
+        Assert.Empty(sink.Images);
+        Assert.Empty(sink.Notes);
+        Assert.Collection(
+            sink.ContentFeatures,
+            feature =>
+            {
+                Assert.Equal("pages", feature.Label);
+                Assert.Equal(0, feature.Count);
+            },
+            feature =>
+            {
+                Assert.Equal("headings", feature.Label);
+                Assert.Equal(0, feature.Count);
+            },
+            feature =>
+            {
+                Assert.Equal("paragraphs", feature.Label);
+                Assert.Equal(0, feature.Count);
+            },
+            feature =>
+            {
+                Assert.Equal("inline images", feature.Label);
+                Assert.Equal(0, feature.Count);
+            });
     }
 
     /// <summary>
-    ///     Proves a malformed document's parser fault propagates for Core to convert (MapsParserFailures).
+    ///     Proves a malformed document's parser fault propagates for Core to convert.
     /// </summary>
     /// <remarks>
     ///     The extractor deliberately does not translate parser faults itself: Core catches any
@@ -216,7 +234,7 @@ public class PdfDocumentExtractorTests
     }
 
     /// <summary>
-    ///     Proves an encrypted document's parser fault propagates for Core to convert (MapsParserFailures).
+    ///     Proves an encrypted document's parser fault propagates for Core to convert.
     /// </summary>
     [Fact]
     public async Task PdfDocumentExtractor_ExtractAsync_EncryptedDocument_PropagatesParserFaultForCore()
@@ -231,7 +249,7 @@ public class PdfDocumentExtractorTests
     }
 
     /// <summary>
-    ///     Proves the extractor contributes the documented self-test cases (ContributesSelfTests).
+    ///     Proves the extractor contributes the documented self-test cases.
     /// </summary>
     [Fact]
     public void PdfDocumentExtractor_GetSelfTestCases_DeployedBackend_ReturnsParseAndRenderingCases()
@@ -254,7 +272,7 @@ public class PdfDocumentExtractorTests
     }
 
     /// <summary>
-    ///     Proves a null context is rejected as a caller error (boundary).
+    ///     Proves a null context is rejected as a caller error.
     /// </summary>
     [Fact]
     public async Task PdfDocumentExtractor_ExtractAsync_NullContext_ThrowsArgumentNullException()
@@ -314,10 +332,7 @@ internal sealed class StubExtractionContext : IExtractionContext
         Sink = sink;
         CancellationToken = cancellationToken;
         DetectedFormat = new FormatDetection(DocumentFormat.Pdf, DetectionBasis.Extension, 0.9);
-        SelectedExtractor = new ExtractorDescriptor(
-            "pdf", "PDF (PdfPig)", [DocumentFormat.Pdf],
-            ExtractorCapabilities.Text | ExtractorCapabilities.EmbeddedImages | ExtractorCapabilities.DocumentMetadata,
-            0);
+        SelectedExtractor = new ExtractorDescriptor("pdf", "PDF (PdfPig)", [DocumentFormat.Pdf], 0);
         Environment = new ExtractionEnvironment("TestOS", "X64", "test-runtime", "test-rid", []);
     }
 

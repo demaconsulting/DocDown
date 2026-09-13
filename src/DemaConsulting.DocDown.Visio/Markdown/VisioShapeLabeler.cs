@@ -44,7 +44,7 @@ internal readonly record struct VisioShapeLabel(string Display, VisioLabelSource
 ///         the shape's text, and the name of the master it was instantiated from. A shape drawn from
 ///         the <c>3-way Plug Valve</c> master *is* a 3-way plug valve by the drawing's own
 ///         statement, so reporting that is recovery, not fabrication. Where neither fact exists the
-///         shape id remains, because an honest gap beats a plausible guess.
+///         shape id remains, because a plain fallback beats a plausible guess.
 ///     </para>
 ///     <para>
 ///         Two rules keep the result truthful. First, a type-derived label is rendered
@@ -88,8 +88,8 @@ internal static class VisioShapeLabeler
     ///     machine — can decode a parenthesized label without reverse-engineering it.
     /// </summary>
     /// <remarks>
-    ///     Published verbatim into both the markdown and the manifest diagnostic, so the two can
-    ///     never drift apart and a machine reading only the manifest still learns the convention.
+    ///     Published verbatim into markdown content whenever a page uses a type-derived or id-fallback
+    ///     endpoint label, so the rendered edge list explains itself in place.
     /// </remarks>
     internal const string Convention =
         "Topology endpoint labels: an unparenthesized label is the shape's own text; "
@@ -110,7 +110,7 @@ internal static class VisioShapeLabeler
     /// <remarks>
     ///     The precedence is strict: authored text always outranks type, and type always outranks
     ///     the id fallback. An endpoint naming a shape absent from the map — which the reader's
-    ///     topology resolution already excludes — degrades to the id fallback rather than throwing.
+    ///     topology resolution already excludes — falls back to the id label rather than throwing.
     ///     Pure.
     /// </remarks>
     public static VisioShapeLabel Label(string id, IReadOnlyDictionary<string, VisioShapeModel> shapes)
@@ -152,7 +152,7 @@ internal static class VisioShapeLabeler
     ///     A connector's own master — <c>Dynamic connector</c>, <c>Line-curve connector</c> — and the
     ///     line-drawing masters describe the stroke between two things, so using one as an endpoint
     ///     label would actively mislead: it would report the wire as the equipment. Such an endpoint
-    ///     keeps the honest id fallback. Pure.
+    ///     keeps the id fallback. Pure.
     /// </remarks>
     private static bool IsConnectiveMaster(string name) =>
         name.Contains(ConnectorWord, StringComparison.OrdinalIgnoreCase) || LineMasters.Contains(name);

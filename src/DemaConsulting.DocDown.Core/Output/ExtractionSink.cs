@@ -5,8 +5,8 @@ namespace DocDown.Core;
 
 /// <summary>
 ///     The sole write path for an extraction: the concrete sink that allocates every output path,
-///     writes image and page bytes, buffers content and parts, and records the honesty stream
-///     (document info, diagnostics, gaps, environment facts, and found counts).
+///     writes image and page bytes, buffers content and parts, and records the reporting stream
+///     (document info, notes, environment facts, and the content inventory).
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -21,9 +21,9 @@ namespace DocDown.Core;
 ///         Images are deduplicated by the SHA-256 of their written bytes: a repeat writes nothing,
 ///         increments the existing image's reference count, and returns the existing path. When
 ///         <see cref="ExtractionOptions.IncludeEmbeddedImages"/> is <see langword="false"/>, images
-///         are suppressed — nothing is written, a single <c>DD0201</c> diagnostic is recorded, and
-///         <see cref="string.Empty"/> is returned so a well-behaved extractor emits no link. Content
-///         parts are buffered rather than written immediately because
+///         are suppressed — nothing is written and <see cref="string.Empty"/> is returned so a
+///         well-behaved extractor emits no link (the engine records the single note that images were
+///         disabled). Content parts are buffered rather than written immediately because
 ///         <see cref="ContentSplitMode.Single"/> concatenates them into <c>content.md</c> instead of
 ///         emitting separate files; <see cref="ContentWriter"/> makes the final layout decision.
 ///     </para>
@@ -72,13 +72,9 @@ public sealed class ExtractionSink : IExtractionSink
     /// <remarks>Accumulated across calls so no content is silently dropped if written in pieces.</remarks>
     private readonly System.Text.StringBuilder _content = new();
 
-    /// <summary>The recorded diagnostics in emission order.</summary>
-    /// <remarks>Ordered so the auditable stream reads chronologically in the result and manifest.</remarks>
-    private readonly List<ExtractionDiagnostic> _diagnostics = [];
-
-    /// <summary>The recorded gaps in emission order, with Core-assigned identifiers.</summary>
-    /// <remarks>A list preserves the dense <c>GAP-1..N</c> ordering the identifiers depend on.</remarks>
-    private readonly List<ExtractionGap> _gaps = [];
+    /// <summary>The recorded notes in emission order.</summary>
+    /// <remarks>Each note is one plain-language fact about a step the extraction could not complete.</remarks>
+    private readonly List<ExtractionNote> _notes = [];
 
     /// <summary>The recorded environment facts in emission order.</summary>
     /// <remarks>Never re-sorted, so environment provenance reads in the order it was contributed.</remarks>
@@ -91,10 +87,6 @@ public sealed class ExtractionSink : IExtractionSink
     ///     accumulate into one entry instead of printing twice.
     /// </remarks>
     private readonly List<ContentFeature> _contentFeatures = [];
-
-    /// <summary>The reported found counts by content kind.</summary>
-    /// <remarks>Supplies the ledger denominators (for example "3 of 4") the completeness story needs.</remarks>
-    private readonly Dictionary<GapKind, int> _foundCounts = [];
 
     /// <summary>The document metadata most recently reported, or <see langword="null"/> when none.</summary>
     /// <remarks>Last write wins, matching the interface contract that later calls supersede earlier ones.</remarks>
@@ -115,14 +107,6 @@ public sealed class ExtractionSink : IExtractionSink
     /// <summary>The next 1-based part ordinal to allocate.</summary>
     /// <remarks>Core-allocated so part numbering is dense and independent of extractor hints.</remarks>
     private int _nextPartOrdinal = 1;
-
-    /// <summary>The next 1-based gap sequence number to allocate.</summary>
-    /// <remarks>Drives the dense <c>GAP-n</c> identifiers, overwriting any caller-supplied value.</remarks>
-    private int _nextGapNumber = 1;
-
-    /// <summary>Whether image writing has been suppressed and the suppression already recorded.</summary>
-    /// <remarks>Ensures the <c>DD0201</c> suppression diagnostic is emitted exactly once.</remarks>
-    private bool _imagesSuppressed;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ExtractionSink"/> class.
@@ -151,16 +135,10 @@ public sealed class ExtractionSink : IExtractionSink
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(hint);
 
-        // Honor suppression: write nothing, record the reason once, and signal "no link" with an empty path
+        // Honor suppression: write nothing and signal "no link" with an empty path. The engine records
+        // the single note that images were disabled, so nothing is recorded here
         if (!_options.IncludeEmbeddedImages)
         {
-            if (!_imagesSuppressed)
-            {
-                _imagesSuppressed = true;
-                RecordDiagnostic(DiagnosticCodes.EmbeddedImagesDisabled, DiagnosticSeverity.Info,
-                    "Embedded-image extraction is disabled by caller options; no images were written.");
-            }
-
             return string.Empty;
         }
 
@@ -348,30 +326,16 @@ public sealed class ExtractionSink : IExtractionSink
     }
 
     /// <inheritdoc />
-    public void ReportDiagnostic(ExtractionDiagnostic diagnostic)
+    public void ReportNote(ExtractionNote note)
     {
-        // Append to the ordered stream surfaced in the result and manifest
-        ArgumentNullException.ThrowIfNull(diagnostic);
-        _diagnostics.Add(diagnostic);
-    }
-
-    /// <inheritdoc />
-    public void ReportGap(ExtractionGap gap)
-    {
-        // Every gap must carry a reason; substitute a Core-authored one and flag it rather than accept silence
-        ArgumentNullException.ThrowIfNull(gap);
-        var reason = gap.Reason;
-        if (string.IsNullOrWhiteSpace(reason))
+        // Record the note verbatim; a note carries a single fact and needs no identifier or ordering key
+        ArgumentNullException.ThrowIfNull(note);
+        if (string.IsNullOrWhiteSpace(note.Message))
         {
-            reason = "the extractor reported this gap without a reason";
-            RecordDiagnostic(DiagnosticCodes.UnexplainedAbsence, DiagnosticSeverity.Warning,
-                $"A gap targeting '{gap.Target}' was reported without a reason; Core supplied one.");
+            throw new ArgumentException("The note message must not be blank.", nameof(note));
         }
 
-        // Overwrite any caller-supplied identifier so identifiers stay dense and ordered
-        var id = $"GAP-{_nextGapNumber.ToString(CultureInfo.InvariantCulture)}";
-        _nextGapNumber++;
-        _gaps.Add(gap with { Id = id, Reason = reason });
+        _notes.Add(note);
     }
 
     /// <inheritdoc />
@@ -424,18 +388,6 @@ public sealed class ExtractionSink : IExtractionSink
         _contentFeatures.Add(feature);
     }
 
-    /// <inheritdoc />
-    public void ReportFound(GapKind kind, int foundCount)
-    {
-        // Record the denominator (last value wins) so partial success can be stated precisely
-        if (foundCount < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(foundCount), foundCount, "The found count cannot be negative.");
-        }
-
-        _foundCounts[kind] = foundCount;
-    }
-
     /// <summary>Gets the scratch folder this sink writes into.</summary>
     /// <remarks>Exposed to the writers so they resolve and create paths through the same safety gate.</remarks>
     internal ScratchFolder Folder => _folder;
@@ -464,13 +416,9 @@ public sealed class ExtractionSink : IExtractionSink
     /// <remarks>Consumed by <see cref="MetadataWriter"/> for <c>metadata.json</c> and by the summary's metadata block.</remarks>
     internal DocumentMetadata? DocumentMetadata => _documentMetadata;
 
-    /// <summary>Gets the recorded diagnostics in emission order.</summary>
-    /// <remarks>Consumed by the writers and merged with any reconciliation-synthesized diagnostics.</remarks>
-    internal IReadOnlyList<ExtractionDiagnostic> Diagnostics => _diagnostics;
-
-    /// <summary>Gets the recorded gaps in emission order.</summary>
-    /// <remarks>Consumed by reconciliation, which appends synthesized gaps for any unexplained absence.</remarks>
-    internal IReadOnlyList<ExtractionGap> Gaps => _gaps;
+    /// <summary>Gets the recorded notes in emission order.</summary>
+    /// <remarks>Consumed by the writers for the summary's notes section and the manifest's <c>notes</c> array.</remarks>
+    internal IReadOnlyList<ExtractionNote> Notes => _notes;
 
     /// <summary>Gets the recorded environment facts in emission order.</summary>
     /// <remarks>Consumed by the writers for the manifest and summary environment blocks.</remarks>
@@ -483,27 +431,6 @@ public sealed class ExtractionSink : IExtractionSink
     ///     only for a feature the backend declared it looked for.
     /// </remarks>
     internal IReadOnlyList<ContentFeature> ContentFeatures => _contentFeatures;
-
-    /// <summary>Gets the reported found counts by content kind.</summary>
-    /// <remarks>Consumed by reconciliation to compute ledger denominators and partial-vs-present status.</remarks>
-    internal IReadOnlyDictionary<GapKind, int> FoundCounts => _foundCounts;
-
-    /// <summary>Gets a value indicating whether image writing was suppressed.</summary>
-    /// <remarks>Consumed by reconciliation to mark the images ledger entry absent and require a gap.</remarks>
-    internal bool ImagesSuppressed => _imagesSuppressed;
-
-    /// <summary>
-    ///     Records a diagnostic from a code, severity, and message.
-    /// </summary>
-    /// <param name="code">The stable diagnostic code.</param>
-    /// <param name="severity">The severity of the diagnostic.</param>
-    /// <param name="message">The human-readable message.</param>
-    /// <remarks>
-    ///     A private convenience over <see cref="ReportDiagnostic(ExtractionDiagnostic)"/> so internal
-    ///     emitters (suppression, reasonless gaps) construct diagnostics consistently.
-    /// </remarks>
-    private void RecordDiagnostic(string code, DiagnosticSeverity severity, string message) =>
-        _diagnostics.Add(new ExtractionDiagnostic(code, severity, message));
 
     /// <summary>
     ///     Allocates a unique relative path within a folder, appending a numeric suffix on collision.

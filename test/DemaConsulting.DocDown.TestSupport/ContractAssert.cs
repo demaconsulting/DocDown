@@ -9,64 +9,25 @@ namespace DemaConsulting.DocDown.TestSupport;
 ///     <see cref="ContractAssertionException"/> on failure so no test runner is referenced.
 /// </summary>
 /// <remarks>
-///     These helpers turn the library's honesty guarantees into one-line checks: that an
-///     extraction folder passes the <see cref="ContractVerifier"/> with no violations, that the
-///     standard layout is present with every ledger slot resolved, and that two files are
-///     byte-for-byte identical. Each helper performs read-only filesystem I/O and holds no state.
+///     These helpers turn the library's output guarantees into one-line checks: that the standard
+///     layout is present with the manifest's mandatory blocks, and that two files are byte-for-byte
+///     identical. Each helper performs read-only filesystem I/O and holds no state.
 /// </remarks>
 public static class ContractAssert
 {
-    /// <summary>The six ledger slots every manifest must resolve.</summary>
-    /// <remarks>Mirrors <see cref="ArtifactLedger"/> so a missing slot is caught as a layout failure.</remarks>
-    private static readonly string[] LedgerSlots = ["summary", "manifest", "metadata", "content", "images", "pages"];
-
-    /// <summary>
-    ///     Asserts the extraction folder passes the contract verifier with no violations.
-    /// </summary>
-    /// <param name="scratchFolder">The absolute path of the extraction folder. Must not be null or empty.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="scratchFolder"/> is null or empty.</exception>
-    /// <exception cref="ContractAssertionException">Thrown when the verifier reports one or more violations.</exception>
-    /// <remarks>
-    ///     Wraps <see cref="ContractVerifier.Verify"/> and, on failure, builds a message naming
-    ///     every violation code and detail so the failure is self-explanatory.
-    /// </remarks>
-    public static void NoViolations(string scratchFolder)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(scratchFolder);
-
-        var violations = ContractVerifier.Verify(scratchFolder);
-        if (violations.Count == 0)
-        {
-            return;
-        }
-
-        // Build a richly formatted report naming each violation so the failure is actionable
-        var message = new StringBuilder();
-        message.Append(violations.Count)
-            .Append(" contract violation(s) in '")
-            .Append(scratchFolder)
-            .Append("':");
-        foreach (var violation in violations)
-        {
-            message.Append('\n').Append("  - ").Append(violation.Code).Append(": ").Append(violation.Detail);
-        }
-
-        throw new ContractAssertionException(message.ToString());
-    }
-
     /// <summary>
     ///     Asserts the standard layout is present: <c>summary.txt</c> and <c>manifest.json</c> exist
-    ///     and the manifest resolves all six ledger slots.
+    ///     and the manifest carries its mandatory top-level blocks.
     /// </summary>
     /// <param name="scratchFolder">The absolute path of the extraction folder. Must not be null or empty.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="scratchFolder"/> is null or empty.</exception>
     /// <exception cref="ContractAssertionException">
-    ///     Thrown when a required file is missing, the manifest is unparsable, or a ledger slot is
-    ///     absent or unresolved.
+    ///     Thrown when a required file is missing, the manifest is unparsable, or a mandatory block is
+    ///     absent.
     /// </exception>
     /// <remarks>
-    ///     Confirms the two always-present files exist and that the manifest's <c>artifacts</c> block
-    ///     carries a resolved entry (with a <c>path</c> and <c>status</c>) for each of the six slots.
+    ///     Confirms the two always-present files exist and that the manifest carries the
+    ///     <c>tool</c>, <c>status</c>, <c>source</c>, and <c>notes</c> blocks that describe the run.
     /// </remarks>
     public static void LayoutPresent(string scratchFolder)
     {
@@ -97,24 +58,13 @@ public static class ContractAssert
 
         using (document)
         {
-            if (!document.RootElement.TryGetProperty("artifacts", out var artifacts))
+            // Every mandatory top-level block must be present so the manifest is self-describing
+            foreach (var block in new[] { "tool", "status", "source", "notes" })
             {
-                throw new ContractAssertionException($"manifest.json in '{scratchFolder}' has no 'artifacts' ledger.");
-            }
-
-            // Every ledger slot must be present and resolved to a path and status
-            foreach (var slot in LedgerSlots)
-            {
-                if (!artifacts.TryGetProperty(slot, out var entry))
+                if (!document.RootElement.TryGetProperty(block, out _))
                 {
                     throw new ContractAssertionException(
-                        $"manifest.json ledger in '{scratchFolder}' is missing the '{slot}' slot.");
-                }
-
-                if (!entry.TryGetProperty("path", out _) || !entry.TryGetProperty("status", out _))
-                {
-                    throw new ContractAssertionException(
-                        $"manifest.json ledger slot '{slot}' in '{scratchFolder}' is not resolved.");
+                        $"manifest.json in '{scratchFolder}' is missing the mandatory '{block}' block.");
                 }
             }
         }

@@ -32,26 +32,26 @@ constituent software items, specifically:
   identification
   - **FormatSniffer (Unit)** — Names a format from the file extension, falling back to a
     leading-byte content signature
-- **Extraction (Subsystem)** — Registration, capability negotiation, deterministic selection, and
-  pipeline orchestration
+- **Extraction (Subsystem)** — Registration, deterministic selection, and pipeline orchestration
   - **DocDownBuilder (Unit)** — Fluent builder that collects registrations and produces an engine
   - **ExtractorRegistry (Unit)** — Immutable snapshot of registered extractors with cached
     availability
-  - **ExtractorSelector (Unit)** — Pure ranking function that chooses the best extractor and records
-    the decision
+  - **ExtractorSelector (Unit)** — Pure ranking function that chooses the best available extractor
+    deterministically
   - **DocDownEngine (Unit)** — Public facade that orchestrates one extraction end to end
 - **Output (Subsystem)** — The sole write path: scratch preparation, path containment, and artifact
   serialization
   - **ScratchFolder (Unit)** — Owns the output directory and the path-safety gate
-  - **ExtractionSink (Unit)** — Allocates every path, writes bytes, and records the honesty stream
+  - **ExtractionSink (Unit)** — Allocates every path, writes bytes, and records notes and the
+    content inventory
   - **ContentWriter (Unit)** — Finalizes `content.md` and any `parts/` files
   - **SummaryWriter (Unit)** — Serializes the human-readable `summary.txt`
-  - **ManifestWriter (Unit)** — Serializes `manifest.json` and reconciles the completeness ledger
-  - **ContractVerifier (Unit)** — Reconciles a scratch folder against its own manifest
+  - **ManifestWriter (Unit)** — Serializes `manifest.json` from the recorded output, inventory,
+    and notes
 - **DocDown.Pdf (System)** — PDF text, embedded-image, and document-metadata extraction; flat, with
   no subsystems
-  - **PdfDocumentExtractor (Unit)** — The backend the engine selects: capabilities, availability,
-    metadata, delegation, and the degradation gaps only a PDF reader can explain
+  - **PdfDocumentExtractor (Unit)** — The backend the engine selects: availability, metadata,
+    delegation, the content inventory, and notes
   - **PdfTextExtractor (Unit)** — Renders a page's glyphs into markdown paragraphs in reading
     order, with image links and page markers
   - **PdfImageExtractor (Unit)** — Writes the embedded images, labeling how each was produced and
@@ -59,9 +59,9 @@ constituent software items, specifically:
   - **PdfDocDownBuilderExtensions (Unit)** — The reflection-free registration seam
 - **DocDown.Pdf.Rendering (System)** — Optional PDF page rendering (rasterization); flat, with no
   subsystems, and the first and only DocDown package that carries native binaries
-  - **PdfPageRenderingExtractor (Unit)** — The superset backend selected when rendering is requested:
-    delegates the managed aspects, rasterizes the pages, and isolates each page's faults into a
-    counted gap
+  - **PdfPageRenderingExtractor (Unit)** — The page-rendering backend selected when rendering is
+    requested and available: delegates the managed aspects, rasterizes pages, and records notes for
+    pages it cannot render
   - **PageRenderer (Unit)** — The single native-interop seam: rasterizes one page to PNG behind a
     process-wide lock and answers a cheap, non-throwing availability probe
   - **PdfRenderingDocDownBuilderExtensions (Unit)** — The reflection-free registration seam, free of
@@ -86,8 +86,8 @@ constituent software items, specifically:
     - **WordTableWriter (Unit)** — Renders a table model as a GFM table, counting every flattened cell
     - **WordContentEmitter (Unit)** — The model-to-sink emission path
   - **OpenXml (Subsystem)** — The managed backend that reads a `.docx` through the Open XML SDK
-    - **WordOpenXmlExtractor (Unit)** — The managed backend the engine selects: capabilities, split
-      modes, and the shortfalls only it can explain
+    - **WordOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
+      including split modes and page-rendering absence
     - **WordOpenXmlReader (Unit)** — Turns the Open XML DOM into the backend-neutral model
     - **WordOpenXmlImageReader (Unit)** — Yields each embedded image's bytes with passthrough
       provenance
@@ -97,12 +97,12 @@ constituent software items, specifically:
   - **ExcelDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
     Excel backend
   - **Markdown (Subsystem)** — The projection of the workbook model onto markdown
-    - **ExcelContentEmitter (Unit)** — The model-to-sink emission path: sheet and chart parts, the
-      verbatim listing and additive grid table, and the honest gap policy
+    - **ExcelContentEmitter (Unit)** — The model-to-sink emission path: sheet and chart parts,
+      the verbatim listing, the additive grid table, inventory counts, and notes
     - **ExcelChartWriter (Unit)** — Renders a chart's cached data series as a bounded table
   - **OpenXml (Subsystem)** — The managed backend that reads an `.xlsx` through the Open XML SDK
-    - **ExcelOpenXmlExtractor (Unit)** — The managed backend the engine selects: capabilities,
-      page-rendering non-applicability, and orchestration
+    - **ExcelOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
+      including page-rendering non-applicability
     - **ExcelOpenXmlReader (Unit)** — Turns the spreadsheet package into the backend-neutral model
     - **ExcelOpenXmlImageReader (Unit)** — Yields each embedded image's bytes and worksheet association
     - **ExcelChartReader (Unit)** — Recovers each chart's cached data series
@@ -118,11 +118,11 @@ constituent software items, specifically:
     - **PowerPointComAvailability (Unit)** — The cheap, side-effect-free rendering-availability probe
     - **PowerPointAutomation (Unit)** — The real COM automation adapter, proven by release-time self-tests
   - **Markdown (Subsystem)** — The projection of the deck model onto markdown
-    - **PowerPointContentEmitter (Unit)** — The model-to-sink emission path: per-slide title, text, and
-      speaker notes, and the honest gaps
+    - **PowerPointContentEmitter (Unit)** — The model-to-sink emission path: per-slide title,
+      text, speaker notes, inventory counts, and notes
   - **OpenXml (Subsystem)** — The guaranteed managed backend that reads a `.pptx` through the Open XML SDK
-    - **PowerPointOpenXmlExtractor (Unit)** — The managed backend the engine selects: capabilities,
-      the not-provided rendering statement, and orchestration
+    - **PowerPointOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
+      including the not-provided rendering fact
     - **PowerPointOpenXmlReader (Unit)** — Turns the presentation package into the backend-neutral model
     - **PowerPointOpenXmlImageReader (Unit)** — Yields each embedded image's bytes and slide association
 - **DocDown.Visio (System)** — Page-name, shape-text, and directed-connector-topology extraction, plus
@@ -136,17 +136,22 @@ constituent software items, specifically:
     - **VisioComAvailability (Unit)** — The cheap, side-effect-free rendering-availability probe
     - **VisioAutomation (Unit)** — The real COM automation adapter, proven by release-time self-tests
   - **Markdown (Subsystem)** — The projection of the drawing model onto markdown
-    - **VisioContentEmitter (Unit)** — The model-to-sink emission path: per-page name, shape text, the
-      directed topology, and the honest gaps
+    - **VisioContentEmitter (Unit)** — The model-to-sink emission path: per-page name, shape
+      text, directed topology, inventory counts, and notes
     - **VisioShapeLabeler (Unit)** — Decides how each topology endpoint is named from what the drawing
       says about it
   - **OpenXml (Subsystem)** — The guaranteed managed backend that reads a `.vsdx`/`.vsdm` through
     `System.IO.Packaging`
-    - **VisioOpenXmlExtractor (Unit)** — The managed backend the engine selects: capabilities,
-      the not-provided rendering statement, and orchestration
+    - **VisioOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
+      including the not-provided rendering fact
     - **VisioPackageReader (Unit)** — Turns the Visio package into the backend-neutral model, resolving
       page names, shape text, and the directed topology
     - **VisioImageReader (Unit)** — Yields each embedded image's bytes and page association
+
+Across these systems, an extraction either writes the invariant layout (`Produced`) or it does not
+(`Unreadable`). Verification therefore checks two reporting surfaces inside produced output: the
+content inventory, including deliberate zeros for looked-for content, and short notes about steps
+DocDown attempted but could not complete.
 
 The following OTS items are also covered:
 

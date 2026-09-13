@@ -12,7 +12,7 @@ namespace DemaConsulting.DocDown.TestSupport;
 /// </remarks>
 public enum StubAvailabilityMode
 {
-    /// <summary>The extractor is available with its effective capabilities.</summary>
+    /// <summary>The extractor is available.</summary>
     Available,
 
     /// <summary>The extractor reports itself unavailable with a reason.</summary>
@@ -28,13 +28,12 @@ public enum StubAvailabilityMode
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Identity, formats, declared and effective capabilities, priority, and availability are
-///         all set through init-only properties, and the extraction body is a scripted delegate so
-///         a test can make the stub write text, add images (including identical bytes to exercise
-///         deduplication), add pages and parts, report document info, diagnostics, environment
-///         facts, found counts and gaps, return any <see cref="ExtractionOutcome"/>, stay silent
-///         about an absence so Core must synthesize the gap, or throw. The static factories cover
-///         the common shapes; the <see cref="ExtractBehavior"/> hook covers the rest.
+///         Identity, formats, priority, page-rendering support, and availability are all set through
+///         init-only properties, and the extraction body is a scripted delegate so a test can make
+///         the stub write text, add images (including identical bytes to exercise deduplication), add
+///         pages and parts, report document info, notes, and environment facts, return an
+///         <see cref="ExtractionOutcome"/>, or throw. The static factories cover the common shapes;
+///         the <see cref="ExtractBehavior"/> hook covers the rest.
 ///     </para>
 ///     <para>
 ///         The <see cref="SelfTestCases"/> collection is mutable so a test can attach cases and
@@ -57,29 +56,26 @@ public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
     /// <remarks>Defaults to plain text, the one format Core can exercise end to end without a real backend.</remarks>
     public IReadOnlyCollection<DocumentFormat> SupportedFormats { get; init; } = [DocumentFormat.Text];
 
-    /// <summary>Gets the content aspects the extractor declares it can produce.</summary>
-    /// <remarks>Declared capabilities; the environment-effective set is <see cref="EffectiveCapabilities"/>.</remarks>
-    public ExtractorCapabilities Capabilities { get; init; } = ExtractorCapabilities.Text;
-
     /// <summary>
-    ///     Gets the capabilities actually usable in this environment, or <see langword="null"/> to
-    ///     mirror the declared <see cref="Capabilities"/>.
+    ///     Gets a value indicating whether this stub can render document pages to images when
+    ///     available.
     /// </summary>
     /// <remarks>
-    ///     Set this below <see cref="Capabilities"/> to model a backend that advertises more than it
-    ///     can deliver here, which is exactly the degradation the library must report honestly.
+    ///     Set to <see langword="true"/> to model a page-rendering backend, which selection prefers
+    ///     when the caller requested pages. Defaults to <see langword="false"/> (a managed backend
+    ///     that only extracts text). Ignored when the stub is unavailable.
     /// </remarks>
-    public ExtractorCapabilities? EffectiveCapabilities { get; init; }
+    public bool ProvidesRenderedPages { get; init; }
 
-    /// <summary>Gets the extractor's ranking priority; higher wins ties.</summary>
-    /// <remarks>Used to model fidelity ordering between two stubs for the same format.</remarks>
+    /// <summary>Gets the extractor's ranking priority; higher wins when more than one candidate remains.</summary>
+    /// <remarks>Used to model ordering between two stubs for the same format.</remarks>
     public int Priority { get; init; }
 
     /// <summary>Gets a value indicating whether page rendering is applicable to this extractor's format.</summary>
     /// <remarks>
     ///     Defaults to <see langword="true"/> (a paginated format). Set to <see langword="false"/> to
     ///     model a non-paginated format such as a spreadsheet, so a test can prove a page request is
-    ///     honored with silence rather than a false shortfall.
+    ///     honored with silence rather than a note.
     /// </remarks>
     public bool PageRenderingApplicable { get; init; } = true;
 
@@ -88,12 +84,12 @@ public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
     public StubAvailabilityMode AvailabilityMode { get; init; } = StubAvailabilityMode.Available;
 
     /// <summary>Gets the reason reported when <see cref="AvailabilityMode"/> is unavailable.</summary>
-    /// <remarks>Surfaced verbatim in the selection trace and summary, so tests can assert on it.</remarks>
+    /// <remarks>Surfaced verbatim in the environment facts and summary, so tests can assert on it.</remarks>
     public string UnavailableReason { get; init; } = "the stub extractor is unavailable in this environment";
 
     /// <summary>
     ///     Gets the scripted extraction body, or <see langword="null"/> to write a small block of
-    ///     default text and succeed.
+    ///     default text and produce output.
     /// </summary>
     /// <remarks>
     ///     The delegate receives the source and the context and returns the outcome, so it can drive
@@ -115,7 +111,7 @@ public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
             throw new InvalidOperationException("stub availability probe deliberately threw"),
         StubAvailabilityMode.Unavailable =>
             ExtractorAvailability.Unavailable(UnavailableReason),
-        _ => ExtractorAvailability.Available(EffectiveCapabilities ?? Capabilities)
+        _ => ExtractorAvailability.Available(ProvidesRenderedPages)
     };
 
     /// <inheritdoc/>
@@ -133,17 +129,17 @@ public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
     public IEnumerable<SelfTestCase> GetSelfTestCases() => SelfTestCases;
 
     /// <summary>
-    ///     Creates an available stub for the given formats and capabilities that writes default text.
+    ///     Creates an available stub for the given formats that writes default text.
     /// </summary>
     /// <param name="id">The extractor identifier. Must not be null or empty.</param>
     /// <param name="formats">The supported formats. Must not be null.</param>
-    /// <param name="capabilities">The declared and effective capabilities.</param>
+    /// <param name="providesRenderedPages">Whether the stub can render pages here. Defaults to <see langword="false"/>.</param>
     /// <returns>A configured available <see cref="StubExtractor"/>.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="id"/> is null or empty.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="formats"/> is <see langword="null"/>.</exception>
-    /// <remarks>The default extraction body writes a small text document and reports success.</remarks>
+    /// <remarks>The default extraction body writes a small text document and produces output.</remarks>
     public static StubExtractor Available(
-        string id, IReadOnlyCollection<DocumentFormat> formats, ExtractorCapabilities capabilities)
+        string id, IReadOnlyCollection<DocumentFormat> formats, bool providesRenderedPages = false)
     {
         ArgumentException.ThrowIfNullOrEmpty(id);
         ArgumentNullException.ThrowIfNull(formats);
@@ -153,7 +149,7 @@ public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
             Id = id,
             DisplayName = id + " (stub)",
             SupportedFormats = formats,
-            Capabilities = capabilities,
+            ProvidesRenderedPages = providesRenderedPages,
             AvailabilityMode = StubAvailabilityMode.Available
         };
     }
@@ -167,7 +163,7 @@ public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
     /// <returns>A configured unavailable <see cref="StubExtractor"/>.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="id"/> or <paramref name="reason"/> is null or empty.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="formats"/> is <see langword="null"/>.</exception>
-    /// <remarks>The reason is surfaced verbatim in the selection trace and summary.</remarks>
+    /// <remarks>The reason is surfaced verbatim in the environment facts and summary.</remarks>
     public static StubExtractor Unavailable(
         string id, IReadOnlyCollection<DocumentFormat> formats, string reason)
     {
@@ -180,7 +176,7 @@ public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
             Id = id,
             DisplayName = id + " (stub)",
             SupportedFormats = formats,
-            Capabilities = ExtractorCapabilities.Text | ExtractorCapabilities.RenderedPages,
+            ProvidesRenderedPages = true,
             AvailabilityMode = StubAvailabilityMode.Unavailable,
             UnavailableReason = reason
         };
@@ -205,50 +201,20 @@ public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
             Id = id,
             DisplayName = id + " (stub)",
             SupportedFormats = formats,
-            Capabilities = ExtractorCapabilities.Text,
             AvailabilityMode = StubAvailabilityMode.ThrowingProbe
         };
     }
 
     /// <summary>
-    ///     Creates an available stub that writes text but stays silent about a shortfall it claims
-    ///     to have found, so Core must synthesize the explaining gap.
-    /// </summary>
-    /// <param name="id">The extractor identifier. Must not be null or empty.</param>
-    /// <param name="formats">The supported formats. Must not be null.</param>
-    /// <returns>A configured silent <see cref="StubExtractor"/>.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="id"/> is null or empty.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="formats"/> is <see langword="null"/>.</exception>
-    /// <remarks>
-    ///     The body reports two embedded images were found but writes none and reports no gap,
-    ///     leaving an unexplained absence Core's reconciliation must catch with a <c>DD0701</c>.
-    /// </remarks>
-    public static StubExtractor Silent(string id, IReadOnlyCollection<DocumentFormat> formats)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(id);
-        ArgumentNullException.ThrowIfNull(formats);
-
-        return new StubExtractor
-        {
-            Id = id,
-            DisplayName = id + " (stub)",
-            SupportedFormats = formats,
-            Capabilities = ExtractorCapabilities.Text | ExtractorCapabilities.EmbeddedImages,
-            AvailabilityMode = StubAvailabilityMode.Available,
-            ExtractBehavior = SilentBehaviorAsync
-        };
-    }
-
-    /// <summary>
     ///     Creates an available stub whose extraction body throws, which Core must convert into a
-    ///     structured failure.
+    ///     prose failure.
     /// </summary>
     /// <param name="id">The extractor identifier. Must not be null or empty.</param>
     /// <param name="formats">The supported formats. Must not be null.</param>
     /// <returns>A configured failing <see cref="StubExtractor"/>.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="id"/> is null or empty.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="formats"/> is <see langword="null"/>.</exception>
-    /// <remarks>Proves a backend exception becomes an <c>ExtractorFailed</c> failure with the layout still written.</remarks>
+    /// <remarks>Proves a backend exception becomes an unreadable result with the layout still written.</remarks>
     public static StubExtractor Failing(string id, IReadOnlyCollection<DocumentFormat> formats)
     {
         ArgumentException.ThrowIfNullOrEmpty(id);
@@ -259,42 +225,23 @@ public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
             Id = id,
             DisplayName = id + " (stub)",
             SupportedFormats = formats,
-            Capabilities = ExtractorCapabilities.Text,
             AvailabilityMode = StubAvailabilityMode.Available,
             ExtractBehavior = FailingBehaviorAsync
         };
     }
 
     /// <summary>
-    ///     Writes a small default text document and reports success.
+    ///     Writes a small default text document and produces output.
     /// </summary>
     /// <param name="context">The extraction context to write through.</param>
-    /// <returns>An outcome of <see cref="ExtractionOutcome.Succeeded"/>.</returns>
+    /// <returns>An outcome of <see cref="ExtractionOutcome.Produced"/>.</returns>
     /// <remarks>The default body when no scripted behavior is configured.</remarks>
     private static async ValueTask<ExtractionOutcome> WriteDefaultTextAsync(IExtractionContext context)
     {
         await context.Sink.WriteContentAsync(
             "# Stub Document\n\nThis content was produced by the stub extractor.\n",
             context.CancellationToken).ConfigureAwait(false);
-        return ExtractionOutcome.Succeeded;
-    }
-
-    /// <summary>
-    ///     Writes text and claims images were found without writing or explaining them.
-    /// </summary>
-    /// <param name="source">The source document (unused).</param>
-    /// <param name="context">The extraction context to write through.</param>
-    /// <returns>An outcome of <see cref="ExtractionOutcome.Succeeded"/>.</returns>
-    /// <remarks>Leaves an unexplained image absence for Core's reconciliation to catch.</remarks>
-    private static async ValueTask<ExtractionOutcome> SilentBehaviorAsync(DocumentSource source, IExtractionContext context)
-    {
-        await context.Sink.WriteContentAsync(
-            "# Stub Document\n\nText is present but the images are silently missing.\n",
-            context.CancellationToken).ConfigureAwait(false);
-
-        // Claim two images were found but write none and never report the gap
-        context.Sink.ReportFound(GapKind.Images, 2);
-        return ExtractionOutcome.Succeeded;
+        return ExtractionOutcome.Produced;
     }
 
     /// <summary>
@@ -304,7 +251,7 @@ public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
     /// <param name="context">The extraction context (unused).</param>
     /// <returns>This method never returns normally.</returns>
     /// <exception cref="InvalidOperationException">Always thrown to simulate a backend failure.</exception>
-    /// <remarks>The engine catches this and records an <c>ExtractorFailed</c> failure.</remarks>
+    /// <remarks>The engine catches this and records an unreadable result with a prose failure.</remarks>
     private static ValueTask<ExtractionOutcome> FailingBehaviorAsync(DocumentSource source, IExtractionContext context) =>
         throw new InvalidOperationException("the stub extractor deliberately failed");
 }

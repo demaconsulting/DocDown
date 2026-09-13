@@ -46,7 +46,7 @@ builds is safe for concurrent use.
 registration, so the error names the offending call. `Build` propagates the `ArgumentException` that
 `ExtractorRegistry`'s constructor raises for a duplicate identifier, a factory that returns null, or an
 extractor with a null or empty identifier — identifier uniqueness is a hard build-time invariant
-because the identifier is both the caller-override key and the manifest key. No exception is swallowed;
+because the identifier is both the engine lookup key and the manifest key. No exception is swallowed;
 configuration faults surface deterministically at `Build`.
 
 #### Dependencies

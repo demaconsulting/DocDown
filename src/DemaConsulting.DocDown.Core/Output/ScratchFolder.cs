@@ -32,9 +32,9 @@ namespace DocDown.Core;
 ///         <see cref="IsReservedDeviceName"/>, <see cref="ValidateTotalPathLength"/>) are pure
 ///         string operations that perform no I/O. Refusals are surfaced as
 ///         <see cref="ScratchFolderException"/> so the engine can convert them into a structured
-///         <see cref="ExtractionFailureKind.ScratchFolderRefused"/> failure rather than leaking an
-///         opaque <see cref="PathTooLongException"/> or <see cref="IOException"/>. An instance is
-///         immutable after <see cref="Prepare(string,ScratchFolderMode)"/> returns and its members are safe for concurrent
+///         failure rather than leaking an opaque <see cref="PathTooLongException"/> or
+///         <see cref="IOException"/>. An instance is immutable after
+///         <see cref="Prepare(string,ScratchFolderMode)"/> returns and its members are safe for concurrent
 ///         reads; the folder-mutating work happens only during preparation.
 ///     </para>
 /// </remarks>
@@ -88,7 +88,7 @@ public sealed class ScratchFolder
     ///     Pinned deliberately: a folder written by a future, unrecognized schema is not provably
     ///     ours to delete, so it is refused rather than cleaned.
     /// </remarks>
-    private const string SupportedManifestSchema = "1.2";
+    private const string SupportedManifestSchema = "2.0";
 
     /// <summary>
     ///     The set of reserved device-name stems, compared case-insensitively.
@@ -135,8 +135,7 @@ public sealed class ScratchFolder
     /// <returns>A prepared <see cref="ScratchFolder"/> whose <see cref="AbsolutePath"/> exists on disk.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="requestedPath"/> is null or empty.</exception>
     /// <exception cref="ScratchFolderException">
-    ///     Thrown when the folder cannot be prepared safely: a non-empty folder under
-    ///     <see cref="ScratchFolderMode.RequireEmpty"/>, a folder under
+    ///     Thrown when the folder cannot be prepared safely: a folder under
     ///     <see cref="ScratchFolderMode.CleanIfDocDownFolder"/> that is not provably this run's
     ///     own prior output, an over-length path, or an underlying I/O error while creating or
     ///     cleaning the folder.
@@ -452,7 +451,7 @@ public sealed class ScratchFolder
     /// <remarks>
     ///     Enforced as a distinct check because per-component truncation bounds only individual names,
     ///     not the accumulated path. Refusing here yields a classifiable
-    ///     <see cref="ExtractionFailureKind.ScratchFolderRefused"/> instead of an opaque
+    ///     <see cref="ScratchFolderException"/> instead of an opaque
     ///     <see cref="PathTooLongException"/> surfacing later. Pure and thread-safe.
     /// </remarks>
     public static void ValidateTotalPathLength(string absolutePath)
@@ -512,39 +511,17 @@ public sealed class ScratchFolder
     /// <exception cref="ScratchFolderException">Thrown when the policy refuses the existing folder.</exception>
     /// <remarks>
     ///     Split from <see cref="Prepare(string,ScratchFolderMode)"/> so the per-mode policy is
-    ///     expressed in one focused switch. Performs filesystem inspection and, for the cleaning
-    ///     modes, deletion of existing contents; <see cref="ScratchFolderMode.CreateUnique"/>
-    ///     instead searches for an unused name. Only
-    ///     <see cref="ScratchFolderMode.CleanIfDocDownFolder"/> is given
+    ///     expressed in one focused switch. Performs filesystem inspection and deletion of existing
+    ///     contents. Only <see cref="ScratchFolderMode.CleanIfDocDownFolder"/> is given
     ///     <paramref name="reader"/>: it is the only mode that deletes files it has separately
     ///     proved it may delete, so it is the only one with a check to re-confirm.
     /// </remarks>
     private static string ApplyMode(string absolute, ScratchFolderMode mode, IFileStateReader reader) => mode switch
     {
-        ScratchFolderMode.RequireEmpty => PrepareRequireEmpty(absolute),
         ScratchFolderMode.CleanIfDocDownFolder => PrepareCleanIfDocDown(absolute, reader),
         ScratchFolderMode.Overwrite => PrepareOverwrite(absolute),
-        ScratchFolderMode.CreateUnique => PrepareCreateUnique(absolute),
         _ => throw new ScratchFolderException("unknownScratchFolderMode", $"The scratch-folder mode '{mode}' is not supported.")
     };
-
-    /// <summary>
-    ///     Resolves the folder for <see cref="ScratchFolderMode.RequireEmpty"/>, refusing a populated folder.
-    /// </summary>
-    /// <param name="absolute">The absolute folder path.</param>
-    /// <returns>The folder path to use.</returns>
-    /// <exception cref="ScratchFolderException">Thrown when the folder exists and is not empty.</exception>
-    /// <remarks>Refuses rather than deletes so this strictest mode never destroys pre-existing content.</remarks>
-    private static string PrepareRequireEmpty(string absolute)
-    {
-        // Only an absent or empty folder is acceptable under the strictest policy
-        if (Directory.Exists(absolute) && !IsEmpty(absolute))
-        {
-            throw new ScratchFolderException("scratchFolderNotEmpty", $"The scratch folder is not empty and mode is RequireEmpty: '{absolute}'.");
-        }
-
-        return absolute;
-    }
 
     /// <summary>
     ///     Resolves the folder for <see cref="ScratchFolderMode.CleanIfDocDownFolder"/> by deleting
@@ -808,40 +785,6 @@ public sealed class ScratchFolder
     }
 
     /// <summary>
-    ///     Resolves the folder for <see cref="ScratchFolderMode.CreateUnique"/> by finding an unused name.
-    /// </summary>
-    /// <param name="absolute">The absolute base folder path.</param>
-    /// <returns>An absolute folder path that does not currently exist.</returns>
-    /// <exception cref="ScratchFolderException">Thrown when a unique name pushes the path over the length limit.</exception>
-    /// <remarks>
-    ///     Appends <c>-2</c>, <c>-3</c>, and so on until an unused name is found, leaving every
-    ///     existing folder untouched. Each candidate is length-checked so the suffix cannot silently
-    ///     exceed the ceiling.
-    /// </remarks>
-    private static string PrepareCreateUnique(string absolute)
-    {
-        // The unsuffixed name wins when it is free
-        if (!Directory.Exists(absolute))
-        {
-            return absolute;
-        }
-
-        // Otherwise probe increasing numeric suffixes until an unused name appears
-        var suffix = 2;
-        while (true)
-        {
-            var candidate = $"{absolute}-{suffix.ToString(CultureInfo.InvariantCulture)}";
-            ValidateTotalPathLength(candidate);
-            if (!Directory.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            suffix++;
-        }
-    }
-
-    /// <summary>
     ///     Determines whether a folder contains no files or subfolders.
     /// </summary>
     /// <param name="absolute">The folder to inspect.</param>
@@ -917,7 +860,7 @@ public sealed class ScratchFolder
                 && string.Equals(manifest.Tool.Name, DocDownToolName, StringComparison.Ordinal)
                 && manifest.Tool.Package is not null
                 && manifest.Tool.Package.StartsWith(DocDownPackagePrefix, StringComparison.Ordinal)
-                && manifest.Artifacts is not null;
+                && manifest.Source is not null;
 
             return isDocDown ? manifest : null;
         }

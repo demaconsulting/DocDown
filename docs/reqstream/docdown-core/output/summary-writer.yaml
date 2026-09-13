@@ -1,9 +1,10 @@
 ---
 # Software Unit Requirements for SummaryWriter
 #
-# SummaryWriter produces the human-readable summary.txt: every mandatory section, the
-# absolute scratch path, the selected backend, the environment, enumerated gaps, and a
-# verbatim failure explanation, deterministically.
+# SUPERSEDED REQUIREMENT: DocDownCore-Output-SummaryWriter-GapsEnumerated
+# required numbered gap rendering in the summary. It is superseded (not satisfied) by
+# DocDownCore-Output-SummaryWriter-NotesListed because the summary now lists only plain extraction
+# notes for attempted-but-incomplete work.
 
 sections:
   - title: DocDownCore Requirements
@@ -13,98 +14,107 @@ sections:
           - title: SummaryWriter Requirements
             requirements:
               - id: DocDownCore-Output-SummaryWriter-MandatorySections
-                title: >-
-                  SummaryWriter shall write every mandatory section, stating explicitly when a section has
-                  nothing to report.
+                title: SummaryWriter shall write every mandatory section of the reduced summary format.
                 justification: |
-                  Operators rely on finding the same sections in every summary. Always writing each
-                  section, and saying so when it is empty, prevents an omission from being mistaken for
-                  a missing feature or a truncated file.
+                  Operators rely on finding the same sections in the same order for every
+                  extraction summary.
                 tests:
                   - SummaryWriter_WriteAsync_CleanRun_ContainsEveryMandatorySection
 
               - id: DocDownCore-Output-SummaryWriter-AbsoluteScratchPath
                 title: SummaryWriter shall state the absolute scratch-folder path in the summary header.
                 justification: |
-                  An operator reading the summary must be able to locate the artifacts on disk. Stating
-                  the absolute scratch path removes ambiguity about where the extraction wrote its
-                  output.
+                  A reader needs the exact scratch location before inspecting any other output.
                 tests:
                   - SummaryWriter_WriteAsync_HeaderBlock_ContainsAbsoluteScratchPath
 
               - id: DocDownCore-Output-SummaryWriter-BackendNamed
                 title: SummaryWriter shall name the selected backend for a successful run.
                 justification: |
-                  Attribution matters when comparing or distrusting results. Naming the backend that
-                  produced the extraction lets an operator reproduce it and correlate output quality
-                  with a specific backend.
+                  Backend attribution lets an operator relate output to the extractor that
+                  produced it.
                 tests:
                   - SummaryWriter_WriteAsync_SuccessfulRun_NamesSelectedBackend
 
               - id: DocDownCore-Output-SummaryWriter-EnvironmentReported
-                title: SummaryWriter shall report the runtime environment and recorded environment facts.
+                title: SummaryWriter shall report the runtime environment and contributed environment facts.
                 justification: |
-                  Extraction fidelity depends on the operating system and runtime. Reporting the
-                  environment and its facts lets an auditor reproduce the conditions and explains
-                  environment-dependent gaps.
+                  The extraction environment helps explain why one run differs from another.
                 tests:
                   - SummaryWriter_WriteAsync_WithEnvironmentFacts_ReportsRuntimeAndFacts
 
-              - id: DocDownCore-Output-SummaryWriter-GapsEnumerated
-                title: >-
-                  SummaryWriter shall enumerate every gap, including gaps Core synthesized for unexplained
-                  absences.
+              - id: DocDownCore-Output-SummaryWriter-NotesListed
+                title: SummaryWriter shall list extraction notes under the Could not read section.
                 justification: |
-                  The summary is where a human learns what is missing. Enumerating every gap, including
-                  synthesized ones, ensures no absence is hidden from the operator reviewing the run.
+                  Attempted-but-incomplete extraction work should be visible to a human reader in a
+                  predictable location.
                 tests:
-                  - SummaryWriter_WriteAsync_UnexplainedAbsence_EnumeratesSynthesizedGap
+                  - SummaryWriter_WriteAsync_ProducedRun_ListsNotesUnderCouldNotRead
 
               - id: DocDownCore-Output-SummaryWriter-FailureExplained
-                title: SummaryWriter shall reproduce the failure explanation verbatim for a failed run.
+                title: SummaryWriter shall reproduce the unreadable failure explanation verbatim.
                 justification: |
-                  A failure explanation is crafted for direct display to an operator. Reproducing it
-                  verbatim preserves the diagnostic detail and remedy without paraphrasing away
-                  actionable information.
+                  Failure prose is composed for direct display and should not be paraphrased by the
+                  summary renderer.
                 tests:
-                  - SummaryWriter_WriteAsync_FailedRun_ReproducesFailureExplanationVerbatim
+                  - SummaryWriter_WriteAsync_UnreadableRun_ReproducesFailureExplanationVerbatim
 
               - id: DocDownCore-Output-SummaryWriter-DeterministicText
                 title: SummaryWriter shall produce byte-identical summary text for identical content.
                 justification: |
-                  Reproducible runs must diff cleanly. Producing byte-identical summary text for the
-                  same content, with fixed line endings, lets consumers attribute any difference to a
-                  real change rather than formatting noise.
+                  Stable summary bytes are required for reproducible output and clean diffs.
                 tests:
                   - SummaryWriter_WriteAsync_SameContentTwice_ProducesByteIdenticalSummary
 
               - id: DocDownCore-Output-SummaryWriter-EnvironmentAttributed
                 title: >-
-                  SummaryWriter shall group the reported environment facts under the component that
-                  contributed each fact.
+                  SummaryWriter shall group contributed environment facts by source and collapse
+                  unused available candidates into a counted line.
                 justification: |
-                  When several backends contribute facts, an unattributed fact such as a capability a
-                  component does not offer can read as a whole-run failure. Grouping each fact under its
-                  contributing component (for example DocDown.Pdf and DocDown.Pdf.Rendering) keeps it
-                  legible as that component's own honest statement, and scales to the multi-backend case.
+                  Grouping keeps each component's facts readable, while collapsing unused available
+                  candidates prevents the summary from spending most of its space on backends that
+                  did not run.
                 tests:
-                  - SummaryWriter_Golden_RenderedPagesNoImages_MatchesCommittedGolden
+                  - SummaryWriter_WriteAsync_UnusedAvailableCandidates_CollapsesThemIntoOneCountedLine
+
+              - id: DocDownCore-Output-SummaryWriter-MetadataInlining
+                title: SummaryWriter shall inline authored metadata using the documented author fallback rules.
+                justification: |
+                  A reader needs a compact orientation view of the document's authored metadata
+                  without opening metadata.json first.
+                tests:
+                  - SummaryWriter_WriteAsync_PdfShapedMetadata_InlinesHumanAuthorNotApplication
+                  - SummaryWriter_WriteAsync_OpcShapedMetadata_FallsBackToCreatorAsAuthor
+
+              - id: DocDownCore-Output-SummaryWriter-GistAndInventory
+                title: >-
+                  SummaryWriter shall open with a justified gist and outline counted content
+                  features, including looked-for zero counts.
+                justification: |
+                  Readers need a compact description of both what the document is and what kinds of
+                  content the extracted markdown contains.
+                tests:
+                  - SummaryWriter_WriteAsync_WithContentFeatures_OpensWithGistAndOutlinesContent
+                  - SummaryWriter_WriteAsync_LookedForZeroFeature_OutlinesTheZero
+                  - SummaryWriter_WriteAsync_UnknownFormat_OmitsGistRatherThanGuessing
+
+              - id: DocDownCore-Output-SummaryWriter-ImageSummary
+                title: >-
+                  SummaryWriter shall summarize extracted images in aggregate and point to
+                  manifest.json for detail.
+                justification: |
+                  Per-image detail belongs in the manifest, while the summary should communicate the
+                  overall shape of the extracted image set.
+                tests:
+                  - SummaryWriter_WriteAsync_WithImages_SummarizesInAggregateAndExplainsTemplateImages
 
               - id: DocDownCore-Output-SummaryWriter-GoldenOutput
-                title: >-
-                  SummaryWriter shall render, for representative reconciled ledgers, summary text that
-                  matches committed human-readable golden files.
+                title: SummaryWriter shall render representative summary output matching the committed golden files.
                 justification: |
-                  Prior review rounds inspected code, requirements, design, verification docs and tests
-                  but never the generated summary a reader consumes, so two clarity defects survived. A
-                  committed golden per representative scenario makes the rendered output itself a
-                  reviewable artifact and locks in its wording. The golden files are driven by constructed
-                  ledgers at the SummaryWriter level, so they evidence the renderer's output for a given
-                  reconciled ledger, not that a real end-to-end PDF or page-rendering extraction produces
-                  that ledger; the machine-specific scratch-folder and source-document lines are
-                  normalized before comparison.
+                  Golden files keep the human-readable wording itself under review, not only the
+                  implementation that produced it.
                 tests:
                   - SummaryWriter_Golden_RenderedPagesNoImages_MatchesCommittedGolden
                   - SummaryWriter_Golden_EmbeddedImages_MatchesCommittedGolden
-                  - SummaryWriter_Golden_DegradedWithGap_MatchesCommittedGolden
-                  - SummaryWriter_Golden_RenderingNotRegisteredDd0301_MatchesCommittedGolden
+                  - SummaryWriter_Golden_RenderingNotAvailableNote_MatchesCommittedGolden
+                  - SummaryWriter_Golden_UnreadableDocxNoBackend_MatchesCommittedGolden

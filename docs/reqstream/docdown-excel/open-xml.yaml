@@ -15,16 +15,17 @@ sections:
         requirements:
           - id: DocDownExcel-OpenXml-Extraction
             title: >-
-              The subsystem shall orchestrate a managed extraction: declare its capabilities, probe
-              unconditionally, read the workbook, emit the content, and contribute self-tests.
+              The subsystem shall orchestrate a managed extraction: identify the supported workbook
+              surface, report page rendering not applicable, probe unconditionally, read the workbook,
+              emit the content, and contribute self-tests.
             justification: |
               The extractor is the backend the engine selects and invokes, so it owns the whole managed
-              extraction path — capabilities and the non-applicable page-rendering declaration, the
-              unconditional availability probe, the buffer-and-open of the workbook, delegation to the
-              reader and emitter, and the self-test cases that describe its own behavior.
+              extraction path — the supported workbook surface, the page-rendering non-applicability,
+              the unconditional availability probe, the buffer-and-open of the workbook, delegation to
+              the reader and emitter, and the self-test cases that describe its own behavior.
             children:
-              - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-DeclaresCapabilities
-              - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-DeclaresPageRenderingNotApplicable
+              - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-ReportsSupportedSurface
+              - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-ReportsPageRenderingNotApplicable
               - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-ProbesUnconditionally
               - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-OrchestratesExtraction
               - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-ContributesSelfTests
@@ -37,10 +38,10 @@ sections:
               preserving every cell's value and formula verbatim and each sheet's identity and
               addressing.
             justification: |
-              The reader is where an .xlsx becomes the model the rest of the package works on, so it
-              resolves shared strings, keeps only cells that carry a value or a formula, never truncates
-              a value, retains the formula alongside its computed value, and carries each worksheet's
-              name and each cell's address so a fact stays citable.
+              The reader is where an `.xlsx` becomes the model the rest of the package works on, so it
+              resolves shared strings, keeps only cells that carry a value or a formula, never
+              truncates a value, retains the formula alongside its computed value, and carries each
+              worksheet's name and each cell's address so a fact stays citable.
             children:
               - DocDownExcel-OpenXml-ExcelOpenXmlReader-PreservesVerbatimValues
               - DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsNumericValuesVerbatim
@@ -73,7 +74,7 @@ sections:
               last plotted; a consumer that cannot recalculate the workbook can use only the latter, so
               the cache is what the chart reader recovers, keeping the reference alongside purely so a
               reader can still find the source range. A name-driven walk covers every plot type, and a
-              chart part that cannot be parsed is returned as a reason rather than thrown.
+              chart part that cannot be parsed is returned with a reason rather than thrown.
             children:
               - DocDownExcel-OpenXml-ExcelChartReader-ReadsCachedSeries
               - DocDownExcel-OpenXml-ExcelChartReader-PreservesSparseIndices

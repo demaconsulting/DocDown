@@ -24,12 +24,14 @@ namespace DocDown.PowerPoint.Com;
 internal static class PowerPointComAvailability
 {
     /// <summary>
-    ///     Probes availability, returning the declared capabilities when PowerPoint automation can run.
+    ///     Probes availability, returning rendered-page support when PowerPoint automation can run.
     /// </summary>
-    /// <param name="declared">The capabilities the extractor declares.</param>
-    /// <returns>An availability result: available with the declared capabilities, or unavailable with a declarative reason.</returns>
+    /// <returns>
+    ///     An availability result: available with rendered-page support, or unavailable with a
+    ///     declarative reason.
+    /// </returns>
     /// <remarks>Cheap, side-effect free, and never throws. Pure apart from the registry read on Windows.</remarks>
-    public static ExtractorAvailability Probe(ExtractorCapabilities declared)
+    public static ExtractorAvailability Probe()
     {
         if (!OperatingSystem.IsWindows())
         {
@@ -39,7 +41,7 @@ internal static class PowerPointComAvailability
         }
 
         return IsPowerPointRegistered()
-            ? ExtractorAvailability.Available(declared)
+            ? ExtractorAvailability.Available(providesRenderedPages: true)
             : ExtractorAvailability.Unavailable(
                 "Microsoft PowerPoint is not registered on this machine; the PowerPoint COM automation backend "
                 + "is available only where Microsoft PowerPoint is present.");

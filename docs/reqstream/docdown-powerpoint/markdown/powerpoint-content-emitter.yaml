@@ -2,18 +2,34 @@
 # Software Unit Requirements for PowerPointContentEmitter
 #
 # PowerPointContentEmitter is the single emission path: it writes a read deck model's per-slide content
-# — title, body text, and speaker notes — plus its inline images, its content outline, its diagnostics,
-# and the honest counted gaps the model and options imply, through the sink.
+# — title, body text, and speaker notes — plus its inline images, its content outline, and any plain
+# notes the model and options imply, through the sink.
 #
 # SUPERSEDED REQUIREMENT: DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceGap
-# required the whole-deck absence of speaker notes to be reported as a COUNTED GAP with a reason. It was
-# authored as a statement of intent before the repository owner established the governing principle that
-# DocDown reports what was extracted and where and makes no acceptability judgement about the content —
-# a gap must describe what DocDown could not do, never what the document does not contain. A notes-less
-# deck cost the extraction nothing, so the requirement is superseded (not satisfied) by
-# DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceInInventory, which places
-# the same distinction in the content inventory as a counted zero. The PPTX0002 informational diagnostic
-# that reported the same absence is retired for the same reason.
+# required the whole-deck absence of speaker notes to be reported as a counted gap with a reason. It
+# was authored as a statement of intent before the repository owner established the governing
+# principle that DocDown reports what was extracted and where and makes no acceptability judgement
+# about the content — a shortfall report must describe what DocDown could not do, never what the
+# document does not contain. A notes-less deck cost the extraction nothing, so the requirement is
+# superseded (not satisfied) by
+# DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceInInventory, which
+# places the same distinction in the content inventory as a counted zero.
+#
+# SUPERSEDED REQUIREMENT: DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsVectorImageCaveat
+# required an informational note for EMF or WMF images. That requirement is superseded (not
+# satisfied) by DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesVectorImagesWithoutNote,
+# because the image bytes are written as found and the completed extraction records no
+# PowerPoint-specific note.
+#
+# SUPERSEDED REQUIREMENT: DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsChartsNotExtracted
+# required separate reporting for charts this backend does not read. That requirement is superseded
+# (not satisfied) with no replacement, because chart-specific reporting was removed from this system.
+#
+# SUPERSEDED REQUIREMENT: DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsEmptyDeckGap
+# required a deck with no slides to be classified as an extraction shortfall. That requirement is
+# superseded (not satisfied) by
+# DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsEmptyDeckInInventory, because an empty
+# deck is now described by empty content and zero-count inventory entries.
 
 sections:
   - title: DocDownPowerPoint Requirements
@@ -45,96 +61,89 @@ sections:
 
               - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesNotes
                 title: >-
-                  PowerPointContentEmitter shall write each slide's speaker notes under its slide, marked
-                  as speaker notes.
+                  PowerPointContentEmitter shall write each slide's speaker notes under its slide,
+                  marked as speaker notes.
                 justification: |
-                  Speaker notes are the half of a deck no render can supply, so the emitter writes them
-                  into the content under their slide, marked as notes so a reader can tell the narration
-                  apart from the slide's own text — the information a picture of the slide would have lost
-                  entirely.
+                  Speaker notes are the half of a deck no render can supply, so the emitter writes
+                  them into the content under their slide, marked as notes so a reader can tell the
+                  narration apart from the slide's own text.
                 tests:
                   - PowerPointContentEmitter_Emit_WritesTitleBodyAndNotes
 
               - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceInInventory
                 title: >-
                   PowerPointContentEmitter shall report the count of slides carrying speaker notes in
-                  the content inventory, including a count of zero, and shall report neither a gap nor
-                  a diagnostic for a deck that carries none.
+                  the content inventory, including a count of zero, and shall record no note for a
+                  deck that carries none.
                 justification: |
                   Speaker notes are half the deck's content and no render can supply them, so a reader
                   must be able to tell "this deck carries no speaker notes" from "speaker notes are not
                   something DocDown counts." Reporting the count whether or not any notes exist keeps
-                  that distinction available to a consuming agent from the inventory alone. A deck with
-                  no notes lost nothing in extraction — every notes slide was read — so reporting the
-                  absence as a gap or a diagnostic would state a verdict about the deck's content
-                  rather than a fact about the extraction.
+                  that distinction available to a consuming agent from the inventory alone.
                 tests:
-                  - PowerPointContentEmitter_Emit_NoNotes_ReportsZeroNotesFeatureNotGapOrDiagnostic
+                  - PowerPointContentEmitter_Emit_NoNotes_ReportsZeroNotesFeatureWithoutNote
+                  - PowerPointContentEmitter_Emit_NotesPresent_ReportsSpeakerNotesFeature
 
               - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-LinksImages
                 title: >-
-                  PowerPointContentEmitter shall write a deck's embedded images through the sink and link
-                  each from the slide that shows it, only when a path was returned.
+                  PowerPointContentEmitter shall write a deck's embedded images through the sink and
+                  link each from the slide that shows it only when a path was returned.
                 justification: |
-                  A slide's pictures are linked inline at their point of occurrence, mirroring the Word
-                  convention, and a link is emitted only when the sink returned a path so a suppressed,
-                  size-skipped, or deduplicated-away image never leaves a link pointing at nothing.
+                  A slide's pictures are linked inline at their point of occurrence, mirroring the
+                  Word convention, and a link is emitted only when the sink returned a path so a
+                  suppressed or otherwise unwritten image never leaves a link pointing at nothing.
                 tests:
+                  - PowerPointContentEmitter_Emit_WithRasterImages_WritesThroughSink
                   - PowerPointContentEmitter_Emit_SlideImage_LinksInlineFromContent
+                  - PowerPointContentEmitter_Emit_ImagesSuppressed_NoDanglingLink
+                  - PowerPointContentEmitter_Emit_ImagesDisabled_WritesNone
 
-              - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsVectorImageCaveat
+              - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesVectorImagesWithoutNote
                 title: >-
-                  PowerPointContentEmitter shall write an EMF or WMF vector image unchanged and record
-                  the readability caveat as an informational diagnostic.
+                  PowerPointContentEmitter shall write an EMF or WMF embedded image unchanged and
+                  shall record no PowerPoint-specific note for that completed image write.
                 justification: |
-                  A vector metafile's bytes are a complete image file, written and counted as extracted;
-                  because no better environment would yield more, the caveat that many viewers cannot
-                  render a metafile is informational and must not degrade the run.
+                  A vector metafile's bytes are already the extracted image file, so writing them
+                  through loses nothing the deck carried. Because the extraction completed exactly what
+                  the deck supplied, the emitter records no additional PowerPoint-specific note.
                 tests:
-                  - PowerPointContentEmitter_Emit_VectorImage_WritesWithInfoCaveat
+                  - PowerPointContentEmitter_Emit_VectorImage_WritesWithoutNote
 
-              - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsChartsNotExtracted
+              - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsEmptyDeckInInventory
                 title: >-
-                  PowerPointContentEmitter shall report a counted gap naming the charts a deck embeds
-                  whose plotted data this backend does not read, and report nothing for a chart-free
-                  deck.
+                  PowerPointContentEmitter shall write empty content and zero-count inventory entries
+                  when the deck has no slides.
                 justification: |
-                  A chart on a slide stores its plotted values in a part carrying neither text nor an
-                  image blip, so without a counted gap it would leave no trace while the summary claimed a
-                  complete extraction. The gap names how many charts were found and points at the workbook
-                  route, and a deck that embeds no charts stays a clean success.
+                  A deck with no slides is still a document state the caller needs to see clearly.
+                  Writing empty content and reporting zero slides and zero speaker-note sets makes that
+                  state explicit without turning ordinary document content into a statement about the
+                  extraction.
                 tests:
-                  - PowerPointContentEmitter_Emit_DeckWithCharts_ReportsCountedGap
-
-              - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsEmptyDeckGap
-                title: PowerPointContentEmitter shall degrade with a counted gap when the deck has no slides.
-                justification: |
-                  An empty content document is indistinguishable from a broken extractor. Stating plainly
-                  that the deck carried no slides turns a mystery into a fact the caller can act on.
-                tests:
-                  - PowerPointContentEmitter_Emit_EmptyDeck_ReportsGap
+                  - PowerPointContentEmitter_Emit_EmptyDeck_WritesEmptyContentAndZeroInventory
 
               - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsContentFeatures
                 title: >-
                   PowerPointContentEmitter shall report a content outline counting the model's slides,
                   slide titles, sets of speaker notes, and inline images.
                 justification: |
-                  A character count does not tell a paste-in reader that the deck's speaker notes — the
-                  half no rendered slide image can supply — are present in the text, nor how many slides
-                  carry a title worth navigating by. The counts come from the model the reader built.
-                  The speaker-notes count is declared as one the backend looked for, so it is stated
-                  even at zero; the remaining counts are omitted when zero to keep the outline compact.
+                  A character count does not tell a paste-in reader that the deck's speaker notes —
+                  the half no rendered slide image can supply — are present in the text, nor how many
+                  slides carry a title worth navigating by. The counts come from the model the reader
+                  built and from the image paths the sink actually allocated.
                 tests:
                   - PowerPointContentEmitter_Emit_Deck_ReportsContentFeaturesIncludingSpeakerNotes
+                  - PowerPointContentEmitter_Emit_NoImages_ReportsZeroInlineImagesWithoutNote
 
               - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-SplitsLargeDecks
                 title: >-
                   PowerPointContentEmitter shall write the deck as one content flow or as one part per
                   slide, honoring the content-split mode.
                 justification: |
-                  A single flow keeps a small deck in one readable file, while a large deck reads better
-                  as one part per slide under a parts folder; honoring the caller's split mode lets the
-                  same emission path serve both without a second implementation, and the inline image
-                  links resolve on disk under either mode.
+                  A single flow keeps a small deck in one readable file, while a large deck reads
+                  better as one part per slide under a parts folder; honoring the caller's split mode
+                  lets the same emission path serve both without a second implementation, and the
+                  inline image links resolve on disk under either mode.
                 tests:
                   - PowerPointContentEmitter_Emit_PerPart_WritesSlideParts
+                  - PowerPointContentEmitter_Emit_PerPartImageLinks_ResolveOnDisk
+                  - PowerPointContentEmitter_Emit_AutoImageLinks_ResolveOnDisk

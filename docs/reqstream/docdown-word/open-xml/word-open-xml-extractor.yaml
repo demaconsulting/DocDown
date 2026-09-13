@@ -1,9 +1,39 @@
 ---
 # Software Unit Requirements for WordOpenXmlExtractor
 #
-# WordOpenXmlExtractor is the managed backend the engine selects and invokes. It declares
-# what it can deliver, reads the document, emits the content through the shared emitter, and
-# explains every shortfall only this backend can explain.
+# WordOpenXmlExtractor is the managed backend the engine selects and invokes. It reports
+# availability, reads the document, emits the content through the shared emitter, and exposes its
+# self-validation cases.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-OpenXml-WordOpenXmlExtractor-DeclaresCapabilities
+# required capability declaration machinery. It is superseded (not satisfied) by
+# DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsManagedAvailability because the backend now
+# reports availability through ExtractorAvailability instead of a capability contract.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsStructuralGap
+# required merged or nested table cells to be reported as a counted structural gap. It is
+# superseded (not satisfied) by DocDownWord-Markdown-WordContentEmitter-ReportsFlattenedTableNote
+# because the retained behavior is a short extraction note emitted by the shared reporter.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-OpenXml-WordOpenXmlExtractor-ExplainsUnhonoredForcePng
+# required force-PNG requests to be reported as counted gaps. It is superseded (not satisfied) by
+# DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote because the retained behavior is a
+# short extraction note.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsEmptyDocumentGap
+# required an empty document to be reported as a gap. It is superseded (not satisfied) by
+# DocDownWord-Markdown-WordContentEmitter-ReportsContentInventory because the retained behavior is a
+# zero-count looked-for inventory feature.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsPageRenderingGap
+# required page-rendering absence to be reported as a gap. It is superseded (not satisfied) by
+# DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsManagedAvailability because the remaining behavior
+# is the availability report plus the environment fact that page rendering is not provided.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-OpenXml-WordOpenXmlExtractor-WritesVectorImageWithCaveat
+# required a caveat to accompany written vector images. It is superseded (not satisfied) by
+# DocDownWord-OpenXml-WordOpenXmlExtractor-WritesVectorImageAsIs because the current behavior is to
+# report only what was extracted.
 
 sections:
   - title: DocDownWord Requirements
@@ -12,61 +42,16 @@ sections:
         sections:
           - title: WordOpenXmlExtractor Requirements
             requirements:
-              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-DeclaresCapabilities
+              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsManagedAvailability
                 title: >-
-                  WordOpenXmlExtractor shall declare the modern Word format, the higher selection
-                  priority, and the text, embedded-image, document-metadata, and document-structure
-                  capabilities.
+                  WordOpenXmlExtractor shall report the modern Word format, its selection priority,
+                  and managed availability for extraction.
                 justification: |
-                  Selection ranks backends on what they declare before any document is opened.
-                  Declaring exactly the deliverable capabilities and the higher priority is what makes
-                  this managed backend the chosen reader for every .docx and keeps a shortfall
-                  negotiated up front rather than discovered as missing output.
+                  Selection ranks backends before any document is opened. Reporting the supported
+                  format, priority, and managed availability truthfully is what makes this backend
+                  the chosen reader for `.docx` without implying work it does not perform.
                 tests:
-                  - WordOpenXmlExtractor_Descriptor_HasPriority10AndCapabilities
-
-              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsStructuralGap
-                title: >-
-                  WordOpenXmlExtractor shall report a counted structural gap when a table's merged or
-                  nested cells were flattened.
-                justification: |
-                  GFM cannot express a merged or nested cell, so the flattening is real and must be
-                  owned. Reporting it as a counted, reason-bearing structural gap is what turns the
-                  table writer's flatten count into an honest statement in the output.
-                tests:
-                  - WordOpenXmlExtractor_Extract_MergedCells_ReportsCountedStructuralGap
-
-              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ExplainsUnhonoredForcePng
-                title: >-
-                  WordOpenXmlExtractor shall write the source bytes and explain a counted gap when PNG
-                  output was requested but cannot be produced.
-                justification: |
-                  This package ships no imaging stack, so a force-PNG request cannot be honored by
-                  re-encoding. Writing the source bytes and explaining which images defeated the request
-                  is more useful than refusing the image or mislabeling its format.
-                tests:
-                  - WordOpenXmlExtractor_Extract_ForcePng_ExplainsUnhonoredMode
-
-              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsEmptyDocumentGap
-                title: WordOpenXmlExtractor shall degrade with an explicit gap when the document carries no text.
-                justification: |
-                  An empty content document is indistinguishable from a broken extractor. Stating
-                  plainly that the document carried no extractable text turns a mystery into a fact the
-                  caller can act on.
-                tests:
-                  - WordOpenXmlExtractor_Extract_EmptyDocument_DegradesWithNoTextGap
-
-              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsPageRenderingGap
-                title: >-
-                  WordOpenXmlExtractor shall degrade with a reasoned gap when page rendering is
-                  requested, and report the page-rendering environment fact.
-                justification: |
-                  This backend declares no rendered-pages capability, so a page-rendering request
-                  cannot be satisfied. Reporting a declarative gap that names where the capability would
-                  live, and stating the fact as an environment fact, is honest without directing the
-                  reader to obtain anything.
-                tests:
-                  - WordOpenXmlExtractor_Extract_PagesRequested_DegradesWithReasonedGap
+                  - WordOpenXmlExtractor_Descriptor_HasPriority10AndManagedAvailability
 
               - id: DocDownWord-OpenXml-WordOpenXmlExtractor-SplitsPerPart
                 title: >-
@@ -79,25 +64,23 @@ sections:
                 tests:
                   - WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1
 
-              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-WritesVectorImageWithCaveat
+              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-WritesVectorImageAsIs
                 title: >-
-                  WordOpenXmlExtractor shall write an EMF or WMF vector image unchanged, with a
-                  readability caveat.
+                  WordOpenXmlExtractor shall write an EMF or WMF vector image in the format stored by
+                  the document.
                 justification: |
-                  A vector metafile's stored bytes are a complete image file, so writing them through
-                  loses nothing. Adding the caveat that many viewers cannot open a metafile is the
-                  honest complement.
+                  A vector image part is already the extracted image file. Writing it unchanged
+                  preserves what the document carried instead of substituting or dropping it.
                 tests:
-                  - WordOpenXmlExtractor_Extract_VectorImage_WritesAsIsWithCaveat
+                  - WordOpenXmlExtractor_Extract_VectorImage_WritesAsIs
 
               - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests
                 title: >-
-                  WordOpenXmlExtractor shall contribute self-test cases, including an honest skip for the
-                  page-rendering capability it does not claim.
+                  WordOpenXmlExtractor shall contribute self-test cases, including a skipped
+                  page-rendering case because this package does not attempt page rendering.
                 justification: |
-                  An operator needs to confirm the backend works where it is deployed. A round-trip case
-                  that builds and reads a document proves the SDK is genuinely functional, and a skipped
-                  page-rendering case keeps a capability the backend does not claim from being reported
-                  as a pass or a failure.
+                  An operator needs to confirm the backend works where it is deployed. A round-trip
+                  case that builds and reads a document proves the SDK is genuinely functional, and a
+                  skipped page-rendering case states that omitted scope honestly.
                 tests:
                   - WordOpenXmlExtractor_SelfValidation_ReportsCases

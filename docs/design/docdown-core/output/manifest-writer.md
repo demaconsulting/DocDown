@@ -4,96 +4,70 @@
 
 #### Purpose
 
-`ManifestWriter` serializes `manifest.json`, the machine-readable twin of `summary.txt`, and runs the
-**completeness-ledger reconciliation** immediately before serialization. Its single responsibility is
-to produce the trim/AOT-safe, deterministic JSON manifest and to guarantee — as it builds it — that no
-partial or absent artifact goes unexplained.
+`ManifestWriter` serializes `manifest.json`, the machine-readable record of one extraction. Its
+single responsibility is to project the in-memory extraction report and sink state into the stable
+schema that downstream tools consume.
 
 #### Data Model
 
-`ManifestWriter` is a `static class` with no state. It maps the in-memory extraction report and the
-sink's recorded artifacts into the `ExtractionManifest` DTO graph, then serializes that graph. The DTO
-graph uses **only** `string`, numeric, `bool`, nullable, and `IReadOnlyList<>` members: every enum is
-mapped to its camelCase string by the writer, so no `JsonStringEnumConverter` is needed and the output
-stays trim- and AOT-safe.
+`ManifestWriter` is a `static class` with no mutable state. It builds the immutable
+`ExtractionManifest` DTO graph and serializes it through the source-generated `DocDownJsonContext`.
+Every domain enum is projected to a fixed camelCase string before it reaches the DTO graph, so the
+serialized object uses only strings, numbers, booleans, nulls, and lists.
 
 #### On-disk format
 
-`manifest.json` is serialized through a **source-generated** `JsonSerializerContext`
-(`DocDownJsonContext`) with `WriteIndented = true` and
-`PropertyNamingPolicy = JsonNamingPolicy.CamelCase`, written with `\n` line endings and no BOM. The
-shape carries:
+`manifest.json` is emitted with schema version `2.0`, `
+` line endings, and UTF-8 without a byte
+order mark. The top-level shape contains:
 
-- `"schemaVersion": "1.0"`, and a `tool` block naming DocDown and the producing package.
-- `scratchFolder`, `extractedAtUtc`, `status`, and the load-bearing boolean `complete`.
-- `source` (path, file name, size, SHA-256, format, media type, detection basis).
-- `extractor` (id, display name, package, capabilities, priority, fidelity) and `selection` (mode,
-  required and satisfied capabilities, the candidate trace).
-- `environment` (operating system, architecture, runtime, identifier, facts) and `document` metadata.
-  This is the **full, untrimmed** environment block — including the available-but-unused backend facts
-  the summary elides — so `manifest.json` is where the complete provenance is read.
-- `contentFeatures` — the counted structural features of the extracted content (headings, tables,
-  comments, sheets, charts, and the like), the machine-readable twin of the summary's content outline;
-  a feature the backend declared it looked for appears with a `count` of `0` when the document carries
-  none, and the array is empty when the backend reported nothing.
-- `artifacts` — the completeness ledger, one entry per root artifact and resource folder (`summary`,
-  `manifest`, `metadata`, `content`, `images`, `pages`) with its status and counts.
-- `images`, `pages`, and **`parts`**, each listing the produced resources. `images` carries the full
-  **per-image inventory** the summary no longer prints — pixel dimensions, `sizeBytes`, `sha256`, the
-  `sourcePage`/`sourcePages` and `referencedByTemplate` image-to-unit association, `sourceRef`,
-  `transform`, a `references` count for the SHA-256 deduplication, and a `description` with its
-  `descriptionSource` provenance when the document offered text about the image (both `null`
-  otherwise). `parts` records each part's `kind` (`page`, `sheet`, `slide`, `section`, `attachment`, or
-  `chart`), Core-assigned `ordinal`, `title`, and `characterCount`; a `chart` part is a data object
-  whose cached data series an extractor recovered.
-- `gaps`, `diagnostics`, `requestedOptions`, and `failure` (null on success).
+- `schemaVersion`
+- `tool`
+- `scratchFolder`
+- `extractedAtUtc`
+- `status` (`produced` or `unreadable`)
+- `source`
+- `extractor`
+- `environment`
+- `document`
+- `contentFeatures`
+- `images`
+- `pages`
+- `parts`
+- `notes`
+- `requestedOptions`
+- `failure`
 
-The manifest deliberately does **not** include a `derivedFrom` field; the convert-to-PDF delegation
-seam that would have populated it was retracted. Enum-valued fields are emitted as camelCase strings
-(for example `"detectionBasis": "contentSignature"`, `"status": "degraded"`) by the writer's mapping
-helpers, keeping the DTO graph converter-free.
-
-#### The ledger reconciliation
-
-Before serializing, `ManifestWriter` enforces the load-bearing invariant: **every `ArtifactEntry`
-whose `Status` is `Partial` or `Absent` must be explained by at least one `ExtractionGap` whose
-`Target` matches.** An unexplained absence gets a synthesized gap with reason *"the extractor did not
-report why this artifact is absent"* and diagnostic `DD0701`. `complete` (and
-`ExtractionResult.IsComplete`) is exactly `Gaps.Count == 0`. This is why a silent hole is structurally
-impossible: the reconciliation runs unconditionally, so the worst case is an admitted, coded gap.
+The file contains only the schema 2.0 top-level fields listed above. The selected extractor shape is
+limited to identifier, display name, owning package, and priority. Notes are emitted as plain
+strings in emission order.
 
 #### Key Methods
 
-- **`static ValueTask WriteAsync(...)`** — reconciles the ledger, builds the `ExtractionManifest` via
-  `BuildManifest`, serializes it through `DocDownJsonContext`, and writes it through the scratch-folder
-  gate.
-
-Private helpers map each enum to its camelCase string (`OutcomeString`, `BasisString`, `ModeString`,
-`CandidateOutcomeString`, `StatusString`, `GapKindString`, `GapScopeString`, `SeverityString`,
-`FailureKindString`, `ImageOutputString`, `TransformString`, `SplitString`, `ScratchModeString`) and
-format the timestamp and page range with `InvariantCulture`. Each projection is `switch`-based and
-throws `ArgumentOutOfRangeException` on a value it has not been taught to serialize, so a vocabulary
-member added without a projection fails at the first attempt to write it rather than reaching a
-consumer's manifest as an unrecognized or missing value. `TransformString` projects `ImageTransform`
-(`Passthrough`→`passthrough`, `DecodedToPng`→`decodedToPng`) for each recorded image.
+- **`WriteAsync(ScratchFolder folder, ExtractionSink sink, ExtractionReport report,
+  ContentWriteResult? content, CancellationToken cancellationToken)`** — builds the DTO graph and
+  writes the serialized JSON.
+- **`BuildManifest`** — maps the report and sink state to the immutable DTO graph.
+- **`BuildSource`**, **`BuildExtractor`**, **`BuildEnvironment`**, **`BuildDocument`**,
+  **`BuildContentFeatures`**, **`BuildImages`**, **`BuildPages`**, **`BuildParts`**,
+  **`BuildNotes`**, **`BuildOptions`**, and **`BuildFailure`** — focused mapping helpers.
+- **`OutcomeString`**, **`BasisString`**, **`ImageOutputString`**, **`TransformString`**,
+  **`SplitString`**, and **`ScratchModeString`** — projection helpers for stable schema strings.
 
 #### Error Handling
 
-The writer performs no I/O beyond the single manifest write, which goes through
-`ScratchFolder.WriteTextAsync` (deterministic `\n`/no-BOM encoding; a path fault surfaces as
-`ScratchFolderException`). It raises no exceptions of its own for content conditions — an unexplained
-absence is repaired by synthesis, not by throwing. Serialization is total over the DTO graph because
-the graph is converter-free.
+`WriteAsync` throws `ArgumentNullException` for null required collaborators. Serialization performs no
+fallback inference: unknown enum values fail fast through the projection helpers rather than reaching
+a consumer as undocumented output.
 
 #### Dependencies
 
-- **ScratchFolder** — the text write gate. See *ScratchFolder Design*.
-- **ExtractionManifest**, **DocDownJsonContext**, **ArtifactLedger**, **ArtifactEntry**,
-  **ExtractionGap**, **ExtractionDiagnostic** (supporting types; see *Output Subsystem Design*).
-- `System.Text.Json` (in-box) — no runtime NuGet dependencies.
+- **`ScratchFolder`** — deterministic contained text write.
+- **`ExtractionManifest`** and **`DocDownJsonContext`** — manifest DTO graph and source-generated
+  serializer context.
+- **`ExtractionSink`** and **`ExtractionReport`** — recorded extraction state.
+- `System.Text.Json` — in-box serializer.
 
 #### Callers
 
-`DocDownEngine` calls `ManifestWriter` in the serialization step, after `ContentWriter` and before
-`SummaryWriter`, so the reconciled ledger and any synthesized gaps are reflected in both twins. See
-*DocDownEngine Design*.
+`DocDownEngine` calls `ManifestWriter` after `MetadataWriter` and before `SummaryWriter`.

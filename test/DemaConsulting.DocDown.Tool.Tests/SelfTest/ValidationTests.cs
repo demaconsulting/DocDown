@@ -31,6 +31,8 @@ public class ValidationTests
 
         Assert.Equal(0, exit);
         Assert.Contains("core.layout-invariance", log, StringComparison.Ordinal);
+        Assert.Contains("core.manifest-schema", log, StringComparison.Ordinal);
+        Assert.DoesNotContain("core.gap-accuracy", log, StringComparison.Ordinal);
         Assert.Contains("pdf.parseRoundTrip", log, StringComparison.Ordinal);
         // The always-skipped page-rendering case appears as a skip, not a failure
         Assert.Contains("[SKIP] pdf.pageRendering", log, StringComparison.Ordinal);
@@ -59,6 +61,8 @@ public class ValidationTests
         var parsed = TrxSerializer.Deserialize(text);
         Assert.NotEmpty(parsed.Results);
         Assert.Contains(parsed.Results, r => r.Name == "core.layout-invariance");
+        Assert.Contains(parsed.Results, r => r.Name == "core.manifest-schema");
+        Assert.DoesNotContain(parsed.Results, r => r.Name == "core.gap-accuracy");
         Assert.Contains(parsed.Results, r => r.Name == "pdf.parseRoundTrip");
 
         // A passing case is recorded as passed
@@ -102,6 +106,8 @@ public class ValidationTests
         var text = File.ReadAllText(xml);
         var parsed = JUnitSerializer.Deserialize(text);
         Assert.NotEmpty(parsed.Results);
+        Assert.Contains(parsed.Results, r => r.Name == "core.manifest-schema");
+        Assert.DoesNotContain(parsed.Results, r => r.Name == "core.gap-accuracy");
         Assert.Contains(parsed.Results, r => r.Name == "pdf.parseRoundTrip");
 
         // The always-skipped page-rendering case is not-executed, and explicitly not a failure

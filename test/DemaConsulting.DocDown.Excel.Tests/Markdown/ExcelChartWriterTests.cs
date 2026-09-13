@@ -29,16 +29,14 @@ public class ExcelChartWriterTests
                 [new ExcelChartPoint(0, "101.3"), new ExcelChartPoint(1, "104.8")])]));
 
         // Act: render the chart part
-        var render = ExcelChartWriter.Render(chart);
+        var markdown = ExcelChartWriter.Render(chart);
 
         // Assert: the context lines and the data rows are both present
-        Assert.True(render.HasData);
-        Assert.Equal(2, render.RenderedPoints);
-        Assert.Contains("# Tank Pressure Trend", render.Markdown, StringComparison.Ordinal);
-        Assert.Contains("- Category axis: Elapsed time (min)", render.Markdown, StringComparison.Ordinal);
-        Assert.Contains("- Value axis: Pressure (kPa)", render.Markdown, StringComparison.Ordinal);
-        Assert.Contains("| Point | Elapsed time (min) | Vessel A |", render.Markdown, StringComparison.Ordinal);
-        Assert.Contains("| 1 | 5 | 104.8 |", render.Markdown, StringComparison.Ordinal);
+        Assert.Contains("# Tank Pressure Trend", markdown, StringComparison.Ordinal);
+        Assert.Contains("- Category axis: Elapsed time (min)", markdown, StringComparison.Ordinal);
+        Assert.Contains("- Value axis: Pressure (kPa)", markdown, StringComparison.Ordinal);
+        Assert.Contains("| Point | Elapsed time (min) | Vessel A |", markdown, StringComparison.Ordinal);
+        Assert.Contains("| 1 | 5 | 104.8 |", markdown, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -56,12 +54,11 @@ public class ExcelChartWriterTests
                 [new ExcelChartPoint(0, "1"), new ExcelChartPoint(2, "3")])]));
 
         // Act: render the chart part
-        var render = ExcelChartWriter.Render(chart);
+        var markdown = ExcelChartWriter.Render(chart);
 
         // Assert: the missing point renders as an empty cell at its own index
-        Assert.Contains("| 1 | b |  |", render.Markdown, StringComparison.Ordinal);
-        Assert.Contains("| 2 | c | 3 |", render.Markdown, StringComparison.Ordinal);
-        Assert.Equal(3, render.RenderedPoints);
+        Assert.Contains("| 1 | b |  |", markdown, StringComparison.Ordinal);
+        Assert.Contains("| 2 | c | 3 |", markdown, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -81,11 +78,11 @@ public class ExcelChartWriterTests
             ]));
 
         // Act: render the chart part
-        var render = ExcelChartWriter.Render(chart);
+        var markdown = ExcelChartWriter.Render(chart);
 
         // Assert: both series head their own column and both values appear on the row
-        Assert.Contains("| Point | Cycle | Chamber 1 | Chamber 2 |", render.Markdown, StringComparison.Ordinal);
-        Assert.Contains("| 0 | 1 | 21.0 | 19.5 |", render.Markdown, StringComparison.Ordinal);
+        Assert.Contains("| Point | Cycle | Chamber 1 | Chamber 2 |", markdown, StringComparison.Ordinal);
+        Assert.Contains("| 0 | 1 | 21.0 | 19.5 |", markdown, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -100,10 +97,10 @@ public class ExcelChartWriterTests
             [new ExcelChartSeries(null, null, null, 1, [new ExcelChartPoint(0, "4")])]));
 
         // Act: render the chart part
-        var render = ExcelChartWriter.Render(chart);
+        var markdown = ExcelChartWriter.Render(chart);
 
         // Assert: the column is headed by position
-        Assert.Contains("| Point | Category | Series 1 |", render.Markdown, StringComparison.Ordinal);
+        Assert.Contains("| Point | Category | Series 1 |", markdown, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -123,17 +120,14 @@ public class ExcelChartWriterTests
             [new ExcelChartSeries("Sweep", null, null, count, points)]));
 
         // Act: render the chart part
-        var render = ExcelChartWriter.Render(chart);
+        var markdown = ExcelChartWriter.Render(chart);
 
         // Assert: the table stops at the bound and the note names both counts
-        Assert.True(render.Truncated);
-        Assert.Equal(ExcelChartWriter.MaxPlottedPoints, render.RenderedPoints);
-        Assert.Equal(count, render.TotalPoints);
         Assert.Contains(
             $"Showing the first {ExcelChartWriter.MaxPlottedPoints} of {count} plotted points",
-            render.Markdown, StringComparison.Ordinal);
+            markdown, StringComparison.Ordinal);
         Assert.DoesNotContain(
-            $"| {count - 1} |", render.Markdown, StringComparison.Ordinal);
+            $"| {count - 1} |", markdown, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -152,16 +146,15 @@ public class ExcelChartWriterTests
             [new ExcelChartSeries("Sweep", null, null, points.Count, points)]));
 
         // Act: render the chart part
-        var render = ExcelChartWriter.Render(chart);
+        var markdown = ExcelChartWriter.Render(chart);
 
         // Assert: nothing is dropped and no caveat is emitted
-        Assert.False(render.Truncated);
-        Assert.DoesNotContain("Showing the first", render.Markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("Showing the first", markdown, StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     Proves a chart whose series cache no points says so and reports no data, so the emitter can
-    ///     raise the honest gap instead of writing an empty table.
+    ///     Proves a chart whose series cache no points says so plainly, so the emitter can preserve
+    ///     that fact in the chart part instead of writing an empty table.
     /// </summary>
     [Fact]
     public void ExcelChartWriter_Render_NoCachedPoints_StatesAbsenceAndReportsNoData()
@@ -172,12 +165,11 @@ public class ExcelChartWriterTests
             [new ExcelChartSeries("Run A", "Sheet1!$A$1:$A$9", null, 0, [])]));
 
         // Act: render the chart part
-        var render = ExcelChartWriter.Render(chart);
+        var markdown = ExcelChartWriter.Render(chart);
 
         // Assert: the absence is stated and the source reference is still offered
-        Assert.False(render.HasData);
-        Assert.Contains("declares no cached data points", render.Markdown, StringComparison.Ordinal);
-        Assert.Contains("Sheet1!$A$1:$A$9", render.Markdown, StringComparison.Ordinal);
+        Assert.Contains("declares no cached data points", markdown, StringComparison.Ordinal);
+        Assert.Contains("Sheet1!$A$1:$A$9", markdown, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -191,13 +183,12 @@ public class ExcelChartWriterTests
         var chart = new ExcelChartModel("/xl/charts/chart1.xml", "Results", null, "the part is not well-formed XML");
 
         // Act: render the chart part
-        var render = ExcelChartWriter.Render(chart);
+        var markdown = ExcelChartWriter.Render(chart);
 
         // Assert: the chart is named, the reason is given, and no data is claimed
-        Assert.False(render.HasData);
-        Assert.Contains("could not be read", render.Markdown, StringComparison.Ordinal);
-        Assert.Contains("not well-formed XML", render.Markdown, StringComparison.Ordinal);
-        Assert.Contains("/xl/charts/chart1.xml", render.Markdown, StringComparison.Ordinal);
+        Assert.Contains("could not be read", markdown, StringComparison.Ordinal);
+        Assert.Contains("not well-formed XML", markdown, StringComparison.Ordinal);
+        Assert.Contains("/xl/charts/chart1.xml", markdown, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -213,10 +204,10 @@ public class ExcelChartWriterTests
             [new ExcelChartSeries("Run", null, null, 1, [new ExcelChartPoint(0, "1")])]));
 
         // Act: render the chart part
-        var render = ExcelChartWriter.Render(chart);
+        var markdown = ExcelChartWriter.Render(chart);
 
         // Assert: the pipe is escaped rather than ending the cell
-        Assert.Contains("| 0 | A\\|B | 1 |", render.Markdown, StringComparison.Ordinal);
+        Assert.Contains("| 0 | A\\|B | 1 |", markdown, StringComparison.Ordinal);
     }
 
     /// <summary>

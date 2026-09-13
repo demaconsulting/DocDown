@@ -13,9 +13,9 @@ namespace DocDown.Core;
 ///     </para>
 ///     <para>
 ///         The <c>Add*</c> methods return the allocated relative path (for example
-///         <c>images/0001-logo.png</c>). Ordinals and gap identifiers passed in are advisory: Core
-///         allocates the real, dense values. Implementations are used from the single extraction
-///         thread and are not required to be thread-safe.
+///         <c>images/0001-logo.png</c>). Ordinals passed in are advisory: Core allocates the real,
+///         dense values. Implementations are used from the single extraction thread and are not
+///         required to be thread-safe.
 ///     </para>
 /// </remarks>
 public interface IExtractionSink
@@ -101,23 +101,19 @@ public interface IExtractionSink
     /// </remarks>
     void ReportDocumentMetadata(DocumentMetadata metadata);
 
-
     /// <summary>
-    ///     Reports a diagnostic to include in the extraction record.
+    ///     Records a plain-language note about a step DocDown attempted during extraction but could
+    ///     not complete.
     /// </summary>
-    /// <param name="diagnostic">The diagnostic to record.</param>
-    /// <remarks>Appended to the ordered diagnostic stream surfaced in the result and manifest.</remarks>
-    void ReportDiagnostic(ExtractionDiagnostic diagnostic);
-
-    /// <summary>
-    ///     Reports a gap explaining an absent or partial artifact.
-    /// </summary>
-    /// <param name="gap">The gap to record. Its identifier is assigned by Core in emission order.</param>
+    /// <param name="note">The note to record. Must not be null.</param>
     /// <remarks>
-    ///     Any identifier on <paramref name="gap"/> is overwritten so gap identifiers are always
-    ///     dense and ordered; the reason must be non-empty.
+    ///     A note carries a single fact about the extraction and nothing else — no code, no severity,
+    ///     no remedy. Reserve it for the case where DocDown tried to produce something and could not
+    ///     (for example an image it could not decode). An absence of content the document simply does
+    ///     not contain is a statement about the document and belongs in the inventory via
+    ///     <see cref="ReportContentFeature"/> at a count of zero, never here.
     /// </remarks>
-    void ReportGap(ExtractionGap gap);
+    void ReportNote(ExtractionNote note);
 
     /// <summary>
     ///     Reports an environment fact contributed by the extractor.
@@ -140,18 +136,7 @@ public interface IExtractionSink
     ///     <see cref="ContentFeature.LookedFor"/>: a feature the format cannot have contributes
     ///     nothing but noise, while a feature the backend genuinely looked for is reported at zero so
     ///     a reader can tell "we looked; there are none" from "we never looked". Reporting an absence
-    ///     here is a statement about the document, never a gap and never a degradation.
+    ///     here is a statement about the document, never a note.
     /// </remarks>
     void ReportContentFeature(ContentFeature feature);
-
-    /// <summary>
-    ///     Reports how many items of a given kind the extractor discovered as expected.
-    /// </summary>
-    /// <param name="kind">The kind of content the count refers to.</param>
-    /// <param name="foundCount">The number of items found in the document.</param>
-    /// <remarks>
-    ///     Lets Core populate the ledger's <c>found</c> counts so partial success can be stated
-    ///     precisely (for example 3 of 4 images) and reconciled against what was actually written.
-    /// </remarks>
-    void ReportFound(GapKind kind, int foundCount);
 }

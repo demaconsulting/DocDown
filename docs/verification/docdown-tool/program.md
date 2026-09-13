@@ -28,10 +28,12 @@ without a linked requirement.
 
 Per IEC 62304 §5.5.2, a `Program` unit test run passes when the version and help commands print their
 expected output; when dispatch is priority-ordered so a higher-priority flag wins; when an extraction
-prints the absolute summary path and an unreadable input renders the structured failure; when a
-missing required option and an unrecognized argument are treated as expected errors with a non-zero
-exit and no stack trace; when a log file that cannot be opened is likewise an expected error; and when
-`--list-backends` reports the PDF backend.
+prints `Extraction produced the output layout.` and the absolute summary path; when an unreadable
+input writes the failure explanation; when a missing required option and an unrecognized argument are
+treated as expected errors with a non-zero exit and no stack trace; when a log file that cannot be
+opened is likewise an expected error; and when `--list-backends` reports the PDF backend as an
+identifier and display name line followed by `formats:` and `status:` lines, with no capabilities
+line.
 
 ### Test Scenarios
 
@@ -57,20 +59,20 @@ Proves that with version, help, and validate all requested, only the version pri
 text nor the banner appears — so a flag combination has a deterministic outcome. Evidence for
 `DocDownTool-Program-PriorityDispatch`.
 
-#### An extraction prints the absolute summary path
+#### A produced extraction prints the summary path
 
 **Test**: `Program_Run_Extraction_PrintsAbsoluteSummaryPath`
 
-Proves the extraction prints a line that is a fully qualified path ending in `summary.txt`, that the
-named file exists on disk, and that it lies under the scratch folder the run targeted; the process
-exits zero. The asserted path is read from the tool's output, not recomputed. Evidence for
-`DocDownTool-Program-Extraction`.
+Proves the extraction reports that the output layout was produced, then prints a line that is a fully
+qualified path ending in `summary.txt`, that the named file exists on disk, and that it lies under the
+scratch folder the run targeted; the process exits zero. The asserted path is read from the tool's
+output, not recomputed. Evidence for `DocDownTool-Program-Extraction`.
 
-#### An unreadable input renders the structured failure
+#### An unreadable input writes the explanation
 
 **Test**: `Program_Run_UnreadableInput_RendersStructuredFailure`
 
-Proves a missing document renders the engine's explanation and exits non-zero without throwing.
+Proves a missing document writes the engine's explanation and exits non-zero without throwing.
 Evidence for `DocDownTool-Program-StructuredFailure`.
 
 #### A missing required option is an expected error
@@ -82,10 +84,10 @@ the expected-error contract; it has no separate requirement and supports the exp
 
 #### Explicit registration
 
-**Test**: `DocDownTool_Build_DefaultEngine_RegistersPdfExplicitly`
+**Test**: `DocDownTool_Build_DefaultEngine_RegistersBackendsExplicitly`
 
-The engine the tool builds registers exactly the PDF backend through `AddPdf`. Evidence for
-`DocDownTool-Program-ExplicitRegistration` (shared with the system-level scenario).
+The engine the tool builds registers the expected backend set through the explicit builder seams.
+Evidence for `DocDownTool-Program-ExplicitRegistration` (shared with the system-level scenario).
 
 #### Expected errors exit non-zero without a stack trace
 
@@ -100,12 +102,6 @@ with a message on standard error and no stack trace — the two expected error c
 
 **Test**: `Program_Run_ListBackends_ListsPdf`
 
-Proves `--list-backends` names the registered-backends heading and the PDF backend. Evidence for
-`DocDownTool-Program-ListBackends`.
-
-#### An existing scratch folder is verified
-
-**Test**: `DocDownTool_Verify_ValidScratch_ReportsNoViolations`
-
-The `--verify` command reports no violations for a folder the tool produced. Evidence for
-`DocDownTool-Program-Verify` (shared with the system-level scenario).
+Proves `--list-backends` names the registered-backends heading, omits a capabilities line, and prints
+the expected identity, formats, and status lines for the PDF backend. Evidence for
+`DocDownTool-Program-BackendInventory`.

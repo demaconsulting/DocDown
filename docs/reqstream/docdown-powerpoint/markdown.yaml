@@ -3,8 +3,9 @@
 #
 # The Markdown subsystem owns the projection of the backend-neutral deck model onto markdown: the
 # content emitter that drives every output the model implies — per-slide content carrying title, text,
-# and speaker notes, the inline images, the content outline, the diagnostics, and the honest gaps. It
-# has one unit, PowerPointContentEmitter, which these requirements decompose into via children.
+# and speaker notes, the inline images, the content outline, and any plain notes required when an
+# attempted reporting step could not be completed. It has one unit, PowerPointContentEmitter, which
+# these requirements decompose into via children.
 
 sections:
   - title: DocDownPowerPoint Requirements
@@ -13,23 +14,23 @@ sections:
         requirements:
           - id: DocDownPowerPoint-Markdown-ModelEmission
             title: >-
-              The subsystem shall emit a deck model's per-slide content, images, content outline,
-              diagnostics, and gaps through one path that is independent of how the model was read.
+              The subsystem shall emit a deck model's per-slide content, images, content outline, and
+              plain notes through one path that is independent of how the model was read.
             justification: |
               Reading a deck and rendering what was read are separate concerns. Holding every emission
               decision in one path, driven only by the model, is what makes each mapping decision
-              testable from a hand-built model with no deck behind it, and what keeps the output contract
-              from acquiring a second, divergent implementation. The same path serves the managed backend
-              and the COM backend, so a deck's content reads identically whether or not it was rendered.
+              testable from a hand-built model with no deck behind it, and what keeps the output
+              contract from acquiring a second, divergent implementation. The same path serves the
+              managed backend and the COM backend, so a deck's content reads identically whether or
+              not it was rendered.
             children:
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesTitle
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesSlideText
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesNotes
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceInInventory
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-LinksImages
-              - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsVectorImageCaveat
-              - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsChartsNotExtracted
-              - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsEmptyDeckGap
+              - DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesVectorImagesWithoutNote
+              - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsEmptyDeckInInventory
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsContentFeatures
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-SplitsLargeDecks
             tests:

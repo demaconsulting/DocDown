@@ -8,42 +8,34 @@ writer, and the content emitter that produces every output the model implies.
 
 The Markdown subsystem is verified through unit tests exercising its three units —
 `WordMarkdownWriter`, `WordTableWriter`, and `WordContentEmitter` — in
-`Markdown/WordMarkdownWriterTests.cs`, `Markdown/WordTableWriterTests.cs`, and integration tests in
-`OpenXml/WordOpenXmlExtractorTests.cs` that drive the emitter through the backend, all in
-`DemaConsulting.DocDown.Word.Tests`.
+`Markdown/WordMarkdownWriterTests.cs`, `Markdown/WordTableWriterTests.cs`, and
+`Markdown/WordContentEmitterTests.cs`, together with integration tests in
+`OpenXml/WordOpenXmlExtractorTests.cs` that drive the emitter through the real backend.
 
-The writer units are tested against **hand-built models with no document behind them**, because the
-subsystem's contract is the projection from a model onto markdown; a document read is the reader's
-job, and mixing the two would obscure which unit was responsible for a defect. The content emitter,
-by contrast, is tested by driving a real extraction and asserting the content, diagnostics, and
-counted gaps the model implies — because the emitter's promise is about what reaches the sink, and
-a substitute sink would satisfy less than the real thing. The `WordDiagnosticCodes` table is pinned
-by a reflection-driven contract test so a renumbering fails the build rather than silently changing
-what downstream consumers branch on.
+The writer units are tested against hand-built models with no document behind them, because the
+subsystem's contract is the projection from a model onto markdown. The content emitter is tested at
+two levels: directly through a `RecordingSink` for inventory, metadata, and note decisions, and
+through real extractions for split-output and end-to-end note behavior.
 
 ### Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
 - **Inputs**: hand-built `WordDocumentModel` instances for the writer units; generated `.docx`
-  documents from `TestData/DocxFixtures.cs` for the shared-emission scenarios
-- **Filesystem**: none for the writer units; the shared-emission scenarios use per-test
+  documents from `TestData/DocxFixtures.cs` for integration scenarios
+- **Filesystem**: none for the writer unit tests; the integration scenarios use per-test
   `TempScratch` folders
-- **Mocking**: none; the writers are exercised directly and the emitter is driven through real
-  backends
-- **Isolation**: each test constructs its own model or its own scratch folder
+- **Mocking**: none for the writers; `RecordingSink` for direct emitter tests; the integration
+  scenarios use the real engine and backend
+- **Isolation**: each test constructs its own model or scratch folder
 
 ### Acceptance Criteria
 
 Per IEC 62304 §5.6.2, a Markdown subsystem test run passes when the writer renders every block kind
-the model carries — headings at their level, ordered and bulleted list items with the correct
-markers and nesting, escaped inline text, bold, italic, and link runs, image links whose target is
-the path the sink allocated, comments under a Comments section, footnotes as references and a
-Footnotes section, and the Document Control section placed after the title heading and before the
-body; when the table writer emits a header-and-delimiter GFM table, pads short rows, escapes pipes
-and converts newlines within a cell, skips an empty table, and returns the count of merged and
-nested cells it flattened; when the emitter writes the model's content in the requested split form
-and reports the model's diagnostics and counted gaps; and when the
-diagnostic-code table matches its pinned contract exactly.
+the model carries; when the table writer emits a header-and-delimiter GFM table, pads short rows,
+escapes pipes, converts newlines within a cell, skips an empty table, and returns the count of
+merged and nested cells it flattened; and when the emitter writes the model's content in the
+requested split form, reports the content inventory, reports metadata once when present, and emits
+only the notes implied by incomplete steps in the model or options.
 
 ### Test Scenarios
 
@@ -58,25 +50,27 @@ Proves the heading-level mapping directly. The full per-block detail — lists, 
 formatting, image links, comments, footnotes, and Document Control placement — is given in the
 *WordMarkdownWriter Verification Design*. Evidence for `DocDownWord-Markdown-ModelRendering`.
 
-#### The table writer emits GFM and counts flattened cells
+#### The table writer emits GFM and reports its flattened-cell count
 
 **Test**: `WordTableWriter_Write_FullTable_ProducesGfmWithHeaderAndAlignment`
 
-Proves the header row, the delimiter row, and the body all appear as GFM. The short-row padding,
-cell escaping, empty-table skip, and merged-and-nested flatten count are given in the
+Proves the header row, delimiter row, and body all appear as GFM. The short-row padding, cell
+escaping, empty-table behavior, and merged-and-nested flatten count are given in the
 *WordTableWriter Verification Design*. Evidence for `DocDownWord-Markdown-TableRendering`.
 
-#### The emitter writes the model's content through the sink
+#### The emitter writes content and inventory through one path
 
-**Test**: `WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1`
+**Tests**: `WordContentEmitter_Emit_BodyWithComments_ReportsOutlineAndSucceeds`,
+`WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1`
 
-Proves the emitter writes the model's content through the sink in the requested split form, driven
-only by what the model carries. Evidence for `DocDownWord-Markdown-ModelEmission`.
+Prove the emitter, driven by a hand-built model, writes content and reports the inventory features
+that make headings and comments discoverable, and that a real extraction writes split `parts/*.md`
+output when requested. Evidence for `DocDownWord-Markdown-ModelEmission`.
 
-#### The diagnostic-code table is pinned
+#### Embedded charts are surfaced as a short note
 
-**Test**: `WordDiagnosticCodes_Table_MatchesPinnedContract`
+**Test**: `WordContentEmitter_Emit_ChartsFound_ReportsChartNote`
 
-Proves the codes a consumer branches on — `WORD0001` through `WORD0009`, with their names — are
-exactly the pinned contract. This is a supporting scenario whose evidence sits at system level
-under `DocDownWord-DiagnosticCodeStability`.
+Proves the emitter reports a plain note when the model says the document embedded charts whose
+chart parts were not read. Evidence for
+`DocDownWord-Markdown-WordContentEmitter-ReportsChartNote`.

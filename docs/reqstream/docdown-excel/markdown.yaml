@@ -14,7 +14,7 @@ sections:
           - id: DocDownExcel-Markdown-ModelEmission
             title: >-
               The subsystem shall emit a workbook model's worksheet parts, chart parts, images,
-              content outline, diagnostics, and gaps through one path that is independent of how the
+              content inventory, and attempt notes through one path that is independent of how the
               model was read.
             justification: |
               Reading a workbook and rendering what was read are separate concerns. Holding every
@@ -29,15 +29,13 @@ sections:
               - DocDownExcel-Markdown-ExcelContentEmitter-ElidesLongCellsInTableOnly
               - DocDownExcel-Markdown-ExcelContentEmitter-NotesMergedRanges
               - DocDownExcel-Markdown-ExcelContentEmitter-EmitsChartParts
-              - DocDownExcel-Markdown-ExcelContentEmitter-ReportsChartGaps
+              - DocDownExcel-Markdown-ExcelContentEmitter-ReportsAttemptNotes
               - DocDownExcel-Markdown-ExcelContentEmitter-WritesShapeText
               - DocDownExcel-Markdown-ExcelContentEmitter-LinksImages
-              - DocDownExcel-Markdown-ExcelContentEmitter-ReportsVectorImageCaveat
-              - DocDownExcel-Markdown-ExcelContentEmitter-ReportsEmptyWorkbookGap
-              - DocDownExcel-Markdown-ExcelContentEmitter-NotesEmptySheet
+              - DocDownExcel-Markdown-ExcelContentEmitter-ReportsZeroCountInventory
+              - DocDownExcel-Markdown-ExcelContentEmitter-WritesEmptyWorksheetMessage
               - DocDownExcel-Markdown-ExcelContentEmitter-StaysSilentOnPageRequest
               - DocDownExcel-Markdown-ExcelContentEmitter-ReportsContentFeatures
-              - DocDownExcel-Markdown-ExcelContentEmitter-ReportsGapsAndDiagnostics
             tests:
               - ExcelContentEmitter_Emit_TwoSheets_WritesTitledSheetParts
 
@@ -48,8 +46,8 @@ sections:
             justification: |
               A chart's cached series is the only form in which a chart's information survives into a
               text extraction. Rendering it as a table with a leading point-index column lets a reader
-              consume it with no knowledge of the chart grammar, and stating every shortfall in the
-              part itself keeps a chart that yielded less than its full data honest rather than silently
+              consume it with no knowledge of the chart grammar, and stating each shortfall in the part
+              itself keeps a chart that yielded less than a full table honest rather than silently
               partial.
             children:
               - DocDownExcel-Markdown-ExcelChartWriter-RendersCachedSeries

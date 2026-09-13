@@ -41,7 +41,7 @@ public class DocDownPdfTests
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>
-    ///     Proves a plain text PDF produces the complete contract layout with no gaps.
+    ///     Proves a plain text PDF produces the complete contract layout with no notes.
     /// </summary>
     [Fact]
     public async Task DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout()
@@ -55,17 +55,16 @@ public class DocDownPdfTests
         // Act: extract into a fresh scratch folder
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
-        // Assert: the run is clean, the full layout exists, and the document's text is present
-        Assert.Equal(ExtractionOutcome.Succeeded, result.Outcome);
-        Assert.True(result.IsComplete);
-        Assert.Empty(result.Gaps);
+        // Assert: the run produced output, carried no failure or note, and the document's text is present
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Null(result.Failure);
+        Assert.Empty(result.Notes);
         Assert.Equal("pdf", result.SelectedExtractor?.Id);
         var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
         Assert.Contains("quick brown fox", content, StringComparison.Ordinal);
         Assert.True(File.Exists(Path.Combine(scratch, "summary.txt")));
         Assert.True(File.Exists(Path.Combine(scratch, "manifest.json")));
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>
@@ -91,7 +90,7 @@ public class DocDownPdfTests
         var second = content.IndexOf("Page 2 marker", StringComparison.Ordinal);
         var third = content.IndexOf("Page 3 marker", StringComparison.Ordinal);
         Assert.True(first >= 0 && second > first && third > second, "page text is missing or out of reading order");
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
@@ -131,7 +130,7 @@ public class DocDownPdfTests
         // Assert: the content document links the image by the path the sink allocated
         var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
         Assert.Contains(entry.GetProperty("path").GetString()!, content, StringComparison.Ordinal);
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
@@ -157,14 +156,14 @@ public class DocDownPdfTests
         Assert.Equal("image/png", entry.GetProperty("mediaType").GetString());
         Assert.Equal("decodedToPng", entry.GetProperty("transform").GetString());
         Assert.NotEqual("passthrough", entry.GetProperty("transform").GetString());
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
-    ///     Proves an image this extractor cannot decode becomes a counted gap naming the encoding.
+    ///     Proves an image this extractor cannot decode becomes a plain note naming the encoding.
     /// </summary>
     [Fact]
-    public async Task DocDownPdf_Extract_UndecodableImage_ReportsCountedGapNamingEncoding()
+    public async Task DocDownPdf_Extract_UndecodableImage_ReportsPlainNoteNamingEncoding()
     {
         // Arrange: a document holding one decodable JPEG and one JBIG2 image
         using var temp = new TempScratch();
@@ -176,28 +175,23 @@ public class DocDownPdfTests
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
         // Assert: the decodable image was written and the undecodable one was counted, not dropped
-        Assert.Equal(ExtractionOutcome.Degraded, result.Outcome);
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Single(Directory.GetFiles(Path.Combine(scratch, "images")));
-        var gap = Assert.Single(result.Gaps, candidate =>
-            candidate.Target == "images/" && candidate.Reason.Contains("JBIG2Decode", StringComparison.Ordinal));
-        Assert.Equal(GapScope.PartiallyExtracted, gap.Scope);
-        Assert.Equal(1, gap.AffectedCount);
-        Assert.Contains("1 of 2", gap.Reason, StringComparison.Ordinal);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "PDF0001");
+        var note = Assert.Single(result.Notes).Message;
+        Assert.Contains("JBIG2Decode: 1", note, StringComparison.Ordinal);
+        Assert.Contains("1 of 2", note, StringComparison.Ordinal);
 
-        // Assert: the ledger records one of two, and the human-readable summary says so too
+        // Assert: the manifest records the written image and the note, and the summary says so too
         using var manifest = await ReadManifestAsync(scratch);
-        var images = manifest.RootElement.GetProperty("artifacts").GetProperty("images");
-        Assert.Equal("partial", images.GetProperty("status").GetString());
-        Assert.Equal(1, images.GetProperty("obtained").GetInt32());
-        Assert.Equal(2, images.GetProperty("found").GetInt32());
+        Assert.Single(manifest.RootElement.GetProperty("images").EnumerateArray());
+        Assert.Equal(note, Assert.Single(manifest.RootElement.GetProperty("notes").EnumerateArray()).GetString());
         var summary = Normalize(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
         Assert.Contains("1 of 2", summary, StringComparison.Ordinal);
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
-    ///     Proves a JPEG 2000 image is written as .jp2, labeled a passthrough, and caveated in the summary.
+    ///     Proves a JPEG 2000 image is written as .jp2 and labeled as a passthrough.
     /// </summary>
     /// <remarks>
     ///     This package takes no JPEG 2000 decoder, so the only two honest options are to write the
@@ -208,7 +202,7 @@ public class DocDownPdfTests
     ///     normalized text because the summary wraps its prose.
     /// </remarks>
     [Fact]
-    public async Task DocDownPdf_Extract_Jpeg2000Image_WritesJp2PassthroughWithReadabilityCaveat()
+    public async Task DocDownPdf_Extract_Jpeg2000Image_WritesJp2Passthrough()
     {
         // Arrange: a document holding one decodable JPEG and one JPEG 2000 image
         using var temp = new TempScratch();
@@ -232,17 +226,10 @@ public class DocDownPdfTests
         Assert.Equal("image/jp2", entry.GetProperty("mediaType").GetString());
         Assert.Equal("passthrough", entry.GetProperty("transform").GetString());
 
-        // Assert: the ledger counts it as extracted rather than lost, so the denominator stays honest
-        var ledger = manifest.RootElement.GetProperty("artifacts").GetProperty("images");
-        Assert.Equal(2, ledger.GetProperty("obtained").GetInt32());
-        Assert.Equal(2, ledger.GetProperty("found").GetInt32());
-
-        // Assert: and the summary carries the readability caveat in words a reader will see
-        Assert.Equal(ExtractionOutcome.Degraded, result.Outcome);
-        var summary = Normalize(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
-        Assert.Contains("Many image viewers and image libraries cannot read JPEG 2000 files.",
-            summary, StringComparison.Ordinal);
-        ContractAssert.NoViolations(scratch);
+        // Assert: the run stays produced with no note because the image was written successfully
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Empty(result.Notes);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
@@ -276,22 +263,20 @@ public class DocDownPdfTests
         Assert.Equal("image/jpeg", entry.GetProperty("mediaType").GetString());
 
         // Assert: and the run explains, rather than hides, that PNG could not be produced
-        Assert.Equal(ExtractionOutcome.Degraded, result.Outcome);
-        Assert.False(result.IsComplete);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "PDF0002");
-        var gap = Assert.Single(result.Gaps, candidate =>
-            candidate.Target == "images/" && candidate.Reason.Contains("PNG output was requested", StringComparison.Ordinal));
-        Assert.Equal(1, gap.AffectedCount);
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        var note = Assert.Single(result.Notes).Message;
+        Assert.Contains("PNG output was requested", note, StringComparison.Ordinal);
+        Assert.Contains("DCTDecode: 1", note, StringComparison.Ordinal);
         var summary = Normalize(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
         Assert.Contains("PNG output was requested", summary, StringComparison.Ordinal);
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
-    ///     Proves an image over a caller's size limit is reported as its own skip gap.
+    ///     Proves an image over a caller's size limit is reported as its own explanatory note.
     /// </summary>
     [Fact]
-    public async Task DocDownPdf_Extract_ImageOverSizeLimit_ReportsSeparateSkipGap()
+    public async Task DocDownPdf_Extract_ImageOverSizeLimit_ReportsSeparateSkipNote()
     {
         // Arrange: a JPEG-bearing document extracted with an impossibly small byte budget
         using var temp = new TempScratch();
@@ -304,22 +289,20 @@ public class DocDownPdfTests
         // Act: extract with the size limit in force
         var result = await engine.ExtractAsync(input, scratch, options, Ct);
 
-        // Assert: nothing was written, and the gap names a size limit rather than a decode failure
+        // Assert: nothing was written, and the note names a size limit rather than a decode failure
         Assert.False(Directory.Exists(Path.Combine(scratch, "images"))
             && Directory.GetFiles(Path.Combine(scratch, "images")).Length > 0);
-        var gap = Assert.Single(result.Gaps, candidate =>
-            candidate.Target == "images/" && candidate.Reason.Contains("size or dimension limit", StringComparison.Ordinal));
-        Assert.Equal(GapScope.Unavailable, gap.Scope);
-        Assert.DoesNotContain("cannot decode", gap.Reason, StringComparison.Ordinal);
-        Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == "PDF0001");
-        ContractAssert.NoViolations(scratch);
+        var note = Assert.Single(result.Notes).Message;
+        Assert.Contains("size or dimension limit", note, StringComparison.Ordinal);
+        Assert.DoesNotContain("cannot decode", note, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
-    ///     Proves disabling embedded images suppresses them with an explained gap and no dangling links.
+    ///     Proves disabling embedded images suppresses them with an explained note and no dangling links.
     /// </summary>
     [Fact]
-    public async Task DocDownPdf_Extract_ImagesDisabled_SuppressesImagesWithGap()
+    public async Task DocDownPdf_Extract_ImagesDisabled_SuppressesImagesWithNote()
     {
         // Arrange: a JPEG-bearing document extracted with embedded images turned off
         using var temp = new TempScratch();
@@ -335,18 +318,19 @@ public class DocDownPdfTests
         // Assert: nothing was written, the suppression is recorded, and no link points at nothing
         Assert.False(Directory.Exists(Path.Combine(scratch, "images"))
             && Directory.GetFiles(Path.Combine(scratch, "images")).Length > 0);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "DD0201");
-        Assert.Contains(result.Gaps, gap => gap.Target == "images/" && gap.Scope == GapScope.NotAttempted);
+        Assert.Equal(
+            "Embedded image extraction was disabled by the caller; no images were written.",
+            Assert.Single(result.Notes).Message);
         var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
         Assert.DoesNotContain("](images/", content, StringComparison.Ordinal);
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
-    ///     Proves a scanned PDF with no text layer degrades with an honest gap rather than an empty document.
+    ///     Proves a scanned PDF with no text layer still produces image-backed output without notes.
     /// </summary>
     [Fact]
-    public async Task DocDownPdf_Extract_ScannedPdfWithNoTextLayer_DegradesWithHonestGap()
+    public async Task DocDownPdf_Extract_ScannedPdfWithNoTextLayer_ProducesImageBackedOutput()
     {
         // Arrange: a document whose only page is a full-page image and carries no glyphs
         using var temp = new TempScratch();
@@ -357,24 +341,24 @@ public class DocDownPdfTests
         // Act: extract the scanned document
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
-        // Assert: the run degrades rather than failing, and says plainly why there is no text
-        Assert.Equal(ExtractionOutcome.Degraded, result.Outcome);
-        Assert.True(File.Exists(Path.Combine(scratch, "content.md")));
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "PDF0003");
-        var gap = Assert.Single(result.Gaps, candidate =>
-            candidate.Target == "content.md" && candidate.Kind == GapKind.Text);
-        Assert.Contains("text layer", gap.Reason, StringComparison.Ordinal);
+        // Assert: the run still produces output, and the page contributes an image link but no body text
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        Assert.Contains("<!-- docdown:page 1 -->", content, StringComparison.Ordinal);
+        Assert.Contains("](images/", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("quick brown fox", content, StringComparison.Ordinal);
+        Assert.Empty(result.Notes);
 
-        // Assert: the page's embedded image is still extracted, so the run is degraded, not useless
+        // Assert: the page's embedded image is still extracted, so the run remains useful
         Assert.Single(Directory.GetFiles(Path.Combine(scratch, "images")));
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
-    ///     Proves a page-rendering request degrades with DD0301 and names the class of package that provides it.
+    ///     Proves a page-rendering request produces a plain note and no rendered page images.
     /// </summary>
     [Fact]
-    public async Task DocDownPdf_Extract_PagesRequested_DegradesWithDD0301AndNamesPackageClass()
+    public async Task DocDownPdf_Extract_PagesRequested_ProducesPlainNoteAndNoRenderedPages()
     {
         // Arrange: a plain text document extracted with rendered pages demanded
         using var temp = new TempScratch();
@@ -387,31 +371,32 @@ public class DocDownPdfTests
         // Act: extract with a capability this package does not provide
         var result = await engine.ExtractAsync(input, scratch, options, Ct);
 
-        // Assert: the engine records the unmet capability and no page was rendered
-        Assert.Equal(ExtractionOutcome.Degraded, result.Outcome);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "DD0301");
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "DD0702");
+        // Assert: the engine records the unmet capability as a note and no page was rendered
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Empty(result.PagePaths);
+        var note = Assert.Single(result.Notes).Message;
+        Assert.Contains("no page renderer is available", note, StringComparison.Ordinal);
+        Assert.Contains("'pdf' format", note, StringComparison.Ordinal);
 
         // Assert: the summary states where the capability lives, declaratively. The summary wraps
         // its prose across lines, so the text is compared with whitespace normalized — a
         // line-oriented match would pass or fail on where the wrap happened to fall.
         var summary = Normalize(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
-        Assert.Contains("does not rasterize pages", summary, StringComparison.Ordinal);
-        Assert.Contains("page-rendering extractor package", summary, StringComparison.Ordinal);
+        Assert.Contains("no page renderer is available", summary, StringComparison.Ordinal);
+        Assert.Contains("pages were not rendered", summary, StringComparison.Ordinal);
 
         // Assert: and never instructs the reader to perform an installation that cannot succeed
         Assert.DoesNotContain("dotnet add package", summary, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("install ", summary, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("not yet available", summary, StringComparison.OrdinalIgnoreCase);
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
-    ///     Proves an encrypted PDF fails structurally without an exception escaping to the caller.
+    ///     Proves an encrypted PDF is returned as an unreadable result without an exception escaping to the caller.
     /// </summary>
     [Fact]
-    public async Task DocDownPdf_Extract_EncryptedPdf_FailsStructurallyAndWritesFullLayout()
+    public async Task DocDownPdf_Extract_EncryptedPdf_ReturnsUnreadableResultAndWritesFullLayout()
     {
         // Arrange: a structurally valid PDF whose content is behind a security handler
         using var temp = new TempScratch();
@@ -422,20 +407,19 @@ public class DocDownPdfTests
         // Act: extract the protected document
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
-        // Assert: the failure is structured and coded, and the full layout is still written
-        Assert.Equal(ExtractionOutcome.Failed, result.Outcome);
+        // Assert: the failure is structured, and the full layout is still written
+        Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
         Assert.NotNull(result.Failure);
-        Assert.Equal(ExtractionFailureKind.ExtractorFailed, result.Failure.Kind);
+        Assert.Null(result.ContentPath);
         Assert.Contains("encrypted", result.Failure.Explanation, StringComparison.OrdinalIgnoreCase);
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>
-    ///     Proves a malformed PDF fails structurally without an exception escaping to the caller.
+    ///     Proves a malformed PDF is returned as an unreadable result without an exception escaping to the caller.
     /// </summary>
     [Fact]
-    public async Task DocDownPdf_Extract_MalformedPdf_FailsStructurallyAndWritesFullLayout()
+    public async Task DocDownPdf_Extract_MalformedPdf_ReturnsUnreadableResultAndWritesFullLayout()
     {
         // Arrange: a truncated document that looks like a PDF but has no cross-reference table
         using var temp = new TempScratch();
@@ -446,19 +430,19 @@ public class DocDownPdfTests
         // Act: extract the malformed document
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
-        // Assert: the failure is structured, and the layout and its explaining gaps are still written
-        Assert.Equal(ExtractionOutcome.Failed, result.Outcome);
-        Assert.Equal(ExtractionFailureKind.ExtractorFailed, result.Failure?.Kind);
-        Assert.Contains(result.Gaps, gap => gap.Target == "content.md");
+        // Assert: the failure is structured, and the explanatory layout is still written
+        Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
+        Assert.NotNull(result.Failure);
+        Assert.Null(result.ContentPath);
+        Assert.False(string.IsNullOrWhiteSpace(result.Failure.Explanation));
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>
-    ///     Proves a PDF with no pages completes with explicit gaps rather than failing or throwing.
+    ///     Proves a PDF with no pages still produces output with explicit zero-count inventory.
     /// </summary>
     [Fact]
-    public async Task DocDownPdf_Extract_ZeroPagePdf_CompletesWithExplicitGaps()
+    public async Task DocDownPdf_Extract_ZeroPagePdf_ProducesZeroCountInventory()
     {
         // Arrange: a valid document that declares no pages at all
         using var temp = new TempScratch();
@@ -469,13 +453,25 @@ public class DocDownPdfTests
         // Act: extract the empty document
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
-        // Assert: no failure, and the absence of content is stated rather than left to be inferred
-        Assert.NotEqual(ExtractionOutcome.Failed, result.Outcome);
+        // Assert: no failure, and the absence of pages is stated as zero-count inventory rather than as a note
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Null(result.Failure);
-        Assert.Contains(result.Gaps, gap =>
-            gap.Target == "content.md" && gap.Reason.Contains("no pages", StringComparison.Ordinal));
+        Assert.Empty(result.Notes);
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        Assert.StartsWith("# DocDown Empty", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("<!-- docdown:page", content, StringComparison.Ordinal);
+
+        using var manifest = await ReadManifestAsync(scratch);
+        var features = manifest.RootElement.GetProperty("contentFeatures").EnumerateArray()
+            .ToDictionary(
+                feature => feature.GetProperty("label").GetString()!,
+                feature => feature.GetProperty("count").GetInt32(),
+                StringComparer.Ordinal);
+        Assert.Equal(0, features["pages"]);
+        Assert.Equal(0, features["headings"]);
+        Assert.Equal(0, features["paragraphs"]);
+        Assert.Equal(0, features["inline images"]);
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>
@@ -500,7 +496,7 @@ public class DocDownPdfTests
         Assert.Contains("Page 2 marker", content, StringComparison.Ordinal);
         Assert.DoesNotContain("Page 1 marker", content, StringComparison.Ordinal);
         Assert.DoesNotContain("Page 3 marker", content, StringComparison.Ordinal);
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
@@ -531,7 +527,7 @@ public class DocDownPdfTests
     }
 
     /// <summary>
-    ///     Proves every extraction scenario reconciles cleanly against the filesystem.
+    ///     Proves every extraction scenario writes the standard summary and manifest layout.
     /// </summary>
     /// <param name="scenario">The fixture key identifying the document under test.</param>
     [Theory]
@@ -545,7 +541,7 @@ public class DocDownPdfTests
     [InlineData("zeroPage")]
     [InlineData("malformed")]
     [InlineData("encrypted")]
-    public async Task DocDownPdf_Extract_AnyOutcome_ReportedGapsMatchFilesystem(string scenario)
+    public async Task DocDownPdf_Extract_AnyOutcome_WritesStandardLayout(string scenario)
     {
         // Arrange: the named fixture and a fresh scratch folder
         using var temp = new TempScratch();
@@ -556,9 +552,8 @@ public class DocDownPdfTests
         // Act: extract whatever this scenario produces, clean or degraded or failed
         await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
-        // Assert: whatever the outcome, the record and the disk tell the same story
+        // Assert: whatever the outcome, the standard layout is present
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>

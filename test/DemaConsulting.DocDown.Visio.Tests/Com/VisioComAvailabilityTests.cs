@@ -15,9 +15,13 @@ public class VisioComAvailabilityTests
     [Fact]
     public void VisioComAvailability_Probe_NeverInstructsInstallation()
     {
-        var result = VisioComAvailability.Probe(ExtractorCapabilities.Text | ExtractorCapabilities.RenderedPages);
+        var result = VisioComAvailability.Probe();
 
         Assert.DoesNotContain("install", result.UnavailableReason ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        if (result.IsAvailable)
+        {
+            Assert.True(result.ProvidesRenderedPages);
+        }
     }
 
     /// <summary>
@@ -31,9 +35,10 @@ public class VisioComAvailabilityTests
             return;
         }
 
-        var result = VisioComAvailability.Probe(ExtractorCapabilities.RenderedPages);
+        var result = VisioComAvailability.Probe();
 
         Assert.False(result.IsAvailable);
+        Assert.False(result.ProvidesRenderedPages);
         Assert.Contains("Windows", result.UnavailableReason!, StringComparison.Ordinal);
     }
 }

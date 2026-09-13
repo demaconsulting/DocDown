@@ -12,7 +12,7 @@ namespace DocDown.Visio.Com;
 /// <remarks>
 ///     <para>
 ///         This class is the whole untestable COM boundary and is deliberately mechanical: it holds
-///         no extraction or gap policy. Which pages render, how failures become gaps, and how the
+///         no extraction policy. Which pages render, how failures become notes, and how the
 ///         content and topology are delegated all live in the cross-platform-tested
 ///         <see cref="VisioComExtractor"/>; the low-level IDispatch plumbing, single-instance
 ///         activation, watchdog, and forced process termination live in <see cref="VisioComDispatch"/>.
@@ -208,7 +208,7 @@ internal sealed class VisioAutomation : IVisioAutomation
             var bytes = File.ReadAllBytes(pngPath);
             return new VisioRenderedPage(pageNumber, bytes, null);
         }
-#pragma warning disable CA1031 // Per-page fault isolation: any export fault becomes a counted gap, never an exception
+#pragma warning disable CA1031 // Per-page fault isolation: any export fault becomes a note-bearing result, never an exception
         catch (Exception exception)
 #pragma warning restore CA1031
         {

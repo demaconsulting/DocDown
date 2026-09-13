@@ -4,8 +4,8 @@ using DocDown.Core;
 namespace DocDown.Word.Markdown;
 
 /// <summary>
-///     Emits a rendered <see cref="WordDocumentModel"/> through the extraction sink, applying the
-///     honest gap-and-diagnostic policy in one place.
+///     Emits a rendered <see cref="WordDocumentModel"/> through the extraction sink, reporting the
+///     produced inventory and any extraction notes in one place.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -15,35 +15,29 @@ namespace DocDown.Word.Markdown;
 ///         everything downstream of the model is this one unit.
 ///     </para>
 ///     <para>
-///         Every shortfall the model records — an assumed table header, a flattened merge, an
-///         omitted page-furniture header, a document with no text — becomes a diagnostic or a
-///         counted, reasoned gap here. Nothing is omitted silently. Performs no filesystem I/O of
+///         The emitted inventory states what reached the output, including deliberate zero counts for
+///         categories a reader genuinely looked for, and a note is reserved for the narrower case
+///         where DocDown attempted a step and could not complete it. Performs no filesystem I/O of
 ///         its own: every byte goes through the sink. Stateless and thread-safe.
 ///     </para>
 /// </remarks>
 internal static class WordContentEmitter
 {
-    /// <summary>The ledger path every image gap must name for the contract verifier to accept it.</summary>
-    private const string ImagesTarget = "images/";
-
-    /// <summary>The ledger path the content and structural gaps name.</summary>
-    private const string ContentTarget = "content.md";
-
-    /// <summary>The pages ledger path a rendering gap names.</summary>
-    private const string PagesTarget = "pages/";
-
     /// <summary>
-    ///     Emits a model through the sink: images, content, metadata, and every diagnostic or gap
-    ///     the model implies.
+    ///     Emits a model through the sink: images, content, metadata, inventory counts, and any
+    ///     extraction notes the model implies.
     /// </summary>
     /// <param name="sink">The sink every artifact is written through. Must not be null.</param>
     /// <param name="options">The effective extraction options. Must not be null.</param>
     /// <param name="model">The document model to emit. Must not be null.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
-    /// <returns><see langword="true"/> when the run degraded (any gap was reported); otherwise <see langword="false"/>.</returns>
+    /// <returns>A task that completes when the model has been emitted.</returns>
     /// <exception cref="ArgumentNullException">Thrown when any argument is <see langword="null"/>.</exception>
-    /// <remarks>Side effect: writes content and images and records reports on the sink.</remarks>
-    public static async ValueTask<bool> EmitAsync(
+    /// <remarks>
+    ///     Side effect: writes content and images and records inventory counts and notes on the
+    ///     sink.
+    /// </remarks>
+    public static async ValueTask EmitAsync(
         IExtractionSink sink, ExtractionOptions options, WordDocumentModel model, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(sink);
@@ -51,7 +45,7 @@ internal static class WordContentEmitter
         ArgumentNullException.ThrowIfNull(model);
 
         // Images first: the content renderer places the links the sink allocates for them
-        var (imagePaths, imagesDegraded) = await WriteImagesAsync(sink, options, model, cancellationToken)
+        var imagePaths = await WriteImagesAsync(sink, options, model, cancellationToken)
             .ConfigureAwait(false);
 
         var partCount = await WriteContentAsync(sink, options, model, imagePaths, cancellationToken)
@@ -67,8 +61,7 @@ internal static class WordContentEmitter
             sink.ReportDocumentMetadata(metadata);
         }
 
-        var modelDegraded = ReportModelDiagnostics(sink, options, model);
-        return imagesDegraded || modelDegraded;
+        ReportExtractionNotes(sink, model);
     }
 
     /// <summary>
@@ -87,10 +80,11 @@ internal static class WordContentEmitter
     ///     </para>
     ///     <para>
     ///         The counts come from the model the reader built by walking the document, not from
-    ///         scanning the rendered markdown: the model already knows, and a regex over markdown
-    ///         would describe a rendering rather than the document. Core drops any zero count, so a
-    ///         document without tables or comments simply omits those words. Side effect: records
-    ///         reports on the sink.
+    ///         scanning the rendered markdown: the model already knows, and a regex over markdown would
+    ///         describe a rendering rather than the document. Features whose absence matters to a reader
+    ///         — text blocks, comments, distinct comment authors, and footnotes — are marked as looked
+    ///         for so a zero count still states plainly that Word extraction inspected them. Side effect:
+    ///         records reports on the sink.
     ///     </para>
     /// </remarks>
     private static void ReportContentFeatures(IExtractionSink sink, WordDocumentModel model)
@@ -98,6 +92,10 @@ internal static class WordContentEmitter
         // Count the body and the surviving document-control subsections together: both are rendered
         // into content.md, so both are things a reader will actually find there
         var blocks = model.Body.Concat(model.DocumentControl.SelectMany(section => section.Blocks)).ToList();
+        var textualBlocks = CountTextualBlocks(blocks);
+
+        sink.ReportContentFeature(new ContentFeature(
+            "text blocks", textualBlocks, "text block", LookedFor: true));
 
         sink.ReportContentFeature(new ContentFeature(
             "headings", blocks.Count(block => block.Kind == WordBlockKind.Heading)));
@@ -107,7 +105,8 @@ internal static class WordContentEmitter
             "list items", blocks.Count(block => block.Kind == WordBlockKind.ListItem)));
         sink.ReportContentFeature(new ContentFeature(
             "inline images", blocks.Count(block => block.Kind == WordBlockKind.Image)));
-        sink.ReportContentFeature(new ContentFeature("comments", model.Comments.Count));
+        sink.ReportContentFeature(new ContentFeature(
+            "comments", model.Comments.Count, LookedFor: true));
 
         // Distinct comment authors answer "is this one person's markup or a review?"; an unattributed
         // comment is not counted as a comment author because the document names nobody for it
@@ -116,9 +115,12 @@ internal static class WordContentEmitter
             model.Comments.Select(comment => comment.Author)
                 .Where(author => author is not null)
                 .Distinct(StringComparer.Ordinal)
-                .Count()));
+                .Count(),
+            "distinct comment author",
+            LookedFor: true));
 
-        sink.ReportContentFeature(new ContentFeature("footnotes", model.Footnotes.Count));
+        sink.ReportContentFeature(new ContentFeature(
+            "footnotes", model.Footnotes.Count, "footnote", LookedFor: true));
     }
 
     /// <summary>
@@ -157,14 +159,14 @@ internal static class WordContentEmitter
     /// <param name="options">The effective options, consulted for suppression and force-PNG.</param>
     /// <param name="model">The model whose image blocks are written.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
-    /// <returns>The map from an image source reference to its written path, and whether the run degraded.</returns>
+    /// <returns>The map from an image source reference to its written path.</returns>
     /// <remarks>
     ///     When images are suppressed nothing is written and Core records the suppression itself. A
-    ///     vector metafile is written unchanged with a readability caveat, and a force-PNG request is
-    ///     explained rather than honored because this package ships no imaging stack. Side effect:
-    ///     writes images and records reports on the sink.
+    ///     force-PNG request is recorded as a note when files were written in their source encoding,
+    ///     because this package ships no imaging stack and therefore cannot re-encode them. Side
+    ///     effect: writes images and records reports on the sink.
     /// </remarks>
-    private static async ValueTask<(Dictionary<string, string> Paths, bool Degraded)> WriteImagesAsync(
+    private static async ValueTask<Dictionary<string, string>> WriteImagesAsync(
         IExtractionSink sink, ExtractionOptions options, WordDocumentModel model, CancellationToken cancellationToken)
     {
         var paths = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -173,17 +175,16 @@ internal static class WordContentEmitter
         // deliberate absence itself, so this unit must not read, write, or count anything here
         if (!options.IncludeEmbeddedImages)
         {
-            return (paths, false);
+            return paths;
         }
 
         var images = CollectImages(model);
         if (images.Count == 0)
         {
-            return (paths, false);
+            return paths;
         }
 
         var writtenPaths = new HashSet<string>(StringComparer.Ordinal);
-        var vectorCount = 0;
 
         foreach (var image in images)
         {
@@ -202,29 +203,14 @@ internal static class WordContentEmitter
             }
 
             writtenPaths.Add(path);
-            if (IsVectorMetafile(image.MediaType))
-            {
-                vectorCount++;
-            }
-        }
-
-        // Report the found count as the number of distinct files written: a logo referenced many
-        // times is one image, so found equals obtained and the ledger stays clean rather than
-        // inventing a false shortfall from deduplication
-        sink.ReportFound(GapKind.Images, writtenPaths.Count);
-
-        var degraded = false;
-        if (vectorCount > 0)
-        {
-            ReportVectorImageDiagnostic(sink, vectorCount, writtenPaths.Count);
         }
 
         if (options.ImageOutput == ImageOutputMode.ForcePng && writtenPaths.Count > 0)
         {
-            degraded |= ReportForcePngGap(sink, writtenPaths.Count);
+            ReportForcePngNote(sink, writtenPaths.Count);
         }
 
-        return (paths, degraded);
+        return paths;
     }
 
     /// <summary>
@@ -383,273 +369,100 @@ internal static class WordContentEmitter
     }
 
     /// <summary>
-    ///     Reports every diagnostic and gap the model implies beyond the images.
+    ///     Reports the extraction notes the model implies beyond the images written earlier.
     /// </summary>
     /// <param name="sink">The sink to report through.</param>
-    /// <param name="options">The effective options.</param>
     /// <param name="model">The model to inspect.</param>
-    /// <returns><see langword="true"/> when any gap was reported; otherwise <see langword="false"/>.</returns>
     /// <remarks>Side effect: records reports on the sink.</remarks>
-    private static bool ReportModelDiagnostics(IExtractionSink sink, ExtractionOptions options, WordDocumentModel model)
+    private static void ReportExtractionNotes(IExtractionSink sink, WordDocumentModel model)
     {
-        var degraded = false;
-
-        if (!HasText(model))
-        {
-            sink.ReportDiagnostic(new ExtractionDiagnostic(
-                WordDiagnosticCodes.NoTextContent, DiagnosticSeverity.Warning,
-                "The document carries no extractable text."));
-            sink.ReportGap(new ExtractionGap(
-                string.Empty, GapKind.Text, ContentTarget, GapScope.Unavailable,
-                "The document carries no headings, paragraphs, list items, or tables, so there is no "
-                + "textual content to extract.",
-                Impact: "No textual content could be recovered from this document."));
-            degraded = true;
-        }
-        else
-        {
-            degraded |= ReportTableDiagnostics(sink, model);
-        }
-
-        if (model.TrackedChangeCount > 0)
-        {
-            var count = model.TrackedChangeCount.ToString(CultureInfo.InvariantCulture);
-            sink.ReportDiagnostic(new ExtractionDiagnostic(
-                WordDiagnosticCodes.TrackedChangesAccepted, DiagnosticSeverity.Info,
-                $"The document contains {count} tracked-change revisions; they were rendered in the "
-                + "accepted-revisions view."));
-        }
-
-        if (model.HeaderFooterPartsEmpty > 0 || model.HeaderFooterPartsPageFurniture > 0)
-        {
-            ReportHeaderFooterOmissions(sink, model);
-        }
-
         // A chart carries its plotted data in a part this backend does not read; say so rather than
         // letting the chart leave no trace at all in a document claiming a complete extraction
         if (model.ChartsFound > 0)
         {
-            ReportChartsNotExtracted(sink, model.ChartsFound);
-            degraded = true;
+            ReportChartsNote(sink, model.ChartsFound);
         }
 
-        if (options.RenderPages)
-        {
-            ReportRenderingUnavailableGap(sink);
-            degraded = true;
-        }
-
-        return degraded;
+        ReportFlattenedTableStructureNote(sink, model);
     }
 
     /// <summary>
-    ///     Reports the counted gap for charts the document embeds but this backend does not read.
+    ///     Reports that the document embeds charts whose chart parts this backend does not read.
     /// </summary>
     /// <param name="sink">The sink to report through.</param>
     /// <param name="count">The number of chart parts found; always greater than zero.</param>
     /// <remarks>
-    ///     A Word chart is anchored through a graphic frame carrying no image blip, so neither the text
-    ///     walk nor the image walk sees it: without this gap the chart's plotted values — often the
-    ///     only quantitative content in a report — would be absent with nothing said about them. The
-    ///     remedy points at the workbook route because a chart in a document is very often a view of a
-    ///     spreadsheet that this product's Excel backend does extract in full. Side effect: records
-    ///     reports on the sink.
+    ///     A Word chart is anchored through a graphic frame carrying no image blip, so neither the
+    ///     text walk nor the image walk sees it. The note therefore records the incomplete step
+    ///     plainly, without treating the document's content as a defect. Side effect: records on the
+    ///     sink.
     /// </remarks>
-    private static void ReportChartsNotExtracted(IExtractionSink sink, int count)
+    private static void ReportChartsNote(IExtractionSink sink, int count)
     {
         var counted = count.ToString(CultureInfo.InvariantCulture);
-        sink.ReportDiagnostic(new ExtractionDiagnostic(
-            WordDiagnosticCodes.ChartsNotExtracted, DiagnosticSeverity.Warning,
-            $"The document embeds {counted} charts whose plotted data this backend does not read."));
-        sink.ReportGap(new ExtractionGap(
-            string.Empty, GapKind.Text, ContentTarget, GapScope.Unavailable,
-            $"The document embeds {counted} charts. Their plotted data is stored in chart parts this "
-            + "backend does not yet read, so neither the values nor the chart titles appear in the extracted content.",
-            Impact: "The quantities those charts plot are not available as data or as text.",
-            Remedy: "Extract the source workbook with the Excel backend, which reads a chart's cached data series "
-            + "in full.",
-            AffectedCount: count));
+        sink.ReportNote(new ExtractionNote(
+            $"The document embeds {counted} charts, but this extractor does not read chart parts, so their titles and plotted values do not appear in the extracted content."));
     }
 
     /// <summary>
-    ///     Reports the table-related diagnostics and the counted structural gap for flattened cells.
+    ///     Reports when markdown table rendering could not preserve merged or nested table structure.
     /// </summary>
     /// <param name="sink">The sink to report through.</param>
     /// <param name="model">The model whose tables are inspected.</param>
-    /// <returns><see langword="true"/> when a flattening gap was reported; otherwise <see langword="false"/>.</returns>
-    /// <remarks>Side effect: records reports on the sink.</remarks>
-    private static bool ReportTableDiagnostics(IExtractionSink sink, WordDocumentModel model)
+    /// <remarks>
+    ///     GitHub-flavored markdown has no merge or nested-table construct, so this is one of the few
+    ///     places where the emitter attempted to preserve structure and could only approximate it.
+    ///     Side effect: records on the sink.
+    /// </remarks>
+    private static void ReportFlattenedTableStructureNote(IExtractionSink sink, WordDocumentModel model)
     {
         var flattened = 0;
-        var assumedHeader = false;
         foreach (var block in EnumerateTables(model))
         {
             flattened += block.MergedCellCount + block.NestedTableCount;
-            assumedHeader |= !block.FirstRowIsHeader;
-        }
-
-        if (assumedHeader)
-        {
-            sink.ReportDiagnostic(new ExtractionDiagnostic(
-                WordDiagnosticCodes.TableHeaderAssumed, DiagnosticSeverity.Info,
-                "A table's first row was used as the header row though the document did not mark it one."));
-        }
-
-        if (model.EmptyTablesSkipped > 0)
-        {
-            var count = model.EmptyTablesSkipped.ToString(CultureInfo.InvariantCulture);
-            sink.ReportDiagnostic(new ExtractionDiagnostic(
-                WordDiagnosticCodes.EmptyTableSkipped, DiagnosticSeverity.Info,
-                $"{count} tables with no cell content were skipped."));
         }
 
         if (flattened == 0)
         {
-            return false;
+            return;
         }
 
         var flattenedText = flattened.ToString(CultureInfo.InvariantCulture);
-        sink.ReportDiagnostic(new ExtractionDiagnostic(
-            WordDiagnosticCodes.MergedCellsFlattened, DiagnosticSeverity.Warning,
-            $"{flattenedText} merged or nested table cells were flattened."));
-        sink.ReportGap(new ExtractionGap(
-            string.Empty, GapKind.Structure, ContentTarget, GapScope.PartiallyExtracted,
-            $"{flattenedText} merged (gridSpan/vMerge) or nested table cells were flattened because "
-            + "GitHub-flavored markdown cannot express a merge or a nested table; their content is "
-            + "preserved but the cell structure is not.",
-            Impact: "The affected tables read as flat grids rather than reproducing the original merges.",
-            AffectedCount: flattened));
-        return true;
-    }
-
-    /// <summary>
-    ///     Records the omitted header and footer parts as informational diagnostics, never gaps.
-    /// </summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <param name="model">The model carrying the two omission counts.</param>
-    /// <remarks>
-    ///     An empty header or footer part and a part carrying only page-numbering furniture are both
-    ///     expected authoring artifacts that carry no document content, so omitting them drops nothing.
-    ///     Each is therefore an <see cref="DiagnosticSeverity.Info"/> note — "an expected decision; no
-    ///     action is implied" — and neither raises a gap nor degrades the run. The two cases are
-    ///     reported separately so each carries its own matching wording; a mixed batch is never
-    ///     described by one case's text. Side effect: records diagnostics on the sink.
-    /// </remarks>
-    private static void ReportHeaderFooterOmissions(IExtractionSink sink, WordDocumentModel model)
-    {
-        if (model.HeaderFooterPartsEmpty > 0)
-        {
-            sink.ReportDiagnostic(new ExtractionDiagnostic(
-                WordDiagnosticCodes.HeaderFooterPageNumberingOnly, DiagnosticSeverity.Info,
-                EmptyPartsMessage(model.HeaderFooterPartsEmpty)));
-        }
-
-        if (model.HeaderFooterPartsPageFurniture > 0)
-        {
-            sink.ReportDiagnostic(new ExtractionDiagnostic(
-                WordDiagnosticCodes.HeaderFooterPageNumberingOnly, DiagnosticSeverity.Info,
-                FurniturePartsMessage(model.HeaderFooterPartsPageFurniture)));
-        }
-    }
-
-    /// <summary>
-    ///     Composes the grammatically-agreeing note for empty header or footer parts.
-    /// </summary>
-    /// <param name="count">The number of empty parts omitted; always positive at the call site.</param>
-    /// <returns>The note text, singular or plural to match the count.</returns>
-    /// <remarks>Pure.</remarks>
-    private static string EmptyPartsMessage(int count) =>
-        count == 1
-            ? "1 empty header or footer part was omitted from document control because it carried no "
-              + "content to add to the narrative."
-            : $"{count.ToString(CultureInfo.InvariantCulture)} empty header or footer parts were omitted "
-              + "from document control because they carried no content to add to the narrative.";
-
-    /// <summary>
-    ///     Composes the grammatically-agreeing note for page-furniture-only header or footer parts.
-    /// </summary>
-    /// <param name="count">The number of furniture-only parts omitted; always positive at the call site.</param>
-    /// <returns>The note text, singular or plural to match the count.</returns>
-    /// <remarks>Pure.</remarks>
-    private static string FurniturePartsMessage(int count) =>
-        count == 1
-            ? "1 header or footer part containing only page-numbering fields was omitted from document "
-              + "control because that furniture is structural repetition rather than document content."
-            : $"{count.ToString(CultureInfo.InvariantCulture)} header or footer parts containing only "
-              + "page-numbering fields were omitted from document control because that furniture is "
-              + "structural repetition rather than document content.";
-
-    /// <summary>
-    ///     Reports the informational readability caveat for vector metafiles written unchanged.
-    /// </summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <param name="vectorCount">The number of vector images written as-is.</param>
-    /// <param name="found">The total number of images found.</param>
-    /// <remarks>
-    ///     Informational, never a gap: the bytes are a complete image file, so they are written and
-    ///     counted as extracted rather than lost, and no better environment would yield more — this
-    ///     package deliberately ships no metafile rasterizer. The caveat is that many viewers cannot
-    ///     render EMF or WMF metafiles, so it is stated for the reader without degrading the run. Side
-    ///     effect: records a diagnostic on the sink.
-    /// </remarks>
-    private static void ReportVectorImageDiagnostic(IExtractionSink sink, int vectorCount, int found)
-    {
-        var counted = Counted(vectorCount, found);
-        sink.ReportDiagnostic(new ExtractionDiagnostic(
-            WordDiagnosticCodes.VectorImageWrittenAsIs, DiagnosticSeverity.Info,
-            $"{counted} embedded images are EMF or WMF vector metafiles, which many viewers cannot render. "
-            + "Their bytes were written unchanged and counted as extracted."));
+        sink.ReportNote(new ExtractionNote(
+            $"{flattenedText} merged or nested table cells were flattened because GitHub-flavored markdown cannot represent that table structure."));
     }
 
     /// <summary>
     ///     Reports that PNG output could not be honored, explaining that source bytes were written instead.
     /// </summary>
     /// <param name="sink">The sink to report through.</param>
-    /// <param name="written">The number of images written in their source encoding.</param>
-    /// <returns>Always <see langword="true"/>, so the caller can accumulate the degraded signal.</returns>
+    /// <param name="written">The number of distinct embedded image files written in their source encoding.</param>
     /// <remarks>
     ///     Core's naming rule already guarantees the file extension follows the bytes actually
-    ///     written; this gap supplies the explanation. This package ships no imaging stack, so it
-    ///     cannot decode and re-encode. Mirrors the PDF backend's unhonored force-PNG note. Side
-    ///     effect: records reports on the sink.
+    ///     written. This note therefore records only the incomplete re-encoding step itself. Side
+    ///     effect: records on the sink.
     /// </remarks>
-    private static bool ReportForcePngGap(IExtractionSink sink, int written)
+    private static void ReportForcePngNote(IExtractionSink sink, int written)
     {
         var writtenText = written.ToString(CultureInfo.InvariantCulture);
-        sink.ReportDiagnostic(new ExtractionDiagnostic(
-            WordDiagnosticCodes.ForcePngNotHonored, DiagnosticSeverity.Warning,
-            $"PNG output was requested but {writtenText} images were written in their source encoding."));
-        sink.ReportGap(new ExtractionGap(
-            string.Empty, GapKind.Images, ImagesTarget, GapScope.PartiallyExtracted,
-            $"PNG output was requested, but this package ships no imaging stack and cannot re-encode; "
-            + $"{writtenText} embedded images were written in their source encoding with a matching file "
-            + "extension rather than converted.",
-            Impact: "Those images are not in the requested PNG format; their file extensions and the "
-            + "manifest media types describe what was actually written.",
-            AffectedCount: written));
-        return true;
+        sink.ReportNote(new ExtractionNote(
+            $"PNG output was requested, but {writtenText} embedded image files were written in their source encoding because this package does not re-encode images."));
     }
 
     /// <summary>
-    ///     Reports that this backend does not render pages, naming where that capability would live.
+    ///     Counts the textual blocks the emitted markdown carries.
     /// </summary>
-    /// <param name="sink">The sink to report through.</param>
+    /// <param name="blocks">The rendered block sequence to count.</param>
+    /// <returns>The number of heading, paragraph, list-item, and table blocks.</returns>
     /// <remarks>
-    ///     Core also emits its own engine-level gap for the unmet render request; this one adds the
-    ///     backend-specific reason. The wording states a fact about where the capability would come
-    ///     from rather than issuing an instruction, so it tells the reader nothing they could act on
-    ///     and fail at today and remains true on the day such a package exists. Side effect: records
-    ///     on the sink.
+    ///     A present-but-empty document is conveyed by this count at zero, marked looked for in the
+    ///     content inventory, rather than by a separate note. Pure.
     /// </remarks>
-    private static void ReportRenderingUnavailableGap(IExtractionSink sink)
-    {
-        sink.ReportGap(new ExtractionGap(
-            string.Empty, GapKind.Pages, PagesTarget, GapScope.Unavailable,
-            "This extractor reads Word text, tables, embedded images, and document metadata; it does "
-            + "not render pages. Rendered page images would come from a separate Word page-rendering "
-            + "extractor package that a host registers with the engine alongside this one.",
-            Impact: "Rendered page images are not available."));
-    }
+    private static int CountTextualBlocks(IEnumerable<WordBlock> blocks) =>
+        blocks.Count(block => block.Kind is WordBlockKind.Heading
+            or WordBlockKind.Paragraph
+            or WordBlockKind.ListItem
+            or WordBlockKind.Table);
 
     /// <summary>
     ///     Enumerates every table block in the body and the document-control subsections.
@@ -677,51 +490,6 @@ internal static class WordContentEmitter
                 }
             }
         }
-    }
-
-    /// <summary>
-    ///     Determines whether the model carries any textual content.
-    /// </summary>
-    /// <param name="model">The model to inspect.</param>
-    /// <returns><see langword="true"/> when text is present; otherwise <see langword="false"/>.</returns>
-    /// <remarks>
-    ///     Text is present when the body has a heading, paragraph, list item, or table, when the
-    ///     metadata names a title, or when a document-control subsection survived. Pure.
-    /// </remarks>
-    private static bool HasText(WordDocumentModel model)
-    {
-        if (model.DocumentControl.Count > 0 || model.Comments.Count > 0 || model.Footnotes.Count > 0)
-        {
-            return true;
-        }
-
-        return model.Body.Any(block => block.Kind
-            is WordBlockKind.Heading or WordBlockKind.Paragraph or WordBlockKind.ListItem or WordBlockKind.Table);
-    }
-
-    /// <summary>
-    ///     Reports whether an image media type names an EMF or WMF vector metafile.
-    /// </summary>
-    /// <param name="mediaType">The image media type.</param>
-    /// <returns><see langword="true"/> for a vector metafile; otherwise <see langword="false"/>.</returns>
-    /// <remarks>Pure.</remarks>
-    private static bool IsVectorMetafile(string mediaType) =>
-        mediaType.Contains("emf", StringComparison.OrdinalIgnoreCase)
-        || mediaType.Contains("wmf", StringComparison.OrdinalIgnoreCase);
-
-    /// <summary>
-    ///     Renders a "{count} of {found}" or bare-count phrase for gap prose.
-    /// </summary>
-    /// <param name="count">The affected count.</param>
-    /// <param name="found">The total found.</param>
-    /// <returns>The phrase.</returns>
-    /// <remarks>Reads naturally whether or not the affected set is the whole set. Pure.</remarks>
-    private static string Counted(int count, int found)
-    {
-        var countText = count.ToString(CultureInfo.InvariantCulture);
-        return count == found
-            ? countText
-            : $"{countText} of {found.ToString(CultureInfo.InvariantCulture)}";
     }
 
     /// <summary>

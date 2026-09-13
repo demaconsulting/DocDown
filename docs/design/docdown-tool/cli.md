@@ -14,7 +14,8 @@ between the argument vector the process receives and the two things the rest of 
 it — a validated set of choices, and a pair of output channels. Context follows the DEMA tool house
 pattern faithfully: a private constructor with a static `Create` factory, a nested argument parser
 that dispatches on a `switch`, required-value helpers that throw an argument fault, and
-silence-aware `WriteLine`/`WriteError` routing with an optional log opened for immediate flushing.
+silence-aware `WriteLine` and `WriteError` routing with an optional log opened for immediate
+flushing.
 
 ## External Interfaces
 
@@ -31,14 +32,16 @@ silence-aware `WriteLine`/`WriteError` routing with an optional log opened for i
   a silenced run that hit an error still exits non-zero. Silence controls only whether the console
   shows the error, never whether the tool reports one.
 - **Only set options are written.** `BuildExtractionOptions` writes the option for each flag the
-  caller actually gave and leaves the rest at the `ExtractionOptions` default, so an unspecified flag
-  never forces a value the caller did not choose.
+  caller actually gave and leaves the rest at the `ExtractionOptions` default, so an unspecified
+  flag never forces a value the caller did not choose.
+- **The scratch-folder policy is explicit.** `--overwrite` accepts only `clean` and `overwrite`,
+  mapping directly to the two scratch-folder modes the engine currently exposes.
 - **No option the engine cannot honor is accepted.** Every extraction flag maps onto a real
   `ExtractionOptions` member, so the command line is an honest surface over the library.
 
 ## Dependencies
 
-- **DocDown.Core** — `ExtractionOptions` and the option value types (`PageRange`, `ImageOutputMode`,
-  `ContentSplitMode`, `ScratchFolderMode`, `ExtractorCapabilities`) the flags map onto.
+- **DocDown.Core** — `ExtractionOptions` and the option value types (`PageRange`,
+  `ImageOutputMode`, `ContentSplitMode`, and `ScratchFolderMode`) the flags map onto.
 
 There are no other dependencies; the subsystem performs no extraction and constructs no engine.

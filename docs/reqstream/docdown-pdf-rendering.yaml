@@ -7,6 +7,27 @@
 # below via children, and is proven by system-level tests. The OTS requirements for
 # the native rasterization stack (PDFtoImage, PDFium, SkiaSharp) are linked as
 # children so the package's dependence on them is traced rather than assumed.
+#
+# SUPERSEDED REQUIREMENT: DocDownPdfRendering-RenderedPagesCapability
+# required the system to declare a superset of capabilities. It is superseded (not
+# satisfied) by DocDownPdfRendering-ReportsRenderedPagesAvailability because DocDown
+# now reports only whether this backend is available here and whether it provides
+# rendered pages here; it no longer negotiates a capability superset. This follows
+# the governing principle that DocDown reports what it extracted and where, using
+# inventory counts and short factual notes rather than capability negotiation.
+#
+# SUPERSEDED REQUIREMENT: DocDownPdfRendering-DegradesWhenUnavailable
+# required the system's absence or native unavailability to preserve a degradation
+# path owned by this package. It is superseded (not satisfied) by
+# DocDownPdfRendering-ReportsRenderedPagesAvailability because renderer absence is
+# now reported through selection-time availability, not by a degraded extraction,
+# note, gap, or diagnostic emitted by this system.
+#
+# SUPERSEDED REQUIREMENT: DocDownPdfRendering-PerPageFailureBecomesCountedGap
+# required a per-page rasterization fault to become a counted gap with a reason. It
+# is superseded (not satisfied) by DocDownPdfRendering-PerPageFailureReportedAsNote
+# because DocDown now records only the factual note that the attempted page could
+# not be rasterized and continues with normal completion.
 
 sections:
   - title: DocDownPdfRendering Requirements
@@ -30,20 +51,20 @@ sections:
         tests:
           - AddPdfRendering_OnBuilder_RegistersRenderingExtractor
 
-      - id: DocDownPdfRendering-RenderedPagesCapability
+      - id: DocDownPdfRendering-ReportsRenderedPagesAvailability
         title: >-
-          The system shall declare the text, embedded-image, document-metadata, and rendered-pages
-          capabilities as a single superset.
+          The system shall report itself available with rendered-page support when the native
+          renderer can run, and unavailable with a reason when it cannot.
         tags: [system]
         justification: |
-          The engine selects exactly one backend, so a rendering-only backend would lose selection to
-          the managed PDF backend and never render. Declaring the full superset is what lets selection
-          choose this backend when rendering is requested, and delivering all four keeps that
-          declaration honest.
+          Page rendering is the one environment-dependent fact selection needs from this package.
+          Reporting rendered-page support only when the native stack is actually usable lets Core
+          choose this backend before any document is opened, and reporting a reason when it is not
+          usable keeps the outcome explainable without this system emitting its own extraction note.
         children:
-          - DocDownPdfRendering-PdfPageRenderingExtractor-DeclaresCapabilities
+          - DocDownPdfRendering-PdfPageRenderingExtractor-ReportsRenderedPagesAvailability
         tests:
-          - PdfPageRenderingExtractor_Descriptor_DeclaresFullSupersetCapabilities
+          - PdfPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReflectsNativeStackWithoutThrowing
 
       - id: DocDownPdfRendering-RendersPagesToPng
         title: The system shall render requested document pages to PNG images in the pages folder.
@@ -67,9 +88,10 @@ sections:
         title: The system shall be selected over the managed PDF backend when page rendering is requested.
         tags: [system]
         justification: |
-          A caller who asks for rendered pages must get them when the capability is available. Because
-          both backends serve the PDF format, selection must prefer the one that can satisfy the
-          rendered-pages requirement rather than the lighter one that cannot.
+          A caller who asks for rendered pages must get them when an available backend reports that it
+          can provide them in this environment. Because both backends serve the PDF format, selection
+          must prefer the backend that can actually produce page images here rather than the lighter
+          managed backend that cannot.
         tests:
           - DocDownPdfRendering_Select_PagesRequested_RenderingBackendWins
 
@@ -79,23 +101,11 @@ sections:
           requested.
         tags: [system]
         justification: |
-          A plain extraction should pay nothing for a capability it did not ask for, including the
+          A plain extraction should pay nothing for rendered-page work it did not ask for, including the
           cost of loading a native stack. When rendering is not requested the lighter managed backend
           must win, so no native code is touched.
         tests:
           - DocDownPdfRendering_Select_PagesNotRequested_BaseBackendWins
-
-      - id: DocDownPdfRendering-DegradesWhenUnavailable
-        title: >-
-          The system's absence or unavailability shall leave the engine's existing page-rendering
-          degradation path unchanged.
-        tags: [system]
-        justification: |
-          When no rendering backend is registered, or its native stack cannot load, a page-rendering
-          request must degrade with the engine's own explained gap rather than fail. Registering this
-          package must not alter that path for the cases it does not serve.
-        tests:
-          - DocDownPdfRendering_Extract_RenderingNotRegistered_DegradesWithDD0301
 
       - id: DocDownPdfRendering-ProbeCheapAndSafe
         title: >-
@@ -110,8 +120,8 @@ sections:
           - DocDownPdfRendering-PdfPageRenderingExtractor-ProbeIsCheapAndSafe
           - DocDownPdfRendering-PageRenderer-ProbeCheapAndNonThrowing
         tests:
-          - PdfPageRenderingExtractor_ProbeAvailability_DeployedStack_ReportsAvailableWithoutThrowing
-          - PageRenderer_ProbeAvailability_DeployedNativeStack_ReportsAvailableWithoutThrowing
+          - PdfPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReflectsNativeStackWithoutThrowing
+          - PageRenderer_ProbeAvailability_AnyEnvironment_ReflectsUsabilityWithoutThrowing
 
       - id: DocDownPdfRendering-ProbeReportsUnavailableWithReason
         title: >-
@@ -121,26 +131,27 @@ sections:
         justification: |
           A missing or incompatible native binary is a real deployment condition, and an unavailable
           backend reported without a cause turns a fixable environment problem into a mystery. The
-          reason is what lets selection degrade honestly and an operator act.
+          reason is what lets selection report the situation honestly and lets an operator act.
         children:
           - DocDownPdfRendering-PageRenderer-ReportsUnavailableWithReason
         tests:
           - NativeProbeResult_Unavailable_CarriesReason
 
-      - id: DocDownPdfRendering-PerPageFailureBecomesCountedGap
+      - id: DocDownPdfRendering-PerPageFailureReportedAsNote
         title: >-
-          The system shall convert any per-page rasterization failure into a counted, reason-bearing
-          gap, without an exception reaching the caller and without silently omitting the pages folder.
+          The system shall report any per-page rasterization failure as a plain one-sentence note
+          naming the page, continue with the remaining pages, and still complete normally.
         tags: [system]
         justification: |
-          Rendering can fail on one page — an unsupported page, an out-of-memory at a high DPI, a
-          native fault — while the rest succeed. Isolating each failure into a counted gap keeps the
-          run alive and the absence explained, which is the library's core honesty promise applied to
-          the one capability that can fail at run time.
+          Rendering can fail on one page — an unsupported page, an out-of-memory at a high DPI, or a
+          native fault — while the rest succeed. Recording only the factual note that the attempted
+          page could not be rasterized keeps the run alive and keeps the report aligned with DocDown's
+          reduced output model: report what was attempted and what was produced, without adding an
+          acceptability judgement.
         children:
-          - DocDownPdfRendering-PdfPageRenderingExtractor-IsolatesPageFailures
+          - DocDownPdfRendering-PdfPageRenderingExtractor-ReportsPageFailuresAsNotes
         tests:
-          - PdfPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsCountedGapWithoutThrowing
+          - PdfPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsNoteWithoutThrowing
 
       - id: DocDownPdfRendering-HonorsDpi
         title: The system shall render pages at the requested dots-per-inch.
@@ -212,4 +223,4 @@ sections:
         children:
           - DocDownPdfRendering-PdfPageRenderingExtractor-ContributesSelfTests
         tests:
-          - PdfPageRenderingExtractor_GetSelfTestCases_DeployedStack_ContributesPassingRenderCase
+          - PdfPageRenderingExtractor_GetSelfTestCases_AnyEnvironment_ReportsHonestRenderCaseStatus

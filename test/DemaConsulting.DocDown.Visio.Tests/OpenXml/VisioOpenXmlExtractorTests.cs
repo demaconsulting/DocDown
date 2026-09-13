@@ -11,8 +11,8 @@ namespace DemaConsulting.DocDown.Visio.Tests.OpenXml;
 public class VisioOpenXmlExtractorTests
 {
     /// <summary>
-    ///     Proves the descriptor: identifier, supported formats (both modern drawings), capabilities,
-    ///     and priority.
+    ///     Proves the descriptor: identifier, display name, supported formats (both modern
+    ///     drawings), priority, and the fact that page rendering is meaningful for Visio drawings.
     /// </summary>
     [Fact]
     public void VisioOpenXmlExtractor_Descriptor_MatchesContract()
@@ -20,12 +20,10 @@ public class VisioOpenXmlExtractorTests
         var extractor = new VisioOpenXmlExtractor();
 
         Assert.Equal("visio-openxml", extractor.Id);
+        Assert.Equal("Visio (Open Packaging)", extractor.DisplayName);
         Assert.Contains(CoreFormat.Vsdx, extractor.SupportedFormats);
         Assert.Contains(CoreFormat.Vsdm, extractor.SupportedFormats);
         Assert.Equal(10, extractor.Priority);
-        Assert.True(extractor.Capabilities.HasFlag(ExtractorCapabilities.EmbeddedImages));
-        Assert.True(extractor.Capabilities.HasFlag(ExtractorCapabilities.DocumentStructure));
-        Assert.False(extractor.Capabilities.HasFlag(ExtractorCapabilities.RenderedPages));
         Assert.True(((IDocumentExtractor)extractor).PageRenderingApplicable);
     }
 
@@ -38,7 +36,10 @@ public class VisioOpenXmlExtractorTests
         var extractor = new VisioOpenXmlExtractor();
 
         Assert.Null(Record.Exception(extractor.ProbeAvailability));
-        Assert.True(extractor.ProbeAvailability().IsAvailable);
+        var availability = extractor.ProbeAvailability();
+        Assert.True(availability.IsAvailable);
+        Assert.False(availability.ProvidesRenderedPages);
+        Assert.Null(availability.UnavailableReason);
     }
 
     /// <summary>

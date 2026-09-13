@@ -37,7 +37,8 @@ public static class PowerPointDocDownBuilderExtensions
     ///     <see cref="DocDownBuilder.Build"/>. The managed backend (priority 10) serves every
     ///     extraction that does not request rendering; the COM backend (priority 0) is chosen only
     ///     when page rendering is requested and Microsoft PowerPoint is available, and otherwise
-    ///     degrades honestly. Side effect: mutates <paramref name="builder"/>'s registration list.
+    ///     records a plain-language note when a requested slide render cannot be completed. Side
+    ///     effect: mutates <paramref name="builder"/>'s registration list.
     /// </remarks>
     public static DocDownBuilder AddPowerPoint(this DocDownBuilder builder)
     {

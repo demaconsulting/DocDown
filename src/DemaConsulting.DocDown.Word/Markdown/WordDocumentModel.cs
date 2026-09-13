@@ -5,7 +5,8 @@ namespace DocDown.Word.Markdown;
 
 /// <summary>
 ///     The backend-neutral model of a whole Word document: the body flow plus the metadata,
-///     document-control content, and the counts the extractor needs to report every decision.
+///     document-control content, and the counts the emitter uses to describe the produced output
+///     and any extraction notes.
 /// </summary>
 /// <param name="Body">The document body as an ordered block sequence.</param>
 /// <param name="DocumentControl">
@@ -23,27 +24,28 @@ namespace DocDown.Word.Markdown;
 ///     <see langword="null"/> when absent. Never computed or guessed — Open XML has no true page count.
 /// </param>
 /// <param name="TrackedChangeCount">
-///     The number of tracked-change revisions rendered in the accepted view, so the caller can
-///     report <c>WORD0008 TrackedChangesAccepted</c> with the count when it is non-zero.
+///     The number of tracked-change revisions rendered in the accepted view, so tests and future
+///     reporting can observe that choice without a second pass over the document.
 /// </param>
 /// <param name="HeaderFooterPartsFound">The total number of header and footer parts found across all sections.</param>
 /// <param name="HeaderFooterPartsEmpty">
-///     The number of header and footer parts omitted because they carried no content at all. Recorded
-///     as an informational diagnostic, never a gap: an empty part is an expected authoring artifact
-///     and drops no content, so it neither degrades the run nor marks <c>content.md</c> partial.
+///     The number of header and footer parts omitted because they carried no content at all, kept on
+///     the model so tests can distinguish them from surviving document-control content without
+///     a second pass over the package.
 /// </param>
 /// <param name="HeaderFooterPartsPageFurniture">
 ///     The number of header and footer parts omitted because they carried only page-numbering fields
-///     (document furniture). Recorded as an informational diagnostic, never a gap: page furniture is
-///     structural repetition, not document content, so omitting it drops nothing and neither degrades
-///     the run nor marks <c>content.md</c> partial.
+///     (document furniture), kept so tests can observe that omission without a second pass over the package.
 /// </param>
-/// <param name="EmptyTablesSkipped">The number of tables skipped because they held no cell content, so the caller can note <c>WORD0003</c>.</param>
+/// <param name="EmptyTablesSkipped">
+///     The number of tables skipped because they held no cell content, so the caller can distinguish
+///     authored empty tables from tables that produced rendered markdown.
+/// </param>
 /// <param name="ChartsFound">
 ///     The number of DrawingML chart parts the document embeds. A chart in a Word document carries
 ///     its plotted data in a chart part exactly as a workbook's does, and this backend does not read
-///     that data, so the count exists solely to let the emitter report the charts as a counted gap
-///     rather than let them vanish from a document that claims a complete extraction.
+///     that data, so the count exists solely to let the emitter record that incomplete extraction
+///     step rather than let the charts vanish from the output.
 /// </param>
 /// <param name="Metadata">
 ///     What the document asserts about itself, mapped from the OPC core properties, or
@@ -52,7 +54,7 @@ namespace DocDown.Word.Markdown;
 /// </param>
 /// <remarks>
 ///     The counts live on the model rather than being recomputed because only the reader, walking
-///     the document once, can observe them; the extractor turns them into gaps and diagnostics.
+///     the document once, can observe them; the emitter turns them into inventory counts and notes.
 ///     Immutable and thread-safe.
 /// </remarks>
 internal sealed record WordDocumentModel(

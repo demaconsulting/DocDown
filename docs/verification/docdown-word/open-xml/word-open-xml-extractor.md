@@ -1,134 +1,100 @@
 ## WordOpenXmlExtractor Verification Design
 
-This document describes the unit-level verification strategy for `WordOpenXmlExtractor`, the managed
-backend the engine selects and invokes for a `.docx`.
+This document describes the unit-level verification strategy for `WordOpenXmlExtractor`, the
+managed backend the engine selects and invokes for a `.docx`.
 
 ### Verification Approach
 
 `WordOpenXmlExtractor` is verified through integration tests in `OpenXml/WordOpenXmlExtractorTests.cs`
 in `DemaConsulting.DocDown.Word.Tests`, with method names beginning with `WordOpenXmlExtractor_`.
 
-The unit is driven **through the engine end to end**, not against a stand-in context, because its
-observable contract is what a host sees: the descriptor's declared capabilities, the produced
-folder, the diagnostics, and the gaps. Every extraction ends with `ContractAssert.NoViolations`, so
-the reported gaps match what is on disk on the same run that asserts the diagnostic code and gap
-reason — a defect that emitted the wrong count or wrote the wrong file would fail the reconciliation
-in the same scenario.
-
-The SDK is not mocked. The documents are the real generated fixtures from
-`TestData/DocxFixtures.cs`, so the unit is exercised against genuine `.docx` files rather than
-against a simulation of one.
-
-Diagnostic codes are asserted by their pinned identifier — `WORD0001`, `WORD0005`, `WORD0006`,
-`WORD0007` — because the diagnostic-code table is a contract downstream consumers branch on. The
-page-rendering scenario additionally asserts that the rendered `summary.txt` does not carry the
-forbidden-remedy substring (case-insensitive), because the gap's remedy must state a fact about the
-environment rather than instruct a step the reader could try and fail at.
+The unit is driven through the engine end to end, not against a stand-in context, because its
+observable contract is what a host sees: the descriptor, the environment facts, the produced
+folder, the content inventory, and any extraction notes. The SDK is not mocked. The documents are
+the real generated fixtures from `TestData/DocxFixtures.cs`, so the unit is exercised against
+genuine `.docx` files rather than against a simulation of one.
 
 ### Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
 - **Inputs**: WordprocessingML documents generated at test time by `TestData/DocxFixtures.cs`
-- **Filesystem**: a per-test `TempScratch` folder holds the fixture file and the output folder
-- **Mocking**: none; the SDK is exercised against real documents and the sink is Core's real
-  writer through the engine
+- **Filesystem**: a per-test `TempScratch` folder holds the fixture file and output folder
+- **Mocking**: none; the SDK is exercised against real documents and the sink is Core's real writer
+  through the engine
 - **Isolation**: each test constructs its own engine and scratch folder
 
 ### Acceptance Criteria
 
-Per IEC 62304 §5.5.2, a `WordOpenXmlExtractor` unit test run passes when the descriptor's identity,
-priority, supported format, and capabilities are exactly the deliverable set with the
-rendered-pages capability absent; when a merged-cell document produces a partially-extracted
-structural gap with a positive affected count and the `WORD0005` diagnostic; when a force-PNG
-request produces `WORD0007` and a gap targeting `images/` whose reason names the request; when a
-vector image is written and `WORD0006` records the readability caveat; when an empty document
-degrades with `WORD0001`; when a page-rendering request degrades with a `Pages`-kind gap whose
-reason names the fact declaratively and the rendered summary carries no remedy the reader could act
-on and fail at;
-when per-part mode produces a `parts/` folder split at each Heading 1; when a header logo identical
-to a body image reuses one deduplicated image path; and when the extractor contributes exactly two
-self-test cases with the round-trip case passing and the page-rendering case skipped, and no case
-failing. Any undeclared capability, any missing diagnostic, any uncounted gap, or any contract
-violation the verifier reports is a failure.
+Per IEC 62304 §5.5.2, a `WordOpenXmlExtractor` test run passes when the descriptor's identity,
+priority, supported format, and managed availability are reported correctly; when a force-PNG
+request produces a short note but still writes the image files truthfully; when a vector image is
+written unchanged; when a merged-cell document produces a table-flattening note; when an empty
+document produces zero text blocks in the content inventory and no separate note; when per-part
+mode produces a `parts/` folder split at each top-level heading; when a header logo identical to a
+body image reuses one written image path; and when the extractor contributes exactly two self-test
+cases with one passing round trip and one skipped page-rendering case.
 
 ### Test Scenarios
 
-#### Declared descriptor matches the supported contract
+#### The descriptor matches the managed backend contract
 
-**Test**: `WordOpenXmlExtractor_Descriptor_HasPriority10AndCapabilities`
+**Test**: `WordOpenXmlExtractor_Descriptor_HasPriority10AndManagedAvailability`
 
-Proves the identity is `word-openxml`, the priority is 10, the `.docx` format is supported, the
-document-structure capability is declared, and — expressly — the rendered-pages capability is not.
-The absence assertion is what keeps the descriptor from claiming a capability the backend cannot
-deliver, so a page-rendering request can be negotiated up front rather than discovered as missing
-output. Evidence for `DocDownWord-OpenXml-WordOpenXmlExtractor-DeclaresCapabilities`.
+Proves the identity is `word-openxml`, the priority is 10, `.docx` is supported, and the
+availability report states the extractor is available while page rendering is not provided here.
+Evidence for `DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsManagedAvailability`.
 
-#### Merged cells produce a counted structural gap
+#### A force-PNG request that cannot be honored is explained by a note
 
-**Test**: `WordOpenXmlExtractor_Extract_MergedCells_ReportsCountedStructuralGap`
+**Test**: `WordOpenXmlExtractor_Extract_ForcePng_ReportsUnhonoredModeNote`
 
-Proves the flatten count the table writer returned surfaces as a structural gap of
-`PartiallyExtracted` scope with a positive affected count and the `WORD0005` diagnostic, and that
-the reported gap matches what is on disk. Evidence for
-`DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsStructuralGap`.
+Proves the result remains `Produced` and a note states that PNG output was requested but the
+embedded image files were written in their source encoding. Evidence for
+`DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote`.
 
-#### A force-PNG request that cannot be honored is explained
+#### A vector image is written as-is
 
-**Test**: `WordOpenXmlExtractor_Extract_ForcePng_ExplainsUnhonoredMode`
+**Test**: `WordOpenXmlExtractor_Extract_VectorImage_WritesAsIs`
 
-Proves the diagnostics carry `WORD0007` and a gap targeting `images/` whose reason names the
-request — that PNG output was requested but cannot be produced — so the caller learns which images
-defeated the request and why, without a mislabeled format. Evidence for
-`DocDownWord-OpenXml-WordOpenXmlExtractor-ExplainsUnhonoredForcePng`.
+Proves the image is written unchanged, the run completes as `Produced`, and no extra note is
+required for that image type. Evidence for `DocDownWord-VectorImagesWrittenAsIs` and
+`DocDownWord-OpenXml-WordOpenXmlExtractor-WritesVectorImageAsIs`.
 
-#### A vector image is written as-is with a caveat
+#### Flattened table structure is explained by a note
 
-**Test**: `WordOpenXmlExtractor_Extract_VectorImage_WritesAsIsWithCaveat`
+**Test**: `WordOpenXmlExtractor_Extract_MergedCells_ReportsFlatteningNote`
 
-Proves the EMF part reaches `images/` as one file and `WORD0006` records the readability caveat, so
-the image survives in the format the document carried while the caveat states what many viewers
-cannot render. Evidence for `DocDownWord-OpenXml-WordOpenXmlExtractor-WritesVectorImageWithCaveat`.
+Proves the result remains `Produced` and a note states that merged or nested table cells were
+flattened because markdown cannot represent that structure. Evidence for
+`DocDownWord-TableStructureNotes` and
+`DocDownWord-Markdown-WordContentEmitter-ReportsFlattenedTableNote`.
 
-#### An empty document degrades with a no-text gap
+#### An empty document produces a zero-count text inventory entry
 
-**Test**: `WordOpenXmlExtractor_Extract_EmptyDocument_DegradesWithNoTextGap`
+**Test**: `WordOpenXmlExtractor_Extract_EmptyDocument_ProducesZeroCountTextInventory`
 
-Proves the outcome degrades and `WORD0001` records the missing text, so an empty content document
-is a stated fact rather than a mystery indistinguishable from a broken extractor. Evidence for
-`DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsEmptyDocumentGap`.
-
-#### A page-rendering request degrades with a reasoned gap
-
-**Test**: `WordOpenXmlExtractor_Extract_PagesRequested_DegradesWithReasonedGap`
-
-Proves the outcome degrades, a gap of kind `Pages` names the fact declaratively — that this backend
-does not render pages — and the rendered `summary.txt` does not carry the forbidden-remedy
-substring, so
-the remedy states an environment fact rather than an instruction the reader could act on and fail
-at. Evidence for `DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsPageRenderingGap`.
+Proves the result remains `Produced`, no note is emitted, and `manifest.json` records a `text
+blocks` content feature with a count of zero. Evidence for `DocDownWord-EmptyDocumentInventory`.
 
 #### Per-part mode splits at Heading 1
 
 **Test**: `WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1`
 
 Proves a `parts/` folder exists and holds at least two files for a document with two top-level
-headings, so the split honors the request rather than returning a single flow the caller would then
-re-segment. Evidence for `DocDownWord-OpenXml-WordOpenXmlExtractor-SplitsPerPart`.
+headings. Evidence for `DocDownWord-ContentSplitting` and
+`DocDownWord-OpenXml-WordOpenXmlExtractor-SplitsPerPart`.
 
-#### A header logo is deduplicated with the body
+#### A header logo is deduplicated with the body image
 
 **Test**: `WordOpenXmlReader_Read_HeaderWithLogo_ReusesDeduplicatedImagePath`
 
-Proves a logo that appears in both the header and the body is written as one file rather than two,
-and the contract verifier reports no violations. Ownership of the deduplication is the reader's,
-but the observable effect — one file in `images/` — is exercised through the extractor here.
-Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-ReusesDeduplicatedImagePath`.
+Proves a logo that appears in both the header and the body is written once rather than twice.
+Supporting evidence for the shared image-provenance path.
 
 #### Self-test cases run and report honestly
 
 **Test**: `WordOpenXmlExtractor_SelfValidation_ReportsCases`
 
 Proves the backend contributes exactly two cases under its category, that one result is passed and
-one is skipped — the round-trip case genuinely passes in the environment under test, and the
-capability this backend does not claim reports a skip with a reason — and that no case is failed.
-Evidence for `DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests`.
+one is skipped, and that no case fails. Evidence for
+`DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests`.

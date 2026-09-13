@@ -1,26 +1,30 @@
 ---
 # Software Unit Requirements for PdfPageRenderingExtractor
 #
-# PdfPageRenderingExtractor is the superset backend: it declares the four capabilities,
-# probes the native stack cheaply, delegates the managed aspects to the base PDF backend,
-# rasterizes the requested pages, and isolates every per-page failure into a counted gap.
+# PdfPageRenderingExtractor is the superset backend: it probes the native stack cheaply,
+# reports rendered-page support only when that stack is usable, delegates the managed
+# aspects to the base PDF backend, rasterizes the requested pages, and reports every
+# per-page failure as a plain note.
+#
+# SUPERSEDED REQUIREMENT:
+# DocDownPdfRendering-PdfPageRenderingExtractor-DeclaresCapabilities required the
+# extractor to declare a four-capability superset. It is superseded (not satisfied)
+# by DocDownPdfRendering-PdfPageRenderingExtractor-ReportsRenderedPagesAvailability
+# because the extractor now reports only whether it is available here and whether it
+# provides rendered pages here; it no longer negotiates a capability set.
+#
+# SUPERSEDED REQUIREMENT:
+# DocDownPdfRendering-PdfPageRenderingExtractor-IsolatesPageFailures required
+# per-page faults to become a counted gap. It is superseded (not satisfied) by
+# DocDownPdfRendering-PdfPageRenderingExtractor-ReportsPageFailuresAsNotes because
+# this unit now records only the factual note that a page could not be rasterized
+# and still returns Produced.
 
 sections:
   - title: DocDownPdfRendering Requirements
     sections:
       - title: PdfPageRenderingExtractor Requirements
         requirements:
-          - id: DocDownPdfRendering-PdfPageRenderingExtractor-DeclaresCapabilities
-            title: >-
-              PdfPageRenderingExtractor shall declare the PDF format and the text, embedded-image,
-              document-metadata, and rendered-pages capabilities.
-            justification: |
-              Selection ranks a single winner over declared capabilities. Declaring the full superset
-              is what makes this backend selectable when rendering is requested; declaring less would
-              let the managed backend win and no page would ever render.
-            tests:
-              - PdfPageRenderingExtractor_Descriptor_DeclaresFullSupersetCapabilities
-
           - id: DocDownPdfRendering-PdfPageRenderingExtractor-ProbeIsCheapAndSafe
             title: >-
               PdfPageRenderingExtractor shall report availability from a cheap, non-throwing probe that
@@ -28,9 +32,22 @@ sections:
             justification: |
               The probe is consulted on every engine build, including for plain extractions. It must
               answer whether the native stack can load without paying rasterization cost or throwing,
-              so a plain extraction is never taxed by a capability it did not request.
+              so a plain extraction is never taxed by rendered-page work it did not request.
             tests:
-              - PdfPageRenderingExtractor_ProbeAvailability_DeployedStack_ReportsAvailableWithoutThrowing
+              - PdfPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReflectsNativeStackWithoutThrowing
+
+          - id: DocDownPdfRendering-PdfPageRenderingExtractor-ReportsRenderedPagesAvailability
+            title: >-
+              PdfPageRenderingExtractor shall report rendered-page support only when the native
+              rasterizer is usable in the current environment, and otherwise shall report itself
+              unavailable with a reason.
+            justification: |
+              Selection needs to know whether this backend can actually produce rendered pages here,
+              not whether it could in some other deployment. Reporting rendered-page support only for
+              the usable environment, and otherwise carrying a reason, is what lets Core choose
+              honestly before any document is opened.
+            tests:
+              - PdfPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReflectsNativeStackWithoutThrowing
 
           - id: DocDownPdfRendering-PdfPageRenderingExtractor-DelegatesManagedAspects
             title: >-
@@ -55,16 +72,17 @@ sections:
               - PdfPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs
               - DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages
 
-          - id: DocDownPdfRendering-PdfPageRenderingExtractor-IsolatesPageFailures
+          - id: DocDownPdfRendering-PdfPageRenderingExtractor-ReportsPageFailuresAsNotes
             title: >-
-              PdfPageRenderingExtractor shall isolate a per-page rasterization failure into a counted
-              gap and continue with the remaining pages, without throwing to the caller.
+              PdfPageRenderingExtractor shall report a per-page rasterization failure as the plain note
+              `Page N could not be rasterized.`, continue with the remaining pages, and not throw to
+              the caller.
             justification: |
               One unrenderable page must not abort a whole extraction or reach the caller as an
-              exception. Catching each page's fault, naming the page in a counted gap, and continuing
-              is what keeps the run honest and alive.
+              exception. Catching each page's fault, naming the page in a short factual note, and
+              continuing is what keeps the run honest and alive without adding any extra judgement.
             tests:
-              - PdfPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsCountedGapWithoutThrowing
+              - PdfPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsNoteWithoutThrowing
 
           - id: DocDownPdfRendering-PdfPageRenderingExtractor-ContributesSelfTests
             title: >-
@@ -75,4 +93,4 @@ sections:
               A distinctly named case that renders a document the backend builds itself provides that
               confirmation without colliding with the managed backend's own case names.
             tests:
-              - PdfPageRenderingExtractor_GetSelfTestCases_DeployedStack_ContributesPassingRenderCase
+              - PdfPageRenderingExtractor_GetSelfTestCases_AnyEnvironment_ReportsHonestRenderCaseStatus

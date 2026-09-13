@@ -17,7 +17,7 @@ DocDown, fully managed and reasoned about without the native stack in view.
 native renderer, not of any instance, so instance state would be misleading. It holds two static
 locks — one that serializes rasterization and one that guards the one-time availability probe — plus
 the cached probe result. Its companion `NativeProbeResult` is an internal immutable record carrying
-`IsAvailable` and a reason, with a shared available value and an `Unavailable(reason)` factory that
+`IsAvailable` and a reason, with a shared `Available` value and an `Unavailable(reason)` factory that
 refuses an empty reason.
 
 ### Key Methods
@@ -27,13 +27,14 @@ refuses an empty reason.
   front. Any native or memory fault surfaces as a thrown exception the caller isolates per page.
 - **`ProbeAvailability()`** — loads the PDFium native once through the PDFtoImage assembly's own
   native-resolution path (honoring the package graph's `runtimes/<rid>/native` asset), caches the
-  outcome, and returns available or a reason. Never throws and never rasterizes.
+  outcome, and returns `NativeProbeResult.Available` or `NativeProbeResult.Unavailable(reason)`.
+  Never throws and never rasterizes.
 
 ### Error Handling
 
 The availability probe catches every load fault and converts it into an unavailable result naming the
 runtime identifier, so it can never throw. `Render` deliberately does not catch: it lets a native or
-memory fault propagate so the extractor can isolate it per page and turn it into a counted gap. The
+memory fault propagate so the extractor can isolate it per page and turn it into a plain note. The
 `CA1416` platform-support warning on the PDFtoImage call is suppressed with justification because
 PDFtoImage is supported on every platform DocDown targets.
 

@@ -15,13 +15,14 @@ sections:
               - id: DocDownPowerPoint-Com-PowerPointComAvailability-ProbesWithoutSideEffects
                 title: >-
                   PowerPointComAvailability shall answer the probe cheaply and without side effects,
-                  opening no deck, launching no application, and never throwing.
+                  opening no deck, launching no application, never throwing, and reporting
+                  rendered-page support when available.
                 justification: |
                   Availability probing carries strict obligations: it must be well under the contract's
                   time bound, side-effect free, and non-throwing. Checking the operating system first and
-                  then a registry lookup for the ProgID — treating any fault as "not registered" — is what
-                  keeps the probe within those obligations while still telling the truth about whether
-                  PowerPoint can be reached.
+                  then a registry lookup for the ProgID — treating any fault as "not registered" — is
+                  what keeps the probe within those obligations while still telling the truth about
+                  whether PowerPoint can be reached and whether rendered pages can be provided.
                 tests:
                   - PowerPointComAvailability_Probe_NeverThrowsAndNeverInstructsInstallation
 

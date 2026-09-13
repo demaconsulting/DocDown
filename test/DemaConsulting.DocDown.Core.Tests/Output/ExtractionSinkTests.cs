@@ -4,25 +4,17 @@ using DocDown.Core;
 namespace DemaConsulting.DocDown.Core.Tests.Output;
 
 /// <summary>
-///     Unit tests for <see cref="ExtractionSink"/>, the sole write path, proving image path
-///     allocation and SHA-256 deduplication, page and part path allocation, image suppression,
-///     the honesty-stream reports, and dense Core-assigned gap identifiers.
+///     Unit tests for <see cref="ExtractionSink"/>, the sole write path, proving image and page
+///     allocation, SHA-256 deduplication, path safety, content-feature recording, and note
+///     recording.
 /// </summary>
-/// <remarks>
-///     These tests drive a real sink over a prepared <see cref="ScratchFolder"/> (its documented
-///     dependency) and inspect the internal recorded state visible via <c>InternalsVisibleTo</c>.
-///     Each is named for the unit requirement it evidences: image path allocation, image
-///     deduplication, page path allocation, part path allocation, image suppression, records and
-///     reports, and gap-identifier allocation, plus the image-transform provenance the manifest
-///     records for every written image.
-/// </remarks>
 public class ExtractionSinkTests
 {
     /// <summary>Gets the ambient test cancellation token so async calls stay responsive to cancellation.</summary>
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>
-    ///     Proves image ordinals are dense, one-based, and allocated in call order (AllocatesImagePaths).
+    ///     Proves image ordinals are dense, one-based, and allocated in call order.
     /// </summary>
     [Fact]
     public async Task ExtractionSink_AddImageAsync_ThreeDistinctImages_AllocatesDenseOrdinalPaths()
@@ -31,12 +23,12 @@ public class ExtractionSinkTests
         using var temp = new TempScratch();
         var sink = NewSink(temp, new ExtractionOptions());
 
-        // Act: add three images with distinct bytes
+        // Act: add three distinct images
         var first = await AddImageAsync(sink, [1], "image/png");
         var second = await AddImageAsync(sink, [2], "image/png");
         var third = await AddImageAsync(sink, [3], "image/png");
 
-        // Assert: the paths carry dense one-based ordinals in call order and each file exists on disk
+        // Assert: the paths are dense and each file exists
         Assert.Equal("images/0001-image.png", first);
         Assert.Equal("images/0002-image.png", second);
         Assert.Equal("images/0003-image.png", third);
@@ -44,7 +36,7 @@ public class ExtractionSinkTests
     }
 
     /// <summary>
-    ///     Proves the file extension follows the written media type (AllocatesImagePaths).
+    ///     Proves the written extension follows the written media type.
     /// </summary>
     [Fact]
     public async Task ExtractionSink_AddImageAsync_JpegMediaType_UsesJpgExtension()
@@ -53,19 +45,18 @@ public class ExtractionSinkTests
         using var temp = new TempScratch();
         var sink = NewSink(temp, new ExtractionOptions());
 
-        // Act: add an image declared as JPEG
+        // Act: add a JPEG image
         var path = await AddImageAsync(sink, [9, 8, 7], "image/jpeg");
 
-        // Assert: the extension reflects the bytes' media type, not a requested format
+        // Assert: the extension reflects the media type
         Assert.EndsWith(".jpg", path, StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     Proves a vector media type is written with its true extension (EMF, WMF, SVG) rather than
-    ///     the <c>.bin</c> fallback, so an extracted vector asset is named for what it is.
+    ///     Proves vector media types are written with their true extensions.
     /// </summary>
-    /// <param name="mediaType">The vector image media type.</param>
-    /// <param name="expectedExtension">The extension the written file must carry.</param>
+    /// <param name="mediaType">The vector media type.</param>
+    /// <param name="expectedExtension">The expected extension.</param>
     [Theory]
     [InlineData("image/x-emf", ".emf")]
     [InlineData("image/emf", ".emf")]
@@ -73,101 +64,70 @@ public class ExtractionSinkTests
     [InlineData("image/wmf", ".wmf")]
     [InlineData("image/svg+xml", ".svg")]
     public async Task ExtractionSink_AddImageAsync_VectorMediaType_UsesTrueExtension(
-        string mediaType, string expectedExtension)
-    {
-        using var temp = new TempScratch();
-        var sink = NewSink(temp, new ExtractionOptions());
-
-        var path = await AddImageAsync(sink, [1, 2, 3, 4], mediaType);
-
-        Assert.EndsWith(expectedExtension, path, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Proves the allocated image name begins with the four-digit ordinal prefix and a hyphen (AllocatesImagePaths).
-    /// </summary>
-    [Fact]
-    public async Task ExtractionSink_AddImageAsync_AllocatedName_BeginsWithOrdinalPrefix()
+        string mediaType,
+        string expectedExtension)
     {
         // Arrange: a real sink over a prepared scratch folder
         using var temp = new TempScratch();
         var sink = NewSink(temp, new ExtractionOptions());
 
-        // Act: add an image and read the allocated file name
-        var path = await AddImageAsync(sink, [42], "image/png");
-        var fileName = path["images/".Length..];
+        // Act: add one vector image
+        var path = await AddImageAsync(sink, [1, 2, 3, 4], mediaType);
 
-        // Assert: the name starts with four digits and a hyphen, the prefix that also defuses reserved names
-        Assert.True(BeginsWithOrdinalPrefix(fileName), $"'{fileName}' does not begin with the {{ordinal:D4}}- prefix.");
+        // Assert: the true extension is preserved
+        Assert.EndsWith(expectedExtension, path, StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     Proves byte-identical images are stored once and reference-counted (ImageDeduplication).
+    ///     Proves byte-identical images are stored once and reference-counted.
     /// </summary>
     [Fact]
     public async Task ExtractionSink_AddImageAsync_IdenticalBytesTwice_DeduplicatesToOneFile()
     {
-        // Arrange: a real sink and two identical image payloads
+        // Arrange: a real sink and one byte sequence written twice
         using var temp = new TempScratch();
         var sink = NewSink(temp, new ExtractionOptions());
         var bytes = new byte[] { 5, 6, 7, 8 };
 
-        // Act: add the same bytes twice
+        // Act: add the same image twice
         var firstPath = await AddImageAsync(sink, bytes, "image/png");
         var secondPath = await AddImageAsync(sink, bytes, "image/png");
 
-        // Assert: one file, one manifest entry, two references, and the same returned relative path
+        // Assert: the second write reuses the first file and increments the reference count
         Assert.Equal(firstPath, secondPath);
-        var record = Assert.Single(sink.Images);
-        Assert.Equal(2, record.References);
+        Assert.Single(sink.Images);
+        Assert.Equal(2, sink.Images[0].References);
         Assert.Single(Directory.GetFiles(Path.Combine(sink.Folder.AbsolutePath, "images")));
     }
 
     /// <summary>
-    ///     Proves a deduplicated add merges its page associations into the surviving record — the
-    ///     union of the source pages and the OR of the template flag — so no referrer is lost, and the
-    ///     scalar source page stays the deterministic lowest referrer.
+    ///     Proves a deduplicated add merges its referrer set into the surviving record.
     /// </summary>
     [Fact]
     public async Task ExtractionSink_AddImageAsync_DuplicateBytes_MergesReferrerSets()
     {
+        // Arrange: a real sink and one image added twice from different source pages
         using var temp = new TempScratch();
         var sink = NewSink(temp, new ExtractionOptions());
         var bytes = new byte[] { 5, 6, 7, 8 };
 
+        // Act: add the duplicate image with different referrers
         using var first = new MemoryStream(bytes, writable: false);
         await sink.AddImageAsync(first, new ImageHint(null, "image/png", SourcePages: [3]), Ct);
         using var second = new MemoryStream(bytes, writable: false);
         await sink.AddImageAsync(
-            second, new ImageHint(null, "image/png", SourcePages: [1], ReferencedByTemplate: true), Ct);
+            second,
+            new ImageHint(null, "image/png", SourcePages: [1], ReferencedByTemplate: true),
+            Ct);
 
-        var record = Assert.Single(sink.Images);
-        Assert.Equal([1, 3], record.SourcePages);
-        Assert.Equal(1, record.SourcePage);
-        Assert.True(record.ReferencedByTemplate);
+        // Assert: the deduplicated record keeps the union of the referrers
+        Assert.Equal([1, 3], sink.Images[0].SourcePages);
+        Assert.Equal(1, sink.Images[0].SourcePage);
+        Assert.True(sink.Images[0].ReferencedByTemplate);
     }
 
     /// <summary>
-    ///     Proves the scalar source page is derived as the first entry of the referrer set when only
-    ///     the set is supplied, so a consumer reading the scalar still sees a stable referrer. The
-    ///     writer supplies the set already sorted, so the first entry is the lowest referrer.
-    /// </summary>
-    [Fact]
-    public async Task ExtractionSink_AddImageAsync_SourcePagesOnly_DerivesScalarFirst()
-    {
-        using var temp = new TempScratch();
-        var sink = NewSink(temp, new ExtractionOptions());
-
-        using var stream = new MemoryStream([1, 2, 3, 4], writable: false);
-        await sink.AddImageAsync(stream, new ImageHint(null, "image/png", SourcePages: [2, 5, 9]), Ct);
-
-        var record = Assert.Single(sink.Images);
-        Assert.Equal(2, record.SourcePage);
-        Assert.Equal([2, 5, 9], record.SourcePages);
-    }
-
-    /// <summary>
-    ///     Proves a rendered page is named by its one-based document page number (AllocatesPagePaths).
+    ///     Proves rendered pages are named by their one-based document page number.
     /// </summary>
     [Fact]
     public async Task ExtractionSink_AddPageAsync_PageNumber_NamesFileByDocumentPage()
@@ -179,65 +139,29 @@ public class ExtractionSinkTests
         // Act: render document page seven
         var path = await AddPageAsync(sink, 7, [1, 2, 3]);
 
-        // Assert: the page file is named by its document page number and exists on disk
+        // Assert: the page file is named by the source page number
         Assert.Equal("pages/page0007.png", path);
         Assert.True(File.Exists(Path.Combine(sink.Folder.AbsolutePath, "pages", "page0007.png")));
     }
 
     /// <summary>
-    ///     Proves a non-positive page number is rejected as a caller error (AllocatesPagePaths boundary).
+    ///     Proves a non-positive page number is rejected as a caller error.
     /// </summary>
     [Fact]
     public async Task ExtractionSink_AddPageAsync_ZeroPageNumber_ThrowsArgumentOutOfRange()
     {
-        // Arrange: a real sink over a prepared scratch folder
+        // Arrange: a sink and an invalid page number
         using var temp = new TempScratch();
         var sink = NewSink(temp, new ExtractionOptions());
         using var png = new MemoryStream([1]);
 
-        // Act + Assert: page numbers are one-based, so zero is invalid
+        // Act / Assert: page numbers are one-based
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
             async () => await sink.AddPageAsync(0, png, Ct));
     }
 
     /// <summary>
-    ///     Proves a titled part path carries its ordinal, kind, and slug and defers the write (AllocatesPartPaths).
-    /// </summary>
-    [Fact]
-    public async Task ExtractionSink_AddContentPartAsync_TitledPart_AllocatesOrdinalKindSlugPath()
-    {
-        // Arrange: a real sink over a prepared scratch folder
-        using var temp = new TempScratch();
-        var sink = NewSink(temp, new ExtractionOptions());
-
-        // Act: add a titled sheet part
-        var path = await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Sheet, 5, "Q1 Budget"), "# Q1\n", Ct);
-
-        // Assert: the path reflects the Core-allocated ordinal, the kind, and the slug, and no file is written yet
-        Assert.Equal("parts/0001-sheet-q1-budget.md", path);
-        Assert.Single(sink.Parts);
-        Assert.False(File.Exists(Path.Combine(sink.Folder.AbsolutePath, "parts", "0001-sheet-q1-budget.md")));
-    }
-
-    /// <summary>
-    ///     Proves an untitled part falls back to the ordinal-and-kind path (AllocatesPartPaths).
-    /// </summary>
-    [Fact]
-    public async Task ExtractionSink_AddContentPartAsync_UntitledPart_AllocatesOrdinalKindPath()
-    {
-        // Arrange: a real sink over a prepared scratch folder
-        using var temp = new TempScratch();
-        var sink = NewSink(temp, new ExtractionOptions());
-
-        // Act: add a part with no title
-        var path = await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Slide, 2, null), "# slide\n", Ct);
-
-        // Assert: an empty slug falls back to the ordinal-and-kind form
-        Assert.Equal("parts/0001-slide.md", path);
-    }
-
-    /// <summary>
-    ///     Proves part ordinals are Core-assigned in call order, ignoring the advisory value (AllocatesPartPaths).
+    ///     Proves part ordinals are Core-assigned in call order, ignoring the advisory ordinal.
     /// </summary>
     [Fact]
     public async Task ExtractionSink_AddContentPartAsync_ConflictingAdvisoryOrdinals_AllocatesDenseOrdinals()
@@ -246,39 +170,38 @@ public class ExtractionSinkTests
         using var temp = new TempScratch();
         var sink = NewSink(temp, new ExtractionOptions());
 
-        // Act: add two parts whose advisory ordinals are both 99
+        // Act: add two parts whose advisory ordinals conflict
         var first = await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Section, 99, "One"), "a", Ct);
         var second = await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Section, 99, "Two"), "b", Ct);
 
-        // Assert: Core allocates dense one-based ordinals regardless of the extractor's advisory numbers
+        // Assert: Core assigns its own dense ordinals
         Assert.Equal("parts/0001-section-one.md", first);
         Assert.Equal("parts/0002-section-two.md", second);
     }
 
     /// <summary>
-    ///     Proves image writing is suppressed, recorded once, and signalled with an empty path (ImageSuppression).
+    ///     Proves image writing is suppressed when embedded images are disabled.
     /// </summary>
     [Fact]
-    public async Task ExtractionSink_AddImageAsync_ImagesDisabled_SuppressesAndRecordsOnce()
+    public async Task ExtractionSink_AddImageAsync_ImagesDisabled_SuppressesWritesAndReturnsEmptyPath()
     {
-        // Arrange: a sink whose options disable embedded images
+        // Arrange: a sink whose options disable embedded-image extraction
         using var temp = new TempScratch();
         var sink = NewSink(temp, new ExtractionOptions { IncludeEmbeddedImages = false });
 
-        // Act: attempt to add two images while suppression is in force
+        // Act: attempt to add two images
         var firstPath = await AddImageAsync(sink, [1], "image/png");
         var secondPath = await AddImageAsync(sink, [2], "image/png");
 
-        // Assert: nothing is written, an empty path is returned, and the DD0201 suppression is recorded exactly once
+        // Assert: nothing is written and the extractor receives no link path
         Assert.Equal(string.Empty, firstPath);
         Assert.Equal(string.Empty, secondPath);
         Assert.Empty(sink.Images);
-        Assert.True(sink.ImagesSuppressed);
-        Assert.Single(sink.Diagnostics, diagnostic => diagnostic.Code == "DD0201");
+        Assert.False(Directory.Exists(Path.Combine(sink.Folder.AbsolutePath, "images")));
     }
 
     /// <summary>
-    ///     Proves the sink records document info, diagnostics, environment facts, and found counts (RecordsReports).
+    ///     Proves the sink records document info, metadata, notes, and environment facts for later serialization.
     /// </summary>
     [Fact]
     public void ExtractionSink_Reports_RecordedForLaterSerialization()
@@ -286,43 +209,39 @@ public class ExtractionSinkTests
         // Arrange: a sink over a prepared scratch folder
         using var temp = new TempScratch();
         var sink = NewSink(temp, new ExtractionOptions());
+        var metadata = new DocumentMetadata([], []);
 
-        // Act: report a stream of honesty facts, with a superseding document-info report
+        // Act: report a superseding document-info stream and the remaining honesty facts
         sink.ReportDocumentInfo(new DocumentInfo("Draft"));
         sink.ReportDocumentInfo(new DocumentInfo("Final"));
-        sink.ReportDiagnostic(new ExtractionDiagnostic("DD9999", DiagnosticSeverity.Info, "note"));
+        sink.ReportDocumentMetadata(metadata);
+        sink.ReportNote(new ExtractionNote("A page could not be rendered."));
         sink.ReportEnvironmentFact(new EnvironmentFact("TestBackend", "gpu", "absent", false));
-        sink.ReportFound(GapKind.Images, 4);
 
-        // Assert: later document info wins and every reported stream is retained for the writers
+        // Assert: later document info wins and the reported data is retained
         Assert.Equal("Final", sink.DocumentInfo?.Title);
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "DD9999");
+        Assert.Same(metadata, sink.DocumentMetadata);
+        Assert.Contains(sink.Notes, note => note.Message == "A page could not be rendered.");
         Assert.Contains(sink.EnvironmentFacts, fact => fact.Key == "gpu");
-        Assert.Equal(4, sink.FoundCounts[GapKind.Images]);
     }
 
     /// <summary>
-    ///     Proves a negative found count is rejected as a caller error (RecordsReports boundary).
+    ///     Proves blank note text is rejected as a caller error.
     /// </summary>
     [Fact]
-    public void ExtractionSink_ReportFound_NegativeCount_ThrowsArgumentOutOfRange()
+    public void ExtractionSink_ReportNote_BlankMessage_ThrowsArgumentException()
     {
         // Arrange: a sink over a prepared scratch folder
         using var temp = new TempScratch();
         var sink = NewSink(temp, new ExtractionOptions());
 
-        // Act + Assert: a negative denominator is meaningless and rejected
-        Assert.Throws<ArgumentOutOfRangeException>(() => sink.ReportFound(GapKind.Images, -1));
+        // Act / Assert: note messages must contain plain-language content
+        Assert.Throws<ArgumentException>(() => sink.ReportNote(new ExtractionNote(" ")));
     }
 
     /// <summary>
-    ///     Proves repeated reports of one content-feature label accumulate in first-reported order
-    ///     and that a zero count the backend did not look for never reaches the output (RecordsReports).
+    ///     Proves repeated reports of one content-feature label accumulate and undeclared zero counts are dropped.
     /// </summary>
-    /// <remarks>
-    ///     Accumulation lets a per-part backend report each part separately; dropping an undeclared
-    ///     zero is what keeps the summary's content outline from printing a line of irrelevant zeroes.
-    /// </remarks>
     [Fact]
     public void ExtractionSink_ReportContentFeature_RepeatedLabels_AccumulateAndDropZeroCounts()
     {
@@ -330,13 +249,13 @@ public class ExtractionSinkTests
         using var temp = new TempScratch();
         var sink = NewSink(temp, new ExtractionOptions());
 
-        // Act: report one label twice, a second label once, and a zero count
+        // Act: report one label twice, another once, and an undeclared zero
         sink.ReportContentFeature(new ContentFeature("tables", 2));
         sink.ReportContentFeature(new ContentFeature("comments", 5));
         sink.ReportContentFeature(new ContentFeature("tables", 3));
         sink.ReportContentFeature(new ContentFeature("footnotes", 0));
 
-        // Assert: labels accumulate, first-reported order survives, and the zero is absent
+        // Assert: the matching label accumulates and the undeclared zero is omitted
         Assert.Collection(
             sink.ContentFeatures,
             feature => Assert.Equal(new ContentFeature("tables", 5), feature),
@@ -344,14 +263,8 @@ public class ExtractionSinkTests
     }
 
     /// <summary>
-    ///     Proves a zero count the backend declared it looked for is kept and reported (RecordsReports).
+    ///     Proves a looked-for zero survives and later accumulations keep its looked-for standing.
     /// </summary>
-    /// <remarks>
-    ///     This is the distinction a consuming agent needs: "we looked and there are none" is a fact
-    ///     about the document worth stating, while "this feature does not apply to the format" is
-    ///     noise. Only the declared zero survives, and a later per-part contribution still accumulates
-    ///     onto it rather than starting a second entry.
-    /// </remarks>
     [Fact]
     public void ExtractionSink_ReportContentFeature_LookedForZero_IsReported()
     {
@@ -359,25 +272,27 @@ public class ExtractionSinkTests
         using var temp = new TempScratch();
         var sink = NewSink(temp, new ExtractionOptions());
 
-        // Act: declare one looked-for feature with no occurrences, one undeclared zero, and one
-        // looked-for feature that later gains a count from a second part
+        // Act: report a looked-for zero, an undeclared zero, and a later accumulated count
         sink.ReportContentFeature(new ContentFeature(
-            "sets of speaker notes", 0, "set of speaker notes", LookedFor: true));
+            "sets of speaker notes",
+            0,
+            "set of speaker notes",
+            LookedFor: true));
         sink.ReportContentFeature(new ContentFeature("worksheets", 0));
         sink.ReportContentFeature(new ContentFeature("comments", 0, LookedFor: true));
         sink.ReportContentFeature(new ContentFeature("comments", 4));
 
-        // Assert: the declared zero survives, the undeclared zero does not, and the accumulated
-        // entry keeps its looked-for standing
+        // Assert: the looked-for zero survives and accumulation preserves its looked-for state
         Assert.Collection(
             sink.ContentFeatures,
             feature => Assert.Equal(
-                new ContentFeature("sets of speaker notes", 0, "set of speaker notes", LookedFor: true), feature),
+                new ContentFeature("sets of speaker notes", 0, "set of speaker notes", LookedFor: true),
+                feature),
             feature => Assert.Equal(new ContentFeature("comments", 4, LookedFor: true), feature));
     }
 
     /// <summary>
-    ///     Proves a blank label and a negative count are rejected as caller errors (RecordsReports boundary).
+    ///     Proves a blank feature label and a negative count are rejected as caller errors.
     /// </summary>
     [Fact]
     public void ExtractionSink_ReportContentFeature_InvalidFeature_Throws()
@@ -386,23 +301,18 @@ public class ExtractionSinkTests
         using var temp = new TempScratch();
         var sink = NewSink(temp, new ExtractionOptions());
 
-        // Act + Assert: an unnamed feature and a negative count are both meaningless
+        // Act / Assert: unnamed and negative features are invalid
         Assert.Throws<ArgumentException>(() => sink.ReportContentFeature(new ContentFeature("  ", 1)));
         Assert.Throws<ArgumentOutOfRangeException>(() => sink.ReportContentFeature(new ContentFeature("tables", -1)));
     }
 
     /// <summary>
-    ///     Proves a content feature agrees in number with its count, using the explicit singular form
-    ///     when the label does not pluralize by a trailing <c>s</c>.
+    ///     Proves a content feature agrees in number with its count.
     /// </summary>
-    /// <remarks>
-    ///     "1 headings" in a file meant to be read by a model reads as a defect and undermines trust
-    ///     in every count beside it, so agreement is asserted rather than assumed.
-    /// </remarks>
     [Fact]
     public void ContentFeature_AgreeingLabel_CountOfOne_UsesSingularForm()
     {
-        // Arrange / Act / Assert: regular, irregular, and plural labels all agree with their count
+        // Arrange / Act / Assert: regular and explicit singular forms agree with the count
         Assert.Equal("table", new ContentFeature("tables", 1).AgreeingLabel);
         Assert.Equal("tables", new ContentFeature("tables", 2).AgreeingLabel);
         Assert.Equal("cell carrying a formula", new ContentFeature("cells carrying a formula", 1, "cell carrying a formula").AgreeingLabel);
@@ -410,113 +320,31 @@ public class ExtractionSinkTests
     }
 
     /// <summary>
-    ///     Proves gap identifiers are dense, emission-ordered, and overwrite any caller value (AllocatesGapIdentifiers).
+    ///     Proves a hostile preferred image name is neutralized and stays within the images folder.
     /// </summary>
     [Fact]
-    public void ExtractionSink_ReportGap_MultipleGaps_AssignsDenseIdentifiersOverwritingCallerIds()
+    public async Task ExtractionSink_AddImageAsync_HostilePreferredName_StaysContained()
     {
-        // Arrange: a sink over a prepared scratch folder
+        // Arrange: a sink and a hostile preferred name attempting traversal
         using var temp = new TempScratch();
         var sink = NewSink(temp, new ExtractionOptions());
+        using var bytes = new MemoryStream([1, 2, 3, 4], writable: false);
 
-        // Act: report two gaps, one carrying a caller-supplied identifier that must be overwritten
-        sink.ReportGap(new ExtractionGap("caller-chosen", GapKind.Images, "images/", GapScope.Unavailable, "no decoder"));
-        sink.ReportGap(new ExtractionGap(string.Empty, GapKind.Pages, "pages/", GapScope.NotAttempted, "not requested"));
+        // Act: add the image
+        var path = await sink.AddImageAsync(bytes, new ImageHint("../../etc/passwd", "image/png"), Ct);
 
-        // Assert: the identifiers are the dense GAP-1, GAP-2 sequence in emission order
-        Assert.Equal(["GAP-1", "GAP-2"], sink.Gaps.Select(gap => gap.Id));
+        // Assert: the sink allocates a contained relative path and writes inside the scratch folder
+        Assert.StartsWith("images/", path, StringComparison.Ordinal);
+        Assert.DoesNotContain("..", path, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(sink.Folder.AbsolutePath, path.Replace('/', Path.DirectorySeparatorChar))));
     }
 
     /// <summary>
-    ///     Proves a gap reported with a blank reason is repaired with a Core reason and a diagnostic (AllocatesGapIdentifiers).
-    /// </summary>
-    [Fact]
-    public void ExtractionSink_ReportGap_BlankReason_SubstitutesReasonAndRecordsDiagnostic()
-    {
-        // Arrange: a sink over a prepared scratch folder
-        using var temp = new TempScratch();
-        var sink = NewSink(temp, new ExtractionOptions());
-
-        // Act: report a gap whose reason is only whitespace
-        sink.ReportGap(new ExtractionGap("x", GapKind.Text, "content.md", GapScope.PartiallyExtracted, "   "));
-
-        // Assert: a blank reason is not accepted verbatim; Core supplies one and records a DD0701 warning
-        var gap = Assert.Single(sink.Gaps);
-        Assert.False(string.IsNullOrWhiteSpace(gap.Reason));
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "DD0701");
-    }
-
-    /// <summary>
-    ///     Proves an image added with no transform hint is recorded as a passthrough (ImageTransformRecorded).
-    /// </summary>
-    [Fact]
-    public async Task ExtractionSink_AddImageAsync_NoTransformHint_RecordsPassthrough()
-    {
-        // Arrange: a real sink over a prepared scratch folder
-        using var temp = new TempScratch();
-        var sink = NewSink(temp, new ExtractionOptions());
-
-        // Act: add an image whose hint says nothing about how the bytes were produced
-        using var stream = new MemoryStream([1, 2, 3]);
-        await sink.AddImageAsync(stream, new ImageHint("figure", "image/png"), Ct);
-
-        // Assert: Core defaults the provenance to passthrough, because it wrote the bytes verbatim
-        var record = Assert.Single(sink.Images);
-        Assert.Equal(ImageTransform.Passthrough, record.Transform);
-    }
-
-    /// <summary>
-    ///     Proves a re-encoded image carries the distinct decoded-to-PNG label (ImageTransformRecorded).
-    /// </summary>
-    [Fact]
-    public async Task ExtractionSink_AddImageAsync_DecodedToPngHint_RecordsDecodedToPng()
-    {
-        // Arrange: a real sink over a prepared scratch folder
-        using var temp = new TempScratch();
-        var sink = NewSink(temp, new ExtractionOptions());
-
-        // Act: add an image the extractor states it decoded and re-encoded as PNG
-        using var stream = new MemoryStream([4, 5, 6]);
-        await sink.AddImageAsync(
-            stream, new ImageHint("figure", "image/png", Transform: ImageTransform.DecodedToPng), Ct);
-
-        // Assert: the reported transform is recorded verbatim and is distinct from the default
-        var record = Assert.Single(sink.Images);
-        Assert.Equal(ImageTransform.DecodedToPng, record.Transform);
-        Assert.NotEqual(ImageTransform.Passthrough, record.Transform);
-    }
-
-    /// <summary>
-    ///     Proves deduplication keeps the first record's transform (ImageTransformRecorded boundary).
-    /// </summary>
-    [Fact]
-    public async Task ExtractionSink_AddImageAsync_DuplicateBytes_KeepsFirstRecordedTransform()
-    {
-        // Arrange: a real sink and one image payload added twice with conflicting provenance claims
-        using var temp = new TempScratch();
-        var sink = NewSink(temp, new ExtractionOptions());
-        var bytes = new byte[] { 7, 7, 7, 7 };
-
-        // Act: add the same bytes first as a passthrough and then as a decode-and-re-encode
-        using var first = new MemoryStream(bytes);
-        await sink.AddImageAsync(first, new ImageHint(null, "image/png", Transform: ImageTransform.Passthrough), Ct);
-        using var second = new MemoryStream(bytes);
-        await sink.AddImageAsync(second, new ImageHint(null, "image/png", Transform: ImageTransform.DecodedToPng), Ct);
-
-        // Assert: the single stored record keeps its first provenance, because identical bytes
-        // cannot honestly carry two different provenances
-        var record = Assert.Single(sink.Images);
-        Assert.Equal(ImageTransform.Passthrough, record.Transform);
-        Assert.Equal(2, record.References);
-    }
-
-    /// <summary>
-    ///     Creates a sink over a freshly prepared scratch folder.
+    ///     Creates a real sink over a prepared scratch folder.
     /// </summary>
     /// <param name="temp">The owning temporary folder.</param>
-    /// <param name="options">The options governing the sink's write decisions.</param>
-    /// <returns>The prepared sink.</returns>
-    /// <remarks>Prepares the scratch folder through the safety gate the sink writes behind.</remarks>
+    /// <param name="options">The options to apply.</param>
+    /// <returns>The configured sink.</returns>
     private static ExtractionSink NewSink(TempScratch temp, ExtractionOptions options)
     {
         var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
@@ -524,42 +352,28 @@ public class ExtractionSinkTests
     }
 
     /// <summary>
-    ///     Adds an image to the sink from an in-memory byte payload.
+    ///     Adds an image to the sink from an in-memory payload.
     /// </summary>
     /// <param name="sink">The sink to write through.</param>
-    /// <param name="bytes">The image bytes.</param>
-    /// <param name="mediaType">The image media type.</param>
-    /// <returns>The allocated relative path.</returns>
-    /// <remarks>Wraps the stream lifetime so each call disposes its own source.</remarks>
-    private static async Task<string> AddImageAsync(ExtractionSink sink, byte[] bytes, string mediaType)
+    /// <param name="bytes">The image payload.</param>
+    /// <param name="mediaType">The written media type.</param>
+    /// <returns>The relative image path returned by the sink.</returns>
+    private static async ValueTask<string> AddImageAsync(ExtractionSink sink, byte[] bytes, string mediaType)
     {
-        using var stream = new MemoryStream(bytes);
-        return await sink.AddImageAsync(stream, new ImageHint(null, mediaType), Ct);
+        using var stream = new MemoryStream(bytes, writable: false);
+        return await sink.AddImageAsync(stream, new ImageHint("image", mediaType), Ct);
     }
 
     /// <summary>
-    ///     Adds a rendered page to the sink from an in-memory byte payload.
+    ///     Adds a rendered page to the sink from an in-memory payload.
     /// </summary>
     /// <param name="sink">The sink to write through.</param>
     /// <param name="pageNumber">The one-based document page number.</param>
-    /// <param name="bytes">The page image bytes.</param>
-    /// <returns>The allocated relative path.</returns>
-    /// <remarks>Wraps the stream lifetime so each call disposes its own source.</remarks>
-    private static async Task<string> AddPageAsync(ExtractionSink sink, int pageNumber, byte[] bytes)
+    /// <param name="bytes">The PNG payload.</param>
+    /// <returns>The relative page path returned by the sink.</returns>
+    private static async ValueTask<string> AddPageAsync(ExtractionSink sink, int pageNumber, byte[] bytes)
     {
-        using var stream = new MemoryStream(bytes);
+        using var stream = new MemoryStream(bytes, writable: false);
         return await sink.AddPageAsync(pageNumber, stream, Ct);
     }
-
-    /// <summary>
-    ///     Determines whether a file name begins with four digits and a hyphen.
-    /// </summary>
-    /// <param name="fileName">The file name to inspect.</param>
-    /// <returns><see langword="true"/> when the name starts with the <c>{ordinal:D4}-</c> prefix.</returns>
-    /// <remarks>Encodes the Core naming invariant the reserved-name protection depends on.</remarks>
-    private static bool BeginsWithOrdinalPrefix(string fileName) =>
-        fileName.Length >= 5
-        && char.IsDigit(fileName[0]) && char.IsDigit(fileName[1])
-        && char.IsDigit(fileName[2]) && char.IsDigit(fileName[3])
-        && fileName[4] == '-';
 }

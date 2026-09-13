@@ -11,20 +11,18 @@ namespace DemaConsulting.DocDown.PowerPoint.Tests.OpenXml;
 public class PowerPointOpenXmlExtractorTests
 {
     /// <summary>
-    ///     Proves the descriptor: identifier, supported format, capabilities, and priority.
+    ///     Proves the descriptor: identifier, supported format, page-rendering applicability, and
+    ///     priority.
     /// </summary>
     [Fact]
     public void PowerPointOpenXmlExtractor_Descriptor_MatchesContract()
     {
-        var extractor = new PowerPointOpenXmlExtractor();
+        IDocumentExtractor extractor = new PowerPointOpenXmlExtractor();
 
         Assert.Equal("powerpoint-openxml", extractor.Id);
         Assert.Contains(CoreFormat.Pptx, extractor.SupportedFormats);
         Assert.Equal(10, extractor.Priority);
-        Assert.True(extractor.Capabilities.HasFlag(ExtractorCapabilities.Text));
-        Assert.True(extractor.Capabilities.HasFlag(ExtractorCapabilities.EmbeddedImages));
-        Assert.True(extractor.Capabilities.HasFlag(ExtractorCapabilities.DocumentStructure));
-        Assert.False(extractor.Capabilities.HasFlag(ExtractorCapabilities.RenderedPages));
+        Assert.True(extractor.PageRenderingApplicable);
     }
 
     /// <summary>
@@ -34,9 +32,11 @@ public class PowerPointOpenXmlExtractorTests
     public void PowerPointOpenXmlExtractor_ProbeAvailability_AlwaysAvailable()
     {
         var extractor = new PowerPointOpenXmlExtractor();
+        var availability = extractor.ProbeAvailability();
 
         Assert.Null(Record.Exception(extractor.ProbeAvailability));
-        Assert.True(extractor.ProbeAvailability().IsAvailable);
+        Assert.True(availability.IsAvailable);
+        Assert.False(availability.ProvidesRenderedPages);
     }
 
     /// <summary>

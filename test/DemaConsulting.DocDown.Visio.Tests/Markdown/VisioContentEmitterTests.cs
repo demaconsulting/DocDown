@@ -6,8 +6,8 @@ using DocDown.Visio.OpenXml;
 namespace DemaConsulting.DocDown.Visio.Tests.Markdown;
 
 /// <summary>
-///     Unit tests for <see cref="VisioContentEmitter"/>, exercising topology rendering and the honest
-///     gap policy from hand-built models with no drawing behind them.
+///     Unit tests for <see cref="VisioContentEmitter"/>, exercising topology rendering and the
+///     inventory-and-notes policy from hand-built models with no drawing behind them.
 /// </summary>
 public class VisioContentEmitterTests
 {
@@ -83,26 +83,26 @@ public class VisioContentEmitterTests
     }
 
     /// <summary>
-    ///     Proves a default extraction of a drawing that embeds no content images reports no images
-    ///     gap and stays a clean success — a drawing whose only metafile is the excluded package
-    ///     thumbnail embeds no content, so nothing is claimed lost.
+    ///     Proves a default extraction of a drawing that embeds no content images records no notes
+    ///     and reports the looked-for content inventory, including zero connections.
     /// </summary>
     [Fact]
-    public async Task VisioContentEmitter_Emit_NoImages_NoImagesGap()
+    public async Task VisioContentEmitter_Emit_NoImages_LeavesNotesEmptyAndReportsInventory()
     {
         var model = new VisioDocumentModel([new VisioPageModel("P", [new VisioShapeModel("1", "A")], [])]);
         var sink = new RecordingSink();
 
-        var degraded = await VisioContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await VisioContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        Assert.False(degraded);
-        Assert.DoesNotContain(sink.Gaps, gap => gap.Kind == GapKind.Images);
-        Assert.DoesNotContain(sink.Diagnostics, diagnostic => diagnostic.Code == "VISIO0003");
+        Assert.Empty(sink.Images);
+        Assert.Empty(sink.Notes);
+        Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "pages", Count: 1, LookedFor: true });
+        Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "labeled shapes", Count: 1, LookedFor: true });
+        Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "connections", Count: 0, LookedFor: true });
     }
 
     /// <summary>
-    ///     Proves a drawing's embedded content images are written through the sink as passthroughs and
-    ///     the found count is reported.
+    ///     Proves a drawing's embedded content images are written through the sink as passthroughs.
     /// </summary>
     [Fact]
     public async Task VisioContentEmitter_Emit_WithRasterImages_WritesThroughSink()
@@ -112,49 +112,55 @@ public class VisioContentEmitterTests
             [new EmbeddedImage([1, 2, 3], "image/png", "photo", "/visio/media/image1.png")]);
         var sink = new RecordingSink();
 
-        var degraded = await VisioContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await VisioContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        Assert.False(degraded);
         var image = Assert.Single(sink.Images);
+        Assert.Equal("image/png", image.Hint.MediaType);
         Assert.Equal(ImageTransform.Passthrough, image.Hint.Transform);
-        Assert.Contains(sink.FoundCounts, found => found.Kind == GapKind.Images && found.FoundCount == 1);
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
-    ///     Proves an EMF vector metafile is written unchanged and accompanied by the <c>VISIO0003</c>
-    ///     readability caveat as an informational diagnostic — not a gap — so a well-formed drawing
-    ///     whose only caveat is vector passthrough does not degrade the run.
+    ///     Proves a force-PNG request that a vector metafile cannot honor is recorded as a plain note
+    ///     while the source-encoded bytes are still written through the sink.
     /// </summary>
     [Fact]
-    public async Task VisioContentEmitter_Emit_VectorImage_WritesWithInfoCaveat()
+    public async Task VisioContentEmitter_Emit_ForcePngVectorImage_ReportsNote()
     {
         var model = new VisioDocumentModel(
             [new VisioPageModel("P", [new VisioShapeModel("1", "A")], [])],
             [new EmbeddedImage([1, 2, 3], "image/x-emf", "schematic", "/visio/media/image1.emf")]);
         var sink = new RecordingSink();
+        var options = new ExtractionOptions { ImageOutput = ImageOutputMode.ForcePng };
 
-        var degraded = await VisioContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await VisioContentEmitter.EmitAsync(sink, options, model, Ct);
 
-        Assert.False(degraded);
-        Assert.Single(sink.Images);
-        Assert.Contains(sink.Diagnostics, diagnostic =>
-            diagnostic.Code == "VISIO0003" && diagnostic.Severity == DiagnosticSeverity.Info);
-        Assert.DoesNotContain(sink.Gaps, gap => gap.Kind == GapKind.Images);
+        var image = Assert.Single(sink.Images);
+        Assert.Equal("image/x-emf", image.Hint.MediaType);
+        Assert.Equal(ImageTransform.Passthrough, image.Hint.Transform);
+        Assert.Contains(
+            sink.Notes,
+            note => note.Message.Contains("PNG output was requested", StringComparison.Ordinal));
     }
 
     /// <summary>
-    ///     Proves an empty drawing is reported as a counted gap rather than an empty, unexplained output.
+    ///     Proves an empty drawing still writes empty content and reports zero-count inventory rather
+    ///     than a special gap or diagnostic.
     /// </summary>
     [Fact]
-    public async Task VisioContentEmitter_Emit_EmptyDrawing_ReportsGap()
+    public async Task VisioContentEmitter_Emit_EmptyDrawing_WritesEmptyContentAndZeroCountInventory()
     {
         var model = new VisioDocumentModel([]);
         var sink = new RecordingSink();
 
-        var degraded = await VisioContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await VisioContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        Assert.True(degraded);
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "VISIO0001");
+        Assert.Equal(string.Empty, Assert.Single(sink.ContentWrites));
+        Assert.Equal(0, Assert.Single(sink.DocumentInfos).PageCount);
+        Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "pages", Count: 0, LookedFor: true });
+        Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "labeled shapes", Count: 0, LookedFor: true });
+        Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "connections", Count: 0, LookedFor: true });
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
@@ -230,51 +236,11 @@ public class VisioContentEmitterTests
     }
 
     /// <summary>
-    ///     Proves the convention is also published as a diagnostic, so the distinction between a name
-    ///     and a type survives a consumer that reads only the manifest.
+    ///     Proves a drawing with no connections still reports a looked-for zero-connection
+    ///     inventory line and omits the connections section from the content.
     /// </summary>
     [Fact]
-    public async Task VisioContentEmitter_Emit_WithConnections_ReportsConventionDiagnostic()
-    {
-        var sink = new RecordingSink();
-
-        await VisioContentEmitter.EmitAsync(
-            sink, new ExtractionOptions { IncludeEmbeddedImages = false }, MixedLabelModel(), Ct);
-
-        var diagnostic = Assert.Single(sink.Diagnostics, candidate => candidate.Code == "VISIO0005");
-        Assert.Equal(VisioShapeLabeler.Convention, diagnostic.Message);
-    }
-
-    /// <summary>
-    ///     Proves the endpoint-resolution coverage is reported honestly: the counts are of endpoint
-    ///     occurrences and must not claim more resolution than was achieved.
-    /// </summary>
-    /// <remarks>
-    ///     The model has four edges and so eight endpoint occurrences: shape 1 carries text once;
-    ///     shape 2 is named by type twice and shape 5 once; shapes 3 (connective master) and 4 (no
-    ///     master) account for the remaining four, which stay unresolved.
-    /// </remarks>
-    [Fact]
-    public async Task VisioContentEmitter_Emit_WithConnections_ReportsHonestEndpointCoverage()
-    {
-        var sink = new RecordingSink();
-
-        await VisioContentEmitter.EmitAsync(
-            sink, new ExtractionOptions { IncludeEmbeddedImages = false }, MixedLabelModel(), Ct);
-
-        var diagnostic = Assert.Single(sink.Diagnostics, candidate => candidate.Code == "VISIO0006");
-        Assert.Contains("Of 8 connector endpoint occurrence(s)", diagnostic.Message, StringComparison.Ordinal);
-        Assert.Contains("1 carried the shape's own text", diagnostic.Message, StringComparison.Ordinal);
-        Assert.Contains("3 were named by the shape's master type", diagnostic.Message, StringComparison.Ordinal);
-        Assert.Contains("4 are identified only by shape id", diagnostic.Message, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Proves a drawing with no connections reports neither labeling diagnostic, because there is
-    ///     no topology for a convention or a coverage count to describe.
-    /// </summary>
-    [Fact]
-    public async Task VisioContentEmitter_Emit_NoConnections_ReportsNoLabelingDiagnostics()
+    public async Task VisioContentEmitter_Emit_NoConnections_ReportsZeroConnectionInventory()
     {
         var model = new VisioDocumentModel([new VisioPageModel("P", [new VisioShapeModel("1", "A")], [])]);
         var sink = new RecordingSink();
@@ -282,8 +248,10 @@ public class VisioContentEmitterTests
         await VisioContentEmitter.EmitAsync(
             sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
 
-        Assert.DoesNotContain(sink.Diagnostics, diagnostic => diagnostic.Code == "VISIO0005");
-        Assert.DoesNotContain(sink.Diagnostics, diagnostic => diagnostic.Code == "VISIO0006");
+        var content = Assert.Single(sink.ContentWrites);
+        Assert.DoesNotContain("## Connections", content, StringComparison.Ordinal);
+        Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "connections", Count: 0, LookedFor: true });
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
@@ -466,7 +434,8 @@ public class VisioContentEmitterTests
     ///     Builds a one-page model exercising every endpoint class at once: a shape with text, a
     ///     text-less shape with a component master, one with a connective master, one with no master,
     ///     and one whose master declares only an invariant name.
-    /// </summary>    /// <returns>The model.</returns>
+    /// </summary>
+    /// <returns>The model.</returns>
     /// <remarks>Mirrors the mix a real engineering schematic carries, so one model pins the whole labeling policy.</remarks>
     private static VisioDocumentModel MixedLabelModel() => new(
     [

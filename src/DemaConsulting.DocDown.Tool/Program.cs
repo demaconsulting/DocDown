@@ -52,7 +52,7 @@ internal static class Program
     ///     Main entry point for the tool.
     /// </summary>
     /// <param name="args">Command-line arguments.</param>
-    /// <returns>0 on success or a degraded extraction, 1 on a failed extraction or a bad argument.</returns>
+    /// <returns>0 when the output layout was produced, 1 when the document could not be read or an argument was bad.</returns>
     /// <exception cref="Exception">Re-thrown after writing to standard error for any unexpected error.</exception>
     public static int Main(string[] args)
     {
@@ -88,8 +88,8 @@ internal static class Program
     /// <param name="context">The parsed context.</param>
     /// <remarks>
     ///     Dispatch is priority-ordered and executes only the highest-priority match: version, then
-    ///     the banner and help, then the <c>--verify</c> and <c>--list-backends</c> auxiliary
-    ///     commands, then <c>--validate</c>, then extraction.
+    ///     the banner and help, then the <c>--list-backends</c> auxiliary command, then
+    ///     <c>--validate</c>, then extraction.
     /// </remarks>
     public static void Run(Context context)
     {
@@ -111,28 +111,21 @@ internal static class Program
             return;
         }
 
-        // Priority 3: verify an existing scratch folder
-        if (context.VerifyFolder != null)
-        {
-            RunVerify(context, context.VerifyFolder);
-            return;
-        }
-
-        // Priority 4: list registered backends
+        // Priority 3: list registered backends
         if (context.ListBackends)
         {
             RunListBackends(context);
             return;
         }
 
-        // Priority 5: self-validation
+        // Priority 4: self-validation
         if (context.Validate)
         {
             Validation.Run(context);
             return;
         }
 
-        // Priority 6: extraction
+        // Priority 5: extraction
         RunExtraction(context);
     }
 
@@ -160,14 +153,12 @@ internal static class Program
         context.WriteLine("  --depth <#>                Set heading depth for markdown output (default: 1)");
         context.WriteLine("  --log <file>               Write output to a log file");
         context.WriteLine("  --list-backends            List registered backends with availability and reason");
-        context.WriteLine("  --verify <dir>             Verify an existing scratch folder against its manifest");
         context.WriteLine("");
         context.WriteLine("Extraction options:");
         context.WriteLine("  --input <file>             Document to extract (required for extraction)");
         context.WriteLine("  --scratch <dir>            Scratch folder to write the extraction into (required)");
         context.WriteLine("  --pages                    Request rendered page images");
         context.WriteLine("  --no-pages                 Do not render page images (default)");
-        context.WriteLine("  --require-pages            Fail rather than degrade if pages cannot be rendered");
         context.WriteLine("  --page-range <a-b>         Restrict extraction to a page range");
         context.WriteLine("  --dpi <#>                  Page render DPI (range 36-1200)");
         context.WriteLine("  --images <preserve|png>    Embedded image output mode");
@@ -175,44 +166,24 @@ internal static class Program
         context.WriteLine("  --max-image-dim <#>        Downscale images exceeding this pixel dimension");
         context.WriteLine("  --max-image-bytes <#>      Skip images exceeding this byte size");
         context.WriteLine("  --split <auto|single|part> content.md splitting strategy");
-        context.WriteLine("  --backend <id>             Force a specific extractor backend (never falls back)");
-        context.WriteLine("  --overwrite <require-empty|clean|overwrite|unique>  Scratch folder policy");
+        context.WriteLine("  --overwrite <clean|overwrite>  Scratch folder policy (default: clean)");
     }
 
-    /// <summary>Runs the contract verifier over an existing scratch folder.</summary>
-    /// <param name="context">The context for output.</param>
-    /// <param name="folder">The scratch folder to verify.</param>
-    private static void RunVerify(Context context, string folder)
-    {
-        var violations = ContractVerifier.Verify(folder);
-        if (violations.Count == 0)
-        {
-            context.WriteLine($"No contract violations found in '{Path.GetFullPath(folder)}'.");
-            return;
-        }
-
-        context.WriteError($"{violations.Count} contract violation(s) found in '{Path.GetFullPath(folder)}':");
-        foreach (var violation in violations)
-        {
-            context.WriteError($"  {violation}");
-        }
-    }
-
-    /// <summary>Lists the registered backends with their formats, capabilities, and availability.</summary>
+    /// <summary>Lists the registered backends with their formats and availability.</summary>
     /// <param name="context">The context for output.</param>
     private static void RunListBackends(Context context)
     {
         var engine = BuildEngine();
         context.WriteLine("Registered backends:");
-        foreach (var status in engine.GetBackendStatus())
+        foreach (var backend in engine.GetBackends())
         {
-            var formats = string.Join(", ", status.SupportedFormats.Select(f => f.Id));
-            var capabilities = string.Join(", ", status.Capabilities.ToCamelCaseNames());
-            var availability = status.IsAvailable ? "available" : $"unavailable ({status.UnavailableReason})";
-            context.WriteLine($"  {status.Id} - {status.DisplayName}");
+            var descriptor = backend.Descriptor;
+            var availability = backend.Availability;
+            var formats = string.Join(", ", descriptor.SupportedFormats.Select(f => f.Id));
+            var status = availability.IsAvailable ? "available" : $"unavailable ({availability.UnavailableReason})";
+            context.WriteLine($"  {descriptor.Id} - {descriptor.DisplayName}");
             context.WriteLine($"    formats: {formats}");
-            context.WriteLine($"    capabilities: {capabilities}");
-            context.WriteLine($"    status: {availability}");
+            context.WriteLine($"    status: {status}");
         }
     }
 
@@ -237,19 +208,19 @@ internal static class Program
         // The engine returns adverse conditions as data; only argument faults and cancellation throw
         var result = engine.ExtractAsync(context.Input, context.Scratch, options).AsTask().GetAwaiter().GetResult();
 
-        if (result.Outcome == ExtractionOutcome.Failed)
+        if (result.Outcome == ExtractionOutcome.Unreadable)
         {
-            // Render the structured failure verbatim (headline, per-candidate verdicts, remedy)
+            // Render the prose failure verbatim (headline plus explanation)
             var failure = result.Failure;
-            context.WriteError(failure?.Explanation ?? "Extraction failed.");
+            context.WriteError(failure?.Explanation ?? "Extraction produced no output.");
             return;
         }
 
-        // Success or degraded: print the absolute path to summary.txt
-        context.WriteLine($"Extraction {result.Outcome.ToString().ToLowerInvariant()}.");
-        if (result.Gaps.Count > 0)
+        // Output was produced: report any notes and print the absolute path to summary.txt
+        context.WriteLine("Extraction produced the output layout.");
+        if (result.Notes.Count > 0)
         {
-            context.WriteLine($"{result.Gaps.Count} gap(s) reported; see summary.txt for detail.");
+            context.WriteLine($"{result.Notes.Count} note(s) recorded; see summary.txt for detail.");
         }
 
         context.WriteLine(Path.GetFullPath(result.SummaryPath));

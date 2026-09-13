@@ -101,7 +101,7 @@ internal static class PageRenderer
     /// <remarks>
     ///     Runs the whole native call chain under <see cref="RenderGate"/> because PDFium is not
     ///     thread-safe. Any native or memory fault surfaces here as a thrown exception; the caller
-    ///     isolates it per page and converts it into a counted gap, so a single unrenderable page
+    ///     isolates it per page and converts it into a plain note, so a single unrenderable page
     ///     never aborts a whole extraction and never reaches the library's caller as an exception.
     /// </remarks>
     public static byte[] Render(byte[] pdf, int pageIndexZeroBased, int dpi)

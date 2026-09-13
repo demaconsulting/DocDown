@@ -11,38 +11,27 @@ namespace DocDown.Pdf.Rendering;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The engine selects exactly one backend for an extraction, so a rendering backend that
-///         advertised only <see cref="ExtractorCapabilities.RenderedPages"/> would lose selection to
-///         the managed PDF backend (which satisfies more of the request) and never render anything.
-///         This extractor therefore declares the full set —
-///         <see cref="ExtractorCapabilities.Text"/>, <see cref="ExtractorCapabilities.EmbeddedImages"/>,
-///         <see cref="ExtractorCapabilities.DocumentMetadata"/>, and
-///         <see cref="ExtractorCapabilities.RenderedPages"/> — and delivers all four. It is chosen
-///         over the base backend only when page rendering is actually requested; otherwise the
-///         lighter managed backend wins on the identifier tie-break and no native code is touched.
+///         This backend deliberately composes <see cref="PdfDocumentExtractor"/> rather than
+///         re-implementing the managed PDF path. It clones the caller's
+///         <see cref="ExtractionOptions"/>, forces <see cref="ExtractionOptions.RenderPages"/> off
+///         on the delegated copy, and runs the managed backend against the same sink so text,
+///         embedded images, and document metadata are emitted exactly once before page rendering
+///         begins.
 ///     </para>
 ///     <para>
-///         Rather than re-implement text, image, and metadata extraction, it constructs a
-///         <see cref="PdfDocumentExtractor"/> and runs it against the same sink with a cloned options
-///         object whose <see cref="ExtractionOptions.RenderPages"/> is forced off. That reuse is
-///         exact — the managed backend writes the content, the images, the document info, and its own
-///         structural gaps — and, because rendering is suppressed on the delegate, the base backend
-///         does not emit its own "rendering unavailable" gap. This backend then adds the pages the
-///         base one cannot. The one honest artifact of the delegation is that the base backend's
-///         <c>pdf.pageRendering = not provided by this extractor</c> environment fact still appears;
-///         it is literally true of the managed inner backend and is complemented, not contradicted,
-///         by this backend's own <c>pages.renderer</c> fact.
+///         <see cref="ProbeAvailability"/> is the only place this backend reports whether page
+///         rendering is possible in the current environment. When
+///         <see cref="PageRenderer.ProbeAvailability"/> succeeds, the backend reports itself
+///         available and states that it provides rendered pages here; when the probe fails, the
+///         backend reports itself unavailable with the probe's reason so selection can choose
+///         another extractor before any document is opened.
 ///     </para>
 ///     <para>
-///         Rendering is environment-dependent, so honesty is enforced at every failure point.
-///         <see cref="ProbeAvailability"/> reports the backend unavailable, with a reason, when the
-///         PDFium native cannot load — which lets selection degrade through the engine's unchanged
-///         <c>DD0301</c> path exactly as if this package were not registered. A page that cannot be
-///         rasterized — an unsupported page, an out-of-memory at a high DPI on a very large page, or
-///         a native fault mid-run — becomes a counted, reason-bearing gap naming the page, and the
-///         run continues with the remaining pages; no exception reaches the caller and the
-///         <c>pages/</c> folder is never silently empty. Instances hold no per-extraction state and
-///         are safe to register once and reuse; concurrent renders are serialized by
+///         Rendering can still fail for an individual page after extraction has started. Each page
+///         that cannot be rasterized is reported as a plain <see cref="ExtractionNote"/> naming the
+///         page, the remaining pages continue rendering, and normal completion still returns
+///         <see cref="ExtractionOutcome.Produced"/>. Instances hold no per-extraction state and are
+///         safe to register once and reuse; concurrent renders are serialized by
 ///         <see cref="PageRenderer"/>.
 ///     </para>
 /// </remarks>
@@ -77,8 +66,8 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="render"/> is <see langword="null"/>.</exception>
     /// <remarks>
-    ///     Internal so tests can inject a faulting renderer to prove per-page failures become counted
-    ///     gaps; production always flows through the parameterless constructor.
+    ///     Internal so tests can inject a faulting renderer to prove per-page failures become
+    ///     recorded notes; production always flows through the parameterless constructor.
     /// </remarks>
     internal PdfPageRenderingExtractor(Func<byte[], int, int, byte[]> render)
     {
@@ -96,31 +85,21 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     public IReadOnlyCollection<DocumentFormat> SupportedFormats => [DocumentFormat.Pdf];
 
     /// <inheritdoc />
-    /// <remarks>
-    ///     The full superset. The rendered-pages capability is the reason this backend exists; the
-    ///     other three are declared because a single-backend selection would otherwise pass this
-    ///     backend over, and because it genuinely delivers them by delegating to the managed backend.
-    /// </remarks>
-    public ExtractorCapabilities Capabilities =>
-        ExtractorCapabilities.Text | ExtractorCapabilities.EmbeddedImages
-        | ExtractorCapabilities.DocumentMetadata | ExtractorCapabilities.RenderedPages;
-
-    /// <inheritdoc />
     public int Priority => 0;
 
     /// <inheritdoc />
     /// <remarks>
     ///     Cheap and non-throwing: it asks <see cref="PageRenderer"/> whether the PDFium native can
     ///     load for the current runtime identifier (a one-time, cached, side-effect-light check) and
-    ///     never rasterizes. When the native stack is present the full capability set is effective;
-    ///     when it is absent the backend reports unavailable with a reason, so selection can degrade
-    ///     honestly rather than fail at render time.
+    ///     never rasterizes. When the native stack is present the backend reports that rendered pages
+    ///     are available here; when it is absent the backend reports unavailable with a reason so
+    ///     selection can choose another extractor before any extraction starts.
     /// </remarks>
     public ExtractorAvailability ProbeAvailability()
     {
         var probe = PageRenderer.ProbeAvailability();
         return probe.IsAvailable
-            ? ExtractorAvailability.Available(Capabilities)
+            ? ExtractorAvailability.Available(providesRenderedPages: true)
             : ExtractorAvailability.Unavailable(
                 $"PDF page rendering is unavailable: {probe.Reason}.");
     }
@@ -140,8 +119,8 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
         var bytes = await ReadSourceAsync(source, cancellationToken).ConfigureAwait(false);
 
         // Delegate the managed aspects to the base backend, with rendering suppressed so it writes
-        // content, images, metadata, and its structural gaps but not its "rendering unavailable" gap.
-        // A parser fault (encrypted, malformed, truncated) propagates from here to Core unchanged,
+        // content, images, metadata, and its own notes without attempting page output itself. A
+        // parser fault (encrypted, malformed, truncated) propagates from here to Core unchanged,
         // which converts it into a structured failure that still writes the full layout.
         var delegatedContext = new DelegatedExtractionContext(context, options.Clone());
         delegatedContext.Options.RenderPages = false;
@@ -149,18 +128,20 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
         var delegatedSource = DocumentSource.FromStream(delegatedStream, source.FileName);
         var baseOutcome = await new PdfDocumentExtractor()
             .ExtractAsync(delegatedSource, delegatedContext).ConfigureAwait(false);
+        if (baseOutcome == ExtractionOutcome.Unreadable)
+        {
+            return baseOutcome;
+        }
 
         // Record the authoritative rendering fact under a distinct key, complementing (not
         // contradicting) the base backend's own pdf.pageRendering fact
         sink.ReportEnvironmentFact(new EnvironmentFact(
             "DocDown.Pdf.Rendering", "pages.renderer", "PDFtoImage (PDFium/SkiaSharp, native)", Available: true));
 
-        // Rasterize the requested pages; per-page faults become counted gaps, not exceptions
-        var pagesDegraded = await RenderPagesAsync(bytes, sink, options, cancellationToken).ConfigureAwait(false);
-
-        return baseOutcome == ExtractionOutcome.Degraded || pagesDegraded
-            ? ExtractionOutcome.Degraded
-            : baseOutcome;
+        // Rasterize the requested pages; per-page faults become notes rather than exceptions that
+        // abort the extraction
+        await RenderPagesAsync(bytes, sink, options, cancellationToken).ConfigureAwait(false);
+        return ExtractionOutcome.Produced;
     }
 
     /// <inheritdoc />
@@ -168,9 +149,9 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     ///     Contributes one case that proves the native stack genuinely rasterizes in this
     ///     deployment: it builds a one-page PDF and renders it to a PNG. Where the native binary is
     ///     absent the case reports a reasoned skip rather than a failure, because an unavailable
-    ///     capability must not be recorded as a broken one. The engine also wraps this backend's
-    ///     cases to skip when <see cref="ProbeAvailability"/> reports it unavailable, so the skip is
-    ///     honest whether observed here or upstream.
+    ///     renderer must not be recorded as a broken one. The engine also wraps this backend's cases
+    ///     to skip when <see cref="ProbeAvailability"/> reports it unavailable, so the skip is honest
+    ///     whether observed here or upstream.
     /// </remarks>
     public IEnumerable<SelfTestCase> GetSelfTestCases() =>
     [
@@ -201,23 +182,19 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     ///     Rasterizes the requested pages to the sink, isolating each page's faults.
     /// </summary>
     /// <param name="bytes">The buffered source PDF bytes.</param>
-    /// <param name="sink">The sink to write rendered pages and gaps through.</param>
+    /// <param name="sink">The sink to write rendered pages and notes through.</param>
     /// <param name="options">The effective options carrying the page range and render DPI.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
-    /// <returns><see langword="true"/> when any page failed to render; otherwise <see langword="false"/>.</returns>
     /// <remarks>
-    ///     Renders each selected page independently so one unrenderable page degrades the run with a
-    ///     counted gap rather than aborting it. Cancellation propagates; every other fault is caught
-    ///     per page and turned into a diagnostic and a gap. Side effect: writes pages and gaps on the
-    ///     sink.
+    ///     Renders each selected page independently so one unrenderable page records a note rather
+    ///     than aborting the whole extraction. Cancellation propagates; every other fault is caught
+    ///     per page and recorded as a note naming that page. Side effect: writes pages and notes on
+    ///     the sink.
     /// </remarks>
-    private async ValueTask<bool> RenderPagesAsync(
+    private async ValueTask RenderPagesAsync(
         byte[] bytes, IExtractionSink sink, ExtractionOptions options, CancellationToken cancellationToken)
     {
         var pageNumbers = SelectPageNumbers(bytes, options.Pages);
-        sink.ReportFound(GapKind.Pages, pageNumbers.Count);
-
-        var failures = new List<int>();
         foreach (var pageNumber in pageNumbers)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -234,44 +211,28 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
             }
             catch (OutOfMemoryException)
             {
-                ReportPageFailure(
-                    sink, PdfRenderingDiagnosticCodes.PageTooLarge, pageNumber,
-                    "ran out of memory rasterizing the page at the requested DPI");
-                failures.Add(pageNumber);
+                ReportPageFailure(sink, pageNumber);
                 continue;
             }
             catch (Exception exception) when (exception is DllNotFoundException
                 or BadImageFormatException or System.Runtime.InteropServices.SEHException)
             {
-                // A native-level fault raised mid-run by the rasterizer; isolate it like any other
-                ReportPageFailure(
-                    sink, PdfRenderingDiagnosticCodes.NativeFault, pageNumber,
-                    $"could not be rasterized because the native renderer faulted ({exception.Message})");
-                failures.Add(pageNumber);
+                // A native-level fault raised mid-run by the rasterizer is still isolated to the
+                // page that triggered it so the remaining pages can continue
+                ReportPageFailure(sink, pageNumber);
                 continue;
             }
-#pragma warning disable CA1031 // Per-page fault isolation: any render fault becomes a counted gap, never an exception to the caller
-            catch (Exception exception)
+#pragma warning disable CA1031 // Per-page fault isolation: any render fault becomes a note, never an exception to the caller
+            catch (Exception)
 #pragma warning restore CA1031
             {
-                ReportPageFailure(
-                    sink, PdfRenderingDiagnosticCodes.PageRenderFailed, pageNumber,
-                    $"could not be rasterized ({exception.Message})");
-                failures.Add(pageNumber);
+                ReportPageFailure(sink, pageNumber);
                 continue;
             }
 
             using var pageStream = new MemoryStream(png, writable: false);
             await sink.AddPageAsync(pageNumber, pageStream, cancellationToken).ConfigureAwait(false);
         }
-
-        if (failures.Count > 0)
-        {
-            ReportPageFailuresGap(sink, failures);
-            return true;
-        }
-
-        return false;
     }
 
     /// <summary>
@@ -304,46 +265,19 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     }
 
     /// <summary>
-    ///     Reports a single page's render failure as a diagnostic.
+    ///     Reports a single page's render failure as a plain note.
     /// </summary>
     /// <param name="sink">The sink to report through.</param>
-    /// <param name="code">The diagnostic code identifying the failure class.</param>
     /// <param name="pageNumber">The 1-based page number that failed.</param>
-    /// <param name="detail">A short description of what went wrong for this page.</param>
     /// <remarks>
-    ///     One diagnostic per failed page keeps the failure class machine-detectable and names the
-    ///     specific page, while the accompanying counted gap (emitted once) summarizes the shortfall.
-    ///     Side effect: records on the sink.
+    ///     Keeps the report aligned with DocDown's reduced output model: the note states only the
+    ///     extraction fact that this page could not be rasterized, without assigning a code,
+    ///     severity, remedy, or impact. Side effect: records on the sink.
     /// </remarks>
-    private static void ReportPageFailure(IExtractionSink sink, string code, int pageNumber, string detail)
+    private static void ReportPageFailure(IExtractionSink sink, int pageNumber)
     {
         var page = pageNumber.ToString(CultureInfo.InvariantCulture);
-        sink.ReportDiagnostic(new ExtractionDiagnostic(
-            code, DiagnosticSeverity.Warning,
-            $"Page {page} {detail}."));
-    }
-
-    /// <summary>
-    ///     Reports the counted gap summarizing every page that could not be rendered.
-    /// </summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <param name="failures">The 1-based page numbers that failed to render.</param>
-    /// <remarks>
-    ///     A single gap with the affected count and the specific page numbers states the shortfall
-    ///     precisely — how many pages, and which — so an absent page image is always explained rather
-    ///     than silently missing. Side effect: records on the sink.
-    /// </remarks>
-    private static void ReportPageFailuresGap(IExtractionSink sink, IReadOnlyList<int> failures)
-    {
-        var pages = failures.Select(page => page.ToString(CultureInfo.InvariantCulture)).ToList();
-        var count = failures.Count.ToString(CultureInfo.InvariantCulture);
-        sink.ReportGap(new ExtractionGap(
-            string.Empty, GapKind.Pages, "pages/", GapScope.PartiallyExtracted,
-            $"{count} page(s) could not be rasterized and were omitted from the pages folder.",
-            Impact: "Rendered page images for the named pages are not available.",
-            Remedy: "Re-run at a lower DPI, or check that the pages are well-formed; the remaining pages were rendered.",
-            AffectedCount: failures.Count,
-            AffectedItems: pages));
+        sink.ReportNote(new ExtractionNote($"Page {page} could not be rasterized."));
     }
 
     /// <summary>
@@ -420,33 +354,6 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
 }
 
 /// <summary>
-///     The diagnostic codes this package owns.
-/// </summary>
-/// <remarks>
-///     A distinct <c>PDFR</c> prefix keeps this package's codes from colliding with Core's <c>DD</c>
-///     range or the managed PDF backend's <c>PDF</c> range, so the ownership of any code in a
-///     manifest is self-evident. Internal because the codes are a published output value, not an API
-///     consumers program against. All members are constants and thread-safe.
-/// </remarks>
-internal static class PdfRenderingDiagnosticCodes
-{
-    /// <summary>A page could not be rasterized for a reason other than memory pressure.</summary>
-    /// <remarks>Accompanies the counted gap naming the page; the run continued with the remaining pages.</remarks>
-    internal const string PageRenderFailed = "PDFR0001";
-
-    /// <summary>A page ran the renderer out of memory at the requested DPI.</summary>
-    /// <remarks>Distinct from <see cref="PageRenderFailed"/> so a consumer can suggest a lower DPI specifically.</remarks>
-    internal const string PageTooLarge = "PDFR0002";
-
-    /// <summary>Reserved for a native fault raised mid-run by the rasterizer.</summary>
-    /// <remarks>
-    ///     Held distinct from <see cref="PageRenderFailed"/> so a genuine native fault can be told
-    ///     apart from an ordinary unrenderable page if the failure surface is refined later.
-    /// </remarks>
-    internal const string NativeFault = "PDFR0003";
-}
-
-/// <summary>
 ///     A private <see cref="IExtractionContext"/> that reuses an outer context but substitutes a
 ///     modified options object for the delegated managed extraction.
 /// </summary>
@@ -454,9 +361,8 @@ internal static class PdfRenderingDiagnosticCodes
 ///     Core keeps its own <see cref="IExtractionContext"/> implementation internal, so this backend
 ///     supplies its own to run the managed backend against the same sink, format, environment, and
 ///     cancellation token while overriding the options — specifically to force
-///     <see cref="ExtractionOptions.RenderPages"/> off so the delegate does not emit its own
-///     rendering-unavailable gap. Immutable after construction and safe to read from the extraction
-///     thread.
+///     <see cref="ExtractionOptions.RenderPages"/> off so the delegate leaves page output to this
+///     backend. Immutable after construction and safe to read from the extraction thread.
 /// </remarks>
 internal sealed class DelegatedExtractionContext : IExtractionContext
 {

@@ -7,9 +7,9 @@ namespace DocDown.PowerPoint.Com;
 /// <remarks>
 ///     <para>
 ///         Everything the COM backend does apart from talking to PowerPoint — content delegation to
-///         the managed backend, availability handling, the gap and diagnostic policy, per-slide fault
-///         isolation, and outcome mapping — is exercised cross-platform in CI by injecting a stub
-///         implementation of this interface. The real automation adapter that implements it is
+///         the managed backend, availability handling, the note-and-inventory policy, per-slide
+///         fault isolation, and outcome mapping — is exercised cross-platform in CI by injecting a
+///         stub implementation of this interface. The real automation adapter that implements it is
 ///         Windows-only and its behavior in a deployed environment is proven by release-time
 ///         self-tests rather than by CI.
 ///     </para>
@@ -28,8 +28,8 @@ internal interface IPowerPointAutomation : IDisposable
     /// <param name="dpi">The target resolution in dots per inch.</param>
     /// <returns>
     ///     One entry per slide in presentation order, each carrying either the slide's PNG bytes or a
-    ///     per-slide failure reason so a single unrenderable slide degrades the run rather than
-    ///     aborting it.
+    ///     per-slide failure reason so a single unrenderable slide is recorded as a note rather than
+    ///     aborting the extraction.
     /// </returns>
     /// <remarks>
     ///     Read-only; a conforming implementation never prompts and never writes to the deck. The

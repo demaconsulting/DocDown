@@ -1,34 +1,57 @@
 ---
 # Software Unit Requirements for PdfDocumentExtractor
 #
-# PdfDocumentExtractor is the backend the engine selects and invokes. It declares what
-# it can deliver, opens the document, reports its metadata, delegates the text and image
-# work, and explains every shortfall only it can explain.
+# PdfDocumentExtractor is the backend the engine selects and invokes. It reports parser context,
+# opens the document, reports metadata, delegates text and image work, and records the content
+# inventory for the selected pages.
+#
+# SUPERSEDED REQUIREMENT: DocDownPdf-PdfDocumentExtractor-DeclaresCapabilities
+# required a capability declaration surface that no longer exists. It is superseded, not satisfied,
+# because DocDown now reports only what it extracted and where and makes no acceptability judgment;
+# the managed backend no longer publishes a `Capabilities` property. The replacement is
+# DocDownPdf-PdfDocumentExtractor-DescribesSupportedContract together with
+# DocDownPdf-PdfDocumentExtractor-ProbeIsCheapAndSafe.
+#
+# SUPERSEDED REQUIREMENT: DocDownPdf-PdfDocumentExtractor-ReportsRenderGap
+# required a backend-local page-rendering gap. It is superseded, not satisfied, because DocDown now
+# reports what it extracted and where and makes no acceptability judgment. The managed backend no
+# longer emits a gap here; the system-level replacement is DocDownPdf-PageRenderingRequestUsesNote.
+#
+# SUPERSEDED REQUIREMENT: DocDownPdf-PdfDocumentExtractor-ReportsNoTextLayerGap
+# required a diagnostic and gap for pages with no text layer. It is superseded, not satisfied,
+# because DocDown now reports what it extracted and where and makes no acceptability judgment.
+# Text-free pages are now described through content counts by
+# DocDownPdf-PdfDocumentExtractor-ReportsContentInventory.
+#
+# SUPERSEDED REQUIREMENT: DocDownPdf-PdfDocumentExtractor-ReportsEmptyDocumentGap
+# required an explicit empty-document gap. It is superseded, not satisfied, because DocDown now
+# reports what it extracted and where and makes no acceptability judgment. Zero-page documents are
+# now described through content counts by DocDownPdf-PdfDocumentExtractor-ReportsContentInventory.
 
 sections:
   - title: DocDownPdf Requirements
     sections:
       - title: PdfDocumentExtractor Requirements
         requirements:
-          - id: DocDownPdf-PdfDocumentExtractor-DeclaresCapabilities
+          - id: DocDownPdf-PdfDocumentExtractor-DescribesSupportedContract
             title: >-
-              PdfDocumentExtractor shall declare the PDF format and the text, embedded-image, and
-              document-metadata capabilities it can deliver.
+              PdfDocumentExtractor shall expose the stable PDF backend identity, display name,
+              supported format, and priority used by the engine.
             justification: |
-              Selection ranks backends on what they declare before any document is opened, so a
-              declaration is a promise made in advance. Declaring only the deliverable capabilities
-              means a shortfall is negotiated up front instead of discovered as missing output.
+              A host and a reviewer need a stable surface that identifies which backend was selected.
+              Keeping that surface explicit makes the managed PDF backend observable without reviving
+              removed pre-extraction feature negotiation semantics.
             tests:
               - PdfDocumentExtractor_Descriptor_DeclaredProperties_MatchTheSupportedContract
 
           - id: DocDownPdf-PdfDocumentExtractor-ProbeIsCheapAndSafe
             title: >-
-              PdfDocumentExtractor shall report its availability without opening the document,
-              performing input or output, or throwing.
+              PdfDocumentExtractor shall report the managed backend available without opening the
+              document, performing input or output, or throwing.
             justification: |
-              The availability probe is called often and early, before a caller has committed to
-              anything. A probe that reads files or throws would make selection slow and unreliable
-              in exactly the phase that is supposed to be cheap and total.
+              The availability probe is called often and early, before a caller has committed to any
+              extraction work. A probe that reads files or throws would make selection slow and
+              unreliable in exactly the phase that is supposed to be cheap and total.
             tests:
               - PdfDocumentExtractor_ProbeAvailability_ManagedOnlyBackend_ReportsAvailableWithoutIo
 
@@ -45,12 +68,11 @@ sections:
 
           - id: DocDownPdf-PdfDocumentExtractor-ReportsEnvironmentFacts
             title: >-
-              PdfDocumentExtractor shall record what parsed the document and that page rendering was
-              not available from it.
+              PdfDocumentExtractor shall record what parsed the document and that page rendering is
+              not provided by this extractor.
             justification: |
-              A degraded result is only explicable if the record says what was and was not present
-              in the environment that produced it. Recording the absent capability alongside the
-              present parser turns an empty page folder into an explained one.
+              A consumer reading the persisted environment facts needs to know which managed parser
+              produced the output and whether page rendering was available from this backend.
             tests:
               - PdfDocumentExtractor_ExtractAsync_AnyDocument_ReportsEnvironmentFacts
 
@@ -58,61 +80,43 @@ sections:
             title: PdfDocumentExtractor shall extract only the pages within a requested page range.
             justification: |
               A caller asking for a slice of a large document is asking for the cost to be
-              proportional too. Extracting outside the range would both contradict the request and
-              put content in the output the caller did not ask for.
+              proportional to that slice. Extracting outside the range would both contradict the
+              request and place content in the output that the caller did not ask for.
             tests:
               - PdfDocumentExtractor_ExtractAsync_PageRange_ExtractsOnlyTheRequestedPages
 
-          - id: DocDownPdf-PdfDocumentExtractor-ReportsRenderGap
+          - id: DocDownPdf-PdfDocumentExtractor-ReportsContentInventory
             title: >-
-              PdfDocumentExtractor shall report a gap naming the class of package that provides page
-              rendering whenever rendered pages are requested.
+              PdfDocumentExtractor shall report content-inventory counts for selected pages,
+              headings, paragraphs, and inline images, including zero where it genuinely looked and
+              found none.
             justification: |
-              The engine can say the capability was unavailable; only the backend can say why it
-              never had it and where it lives. Stating that as a fact, with no instruction the reader
-              could act on and fail at, keeps the explanation useful without becoming a promise.
+              The governing reporting principle is to say what was extracted and where, not to judge
+              the document. Counts from the same extraction walk that produced the output keep empty
+              and text-free PDFs observable without reviving gaps or diagnostics.
             tests:
-              - PdfDocumentExtractor_ExtractAsync_RenderPagesRequested_ReportsPackageClassGap
-
-          - id: DocDownPdf-PdfDocumentExtractor-ReportsNoTextLayerGap
-            title: >-
-              PdfDocumentExtractor shall report a coded diagnostic and a gap when no extracted page
-              carries a text layer.
-            justification: |
-              An empty content document looks identical whether the extractor failed or the document
-              genuinely had no text. Coding the condition lets automation distinguish the two without
-              reading prose, and the gap lets a human do the same.
-            tests:
-              - PdfDocumentExtractor_ExtractAsync_NoTextLayer_ReportsCodedGapAndDegrades
-
-          - id: DocDownPdf-PdfDocumentExtractor-ReportsEmptyDocumentGap
-            title: PdfDocumentExtractor shall report a gap, rather than fail, when the document has no pages.
-            justification: |
-              A page-less document is well formed and simply has nothing in it. Failing would
-              misattribute an empty document to a broken extractor, and saying nothing would leave
-              the emptiness unexplained.
-            tests:
-              - PdfDocumentExtractor_ExtractAsync_ZeroPageDocument_ReportsStructureGapWithoutThrowing
+              - PdfDocumentExtractor_ExtractAsync_NoTextLayer_WritesImageBackedContentWithZeroTextCounts
+              - PdfDocumentExtractor_ExtractAsync_ZeroPageDocument_ReportsZeroCountInventoryWithoutThrowing
 
           - id: DocDownPdf-PdfDocumentExtractor-MapsParserFailures
             title: >-
               PdfDocumentExtractor shall surface a parser fault with its explanation rather than
               suppressing it or returning a successful outcome.
             justification: |
-              The engine converts a backend fault into a coded, structured failure that still writes
-              the full output layout. Suppressing the fault here would discard the parser's own
-              explanation and report a success that did not happen.
+              The engine converts a backend fault into an unreadable result that still writes the full
+              output layout. Suppressing the fault here would discard the parser's own explanation and
+              report a success that did not happen.
             tests:
               - PdfDocumentExtractor_ExtractAsync_MalformedDocument_PropagatesParserFaultForCore
               - PdfDocumentExtractor_ExtractAsync_EncryptedDocument_PropagatesParserFaultForCore
 
           - id: DocDownPdf-PdfDocumentExtractor-ContributesSelfTests
             title: >-
-              PdfDocumentExtractor shall contribute self-test cases that exercise its parser and report
-              an explained skip for page rendering.
+              PdfDocumentExtractor shall contribute self-test cases that exercise its parser and
+              report a truthful skipped result for page rendering.
             justification: |
               An operator needs evidence that the backend works in the environment it was deployed
-              into. Reporting the capability this package does not claim as a reasoned skip rather
-              than as a failure keeps the self-test result readable as a health signal.
+              into. Reporting page rendering as a skipped case, rather than as a failure, keeps the
+              self-test result readable as a health signal.
             tests:
               - PdfDocumentExtractor_GetSelfTestCases_DeployedBackend_ReturnsParseAndRenderingCases

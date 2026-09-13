@@ -6,35 +6,59 @@
 # details. Each decomposes into subsystem and unit requirements linked below via children,
 # and is proven by system-level tests. DocDown.Tool has two subsystems (Cli, SelfTest) and
 # one direct unit (Program).
+#
+# SUPERSEDED REQUIREMENT: DocDownTool-ListBackends required the backend inventory to include
+# capabilities. The CLI surface was reduced so the tool now reports only each backend's
+# identifier and display name, supported formats, and availability status, including the
+# unavailable reason when present. The requirement is superseded (not satisfied) by
+# DocDownTool-BackendInventory.
+#
+# SUPERSEDED REQUIREMENT: DocDownTool-VerifyFolder required a separate contract-verification
+# command. The ContractVerifier and the --verify surface were removed when DocDown.Tool was
+# reduced to extraction reporting and self-validation only. This requirement is retired with
+# no replacement.
 
 sections:
   - title: DocDownTool Requirements
     requirements:
       - id: DocDownTool-Extraction
         title: >-
-          The tool shall extract a document into a scratch folder and print the absolute path to
-          the produced summary on success.
+          The tool shall extract a document into a scratch folder and, when output is produced,
+          report that the output layout was written and print the absolute path to summary.txt.
         tags: [system]
         justification: |
-          The tool exists to turn a document into the DocDown output contract from a shell or a
-          pipeline. Printing the absolute path to the summary on success gives the caller a single,
-          unambiguous handle to the result that a later step can consume without re-deriving where
-          the output went.
+          The tool exists to turn a document into the DocDown output layout from a shell or a
+          pipeline. Reporting that output was produced and printing the absolute path to the
+          summary gives the caller a single, unambiguous handle to the result that a later step
+          can consume without re-deriving where the output went.
         children:
           - DocDownTool-Program-Extraction
         tests:
           - DocDownTool_Extract_GeneratedPdf_PrintsAbsoluteSummaryPathAndExitsZero
 
+      - id: DocDownTool-ExtractionNotes
+        title: >-
+          The tool shall report recorded extraction notes in short plain prose and direct the
+          caller to summary.txt for detail.
+        tags: [system]
+        justification: |
+          DocDown reports what it extracted and where. When an extraction records notes, the caller
+          needs a concise signal at the console and a stable place to read the detail later.
+          Reporting only the note count in plain prose keeps the command-line surface brief while
+          the summary remains the detailed record.
+        tests:
+          - DocDownTool_Extract_NoImages_ReportsRecordedNoteInSummaryAndManifest
+
       - id: DocDownTool-StructuredFailure
         title: >-
-          The tool shall render the structured extraction failure, rather than a bare exception,
-          when an extraction cannot proceed, and exit non-zero.
+          The tool shall write the extraction failure explanation to standard error and exit
+          non-zero when an input is unreadable.
         tags: [system]
         justification: |
           A batch caller processes documents it did not choose, and a stack trace is neither
-          actionable nor safe to surface. Rendering the engine's structured explanation — headline,
-          per-candidate verdicts, and remedy — turns a failure into information the caller can act on
-          while a non-zero exit lets automation branch on it.
+          actionable nor safe to surface. Writing the engine's failure explanation to standard
+          error turns the unreadable outcome into information the caller can act on, while a
+          non-zero exit lets automation branch on it.
         children:
           - DocDownTool-Program-StructuredFailure
         tests:
@@ -44,10 +68,9 @@ sections:
         title: The tool shall register its extraction backends explicitly, without reflection or assembly scanning.
         tags: [system]
         justification: |
-          The tool is meant to be publishable as a single-file, trimmed executable, and both
-          single-file packaging and trimming are defeated by reflection-based discovery. Building the
-          engine from one explicit registration call — the PDF, page-rendering, and both Word backends
-          through their AddPdf, AddPdfRendering, and AddWord seams — keeps the active backend set a
+          The tool is meant to be publishable as a single-file executable, and reflection-based
+          discovery defeats that by making the active backend set a property of what happens to be
+          on disk. Building the engine from one explicit registration chain keeps the backend set a
           decision the code states rather than a deployment accident, and keeps those publish modes
           viable.
         children:
@@ -66,7 +89,7 @@ sections:
         children:
           - DocDownTool-Cli-OptionMapping
         tests:
-          - DocDownTool_Extract_NoImages_ReportsSuppressionGap
+          - DocDownTool_Extract_NoImages_ReportsRecordedNoteInSummaryAndManifest
 
       - id: DocDownTool-StandardFlags
         title: >-
@@ -76,7 +99,8 @@ sections:
         justification: |
           Every DEMA tool shares one command-line idiom so that scripts, agents, and operators can
           drive any of them the same way. Providing the same version, help, silence, log, and depth
-          flags keeps the tool consistent with the rest of the family rather than a bespoke exception.
+          flags keeps the tool consistent with the rest of the family rather than a bespoke
+          exception.
         children:
           - DocDownTool-Program-Version
           - DocDownTool-Program-Help
@@ -88,15 +112,15 @@ sections:
 
       - id: DocDownTool-SelfValidation
         title: >-
-          The tool shall run a self-validation that exercises its own functionality and the union of
-          self-test cases every registered backend contributes, and shall write the results as TRX or
-          JUnit.
+          The tool shall run a self-validation that exercises its own functionality and the current
+          Core plus registered-backend self-test cases, and shall write the results as TRX or JUnit.
         tags: [system]
         justification: |
           An operator needs to confirm the tool works where it is installed, not merely that it is
-          present. Running the tool's own commands together with each registered backend's self-test
-          cases, and emitting the outcome in a machine-readable results format, makes that
-          confirmation available on demand and consumable as compliance evidence.
+          present. Running the tool's own commands together with the current Core self-tests and each
+          registered backend's self-test cases, and emitting the outcome in a machine-readable
+          results format, makes that confirmation available on demand and consumable as compliance
+          evidence.
         children:
           - DocDownTool-SelfTest-Validation
           - DocDownTool-SelfTest-Adaptation
@@ -104,6 +128,7 @@ sections:
         tests:
           - DocDownTool_Validate_ResultsTrx_ProducesWellFormedTrx
           - DocDownTool_Validate_ResultsXml_ProducesWellFormedJUnit
+          - DocDownTool_Validate_RenderingSelfTestCase_IsRecordedAndNotFailed
 
       - id: DocDownTool-SelfValidationSkipDistinct
         title: >-
@@ -111,10 +136,10 @@ sections:
           not-executed result, distinct from a failure.
         tags: [system]
         justification: |
-          A capability a backend does not offer here must not be reported as a pass, which would hide
-          a coverage gap, nor as a failure, which would be a false alarm. Recording it as not-executed
-          is honest: it produces no false failure, and — because a not-executed result is not counted
-          as evidence — it correctly satisfies nothing.
+          An environment-dependent self-test that could not run here must not be reported as a pass,
+          which would hide missing evidence, nor as a failure, which would be a false alarm.
+          Recording it as not-executed is honest: it produces no false failure and correctly
+          satisfies nothing.
         children:
           - DocDownTool-SelfTestAdapter-SkippedIsNotExecuted
           - DocDown-OTS-TestResults-Outcomes
@@ -136,29 +161,20 @@ sections:
         tests:
           - DocDownTool_BadArgument_WritesErrorAndExitsNonZero
 
-      - id: DocDownTool-ListBackends
-        title: The tool shall list the registered backends with their formats, capabilities, and availability.
+      - id: DocDownTool-BackendInventory
+        title: >-
+          The tool shall list each registered backend as its identifier and display name, the
+          formats it supports, and its availability status, including an unavailable reason when
+          present.
         tags: [system]
         justification: |
           Before running an extraction, an operator diagnosing a deployment needs to see which
-          backends are present and usable and why. Listing each backend's formats, capabilities, and
-          availability makes that visible without triggering an extraction.
+          backends are present and usable and why. Reporting each backend's identity, formats, and
+          availability status makes that visible without triggering an extraction.
         children:
-          - DocDownTool-Program-ListBackends
+          - DocDownTool-Program-BackendInventory
         tests:
           - DocDownTool_ListBackends_DefaultEngine_ListsPdfAvailable
-
-      - id: DocDownTool-VerifyFolder
-        title: The tool shall verify an existing scratch folder against its own manifest on request.
-        tags: [system]
-        justification: |
-          The honesty of an extraction rests on the folder agreeing with its manifest, and a consumer
-          receiving a folder produced elsewhere needs to check that independently. Exposing the
-          contract verifier as a command lets that check run without re-extracting the document.
-        children:
-          - DocDownTool-Program-Verify
-        tests:
-          - DocDownTool_Verify_ValidScratch_ReportsNoViolations
 
       - id: DocDownTool-Packaging
         title: >-
@@ -169,9 +185,8 @@ sections:
           The intended distribution is a global or local .NET tool a user installs and runs as
           docdown. The produced package must stay runtime-identifier-agnostic: every tool asset is
           placed under the literal any platform folder so a single package installs on any RID and
-          resolves the correct native asset at run time (the tool does carry the rendering package's
-          native binaries transitively, so the claim is RID-agnostic, not native-free). Proving this
-          against the packed .nupkg, rather than against project metadata, is what makes the
-          documented installation and invocation dependable on every platform.
+          resolves the correct native asset at run time. Proving this against the packed .nupkg,
+          rather than against project metadata, is what makes the documented installation and
+          invocation dependable on every platform.
         tests:
           - DocDownTool_Package_Nupkg_IsRidAgnosticDotNetTool

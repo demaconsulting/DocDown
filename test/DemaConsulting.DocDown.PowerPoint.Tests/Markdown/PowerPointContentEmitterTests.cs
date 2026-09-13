@@ -6,8 +6,8 @@ using DocDown.PowerPoint.OpenXml;
 namespace DemaConsulting.DocDown.PowerPoint.Tests.Markdown;
 
 /// <summary>
-///     Unit tests for <see cref="PowerPointContentEmitter"/>, exercising the honest gap policy from
-///     hand-built models with no deck behind them.
+///     Unit tests for <see cref="PowerPointContentEmitter"/>, exercising the inventory and
+///     plain-language note policy from hand-built models with no deck behind them.
 /// </summary>
 public class PowerPointContentEmitterTests
 {
@@ -107,11 +107,11 @@ public class PowerPointContentEmitterTests
     }
 
     /// <summary>
-    ///     Proves a deck whose slides carry notes reports the notes in the content outline and raises
-    ///     neither a notes gap nor any diagnostic about the notes.
+    ///     Proves a deck whose slides carry notes reports the notes in the content outline and
+    ///     records no extraction note about that ordinary document content.
     /// </summary>
     [Fact]
-    public async Task PowerPointContentEmitter_Emit_NotesPresent_NoNotesGap()
+    public async Task PowerPointContentEmitter_Emit_NotesPresent_ReportsSpeakerNotesFeature()
     {
         var model = new PowerPointDeckModel(
             [new PowerPointSlideModel(1, "T", ["b"], "notes here")]);
@@ -120,16 +120,16 @@ public class PowerPointContentEmitterTests
         await PowerPointContentEmitter.EmitAsync(
             sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
 
-        Assert.DoesNotContain(sink.Gaps, gap => gap.Target == "notes");
         Assert.Contains(
             sink.ContentFeatures,
-            feature => feature.Label == "sets of speaker notes" && feature.Count == 1);
+            feature => feature is { Label: "sets of speaker notes", Count: 1, LookedFor: true });
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
-    ///     Proves a deck with no speaker notes states the whole-deck absence as a counted zero in the
-    ///     content outline — a fact about the deck — and raises neither a gap nor a diagnostic, so a
-    ///     notes-less deck never degrades the run.
+    ///     Proves a deck with no speaker notes states the whole-deck absence as a counted zero in
+    ///     the content outline — a fact about the deck — and records no extraction note, so a
+    ///     notes-less deck never reads as incomplete.
     /// </summary>
     /// <remarks>
     ///     The zero is what lets a reader tell "we read every notes slide and there are none" from
@@ -137,7 +137,7 @@ public class PowerPointContentEmitterTests
     ///     same thing as a judgement about the deck's content, which is not DocDown's role.
     /// </remarks>
     [Fact]
-    public async Task PowerPointContentEmitter_Emit_NoNotes_ReportsZeroNotesFeatureNotGapOrDiagnostic()
+    public async Task PowerPointContentEmitter_Emit_NoNotes_ReportsZeroNotesFeatureWithoutNote()
     {
         var model = new PowerPointDeckModel(
         [
@@ -146,77 +146,78 @@ public class PowerPointContentEmitterTests
         ]);
         var sink = new RecordingSink();
 
-        var degraded = await PowerPointContentEmitter.EmitAsync(
+        await PowerPointContentEmitter.EmitAsync(
             sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
 
-        Assert.False(degraded);
-        Assert.DoesNotContain(sink.Gaps, gap => gap.Target == "notes");
-        Assert.Empty(sink.Diagnostics);
         Assert.Contains(
             sink.ContentFeatures,
             feature => feature is { Label: "sets of speaker notes", Count: 0, LookedFor: true });
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
-    ///     Proves a default extraction of a deck that embeds no images reports no images gap and stays
-    ///     a clean success — the backend no longer claims it cannot extract images.
+    ///     Proves a default extraction of a deck that embeds no images records zero inline images
+    ///     and stays silent about the absence.
     /// </summary>
     [Fact]
-    public async Task PowerPointContentEmitter_Emit_NoImages_NoImagesGap()
+    public async Task PowerPointContentEmitter_Emit_NoImages_ReportsZeroInlineImagesWithoutNote()
     {
         var model = new PowerPointDeckModel([new PowerPointSlideModel(1, "T", ["b"], "n")]);
         var sink = new RecordingSink();
 
-        var degraded = await PowerPointContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await PowerPointContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        Assert.False(degraded);
-        Assert.DoesNotContain(sink.Gaps, gap => gap.Kind == GapKind.Images);
-        Assert.DoesNotContain(sink.Diagnostics, diagnostic => diagnostic.Code == "PPTX0003");
+        Assert.Contains(sink.ContentFeatures, feature => feature.Label == "inline images" && feature.Count == 0);
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
     ///     Proves the deck's embedded images are written through the sink as passthroughs and the
-    ///     found count is reported, with no gap when every image is a well-formed raster.
+    ///     inline-image inventory reflects every linked raster image.
     /// </summary>
     [Fact]
     public async Task PowerPointContentEmitter_Emit_WithRasterImages_WritesThroughSink()
     {
         var model = new PowerPointDeckModel(
-            [new PowerPointSlideModel(1, "T", ["b"], "n")],
+            [new PowerPointSlideModel(
+                1, "T", ["b"], "n",
+                [
+                    new PowerPointSlideImageRef("/ppt/media/image1.png", "logo"),
+                    new PowerPointSlideImageRef("/ppt/media/image2.jpeg", "chart")
+                ])],
             [
                 new EmbeddedImage([1, 2, 3], "image/png", "logo", "/ppt/media/image1.png"),
                 new EmbeddedImage([4, 5, 6], "image/jpeg", "chart", "/ppt/media/image2.jpeg")
             ]);
         var sink = new RecordingSink();
 
-        var degraded = await PowerPointContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await PowerPointContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        Assert.False(degraded);
         Assert.Equal(2, sink.Images.Count);
         Assert.All(sink.Images, image => Assert.Equal(ImageTransform.Passthrough, image.Hint.Transform));
-        Assert.Contains(sink.FoundCounts, found => found.Kind == GapKind.Images && found.FoundCount == 2);
+        Assert.Contains(sink.ContentFeatures, feature => feature.Label == "inline images" && feature.Count == 2);
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
-    ///     Proves an EMF vector metafile is written unchanged and accompanied by the repurposed
-    ///     <c>PPTX0003</c> readability caveat as an informational diagnostic — not a gap — so a
-    ///     well-formed deck whose only caveat is vector passthrough does not degrade the run.
+    ///     Proves an EMF vector metafile is written unchanged with no vector-only extraction note,
+    ///     because the bytes were produced exactly as stored.
     /// </summary>
     [Fact]
-    public async Task PowerPointContentEmitter_Emit_VectorImage_WritesWithInfoCaveat()
+    public async Task PowerPointContentEmitter_Emit_VectorImage_WritesWithoutNote()
     {
         var model = new PowerPointDeckModel(
-            [new PowerPointSlideModel(1, "T", ["b"], "n")],
+            [new PowerPointSlideModel(
+                1, "T", ["b"], "n",
+                [new PowerPointSlideImageRef("/ppt/media/image1.emf", "schematic")])],
             [new EmbeddedImage([1, 2, 3], "image/x-emf", "schematic", "/ppt/media/image1.emf")]);
         var sink = new RecordingSink();
 
-        var degraded = await PowerPointContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await PowerPointContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        Assert.False(degraded);
         Assert.Single(sink.Images);
-        Assert.Contains(sink.Diagnostics, diagnostic =>
-            diagnostic.Code == "PPTX0003" && diagnostic.Severity == DiagnosticSeverity.Info);
-        Assert.DoesNotContain(sink.Gaps, gap => gap.Kind == GapKind.Images);
+        Assert.Equal(ImageTransform.Passthrough, sink.Images[0].Hint.Transform);
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
@@ -235,7 +236,7 @@ public class PowerPointContentEmitterTests
             sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
 
         Assert.Empty(sink.Images);
-        Assert.DoesNotContain(sink.Gaps, gap => gap.Kind == GapKind.Images);
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
@@ -259,18 +260,25 @@ public class PowerPointContentEmitterTests
     }
 
     /// <summary>
-    ///     Proves an empty deck is reported as a counted gap rather than an empty, unexplained output.
+    ///     Proves an empty deck is emitted as empty content plus zero-count inventory, so the
+    ///     absence is described as document content rather than an extraction failure.
     /// </summary>
     [Fact]
-    public async Task PowerPointContentEmitter_Emit_EmptyDeck_ReportsGap()
+    public async Task PowerPointContentEmitter_Emit_EmptyDeck_WritesEmptyContentAndZeroInventory()
     {
         var model = new PowerPointDeckModel([]);
         var sink = new RecordingSink();
 
-        var degraded = await PowerPointContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await PowerPointContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        Assert.True(degraded);
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "PPTX0001");
+        Assert.Equal(string.Empty, Assert.Single(sink.ContentWrites));
+        var info = Assert.Single(sink.DocumentInfos);
+        Assert.Equal(0, info.PageCount);
+        Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "slides", Count: 0, LookedFor: true });
+        Assert.Contains(
+            sink.ContentFeatures,
+            feature => feature is { Label: "sets of speaker notes", Count: 0, LookedFor: true });
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
@@ -341,43 +349,4 @@ public class PowerPointContentEmitterTests
         return MarkdownImageLinks.AssertAllImageLinksResolveOnDisk(folder.AbsolutePath);
     }
 
-    /// <summary>
-    ///     Proves a deck embedding charts reports a counted gap naming them, so a chart on a slide is
-    ///     never dropped while the summary still claims a complete extraction.
-    /// </summary>
-    [Fact]
-    public async Task PowerPointContentEmitter_Emit_DeckWithCharts_ReportsCountedGap()
-    {
-        // Arrange: a one-slide deck the reader found two chart parts in
-        var model = new PowerPointDeckModel(
-            [new PowerPointSlideModel(1, "Results", ["Body"], null)], [], null, ChartsFound: 2);
-        var sink = new RecordingSink();
-
-        // Act: emit the deck
-        var degraded = await PowerPointContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
-
-        // Assert: the charts are counted, explained, and given a remedy
-        Assert.True(degraded);
-        var gap = Assert.Single(sink.Gaps, candidate => candidate.Reason.Contains("charts", StringComparison.Ordinal));
-        Assert.Equal(2, gap.AffectedCount);
-        Assert.Equal(GapScope.Unavailable, gap.Scope);
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "PPTX0005");
-    }
-
-    /// <summary>
-    ///     Proves a deck embedding no chart reports no chart gap, so an ordinary deck stays clean.
-    /// </summary>
-    [Fact]
-    public async Task PowerPointContentEmitter_Emit_DeckWithoutCharts_ReportsNoChartGap()
-    {
-        // Arrange: an ordinary one-slide deck
-        var model = new PowerPointDeckModel([new PowerPointSlideModel(1, "Results", ["Body"], null)], []);
-        var sink = new RecordingSink();
-
-        // Act: emit the deck
-        await PowerPointContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
-
-        // Assert: nothing is said about charts that do not exist
-        Assert.DoesNotContain(sink.Gaps, candidate => candidate.Reason.Contains("chart", StringComparison.OrdinalIgnoreCase));
-    }
 }

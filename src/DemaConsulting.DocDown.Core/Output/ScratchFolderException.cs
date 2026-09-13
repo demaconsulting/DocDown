@@ -5,8 +5,7 @@ namespace DocDown.Core;
 /// </summary>
 /// <remarks>
 ///     A dedicated exception type lets the engine catch scratch-folder refusals specifically and
-///     convert them into a structured <see cref="ExtractionFailureKind.ScratchFolderRefused"/>
-///     failure with a machine-branchable code, rather than surfacing an opaque
+///     convert them into a prose extraction failure, rather than surfacing an opaque
 ///     <see cref="System.IO.IOException"/> or <see cref="System.IO.PathTooLongException"/>. The
 ///     <see cref="Reason"/> property carries a short, stable cause the engine can present to the
 ///     caller. This type is immutable after construction and therefore thread-safe.

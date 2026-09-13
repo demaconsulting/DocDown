@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Text.Json;
 using DemaConsulting.DocDown.TestSupport;
 using DemaConsulting.DocDown.Tool.Tests.TestData;
 using DemaConsulting.TestResults;
@@ -42,6 +43,8 @@ public class DocDownToolTests
 
         // Assert: exit zero and an absolute summary.txt path that exists on disk
         Assert.Equal(0, exit);
+        Assert.Contains("Extraction produced the output layout.", log, StringComparison.Ordinal);
+        Assert.DoesNotContain("note(s) recorded", log, StringComparison.Ordinal);
         var summaryLine = FindSummaryLine(log);
         Assert.True(Path.IsPathFullyQualified(summaryLine));
         Assert.EndsWith("summary.txt", summaryLine, StringComparison.Ordinal);
@@ -64,8 +67,10 @@ public class DocDownToolTests
         var (exit, log) = CliHarness.Run("--input", input, "--scratch", scratch);
 
         // Assert: non-zero and the structured explanation prose, not a stack trace
-        Assert.NotEqual(0, exit);
-        Assert.Contains("could not be read", log, StringComparison.Ordinal);
+        Assert.Equal(1, exit);
+        Assert.Contains("The source document 'missing.pdf' could not be read.", log, StringComparison.Ordinal);
+        Assert.Contains("Detected format:", log, StringComparison.Ordinal);
+        Assert.DoesNotContain("Extraction failed.", log, StringComparison.Ordinal);
         Assert.DoesNotContain("at DocDown.", log, StringComparison.Ordinal);
     }
 
@@ -78,25 +83,25 @@ public class DocDownToolTests
     {
         // Arrange & Act: the same one-liner the tool uses to build its engine
         var engine = new DocDownBuilder().AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().Build();
+        var backends = engine.GetBackends();
 
         // Assert: every backend package's extractors are registered explicitly
-        Assert.Equal(8, engine.Extractors.Count);
-        Assert.Contains(engine.Extractors, extractor => extractor.Id == "pdf");
-        Assert.Contains(engine.Extractors, extractor => extractor.Id == "pdf-rendering");
-        Assert.Contains(engine.Extractors, extractor => extractor.Id == "word-openxml");
-        Assert.Contains(engine.Extractors, extractor => extractor.Id == "visio-openxml");
-        Assert.Contains(engine.Extractors, extractor => extractor.Id == "visio-com");
-        Assert.Contains(engine.Extractors, extractor => extractor.Id == "powerpoint-openxml");
-        Assert.Contains(engine.Extractors, extractor => extractor.Id == "powerpoint-com");
-        Assert.Contains(engine.Extractors, extractor => extractor.Id == "excel-openxml");
+        Assert.Equal(8, backends.Count);
+        Assert.Contains(backends, backend => backend.Descriptor.Id == "pdf");
+        Assert.Contains(backends, backend => backend.Descriptor.Id == "pdf-rendering");
+        Assert.Contains(backends, backend => backend.Descriptor.Id == "word-openxml");
+        Assert.Contains(backends, backend => backend.Descriptor.Id == "visio-openxml");
+        Assert.Contains(backends, backend => backend.Descriptor.Id == "visio-com");
+        Assert.Contains(backends, backend => backend.Descriptor.Id == "powerpoint-openxml");
+        Assert.Contains(backends, backend => backend.Descriptor.Id == "powerpoint-com");
+        Assert.Contains(backends, backend => backend.Descriptor.Id == "excel-openxml");
     }
 
     /// <summary>
-    ///     Proves an extraction option flag reaches the engine: <c>--no-images</c> suppresses images
-    ///     and the tool reports the resulting gap.
+    ///     Proves <c>--no-images</c> is reported as a note in the produced summary and manifest.
     /// </summary>
     [Fact]
-    public void DocDownTool_Extract_NoImages_ReportsSuppressionGap()
+    public void DocDownTool_Extract_NoImages_ReportsRecordedNoteInSummaryAndManifest()
     {
         // Arrange
         using var temp = new TempScratch();
@@ -106,10 +111,34 @@ public class DocDownToolTests
         // Act: suppress embedded images
         var (exit, log) = CliHarness.Run("--input", input, "--scratch", scratch, "--no-images");
 
-        // Assert: the suppression produced a degraded outcome with a reported gap
+        // Assert: output is still produced, with one recorded note and the new produced wording
         Assert.Equal(0, exit);
-        Assert.Contains("degraded", log, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("gap(s) reported", log, StringComparison.Ordinal);
+        Assert.Contains("Extraction produced the output layout.", log, StringComparison.Ordinal);
+        Assert.Contains("1 note(s) recorded; see summary.txt for detail.", log, StringComparison.Ordinal);
+
+        var summaryPath = FindSummaryLine(log);
+        var summary = File.ReadAllText(summaryPath);
+        Assert.Contains(
+            "Status          : PRODUCED  - the standard output layout was written.",
+            summary,
+            StringComparison.Ordinal);
+        Assert.Contains("Could not read", summary, StringComparison.Ordinal);
+        Assert.Contains(
+            "Embedded image extraction was disabled by the caller; no images were written.",
+            summary,
+            StringComparison.Ordinal);
+
+        var manifestPath = Path.Combine(Path.GetDirectoryName(summaryPath)!, "manifest.json");
+        Assert.True(File.Exists(manifestPath));
+        using var manifest = JsonDocument.Parse(File.ReadAllText(manifestPath));
+        var root = manifest.RootElement;
+        Assert.Equal("2.0", root.GetProperty("schemaVersion").GetString());
+        var note = Assert.Single(root.GetProperty("notes").EnumerateArray().Select(static element => element.GetString()));
+        Assert.Equal("Embedded image extraction was disabled by the caller; no images were written.", note);
+        Assert.False(root.TryGetProperty("artifacts", out _));
+        Assert.False(root.TryGetProperty("diagnostics", out _));
+        Assert.False(root.TryGetProperty("gaps", out _));
+        Assert.False(root.TryGetProperty("selection", out _));
     }
 
     /// <summary>
@@ -131,6 +160,8 @@ public class DocDownToolTests
         Assert.True(File.Exists(trx));
         var parsed = TrxSerializer.Deserialize(File.ReadAllText(trx));
         Assert.NotEmpty(parsed.Results);
+        Assert.Contains(parsed.Results, r => r.Name == "core.manifest-schema");
+        Assert.DoesNotContain(parsed.Results, r => r.Name == "core.gap-accuracy");
         Assert.Contains(parsed.Results, r => r.Name == "pdf.parseRoundTrip");
     }
 
@@ -205,32 +236,23 @@ public class DocDownToolTests
     {
         // Act
         var (exit, log) = CliHarness.Run("--list-backends");
+        var lines = log.Split('\n').Select(static line => line.TrimEnd('\r')).ToList();
+        var pdfIndex = lines.FindIndex(static line => line == "  pdf - PDF (PdfPig)");
+        var renderingIndex = lines.FindIndex(static line => line == "  pdf-rendering - PDF pages (PDFtoImage/PDFium)");
 
         // Assert
         Assert.Equal(0, exit);
-        Assert.Contains("pdf", log, StringComparison.Ordinal);
-        Assert.Contains("pdf-rendering", log, StringComparison.Ordinal);
-        Assert.Contains("available", log, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Proves <c>--verify</c> reports no violations for a folder the tool just produced.
-    /// </summary>
-    [Fact]
-    public void DocDownTool_Verify_ValidScratch_ReportsNoViolations()
-    {
-        // Arrange: produce a valid scratch folder
-        using var temp = new TempScratch();
-        var input = WriteFixture(temp, "input.pdf", ToolPdfFixtures.SimpleText());
-        var scratch = Path.Combine(temp.Path, "out");
-        CliHarness.Run("--input", input, "--scratch", scratch);
-
-        // Act: verify it
-        var (exit, log) = CliHarness.Run("--verify", scratch);
-
-        // Assert
-        Assert.Equal(0, exit);
-        Assert.Contains("No contract violations", log, StringComparison.Ordinal);
+        Assert.Contains("Registered backends:", log, StringComparison.Ordinal);
+        Assert.DoesNotContain("capabilities:", log, StringComparison.Ordinal);
+        Assert.True(pdfIndex >= 0);
+        Assert.Equal("    formats: pdf", lines[pdfIndex + 1]);
+        Assert.Equal("    status: available", lines[pdfIndex + 2]);
+        Assert.True(renderingIndex >= 0);
+        Assert.Equal("    formats: pdf", lines[renderingIndex + 1]);
+        var renderingStatus = lines[renderingIndex + 2];
+        Assert.True(
+            renderingStatus == "    status: available"
+            || renderingStatus.StartsWith("    status: unavailable (", StringComparison.Ordinal));
     }
 
     /// <summary>

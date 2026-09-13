@@ -1,0 +1,48 @@
+DocDown Extraction Summary
+==========================
+
+A 3-page PDF document; extracted 67 characters of text.
+
+Scratch folder  : <scratch-folder>
+Source document : <source-document>
+Detected format : pdf (application/pdf) - detected by file extension
+Extracted (UTC) : 2026-01-02T03:04:05Z
+Status          : PRODUCED  - the standard output layout was written.
+
+All paths below are relative to the scratch folder shown above.
+
+Backend
+-------
+  Selected  : pdf - PDF (PdfPig)
+
+Environment
+-----------
+  Operating system   : TestOS 1.0, X64
+  Runtime            : test-runtime 8.0
+  Runtime identifier : test-rid
+  DocDown.Pdf:
+    pdf.parser        : PdfPig (managed) (available)
+    pdf.pageRendering : not provided by this extractor (NOT available)
+
+Document metadata
+-----------------
+  The document supplied no author or modified date.
+  See metadata.json for the document's full self-reported metadata.
+
+Layout
+------
+  summary.txt          this file
+  manifest.json        machine-readable form of this summary
+  metadata.json        what the document asserts about itself
+  content.md           PRESENT
+  images/              not present - none were written
+  pages/               not present - none were written
+
+What WAS extracted
+------------------
+  content.md   67 characters of text.
+
+Could not read
+--------------
+  - Page rendering was requested, but no page renderer is available for the 'pdf' format in this environment;
+    pages were not rendered.

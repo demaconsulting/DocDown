@@ -1,80 +1,110 @@
 ---
 # Software System Requirements for DocDown.Core
 #
-# These requirements describe the externally visible behavior of the library from
-# the perspective of its consumers, without specifying implementation details.
-# Each requirement decomposes into subsystem requirements (Detection, Extraction,
-# Output) linked below via children, and is proven by system-level tests.
+# SUPERSEDED REQUIREMENT: DocDownCore-BackendOverride
+# required a caller-named extractor override. It is superseded (not satisfied) with no replacement
+# because the governing principle removed caller-directed selection machinery; Core now applies only
+# the fixed deterministic selection policy.
+#
+# SUPERSEDED REQUIREMENT: DocDownCore-SelectionReported
+# required a per-candidate selection explanation. It is superseded (not satisfied) with no
+# replacement because verdict-style candidate traces were removed from the Core reporting model.
+#
+# SUPERSEDED REQUIREMENT: DocDownCore-Degradation
+# required a distinct degraded outcome and explained gaps. It is superseded (not satisfied) by
+# DocDownCore-NotesReported because Core now records attempted-but-incomplete work as plain notes
+# while still returning the two-state outcome model.
+#
+# SUPERSEDED REQUIREMENT: DocDownCore-Diagnostics
+# required coded extraction diagnostics. It is superseded (not satisfied) with no replacement
+# because the governing principle limits reporting to content inventory and plain notes.
+#
+# SUPERSEDED REQUIREMENT: DocDownCore-GapReporting
+# required numbered gaps for missing output. It is superseded (not satisfied) by
+# DocDownCore-NotesReported and DocDownCore-Output-ContentOutline because Core now reports only
+# attempted-but-incomplete work as notes and states document absences through the content inventory.
+#
+# SUPERSEDED REQUIREMENT: DocDownCore-GapAccuracy
+# required gap and ledger reconciliation. It is superseded (not satisfied) with no replacement
+# because the gap, ledger, and contract-verifier machinery was removed from Core.
+#
+# SUPERSEDED REQUIREMENT: DocDownCore-NoSilentAbsence
+# required every absence to be explained by a gap. It is superseded (not satisfied) by
+# DocDownCore-NotesReported and DocDownCore-Output-ContentOutline because the governing principle
+# now separates attempted extraction shortfalls from facts about the document's own content.
 
 sections:
   - title: DocDownCore Requirements
     requirements:
       - id: DocDownCore-OutputContract
         title: >-
-          The library shall produce a self-describing output contract that a downstream
-          consumer can validate without access to the original document.
+          The library shall produce a self-describing output contract recording what it extracted,
+          where it wrote the results, and any unreadable outcome.
         tags: [system]
         justification: |
-          Extraction feeds automated pipelines that must trust the result without
-          re-reading proprietary source files. A stable, verifiable output contract lets
-          consumers detect tampering or incomplete extraction and is the basis for the
-          compliance evidence the wider product depends on.
+          Downstream automation must act on the extraction without reopening the source document.
+          A stable record of produced artifacts, their location, and any unreadable failure is the
+          core value of the library.
         children:
-          - DocDownCore-Extraction-Orchestration
-          - DocDownCore-Output-ContractVerification
+          - DocDownCore-LayoutInvariance
+          - DocDownCore-SummaryFile
+          - DocDownCore-ManifestFile
           - DocDownCore-Output-DocumentMetadata
         tests:
           - DocDownCore_Extract_TextDocument_ProducesContractLayout
-          - DocDownCore_Extract_AnyOutcome_ReportedGapsMatchFilesystem
+          - DocDownCore_Extract_Failure_StillWritesSummaryAndManifest
 
       - id: DocDownCore-LayoutInvariance
         title: >-
-          The library shall write the summary and manifest for every extraction regardless
-          of outcome, including failures.
+          The library shall write the standard root artifacts for every extraction whose scratch
+          folder it accepts, including unreadable outcomes.
         tags: [system]
         justification: |
-          Callers automate on the presence of the output files. If a failure left no
-          artifacts, an operator could not distinguish a crash from a missing input, so an
-          honest record must exist even when extraction cannot proceed.
+          Operators must be able to distinguish an unreadable extraction from a missing run. A
+          stable set of root artifacts gives every accepted extraction one recognizable record.
         children:
           - DocDownCore-Output-ArtifactLayout
+          - DocDownCore-Extraction-Orchestration
         tests:
-          - DocDownCore_Extract_NoBackendForFormat_FailsAndStillWritesLayout
+          - DocDownCore_Extract_TextDocument_ProducesContractLayout
           - DocDownCore_Extract_Failure_StillWritesSummaryAndManifest
 
       - id: DocDownCore-SummaryFile
-        title: The library shall write a human-readable summary describing what was and was not extracted.
+        title: >-
+          The library shall write a human-readable summary describing the extraction, its runtime
+          context, and any recorded notes.
         tags: [system]
         justification: |
-          Operators triaging an extraction need a plain-language account without parsing
-          machine formats. The summary is the first document a human reads when an
-          extraction is incomplete or fails.
+          Humans triage extractions from the summary first. It must state the scratch location,
+          the selected backend, what was extracted, and any attempted steps that could not be
+          completed.
         children:
           - DocDownCore-Output-SummaryContent
           - DocDownCore-Output-ContentOutline
+          - DocDownCore-Output-ExtractionNotes
         tests:
-          - DocDownCore_Extract_Summary_ContainsAbsoluteScratchPath
-          - DocDownCore_Extract_Summary_NamesSelectedBackend
+          - DocDownCore_Extract_BackendUnavailable_ReasonAppearsInSummary
+          - DocDownCore_Extract_PagesRequestedButUnsupported_ProducesWithNote
 
       - id: DocDownCore-ManifestFile
-        title: The library shall write a machine-readable manifest that round-trips the extraction result.
+        title: The library shall write a machine-readable manifest describing the extraction run.
         tags: [system]
         justification: |
-          Downstream tooling consumes the manifest programmatically. A manifest that
-          round-trips guarantees the recorded result can be reloaded and acted on without
-          loss, which is required for reproducible automated processing.
+          Automated consumers need a stable machine-readable record of the extraction. The manifest
+          carries the format, source, selected backend, output inventories, requested options, and
+          any unreadable failure.
         children:
           - DocDownCore-Output-ManifestContent
         tests:
-          - DocDownCore_Extract_Manifest_RoundTrips
+          - DocDownCore_Extract_TextDocument_ProducesContractLayout
+          - DocDownCore_Extract_ImageProvenance_ManifestRecordsTransformPerImage
 
       - id: DocDownCore-ContentFile
-        title: The library shall write extracted document content as Markdown.
+        title: The library shall write extracted document content as Markdown when text was produced.
         tags: [system]
         justification: |
-          Markdown is the interchange format consumers convert onward. Emitting content in
-          a single well-known text format lets every downstream renderer and indexer work
-          from one predictable representation.
+          Downstream readers and agents consume one predictable text artifact. Writing Markdown
+          gives them a stable format regardless of source document type.
         children:
           - DocDownCore-Output-ContentDocument
         tests:
@@ -82,185 +112,138 @@ sections:
 
       - id: DocDownCore-ImageFolder
         title: >-
-          The library shall write embedded images as deduplicated resource files whose
-          presence or explained absence is reflected on disk.
+          The library shall write embedded images as deduplicated resources and record their
+          provenance in the manifest.
         tags: [system]
         justification: |
-          Images carry information the text cannot, and duplicated bytes waste storage in
-          large batch runs. Reflecting presence or explained absence on disk keeps the
-          output honest so a consumer never silently loses a picture.
+          Images often contain document content that text alone cannot capture. Deduplicated image
+          output keeps the scratch folder compact while still preserving provenance for every image.
         children:
           - DocDownCore-Output-ImageResources
+          - DocDownCore-Output-ImageProvenance
         tests:
-          - DocDownCore_Extract_AnyOutcome_ReportedGapsMatchFilesystem
-          - DocDownCore_Extract_TextDocument_ProducesContractLayout
+          - DocDownCore_Extract_ImageProvenance_ManifestRecordsTransformPerImage
 
       - id: DocDownCore-PageFolder
         title: >-
-          The library shall write rendered pages when page rendering is requested and
-          supported, and otherwise explain their absence.
+          The library shall write rendered pages when page rendering succeeds and shall otherwise
+          record a note when a requested paginated render could not be completed.
         tags: [system]
         justification: |
-          Some consumers need a visual page image for layout-sensitive review. When the
-          environment cannot render pages the caller must be told why, rather than being
-          left to guess whether the pages were simply empty.
+          Some consumers need rendered page images, but that ability depends on the selected
+          backend and environment. The library must therefore distinguish produced pages from a
+          requested render that could not be completed.
         children:
+          - DocDownCore-NotesReported
           - DocDownCore-Output-PageResources
         tests:
-          - DocDownCore_Extract_PagesRequestedButUnsupported_DegradesWithGap
-          - DocDownCore_Extract_AnyOutcome_ReportedGapsMatchFilesystem
+          - DocDownCore_Extract_PagesRequestedButUnsupported_ProducesWithNote
 
       - id: DocDownCore-FormatDetection
-        title: The library shall determine the document format from the file name before selecting a backend.
+        title: The library shall determine the document format before selecting an extractor.
         tags: [system]
         justification: |
-          Selecting a backend requires naming the format. The caller already possesses the
-          document and named it, so the file extension is the primary signal; a bounded
-          leading-byte check recovers input that arrives unnamed or with an unrecognized
-          extension. Detection is the entry point for the whole extraction pipeline and it
-          never opens or parses the document to reach its answer.
+          Routing a document to a compatible extractor depends on naming its format first.
+          Detection is therefore the entry point to the entire extraction pipeline.
         children:
           - DocDownCore-Detection-FormatIdentification
+          - DocDownCore-Detection-DetectionBasisReported
           - DocDownCore-Detection-UnknownFormatReported
           - DocDownCore-Detection-NonDestructiveInspection
         tests:
-          - DocDownCore_Extract_TextDocument_ProducesContractLayout
-          - DocDownCore_Extract_UnknownFormat_FailsWithDiagnostic
+          - DocDownCore_ExtractAsync_DocxWithoutWordBackend_FailsHonestlyNamingThePackage
+          - DocDownCore_Extract_UnknownFormat_ReturnsUnreadableResult
 
       - id: DocDownCore-ExplicitRegistration
-        title: The library shall use only the extraction backends explicitly registered by the host application.
+        title: The library shall use only the extraction backends explicitly registered by the host.
         tags: [system]
         justification: |
-          Hosts must control which third-party backends run, for licensing and supply-chain
-          reasons. Using only explicitly registered backends prevents surprise dependencies
-          from participating in extraction.
+          Hosts control which extractors participate. Core must not discover or activate other
+          backends implicitly.
         children:
           - DocDownCore-Extraction-ExplicitRegistration
         tests:
-          - DocDownCore_GetBackendStatus_ReportsAvailabilityAndReason
+          - DocDownCore_ExtractAsync_DocxWithoutWordBackend_FailsHonestlyNamingThePackage
 
       - id: DocDownCore-BackendSelection
-        title: The library shall select the highest-fidelity available backend that supports the detected format.
+        title: >-
+          The library shall select one extractor deterministically from the detected format,
+          current availability, and requested page-rendering preference.
         tags: [system]
         justification: |
-          When several backends can read a format they differ in fidelity. Choosing the
-          best available one gives consumers the richest result the environment can produce
-          without requiring them to understand backend internals.
+          When more than one backend can read a format, callers need a stable policy that yields
+          the same winner for the same inputs without hidden negotiation.
         children:
           - DocDownCore-Extraction-DeterministicSelection
         tests:
-          - DocDownCore_Extract_HigherFidelityUnavailable_FallsBackAndRecordsExclusion
+          - DocDownCore_Extract_TextDocument_ProducesContractLayout
 
       - id: DocDownCore-BackendAvailability
-        title: The library shall treat a backend that fails its availability probe as unavailable and report the reason.
+        title: >-
+          The library shall treat a backend that cannot run in the current environment as
+          unavailable and report the reason.
         tags: [system]
         justification: |
-          Backends depend on native components that may be missing at runtime. Detecting an
-          unavailable backend and recording why lets operators fix the environment instead
-          of receiving an opaque crash mid-extraction.
+          Backends depend on environment-specific tools and native components. Recording
+          unavailability lets operators diagnose the environment instead of receiving an opaque
+          crash.
         children:
           - DocDownCore-Extraction-AvailabilityProbing
         tests:
           - DocDownCore_Extract_BackendUnavailable_ReasonAppearsInSummary
-          - DocDownCore_GetBackendStatus_ReportsAvailabilityAndReason
-
-      - id: DocDownCore-BackendOverride
-        title: The library shall honor a caller-named backend and never silently substitute a different one.
-        tags: [system]
-        justification: |
-          A caller who names a backend is asserting a deliberate policy, often for
-          reproducibility or certification. Silently falling back to another backend would
-          violate that policy and produce results the caller did not authorize.
-        children:
-          - DocDownCore-Extraction-DeterministicSelection
-        tests:
-          - DocDownCore_Extract_OverrideUnavailable_FailsAndNeverFallsBack
-
-      - id: DocDownCore-SelectionReported
-        title: The library shall report, for every candidate backend, why it was or was not selected.
-        tags: [system]
-        justification: |
-          When the chosen backend is not the one an operator expected, they need the reason
-          each alternative was rejected to diagnose the environment. A full selection trace
-          turns an opaque decision into an auditable one.
-        children:
-          - DocDownCore-Extraction-SelectionExplained
-          - DocDownCore-Detection-DetectionBasisReported
-        tests:
-          - DocDownCore_Extract_HigherFidelityUnavailable_FallsBackAndRecordsExclusion
-          - DocDownCore_Extract_Summary_NamesSelectedBackend
 
       - id: DocDownCore-StructuredFailure
         title: >-
-          The library shall report failures as structured, coded outcomes rather than
-          throwing, and still write a verifiable layout.
+          The library shall return unreadable outcomes as structured failure data rather than
+          throwing ordinary extraction errors.
         tags: [system]
         justification: |
-          Batch pipelines cannot tolerate unhandled exceptions that abort a whole run. A
-          coded, structured failure lets automation branch on the cause and still find a
-          verifiable record of what happened.
+          Batch workflows must be able to inspect failure details without catching routine
+          exceptions. Returning a structured failure keeps automation in control.
         children:
           - DocDownCore-Extraction-StructuredFailure
           - DocDownCore-Extraction-ExtractorIsolation
+          - DocDownCore-Extraction-TwoStateOutcome
         tests:
-          - DocDownCore_Extract_NoBackendForFormat_FailsAndStillWritesLayout
-          - DocDownCore_Extract_UnknownFormat_FailsWithDiagnostic
+          - DocDownCore_Extract_UnknownFormat_ReturnsUnreadableResult
           - DocDownCore_Extract_Failure_StillWritesSummaryAndManifest
 
       - id: DocDownCore-Options
         title: >-
-          The library shall isolate the caller's options so that mutation after the call
-          cannot affect an in-flight or subsequent extraction.
+          The library shall isolate the caller's options so later mutation cannot affect an
+          in-flight or completed extraction.
         tags: [system]
         justification: |
-          Callers reuse and mutate option objects across concurrent extractions. Isolating
-          a snapshot at call time prevents one thread's later edit from corrupting another
-          extraction, which is essential for safe concurrent use.
+          Callers often reuse one options object across several extractions. Cloning the options at
+          call time prevents later edits from corrupting another run.
         children:
           - DocDownCore-Extraction-OptionIsolation
         tests:
           - DocDownCore_Extract_OptionsMutatedAfterCall_DoNotAffectResult
 
-      - id: DocDownCore-Degradation
+      - id: DocDownCore-NotesReported
         title: >-
-          The library shall degrade gracefully by recording an explained gap when a
-          requested capability is unavailable, unless the caller requires that capability.
+          The library shall record a plain-language note when it attempted an extraction step and
+          could not complete it.
         tags: [system]
         justification: |
-          A missing optional capability should not fail an otherwise useful extraction, but
-          the consumer must know what was lost. Recording an explained gap preserves the
-          usable result while keeping the record honest; a hard requirement still fails.
+          A caller needs to know when DocDown tried to do something and could not finish, such as
+          page rendering with no renderer or an undecodable image. Plain notes provide that fact
+          without introducing a judgment about the document itself.
         children:
-          - DocDownCore-Extraction-CapabilityNegotiation
-          - DocDownCore-Output-GapExplanation
+          - DocDownCore-Output-ExtractionNotes
         tests:
-          - DocDownCore_Extract_PagesRequestedButUnsupported_DegradesWithGap
-          - DocDownCore_Extract_RequiredCapabilitiesUnavailable_FailsWithoutDegrading
-          - DocDownCore_Extract_HigherFidelityUnavailable_FallsBackAndRecordsExclusion
-
-      - id: DocDownCore-Diagnostics
-        title: The library shall attach coded diagnostics explaining notable conditions during extraction.
-        tags: [system]
-        justification: |
-          Operators need machine-stable codes to build alerting and dashboards over large
-          extraction volumes. Coded diagnostics let tooling recognize recurring conditions
-          without parsing free-form English.
-        children:
-          - DocDownCore-Extraction-AvailabilityProbing
-          - DocDownCore-Output-GapExplanation
-        tests:
-          - DocDownCore_Extract_UnknownFormat_FailsWithDiagnostic
-          - DocDownCore_Extract_BackendUnavailable_ReasonAppearsInSummary
+          - DocDownCore_Extract_PagesRequestedButUnsupported_ProducesWithNote
 
       - id: DocDownCore-ScratchFolderSafety
         title: >-
-          The library shall confine all written artifacts to the caller-provided scratch
-          folder and refuse paths that would escape or overflow it.
+          The library shall confine all written artifacts to the caller-provided scratch folder and
+          refuse unsafe paths or unsafe destructive reuse.
         tags: [system]
         justification: |
-          Extractors process untrusted documents that may carry hostile resource names. A
-          strict containment boundary prevents a malicious file from writing outside the
-          scratch folder or producing paths the host filesystem cannot represent.
+          Extractors process untrusted document content that can influence output names. A single
+          contained write path is necessary to prevent traversal, reserved-name hazards, and
+          unintended deletion of caller files.
         children:
           - DocDownCore-Output-PathSafety
         tests:
@@ -268,106 +251,59 @@ sections:
 
       - id: DocDownCore-Determinism
         title: >-
-          The library shall produce byte-identical output for identical input when the
-          timestamp is fixed.
+          The library shall produce byte-identical summary and manifest output for identical input
+          when the timestamp is fixed.
         tags: [system]
         justification: |
-          Reproducible builds and audit re-runs require that the same input yields the same
-          bytes. Determinism lets consumers diff two runs and attribute any difference to a
-          real change rather than to non-deterministic ordering.
+          Reproducible re-runs and clean diffs depend on deterministic serializer output within one
+          environment.
         children:
           - DocDownCore-Output-Determinism
         tests:
           - DocDownCore_Extract_RepeatedRun_IsByteIdentical
-          - DocDownCore_Extract_RepeatedRunWithSystemClock_DiffersOnlyInTimestamp
-
-      - id: DocDownCore-GapReporting
-        title: The library shall report a numbered gap for every part of the requested extraction it could not deliver.
-        tags: [system]
-        justification: |
-          Consumers must be able to enumerate exactly what is missing to decide whether the
-          result is fit for purpose. Numbered gaps give each shortfall a stable identity for
-          tracking and remediation.
-        children:
-          - DocDownCore-Output-GapExplanation
-        tests:
-          - DocDownCore_Extract_PagesRequestedButUnsupported_DegradesWithGap
-          - DocDownCore_Extract_AnyOutcome_ReportedGapsMatchFilesystem
-
-      - id: DocDownCore-GapAccuracy
-        title: The library shall ensure every reported gap and ledger entry matches the artifacts actually on disk.
-        tags: [system]
-        justification: |
-          A record that disagrees with the filesystem is worse than none, because consumers
-          act on the record. Reconciling the ledger against disk before reporting guarantees
-          the evidence and the artifacts tell the same story.
-        children:
-          - DocDownCore-Output-CompletenessLedger
-        tests:
-          - DocDownCore_Extract_AnyOutcome_ReportedGapsMatchFilesystem
-
-      - id: DocDownCore-NoSilentAbsence
-        title: >-
-          The library shall never leave an artifact absent or partial without a gap that
-          explains the absence.
-        tags: [system]
-        justification: |
-          Silent absence is the failure mode that undermines trust in an extraction: the
-          consumer cannot tell an empty document from a lost one. Synthesizing an explaining
-          gap for any unexplained absence keeps the contract honest by construction.
-        children:
-          - DocDownCore-Output-CompletenessLedger
-          - DocDownCore-Output-GapExplanation
-        tests:
-          - DocDownCore_Extract_UnexplainedAbsence_CoreSynthesizesGap
-          - DocDownCore_Extract_AnyOutcome_ReportedGapsMatchFilesystem
 
       - id: DocDownCore-ProvenanceReported
         title: The library shall record which tool and backend produced the extraction.
         tags: [system]
         justification: |
-          Regulated workflows must attribute every artifact to the software that created it.
-          Recording tool and backend provenance supports reproducibility and lets consumers
-          re-run or distrust results from a specific backend version.
+          Regulated workflows must be able to attribute output to the software that produced it.
+          Tool and backend provenance are therefore first-class output facts.
         children:
           - DocDownCore-Output-ManifestContent
+          - DocDownCore-Output-SummaryContent
         tests:
-          - DocDownCore_Extract_Summary_NamesSelectedBackend
-          - DocDownCore_Extract_Manifest_RoundTrips
+          - DocDownCore_Extract_TextDocument_ProducesContractLayout
 
       - id: DocDownCore-EnvironmentReported
         title: The library shall record the runtime environment in which the extraction ran.
         tags: [system]
         justification: |
-          Extraction fidelity depends on the operating system and runtime. Capturing the
-          environment lets an auditor reproduce the conditions and explains environment-
-          dependent gaps without a separate investigation.
+          Extraction behavior depends on the operating system, runtime, and available backends.
+          Recording that environment keeps output reproducible and diagnosable.
         children:
           - DocDownCore-Output-SummaryContent
         tests:
           - DocDownCore_Extract_TextDocument_ProducesContractLayout
 
       - id: DocDownCore-SelfValidationSeam
-        title: The library shall expose self-test cases that verify its own contract and each backend's cases.
+        title: >-
+          The library shall expose self-test cases that verify its own contract and any
+          backend-contributed cases.
         tags: [system]
         justification: |
-          Operators need a way to confirm, in the deployed environment, that Core and its
-          backends still honor the contract. A self-test seam lets a host run these checks
-          on demand rather than trusting the build machine's results.
+          Operators need a way to validate the deployed environment without depending only on the
+          build machine's evidence.
         children:
           - DocDownCore-Extraction-SelfValidationSeam
         tests:
-          - DocDownCore_GetSelfTestCases_IncludesCoreCases
+          - DocDownCore_GetSelfTestCases_IncludesCurrentCoreCases
 
       - id: DocDownCore-ImageProvenanceReported
         title: The library shall record, for every extracted image, how that image was produced.
         tags: [system]
         justification: |
-          A manifest that describes a decoded and re-encoded image as a byte-for-byte
-          passthrough is a false provenance claim, and downstream trust in every other
-          manifest field rests on no field being decorative. Stating per image whether the
-          bytes are the document's own or a new encoding lets a consumer decide whether the
-          artifact is suitable as forensic evidence or only as a rendering.
+          Image provenance matters whenever a consumer needs to distinguish the document's own bytes
+          from a decoded and re-encoded image representation.
         children:
           - DocDownCore-Output-ImageProvenance
         tests:

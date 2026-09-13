@@ -1,9 +1,15 @@
 ---
 # Software Unit Requirements for PdfTextExtractor
 #
-# PdfTextExtractor turns a page's positioned glyphs into markdown paragraphs in reading
-# order, places the links to that page's images, marks page boundaries, and reports
-# honestly when a page carries no glyphs at all.
+# PdfTextExtractor turns a page's positioned glyphs into markdown paragraphs in reading order,
+# places the links to that page's images, marks page boundaries, and reports text structure counts
+# from the same rendering pass.
+#
+# SUPERSEDED REQUIREMENT: DocDownPdf-PdfTextExtractor-ReportsNoTextLayer
+# required the unit to report a separate no-text-layer condition. It is superseded, not satisfied,
+# because DocDown now reports what it extracted and where and makes no acceptability judgment.
+# Text-free input is now described through zero heading and paragraph counts by
+# DocDownPdf-PdfTextExtractor-ReportsZeroTextCounts.
 
 sections:
   - title: DocDownPdf Requirements
@@ -49,11 +55,14 @@ sections:
             tests:
               - PdfTextExtractor_Extract_ExtractedImages_LinksThemUnderTheirOwnPage
 
-          - id: DocDownPdf-PdfTextExtractor-ReportsNoTextLayer
-            title: PdfTextExtractor shall report whether any extracted page carried a glyph at all.
+          - id: DocDownPdf-PdfTextExtractor-ReportsZeroTextCounts
+            title: >-
+              PdfTextExtractor shall return zero heading and paragraph counts for text-free or empty
+              page selections without inventing text.
             justification: |
-              Producing no text because a page had none is a different fact from producing no text
-              because the layout could not be resolved. Reporting the distinction is what lets the
-              caller explain a scanned document instead of merely showing an empty result.
+              A selected page may legitimately carry no glyphs, and a zero-page document supplies no
+              pages at all. Returning factual zero counts keeps those cases observable without
+              inventing content or reviving removed no-text-layer diagnostics.
             tests:
-              - PdfTextExtractor_Extract_PageWithNoGlyphs_ReportsNoGlyphsPresent
+              - PdfTextExtractor_Extract_PageWithNoGlyphs_YieldsZeroTextCounts
+              - PdfTextExtractor_Extract_NoPages_ProducesZeroCountsAndNoMarkers

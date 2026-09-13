@@ -3,11 +3,11 @@
 #
 # PowerPointAutomation is the real COM automation adapter: the single unit that talks to Microsoft
 # PowerPoint over late-bound IDispatch. It is the whole untestable COM boundary and is deliberately
-# mechanical, holding no extraction or gap policy. Its behavior is exercised at the seam in CI through an
-# injected stub, and its correctness in a deployed environment is proven by release-time self-tests.
-# The requirements below name the observable seam contract the adapter must satisfy; the real adapter's
-# read-only open, watchdog-bounded single session, and forced process teardown are documented in the
-# design and verification and proven by the release-time self-test cases, not by CI.
+# mechanical, holding no extraction or reporting policy. Its behavior is exercised at the seam in CI
+# through an injected stub, and its correctness in a deployed environment is proven by release-time
+# self-tests. The requirements below name the observable seam contract the adapter must satisfy; the
+# real adapter's read-only open, watchdog-bounded single session, and forced process teardown are
+# documented in the design and verification and proven by the release-time self-test cases, not by CI.
 
 sections:
   - title: DocDownPowerPoint Requirements
@@ -21,10 +21,11 @@ sections:
                   PowerPointAutomation shall render each slide at the caller's requested resolution,
                   converting the slide's point dimensions to pixels at that resolution.
                 justification: |
-                  The rendered appearance is primary evidence, and the caller chose the resolution, so the
-                  adapter converts each slide's point dimensions to pixels at the requested DPI and exports
-                  at that size rather than a fixed one. The resolution reaching the seam is proven in CI;
-                  the point-to-pixel conversion and PNG export are proven by the release-time self-tests.
+                  The rendered appearance is primary evidence, and the caller chose the resolution, so
+                  the adapter converts each slide's point dimensions to pixels at the requested DPI
+                  and exports at that size rather than a fixed one. The resolution reaching the seam
+                  is proven in CI; the point-to-pixel conversion and PNG export are proven by the
+                  release-time self-tests.
                 tests:
                   - PowerPointComExtractor_Extract_PassesRenderDpiToAutomation
 
@@ -33,22 +34,22 @@ sections:
                   PowerPointAutomation shall return one result per slide in presentation order, each
                   carrying either the slide's PNG bytes or a per-slide failure reason.
                 justification: |
-                  A single unrenderable slide must degrade the run rather than abort it, so the adapter
-                  isolates each slide's export and returns exactly one result per slide — PNG bytes when it
-                  succeeded, a failure reason when it did not — letting the extractor turn a failure into a
-                  counted gap while the remaining slides still render.
+                  A single unrenderable slide must not abort the rest of the render, so the adapter
+                  isolates each slide's export and returns exactly one result per slide — PNG bytes
+                  when it succeeded, a failure reason when it did not — letting the extractor report
+                  the failed attempt as a plain note while the remaining slides still render.
                 tests:
-                  - PowerPointComExtractor_Extract_SlideRenderFails_ReportsCountedGap
+                  - PowerPointComExtractor_Extract_SlideRenderFails_ReportsNote
 
               - id: DocDownPowerPoint-Com-PowerPointAutomation-ReleasesItsSession
                 title: >-
-                  PowerPointAutomation shall own its PowerPoint session and release it, so no COM object
-                  outlives the render and the owning process does not leak.
+                  PowerPointAutomation shall own its PowerPoint session and release it, so no COM
+                  object outlives the render and the owning process does not leak.
                 justification: |
-                  A whole session — activate, open read-only, export every slide, close, quit, release —
-                  runs inside one watchdog-guarded call, so no COM object outlives the timeout window and a
-                  modal-dialog hang is bounded by force-terminating the owned process, leaving no orphan.
-                  The extractor's disposal of the seam after each render is proven in CI; the forced,
-                  deterministic process teardown is proven by the release-time self-tests.
+                  A whole session — activate, open read-only, export every slide, close, quit,
+                  release — runs inside one watchdog-guarded call, so no COM object outlives the
+                  timeout window and a modal-dialog hang is bounded by force-terminating the owned
+                  process. The extractor's disposal of the seam after each render is proven in CI; the
+                  forced, deterministic process teardown is proven by the release-time self-tests.
                 tests:
                   - PowerPointComExtractor_Extract_ViaStub_WritesNotesAndRendersEverySlide

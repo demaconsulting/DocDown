@@ -13,7 +13,7 @@ namespace DocDown.Core;
 ///     order followed by availability-derived facts; never re-sorted.
 /// </param>
 /// <remarks>
-///     Recording the environment makes a degraded result reproducible and explicable: whether a
+///     Recording the environment makes an incomplete result reproducible and explicable: whether a
 ///     capability was available often depends on the OS, architecture, and RID, so capturing them
 ///     lets a reader understand why the same document might extract differently elsewhere. The
 ///     fact order is preserved deliberately so provenance reads chronologically. Instances are

@@ -15,9 +15,9 @@ namespace DocDown.Word.Markdown;
 ///         where GFM cannot represent the structure, counted rather than dropped.
 ///     </para>
 ///     <para>
-///         The returned flattened-cell count is what lets the caller raise a single counted
-///         structural gap plus <c>WORD0005</c>: GFM cannot express a horizontal or vertical merge or
-///         a nested table, so those are rendered as faithfully as the format allows and the loss is
+///         The returned flattened-cell count is what lets the caller record how much table structure
+///         markdown could not preserve: GFM cannot express a horizontal or vertical merge or a
+///         nested table, so those are rendered as faithfully as the format allows and the loss is
 ///         stated with a number. Stateless and thread-safe.
 ///     </para>
 /// </remarks>
@@ -29,13 +29,12 @@ internal static class WordTableWriter
     /// <param name="table">The table to render. Must not be null.</param>
     /// <returns>
     ///     The rendered markdown (empty when the table has no cell content, so the caller can skip
-    ///     it and emit <c>WORD0003</c>), and the number of cells flattened by a merge or a nested
-    ///     table, so the caller can raise a counted structural gap and <c>WORD0005</c>.
+    ///     emitting an empty table shell), and the number of cells flattened by a merge or a nested
+    ///     table, so the caller can record how much structure markdown could not preserve.
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="table"/> is <see langword="null"/>.</exception>
     /// <remarks>
-    ///     Row one is always the header because GFM requires a delimiter row; when Word did not mark
-    ///     it a header the caller states that assumption with <c>WORD0004</c>. The column count is
+    ///     Row one is always the header because GFM requires a delimiter row. The column count is
     ///     the widest row, and short rows are padded so the grid stays rectangular. Pure.
     /// </remarks>
     public static (string Markdown, int FlattenedCells) Write(WordTableModel table)
@@ -45,7 +44,7 @@ internal static class WordTableWriter
         var flattened = table.MergedCellCount + table.NestedTableCount;
 
         // A table with no rows, no columns, or no cell content anywhere contributes nothing; the
-        // caller skips it and records WORD0003 rather than emitting an empty header-and-delimiter shell
+        // caller skips it rather than emitting an empty header-and-delimiter shell
         var columnCount = table.Rows.Count == 0 ? 0 : table.Rows.Max(row => row.Count);
         if (columnCount == 0)
         {

@@ -23,10 +23,10 @@ writer is still open, which is what proves the write reached disk immediately ra
 
 Per IEC 62304 §5.5.2, a `Context` unit test run passes when a written line reaches the console only
 when not silent and always reaches the log; when a log line is flushed immediately; when an error sets
-the exit code even under silence and no error leaves it zero; when the extraction flags project onto
-the options and the scratch-policy token maps to its mode; and when an unknown argument, a malformed
-page range, an unknown image mode, and an out-of-range heading depth are each rejected with an
-argument fault.
+the exit code even under silence and no error leaves it zero; when the supported extraction flags
+project onto the options; when `--overwrite` maps `clean` and `overwrite` to the supported scratch
+modes and rejects the removed tokens; and when an unknown argument, a malformed page range, an
+unknown image mode, and an out-of-range heading depth are each rejected with an argument fault.
 
 ### Test Scenarios
 
@@ -46,19 +46,27 @@ disposed. Evidence for `DocDownTool-Context-Logging`.
 
 #### An error sets the exit code even under silence
 
-**Tests**: `Context_WriteError_SilentMode_StillSetsExitCodeOne`, `Context_ExitCode_NoErrors_ReturnsZero`
+**Tests**: `Context_WriteError_SilentMode_StillSetsExitCodeOne`,
+`Context_ExitCode_NoErrors_ReturnsZero`
 
 Prove the error flag is set unconditionally so a silenced failure still exits non-zero, and that a run
 with no error reports success. Evidence for `DocDownTool-Context-ErrorFlag`.
 
-#### Option mapping
+#### Supported extraction flags are mapped
 
-**Tests**: `Context_BuildExtractionOptions_Flags_MapOntoOptions`,
-`Context_BuildExtractionOptions_ScratchPolicyToken_MapsToMode`
+**Test**: `Context_BuildExtractionOptions_SupportedFlags_MapOntoOptions`
 
-Prove each extraction flag projects onto its `ExtractionOptions` member — including `--require-pages`
-adding the rendered-pages capability requirement — and that each scratch-policy token maps to its
-mode. Evidence for `DocDownTool-Context-OptionMapping`.
+Proves each supported extraction flag projects onto its `ExtractionOptions` member. Evidence for
+`DocDownTool-Context-OptionMapping`.
+
+#### Scratch-folder policy tokens are constrained
+
+**Tests**: `Context_BuildExtractionOptions_SupportedScratchPolicyToken_MapsToMode`,
+`Context_Create_RemovedScratchPolicyToken_ThrowsArgumentException`
+
+Prove `--overwrite` accepts only `clean` and `overwrite`, maps them to the current scratch-folder
+modes, and rejects the removed tokens during parsing. Evidence for
+`DocDownTool-Context-ScratchPolicy`.
 
 #### An unknown argument is rejected
 

@@ -1,10 +1,9 @@
 ---
 # Software Subsystem Requirements for DocDownWord Markdown
 #
-# The Markdown subsystem owns the backend-neutral document model and the projection of that
-# model onto markdown: the model renderer, the GFM table writer, and the shared content
-# emitter that drives every output the model implies. These requirements decompose into
-# the WordMarkdownWriter, WordTableWriter, and WordContentEmitter units via children.
+# The Markdown subsystem owns the backend-neutral document model and the projection of that model
+# onto markdown: the model renderer, the GFM table writer, and the shared content emitter that
+# drives content, inventory, metadata, and extraction notes through the sink.
 
 sections:
   - title: DocDownWord Requirements
@@ -17,8 +16,8 @@ sections:
               images, comments, footnotes, and Document Control — to a markdown flow.
             justification: |
               The content document is markdown, so every structural element the model carries has to
-              be projected onto markdown's own vocabulary. Owning that projection in one renderer keeps
-              the mapping consistent and the escaping uniform across every element type.
+              be projected onto markdown's own vocabulary. Owning that projection in one renderer
+              keeps the mapping consistent and the escaping uniform across every element type.
             children:
               - DocDownWord-Markdown-WordMarkdownWriter-RendersHeadings
               - DocDownWord-Markdown-WordMarkdownWriter-RendersLists
@@ -34,13 +33,13 @@ sections:
 
           - id: DocDownWord-Markdown-TableRendering
             title: >-
-              The subsystem shall render a table model as a GitHub-Flavored-Markdown table and count
-              every cell it had to flatten.
+              The subsystem shall render a table model as a GitHub-Flavored-Markdown table and
+              count every cell it had to flatten.
             justification: |
               A GFM table is the whole point of reading the Word grid rather than a flattened
               rendering, so the table writer must emit a real header-and-delimiter table, pad short
-              rows, escape cell content, skip an empty table, and count each merged or nested cell it
-              cannot express.
+              rows, escape cell content, skip an empty table, and count each merged or nested cell
+              it cannot express.
             children:
               - DocDownWord-Markdown-WordTableWriter-RendersGfmTable
               - DocDownWord-Markdown-WordTableWriter-PadsShortRows
@@ -52,8 +51,9 @@ sections:
 
           - id: DocDownWord-Markdown-ModelEmission
             title: >-
-              The subsystem shall emit a document model's content, images, diagnostics, and gaps
-              through one path that is independent of how the model was read.
+              The subsystem shall emit a document model's content, images, content inventory,
+              metadata, and extraction notes through one path that is independent of how the model
+              was read.
             justification: |
               Reading a document and rendering what was read are separate concerns. Holding every
               emission decision in one path, driven only by the model, is what makes each mapping
@@ -61,6 +61,9 @@ sections:
               the output contract from acquiring a second, divergent implementation.
             children:
               - DocDownWord-Markdown-WordContentEmitter-EmitsModelContent
-              - DocDownWord-Markdown-WordContentEmitter-ReportsGapsAndDiagnostics
+              - DocDownWord-Markdown-WordContentEmitter-ReportsContentInventory
+              - DocDownWord-Markdown-WordContentEmitter-ReportsChartNote
+              - DocDownWord-Markdown-WordContentEmitter-ReportsFlattenedTableNote
+              - DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote
             tests:
-              - WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1
+              - WordContentEmitter_Emit_BodyWithComments_ReportsOutlineAndSucceeds

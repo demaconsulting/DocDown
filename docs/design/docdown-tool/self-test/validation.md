@@ -27,16 +27,18 @@ the in-process checks and the engine self-test cases.
 - **`RunCliTest`** (private) — runs one of the tool's own commands (`--version`, `--help`) in-process
   via `Context.Create([... "--silent", "--log", <temp>])` and `Program.Run`, then asserts on the
   captured log. This is the same silence-plus-log mechanism the reference DEMA tool uses.
-- **`RunEngineSelfTests`** (private) — builds the engine with `new DocDownBuilder().AddPdf().Build()`,
+- **`RunEngineSelfTests`** (private) — builds the engine with
+  `new DocDownBuilder().AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().Build()`,
   enumerates `GetSelfTestCases()`, runs each case in its own work folder, maps the result through
-  `SelfTestAdapter`, and prints a pass, fail, or skip line. A case that throws is recorded as a
-  failure so the run continues and reports every case.
+  `SelfTestAdapter`, and prints a pass, fail, or skip line. The current Core portion of that union is
+  `core.layout-invariance` and `core.manifest-schema`. A case that throws is recorded as a failure so
+  the run continues and reports every case.
 - **`WriteResultsFile`** (private) — selects `TrxSerializer` for a `.trx` extension and
   `JUnitSerializer` for a `.xml` extension, and reports an error for any other extension.
 
 #### Error Handling
 
-Every check runs inside a `try`/`catch` that records an exception as a failed result rather than
+Every check runs inside a `try` and `catch` that records an exception as a failed result rather than
 aborting the run, because a self-test exists to produce a health signal, not to throw. An unsupported
 results-file extension and a results-file write failure are both reported through `WriteError`,
 driving the exit code to 1.
@@ -47,8 +49,12 @@ driving the exit code to 1.
   property in the header.
 - **Context** — constructed for each in-process check.
 - **SelfTestAdapter** — maps each engine self-test result into the results model.
-- **DocDown.Core** / **DocDown.Pdf** — the engine and the `AddPdf` seam.
-- **DemaConsulting.TestResults** — the results collection and the `TrxSerializer`/`JUnitSerializer`.
+- **DocDown.Core** — the engine and the self-test types.
+- **DocDown.Pdf**, **DocDown.Pdf.Rendering**, **DocDown.Word**, **DocDown.Visio**,
+  **DocDown.PowerPoint**, and **DocDown.Excel** — the explicit backend registration chain the driver
+  validates.
+- **DemaConsulting.TestResults** — the results collection and the `TrxSerializer` and
+  `JUnitSerializer`.
 
 #### Callers
 

@@ -52,20 +52,12 @@ public interface IDocumentExtractor
     IReadOnlyCollection<DocumentFormat> SupportedFormats { get; }
 
     /// <summary>
-    ///     Gets the content aspects this extractor declares it can produce.
+    ///     Gets the extractor's ranking priority; higher values are preferred when more than one
+    ///     candidate remains.
     /// </summary>
     /// <remarks>
-    ///     These are <em>declared</em> capabilities; the environment-specific effective set is
-    ///     reported by <see cref="ProbeAvailability"/> and may be a subset.
-    /// </remarks>
-    ExtractorCapabilities Capabilities { get; }
-
-    /// <summary>
-    ///     Gets the extractor's ranking priority; higher values are preferred on ties.
-    /// </summary>
-    /// <remarks>
-    ///     Only breaks ties after format, availability, and capability fit have been considered,
-    ///     so priority never overrides a better capability match.
+    ///     Only breaks a remaining choice after format and the page-rendering preference have been
+    ///     applied; the final tie-break is the extractor identifier, so selection is deterministic.
     /// </remarks>
     int Priority { get; }
 
@@ -76,11 +68,11 @@ public interface IDocumentExtractor
     /// <remarks>
     ///     <para>
     ///         Page rendering is a request, not a demand: for a paginated format (PDF, Word,
-    ///         PowerPoint, Visio) a <c>--pages</c> request that this environment cannot satisfy is a
-    ///         real shortfall the engine degrades and explains, because a better environment would
-    ///         deliver rendered pages. For a non-paginated format such as a spreadsheet there is no
-    ///         page grid to render, so the same request applies to nothing and the engine honors it
-    ///         with silence rather than a false shortfall.
+    ///         PowerPoint, Visio) a <c>--pages</c> request that this environment cannot satisfy is
+    ///         recorded as a plain note, because a better environment would deliver rendered pages.
+    ///         For a non-paginated format such as a spreadsheet there is no page grid to render, so
+    ///         the same request applies to nothing and the engine honors it with silence rather than
+    ///         a note.
     ///     </para>
     ///     <para>
     ///         The default is <see langword="true"/> because most formats are paginated in principle;
@@ -93,10 +85,10 @@ public interface IDocumentExtractor
     bool PageRenderingApplicable => true;
 
     /// <summary>
-    ///     Probes whether the extractor can run in the current environment and with which
-    ///     effective capabilities.
+    ///     Probes whether the extractor can run in the current environment and whether it can render
+    ///     document pages here.
     /// </summary>
-    /// <returns>An <see cref="ExtractorAvailability"/> describing availability and effective capabilities.</returns>
+    /// <returns>An <see cref="ExtractorAvailability"/> describing availability and page-rendering support.</returns>
     /// <remarks>
     ///     Must be cheap (&lt; 50 ms), side-effect free, and must not open the document, launch an
     ///     application, or throw. Core caches the result until availability is refreshed and
@@ -110,8 +102,8 @@ public interface IDocumentExtractor
     /// <param name="source">The document to extract. The extractor opens it via <see cref="DocumentSource.OpenRead"/>.</param>
     /// <param name="context">The extraction context providing options, the sink, and cancellation.</param>
     /// <returns>
-    ///     A <see cref="ValueTask{TResult}"/> yielding the extractor's own view of the outcome
-    ///     (succeeded, degraded, or failed).
+    ///     A <see cref="ValueTask{TResult}"/> yielding <see cref="ExtractionOutcome.Produced"/> once
+    ///     the extractor has written its output.
     /// </returns>
     /// <exception cref="OperationCanceledException">
     ///     May be thrown when the context's cancellation token is signaled; this propagates rather
@@ -120,8 +112,8 @@ public interface IDocumentExtractor
     /// <remarks>
     ///     The extractor must route every artifact through <paramref name="context"/>'s sink and
     ///     use the relative paths the sink returns in markdown links. Any other thrown exception is
-    ///     caught by Core and converted into an <see cref="ExtractionFailureKind.ExtractorFailed"/>
-    ///     failure, so the extractor need not translate failures into results itself.
+    ///     caught by Core and converted into an <see cref="ExtractionOutcome.Unreadable"/> result with
+    ///     a prose failure, so the extractor need not translate failures into results itself.
     /// </remarks>
     ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context);
 }

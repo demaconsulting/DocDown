@@ -1,3 +1,4 @@
+using System.Reflection;
 using DocDown.Core;
 using DocDown.Pdf;
 
@@ -5,13 +6,14 @@ namespace DemaConsulting.DocDown.Pdf.Tests;
 
 /// <summary>
 ///     Unit tests for <see cref="PdfDocDownBuilderExtensions"/>, proving the registration seam
-///     registers exactly one PDF backend, chains, rejects a null builder, and uses no reflection.
+///     registers exactly one PDF backend, chains, defers construction to build time, rejects a null
+///     builder, and uses no reflection-based loading.
 /// </summary>
 /// <remarks>
 ///     The seam is small but load-bearing: it is the one visible edge from a host to this package,
-///     and the property that makes DocDown's dependency graph honest is that nothing else can create
+///     and the property that keeps DocDown's dependency graph honest is that nothing else can create
 ///     that edge. These tests pin both halves — that the call does register the backend, and that it
-///     does so without reflection or assembly scanning.
+///     does so as an explicit factory rather than by reflection or assembly scanning.
 /// </remarks>
 public class PdfDocDownBuilderExtensionsTests
 {
@@ -27,13 +29,13 @@ public class PdfDocDownBuilderExtensionsTests
         // Act: register the PDF backend and build an engine
         var engine = builder.AddPdf().Build();
 
-        // Assert: exactly one backend is registered, and it is the PDF one with its declared formats
+        // Assert: exactly one backend descriptor is registered, and it matches the PDF contract
         var descriptor = Assert.Single(engine.Extractors);
         Assert.Equal("pdf", descriptor.Id);
+        Assert.Equal("PDF (PdfPig)", descriptor.DisplayName);
         Assert.Equal([DocumentFormat.Pdf], descriptor.SupportedFormats);
-        Assert.Equal(
-            ExtractorCapabilities.Text | ExtractorCapabilities.EmbeddedImages | ExtractorCapabilities.DocumentMetadata,
-            descriptor.Capabilities);
+        Assert.Equal(0, descriptor.Priority);
+        Assert.True(descriptor.PageRenderingApplicable);
     }
 
     /// <summary>
@@ -53,7 +55,7 @@ public class PdfDocDownBuilderExtensionsTests
     }
 
     /// <summary>
-    ///     Proves registration is deferred to build time, so it creates no instance by itself.
+    ///     Proves registration is deferred to build time, so each built engine materializes its own extractor.
     /// </summary>
     /// <remarks>
     ///     Registering a factory rather than an instance is what lets a host configure a builder it
@@ -65,15 +67,16 @@ public class PdfDocDownBuilderExtensionsTests
         // Arrange: one builder registered once
         var builder = new DocDownBuilder().AddPdf();
 
-        // Act: build two engines from it and probe each backend
+        // Act: build two engines from it and inspect their materialized extractor instances
         var first = builder.Build();
         var second = builder.Build();
+        var firstExtractor = Assert.IsType<PdfDocumentExtractor>(Assert.Single(RegisteredExtractors(first)));
+        var secondExtractor = Assert.IsType<PdfDocumentExtractor>(Assert.Single(RegisteredExtractors(second)));
 
-        // Assert: both engines carry a working PDF backend of their own
-        Assert.Equal("pdf", Assert.Single(first.Extractors).Id);
-        Assert.Equal("pdf", Assert.Single(second.Extractors).Id);
-        Assert.All(first.GetBackendStatus(), status => Assert.True(status.IsAvailable));
-        Assert.All(second.GetBackendStatus(), status => Assert.True(status.IsAvailable));
+        // Assert: each engine materialized its own backend instance, and both probes succeed
+        Assert.NotSame(firstExtractor, secondExtractor);
+        Assert.True(firstExtractor.ProbeAvailability().IsAvailable);
+        Assert.True(secondExtractor.ProbeAvailability().IsAvailable);
     }
 
     /// <summary>
@@ -104,12 +107,32 @@ public class PdfDocDownBuilderExtensionsTests
     }
 
     /// <summary>
-    ///     Proves a null builder is rejected as a caller error (boundary).
+    ///     Proves a null builder is rejected as a caller error.
     /// </summary>
     [Fact]
     public void PdfDocDownBuilderExtensions_AddPdf_NullBuilder_ThrowsArgumentNullException()
     {
         // Act + Assert: the builder is what the registration mutates and is mandatory
         Assert.Throws<ArgumentNullException>(() => ((DocDownBuilder)null!).AddPdf());
+    }
+
+    /// <summary>
+    ///     Reads the materialized extractor instances from a built engine.
+    /// </summary>
+    /// <param name="engine">The engine whose private registry is inspected.</param>
+    /// <returns>The registered extractor instances in registration order.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the engine no longer exposes its registry field.</exception>
+    /// <remarks>
+    ///     The public engine surface exposes descriptors only, which is right for production code.
+    ///     This test inspects the registry directly so the deferred-construction contract can be
+    ///     asserted without widening that public API for tests.
+    /// </remarks>
+    private static IReadOnlyList<IDocumentExtractor> RegisteredExtractors(DocDownEngine engine)
+    {
+        var registryField = typeof(DocDownEngine).GetField("_registry", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("DocDownEngine no longer exposes the expected '_registry' field.");
+        var registry = registryField.GetValue(engine) as ExtractorRegistry
+            ?? throw new InvalidOperationException("DocDownEngine did not hold an ExtractorRegistry.");
+        return registry.Extractors;
     }
 }

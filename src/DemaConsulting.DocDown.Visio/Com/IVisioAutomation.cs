@@ -7,8 +7,8 @@ namespace DocDown.Visio.Com;
 /// <remarks>
 ///     <para>
 ///         Everything the COM backend does apart from talking to Visio — content and topology
-///         delegation to the managed backend, availability handling, the gap and diagnostic policy,
-///         per-page fault isolation, and outcome mapping — is exercised cross-platform in CI by
+///         delegation to the managed backend, availability handling, the note policy, per-page fault
+///         isolation, and normal-completion mapping — is exercised cross-platform in CI by
 ///         injecting a stub implementation of this interface. The real automation adapter that
 ///         implements it is Windows-only and its behavior in a deployed environment is proven by
 ///         release-time self-tests rather than by CI.
@@ -28,8 +28,8 @@ internal interface IVisioAutomation : IDisposable
     /// <param name="dpi">The target resolution in dots per inch.</param>
     /// <returns>
     ///     One entry per foreground page in document order, each carrying either the page's PNG bytes
-    ///     or a per-page failure reason so a single unrenderable page degrades the run rather than
-    ///     aborting it.
+    ///     or a per-page failure reason so a single unrenderable page becomes a recorded note rather
+    ///     than aborting the run.
     /// </returns>
     /// <remarks>
     ///     Read-only; a conforming implementation never prompts and never writes to the drawing. The

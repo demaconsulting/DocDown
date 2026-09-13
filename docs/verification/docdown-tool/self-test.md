@@ -23,10 +23,11 @@ distinct from a failure.
 ### Acceptance Criteria
 
 Per IEC 62304 §5.5.2, a SelfTest subsystem test run passes when the validation driver prints an
-environment header at the requested depth, runs Core's and the PDF backend's cases as one union,
-writes a TRX or JUnit results file, reports an error for an unsupported extension, and exits zero when
-no case failed; and when the adapter maps each executed status to its outcome, maps a skip to
-not-executed, and preserves the case name, category, duration, and message.
+environment header at the requested depth, runs `core.layout-invariance` and `core.manifest-schema`
+together with the registered backend cases as one union, writes a TRX or JUnit results file, reports
+an error for an unsupported extension, and exits zero when no case failed; and when the adapter maps
+each executed status to its outcome, maps a skip to not-executed, and preserves the case name,
+category, duration, and message.
 
 ### Test Scenarios
 
@@ -38,8 +39,8 @@ full detail is given in the respective unit verification documents.
 **Tests**: `Validation_Run_DefaultEngine_RunsCoreAndPdfSelfTestUnion`,
 `Validation_Run_ResultsTrx_WritesFile`
 
-Prove the driver runs Core's and the PDF backend's cases together and writes the requested results
-file. Evidence for `DocDownTool-SelfTest-Validation`.
+Prove the driver runs the current Core cases together with the backend cases and writes the requested
+results file. Evidence for `DocDownTool-SelfTest-Validation`.
 
 #### A skip is mapped to not-executed
 

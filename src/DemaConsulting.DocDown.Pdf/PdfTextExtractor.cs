@@ -62,10 +62,7 @@ internal static class PdfTextExtractor
     /// <param name="documentTitle">The document title to head the output with, or <see langword="null"/> when unknown.</param>
     /// <param name="images">The images extracted from the same pages, linked under the page they came from. Must not be null.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
-    /// <returns>
-    ///     The rendered markdown and whether any glyphs were present at all, so the caller can tell an
-    ///     empty document from one whose text simply could not be laid out.
-    /// </returns>
+    /// <returns>The rendered markdown together with the heading and paragraph counts it emitted.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="pages"/> or <paramref name="images"/> is <see langword="null"/>.</exception>
     /// <remarks>
     ///     Emits a <c>&lt;!-- docdown:page N --&gt;</c> marker before each page's content, matching the
@@ -80,7 +77,8 @@ internal static class PdfTextExtractor
         ArgumentNullException.ThrowIfNull(images);
 
         var markdown = new StringBuilder();
-        var anyGlyphs = false;
+        var headingCount = 0;
+        var paragraphCount = 0;
 
         // Head the document with its own title when the PDF declares one, so content.md is self-identifying
         if (!string.IsNullOrWhiteSpace(documentTitle))
@@ -91,18 +89,19 @@ internal static class PdfTextExtractor
         foreach (var page in pages)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            anyGlyphs |= page.Letters.Count > 0;
 
             // Mark the page boundary before its content so passages remain traceable to a source page
             markdown.Append("<!-- docdown:page ")
                 .Append(page.Number.ToString(CultureInfo.InvariantCulture))
                 .Append(" -->\n\n");
 
-            AppendPageText(markdown, page);
+            var pageCounts = AppendPageText(markdown, page);
+            headingCount += pageCounts.HeadingCount;
+            paragraphCount += pageCounts.ParagraphCount;
             AppendPageImages(markdown, page.Number, images);
         }
 
-        return new PdfTextResult(markdown.ToString(), anyGlyphs);
+        return new PdfTextResult(markdown.ToString(), headingCount, paragraphCount);
     }
 
     /// <summary>
@@ -110,27 +109,34 @@ internal static class PdfTextExtractor
     /// </summary>
     /// <param name="markdown">The builder to append to.</param>
     /// <param name="page">The page to render.</param>
+    /// <returns>The number of headings and paragraphs appended for this page.</returns>
     /// <remarks>
     ///     Uses the spatial pipeline first and the content-order extractor only as a fallback, because
     ///     the former produces paragraph boundaries markdown needs while the latter produces a single
     ///     undifferentiated flow. Side effect: appends to <paramref name="markdown"/>.
     /// </remarks>
-    private static void AppendPageText(StringBuilder markdown, Page page)
+    private static PageTextCounts AppendPageText(StringBuilder markdown, Page page)
     {
         // A page with no glyphs has no text to render; the caller reports the absence
         if (page.Letters.Count == 0)
         {
-            return;
+            return PageTextCounts.Empty;
         }
 
         var headings = CollectHeadingTexts(page);
         var blocks = SegmentIntoReadingOrder(page);
+        var headingCount = 0;
+        var paragraphCount = 0;
 
         // Segmentation is heuristic; when it yields nothing, fall back rather than lose the text
         if (blocks.Count == 0)
         {
-            AppendParagraph(markdown, ContentOrderTextExtractor.GetText(page, true));
-            return;
+            if (AppendParagraph(markdown, ContentOrderTextExtractor.GetText(page, true)))
+            {
+                paragraphCount++;
+            }
+
+            return new PageTextCounts(headingCount, paragraphCount);
         }
 
         foreach (var block in blocks)
@@ -145,11 +151,17 @@ internal static class PdfTextExtractor
             if (headings.TryGetValue(text, out var level))
             {
                 markdown.Append('#', level).Append(' ').Append(text).Append("\n\n");
+                headingCount++;
                 continue;
             }
 
-            AppendParagraph(markdown, text);
+            if (AppendParagraph(markdown, text))
+            {
+                paragraphCount++;
+            }
         }
+
+        return new PageTextCounts(headingCount, paragraphCount);
     }
 
     /// <summary>
@@ -256,14 +268,21 @@ internal static class PdfTextExtractor
     /// </summary>
     /// <param name="markdown">The builder to append to.</param>
     /// <param name="text">The paragraph text.</param>
+    /// <returns>
+    ///     <see langword="true"/> when a non-empty paragraph was appended; otherwise
+    ///     <see langword="false"/>.
+    /// </returns>
     /// <remarks>Centralizes the blank-line separation markdown paragraphs require. Side effect: appends.</remarks>
-    private static void AppendParagraph(StringBuilder markdown, string text)
+    private static bool AppendParagraph(StringBuilder markdown, string text)
     {
         var normalized = Normalize(text);
-        if (normalized.Length > 0)
+        if (normalized.Length == 0)
         {
-            markdown.Append(normalized).Append("\n\n");
+            return false;
         }
+
+        markdown.Append(normalized).Append("\n\n");
+        return true;
     }
 
     /// <summary>
@@ -308,17 +327,31 @@ internal static class PdfTextExtractor
 }
 
 /// <summary>
+///     The text structures appended for one page.
+/// </summary>
+/// <param name="HeadingCount">The number of markdown headings appended for the page.</param>
+/// <param name="ParagraphCount">The number of markdown paragraphs appended for the page.</param>
+/// <remarks>
+///     Returned from <see cref="PdfTextExtractor.AppendPageText"/> so the caller can report the
+///     document inventory from the same walk that rendered the markdown, rather than re-parsing the
+///     output. Immutable and thread-safe.
+/// </remarks>
+internal readonly record struct PageTextCounts(int HeadingCount, int ParagraphCount)
+{
+    /// <summary>The zero-count instance used for a page that contributed no text.</summary>
+    /// <remarks>Named once so the "no glyphs" path states its intent rather than constructing zeros inline.</remarks>
+    public static PageTextCounts Empty { get; } = new(0, 0);
+}
+
+/// <summary>
 ///     The outcome of rendering a document's text.
 /// </summary>
 /// <param name="Markdown">The rendered markdown, which may contain only page markers.</param>
-/// <param name="AnyGlyphs">
-///     <see langword="true"/> when at least one selected page contained a glyph; otherwise
-///     <see langword="false"/>.
-/// </param>
+/// <param name="HeadingCount">The number of markdown headings emitted from tagged PDF structure.</param>
+/// <param name="ParagraphCount">The number of markdown paragraphs emitted from page text blocks.</param>
 /// <remarks>
-///     <paramref name="AnyGlyphs"/> is reported separately from the markdown because the two answer
-///     different questions: whether the document has a text layer at all, and what could be made of
-///     it. A scanned document has neither, and the distinction is what lets the caller explain that
-///     honestly rather than emitting a silently empty document. Immutable and thread-safe.
+///     Returned from the text-rendering pass so the extractor can report the content inventory from
+///     the same facts that produced <paramref name="Markdown"/>, rather than scanning markdown after
+///     the fact. Immutable and thread-safe.
 /// </remarks>
-internal sealed record PdfTextResult(string Markdown, bool AnyGlyphs);
+internal sealed record PdfTextResult(string Markdown, int HeadingCount, int ParagraphCount);

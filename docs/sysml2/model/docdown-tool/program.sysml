@@ -1,6 +1,6 @@
 package DocDownTool {
     part def Program {
-        doc /* The tool's entry point: priority-ordered dispatch, banner and help, explicit engine registration, extraction and reporting, and the list-backends and verify commands. */
+        doc /* The tool's entry point: priority-ordered dispatch, banner and help, explicit engine registration, extraction and reporting, and the list-backends command. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Tool/Program.cs */
         comment testRef /* Test: test/DemaConsulting.DocDown.Tool.Tests/ProgramTests.cs */

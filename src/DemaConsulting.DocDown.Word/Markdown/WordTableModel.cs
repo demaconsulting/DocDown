@@ -12,22 +12,21 @@ namespace DocDown.Word.Markdown;
 /// </param>
 /// <param name="FirstRowIsHeader">
 ///     <see langword="true"/> when Word itself marked the first row a header (<c>w:tblHeader</c>).
-///     When <see langword="false"/> the writer still uses row one as the header — GFM requires a
-///     header row — and the caller emits <c>WORD0004 TableHeaderAssumed</c> so the assumption is
-///     stated rather than hidden.
+///     When <see langword="false"/> the writer still uses row one as the header, because GFM
+///     requires a header row.
 /// </param>
 /// <param name="MergedCellCount">
-///     The number of cells emptied by a horizontal or vertical merge, so the caller can raise a
-///     counted structural gap for the merges GFM cannot represent.
+///     The number of cells emptied by a horizontal or vertical merge, so the emitter can record how
+///     much table structure GFM could not preserve.
 /// </param>
 /// <param name="NestedTableCount">
 ///     The number of nested tables flattened into a parent cell as <c>&lt;br&gt;</c>-joined rows,
-///     counted into the same structural gap.
+///     counted into the same structure-loss note.
 /// </param>
 /// <remarks>
 ///     Word carries genuine table structure where a PDF flattened it into concatenated runs, so
 ///     this model is the headline differentiator: it preserves rows and columns and accounts for
-///     exactly what could not be preserved. Immutable and thread-safe.
+///     exactly what markdown could not preserve. Immutable and thread-safe.
 /// </remarks>
 internal sealed record WordTableModel(
     IReadOnlyList<IReadOnlyList<WordTableCell>> Rows,

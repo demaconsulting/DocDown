@@ -6,12 +6,12 @@
 
 The Markdown subsystem is the reader-neutral core of `DocDown.Word`. It defines the block
 vocabulary the reader populates, the writer that turns that vocabulary into a markdown flow, the
-table writer that expresses `w:tbl` structure as a GitHub-flavored-markdown table, the emitter that
-walks a rendered model through the extraction sink, and the pinned diagnostic-code contract. Every
-mapping decision that differentiates a Word extraction from a PDF extraction — genuine tables, the
-`## Document Control` section, image passthrough with honest provenance, tracked-change
-accepted-view, footnote and comment sections, per-part splitting at `Heading 1` — lives here and
-is testable from a hand-built model with no document and no Open XML SDK.
+table writer that expresses `w:tbl` structure as a GitHub-flavored-markdown table, and the emitter
+that writes content, images, content inventory, metadata, and extraction notes through the sink.
+Every mapping decision that differentiates a Word extraction from a PDF extraction — genuine
+tables, the `## Document Control` section, image passthrough with honest provenance, comments,
+footnotes, and split-at-`Heading 1` behavior — lives here and is testable from a hand-built model
+with no document and no Open XML SDK.
 
 The subsystem exists because reading a document and rendering what was read are separate concerns.
 Holding the whole projection apart from the reader is what makes every mapping decision provable
@@ -24,64 +24,51 @@ that could drift from the first.
 | --------- | --------- | ------ | ----------- |
 | `WordDocumentModel` | Inbound, from the reader | .NET record | The pivot between reading and rendering |
 | `IExtractionSink` | Outbound, from the emitter to Core | .NET interface | The only output channel |
-| `ExtractionOptions` | Inbound, from `IExtractionContext` | .NET record | Split mode, force-PNG, render, images |
-| `WordDiagnosticCodes` | Outbound to callers | .NET constants | The `WORD0001`–`WORD0009` contract, pinned by test |
+| `ExtractionOptions` | Inbound | .NET | Split and image options |
 
 ### Design
 
-**The model.** `WordDocumentModel` is the whole cross-backend contract. It carries the body as an
-ordered `WordBlock` sequence; the surviving `WordDocumentControlSection` list; the `WordComment`
-list; the footnote bodies as inline sequences; the metadata (`Title`, `Author`,
-`ProducerPageCount`); and the counts the reader observed but the writer cannot recompute
-(`TrackedChangeCount`, `HeaderFooterPartsFound`/`Omitted` with a reason string,
-`EmptyTablesSkipped`). Counts live on the model because only the reader, walking the document
-once, can observe them; the emitter turns them into the corresponding gaps and diagnostics.
+**The model.** `WordDocumentModel` is the cross-backend contract. It carries the body as an ordered
+`WordBlock` sequence; the surviving `WordDocumentControlSection` list; the `WordComment` list; the
+footnote bodies as inline sequences; metadata (`Title`, `Author`, `ProducerPageCount`, and the
+optional Core `DocumentMetadata` projection); and the counts only the reader can observe cheaply in
+one pass, including tracked changes, omitted header or footer parts, empty tables, and embedded
+charts.
 
 **The block vocabulary.** `WordBlockKind` (`Heading`, `Paragraph`, `ListItem`, `Table`, `Image`,
-`PageBreak`, `DocumentControl`) is deliberately small — a language-model consumer gains nothing
-from colors, fonts, or strikethrough, which would add tokens without adding meaning. A single
-`WordBlock` record with kind-selected payloads keeps the sequence uniform and cheap to walk.
-`WordInline` carries the literal text and the minimal formatting the mapping preserves — bold,
-italic, hyperlink — plus a `Raw` flag so a footnote-reference marker or a hard break survives
-escaping. `WordListInfo` records the zero-based nesting level and whether the list is ordered;
-ordering is decided from `numbering.xml`'s `w:numFmt` as *any format other than `bullet` is
-ordered*.
+`PageBreak`) is deliberately small. A language-model consumer gains little from Word-specific
+typography, but it gains a great deal from an honest structure: headings, lists, real tables,
+inline images, comments, and footnotes. `WordInline` carries literal text plus the minimal
+preserved formatting — bold, italic, hyperlink, and a `Raw` flag for markers that must bypass
+escaping.
 
-**The table model.** `WordTableModel` and `WordTableCell` preserve rows and columns and account
-for exactly what could not be preserved. Horizontally merged (`w:gridSpan`) and vertically merged
-(`w:vMerge`) continuation cells are present but empty, so column alignment survives even though
-GFM cannot express the merge itself; `MergedCellCount` and `NestedTableCount` carry the flattening
-count into the caller's `WORD0005` gap. `FirstRowIsHeader` records whether Word itself marked the
-first row a header, so the caller can decide whether to emit `WORD0004 TableHeaderAssumed`.
+**The table model.** `WordTableModel` and `WordTableCell` preserve rows and columns and account for
+exactly what markdown could not preserve. Merge continuations are represented as empty cells so the
+grid stays aligned, and nested tables are pre-flattened into `<br>`-joined rows.
+`MergedCellCount` and `NestedTableCount` are the accounting the emitter uses when it reports that
+markdown could not preserve all of the table structure.
 
 **The document-control model.** `WordDocumentControlSection` records the origin label (`Header`,
-`Footer`, or a numbered variant when more than one distinct value survives) and the block sequence
-for the subsection — including its own tables and images, which flow through the same writer as
-the body. `WordDocumentModel.HeaderFooterPartsEmpty` and `HeaderFooterPartsPageFurniture` carry the
-two counted, separated omissions the caller reports as `WORD0009 HeaderFooterPageNumberingOnly`
-informational diagnostics — never gaps, because omitting an empty or furniture-only part loses no
-document content.
+`Footer`, or a numbered variant) and the block sequence for the subsection. Headers and footers
+that reduce to page furniture or to nothing at all are omitted from the rendered section. The
+reader still counts them on the model so tests can observe those cases without a second pass over the
+package.
 
 **The image reference.** `WordImageRef` carries the complete stored bytes together with the media
-type, a preferred base name, and the source-reference URI within the package. Bytes and provenance
-travel as one record because the two must agree; the emitter's `HintFor` always claims
-`ImageTransform.Passthrough` because an Open XML image part stores a complete image file
-byte-for-byte, and `WidthPx`/`HeightPx` stay `null` because `wp:extent` is an EMU display size, not
-a pixel count.
+type, preferred base name, optional description, description source, and source part URI. Bytes
+and provenance travel as one record because the two must agree. The emitter's `HintFor()` always
+claims `ImageTransform.Passthrough`, and it leaves pixel dimensions unstated because `wp:extent`
+is an EMU display size rather than a pixel count.
 
-**The diagnostic-code contract.** `WordDiagnosticCodes` defines the nine codes this package owns —
-`WORD0001` `NoTextContent`, `WORD0002` `PasswordProtected`, `WORD0003` `EmptyTableSkipped`,
-`WORD0004` `TableHeaderAssumed`, `WORD0005` `MergedCellsFlattened`, `WORD0006`
-`VectorImageWrittenAsIs`, `WORD0007` `ForcePngNotHonored`, `WORD0008` `TrackedChangesAccepted`,
-`WORD0009` `HeaderFooterPageNumberingOnly`. The numbering is contiguous and pinned by
-`WordDiagnosticCodes_Table_MatchesPinnedContract`, so a consumer branching on a code is never
-surprised by a renumbering. The distinct `WORD` prefix cannot collide with Core's `DD` range or
-the PDF package's `PDF` range whatever any of them adds later, which makes ownership self-evident
-in any manifest.
+**The content inventory and notes.** `WordContentEmitter` reports the content inventory from the
+model rather than by scanning the rendered markdown again. It counts text blocks, headings, tables, list
+items, inline images, comments, distinct comment authors, and footnotes, and marks genuinely
+looked-for categories so zero remains explicit. It emits only three short extraction notes: charts
+whose chart parts were not read, merged or nested table structure flattened for markdown, and
+force-PNG requests that could not be completed because the package does not re-encode images.
 
 **The unit split.** Three units divide the work along the boundaries their responsibilities draw:
-`WordMarkdownWriter` owns rendering (block sequence to markdown, inline escaping, document-control
-placement, comment and footnote sections); `WordTableWriter` owns the seven table rules and the
-flattened-cell count; `WordContentEmitter` owns the sink walk and the whole gap-and-diagnostic
-policy. The supporting D8 types listed above live in the same
-subsystem folder because they are the vocabulary of the units, not units of their own.
+`WordMarkdownWriter` owns rendering, `WordTableWriter` owns the table rules and the
+flattened-cell count, and `WordContentEmitter` owns sink emission, inventory reporting, and note
+reporting. The supporting record types live in the same subsystem folder because they are the
+units' shared vocabulary rather than independent units of their own.

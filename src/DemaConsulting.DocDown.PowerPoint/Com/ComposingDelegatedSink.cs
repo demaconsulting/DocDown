@@ -15,13 +15,13 @@ namespace DocDown.PowerPoint.Com;
 ///         The managed backend, unaware that a rendering host is composing its output, unconditionally
 ///         reports <c>powerpoint.pageRendering : not provided by this extractor (NOT available)</c>. In
 ///         a successful COM run that statement is false: rendering was performed. This wrapper
-///         suppresses that one contradictory fact, forwarding everything else — content, images, gaps,
-///         and diagnostics — verbatim, so the composed report is internally consistent.
+///         suppresses that one contradictory fact, forwarding everything else — content, images,
+///         notes, and inventory — verbatim, so the composed report is internally consistent.
 ///     </para>
 ///     <para>
 ///         The filter is deliberately narrow — it suppresses only the exact
 ///         <c>powerpoint.pageRendering</c> fact when it is reported unavailable — so no other honest
-///         fact or gap is lost. The COM extractor emits its own authoritative
+///         fact or note is lost. The COM extractor emits its own authoritative
 ///         <c>pages.renderer : available</c> fact on the real sink, which this wrapper never touches.
 ///         Used from the single extraction thread; not required to be thread-safe.
 ///     </para>
@@ -68,10 +68,7 @@ internal sealed class ComposingDelegatedSink : IExtractionSink
     public void ReportDocumentMetadata(DocumentMetadata metadata) => _inner.ReportDocumentMetadata(metadata);
 
     /// <inheritdoc />
-    public void ReportDiagnostic(ExtractionDiagnostic diagnostic) => _inner.ReportDiagnostic(diagnostic);
-
-    /// <inheritdoc />
-    public void ReportGap(ExtractionGap gap) => _inner.ReportGap(gap);
+    public void ReportNote(ExtractionNote note) => _inner.ReportNote(note);
 
     /// <inheritdoc />
     /// <remarks>
@@ -92,7 +89,4 @@ internal sealed class ComposingDelegatedSink : IExtractionSink
 
     /// <inheritdoc />
     public void ReportContentFeature(ContentFeature feature) => _inner.ReportContentFeature(feature);
-
-    /// <inheritdoc />
-    public void ReportFound(GapKind kind, int foundCount) => _inner.ReportFound(kind, foundCount);
 }

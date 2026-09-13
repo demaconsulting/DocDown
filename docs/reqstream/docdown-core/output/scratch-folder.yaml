@@ -1,9 +1,13 @@
 ---
 # Software Unit Requirements for ScratchFolder
 #
-# ScratchFolder prepares the output folder under a caller-chosen policy and allocates
-# every artifact path safely, confining output to the folder and rejecting hostile or
-# unrepresentable components.
+# SUPERSEDED REQUIREMENT: DocDownCore-Output-ScratchFolder-ModeRequireEmpty
+# required the removed RequireEmpty mode. It is superseded (not satisfied) with no replacement
+# because Core now supports only CleanIfDocDownFolder and Overwrite.
+#
+# SUPERSEDED REQUIREMENT: DocDownCore-Output-ScratchFolder-ModeCreateUnique
+# required the removed CreateUnique mode. It is superseded (not satisfied) with no replacement
+# because Core now supports only CleanIfDocDownFolder and Overwrite.
 
 sections:
   - title: DocDownCore Requirements
@@ -12,133 +16,60 @@ sections:
         sections:
           - title: ScratchFolder Requirements
             requirements:
-              - id: DocDownCore-Output-ScratchFolder-ModeRequireEmpty
-                title: >-
-                  ScratchFolder shall create an absent folder and refuse a non-empty one under the
-                  require-empty policy.
-                justification: |
-                  Some callers must never overwrite existing data. The require-empty policy protects
-                  them by refusing a populated folder while still creating a fresh one, preserving any
-                  contents it did not create.
-                tests:
-                  - ScratchFolder_Prepare_RequireEmptyOnAbsentFolder_CreatesFolder
-                  - ScratchFolder_Prepare_RequireEmptyOnPopulatedFolder_RefusesAndPreservesContents
-
               - id: DocDownCore-Output-ScratchFolder-ModeCleanIfDocDownFolder
                 title: >-
-                  ScratchFolder shall delete, under the clean-if-DocDown policy, only the files a
-                  manifest written for that folder accounts for, and shall refuse otherwise.
+                  ScratchFolder shall delete, under CleanIfDocDownFolder, only the files a manifest
+                  written for that same folder accounts for and shall refuse otherwise.
                 justification: |
-                  This policy is the default, so its guard decides whether a caller who points
-                  --scratch at the wrong directory loses their files. The operation is therefore
-                  scoped to what can be proved rather than to the folder as a whole: the guard
-                  deletes the specific artifacts the folder's own manifest accounts for and never
-                  empties a directory. Proof starts with a positive, structural reading of
-                  manifest.json — it must deserialize as a DocDown manifest and carry the pinned
-                  schema identifier, the exact tool name, the DocDown package prefix, and an
-                  artifacts ledger — so a folder that merely mentions DocDown, another product's
-                  manifest.json, or a corrupt or partially written one is refused. Refusing costs
-                  the caller one flag; a false positive costs them their data, so when in doubt the
-                  correct answer is always to refuse.
+                  The default reuse mode must not destroy caller data. It therefore deletes only
+                  proven prior DocDown output and refuses when the proof is incomplete.
                 tests:
                   - ScratchFolder_Prepare_CleanIfDocDownOnUserFolder_RefusesAndPreservesContents
-                  - ScratchFolder_Prepare_CleanIfDocDownOnDocDownFolder_CleansContents
-                  - ScratchFolder_Prepare_FolderMentioningDocDownInAPlainFile_IsRefused
-                  - ScratchFolder_Prepare_UnrelatedFileNamedManifestJson_IsRefused
-                  - ScratchFolder_Prepare_TruncatedManifest_IsRefused
-                  - ScratchFolder_Prepare_ManifestFromADifferentTool_IsRefused
+                  - ScratchFolder_Prepare_CleanIfDocDownOnDocDownFolder_CleansInventoriedFiles
 
               - id: DocDownCore-Output-ScratchFolder-ReuseBoundToFolder
                 title: >-
-                  ScratchFolder shall refuse destructive reuse unless the folder's manifest records
-                  that very folder as its own scratch folder.
+                  ScratchFolder shall refuse destructive reuse unless the manifest records that very
+                  folder as its scratch folder.
                 justification: |
-                  A structurally valid manifest proves only that the file is a DocDown manifest; it
-                  does not prove the folder is DocDown output. A genuine manifest.json copied out of
-                  a real run into a folder of the caller's own documents satisfies every structural
-                  condition, and a hand-authored one can too. Comparing the manifest's recorded
-                  scratch folder against the folder being prepared is what turns "this is our kind
-                  of file" into "this is our folder". Both sides are normalized before comparison so
-                  a trailing separator or a redundant path segment cannot cause a false refusal, and
-                  the comparison follows the host file system's case sensitivity. Aliases such as
-                  symbolic links, junctions and short names are deliberately not resolved: an
-                  unresolved alias produces a refusal, which is the fail-safe direction, and every
-                  refusal names ScratchFolderMode.Overwrite as the deliberate escape hatch.
+                  A genuine DocDown manifest copied into another folder must not authorize deletion
+                  of that folder's contents.
                 tests:
                   - ScratchFolder_Prepare_CopiedGenuineManifestAmongUserFiles_RefusesAndPreservesContents
-                  - ScratchFolder_Prepare_ManifestNamingADifferentFolder_IsRefused
-                  - ScratchFolder_Prepare_ManifestPathDifferingOnlyCosmetically_StillCleans
-                  - ScratchFolder_Prepare_RefusedReuse_NamesTheOverwriteEscapeHatch
 
               - id: DocDownCore-Output-ScratchFolder-InventoryScopedDeletion
                 title: >-
-                  ScratchFolder shall delete only manifest-accounted files, refuse when any file is
-                  unaccounted for, and route every deletion through the containment check.
+                  ScratchFolder shall delete only manifest-accounted files and refuse when any file
+                  is unaccounted for or any manifest path escapes the folder.
                 justification: |
-                  Emptying a directory destroys whatever happens to be in it, including anything a
-                  caller added after the previous run. Deleting only the inventoried artifacts
-                  bounds the damage to files this library wrote, and refusing outright when even one
-                  file is unaccounted for means a folder that is partly the caller's is never
-                  partly deleted. The accounting rule is the same one the contract verifier applies
-                  as DD0717, held in one place so the two cannot drift. Because a manifest can be
-                  hand-authored, every inventoried path is resolved through the containment check
-                  before any deletion occurs, so a listed path outside the folder refuses the whole
-                  operation instead of reaching the file. Empty directories are left in place: they
-                  hold no data, and removing them would mean deleting something no manifest accounts
-                  for.
+                  Safe destructive reuse requires both a complete inventory and containment of every
+                  inventoried path.
                 tests:
-                  - ScratchFolder_Prepare_DocDownFolderWithOneUnlistedFile_RefusesAndPreservesContents
-                  - ScratchFolder_Prepare_ManifestListingAnEscapingPath_IsRefused
-                  - ScratchFolder_Prepare_CleanIfDocDownOnDocDownFolder_CleansContents
+                  - ScratchFolder_Prepare_UnaccountedFileBesideManifest_RefusesAndPreservesContents
+                  - ScratchFolder_Prepare_EscapingManifestPath_Refuses
+                  - ScratchFolder_Prepare_CleanIfDocDownOnDocDownFolder_CleansInventoriedFiles
 
               - id: DocDownCore-Output-ScratchFolder-RevalidatedBeforeDeletion
                 title: >-
-                  ScratchFolder shall re-read each inventoried file immediately before deleting it and
-                  refuse when its state no longer matches the state recorded during the inventory scan.
+                  ScratchFolder shall re-read each inventoried target before deleting it and refuse
+                  when the folder changed after the inventory scan.
                 justification: |
-                  The inventory is taken at one instant and acted on at another, so a file created or
-                  changed at an inventoried path in between would otherwise be deleted on the strength
-                  of a check that never saw it. That matters most for summary.txt, manifest.json and
-                  content.md, which are inventoried under fixed names in every run and are therefore
-                  the only inventory entries an outsider can predict without first reading the
-                  manifest. Recording each inventoried path's existence, length and last-write time
-                  during the scan the guard already performs, and comparing that recording against a
-                  fresh reading immediately before each deletion, refuses on any divergence, including
-                  a path that held nothing at scan time and holds a file now. Two limits are stated
-                  rather than glossed: the interval between the final reading and the deletion itself
-                  is narrowed, not eliminated, because closing it would require operating-system-level
-                  locking this library does not take; and the refusal is not atomic, since a mismatch
-                  on one target aborts after earlier targets were deleted. The second is acceptable
-                  because everything deleted before the abort is an inventoried DocDown artifact, so
-                  no file of the caller's can be lost, and the refusal message says so.
+                  The default reuse guard must not act on a stale view of the folder contents.
                 tests:
-                  - ScratchFolder_Prepare_InventoriedFileChangedBetweenScanAndDelete_RefusesAndPreservesTheChange
-                  - ScratchFolder_Prepare_InventoriedPathCreatedAfterTheScan_RefusesAndPreservesTheNewFile
-                  - ScratchFolder_Prepare_InventoriedFileTouchedBetweenScanAndDelete_RefusesOnTimestampAlone
+                  - ScratchFolder_Prepare_FolderChangesDuringPreparation_Refuses
 
               - id: DocDownCore-Output-ScratchFolder-ModeOverwrite
-                title: ScratchFolder shall clear an existing folder's contents under the overwrite policy.
+                title: ScratchFolder shall clear an existing folder's contents under Overwrite.
                 justification: |
-                  A caller who explicitly opts into overwrite wants a clean slate every run.
-                  Unconditionally clearing the folder honors that intent and guarantees no stale
-                  artifacts survive.
+                  Overwrite is the caller's explicit opt-in to unconditional replacement.
                 tests:
                   - ScratchFolder_Prepare_OverwriteOnPopulatedFolder_ClearsContents
-
-              - id: DocDownCore-Output-ScratchFolder-ModeCreateUnique
-                title: ScratchFolder shall allocate a distinct new folder under the create-unique policy.
-                justification: |
-                  Concurrent or archival runs need non-colliding output locations. Allocating a distinct
-                  folder lets many extractions coexist without one overwriting another.
-                tests:
-                  - ScratchFolder_Prepare_CreateUniqueOnExistingFolder_AllocatesDistinctFolder
 
               - id: DocDownCore-Output-ScratchFolder-PathContainment
                 title: ScratchFolder shall confine every allocated path within the scratch folder and refuse escapes.
                 justification: |
-                  Artifact names can come from a hostile document. Refusing traversal, rooted, and
-                  injection components keeps all output inside the scratch folder, closing a
-                  path-escape attack surface.
+                  Output names can originate in hostile document content and must never escape the
+                  scratch folder.
                 tests:
                   - ScratchFolder_Combine_TraversalOrRootedPath_IsRefused
                   - ScratchFolder_Combine_LegitimateRelativePath_StaysContained
@@ -147,9 +78,7 @@ sections:
               - id: DocDownCore-Output-ScratchFolder-RejectsReservedNames
                 title: ScratchFolder shall reject reserved device-name components on every platform.
                 justification: |
-                  A reserved device name can hijack I/O or make output non-portable to Windows.
-                  Rejecting such components everywhere keeps output portable and forecloses a class of
-                  filesystem attacks regardless of the host platform.
+                  Output should remain portable to Windows and should never resolve to device names.
                 tests:
                   - ScratchFolder_IsReservedDeviceName_ReservedComponent_ReturnsTrue
                   - ScratchFolder_IsReservedDeviceName_OrdinaryComponent_ReturnsFalse
@@ -157,36 +86,27 @@ sections:
                   - ScratchFolder_Combine_ReservedDeviceNameComponent_IsRefused
 
               - id: DocDownCore-Output-ScratchFolder-RejectsOverlongPaths
-                title: >-
-                  ScratchFolder shall refuse an allocated path longer than the supported limit with a stable
-                  exception.
+                title: ScratchFolder shall refuse an allocated path longer than the supported total-path limit.
                 justification: |
-                  An over-long path can fail opaquely deep in the filesystem. Refusing it up front with
-                  a stable, typed exception turns an unpredictable I/O error into a clear, reportable
-                  refusal.
+                  Explicit path-length rejection keeps overlong paths from failing later as opaque
+                  filesystem errors.
                 tests:
                   - ScratchFolder_ValidateTotalPathLength_OverLimit_ThrowsScratchFolderException
-                  - ScratchFolder_Combine_OverLongTotalPath_ThrowsScratchFolderNotPathTooLong
+                  - ScratchFolder_Combine_OverLongTotalPath_ThrowsScratchFolderException
 
               - id: DocDownCore-Output-ScratchFolder-DeterministicNaming
-                title: ScratchFolder shall derive artifact name slugs deterministically from arbitrary input text.
+                title: ScratchFolder shall derive deterministic, filesystem-safe slugs from arbitrary input text.
                 justification: |
-                  Reproducible output requires that a title always yields the same file name. Normalizing,
-                  transliterating, and truncating input to a stable ASCII slug makes naming deterministic
-                  and safe across platforms and Unicode forms.
+                  Stable slugging keeps output names predictable across runs and platforms.
                 tests:
-                  - ScratchFolder_Slugify_OverLongTitle_TruncatesToComponentLimit
                   - ScratchFolder_Slugify_TrailingDotsAndSpaces_AreRemoved
                   - ScratchFolder_Slugify_AccentedAndPunctuated_ProducesCleanAsciiSlug
-                  - ScratchFolder_Slugify_OnlyPunctuation_ReturnsEmpty
-                  - ScratchFolder_Slugify_UnicodeNormalizationForms_ProduceIdenticalSlug
 
               - id: DocDownCore-Output-ScratchFolder-RefusalReported
-                title: ScratchFolder shall report a stable, human-readable reason whenever it refuses a folder or path.
+                title: ScratchFolder shall refuse unsafe reuse or unsafe paths with a stable structured reason.
                 justification: |
-                  An operator who hits a refusal needs to know why to fix it. A stable reason string
-                  lets both humans and tooling recognize and act on the specific refusal rather than
-                  guessing at an opaque failure.
+                  Callers and higher layers need structured refusal reasons to surface what went
+                  wrong without guessing.
                 tests:
-                  - ScratchFolder_Prepare_RefusedFolder_ReportsStableReason
-                  - ScratchFolder_ValidateTotalPathLength_OverLimit_ReportsPathTooLongReason
+                  - ScratchFolder_Prepare_CleanIfDocDownOnUserFolder_RefusesAndPreservesContents
+                  - ScratchFolder_Prepare_EscapingManifestPath_Refuses

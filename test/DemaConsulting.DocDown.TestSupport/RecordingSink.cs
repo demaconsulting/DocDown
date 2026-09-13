@@ -33,17 +33,11 @@ public sealed class RecordingSink : IExtractionSink
     /// <summary>The reported self-reported document-metadata records, in call order.</summary>
     private readonly List<DocumentMetadata> _documentMetadata = [];
 
-    /// <summary>The reported diagnostics, in call order.</summary>
-    private readonly List<ExtractionDiagnostic> _diagnostics = [];
-
-    /// <summary>The reported gaps, in call order.</summary>
-    private readonly List<ExtractionGap> _gaps = [];
+    /// <summary>The reported notes, in call order.</summary>
+    private readonly List<ExtractionNote> _notes = [];
 
     /// <summary>The reported environment facts, in call order.</summary>
     private readonly List<EnvironmentFact> _environmentFacts = [];
-
-    /// <summary>The reported found counts, in call order.</summary>
-    private readonly List<RecordedFound> _foundCounts = [];
 
     /// <summary>The reported content features, in call order.</summary>
     private readonly List<ContentFeature> _contentFeatures = [];
@@ -75,21 +69,13 @@ public sealed class RecordingSink : IExtractionSink
     /// <remarks>Later reports supersede earlier ones in the real sink; here all are retained for assertion.</remarks>
     public IReadOnlyList<DocumentMetadata> DocumentMetadata => _documentMetadata;
 
-    /// <summary>Gets the reported diagnostics, in call order.</summary>
-    /// <remarks>Preserves the order diagnostics were emitted for order-sensitive assertions.</remarks>
-    public IReadOnlyList<ExtractionDiagnostic> Diagnostics => _diagnostics;
-
-    /// <summary>Gets the reported gaps, in call order.</summary>
-    /// <remarks>Recorded verbatim; unlike the real sink, no identifier is assigned here.</remarks>
-    public IReadOnlyList<ExtractionGap> Gaps => _gaps;
+    /// <summary>Gets the reported notes, in call order.</summary>
+    /// <remarks>Preserves the order notes were emitted for order-sensitive assertions.</remarks>
+    public IReadOnlyList<ExtractionNote> Notes => _notes;
 
     /// <summary>Gets the reported environment facts, in call order.</summary>
     /// <remarks>Preserves insertion order so provenance assertions read chronologically.</remarks>
     public IReadOnlyList<EnvironmentFact> EnvironmentFacts => _environmentFacts;
-
-    /// <summary>Gets the reported found counts, in call order.</summary>
-    /// <remarks>Each entry pairs a gap kind with the number of items the extractor reported finding.</remarks>
-    public IReadOnlyList<RecordedFound> FoundCounts => _foundCounts;
 
     /// <summary>Gets the reported content features, in call order.</summary>
     /// <remarks>
@@ -175,19 +161,11 @@ public sealed class RecordingSink : IExtractionSink
     }
 
     /// <inheritdoc/>
-    public void ReportDiagnostic(ExtractionDiagnostic diagnostic)
+    public void ReportNote(ExtractionNote note)
     {
-        ArgumentNullException.ThrowIfNull(diagnostic);
-        _diagnostics.Add(diagnostic);
-        _calls.Add(nameof(ReportDiagnostic));
-    }
-
-    /// <inheritdoc/>
-    public void ReportGap(ExtractionGap gap)
-    {
-        ArgumentNullException.ThrowIfNull(gap);
-        _gaps.Add(gap);
-        _calls.Add(nameof(ReportGap));
+        ArgumentNullException.ThrowIfNull(note);
+        _notes.Add(note);
+        _calls.Add(nameof(ReportNote));
     }
 
     /// <inheritdoc/>
@@ -204,13 +182,6 @@ public sealed class RecordingSink : IExtractionSink
         ArgumentNullException.ThrowIfNull(feature);
         _contentFeatures.Add(feature);
         _calls.Add(nameof(ReportContentFeature));
-    }
-
-    /// <inheritdoc/>
-    public void ReportFound(GapKind kind, int foundCount)
-    {
-        _foundCounts.Add(new RecordedFound(kind, foundCount));
-        _calls.Add(nameof(ReportFound));
     }
 
     /// <summary>
@@ -251,11 +222,3 @@ public sealed record RecordedPage(int PageNumber, byte[] Content);
 /// <param name="Markdown">The markdown body of the part.</param>
 /// <remarks>Immutable snapshot of one part emission for assertion.</remarks>
 public sealed record RecordedPart(ContentPart Part, string Markdown);
-
-/// <summary>
-///     A recorded call to <see cref="RecordingSink.ReportFound"/>.
-/// </summary>
-/// <param name="Kind">The kind of content the count refers to.</param>
-/// <param name="FoundCount">The number of items the extractor reported finding.</param>
-/// <remarks>Immutable snapshot of one found-count report for assertion.</remarks>
-public sealed record RecordedFound(GapKind Kind, int FoundCount);

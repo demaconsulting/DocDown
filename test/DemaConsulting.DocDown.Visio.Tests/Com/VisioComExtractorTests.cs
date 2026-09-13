@@ -16,8 +16,8 @@ public class VisioComExtractorTests
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>
-    ///     Proves the descriptor: identifier, formats, capabilities (including rendered pages), and the
-    ///     priority-zero tie-break that keeps the managed backend the default.
+    ///     Proves the descriptor: identifier, display name, formats, the page-rendering-applicable
+    ///     contract, and the priority-zero tie-break that keeps the managed backend the default.
     /// </summary>
     [Fact]
     public void VisioComExtractor_Descriptor_MatchesContract()
@@ -25,11 +25,11 @@ public class VisioComExtractorTests
         var extractor = new VisioComExtractor();
 
         Assert.Equal("visio-com", extractor.Id);
+        Assert.Equal("Visio (COM automation)", extractor.DisplayName);
         Assert.Contains(CoreFormat.Vsdx, extractor.SupportedFormats);
         Assert.Contains(CoreFormat.Vsdm, extractor.SupportedFormats);
         Assert.Equal(0, extractor.Priority);
-        Assert.True(extractor.Capabilities.HasFlag(ExtractorCapabilities.RenderedPages));
-        Assert.True(extractor.Capabilities.HasFlag(ExtractorCapabilities.DocumentStructure));
+        Assert.True(((IDocumentExtractor)extractor).PageRenderingApplicable);
     }
 
     /// <summary>
@@ -44,6 +44,10 @@ public class VisioComExtractorTests
         Assert.Null(Record.Exception(extractor.ProbeAvailability));
         var result = extractor.ProbeAvailability();
         Assert.DoesNotContain("install", result.UnavailableReason ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        if (result.IsAvailable)
+        {
+            Assert.True(result.ProvidesRenderedPages);
+        }
     }
 
     /// <summary>
@@ -57,6 +61,7 @@ public class VisioComExtractorTests
         var result = extractor.ProbeAvailability();
 
         Assert.False(result.IsAvailable);
+        Assert.False(result.ProvidesRenderedPages);
         Assert.DoesNotContain("install", result.UnavailableReason ?? string.Empty, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -88,15 +93,16 @@ public class VisioComExtractorTests
         Assert.Contains(sink.EnvironmentFacts, fact => fact.Key == "pages.renderer");
         Assert.NotNull(created);
         Assert.True(created.Disposed);
-        Assert.Equal(ExtractionOutcome.Succeeded, outcome);
+        Assert.DoesNotContain(sink.Notes, note => note.Message.Contains("could not be rendered", StringComparison.Ordinal));
+        Assert.Equal(ExtractionOutcome.Produced, outcome);
     }
 
     /// <summary>
-    ///     Proves a page that fails to render becomes a counted gap while the remaining pages are still
-    ///     rendered and the topology is still delivered — never a silent absence.
+    ///     Proves a page that fails to render is recorded as a plain note while the remaining pages
+    ///     are still rendered and the topology is still delivered — never a silent absence.
     /// </summary>
     [Fact]
-    public async Task VisioComExtractor_Extract_PageRenderFails_ReportsCountedGap()
+    public async Task VisioComExtractor_Extract_PageRenderFails_ReportsNote()
     {
         using var temp = new TempScratch();
         var input = WriteFixture(temp, "two.vsdx", VsdxFixtures.TwoPages());
@@ -111,11 +117,11 @@ public class VisioComExtractorTests
         var outcome = await extractor.ExtractAsync(
             DocumentSource.FromFile(input), new CapturingContext(sink, Ct));
 
-        Assert.Equal(ExtractionOutcome.Degraded, outcome);
+        Assert.Equal(ExtractionOutcome.Produced, outcome);
         Assert.Single(sink.Pages);
-        var gap = Assert.Single(sink.Gaps, candidate => candidate.Kind == GapKind.Pages && candidate.Scope == GapScope.PartiallyExtracted);
-        Assert.Equal(1, gap.AffectedCount);
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "VISIO0004");
+        Assert.Contains(
+            sink.Notes,
+            note => note.Message.Contains("Page 2 could not be rendered", StringComparison.Ordinal));
     }
 
     /// <summary>

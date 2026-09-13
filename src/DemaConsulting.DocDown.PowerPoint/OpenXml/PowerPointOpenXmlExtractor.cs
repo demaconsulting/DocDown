@@ -18,19 +18,17 @@ namespace DocDown.PowerPoint.OpenXml;
 ///         narration, the caveats, and the argument the slide only gestures at, and they are
 ///         invisible to any renderer. This backend therefore always extracts, from the file itself,
 ///         the text of every slide, the slide title where one exists, the speaker notes, the deck's
-///         embedded images, and the slide order. It is 100% managed and declares
-///         <see cref="ExtractorCapabilities.Text"/>, <see cref="ExtractorCapabilities.EmbeddedImages"/>,
-///         <see cref="ExtractorCapabilities.DocumentStructure"/>,
-///         and <see cref="ExtractorCapabilities.DocumentMetadata"/> and pointedly not
-///         <see cref="ExtractorCapabilities.RenderedPages"/>: rasterizing a slide needs a renderer
-///         this package's managed backend deliberately does not ship. Rendering is delivered by the
-///         separate COM backend when Microsoft PowerPoint is available.
+///         embedded images, and the slide order. It is 100% managed and deliberately does not render
+///         slide images: rasterizing a slide needs a renderer this package does not ship in managed
+///         code. Rendering is delivered by the separate COM backend when Microsoft PowerPoint is
+///         available.
 ///     </para>
 ///     <para>
 ///         Because nothing about this backend is environment-dependent, <see cref="ProbeAvailability"/>
-///         is unconditional and performs no I/O. Adverse decks are not translated into results here:
-///         Core catches any exception and converts it into a structured failure with the full layout
-///         still written. Instances hold no per-extraction state and are safe to register once and reuse.
+///         is unconditional and performs no I/O, reporting availability without rendered pages.
+///         Adverse decks are not translated into results here: Core catches any exception and
+///         converts it into a structured failure with the full layout still written. Instances hold
+///         no per-extraction state and are safe to register once and reuse.
 ///     </para>
 /// </remarks>
 public sealed class PowerPointOpenXmlExtractor : IDocumentExtractor, ISelfValidating
@@ -58,19 +56,14 @@ public sealed class PowerPointOpenXmlExtractor : IDocumentExtractor, ISelfValida
     public IReadOnlyCollection<CoreFormat> SupportedFormats => [CoreFormat.Pptx];
 
     /// <inheritdoc />
-    public ExtractorCapabilities Capabilities =>
-        ExtractorCapabilities.Text | ExtractorCapabilities.EmbeddedImages
-        | ExtractorCapabilities.DocumentMetadata | ExtractorCapabilities.DocumentStructure;
-
-    /// <inheritdoc />
     public int Priority => 10;
 
     /// <inheritdoc />
     /// <remarks>
-    ///     Always available, with the full declared capability set. The Open XML SDK is a managed
-    ///     assembly that ships inside this package. Performs no I/O and cannot throw.
+    ///     Always available, without rendered pages. The Open XML SDK is a managed assembly that
+    ///     ships inside this package. Performs no I/O and cannot throw.
     /// </remarks>
-    public ExtractorAvailability ProbeAvailability() => ExtractorAvailability.Available(Capabilities);
+    public ExtractorAvailability ProbeAvailability() => ExtractorAvailability.Available();
 
     /// <inheritdoc />
     public async ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context)
@@ -94,23 +87,24 @@ public sealed class PowerPointOpenXmlExtractor : IDocumentExtractor, ISelfValida
         using var stream = new MemoryStream(bytes, writable: false);
         var model = PowerPointOpenXmlReader.Read(stream);
 
-        var degraded = await PowerPointContentEmitter.EmitAsync(sink, context.Options, model, cancellationToken)
+        await PowerPointContentEmitter.EmitAsync(sink, context.Options, model, cancellationToken)
             .ConfigureAwait(false);
-        return degraded ? ExtractionOutcome.Degraded : ExtractionOutcome.Succeeded;
+        return ExtractionOutcome.Produced;
     }
 
     /// <inheritdoc />
     /// <remarks>
     ///     The cases describe this backend's own behavior in its deployed environment: that it can
-    ///     read a deck it builds itself, and that page rendering is genuinely not provided rather than
-    ///     merely untested. The rendering case reports as skipped with a reason, because a capability
-    ///     this package's managed backend does not claim must not be reported as a failure.
+    ///     read a deck it builds itself, and that slide rendering is genuinely not provided rather
+    ///     than merely untested. The rendering case reports as skipped with a reason, because a
+    ///     behavior this package's managed backend does not provide must not be reported as a
+    ///     failure.
     /// </remarks>
     public IEnumerable<SelfTestCase> GetSelfTestCases() =>
     [
         new SelfTestCase("powerpoint.openxml.parseRoundTrip", Id, RunParseRoundTrip),
         new SelfTestCase("powerpoint.pageRendering", Id, static _ => SelfTestResult.Skipped(
-            "This extractor does not provide the renderedPages capability; slide rendering needs the COM backend."))
+            "This extractor does not render slide images; slide rendering needs the COM backend."))
     ];
 
     /// <summary>

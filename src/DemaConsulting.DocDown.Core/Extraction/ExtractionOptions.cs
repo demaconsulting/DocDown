@@ -35,9 +35,9 @@ public sealed class ExtractionOptions
     ///     Gets or sets a value indicating whether document pages should be rendered to images.
     /// </summary>
     /// <remarks>
-    ///     Requesting rendered pages adds the <see cref="ExtractorCapabilities.RenderedPages"/>
-    ///     requirement to selection; when no available backend can satisfy it the run degrades
-    ///     with a reported gap rather than failing.
+    ///     Requesting rendered pages makes selection prefer an available backend that can render
+    ///     pages; when none is available for a paginated format the run still produces its layout and
+    ///     records a plain note that pages were not rendered.
     /// </remarks>
     public bool RenderPages { get; set; }
 
@@ -56,8 +56,9 @@ public sealed class ExtractionOptions
     ///     Defaults to <see langword="true"/>.
     /// </summary>
     /// <remarks>
-    ///     Setting this to <see langword="false"/> is a deliberate suppression that Core records
-    ///     as an explained gap on <c>images/</c>, so an absent image folder is never ambiguous.
+    ///     Setting this to <see langword="false"/> deliberately suppresses embedded images: nothing is
+    ///     written to <c>images/</c> and a plain note records that images were not extracted, so an
+    ///     absent image folder is never ambiguous.
     /// </remarks>
     public bool IncludeEmbeddedImages { get; set; } = true;
 
@@ -121,27 +122,6 @@ public sealed class ExtractionOptions
     public ContentSplitMode ContentSplit { get; set; } = ContentSplitMode.Auto;
 
     /// <summary>
-    ///     Gets or sets the identifier of a specific extractor to force, or <see langword="null"/>
-    ///     to let Core rank candidates automatically.
-    /// </summary>
-    /// <remarks>
-    ///     A forced extractor switches selection to <see cref="SelectionMode.CallerOverride"/>
-    ///     and never silently falls back to another backend; if the named extractor cannot run,
-    ///     the extraction fails with an explanatory failure.
-    /// </remarks>
-    public string? PreferredExtractorId { get; set; }
-
-    /// <summary>
-    ///     Gets or sets an optional set of capabilities the selected extractor must satisfy, or
-    ///     <see langword="null"/> to require only what other options imply.
-    /// </summary>
-    /// <remarks>
-    ///     A hard requirement: when no available extractor satisfies it the run fails rather than
-    ///     degrading, because the caller has declared these capabilities non-negotiable.
-    /// </remarks>
-    public ExtractorCapabilities? RequireCapabilities { get; set; }
-
-    /// <summary>
     ///     Gets or sets a fixed timestamp to stamp into output, or <see langword="null"/> to use
     ///     the current wall-clock time.
     /// </summary>
@@ -172,8 +152,6 @@ public sealed class ExtractionOptions
         PageRenderDpi = PageRenderDpi,
         ScratchFolder = ScratchFolder,
         ContentSplit = ContentSplit,
-        PreferredExtractorId = PreferredExtractorId,
-        RequireCapabilities = RequireCapabilities,
         TimestampUtc = TimestampUtc
     };
 }

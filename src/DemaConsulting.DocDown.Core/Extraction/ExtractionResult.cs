@@ -2,7 +2,7 @@ namespace DocDown.Core;
 
 /// <summary>
 ///     The complete, immutable result of an extraction: its outcome, the paths it produced, the
-///     detection and selection decisions, and the honesty record (gaps, diagnostics, ledger).
+///     detection and selection decisions, and any notes about steps that could not be completed.
 /// </summary>
 /// <remarks>
 ///     Returned by the engine instead of throwing so a caller always receives the full picture,
@@ -25,14 +25,9 @@ public sealed class ExtractionResult
     /// <param name="partPaths">The relative paths of split content parts.</param>
     /// <param name="detectedFormat">The detected format for the source document.</param>
     /// <param name="selectedExtractor">The selected extractor descriptor, or <see langword="null"/> on selection failure.</param>
-    /// <param name="selectionMode">Whether selection was automatic or a caller override.</param>
-    /// <param name="selectionTrace">The full candidate trace explaining the selection.</param>
-    /// <param name="failure">The structured failure when the extraction failed, or <see langword="null"/> otherwise.</param>
-    /// <param name="diagnostics">The diagnostics emitted during the extraction.</param>
-    /// <param name="isComplete"><see langword="true"/> when there are no gaps.</param>
+    /// <param name="failure">The structured failure when the extraction was unreadable, or <see langword="null"/> otherwise.</param>
     /// <param name="environment">The environment the extraction ran in.</param>
-    /// <param name="gaps">The gaps explaining every absent or partial artifact.</param>
-    /// <param name="artifacts">The completeness ledger describing what exists on disk.</param>
+    /// <param name="notes">The notes recording any step DocDown attempted but could not complete.</param>
     /// <exception cref="ArgumentNullException">
     ///     Thrown when any non-nullable reference argument is <see langword="null"/>.
     /// </exception>
@@ -51,14 +46,9 @@ public sealed class ExtractionResult
         IReadOnlyList<string> partPaths,
         FormatDetection detectedFormat,
         ExtractorDescriptor? selectedExtractor,
-        SelectionMode selectionMode,
-        IReadOnlyList<CandidateVerdict> selectionTrace,
         ExtractionFailure? failure,
-        IReadOnlyList<ExtractionDiagnostic> diagnostics,
-        bool isComplete,
         ExtractionEnvironment environment,
-        IReadOnlyList<ExtractionGap> gaps,
-        ArtifactLedger artifacts)
+        IReadOnlyList<ExtractionNote> notes)
     {
         // Guard the required references so downstream consumers never see nulls in these members
         ArgumentException.ThrowIfNullOrEmpty(scratchFolder);
@@ -68,11 +58,8 @@ public sealed class ExtractionResult
         ArgumentNullException.ThrowIfNull(pagePaths);
         ArgumentNullException.ThrowIfNull(partPaths);
         ArgumentNullException.ThrowIfNull(detectedFormat);
-        ArgumentNullException.ThrowIfNull(selectionTrace);
-        ArgumentNullException.ThrowIfNull(diagnostics);
         ArgumentNullException.ThrowIfNull(environment);
-        ArgumentNullException.ThrowIfNull(gaps);
-        ArgumentNullException.ThrowIfNull(artifacts);
+        ArgumentNullException.ThrowIfNull(notes);
 
         Outcome = outcome;
         ScratchFolder = scratchFolder;
@@ -84,14 +71,9 @@ public sealed class ExtractionResult
         PartPaths = partPaths;
         DetectedFormat = detectedFormat;
         SelectedExtractor = selectedExtractor;
-        SelectionMode = selectionMode;
-        SelectionTrace = selectionTrace;
         Failure = failure;
-        Diagnostics = diagnostics;
-        IsComplete = isComplete;
         Environment = environment;
-        Gaps = gaps;
-        Artifacts = artifacts;
+        Notes = notes;
     }
 
     /// <summary>Gets the overall outcome of the extraction.</summary>
@@ -111,7 +93,7 @@ public sealed class ExtractionResult
     public string ManifestPath { get; }
 
     /// <summary>Gets the path to <c>content.md</c>, or <see langword="null"/> when none was written.</summary>
-    /// <remarks><see langword="null"/> when extraction failed before any content could be produced.</remarks>
+    /// <remarks><see langword="null"/> when extraction could not produce any content.</remarks>
     public string? ContentPath { get; }
 
     /// <summary>Gets the relative paths of extracted images.</summary>
@@ -134,35 +116,20 @@ public sealed class ExtractionResult
     /// <remarks><see langword="null"/> when no extractor could be selected.</remarks>
     public ExtractorDescriptor? SelectedExtractor { get; }
 
-    /// <summary>Gets whether selection was automatic or forced by a caller override.</summary>
-    /// <remarks>Recorded so a caller can tell an override apart from an automatic decision.</remarks>
-    public SelectionMode SelectionMode { get; }
-
-    /// <summary>Gets the full candidate trace explaining the selection.</summary>
-    /// <remarks>Deterministically ordered so the same inputs always yield the same trace.</remarks>
-    public IReadOnlyList<CandidateVerdict> SelectionTrace { get; }
-
-    /// <summary>Gets the structured failure, or <see langword="null"/> when the extraction did not fail.</summary>
-    /// <remarks>Carries the fixed code and displayable explanation for a failed extraction.</remarks>
+    /// <summary>Gets the structured failure, or <see langword="null"/> when the extraction produced output.</summary>
+    /// <remarks>Carries the displayable prose for an unreadable extraction.</remarks>
     public ExtractionFailure? Failure { get; }
-
-    /// <summary>Gets the diagnostics emitted during the extraction.</summary>
-    /// <remarks>An ordered, auditable record of the decisions and degradations of the run.</remarks>
-    public IReadOnlyList<ExtractionDiagnostic> Diagnostics { get; }
-
-    /// <summary>Gets a value indicating whether the extraction produced everything requested.</summary>
-    /// <remarks>Equivalent to <c>Gaps.Count == 0</c>; the same value drives the manifest's <c>complete</c> flag.</remarks>
-    public bool IsComplete { get; }
 
     /// <summary>Gets the environment the extraction ran in.</summary>
     /// <remarks>Captured from the runtime plus any facts contributed by backends and candidates.</remarks>
     public ExtractionEnvironment Environment { get; }
 
-    /// <summary>Gets the gaps explaining every absent or partial artifact.</summary>
-    /// <remarks>Every partial or absent ledger entry is explained by at least one gap here.</remarks>
-    public IReadOnlyList<ExtractionGap> Gaps { get; }
-
-    /// <summary>Gets the completeness ledger describing what exists on disk.</summary>
-    /// <remarks>The machine-checkable statement of which artifacts are present, partial, or absent.</remarks>
-    public ArtifactLedger Artifacts { get; }
+    /// <summary>Gets the notes recording any step DocDown attempted but could not complete.</summary>
+    /// <remarks>
+    ///     Each note is a single plain-language fact about the extraction (for example that page
+    ///     rendering was requested but no renderer was available). Empty when nothing was left
+    ///     incomplete. Absences of content the document simply does not contain are described by the
+    ///     inventory, not here.
+    /// </remarks>
+    public IReadOnlyList<ExtractionNote> Notes { get; }
 }

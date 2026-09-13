@@ -4,14 +4,58 @@
 # These requirements describe the externally visible behavior of the Excel extraction
 # package from the perspective of a host that registers it, without specifying
 # implementation details. Each decomposes into subsystem and unit requirements linked
-# below via children, and is proven by system-level tests. DocDown.Excel has two
-# subsystems (Markdown, OpenXml) and one direct unit (ExcelDocDownBuilderExtensions).
+# below via children, and is proven by system-level or unit-level tests. DocDown.Excel
+# has two subsystems (Markdown, OpenXml) and one direct unit
+# (ExcelDocDownBuilderExtensions).
 #
 # A workbook, in this product's domain, is a prose and data container, not a picture, so
 # these requirements are traced forward from the Excel intent: preserve cell values
 # verbatim at full precision and full length, keep the formulas behind computed cells
 # alongside their values, cite every fact by sheet and cell address, deliberately never
-# render, and refuse the legacy binary format honestly.
+# render, and report extraction results factually through content inventory counts and
+# short notes about attempted steps that could not complete.
+#
+# SUPERSEDED REQUIREMENT: DocDownExcel-ChartFidelity
+# DocDownExcel-ChartFidelity required counted reporting for unreadable, uncached, and
+# bounded charts. It was authored before the repository owner established the current
+# reporting rule that DocDown reports what it extracted and where, then records a short
+# note only when an attempted step could not complete. A chart with no cached data or a
+# bounded table is now stated in the chart part itself, while only an unreadable chart
+# records a note. The requirement is superseded (not satisfied) by
+# DocDownExcel-AttemptNotes and DocDownExcel-Charts.
+#
+# SUPERSEDED REQUIREMENT: DocDownExcel-VectorImages
+# DocDownExcel-VectorImages required a dedicated readability caveat when an EMF or WMF
+# image was written successfully. Under the current reporting rule, a successfully written
+# image records no extra note; the extraction simply reports what it wrote. The requirement
+# is superseded (not satisfied) by DocDownExcel-EmbeddedImages.
+#
+# SUPERSEDED REQUIREMENT: DocDownExcel-EmptyWorkbook
+# DocDownExcel-EmptyWorkbook required a counted empty-workbook shortfall. Under the current
+# reporting rule, an empty workbook is reported through zero-count content inventory lines
+# for features the backend explicitly looked for. The requirement is superseded
+# (not satisfied) by DocDownExcel-EmptyWorkbookInventory.
+#
+# SUPERSEDED REQUIREMENT: DocDownExcel-EmptyWorksheet
+# DocDownExcel-EmptyWorksheet required an informational empty-sheet report. Under the
+# current reporting rule, an empty worksheet is stated in the worksheet part itself and
+# records no note about the document. The requirement is superseded (not satisfied) by
+# DocDownExcel-EmptyWorksheetContent.
+#
+# SUPERSEDED REQUIREMENT: DocDownExcel-DeclaredCapabilities
+# DocDownExcel-DeclaredCapabilities described the extractor surface in terms of declared
+# capabilities. The Excel reporting contract no longer models capabilities, so that
+# requirement is superseded (not satisfied) by
+# DocDownExcel-OpenXml-ExcelOpenXmlExtractor-ReportsSupportedSurface,
+# DocDownExcel-OpenXml-ExcelOpenXmlExtractor-ReportsPageRenderingNotApplicable, and
+# DocDownExcel-OpenXml-ExcelOpenXmlExtractor-ProbesUnconditionally.
+#
+# SUPERSEDED REQUIREMENT: DocDownExcel-LegacyFormatRefusal
+# DocDownExcel-LegacyFormatRefusal required a structured failure whose remedy promised no
+# support route. Remedy fields are no longer part of the reporting contract. The legacy
+# binary format is now reported as unreadable with a plain explanation that the format is
+# unsupported. The requirement is superseded (not satisfied) by
+# DocDownExcel-LegacyFormatUnreadableExplanation.
 
 sections:
   - title: DocDownExcel Requirements
@@ -35,14 +79,14 @@ sections:
 
       - id: DocDownExcel-Extraction
         title: >-
-          The system shall extract each worksheet of a workbook as a structured content part, and its
-          images and metadata, into the DocDown output contract.
+          The system shall extract each worksheet of a workbook as a structured content part, together
+          with its charts, images, and metadata, into the DocDown output contract.
         tags: [system]
         justification: |
           The package exists to turn a workbook into the invariant DocDown output layout so a
-          downstream agent sees the same artifacts it sees for every other format. A workbook is a
-          prose and data container, so extracting each worksheet as its own navigable part — rather
-          than a single flattened flow — is what lets a cited fact keep the sheet identity the
+          downstream agent sees the same artifact structure it sees for every other format. A workbook
+          is a prose and data container, so extracting each worksheet as its own navigable part —
+          rather than a single flattened flow — is what lets a cited fact keep the sheet identity the
           workbook gave it.
         children:
           - DocDownExcel-OpenXml-Extraction
@@ -50,6 +94,7 @@ sections:
           - DocDownExcel-Markdown-ModelEmission
         tests:
           - DocDownExcel_Extract_Xlsx_SelectsOpenXml
+          - DocDownExcel_Extract_TwoSheetWorkbook_WritesPartPerSheet
 
       - id: DocDownExcel-VerbatimCellValues
         title: >-
@@ -91,7 +136,7 @@ sections:
         justification: |
           A fact pulled from a workbook is only useful if a reader can find where it came from.
           Carrying the sheet name and the cell address means a quotation extracted into the content
-          document can be traced to the exact sheet and cell that holds it, rather than floating free
+          document can be traced to the exact sheet and cell that hold it, rather than floating free
           of its provenance.
         children:
           - DocDownExcel-OpenXml-ExcelOpenXmlReader-PreservesSheetIdentity
@@ -122,13 +167,14 @@ sections:
       - id: DocDownExcel-Charts
         title: >-
           The system shall surface each chart a worksheet shows as its own content part carrying the
-          data the chart cached as last plotted.
+          data the chart cached as last plotted, or a plain statement of why no data table could be
+          produced.
         tags: [system]
         justification: |
-          A picture of a plot shows a shape; the cached series is the plotted numbers themselves,
+          A picture of a plot shows a shape; the cached series are the plotted numbers themselves,
           which a consumer can read and compute from. Extracting the cache as a table — categories
-          against series values — recovers a chart's information as data, where before this backend
-          read them a chart vanished from a text extraction entirely.
+          against series values — recovers a chart's information as data, and a chart whose part could
+          not be read or whose cache is absent must still remain visible in the extracted content.
         children:
           - DocDownExcel-OpenXml-ChartReading
           - DocDownExcel-Markdown-ChartRendering
@@ -136,21 +182,22 @@ sections:
         tests:
           - DocDownExcel_Extract_ChartWorkbook_WritesChartDataPart
 
-      - id: DocDownExcel-ChartFidelity
+      - id: DocDownExcel-AttemptNotes
         title: >-
-          The system shall report, as a counted gap, each chart it could not read, one that cached no
-          data, and one whose cached data exceeded the rendering bound.
+          The system shall record a short plain note only when an attempted chart or image step could
+          not be completed.
         tags: [system]
         justification: |
-          Extracting charts is worthwhile only if the shortfalls are honest: a chart that dropped out
-          silently is exactly the failure the output contract forbids. A chart whose part could not be
-          parsed, one saved without a value cache, and one whose cache was bounded must each say so
-          with a count, so a chart-free or fully cached workbook stays a clean success and a lossy one
-          states its loss.
+          The reporting contract distinguishes facts about extracted content from facts about attempted
+          steps that did not finish. An unreadable chart part, images skipped by caller-supplied size
+          limits, and embedded images written in their source encoding when PNG output was requested are
+          all incomplete steps and therefore deserve a short note. An empty worksheet, an empty
+          workbook, a chart with no cached data, a bounded chart table, or a vector image written
+          successfully are facts about the content and are reported in content or inventory instead.
         children:
-          - DocDownExcel-Markdown-ExcelContentEmitter-ReportsChartGaps
+          - DocDownExcel-Markdown-ExcelContentEmitter-ReportsAttemptNotes
         tests:
-          - ExcelContentEmitter_Emit_ChartWithoutCache_ReportsGap
+          - ExcelContentEmitter_Emit_UnreadableChart_ReportsNoteAndKeepsChartPart
 
       - id: DocDownExcel-DrawingShapeText
         title: >-
@@ -161,7 +208,7 @@ sections:
           Callouts, labels, and annotations live in the drawing layer and in no cell — a part number
           beside a pasted photograph, a legend key, a warning about a worst-case condition. A backend
           that read only cells and pictures would drop that text while reporting a complete
-          extraction, the same quiet failure mode as a dropped chart.
+          extraction.
         children:
           - DocDownExcel-OpenXml-ShapeReading
           - DocDownExcel-Markdown-ExcelContentEmitter-WritesShapeText
@@ -175,130 +222,98 @@ sections:
         tags: [system]
         justification: |
           A worksheet can paste a photograph or a schematic, and a text-only extraction discards it
-          silently. Writing the images out, linking them under the worksheet section, and recording
-          the sheet association keeps a consumer's view of the workbook complete and keeps an image
-          citable back to the sheet it appears on.
+          silently. Writing the images out, linking them under the worksheet section, and recording the
+          sheet association keeps a consumer's view of the workbook complete and keeps an image citable
+          back to the sheet it appears on.
         children:
           - DocDownExcel-OpenXml-Images
           - DocDownExcel-Markdown-ExcelContentEmitter-LinksImages
         tests:
           - DocDownExcel_Extract_ImageWorkbook_WritesEmbeddedImage
 
-      - id: DocDownExcel-VectorImages
+      - id: DocDownExcel-EmptyWorkbookInventory
         title: >-
-          The system shall write an EMF or WMF vector image unchanged, with an informational caveat
-          that many viewers cannot render it.
+          The system shall report zero-count content inventory entries for an empty workbook for the
+          content kinds it explicitly looked for.
         tags: [system]
         justification: |
-          A vector metafile's stored bytes are a complete image file, so writing them through loses
-          nothing the workbook carried. Recording the readability caveat — that many viewers and image
-          libraries cannot open a metafile — is the honest complement, and because no better
-          environment would yield more it is informational rather than a gap.
+          A workbook with no worksheets lost nothing in extraction, but a caller still needs to know
+          that the backend looked for workbook content and found none. Reporting zero counts makes that
+          distinction explicit without characterizing the document.
         children:
-          - DocDownExcel-Markdown-ExcelContentEmitter-ReportsVectorImageCaveat
+          - DocDownExcel-Markdown-ExcelContentEmitter-ReportsZeroCountInventory
         tests:
-          - DocDownExcel_Extract_VectorImageWorkbook_Succeeds
+          - ExcelContentEmitter_Emit_EmptyWorkbook_ReportsZeroCountInventory
 
-      - id: DocDownExcel-EmptyWorkbook
-        title: The system shall degrade with an explicit counted gap when a workbook contains no worksheets.
-        tags: [system]
-        justification: |
-          A workbook with no worksheets has no content to write, and an empty content document is
-          indistinguishable from a broken extractor. Saying plainly that the workbook carried no
-          worksheets turns a mystery into a fact the caller can act on.
-        children:
-          - DocDownExcel-Markdown-ExcelContentEmitter-ReportsEmptyWorkbookGap
-        tests:
-          - ExcelContentEmitter_Emit_EmptyWorkbook_ReportsGap
-
-      - id: DocDownExcel-EmptyWorksheet
+      - id: DocDownExcel-EmptyWorksheetContent
         title: >-
-          The system shall record an empty worksheet as an informational diagnostic that does not
-          degrade the run.
+          The system shall state in the worksheet part when a worksheet has no cell content, and shall
+          record no note for that fact.
         tags: [system]
         justification: |
-          A worksheet with no populated cells is an ordinary authoring artifact, not a loss of
-          content. Noting it informationally lets a reader tell a genuinely empty sheet apart from one
-          whose content was missed, without falsely reporting a complete extraction as degraded.
+          A worksheet with no populated cells is an ordinary authoring artifact, not an incomplete
+          extraction step. Stating that fact in the worksheet part lets a reader distinguish an empty
+          sheet from missing content without wrongly describing the document.
         children:
-          - DocDownExcel-Markdown-ExcelContentEmitter-NotesEmptySheet
+          - DocDownExcel-Markdown-ExcelContentEmitter-WritesEmptyWorksheetMessage
         tests:
-          - ExcelContentEmitter_Emit_EmptySheet_NotesInformationalDiagnostic
-
-      - id: DocDownExcel-DeclaredCapabilities
-        title: >-
-          The system shall declare exactly the text, embedded-image, document-metadata, and
-          document-structure capabilities for its managed backend, and pointedly not the rendered-pages
-          capability.
-        tags: [system]
-        justification: |
-          Backend selection negotiates over declared capabilities, so a declaration that overstates
-          what a backend can deliver causes the wrong backend to be chosen and the shortfall to
-          surface only as missing output. Declaring exactly what is deliverable — and not the
-          rendered-pages capability, because a workbook is deliberately never rendered — keeps
-          selection honest before any work begins.
-        children:
-          - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-DeclaresCapabilities
-        tests:
-          - ExcelOpenXmlExtractor_Descriptor_MatchesContract
+          - ExcelContentEmitter_Emit_EmptySheet_WritesEmptySheetMessage
 
       - id: DocDownExcel-NoPageRendering
         title: >-
           The system shall not render a workbook to pages, and shall honor a page-rendering request
-          against it as not applicable — recording that fact with its reason and without reporting a
-          shortfall.
+          against it as not applicable while otherwise remaining silent.
         tags: [system]
         justification: |
           Not rendering Excel is a positive design decision: a workbook has no page grid, so
-          rasterizing one would impose an arbitrary layout the data does not have, clip long prose,
-          and substitute a picture of a number for the number itself. Because rendering applies to
-          nothing here rather than being merely unavailable, a page request is answered with an
-          environment fact stating it is not applicable and why, and the run does not degrade — the
-          caller is told plainly, without a false shortfall the reader could mistake for a failure.
+          rasterizing one would impose an arbitrary layout the data does not have, clip long prose, and
+          substitute a picture of a number for the number itself. Because rendering applies to nothing
+          here rather than being deferred work, the extractor surface says so and the content emission
+          path remains silent.
         children:
-          - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-DeclaresPageRenderingNotApplicable
+          - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-ReportsPageRenderingNotApplicable
           - DocDownExcel-Markdown-ExcelContentEmitter-StaysSilentOnPageRequest
         tests:
           - DocDownExcel_Extract_RenderPagesRequested_StaysSilentAndSucceeds
 
       - id: DocDownExcel-ContentOutline
         title: >-
-          The system shall report an outline of what the content contains — worksheets, populated
-          cells, formulas, images, charts, drawing annotations, and cached chart points — counted from
-          the model.
+          The system shall report a content outline counting the model's worksheets, populated cells,
+          formulas, images, charts, drawing annotations, and cached chart points, including zero counts
+          for features it explicitly looked for.
         tags: [system]
         justification: |
           A character count says nothing about whether a workbook is one small table or tens of
           thousands of cells across a dozen sheets, which is exactly what a reader deciding whether to
-          open the parts needs to know. Counting each content kind from the model the reader built
-          gives that reader an honest shape of the workbook before reading a single part.
+          open the parts needs to know. Counting each content kind from the model the reader built gives
+          that reader an honest shape of the workbook, and preserving zero counts for explicitly looked
+          for features distinguishes "none found" from "not counted."
         children:
           - DocDownExcel-Markdown-ExcelContentEmitter-ReportsContentFeatures
         tests:
           - ExcelContentEmitter_Emit_Workbook_ReportsContentFeatures
+          - ExcelContentEmitter_Emit_NoImages_ReportsZeroImageInventory
 
-      - id: DocDownExcel-LegacyFormatRefusal
+      - id: DocDownExcel-LegacyFormatUnreadableExplanation
         title: >-
-          The system shall refuse a legacy binary Excel workbook with a structured failure whose
-          remedy promises no capability, and without an exception reaching the caller.
+          The system shall report a legacy binary Excel workbook as unreadable with a plain explanation
+          that the format is unsupported.
         tags: [system]
         justification: |
           This package reads Open XML workbooks and nothing else, and DocDown does not support the
-          legacy binary formats at all. A caller who hands the engine an .xls therefore deserves a
-          plain statement of that fact with the full output layout still written — not an exception,
-          not a silent omission, and not a remedy pointing at a package or an environment that will
-          never deliver the capability.
+          legacy binary Excel formats at all. A caller who hands the engine an `.xls` therefore deserves
+          a plain statement of that fact with the full output layout still written — not an exception,
+          not a silent omission, and not advice to install something that will never deliver support.
         tests:
-          - DocDownExcel_Extract_LegacyXls_FailsWithUnsupportedFormatRemedy
+          - DocDownExcel_Extract_LegacyXls_IsUnreadableWithUnsupportedFormatExplanation
 
       - id: DocDownExcel-SelfValidation
         title: The system shall contribute self-validation cases describing its own extraction behavior.
         tags: [system]
         justification: |
-          An operator needs to confirm the backend actually works where it is deployed, not merely
-          that it is present. Cases the backend contributes about itself — including an honest skip for
-          the page-rendering capability it does not claim, because a workbook is non-paginated — make
-          that confirmation available on demand.
+          An operator needs to confirm the backend actually works where it is deployed, not merely that
+          it is present. Cases the backend contributes about itself — including an honest skip for page
+          rendering because a workbook is non-paginated — make that confirmation available on demand.
         children:
           - DocDownExcel-OpenXml-ExcelOpenXmlExtractor-ContributesSelfTests
         tests:

@@ -6,8 +6,8 @@ using DocDown.Excel.OpenXml;
 namespace DemaConsulting.DocDown.Excel.Tests.Markdown;
 
 /// <summary>
-///     Unit tests for <see cref="ExcelContentEmitter"/>, exercising the honest gap-and-part policy
-///     from hand-built models with no workbook behind them.
+///     Unit tests for <see cref="ExcelContentEmitter"/>, exercising the part writing, content
+///     inventory, and note-reporting policy from hand-built models with no workbook behind them.
 /// </summary>
 public class ExcelContentEmitterTests
 {
@@ -36,7 +36,8 @@ public class ExcelContentEmitterTests
     }
 
     /// <summary>
-    ///     Proves each worksheet becomes a titled sheet part and the sheet count is reported found.
+    ///     Proves each worksheet becomes a titled sheet part and the content inventory reports the
+    ///     workbook's worksheet count.
     /// </summary>
     [Fact]
     public async Task ExcelContentEmitter_Emit_TwoSheets_WritesTitledSheetParts()
@@ -48,73 +49,73 @@ public class ExcelContentEmitterTests
         ]);
         var sink = new RecordingSink();
 
-        var degraded = await ExcelContentEmitter.EmitAsync(
+        await ExcelContentEmitter.EmitAsync(
             sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
 
-        Assert.False(degraded);
         Assert.Equal(2, sink.Parts.Count);
         Assert.All(sink.Parts, part => Assert.Equal(ContentPartKind.Sheet, part.Part.Kind));
         Assert.Equal("Requirements", sink.Parts[0].Part.Title);
         Assert.Equal("Calculations", sink.Parts[1].Part.Title);
-        Assert.Contains(sink.FoundCounts, found => found.Kind == GapKind.Parts && found.FoundCount == 2);
+        Assert.Contains(sink.ContentFeatures, feature => feature.Label == "worksheets" && feature.Count == 2);
     }
 
     /// <summary>
-    ///     Proves a default extraction of a workbook that embeds no images reports no images gap and
-    ///     stays a clean success — the backend no longer claims a workbook cannot carry pictures.
+    ///     Proves a default extraction of a workbook that embeds no images records that zero-image
+    ///     inventory explicitly, with no note about a missing step.
     /// </summary>
     [Fact]
-    public async Task ExcelContentEmitter_Emit_NoImages_NoImagesGap()
+    public async Task ExcelContentEmitter_Emit_NoImages_ReportsZeroImageInventory()
     {
         var model = new ExcelWorkbookModel([new ExcelSheetModel("S", [new ExcelCellModel("A1", "x", null)], [])]);
         var sink = new RecordingSink();
 
-        var degraded = await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        Assert.False(degraded);
-        Assert.DoesNotContain(sink.Gaps, candidate => candidate.Kind == GapKind.Images);
+        Assert.Empty(sink.Notes);
+        Assert.Contains(
+            sink.ContentFeatures,
+            feature => feature.Label == "inline images" && feature.Count == 0 && feature.LookedFor);
     }
 
     /// <summary>
     ///     Proves the workbook's embedded images are written through the sink as passthroughs and the
-    ///     found count is reported.
+    ///     content inventory reports the image count.
     /// </summary>
     [Fact]
     public async Task ExcelContentEmitter_Emit_WithRasterImages_WritesThroughSink()
     {
         var model = new ExcelWorkbookModel(
-            [new ExcelSheetModel("S", [new ExcelCellModel("A1", "x", null)], [])],
+            [new ExcelSheetModel(
+                "S",
+                [new ExcelCellModel("A1", "x", null)],
+                [],
+                [new ExcelSheetImageRef("/xl/media/image1.png", "photo")])],
             [new EmbeddedImage([1, 2, 3], "image/png", "photo", "/xl/media/image1.png")]);
         var sink = new RecordingSink();
 
-        var degraded = await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        Assert.False(degraded);
         var image = Assert.Single(sink.Images);
         Assert.Equal(ImageTransform.Passthrough, image.Hint.Transform);
-        Assert.Contains(sink.FoundCounts, found => found.Kind == GapKind.Images && found.FoundCount == 1);
+        Assert.Contains(sink.ContentFeatures, feature => feature.Label == "inline images" && feature.Count == 1);
     }
 
     /// <summary>
-    ///     Proves an EMF vector metafile is written unchanged and accompanied by the <c>XLSX0003</c>
-    ///     readability caveat as an informational diagnostic — not a gap — so a well-formed workbook
-    ///     whose only caveat is vector passthrough does not degrade the run.
+    ///     Proves an EMF vector metafile is written unchanged with no vector-only note: the bytes were
+    ///     written successfully, so nothing was left incomplete.
     /// </summary>
     [Fact]
-    public async Task ExcelContentEmitter_Emit_VectorImage_WritesWithInfoCaveat()
+    public async Task ExcelContentEmitter_Emit_VectorImage_WritesSilently()
     {
         var model = new ExcelWorkbookModel(
             [new ExcelSheetModel("S", [new ExcelCellModel("A1", "x", null)], [])],
             [new EmbeddedImage([1, 2, 3], "image/x-emf", "schematic", "/xl/media/image1.emf")]);
         var sink = new RecordingSink();
 
-        var degraded = await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        Assert.False(degraded);
         Assert.Single(sink.Images);
-        Assert.Contains(sink.Diagnostics, diagnostic =>
-            diagnostic.Code == "XLSX0003" && diagnostic.Severity == DiagnosticSeverity.Info);
-        Assert.DoesNotContain(sink.Gaps, candidate => candidate.Kind == GapKind.Images);
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
@@ -136,9 +137,8 @@ public class ExcelContentEmitterTests
     }
 
     /// <summary>
-    ///     Proves a page-rendering request against a workbook is answered with silence by the backend
-    ///     — no pages gap, no diagnostic — because a workbook is non-paginated and the engine records
-    ///     that non-applicability itself.
+    ///     Proves a page-rendering request against a workbook is answered with silence by the backend,
+    ///     because a workbook is non-paginated and the engine records that non-applicability itself.
     /// </summary>
     [Fact]
     public async Task ExcelContentEmitter_Emit_RenderPagesRequested_StaysSilent()
@@ -147,45 +147,51 @@ public class ExcelContentEmitterTests
         var sink = new RecordingSink();
         var options = new ExtractionOptions { RenderPages = true, IncludeEmbeddedImages = false };
 
-        var degraded = await ExcelContentEmitter.EmitAsync(sink, options, model, Ct);
+        await ExcelContentEmitter.EmitAsync(sink, options, model, Ct);
 
-        Assert.False(degraded);
-        Assert.DoesNotContain(sink.Gaps, candidate => candidate.Kind == GapKind.Pages);
-        Assert.DoesNotContain(sink.Diagnostics, diagnostic => diagnostic.Code == "XLSX0003");
+        Assert.Empty(sink.Pages);
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
-    ///     Proves an empty workbook is reported as a counted gap rather than an empty, unexplained output.
+    ///     Proves an empty workbook is reported through zero-count inventory entries rather than a
+    ///     gap, so the summary can say the backend looked and found none.
     /// </summary>
     [Fact]
-    public async Task ExcelContentEmitter_Emit_EmptyWorkbook_ReportsGap()
+    public async Task ExcelContentEmitter_Emit_EmptyWorkbook_ReportsZeroCountInventory()
     {
         var model = new ExcelWorkbookModel([]);
         var sink = new RecordingSink();
 
-        var degraded = await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        Assert.True(degraded);
-        Assert.Contains(sink.Gaps, gap => gap.Kind == GapKind.Parts);
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "XLSX0001");
+        Assert.Empty(sink.Parts);
+        Assert.Empty(sink.Notes);
+        Assert.Equal(0, Assert.Single(sink.DocumentInfos).PartCount);
+        Assert.Contains(
+            sink.ContentFeatures,
+            feature => feature.Label == "worksheets" && feature.Count == 0 && feature.LookedFor);
+        Assert.Contains(
+            sink.ContentFeatures,
+            feature => feature.Label == "inline images" && feature.Count == 0 && feature.LookedFor);
     }
 
     /// <summary>
-    ///     Proves an empty worksheet is noted informationally, never as a gap that degrades the run.
+    ///     Proves an empty worksheet says so in its sheet part and records no note, because the
+    ///     absence is a fact about the document rather than an incomplete step.
     /// </summary>
     [Fact]
-    public async Task ExcelContentEmitter_Emit_EmptySheet_NotesInformationalDiagnostic()
+    public async Task ExcelContentEmitter_Emit_EmptySheet_WritesEmptySheetMessage()
     {
         var model = new ExcelWorkbookModel([new ExcelSheetModel("Blank", [], [])]);
         var sink = new RecordingSink();
 
-        var degraded = await ExcelContentEmitter.EmitAsync(
+        await ExcelContentEmitter.EmitAsync(
             sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
 
-        Assert.False(degraded);
-        Assert.Single(sink.Parts);
-        Assert.Contains(sink.Diagnostics, diagnostic =>
-            diagnostic.Code == "XLSX0002" && diagnostic.Severity == DiagnosticSeverity.Info);
+        var part = Assert.Single(sink.Parts);
+        Assert.Contains("_This worksheet has no cell content._", part.Markdown, StringComparison.Ordinal);
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
@@ -340,7 +346,7 @@ public class ExcelContentEmitterTests
 
     /// <summary>
     ///     Proves each chart a worksheet shows becomes its own titled chart part, emitted straight
-    ///     after the sheet that shows it, and is counted among the parts found.
+    ///     after the sheet that shows it, and counted in the content inventory.
     /// </summary>
     /// <remarks>
     ///     A chart's cached series can run to hundreds of rows; emitting it as its own part keeps the
@@ -354,16 +360,15 @@ public class ExcelContentEmitterTests
         var sink = new RecordingSink();
 
         // Act: emit the workbook
-        var degraded = await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
         // Assert: two parts, the chart second, titled by the chart and typed as a chart
-        Assert.False(degraded);
         Assert.Equal(2, sink.Parts.Count);
         Assert.Equal(ContentPartKind.Sheet, sink.Parts[0].Part.Kind);
         Assert.Equal(ContentPartKind.Chart, sink.Parts[1].Part.Kind);
         Assert.Equal("Tank Pressure Trend", sink.Parts[1].Part.Title);
         Assert.Contains("| 0 | 0 | 101.3 |", sink.Parts[1].Markdown, StringComparison.Ordinal);
-        Assert.Contains(sink.FoundCounts, found => found.Kind == GapKind.Parts && found.FoundCount == 2);
+        Assert.Contains(sink.ContentFeatures, feature => feature.Label == "charts" && feature.Count == 1);
     }
 
     /// <summary>
@@ -385,12 +390,11 @@ public class ExcelContentEmitterTests
     }
 
     /// <summary>
-    ///     Proves a chart carrying no cached data is reported as a counted gap with a remedy — the
-    ///     defect this feature exists to fix was a chart that disappeared while the summary claimed
-    ///     everything requested had been extracted.
+    ///     Proves a chart carrying no cached data still gets its own chart part stating that fact,
+    ///     with no sink note because nothing failed to be read.
     /// </summary>
     [Fact]
-    public async Task ExcelContentEmitter_Emit_ChartWithoutCache_ReportsGap()
+    public async Task ExcelContentEmitter_Emit_ChartWithoutCache_WritesChartPartOnly()
     {
         // Arrange: a chart whose series references a range but caches no values
         var chart = new ExcelChartModel("/xl/charts/chart1.xml", "Results", new ExcelChartData(
@@ -400,23 +404,21 @@ public class ExcelContentEmitterTests
         var sink = new RecordingSink();
 
         // Act: emit the workbook
-        var degraded = await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        // Assert: the loss is a counted, remedied gap rather than silence
-        Assert.True(degraded);
-        var gap = Assert.Single(sink.Gaps, candidate => candidate.Reason.Contains(
-            "no cached data points", StringComparison.Ordinal));
-        Assert.Equal(1, gap.AffectedCount);
-        Assert.NotNull(gap.Remedy);
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "XLSX0005");
+        // Assert: the chart part states the absence and the sink records no note
+        var chartPart = Assert.Single(sink.Parts, part => part.Part.Kind == ContentPartKind.Chart);
+        Assert.Contains("declares no cached data points", chartPart.Markdown, StringComparison.Ordinal);
+        Assert.Contains("Sheet1!$A$1:$A$9", chartPart.Markdown, StringComparison.Ordinal);
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
-    ///     Proves a chart part that could not be read at all is reported as a failed gap naming the
-    ///     chart, so an unreadable chart is never mistaken for an absent one.
+    ///     Proves a chart part that could not be read records a note naming the chart and still gets
+    ///     its own chart part, so an unreadable chart is never mistaken for an absent one.
     /// </summary>
     [Fact]
-    public async Task ExcelContentEmitter_Emit_UnreadableChart_ReportsFailedGap()
+    public async Task ExcelContentEmitter_Emit_UnreadableChart_ReportsNoteAndKeepsChartPart()
     {
         // Arrange: a chart the reader could not parse
         var chart = new ExcelChartModel("/xl/charts/chart1.xml", "Results", null, "the part is not well-formed XML");
@@ -424,21 +426,23 @@ public class ExcelContentEmitterTests
         var sink = new RecordingSink();
 
         // Act: emit the workbook
-        var degraded = await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        // Assert: the chart is named in a failed gap and still has a part of its own
-        Assert.True(degraded);
-        var gap = Assert.Single(sink.Gaps, candidate => candidate.Scope == GapScope.Failed);
-        Assert.Contains(gap.AffectedItems!, item => item.Contains("/xl/charts/chart1.xml", StringComparison.Ordinal));
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "XLSX0004");
+        // Assert: the unreadable chart is named in a note and still has a part of its own
+        var note = Assert.Single(sink.Notes);
+        Assert.Contains("could not be read", note.Message, StringComparison.Ordinal);
+        Assert.Contains("/xl/charts/chart1.xml", note.Message, StringComparison.Ordinal);
+        var chartPart = Assert.Single(sink.Parts, part => part.Part.Kind == ContentPartKind.Chart);
+        Assert.Contains("could not be read", chartPart.Markdown, StringComparison.Ordinal);
+        Assert.Contains("not well-formed XML", chartPart.Markdown, StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     Proves a chart cached beyond the rendering bound reports a counted truncation gap stating
-    ///     how much was dropped.
+    ///     Proves a chart cached beyond the rendering bound states the truncation in its own chart
+    ///     part, with no sink note because the chart was still read successfully.
     /// </summary>
     [Fact]
-    public async Task ExcelContentEmitter_Emit_ChartBeyondBound_ReportsTruncationGap()
+    public async Task ExcelContentEmitter_Emit_ChartBeyondBound_StatesTruncationInChartPart()
     {
         // Arrange: a chart with one more point than the bound allows
         var count = ExcelChartWriter.MaxPlottedPoints + 1;
@@ -450,35 +454,35 @@ public class ExcelContentEmitterTests
         var sink = new RecordingSink();
 
         // Act: emit the workbook
-        var degraded = await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        // Assert: the truncation is stated as a counted gap, not performed quietly
-        Assert.True(degraded);
-        var gap = Assert.Single(sink.Gaps, candidate => candidate.Reason.Contains(
-            "plotted points", StringComparison.Ordinal));
-        Assert.Equal(GapScope.PartiallyExtracted, gap.Scope);
-        Assert.Contains(gap.AffectedItems!, item => item.Contains(
-            $"{ExcelChartWriter.MaxPlottedPoints} of {count}", StringComparison.Ordinal));
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "XLSX0006");
+        // Assert: the truncation is stated in the chart part itself, not as a sink note
+        var chartPart = Assert.Single(sink.Parts, part => part.Part.Kind == ContentPartKind.Chart);
+        Assert.Contains(
+            $"Showing the first {ExcelChartWriter.MaxPlottedPoints} of {count} plotted points",
+            chartPart.Markdown,
+            StringComparison.Ordinal);
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
-    ///     Proves a workbook showing no chart reports no chart gap, so the chart ledger never degrades
-    ///     an ordinary chart-free workbook.
+    ///     Proves a workbook showing no chart records no chart-related note, so the chart ledger
+    ///     never invents incomplete work for an ordinary chart-free workbook.
     /// </summary>
     [Fact]
-    public async Task ExcelContentEmitter_Emit_NoCharts_ReportsNoChartGap()
+    public async Task ExcelContentEmitter_Emit_NoCharts_ReportsNoChartNotes()
     {
         // Arrange: an ordinary one-sheet workbook
         var model = new ExcelWorkbookModel([new ExcelSheetModel("S", [new ExcelCellModel("A1", "x", null)], [])]);
         var sink = new RecordingSink();
 
         // Act: emit the workbook
-        var degraded = await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
         // Assert: nothing is said about charts that do not exist
-        Assert.False(degraded);
-        Assert.DoesNotContain(sink.Gaps, candidate => candidate.Reason.Contains("chart", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            sink.Notes,
+            note => note.Message.Contains("chart", StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>
@@ -594,7 +598,7 @@ public class ExcelContentEmitterTests
     /// </summary>
     /// <param name="sheet">The sheet to render.</param>
     /// <returns>The rendered markdown of the single sheet part.</returns>
-    /// <remarks>Images are disabled so the run does not degrade on the implicit image gap.</remarks>
+    /// <remarks>Images are disabled so the run stays focused on sheet rendering alone.</remarks>
     private static async Task<string> RenderSingleSheetAsync(ExcelSheetModel sheet)
     {
         var sink = new RecordingSink();

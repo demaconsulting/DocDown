@@ -5,7 +5,7 @@ namespace DemaConsulting.DocDown.Pdf.Tests;
 
 /// <summary>
 ///     Unit tests for the PDF text extractor, proving reading order, the prohibition on raw page
-///     text, image-link placement, page markers, and the honest no-glyph signal.
+///     text, image-link placement, page markers, and honest zero-count reporting for text-free input.
 /// </summary>
 /// <remarks>
 ///     Text extraction is heuristic, so these tests assert properties of the markdown — expected
@@ -19,7 +19,7 @@ public class PdfTextExtractorTests
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>
-    ///     Proves a single page's text is rendered as markdown paragraphs (ReadingOrder).
+    ///     Proves a single page's text is rendered as markdown paragraphs in reading order.
     /// </summary>
     [Fact]
     public void PdfTextExtractor_Extract_SingleTextPage_RendersParagraphsInReadingOrder()
@@ -32,14 +32,14 @@ public class PdfTextExtractorTests
         var result = global::DocDown.Pdf.PdfTextExtractor.Extract(pages, "Simple", [], Ct);
 
         // Assert: both lines are present and the upper one comes first, as a reader would read them
-        Assert.True(result.AnyGlyphs);
+        Assert.True(result.ParagraphCount > 0);
         var heading = result.Markdown.IndexOf("Introduction", StringComparison.Ordinal);
         var body = result.Markdown.IndexOf("quick brown fox", StringComparison.Ordinal);
         Assert.True(heading >= 0 && body > heading, "the page text is missing or out of reading order");
     }
 
     /// <summary>
-    ///     Proves the extractor does not simply emit PdfPig's raw page text (AvoidsRawPageText).
+    ///     Proves the extractor does not simply emit PdfPig's raw page text.
     /// </summary>
     /// <remarks>
     ///     PdfPig's own documentation warns against <c>Page.Text</c> because it is content-stream draw
@@ -107,7 +107,7 @@ public class PdfTextExtractorTests
     }
 
     /// <summary>
-    ///     Proves image links are substituted under the page they came from (LinksImages).
+    ///     Proves image links are substituted under the page they came from.
     /// </summary>
     [Fact]
     public void PdfTextExtractor_Extract_ExtractedImages_LinksThemUnderTheirOwnPage()
@@ -128,10 +128,10 @@ public class PdfTextExtractorTests
     }
 
     /// <summary>
-    ///     Proves a page with no glyphs is reported honestly rather than silently emptied (ReportsNoTextLayer).
+    ///     Proves a page with no glyphs yields zero text counts rather than invented content.
     /// </summary>
     [Fact]
-    public void PdfTextExtractor_Extract_PageWithNoGlyphs_ReportsNoGlyphsPresent()
+    public void PdfTextExtractor_Extract_PageWithNoGlyphs_YieldsZeroTextCounts()
     {
         // Arrange: a purely graphical page
         using var document = PdfFixtures.Open(PdfFixtures.NoTextLayer());
@@ -140,8 +140,9 @@ public class PdfTextExtractorTests
         // Act: render the page
         var result = global::DocDown.Pdf.PdfTextExtractor.Extract(pages, null, [], Ct);
 
-        // Assert: the absence of a text layer is signalled as a fact the caller can explain
-        Assert.False(result.AnyGlyphs);
+        // Assert: the absence of a text layer becomes empty text output with zero counts
+        Assert.Equal(0, result.HeadingCount);
+        Assert.Equal(0, result.ParagraphCount);
         Assert.DoesNotContain("quick brown fox", result.Markdown, StringComparison.Ordinal);
     }
 
@@ -170,10 +171,10 @@ public class PdfTextExtractorTests
     }
 
     /// <summary>
-    ///     Proves an empty page list yields empty output without throwing (boundary).
+    ///     Proves an empty page list yields empty output and zero counts without throwing.
     /// </summary>
     [Fact]
-    public void PdfTextExtractor_Extract_NoPages_ProducesNoGlyphsAndNoMarkers()
+    public void PdfTextExtractor_Extract_NoPages_ProducesZeroCountsAndNoMarkers()
     {
         // Arrange: no pages at all, as a zero-page document produces
         var pages = Array.Empty<Page>();
@@ -182,12 +183,13 @@ public class PdfTextExtractorTests
         var result = global::DocDown.Pdf.PdfTextExtractor.Extract(pages, null, [], Ct);
 
         // Assert: the result is empty and honest rather than an exception
-        Assert.False(result.AnyGlyphs);
+        Assert.Equal(0, result.HeadingCount);
+        Assert.Equal(0, result.ParagraphCount);
         Assert.Equal(string.Empty, result.Markdown);
     }
 
     /// <summary>
-    ///     Proves a null page list is rejected as a caller error (boundary).
+    ///     Proves a null page list is rejected as a caller error.
     /// </summary>
     [Fact]
     public void PdfTextExtractor_Extract_NullPages_ThrowsArgumentNullException()

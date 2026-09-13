@@ -5,33 +5,27 @@ namespace DemaConsulting.DocDown.Core.Tests.Extraction;
 
 /// <summary>
 ///     Subsystem-integration tests for the Extraction subsystem, exercising
-///     <see cref="DocDownBuilder"/>, <see cref="ExtractorRegistry"/>, <see cref="ExtractorSelector"/>,
-///     and <see cref="DocDownEngine"/> together at the subsystem boundary.
+///     <see cref="DocDownBuilder"/>, <see cref="ExtractorRegistry"/>,
+///     <see cref="ExtractorSelector"/>, and <see cref="DocDownEngine"/> together at the subsystem
+///     boundary.
 /// </summary>
-/// <remarks>
-///     These tests use Extraction units and their documented dependencies (the Output subsystem is
-///     a documented downstream dependency of orchestration). Each is named for the subsystem
-///     requirement it evidences: explicit registration, availability probing, deterministic and
-///     explained selection, capability negotiation, orchestration, structured failure, option and
-///     extractor isolation, and the self-validation seam.
-/// </remarks>
 public class ExtractionTests
 {
     /// <summary>Gets the ambient test cancellation token so async calls stay responsive to cancellation.</summary>
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>
-    ///     Proves explicitly registered backends appear on the built engine (ExplicitRegistration).
+    ///     Proves explicitly registered backends appear on the built engine.
     /// </summary>
     [Fact]
     public void Extraction_ExplicitRegistration_RegisteredBackends_AppearInEngine()
     {
-        // Arrange: a builder with two explicitly registered backends
+        // Arrange: a builder with two explicit backends
         var builder = new DocDownBuilder()
-            .AddExtractor(StubExtractor.Available("alpha", [DocumentFormat.Text], ExtractorCapabilities.Text))
-            .AddExtractor(StubExtractor.Available("beta", [DocumentFormat.Pdf], ExtractorCapabilities.Text));
+            .AddExtractor(StubExtractor.Available("alpha", [DocumentFormat.Text]))
+            .AddExtractor(StubExtractor.Available("beta", [DocumentFormat.Pdf]));
 
-        // Act: build the engine and read its registered descriptors
+        // Act: build the engine and read its descriptors
         var engine = builder.Build();
 
         // Assert: both registered backends are present, and only those
@@ -41,7 +35,7 @@ public class ExtractionTests
     }
 
     /// <summary>
-    ///     Proves a throwing availability probe is contained and treated as unavailable (AvailabilityProbing).
+    ///     Proves a throwing availability probe is contained and treated as unavailable.
     /// </summary>
     [Fact]
     public void Extraction_AvailabilityProbing_ThrowingProbe_TreatedAsUnavailable()
@@ -51,94 +45,71 @@ public class ExtractionTests
             .AddExtractor(StubExtractor.ThrowingProbe("throwing", [DocumentFormat.Text]))
             .Build();
 
-        // Act: query backend status, which must probe availability defensively
-        var status = Assert.Single(engine.GetBackendStatus());
+        // Act: query backend availability
+        var candidate = Assert.Single(engine.GetBackends());
 
-        // Assert: the throwing probe is contained and the backend is reported unavailable
-        Assert.False(status.IsAvailable);
-        Assert.False(string.IsNullOrEmpty(status.UnavailableReason));
+        // Assert: the throwing probe is contained and reported unavailable
+        Assert.False(candidate.Availability.IsAvailable);
+        Assert.False(string.IsNullOrEmpty(candidate.Availability.UnavailableReason));
     }
 
     /// <summary>
-    ///     Proves the selector is a pure function that yields equal results for equal inputs (DeterministicSelection).
+    ///     Proves selector calls remain deterministic for equal inputs.
     /// </summary>
     [Fact]
     public void Extraction_DeterministicSelection_EqualInputs_ProduceEqualSelection()
     {
-        // Arrange: a selector, a detection, options, and two available candidates
-        var selector = new ExtractorSelector();
+        // Arrange: a detection, options, and two available candidates
         var detection = TextDetection();
         var options = new ExtractionOptions { IncludeEmbeddedImages = false };
         var candidates = new[]
         {
-            Candidate("one", ExtractorCapabilities.Text, priority: 1),
-            Candidate("two", ExtractorCapabilities.Text, priority: 2)
+            Candidate("one", priority: 1),
+            Candidate("two", priority: 2)
         };
 
         // Act: run selection twice with the same inputs
-        var first = selector.Select(detection, options, candidates);
-        var second = selector.Select(detection, options, candidates);
+        var first = ExtractorSelector.Select(detection, options, candidates, out var firstFailure);
+        var second = ExtractorSelector.Select(detection, options, candidates, out var secondFailure);
 
-        // Assert: the two selections are identical, including the ordered trace
-        Assert.Equal(first.Selected, second.Selected);
-        Assert.Equal(first.Trace, second.Trace);
+        // Assert: the two selections are identical
+        Assert.Null(firstFailure);
+        Assert.Null(secondFailure);
+        Assert.Equal(first, second);
     }
 
     /// <summary>
-    ///     Proves the selection trace explains every candidate considered (SelectionExplained).
+    ///     Proves the selector prefers a renderer when page rendering was requested.
     /// </summary>
     [Fact]
-    public void Extraction_SelectionExplained_MultipleCandidates_TraceCoversEveryCandidate()
+    public void Extraction_RenderPreference_RenderRequested_PrefersRenderer()
     {
-        // Arrange: a selector with two competing candidates for the same format
-        var selector = new ExtractorSelector();
-        var options = new ExtractionOptions { IncludeEmbeddedImages = false };
+        // Arrange: rendered pages are requested and only one candidate can render them
+        var options = new ExtractionOptions { IncludeEmbeddedImages = false, RenderPages = true };
         var candidates = new[]
         {
-            Candidate("winner", ExtractorCapabilities.Text, priority: 10),
-            Candidate("loser", ExtractorCapabilities.Text, priority: 1)
+            Candidate("text-only", priority: 100),
+            Candidate("renderer", priority: 1, providesRenderedPages: true)
         };
 
-        // Act: run selection
-        var selection = selector.Select(TextDetection(), options, candidates);
+        // Act: select for a text document
+        var selected = ExtractorSelector.Select(TextDetection(), options, candidates, out var failure);
 
-        // Assert: the trace names both candidates and the higher-priority one wins
-        Assert.Equal("winner", selection.Selected?.Id);
-        Assert.Contains(selection.Trace, verdict => verdict.ExtractorId == "winner");
-        Assert.Contains(selection.Trace, verdict => verdict.ExtractorId == "loser");
+        // Assert: render capability is preferred over the higher ordinary priority
+        Assert.Null(failure);
+        Assert.Equal("renderer", selected?.Id);
     }
 
     /// <summary>
-    ///     Proves the selector accepts a partial satisfier when a requested capability is unavailable (CapabilityNegotiation).
-    /// </summary>
-    [Fact]
-    public void Extraction_CapabilityNegotiation_RenderRequestedButUnavailable_SelectsPartialSatisfier()
-    {
-        // Arrange: rendered pages are requested but the only candidate offers text alone
-        var selector = new ExtractorSelector();
-        var options = new ExtractionOptions { IncludeEmbeddedImages = false, RenderPages = true };
-        var candidates = new[] { Candidate("text", ExtractorCapabilities.Text, priority: 1) };
-
-        // Act: run selection with the unsatisfiable render request
-        var selection = selector.Select(TextDetection(), options, candidates);
-
-        // Assert: the partial satisfier is selected but the render capability is unmet
-        Assert.Equal("text", selection.Selected?.Id);
-        Assert.True(selection.RequiredCapabilities.HasFlag(ExtractorCapabilities.RenderedPages));
-        Assert.False(selection.SatisfiedCapabilities.HasFlag(ExtractorCapabilities.RenderedPages));
-    }
-
-    /// <summary>
-    ///     Proves the engine orchestrates the full pipeline end to end for a text document (Orchestration).
+    ///     Proves the engine orchestrates the full pipeline end to end for a text document.
     /// </summary>
     [Fact]
     public async Task Extraction_Orchestration_TextDocument_RunsPipelineEndToEnd()
     {
-        // Arrange: an engine with a fully capable text backend and a text input
+        // Arrange: an engine with a text backend and a text input
         using var temp = new TempScratch();
         var engine = new DocDownBuilder()
-            .AddExtractor(StubExtractor.Available(
-                "text", [DocumentFormat.Text], ExtractorCapabilities.Text | ExtractorCapabilities.EmbeddedImages))
+            .AddExtractor(StubExtractor.Available("text", [DocumentFormat.Text]))
             .Build();
         var input = temp.CreateFile("document.txt", "hello world");
         var scratch = Path.Combine(temp.Path, "out");
@@ -146,18 +117,18 @@ public class ExtractionTests
         // Act: run the full pipeline
         var result = await engine.ExtractAsync(input, scratch, new ExtractionOptions(), Ct);
 
-        // Assert: the pipeline produced the layout, selected the backend, and did not fail
-        Assert.NotEqual(ExtractionOutcome.Failed, result.Outcome);
+        // Assert: the layout was produced, the backend was selected, and content was written
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Equal("text", result.SelectedExtractor?.Id);
         Assert.True(File.Exists(Path.Combine(scratch, "content.md")));
         ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
-    ///     Proves the engine returns a structured failure with a code when no backend is available (StructuredFailure).
+    ///     Proves a structured failure is returned when no backend is available for the detected format.
     /// </summary>
     [Fact]
-    public async Task Extraction_StructuredFailure_NoAvailableBackend_ReturnsFailureWithCode()
+    public async Task Extraction_StructuredFailure_NoAvailableBackend_ReturnsUnreadableFailure()
     {
         // Arrange: an engine whose only text backend is unavailable
         using var temp = new TempScratch();
@@ -165,18 +136,18 @@ public class ExtractionTests
             .AddExtractor(StubExtractor.Unavailable("text", [DocumentFormat.Text], "the text backend is offline"))
             .Build();
         var input = temp.CreateFile("document.txt", "hello world");
-        var scratch = Path.Combine(temp.Path, "out");
 
         // Act: run the extraction with no available backend
-        var result = await engine.ExtractAsync(input, scratch, new ExtractionOptions(), Ct);
+        var result = await engine.ExtractAsync(input, Path.Combine(temp.Path, "out"), new ExtractionOptions(), Ct);
 
-        // Assert: the failure is structured and carries the no-available-extractor code
+        // Assert: the failure is unreadable and carries prose
+        Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
         Assert.NotNull(result.Failure);
-        Assert.Equal("DD0403", result.Failure.Code);
+        Assert.Contains("No available extractor can process the detected format", result.Failure.Explanation, StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     Proves builder mutation after Build does not affect the already-built engine (OptionIsolation).
+    ///     Proves builder mutation after Build does not affect the already-built engine defaults.
     /// </summary>
     [Fact]
     public async Task Extraction_OptionIsolation_BuilderMutatedAfterBuild_DoesNotAffectEngine()
@@ -184,27 +155,26 @@ public class ExtractionTests
         // Arrange: build an engine whose defaults do not render pages, then mutate the builder afterwards
         using var temp = new TempScratch();
         var builder = new DocDownBuilder()
-            .AddExtractor(StubExtractor.Available(
-                "text", [DocumentFormat.Text], ExtractorCapabilities.Text | ExtractorCapabilities.EmbeddedImages))
+            .AddExtractor(StubExtractor.Available("text", [DocumentFormat.Text]))
             .ConfigureDefaults(options => options.RenderPages = false);
         var engine = builder.Build();
         builder.ConfigureDefaults(options => options.RenderPages = true);
         var input = temp.CreateFile("document.txt", "hello world");
-        var scratch = Path.Combine(temp.Path, "out");
 
         // Act: run the engine using its own captured defaults
-        var result = await engine.ExtractAsync(input, scratch, null, Ct);
+        var result = await engine.ExtractAsync(input, Path.Combine(temp.Path, "out"), null, Ct);
 
-        // Assert: the later builder mutation did not leak in, so no page-render gap was produced
-        Assert.DoesNotContain(result.Gaps, gap => gap.Kind == GapKind.Pages);
-        ContractAssert.NoViolations(scratch);
+        // Assert: the later builder mutation did not leak into the already-built engine
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.DoesNotContain(result.Notes, note => note.Message.Contains("Page rendering was requested", StringComparison.Ordinal));
+        ContractAssert.LayoutPresent(result.ScratchFolder);
     }
 
     /// <summary>
-    ///     Proves a throwing backend becomes a structured failure rather than propagating (ExtractorIsolation).
+    ///     Proves a throwing backend becomes a structured unreadable failure rather than propagating.
     /// </summary>
     [Fact]
-    public async Task Extraction_ExtractorIsolation_BackendThrows_BecomesStructuredFailure()
+    public async Task Extraction_ExtractorIsolation_BackendThrows_BecomesUnreadableFailure()
     {
         // Arrange: an engine with a backend that throws during extraction
         using var temp = new TempScratch();
@@ -212,60 +182,53 @@ public class ExtractionTests
             .AddExtractor(StubExtractor.Failing("failing", [DocumentFormat.Text]))
             .Build();
         var input = temp.CreateFile("document.txt", "hello world");
-        var scratch = Path.Combine(temp.Path, "out");
 
         // Act: run the extraction so the backend faults
-        var result = await engine.ExtractAsync(input, scratch, new ExtractionOptions(), Ct);
+        var result = await engine.ExtractAsync(input, Path.Combine(temp.Path, "out"), new ExtractionOptions(), Ct);
 
-        // Assert: the exception was contained and converted into a structured failure
-        Assert.Equal(ExtractionOutcome.Failed, result.Outcome);
-        Assert.Equal("DD0703", result.Failure?.Code);
+        // Assert: the exception was contained and converted into an unreadable failure
+        Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
+        Assert.Contains("The selected extractor 'failing' failed while extracting.", result.Failure?.Explanation, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(result.ScratchFolder);
     }
 
     /// <summary>
-    ///     Proves the engine exposes Core's own cases and a self-validating backend's cases (SelfValidationSeam).
+    ///     Proves the engine exposes Core's own self-test cases together with a self-validating backend's cases.
     /// </summary>
     [Fact]
     public void Extraction_SelfValidationSeam_Engine_ExposesCoreAndBackendCases()
     {
-        // Arrange: an engine with an available self-validating backend contributing one case
-        var backend = StubExtractor.Available("backend", [DocumentFormat.Text], ExtractorCapabilities.Text);
+        // Arrange: an available self-validating backend contributing one case
+        var backend = StubExtractor.Available("backend", [DocumentFormat.Text]);
         backend.SelfTestCases.Add(new SelfTestCase(
-            "backend.case", "backend", _ => SelfTestResult.Passed(TimeSpan.Zero)));
+            "backend.case",
+            "backend",
+            _ => SelfTestResult.Passed(TimeSpan.Zero)));
         var engine = new DocDownBuilder().AddExtractor(backend).Build();
 
         // Act: enumerate the assembled self-test suite
         var cases = engine.GetSelfTestCases();
 
         // Assert: the suite includes Core's own cases and the backend's contributed case
-        Assert.Contains(cases, testCase => testCase.Category == "core");
+        Assert.Equal(2, cases.Count(testCase => testCase.Category == "core"));
         Assert.Contains(cases, testCase => testCase.Category == "backend");
     }
 
     /// <summary>
-    ///     Creates a candidate for the text format with the given capabilities, priority, and availability.
+    ///     Creates an available candidate for selector tests.
     /// </summary>
     /// <param name="id">The candidate identifier.</param>
-    /// <param name="capabilities">The declared and effective capabilities.</param>
     /// <param name="priority">The ranking priority.</param>
-    /// <param name="available">Whether the candidate is available.</param>
-    /// <param name="reason">The unavailability reason when not available.</param>
+    /// <param name="providesRenderedPages">Whether the candidate can render pages in this environment.</param>
     /// <returns>The configured candidate.</returns>
-    /// <remarks>Keeps the selector tests declarative by building descriptors and availability in one place.</remarks>
-    private static ExtractorCandidate Candidate(
-        string id, ExtractorCapabilities capabilities, int priority, bool available = true, string reason = "unavailable")
-    {
-        var descriptor = new ExtractorDescriptor(id, id + " name", [DocumentFormat.Text], capabilities, priority);
-        var availability = available
-            ? ExtractorAvailability.Available(capabilities)
-            : ExtractorAvailability.Unavailable(reason);
-        return new ExtractorCandidate(descriptor, availability);
-    }
+    private static ExtractorCandidate Candidate(string id, int priority, bool providesRenderedPages = false) =>
+        new(
+            new ExtractorDescriptor(id, id + " name", [DocumentFormat.Text], priority),
+            ExtractorAvailability.Available(providesRenderedPages));
 
     /// <summary>
-    ///     Creates a text-format detection by extension for selector tests.
+    ///     Creates a text-format detection by file extension for selector tests.
     /// </summary>
     /// <returns>A text-format detection.</returns>
-    /// <remarks>Selection depends only on the detected format, so a simple extension detection suffices.</remarks>
     private static FormatDetection TextDetection() => new(DocumentFormat.Text, DetectionBasis.Extension, 0.5);
 }

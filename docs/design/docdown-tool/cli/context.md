@@ -15,12 +15,12 @@ output methods whose behavior `--silent` and `--log` control.
 static `Create` factory. Parsing is delegated to a nested `private sealed class ArgumentParser`.
 The parsed choices are exposed as `private init` properties:
 
-- The DEMA vocabulary — `Version`, `Help`, `Silent`, `Validate`, `ResultsFile`, `HeadingDepth`
-  (default 1) — plus `ListBackends` and `VerifyFolder` for the auxiliary commands.
+- The DEMA vocabulary — `Version`, `Help`, `Silent`, `Validate`, `ResultsFile`, and `HeadingDepth`
+  (default 1) — plus `ListBackends` for the auxiliary command.
 - The extraction flags — `Input`, `Scratch`, `RenderPages`, `IncludeEmbeddedImages` (default true),
-  `RequirePages`, `Pages`, `Dpi`, `ImageOutput`, `MaxImageDimensionPx`, `MaxImageBytes`,
-  `ContentSplit`, `Backend`, and `ScratchMode`. The optional ones are nullable so an unset flag can be
-  told apart from a flag set to its default.
+  `Pages`, `Dpi`, `ImageOutput`, `MaxImageDimensionPx`, `MaxImageBytes`, `ContentSplit`, and
+  `ScratchMode`. The optional ones are nullable so an unset flag can be told apart from a flag set
+  to its default.
 - `ExitCode` returns 1 when any error has been reported, and 0 otherwise.
 
 The log writer is a private `StreamWriter?` opened by `Create` when `--log` is given.
@@ -32,9 +32,8 @@ The log writer is a private `StreamWriter?` opened by `Create` when `--log` is g
   unrecognized or malformed argument surfaces as an `ArgumentException`; a log file that cannot be
   opened surfaces as an `InvalidOperationException`.
 - **`ExtractionOptions BuildExtractionOptions()`** — projects the parsed extraction flags onto a
-  fresh options instance, writing only the options the caller set. `--require-pages` adds the
-  `RenderedPages` capability as a hard requirement, which turns an unavailable renderer from a
-  degrade into a failure.
+  fresh options instance, writing only the options the caller set. `--overwrite` accepts only the
+  `clean` and `overwrite` tokens, mapping them directly to the current scratch-folder modes.
 - **`void WriteLine(string message)`** — writes to standard output unless `Silent`, and always to the
   log when one is open.
 - **`void WriteError(string message)`** — sets the error flag unconditionally, writes to standard
@@ -55,7 +54,7 @@ non-zero exit. `Dispose` closes the log writer.
 #### Dependencies
 
 - **DocDown.Core** — `ExtractionOptions` and the option value types the flags map onto: `PageRange`,
-  `ImageOutputMode`, `ContentSplitMode`, `ScratchFolderMode`, and `ExtractorCapabilities`.
+  `ImageOutputMode`, `ContentSplitMode`, and `ScratchFolderMode`.
 
 #### Callers
 

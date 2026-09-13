@@ -1,8 +1,8 @@
 ---
 # Software Unit Requirements for WordTableWriter
 #
-# WordTableWriter renders a table model as a GitHub-Flavored-Markdown table, applying the
-# rules that make a Word grid legible in markdown and counting every cell it must flatten.
+# WordTableWriter renders a table model as a GitHub-Flavored-Markdown table, applying the rules
+# that make a Word grid legible in markdown and counting every cell it must flatten.
 
 sections:
   - title: DocDownWord Requirements
@@ -13,8 +13,8 @@ sections:
             requirements:
               - id: DocDownWord-Markdown-WordTableWriter-RendersGfmTable
                 title: >-
-                  WordTableWriter shall render a table with a header row and delimiter row, treating the
-                  first row as the header.
+                  WordTableWriter shall render a table with a header row and delimiter row, treating
+                  the first row as the header.
                 justification: |
                   GitHub-Flavored Markdown requires a delimiter row, so the first row is always the
                   header. Emitting the header and its delimiter is what makes the output a table a
@@ -32,32 +32,32 @@ sections:
 
               - id: DocDownWord-Markdown-WordTableWriter-EscapesCellContent
                 title: >-
-                  WordTableWriter shall escape a pipe and convert a newline within a cell so the cell
-                  stays within one table cell.
+                  WordTableWriter shall escape a pipe and convert a newline within a cell so the
+                  cell stays within one table cell.
                 justification: |
-                  A literal pipe would start a new cell and a literal newline would break the row, so
-                  each is transformed — the pipe escaped, the newline rendered as a line break — to keep
-                  the cell's content inside its cell.
+                  A literal pipe would start a new cell and a literal newline would break the row,
+                  so each is transformed — the pipe escaped, the newline rendered as a line break —
+                  to keep the cell's content inside its cell.
                 tests:
                   - WordTableWriter_Write_CellWithNewlineAndPipe_EscapesAndBreaks
 
               - id: DocDownWord-Markdown-WordTableWriter-SkipsEmptyTable
                 title: WordTableWriter shall skip a table that has no cell content.
                 justification: |
-                  An empty table contributes nothing to the content and would render as a bare header
-                  skeleton. Skipping it keeps the output clean, and the extractor records the skip as a
-                  diagnostic so the omission is not silent.
+                  An empty table contributes nothing to the content and would render as a bare
+                  header skeleton. Returning an empty string lets the caller omit the table from the
+                  rendered flow.
                 tests:
                   - WordTableWriter_Write_EmptyTable_ReturnsEmpty
 
               - id: DocDownWord-Markdown-WordTableWriter-FlattensMergedAndNested
                 title: >-
-                  WordTableWriter shall flatten merged and nested cells and report the count of cells it
-                  flattened.
+                  WordTableWriter shall flatten merged and nested cells and report the count of
+                  cells it flattened.
                 justification: |
-                  GFM cannot express a merged span or a nested table, so each is flattened — the merged
-                  text placed in the first column, the nested rows joined with line breaks. Returning
-                  the count of flattened cells lets the extractor raise a counted structural gap rather
-                  than misrepresent the grid silently.
+                  GFM cannot express a merged span or a nested table, so each is flattened — the
+                  merged text placed in the first column and the nested rows joined with line breaks.
+                  Returning the count of flattened cells lets the emitter describe that incomplete
+                  preservation explicitly.
                 tests:
                   - WordTableWriter_Write_MergedAndNestedCells_CountsFlattened

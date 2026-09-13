@@ -7,15 +7,13 @@ Scratch folder  : <scratch-folder>
 Source document : <source-document>
 Detected format : pdf (application/pdf) - detected by file extension
 Extracted (UTC) : 2026-01-02T03:04:05Z
-Status          : SUCCEEDED  - all requested content was extracted.
+Status          : PRODUCED  - the standard output layout was written.
 
 All paths below are relative to the scratch folder shown above.
 
 Backend
 -------
-  Selected  : pdf - PDF (PdfPig)      [selected automatically]
-  Fidelity  : best-effort
-  Why       : satisfies 1 of 1 requested capabilities.
+  Selected  : pdf - PDF (PdfPig)
 
 Environment
 -----------
@@ -38,7 +36,7 @@ Layout
   metadata.json        what the document asserts about itself
   content.md           PRESENT
   images/              PRESENT - 2 extracted
-  pages/               not present - none were found
+  pages/               not present - none were written
 
 What WAS extracted
 ------------------
@@ -46,17 +44,6 @@ What WAS extracted
   images/      2 embedded images, 6 bytes total, spanning pages 1-2.
                See manifest.json for the per-image inventory.
 
-What was NOT extracted
-----------------------
-  No gaps: everything requested was extracted.
-
-Completeness
-------------
-  content.md : COMPLETE
-  images/    : COMPLETE   (2 of 2)
-  pages/     : COMPLETE   (0 of 0)
-  Every absence above is explained by a numbered gap. There are no unexplained gaps.
-
-Diagnostics (0 warnings, 0 errors)
-----------------------------------
-  No diagnostics were emitted.
+Could not read
+--------------
+  Nothing was left incomplete.

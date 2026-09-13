@@ -1,9 +1,10 @@
 ---
 # Software Unit Requirements for DocDownEngine
 #
-# DocDownEngine orchestrates the extraction pipeline: it validates arguments, snapshots
-# options, prepares output, runs the selected backend in isolation, and reports status
-# and self-test cases.
+# SUPERSEDED REQUIREMENT: DocDownCore-Extraction-DocDownEngine-BackendStatus
+# required the removed BackendStatus projection. It is superseded (not satisfied) by
+# DocDownCore-Extraction-DocDownEngine-BackendCandidates because the engine now reports candidates
+# directly.
 
 sections:
   - title: DocDownCore Requirements
@@ -14,110 +15,104 @@ sections:
             requirements:
               - id: DocDownCore-Extraction-DocDownEngine-RenderRequestApplicability
                 title: >-
-                  DocDownEngine shall treat page rendering as a request, degrading with a counted pages
-                  gap only when the format is paginated, and honoring it with silence when it is not.
+                  DocDownEngine shall treat page rendering as a request, recording a note only when
+                  a requested paginated render could not be completed.
                 justification: |
-                  A caller who requests rendered pages must be told plainly when they cannot be
-                  produced, but a non-paginated format has no page grid and no environment could ever
-                  make it render, so treating its missing pages as a shortfall would be a false failure.
-                  Degrading a paginated format with a counted gap that names who could have rendered,
-                  while recording an informational diagnostic and neither gap nor degradation for a
-                  non-paginated one, keeps the completeness signal honest in both directions.
+                  Page rendering depends on both format and environment. A paginated format with no
+                  renderer needs an explicit note, while a non-paginated format should not report a
+                  false shortfall.
                 tests:
                   - DocDownEngine_ExtractAsync_NonPaginatedFormat_RenderRequest_SucceedsSilently
-                  - DocDownBuilder_ConfigureDefaults_RenderPages_ProducesPageGapByDefault
+                  - DocDownEngine_ExtractAsync_PaginatedFormat_RenderRequestUnavailable_RecordsNote
 
               - id: DocDownCore-Extraction-DocDownEngine-PipelineOrder
                 title: >-
-                  DocDownEngine shall run the extraction stages in a fixed order and not invoke a backend for
-                  unknown input.
+                  DocDownEngine shall run the extraction stages in a fixed order and not invoke a
+                  backend for unknown input.
                 justification: |
-                  Each stage depends on the previous one's result, and a backend must never see input
-                  whose format was not recognized. A fixed pipeline order guarantees these
-                  preconditions and keeps behavior predictable.
+                  Each stage depends on the previous stage's result. A backend must never run on an
+                  input whose format was not recognized.
                 tests:
                   - DocDownEngine_ExtractAsync_UnknownFormat_DoesNotInvokeBackend
                   - DocDownEngine_ExtractAsync_Backend_ReceivesSinkContextWithoutScratchPath
 
               - id: DocDownCore-Extraction-DocDownEngine-OptionsSnapshot
-                title: >-
-                  DocDownEngine shall clone the caller's options before any other work so later mutation
-                  cannot affect the run.
+                title: DocDownEngine shall clone the caller's options before any other work.
                 justification: |
-                  Callers reuse and mutate option objects across concurrent extractions. Cloning on
-                  entry isolates each run so a caller editing the object mid-flight cannot corrupt the
-                  extraction the backend sees.
+                  Callers may mutate an options object after starting an extraction. Cloning it on
+                  entry isolates the run from later mutation.
                 tests:
                   - DocDownEngine_ExtractAsync_CallerOptions_AreClonedBeforeReachingBackend
 
               - id: DocDownCore-Extraction-DocDownEngine-ExtractorIsolation
-                title: >-
-                  DocDownEngine shall catch an exception thrown by a backend and convert it into a structured
-                  failure.
+                title: DocDownEngine shall catch a backend exception and convert it into an unreadable result.
                 justification: |
-                  Third-party backends process untrusted documents and can throw unexpectedly. Catching
-                  that fault protects the host process and turns a backend crash into a coded,
-                  reportable failure.
+                  Third-party extractors can fail unexpectedly. The engine must contain those faults
+                  and preserve a usable result object.
                 tests:
-                  - DocDownEngine_ExtractAsync_BackendThrows_ReturnsExtractorFailedFailure
+                  - DocDownEngine_ExtractAsync_BackendThrows_ReturnsUnreadableLayout
 
               - id: DocDownCore-Extraction-DocDownEngine-FailureReturned
-                title: DocDownEngine shall return a structured failure instead of throwing when a stage cannot proceed.
+                title: >-
+                  DocDownEngine shall return structured failure data instead of throwing
+                  ordinary extraction errors.
                 justification: |
-                  Batch automation must branch on failure causes without handling exceptions. Returning
-                  a structured failure, including when the scratch folder is refused, keeps the caller
-                  in control of error handling.
+                  Routine extraction failures must be open to inspection by callers without exception-based
+                  control flow.
                 tests:
                   - DocDownEngine_ExtractAsync_ScratchRefused_ReturnsFailureWithoutWritingLayout
 
               - id: DocDownCore-Extraction-DocDownEngine-FailureArtifacts
                 title: >-
-                  DocDownEngine shall still write a verifiable output layout when extraction fails after the
-                  folder is prepared.
+                  DocDownEngine shall still write the root artifacts when extraction fails after the
+                  scratch folder was prepared.
                 justification: |
-                  A failure record is only useful if a consumer can find and verify it. Writing the
-                  full layout even on failure ensures every outcome leaves the same auditable evidence
-                  on disk.
+                  A backend failure must still leave an auditable record in the accepted scratch
+                  folder.
                 tests:
-                  - DocDownEngine_ExtractAsync_BackendThrows_StillWritesVerifiableLayout
+                  - DocDownEngine_ExtractAsync_BackendThrows_ReturnsUnreadableLayout
 
-              - id: DocDownCore-Extraction-DocDownEngine-BackendStatus
-                title: DocDownEngine shall report each backend's availability and capabilities.
+              - id: DocDownCore-Extraction-DocDownEngine-BackendCandidates
+                title: >-
+                  DocDownEngine shall report the registered backend candidates with
+                  availability and render support.
                 justification: |
-                  Operators need to see, before running, which backends are usable and what they can
-                  do in the current environment. Reporting availability and capabilities supports
-                  environment diagnosis and capacity planning.
+                  Operators need to see which extractors are registered and usable before running an
+                  extraction.
                 tests:
-                  - DocDownEngine_GetBackendStatus_MixedBackends_ReportsAvailabilityAndCapabilities
+                  - DocDownEngine_GetBackends_MixedBackends_ReportsAvailabilityAndRenderedPageSupport
 
               - id: DocDownCore-Extraction-DocDownEngine-SelfTestCases
-                title: >-
-                  DocDownEngine shall expose Core's self-test cases and wrap an unavailable backend's cases as
-                  skipped.
+                title: DocDownEngine shall expose the current Core self-tests and skip unavailable backend cases.
                 justification: |
-                  A host must validate the contract in its own environment, and an unavailable backend
-                  should report skipped rather than fail. Exposing Core's cases plus wrapped backend
-                  cases gives an honest, runnable self-test set.
+                  A host should be able to validate the deployed environment through one self-test
+                  surface.
                 tests:
-                  - DocDownEngine_GetSelfTestCases_NoBackends_IncludesThreeCoreCases
+                  - DocDownEngine_GetSelfTestCases_NoBackends_IncludesTwoCoreCases
                   - DocDownEngine_GetSelfTestCases_UnavailableBackend_WrapsCasesAsSkipped
 
               - id: DocDownCore-Extraction-DocDownEngine-Cancellation
                 title: DocDownEngine shall propagate cancellation when the caller cancels an extraction.
                 justification: |
-                  Long extractions must be abortable so a host can reclaim resources or respond to
-                  shutdown. Propagating cancellation lets callers stop work promptly instead of waiting
-                  for a run to finish.
+                  Long-running extractions must be able to be interrupted so callers can reclaim resources.
                 tests:
                   - DocDownEngine_ExtractAsync_CanceledToken_PropagatesOperationCanceled
 
               - id: DocDownCore-Extraction-DocDownEngine-RejectNullArguments
                 title: DocDownEngine shall reject null or empty source, document path, and scratch folder arguments.
                 justification: |
-                  A null or empty required argument is a programming error that cannot yield a valid
-                  extraction. Rejecting it up front surfaces the mistake immediately rather than
-                  failing obscurely mid-pipeline.
+                  Required inputs that are null or empty are programming errors and should fail
+                  immediately.
                 tests:
                   - DocDownEngine_ExtractAsync_NullSource_ThrowsArgumentNullException
                   - DocDownEngine_ExtractAsync_EmptyScratchFolder_ThrowsArgumentException
                   - DocDownEngine_ExtractAsync_EmptyDocumentPath_ThrowsArgumentException
+
+              - id: DocDownCore-Extraction-DocDownEngine-TwoStateOutcome
+                title: DocDownEngine shall return only Produced or Unreadable extraction outcomes.
+                justification: |
+                  The engine's public outcome model states only whether the standard layout was
+                  written or the extraction was unreadable.
+                tests:
+                  - DocDownEngine_ExtractAsync_ImagesAndPages_ProducesBothArtifacts
+                  - DocDownEngine_ExtractAsync_BackendThrows_ReturnsUnreadableLayout

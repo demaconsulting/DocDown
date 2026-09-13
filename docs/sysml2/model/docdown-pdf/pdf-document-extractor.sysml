@@ -1,6 +1,6 @@
 package DocDownPdf {
     part def PdfDocumentExtractor {
-        doc /* Orchestrates a PDF extraction: capabilities, availability, metadata, delegation, and degradation gaps. */
+        doc /* Orchestrates a PDF extraction: availability, metadata, delegation, the content inventory, and notes. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Pdf/PdfDocumentExtractor.cs */
         comment testRef /* Test: test/DemaConsulting.DocDown.Pdf.Tests/PdfDocumentExtractorTests.cs */

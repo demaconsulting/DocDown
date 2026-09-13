@@ -1,10 +1,10 @@
 ---
 # Software Subsystem Requirements for DocDownVisio OpenXml
 #
-# The OpenXml subsystem is the managed backend: the guaranteed content path. It is the extractor the
-# engine selects for an extraction that does not request rendering, the reader that turns the Visio Open
-# Packaging container into the backend-neutral model — preserving page order and each page's name, shape
-# text, master classification, and the directed connector topology — and the image reader that resolves
+# The OpenXml subsystem is the managed backend: the guaranteed content path. It is the extractor
+# the engine selects for ordinary Visio extraction, the reader that turns the Visio Open Packaging
+# container into the backend-neutral model — preserving page order and each page's name, shape
+# text, master classification, and directed connector topology — and the image reader that resolves
 # each embedded image's bytes and page association. These requirements decompose into the
 # VisioOpenXmlExtractor, VisioPackageReader, and VisioImageReader units via children.
 
@@ -15,35 +15,35 @@ sections:
         requirements:
           - id: DocDownVisio-OpenXml-Extraction
             title: >-
-              The subsystem shall orchestrate a managed extraction: declare its capabilities, probe
-              unconditionally, read the drawing, emit the content, and contribute self-tests.
+              The subsystem shall identify the modern Visio drawings it handles, probe available
+              everywhere it runs, read the drawing, emit the content, and contribute self-tests.
             justification: |
-              The managed extractor is the backend the engine selects for a content extraction, so it owns
-              the whole managed path — capabilities and the plain statement that this extractor does not
-              render, the unconditional availability probe, the buffer-and-open of the drawing, delegation
-              to the reader and emitter, and the self-test cases that describe its own behavior, including
-              a round-trip that proves the topology path is genuinely functional.
+              The managed extractor is the backend the engine selects for ordinary content extraction,
+              so it owns the whole managed path: the supported modern Visio formats, the higher
+              selection priority, the always-available probe, the buffer-and-open of the drawing,
+              delegation to the reader and emitter, and the self-test cases that describe its own
+              behavior.
             children:
-              - DocDownVisio-OpenXml-VisioOpenXmlExtractor-DeclaresCapabilities
-              - DocDownVisio-OpenXml-VisioOpenXmlExtractor-DeclaresPageRenderingNotProvided
+              - DocDownVisio-OpenXml-VisioOpenXmlExtractor-ParticipatesInSelection
               - DocDownVisio-OpenXml-VisioOpenXmlExtractor-ProbesUnconditionally
               - DocDownVisio-OpenXml-VisioOpenXmlExtractor-OrchestratesExtraction
               - DocDownVisio-OpenXml-VisioOpenXmlExtractor-ContributesSelfTests
             tests:
-              - VisioOpenXmlExtractor_Descriptor_MatchesContract
+              - DocDownVisio_Extract_Vsdx_SelectsOpenXml
 
           - id: DocDownVisio-OpenXml-Reading
             title: >-
-              The subsystem shall read the Visio package into the backend-neutral model, preserving page
-              order and extracting each page's name, its shape text, its shapes' master classification,
-              and the directed connections between its shapes.
+              The subsystem shall read the Visio package into the backend-neutral model, preserving
+              page order and extracting each page's name, its shape text, its shapes' master
+              classification, and the directed connections between its shapes.
             justification: |
-              The reader is where a drawing becomes the model the rest of the package works on. It reads
-              the pages collection for each page's name and part, reads that part's shapes and their text,
-              resolves each connector's begin and end records into a real directed edge scoped to the page
-              that owns it, reads the master collection so a text-less shape can still be classified by its
-              type, and recovers a symbol-font glyph the drawing's own font declares. It wraps a package it
-              cannot open or a missing pages part so Core sees a structured failure.
+              The reader is where a drawing becomes the model the rest of the package works on. It
+              reads the pages collection for each page's name and part, reads that part's shapes and
+              their text, resolves each connector's begin and end records into a real directed edge
+              scoped to the page that owns it, reads the master collection so a text-less shape can
+              still be classified by its type, and recovers a symbol-font glyph the drawing's own
+              font declares. It wraps a package it cannot open or a missing pages part so Core sees a
+              structured unreadable result.
             children:
               - DocDownVisio-OpenXml-VisioPackageReader-SurfacesPageNames
               - DocDownVisio-OpenXml-VisioPackageReader-ExtractsShapeText
@@ -58,16 +58,17 @@ sections:
 
           - id: DocDownVisio-OpenXml-Images
             title: >-
-              The subsystem shall resolve each embedded image's bytes and record which pages reference it,
-              distinguishing a page reference from template furniture and excluding the package thumbnail.
+              The subsystem shall resolve each embedded image's bytes and record which pages
+              reference it, distinguishing a page reference from template furniture and excluding the
+              package thumbnail.
             justification: |
               A Visio drawing embeds a raster or metafile image through a foreign-data shape whose
-              relationship targets a media part, so the image reader passes its bytes through unchanged,
-              deduplicates by package part, and follows every image relationship on a page or master.
-              Recording every referring page, flagging an image reached only through a master as template
-              furniture rather than fabricating a page, and excluding the package thumbnail — which is
-              document furniture, not embedded content — is what lets a reader tell "on page 2" from
-              "master furniture" from "true orphan".
+              relationship targets a media part, so the image reader passes its bytes through
+              unchanged, deduplicates by package part, and follows every image relationship on a page
+              or master. Recording every referring page, flagging an image reached only through a
+              master as template furniture rather than fabricating a page, and excluding the package
+              thumbnail — which is document furniture, not embedded content — is what lets a reader
+              tell "on page 2" from "master furniture" from "true orphan".
             children:
               - DocDownVisio-OpenXml-VisioImageReader-YieldsEmbeddedImages
               - DocDownVisio-OpenXml-VisioImageReader-RecordsPageAssociation

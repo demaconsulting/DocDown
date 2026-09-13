@@ -115,10 +115,10 @@ public class ContextTests
     }
 
     /// <summary>
-    ///     Proves the extraction flags project onto <see cref="ExtractionOptions"/>.
+    ///     Proves the supported extraction flags project onto <see cref="ExtractionOptions"/>.
     /// </summary>
     [Fact]
-    public void Context_BuildExtractionOptions_Flags_MapOntoOptions()
+    public void Context_BuildExtractionOptions_SupportedFlags_MapOntoOptions()
     {
         using var context = Context.Create(
         [
@@ -131,9 +131,7 @@ public class ContextTests
             "--max-image-dim", "1024",
             "--max-image-bytes", "2048",
             "--split", "part",
-            "--backend", "pdf",
-            "--overwrite", "unique",
-            "--require-pages"
+            "--overwrite", "overwrite"
         ]);
 
         var options = context.BuildExtractionOptions();
@@ -145,21 +143,16 @@ public class ContextTests
         Assert.Equal(1024, options.MaxImageDimensionPx);
         Assert.Equal(2048L, options.MaxImageBytes);
         Assert.Equal(ContentSplitMode.PerPart, options.ContentSplit);
-        Assert.Equal("pdf", options.PreferredExtractorId);
-        Assert.Equal(ScratchFolderMode.CreateUnique, options.ScratchFolder);
-        Assert.NotNull(options.RequireCapabilities);
-        Assert.True(options.RequireCapabilities.Value.HasFlag(ExtractorCapabilities.RenderedPages));
+        Assert.Equal(ScratchFolderMode.Overwrite, options.ScratchFolder);
     }
 
     /// <summary>
-    ///     Proves <c>--no-images</c> and the scratch-policy and split tokens map to their enum values.
+    ///     Proves <c>--no-images</c> and the supported scratch-policy tokens map to their enum values.
     /// </summary>
     [Theory]
-    [InlineData("require-empty", ScratchFolderMode.RequireEmpty)]
     [InlineData("clean", ScratchFolderMode.CleanIfDocDownFolder)]
     [InlineData("overwrite", ScratchFolderMode.Overwrite)]
-    [InlineData("unique", ScratchFolderMode.CreateUnique)]
-    public void Context_BuildExtractionOptions_ScratchPolicyToken_MapsToMode(string token, ScratchFolderMode expected)
+    public void Context_BuildExtractionOptions_SupportedScratchPolicyToken_MapsToMode(string token, ScratchFolderMode expected)
     {
         using var context = Context.Create(["--no-images", "--overwrite", token]);
 
@@ -167,5 +160,17 @@ public class ContextTests
 
         Assert.False(options.IncludeEmbeddedImages);
         Assert.Equal(expected, options.ScratchFolder);
+    }
+
+    /// <summary>
+    ///     Proves removed scratch-policy tokens are rejected during argument parsing.
+    /// </summary>
+    /// <param name="token">The removed token that should no longer parse.</param>
+    [Theory]
+    [InlineData("require-empty")]
+    [InlineData("unique")]
+    public void Context_Create_RemovedScratchPolicyToken_ThrowsArgumentException(string token)
+    {
+        Assert.Throws<ArgumentException>(() => Context.Create(["--overwrite", token]));
     }
 }

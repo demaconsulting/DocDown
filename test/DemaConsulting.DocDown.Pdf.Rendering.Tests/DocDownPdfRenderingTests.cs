@@ -14,16 +14,16 @@ namespace DemaConsulting.DocDown.Pdf.Rendering.Tests;
 /// <remarks>
 ///     <para>
 ///         The highest-value scenario produces a genuine rendered page and asserts it is a valid PNG
-///         with plausible dimensions, not merely that a file appeared — a file that exists but is not
-///         a decodable image would satisfy a weaker check while failing the actual promise. Every
-///         scenario ends by confirming the contract verifier finds no violations, so a reported gap
-///         always matches what is on disk.
+///         with plausible dimensions, not merely that a file appeared. Every scenario also confirms
+///         the invariant DocDown layout exists, so the rendering package's contribution is verified
+///         against the same contract a host consumes.
 ///     </para>
 ///     <para>
-///         Selection is exercised both ways: with page rendering requested the rendering backend must
-///         win, and with it not requested the lighter managed backend must win on the identifier
-///         tie-break so no native code is touched. The degradation scenario proves the engine's
-///         unchanged <c>DD0301</c> path still fires when the rendering package is not registered.
+///         Selection is exercised both ways: with page rendering requested the rendering backend
+///         must win, and with it not requested the lighter managed backend must win on the
+///         identifier tie-break so no native code is touched. Rendering-required scenarios skip when
+///         the native stack is unavailable in this environment, because absence of the native stack
+///         is an environmental fact, not a product failure.
 ///     </para>
 /// </remarks>
 public class DocDownPdfRenderingTests
@@ -41,6 +41,7 @@ public class DocDownPdfRenderingTests
     public async Task DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages()
     {
         // Arrange: an engine with both PDF backends and a generated single-page document
+        SkipWhenRendererUnavailable();
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
@@ -50,22 +51,25 @@ public class DocDownPdfRenderingTests
         // Act: extract with page rendering requested at the default 150 DPI
         var result = await engine.ExtractAsync(input, scratch, options, Ct);
 
-        // Assert: the rendering backend was chosen and a page image exists on disk
+        // Assert: the rendering backend was chosen, the run produced output, and no note reports a shortfall
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Equal("pdf-rendering", result.SelectedExtractor?.Id);
+        Assert.Empty(result.Notes);
+
+        // Assert: a page image exists on disk and the contract layout is present
         var pagePath = Path.Combine(scratch, "pages", "page0001.png");
         Assert.True(File.Exists(pagePath), $"expected a rendered page at '{pagePath}'");
+        ContractAssert.LayoutPresent(scratch);
 
         // Assert: the file is a valid PNG, not merely present
         var bytes = await File.ReadAllBytesAsync(pagePath, Ct);
         Assert.True(Png.HasSignature(bytes), "the rendered page does not carry the PNG signature");
         var (width, height) = Png.ReadDimensions(bytes);
 
-        // Assert: the dimensions are plausible for A4 at 150 DPI (about 1240 x 1754 pixels), and
-        // portrait-oriented, rather than a degenerate 0x0 or a transposed raster
+        // Assert: the dimensions are plausible for A4 at 150 DPI and portrait-oriented
         Assert.InRange(width, 1100, 1400);
         Assert.InRange(height, 1600, 1900);
         Assert.True(height > width, "an A4 page should render taller than it is wide");
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>
@@ -75,6 +79,7 @@ public class DocDownPdfRenderingTests
     public async Task DocDownPdfRendering_Render_Deterministic_ProducesByteIdenticalPages()
     {
         // Arrange: one document rendered twice into separate scratch folders
+        SkipWhenRendererUnavailable();
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
@@ -82,13 +87,17 @@ public class DocDownPdfRenderingTests
         var second = Path.Combine(temp.Path, "second");
 
         // Act: render the same input twice
-        await engine.ExtractAsync(input, first, RenderingOptions(), Ct);
-        await engine.ExtractAsync(input, second, RenderingOptions(), Ct);
+        var firstResult = await engine.ExtractAsync(input, first, RenderingOptions(), Ct);
+        var secondResult = await engine.ExtractAsync(input, second, RenderingOptions(), Ct);
+
+        // Assert: both runs completed cleanly
+        Assert.Equal(ExtractionOutcome.Produced, firstResult.Outcome);
+        Assert.Equal(ExtractionOutcome.Produced, secondResult.Outcome);
+        ContractAssert.LayoutPresent(first);
+        ContractAssert.LayoutPresent(second);
 
         // Assert: the rendered page bytes are identical across the two runs
-        var firstPage = await File.ReadAllBytesAsync(Path.Combine(first, "pages", "page0001.png"), Ct);
-        var secondPage = await File.ReadAllBytesAsync(Path.Combine(second, "pages", "page0001.png"), Ct);
-        Assert.Equal(firstPage, secondPage);
+        ContractAssert.FileEquals(Path.Combine(first, "pages", "page0001.png"), Path.Combine(second, "pages", "page0001.png"));
     }
 
     /// <summary>
@@ -98,6 +107,7 @@ public class DocDownPdfRenderingTests
     public async Task DocDownPdfRendering_Select_PagesRequested_RenderingBackendWins()
     {
         // Arrange
+        SkipWhenRendererUnavailable();
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
@@ -106,11 +116,12 @@ public class DocDownPdfRenderingTests
         // Act: request rendered pages
         var result = await engine.ExtractAsync(input, scratch, RenderingOptions(), Ct);
 
-        // Assert: the rendering backend won, pages were produced, and no DD0301 degradation fired
+        // Assert: the rendering backend won, pages were produced, and nothing was left incomplete
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Equal("pdf-rendering", result.SelectedExtractor?.Id);
         Assert.NotEmpty(result.PagePaths);
-        Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == "DD0301");
-        ContractAssert.NoViolations(scratch);
+        Assert.Empty(result.Notes);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
@@ -129,33 +140,11 @@ public class DocDownPdfRenderingTests
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
         // Assert: the managed backend won on the identifier tie-break and produced no pages
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Equal("pdf", result.SelectedExtractor?.Id);
         Assert.Empty(result.PagePaths);
-        ContractAssert.NoViolations(scratch);
-    }
-
-    /// <summary>
-    ///     Proves that when the rendering package is not registered, the engine's unchanged
-    ///     <c>DD0301</c> degradation path fires for a page-rendering request.
-    /// </summary>
-    [Fact]
-    public async Task DocDownPdfRendering_Extract_RenderingNotRegistered_DegradesWithDD0301()
-    {
-        // Arrange: an engine with only the managed PDF backend registered
-        using var temp = new TempScratch();
-        var engine = new DocDownBuilder().AddPdf().Build();
-        var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
-        var scratch = Path.Combine(temp.Path, "out");
-
-        // Act: request rendered pages with no rendering backend available
-        var result = await engine.ExtractAsync(input, scratch, RenderingOptions(), Ct);
-
-        // Assert: the engine degrades through its own DD0301/DD0702 path and renders no pages
-        Assert.Equal(ExtractionOutcome.Degraded, result.Outcome);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "DD0301");
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "DD0702");
-        Assert.Empty(result.PagePaths);
-        ContractAssert.NoViolations(scratch);
+        Assert.Empty(result.Notes);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
@@ -165,6 +154,7 @@ public class DocDownPdfRenderingTests
     public async Task DocDownPdfRendering_Render_PageRange_RestrictsRenderedPages()
     {
         // Arrange: a five-page document with a page range limiting rendering to pages 2 through 3
+        SkipWhenRendererUnavailable();
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "multi.pdf", RenderingFixtures.MultiPage(5));
@@ -176,11 +166,12 @@ public class DocDownPdfRenderingTests
         var result = await engine.ExtractAsync(input, scratch, options, Ct);
 
         // Assert: exactly the two pages in range were rendered, named by their document page number
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Equal("pdf-rendering", result.SelectedExtractor?.Id);
         var pageFiles = Directory.GetFiles(Path.Combine(scratch, "pages"), "*.png")
             .Select(Path.GetFileName).OrderBy(name => name, StringComparer.Ordinal).ToList();
         Assert.Equal(["page0002.png", "page0003.png"], pageFiles);
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
@@ -190,6 +181,7 @@ public class DocDownPdfRenderingTests
     public async Task DocDownPdfRendering_Render_HigherDpi_ProducesLargerPage()
     {
         // Arrange: the same document rendered at two different DPIs
+        SkipWhenRendererUnavailable();
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
@@ -202,8 +194,14 @@ public class DocDownPdfRenderingTests
         highOptions.PageRenderDpi = 200;
 
         // Act
-        await engine.ExtractAsync(input, lowScratch, lowOptions, Ct);
-        await engine.ExtractAsync(input, highScratch, highOptions, Ct);
+        var lowResult = await engine.ExtractAsync(input, lowScratch, lowOptions, Ct);
+        var highResult = await engine.ExtractAsync(input, highScratch, highOptions, Ct);
+
+        // Assert: both runs completed cleanly
+        Assert.Equal(ExtractionOutcome.Produced, lowResult.Outcome);
+        Assert.Equal(ExtractionOutcome.Produced, highResult.Outcome);
+        ContractAssert.LayoutPresent(lowScratch);
+        ContractAssert.LayoutPresent(highScratch);
 
         // Assert: the higher-DPI render is strictly larger in both dimensions
         var (lowWidth, lowHeight) = Png.ReadDimensions(
@@ -234,6 +232,22 @@ public class DocDownPdfRenderingTests
     /// <returns>An options instance with a fixed timestamp.</returns>
     /// <remarks>Used by the base-backend selection scenario, which must not request rendered pages.</remarks>
     private static ExtractionOptions FixedOptions() => new() { TimestampUtc = FixedTimestamp };
+
+    /// <summary>
+    ///     Skips the calling test when the native PDF renderer is unavailable in this environment.
+    /// </summary>
+    /// <remarks>
+    ///     Rendering scenarios verify genuine raster output, so they are meaningful only where the
+    ///     PDFium-backed stack can load. An unavailable renderer is an environment fact, not a
+    ///     product failure.
+    /// </remarks>
+    private static void SkipWhenRendererUnavailable()
+    {
+        var probe = PageRenderer.ProbeAvailability();
+        Assert.SkipWhen(
+            !probe.IsAvailable,
+            $"PDF page rendering is unavailable in this environment: {probe.Reason}.");
+    }
 
     /// <summary>
     ///     Materializes a generated fixture as a file on disk.

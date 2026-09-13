@@ -11,7 +11,8 @@ namespace DemaConsulting.DocDown.Excel.Tests.OpenXml;
 public class ExcelOpenXmlExtractorTests
 {
     /// <summary>
-    ///     Proves the descriptor: identifier, supported format, capabilities, and priority.
+    ///     Proves the descriptor-facing properties: identifier, display name, supported format,
+    ///     priority, and the non-paginated page-rendering flag.
     /// </summary>
     [Fact]
     public void ExcelOpenXmlExtractor_Descriptor_MatchesContract()
@@ -19,19 +20,15 @@ public class ExcelOpenXmlExtractorTests
         var extractor = new ExcelOpenXmlExtractor();
 
         Assert.Equal("excel-openxml", extractor.Id);
+        Assert.Equal("Excel (Open XML SDK)", extractor.DisplayName);
         Assert.Contains(CoreFormat.Xlsx, extractor.SupportedFormats);
         Assert.Equal(10, extractor.Priority);
-        Assert.True(extractor.Capabilities.HasFlag(ExtractorCapabilities.Text));
-        Assert.True(extractor.Capabilities.HasFlag(ExtractorCapabilities.EmbeddedImages));
-        Assert.True(extractor.Capabilities.HasFlag(ExtractorCapabilities.DocumentStructure));
-        Assert.True(extractor.Capabilities.HasFlag(ExtractorCapabilities.DocumentMetadata));
-        Assert.False(extractor.Capabilities.HasFlag(ExtractorCapabilities.RenderedPages));
         Assert.False(extractor.PageRenderingApplicable);
     }
 
     /// <summary>
-    ///     Proves the extractor is unconditionally available with its full declared capabilities and
-    ///     never throws when probed.
+    ///     Proves the extractor is unconditionally available, reports no unavailable reason, and
+    ///     never claims rendered pages for a non-paginated workbook.
     /// </summary>
     [Fact]
     public void ExcelOpenXmlExtractor_ProbeAvailability_AlwaysAvailable()
@@ -43,7 +40,8 @@ public class ExcelOpenXmlExtractorTests
 
         var availability = extractor.ProbeAvailability();
         Assert.True(availability.IsAvailable);
-        Assert.Equal(extractor.Capabilities, availability.EffectiveCapabilities);
+        Assert.Null(availability.UnavailableReason);
+        Assert.False(availability.ProvidesRenderedPages);
     }
 
     /// <summary>

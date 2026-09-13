@@ -27,10 +27,10 @@ combination.
 Two families of tests in the same project are deliberately **not** claimed as evidence that PdfPig
 was exercised, because they execute none of its code. The `PdfDocDownBuilderExtensions_*` tests are
 unrelated to PdfPig: they validate the builder registration seam only, constructing a builder,
-calling `AddPdf()`, and inspecting the resulting descriptor. Even the one that calls
-`GetBackendStatus()` reaches no parser code, because `PdfDocumentExtractor.ProbeAvailability()`
-returns a constant availability value; and one of them asserts PdfPig's *absence* from the public
-registration surface. `DocDownPdf_Package_BuildOutput_ContainsNoNativeAssets` is likewise an
+calling `AddPdf()`, and inspecting the resulting descriptor. None of them reaches any parser code:
+the registration surface exposes only the descriptor, and `PdfDocumentExtractor.ProbeAvailability()`
+returns a constant availability value without opening a document. One of them asserts PdfPig's
+*absence* from the public registration surface. `DocDownPdf_Package_BuildOutput_ContainsNoNativeAssets` is likewise an
 assertion about how PdfPig is *packaged* — it inspects the built output for native assets — rather
 than an exercise of the parser. Both families are valuable, and the packaging assertion is cited
 below for exactly what it proves; neither is transitive evidence that the parser behaves as

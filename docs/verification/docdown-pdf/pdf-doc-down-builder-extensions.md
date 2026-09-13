@@ -9,17 +9,12 @@ registration seam that adds the PDF backend to a builder.
 `PdfDocDownBuilderExtensionsTests.cs` in `DemaConsulting.DocDown.Pdf.Tests`, with method names
 beginning with `PdfDocDownBuilderExtensions_`.
 
-Nothing is mocked: a real builder is used and a real engine is built from it, because the observable
-behavior under test is exactly what a host observes. The registration's effect is asserted through
-the engine's own descriptor list rather than through any internal state, so the test verifies the
-promise made to a host rather than an implementation detail.
+Nothing is mocked. A real builder is used and real engines are built from it because the observable
+behavior under test is exactly what a host consumes: the backend descriptor list and the chaining
+surface.
 
-The reflection-free property is verified **structurally** rather than by observing an absence. A test
-that merely ran the call and saw it succeed would pass equally well against a scanning
-implementation. Instead the extension method's own signature is inspected: it takes only the builder
-and returns only the builder, so there is no type name, assembly name, or path for a scanning
-implementation to resolve, and the absence of any parser type on the seam is asserted at the same
-time.
+The reflection-free property is verified structurally rather than by observing an absence. The tests
+inspect the extension method signature itself and confirm it takes and returns only the builder.
 
 ### Test Environment
 
@@ -31,13 +26,13 @@ time.
 
 ### Acceptance Criteria
 
-Per IEC 62304 §5.5.2, a `PdfDocDownBuilderExtensions` unit test run passes when the call registers
-exactly one extractor, identified as the PDF backend and declaring the PDF format and the supported
-capabilities; when it returns the same builder instance it was called on; when two engines built from
-one registration each receive a working backend; when the registration surface takes and returns only
-the builder and mentions no parser type; and when a missing builder is rejected at the call. More
-than one registered backend, a different builder instance returned, or a deferred null check is a
-failure.
+Per IEC 62304 Section 5.5.2, a `PdfDocDownBuilderExtensions` unit test run passes when `AddPdf`
+registers exactly one PDF extractor factory; when the resulting engine descriptor reports the stable
+PDF identity, supported format, priority, and page-rendering applicability surface; when the same
+builder instance is returned for chaining; when separate engines each receive their own extractor
+instance; when the registration seam mentions no parser type; and when a missing builder is rejected
+at the call. More than one registered backend, a different builder returned, or any reflection-based
+loading surface is a failure.
 
 ### Test Scenarios
 
@@ -45,40 +40,34 @@ failure.
 
 **Test**: `PdfDocDownBuilderExtensions_AddPdf_EmptyBuilder_RegistersTheSinglePdfExtractor`
 
-Proves an engine built from a builder with one registration carries exactly one backend, identified
-as the PDF one, declaring the PDF format and the three supported capabilities selection ranks on.
-Evidence for `DocDownPdf-PdfDocDownBuilderExtensions-RegistersExtractor`.
+Proves a builder with one registration produces one PDF extractor descriptor with the documented
+identity and format surface. Evidence for
+`DocDownPdf-PdfDocDownBuilderExtensions-RegistersSupportedPdfExtractor`.
 
 #### The builder is returned for chaining
 
 **Test**: `PdfDocDownBuilderExtensions_AddPdf_AnyBuilder_ReturnsTheSameBuilderForChaining`
 
-Proves the same instance comes back, so a host registering several backends can express that as one
-readable configuration sequence. Evidence for
+Proves the same builder instance is returned. Evidence for
 `DocDownPdf-PdfDocDownBuilderExtensions-ReturnsBuilderForChaining`.
 
 #### Each engine receives its own backend
 
 **Test**: `PdfDocDownBuilderExtensions_AddPdf_TwoEngines_EachReceivesItsOwnExtractor`
 
-Proves registration is deferred to build time: two engines built from one registration each carry a
-PDF backend that probes as available. This is what lets a host configure a builder it never builds
-without paying for the backend. Evidence for
+Proves the registration stores a factory rather than a singleton instance. Evidence for
 `DocDownPdf-PdfDocDownBuilderExtensions-ReflectionFree`.
 
 #### The registration surface uses no reflection
 
 **Test**: `PdfDocDownBuilderExtensions_AddPdf_RegistrationSurface_UsesNoReflection`
 
-Proves the property structurally. The extension method takes only the builder and returns only the
-builder, so no type, assembly, or path is available for it to resolve; and no parser type appears on
-the seam, so a host can reference it without the parser entering its own compilation. Evidence for
-`DocDownPdf-PdfDocDownBuilderExtensions-ReflectionFree`.
+Proves the extension method takes and returns only the builder and exposes no PdfPig type. Evidence
+for `DocDownPdf-PdfDocDownBuilderExtensions-ReflectionFree`.
 
 #### A missing builder is rejected at the call
 
 **Test**: `PdfDocDownBuilderExtensions_AddPdf_NullBuilder_ThrowsArgumentNullException`
 
-Proves the failure happens where the mistake was made, naming the offending call site rather than
-surfacing later against configuration the host wrote correctly. Evidence for
+Proves the builder argument is mandatory. Evidence for
 `DocDownPdf-PdfDocDownBuilderExtensions-RejectsNullBuilder`.

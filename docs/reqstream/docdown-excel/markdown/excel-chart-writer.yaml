@@ -27,31 +27,30 @@ sections:
 
               - id: DocDownExcel-Markdown-ExcelChartWriter-StatesUnreadableAndUncached
                 title: >-
-                  ExcelChartWriter shall state, in the chart part itself, a chart whose part could not be
-                  read and one that cached no data points.
+                  ExcelChartWriter shall state, in the chart part itself, a chart whose part could not
+                  be read and one that cached no data points.
                 justification: |
-                  A chart part that could not be read still gets a part that states why, and a chart that
-                  caches no values says so, so neither is ever a silent absence; the emitter reports the
-                  matching counted gap, but the reader of the part sees the reason first-hand.
+                  A chart part that could not be read still gets a part that states why, and a chart
+                  that caches no values says so, so neither is ever a silent absence; the reader of the
+                  part sees the reason first-hand and no separate interpretation step is required.
                 tests:
                   - ExcelChartWriter_Render_UnreadableChart_StatesTheReason
 
               - id: DocDownExcel-Markdown-ExcelChartWriter-BoundsPlottedPoints
                 title: >-
-                  ExcelChartWriter shall bound the rendered data table at a fixed number of plotted points
-                  and state how many it dropped.
+                  ExcelChartWriter shall bound the rendered data table at a fixed number of plotted
+                  points and state how many it omitted.
                 justification: |
-                  A logged sweep can cache tens of thousands of points, which would crowd out the rest of
-                  the workbook, so the table is capped; the truncation is never silent — the table says
-                  what it dropped and the emitter reports a counted gap — and a chart exactly at the bound
-                  is not truncated.
+                  A logged sweep can cache tens of thousands of points, which would crowd out the rest
+                  of the workbook, so the table is capped; the omission is never silent — the part says
+                  what it omitted — and a chart exactly at the bound is not truncated.
                 tests:
                   - ExcelChartWriter_Render_BeyondBound_TruncatesAndStatesIt
 
               - id: DocDownExcel-Markdown-ExcelChartWriter-DescribesChartUnderSheet
                 title: >-
-                  ExcelChartWriter shall produce a one-line description of a chart naming it and its part
-                  for use under the owning worksheet.
+                  ExcelChartWriter shall produce a one-line description of a chart naming it and its
+                  part for use under the owning worksheet.
                 justification: |
                   A reader who opens only a worksheet part must still learn the sheet shows a chart and
                   where its data lives, so the description names the chart and points at its own part

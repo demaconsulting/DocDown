@@ -61,6 +61,8 @@ public class ProgramTests
         // Assert: the emitted summary line — read out of the log, never recomputed — is fully
         // qualified, names summary.txt, exists on disk, and lies under the scratch folder targeted
         Assert.Equal(0, exit);
+        Assert.Contains("Extraction produced the output layout.", log, StringComparison.Ordinal);
+        Assert.DoesNotContain("Extraction succeeded", log, StringComparison.Ordinal);
         var summaryLine = FindSummaryLine(log);
         Assert.True(Path.IsPathFullyQualified(summaryLine));
         Assert.EndsWith("summary.txt", summaryLine, StringComparison.Ordinal);
@@ -79,7 +81,9 @@ public class ProgramTests
         var (exit, log) = CliHarness.Run("--input", input, "--scratch", scratch);
 
         Assert.Equal(1, exit);
-        Assert.Contains("could not be read", log, StringComparison.Ordinal);
+        Assert.Contains("The source document 'missing.pdf' could not be read.", log, StringComparison.Ordinal);
+        Assert.Contains("Detected format:", log, StringComparison.Ordinal);
+        Assert.DoesNotContain("Extraction failed.", log, StringComparison.Ordinal);
     }
 
     /// <summary>Proves a missing required <c>--input</c> is an expected argument error.</summary>
@@ -122,11 +126,15 @@ public class ProgramTests
     public void Program_Run_ListBackends_ListsPdf()
     {
         var (exit, log) = CliHarness.Run("--list-backends");
+        var lines = log.Split('\n').Select(static line => line.TrimEnd('\r')).ToList();
+        var pdfIndex = lines.FindIndex(static line => line == "  pdf - PDF (PdfPig)");
 
         Assert.Equal(0, exit);
         Assert.Contains("Registered backends:", log, StringComparison.Ordinal);
-        Assert.Contains("pdf", log, StringComparison.Ordinal);
-        Assert.Contains("pdf-rendering", log, StringComparison.Ordinal);
+        Assert.DoesNotContain("capabilities:", log, StringComparison.Ordinal);
+        Assert.True(pdfIndex >= 0);
+        Assert.Equal("    formats: pdf", lines[pdfIndex + 1]);
+        Assert.Equal("    status: available", lines[pdfIndex + 2]);
     }
 
     /// <summary>Runs <c>Program.Main</c> while capturing standard error.</summary>

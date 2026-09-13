@@ -33,8 +33,7 @@ internal sealed class CapturingContext : IExtractionContext
 
     /// <inheritdoc />
     public ExtractorDescriptor SelectedExtractor { get; } = new(
-        "visio-com", "Visio (COM automation)", [CoreFormat.Vsdx, CoreFormat.Vsdm],
-        ExtractorCapabilities.Text | ExtractorCapabilities.RenderedPages, 0);
+        "visio-com", "Visio (COM automation)", [CoreFormat.Vsdx, CoreFormat.Vsdm], 0);
 
     /// <inheritdoc />
     public ExtractionEnvironment Environment { get; } = new("TestOS 1.0", "X64", "test-runtime 8.0", "test-rid", []);

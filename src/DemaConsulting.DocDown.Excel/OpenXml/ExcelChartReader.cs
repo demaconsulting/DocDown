@@ -26,7 +26,8 @@ namespace DocDown.Excel.OpenXml;
 ///         way — <c>c:ser</c> with <c>c:cat</c>/<c>c:val</c> caches — and a name-driven walk therefore
 ///         covers plot types this product has never seen, where a typed walk would silently cover only
 ///         the types it was written against. A chart part that cannot be parsed is returned as a
-///         failure reason rather than thrown, so the caller can report it as a gap and keep going.
+///         failure reason rather than thrown, so the caller can keep the chart in the output and
+///         record the failed read without aborting the workbook.
 ///     </para>
 ///     <para>Read-only over the package. Stateless and thread-safe.</para>
 /// </remarks>
@@ -101,7 +102,7 @@ internal static class ExcelChartReader
     /// <param name="stream">A readable stream over the chart part XML. Must not be null.</param>
     /// <returns>The chart's title, plot types, axis titles, categories, and series.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="stream"/> is <see langword="null"/>.</exception>
-    /// <exception cref="XmlException">Thrown when the part is not well-formed XML; the caller converts this into a reported gap.</exception>
+    /// <exception cref="XmlException">Thrown when the part is not well-formed XML; the caller converts this into the chart's recorded read-failure reason.</exception>
     /// <remarks>
     ///     Exposed separately from <see cref="Collect"/> so the parsing rules can be exercised against
     ///     hand-written chart XML with no package around it. Read-only over the stream.
@@ -465,7 +466,8 @@ internal static class ExcelChartReader
     /// <remarks>
     ///     A malformed or unsupported chart must not abort the extraction of an otherwise readable
     ///     workbook, and must not disappear either; converting the failure into a reason lets the
-    ///     emitter report it as a counted gap. Read-only I/O over the part.
+    ///     emitter keep the chart part and record a plain-language note about the failed read. Read-only
+    ///     I/O over the part.
     /// </remarks>
     private static ExcelChartModel BuildChart(OpenXmlPart part, string sheetName)
     {

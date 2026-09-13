@@ -10,8 +10,8 @@ namespace DemaConsulting.DocDown.Excel.Tests;
 ///     through <see cref="DocDownEngine"/> against workbooks generated at test time.
 /// </summary>
 /// <remarks>
-///     Every scenario runs the real engine over a real workbook and confirms the contract verifier
-///     finds no violations, so a reported gap always matches what is on disk.
+///     Every scenario runs the real engine over a real workbook and confirms the invariant output
+///     layout is written, so the structured result and the files on disk describe the same run.
 /// </remarks>
 public class DocDownExcelTests
 {
@@ -31,19 +31,18 @@ public class DocDownExcelTests
         using var temp = new TempScratch();
         var (scratch, result) = await ExtractAsync(temp, "book.xlsx", XlsxFixtures.ImageWorkbook(), FixedOptions());
 
-        Assert.Equal(ExtractionOutcome.Succeeded, result.Outcome);
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Empty(result.Notes);
         var images = Directory.GetFiles(Path.Combine(scratch, "images"));
         Assert.Single(images);
         Assert.EndsWith(".png", images[0], StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>
     ///     Proves a workbook whose only image is an EMF vector metafile still reports <see
-    ///     cref="ExtractionOutcome.Succeeded"/>: the bytes are written unchanged and counted, the
-    ///     <c>XLSX0003</c> caveat is stated as an informational diagnostic, and no images gap is
-    ///     opened — a well-formed vector-bearing workbook must not degrade.
+    ///     cref="ExtractionOutcome.Produced"/>: the bytes are written unchanged and no vector-only
+    ///     caveat is recorded.
     /// </summary>
     [Fact]
     public async Task DocDownExcel_Extract_VectorImageWorkbook_Succeeds()
@@ -51,15 +50,12 @@ public class DocDownExcelTests
         using var temp = new TempScratch();
         var (scratch, result) = await ExtractAsync(temp, "book.xlsx", XlsxFixtures.VectorImageWorkbook(), FixedOptions());
 
-        Assert.Equal(ExtractionOutcome.Succeeded, result.Outcome);
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Empty(result.Notes);
         var images = Directory.GetFiles(Path.Combine(scratch, "images"));
         Assert.Single(images);
         Assert.EndsWith(".emf", images[0], StringComparison.Ordinal);
-        Assert.Contains(result.Diagnostics, diagnostic =>
-            diagnostic.Code == "XLSX0003" && diagnostic.Severity == DiagnosticSeverity.Info);
-        Assert.DoesNotContain(result.Gaps, gap => gap.Kind == GapKind.Images);
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>
@@ -72,12 +68,13 @@ public class DocDownExcelTests
         var (_, result) = await ExtractAsync(temp, "book.xlsx", XlsxFixtures.TwoSheetWorkbook(), FixedOptions());
 
         Assert.Equal("excel-openxml", result.SelectedExtractor?.Id);
+        Assert.False(result.SelectedExtractor?.PageRenderingApplicable ?? true);
     }
 
     /// <summary>
     ///     Proves each worksheet becomes a part under <c>parts/</c> and the full contract layout is
-    ///     present with no violations. A well-formed workbook that embeds no images reports no images
-    ///     gap and succeeds cleanly — the backend no longer claims a workbook cannot carry pictures.
+    ///     present. A well-formed workbook that embeds no images still produces output cleanly and
+    ///     records no extraction note about absent pictures.
     /// </summary>
     [Fact]
     public async Task DocDownExcel_Extract_TwoSheetWorkbook_WritesPartPerSheet()
@@ -85,13 +82,12 @@ public class DocDownExcelTests
         using var temp = new TempScratch();
         var (scratch, result) = await ExtractAsync(temp, "book.xlsx", XlsxFixtures.TwoSheetWorkbook(), FixedOptions());
 
-        Assert.Equal(ExtractionOutcome.Succeeded, result.Outcome);
-        Assert.DoesNotContain(result.Gaps, gap => gap.Kind == GapKind.Images);
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Empty(result.Notes);
 
         var parts = Directory.GetFiles(Path.Combine(scratch, "parts"), "*.md");
         Assert.Equal(2, parts.Length);
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>
@@ -111,9 +107,8 @@ public class DocDownExcelTests
     }
 
     /// <summary>
-    ///     Proves requesting rendered pages for a non-paginated workbook is honored with silence: the
-    ///     run succeeds, no pages gap is emitted, and the engine records the non-applicability as an
-    ///     informational <c>DD0303</c> diagnostic rather than a false shortfall.
+    ///     Proves requesting rendered pages for a non-paginated workbook is honored with silence:
+    ///     the run still produces output, no page images are written, and no note is recorded.
     /// </summary>
     [Fact]
     public async Task DocDownExcel_Extract_RenderPagesRequested_StaysSilentAndSucceeds()
@@ -123,32 +118,33 @@ public class DocDownExcelTests
         options.RenderPages = true;
         var (scratch, result) = await ExtractAsync(temp, "book.xlsx", XlsxFixtures.TwoSheetWorkbook(), options);
 
-        Assert.Equal(ExtractionOutcome.Succeeded, result.Outcome);
-        Assert.DoesNotContain(result.Gaps, gap => gap.Kind == GapKind.Pages);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "DD0303");
-        ContractAssert.NoViolations(scratch);
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Empty(result.PagePaths);
+        Assert.Empty(result.Notes);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
-    ///     Proves a legacy binary workbook fails with a structured refusal whose remedy states plainly
-    ///     that the format is unsupported and never instructs an installation.
+    ///     Proves a legacy binary workbook is unreadable with a structured explanation that states
+    ///     plainly that the format is unsupported and never instructs an installation.
     /// </summary>
     [Fact]
-    public async Task DocDownExcel_Extract_LegacyXls_FailsWithUnsupportedFormatRemedy()
+    public async Task DocDownExcel_Extract_LegacyXls_IsUnreadableWithUnsupportedFormatExplanation()
     {
         using var temp = new TempScratch();
         var (scratch, result) = await ExtractAsync(temp, "report.xls", XlsxFixtures.LegacyXlsBytes(), FixedOptions());
 
-        Assert.Equal(ExtractionOutcome.Failed, result.Outcome);
+        Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
         Assert.NotNull(result.Failure);
-        Assert.Equal(ExtractionFailureKind.NoExtractorForFormat, result.Failure.Kind);
+        Assert.Null(result.SelectedExtractor);
+        Assert.Equal("No registered extractor supports the detected format.", result.Failure.Summary);
         Assert.Contains(
             "DocDown does not support the legacy binary Office formats",
-            result.Failure.Remedy!,
+            result.Failure.Explanation,
             StringComparison.Ordinal);
-        Assert.DoesNotContain("install", result.Failure.Remedy!, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Detected format: xls", result.Failure.Explanation, StringComparison.Ordinal);
+        Assert.DoesNotContain("install", result.Failure.Explanation, StringComparison.OrdinalIgnoreCase);
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>
@@ -162,7 +158,8 @@ public class DocDownExcelTests
         using var temp = new TempScratch();
         var (scratch, result) = await ExtractAsync(temp, "book.xlsx", XlsxFixtures.ChartWorkbook(), FixedOptions());
 
-        Assert.Equal(ExtractionOutcome.Succeeded, result.Outcome);
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Empty(result.Notes);
         var chartPart = Assert.Single(
             Directory.GetFiles(Path.Combine(scratch, "parts"), "*chart*.md"));
         var markdown = await File.ReadAllTextAsync(chartPart, Ct);
@@ -171,7 +168,6 @@ public class DocDownExcelTests
         Assert.Contains("- Value axis: Pressure (kPa)", markdown, StringComparison.Ordinal);
         Assert.Contains("| 2 | 10 | 109.2 |", markdown, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>

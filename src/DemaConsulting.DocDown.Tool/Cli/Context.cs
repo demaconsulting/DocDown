@@ -49,9 +49,6 @@ internal sealed class Context : IDisposable
     /// <summary>Gets a value indicating whether the list-backends command was requested.</summary>
     public bool ListBackends { get; private init; }
 
-    /// <summary>Gets the folder to run the contract verifier against, or <see langword="null"/> when not requested.</summary>
-    public string? VerifyFolder { get; private init; }
-
     /// <summary>Gets the document to extract, or <see langword="null"/> when none was specified.</summary>
     public string? Input { get; private init; }
 
@@ -63,9 +60,6 @@ internal sealed class Context : IDisposable
 
     /// <summary>Gets a value indicating whether embedded image extraction is enabled (default true).</summary>
     public bool IncludeEmbeddedImages { get; private init; } = true;
-
-    /// <summary>Gets a value indicating whether page rendering must fail rather than degrade.</summary>
-    public bool RequirePages { get; private init; }
 
     /// <summary>Gets the requested page range, or <see langword="null"/> for the whole document.</summary>
     public PageRange? Pages { get; private init; }
@@ -84,9 +78,6 @@ internal sealed class Context : IDisposable
 
     /// <summary>Gets the requested content-split mode, or <see langword="null"/> to use the engine default.</summary>
     public ContentSplitMode? ContentSplit { get; private init; }
-
-    /// <summary>Gets the forced extractor identifier, or <see langword="null"/> for automatic selection.</summary>
-    public string? Backend { get; private init; }
 
     /// <summary>Gets the requested scratch-folder policy, or <see langword="null"/> to use the engine default.</summary>
     public ScratchFolderMode? ScratchMode { get; private init; }
@@ -124,19 +115,16 @@ internal sealed class Context : IDisposable
             ResultsFile = parser.ResultsFile,
             HeadingDepth = parser.HeadingDepth,
             ListBackends = parser.ListBackends,
-            VerifyFolder = parser.VerifyFolder,
             Input = parser.Input,
             Scratch = parser.Scratch,
             RenderPages = parser.RenderPages,
             IncludeEmbeddedImages = parser.IncludeEmbeddedImages,
-            RequirePages = parser.RequirePages,
             Pages = parser.Pages,
             Dpi = parser.Dpi,
             ImageOutput = parser.ImageOutput,
             MaxImageDimensionPx = parser.MaxImageDimensionPx,
             MaxImageBytes = parser.MaxImageBytes,
             ContentSplit = parser.ContentSplit,
-            Backend = parser.Backend,
             ScratchMode = parser.ScratchMode
         };
 
@@ -156,8 +144,6 @@ internal sealed class Context : IDisposable
     /// <remarks>
     ///     Only options the caller explicitly set are written; every other property is left at the
     ///     <see cref="ExtractionOptions"/> default. No option is invented that Core does not support.
-    ///     <c>--require-pages</c> adds the <see cref="ExtractorCapabilities.RenderedPages"/> hard
-    ///     requirement, which turns an unavailable page render from a degrade into a failure.
     /// </remarks>
     public ExtractionOptions BuildExtractionOptions()
     {
@@ -200,18 +186,6 @@ internal sealed class Context : IDisposable
         if (ScratchMode.HasValue)
         {
             options.ScratchFolder = ScratchMode.Value;
-        }
-
-        if (!string.IsNullOrEmpty(Backend))
-        {
-            options.PreferredExtractorId = Backend;
-        }
-
-        // A hard capability requirement so an unavailable renderer fails rather than degrades
-        if (RequirePages)
-        {
-            options.RequireCapabilities = (options.RequireCapabilities ?? ExtractorCapabilities.None)
-                | ExtractorCapabilities.RenderedPages;
         }
 
         return options;
@@ -311,9 +285,6 @@ internal sealed class Context : IDisposable
         /// <summary>Gets a value indicating whether the list-backends command was requested.</summary>
         public bool ListBackends { get; private set; }
 
-        /// <summary>Gets the folder to verify.</summary>
-        public string? VerifyFolder { get; private set; }
-
         /// <summary>Gets the document to extract.</summary>
         public string? Input { get; private set; }
 
@@ -325,9 +296,6 @@ internal sealed class Context : IDisposable
 
         /// <summary>Gets a value indicating whether embedded image extraction is enabled.</summary>
         public bool IncludeEmbeddedImages { get; private set; } = true;
-
-        /// <summary>Gets a value indicating whether page rendering must fail rather than degrade.</summary>
-        public bool RequirePages { get; private set; }
 
         /// <summary>Gets the requested page range.</summary>
         public PageRange? Pages { get; private set; }
@@ -347,8 +315,6 @@ internal sealed class Context : IDisposable
         /// <summary>Gets the requested content-split mode.</summary>
         public ContentSplitMode? ContentSplit { get; private set; }
 
-        /// <summary>Gets the forced extractor identifier.</summary>
-        public string? Backend { get; private set; }
 
         /// <summary>Gets the requested scratch-folder policy.</summary>
         public ScratchFolderMode? ScratchMode { get; private set; }
@@ -413,10 +379,6 @@ internal sealed class Context : IDisposable
                     ListBackends = true;
                     return index;
 
-                case "--verify":
-                    VerifyFolder = GetRequiredStringArgument(arg, args, index, "a folder argument");
-                    return index + 1;
-
                 case "--input":
                     Input = GetRequiredStringArgument(arg, args, index, "a document path argument");
                     return index + 1;
@@ -431,10 +393,6 @@ internal sealed class Context : IDisposable
 
                 case "--no-pages":
                     RenderPages = false;
-                    return index;
-
-                case "--require-pages":
-                    RequirePages = true;
                     return index;
 
                 case "--no-images":
@@ -465,12 +423,8 @@ internal sealed class Context : IDisposable
                     ContentSplit = ParseContentSplit(arg, GetRequiredStringArgument(arg, args, index, "a split mode argument (auto|single|part)"));
                     return index + 1;
 
-                case "--backend":
-                    Backend = GetRequiredStringArgument(arg, args, index, "an extractor identifier argument");
-                    return index + 1;
-
                 case "--overwrite":
-                    ScratchMode = ParseScratchMode(arg, GetRequiredStringArgument(arg, args, index, "a scratch policy argument (require-empty|clean|overwrite|unique)"));
+                    ScratchMode = ParseScratchMode(arg, GetRequiredStringArgument(arg, args, index, "a scratch policy argument (clean|overwrite)"));
                     return index + 1;
 
                 default:
@@ -549,11 +503,9 @@ internal sealed class Context : IDisposable
         /// <summary>Parses a scratch-policy token into a <see cref="ScratchFolderMode"/>.</summary>
         private static ScratchFolderMode ParseScratchMode(string arg, string value) => value switch
         {
-            "require-empty" => ScratchFolderMode.RequireEmpty,
             "clean" => ScratchFolderMode.CleanIfDocDownFolder,
             "overwrite" => ScratchFolderMode.Overwrite,
-            "unique" => ScratchFolderMode.CreateUnique,
-            _ => throw new ArgumentException($"{arg} requires 'require-empty', 'clean', 'overwrite', or 'unique'", nameof(arg))
+            _ => throw new ArgumentException($"{arg} requires 'clean' or 'overwrite'", nameof(arg))
         };
     }
 }

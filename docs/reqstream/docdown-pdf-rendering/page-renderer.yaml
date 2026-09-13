@@ -29,7 +29,7 @@ sections:
               plain extraction avoid native cost and lets an unavailable stack be reported rather than
               crash selection.
             tests:
-              - PageRenderer_ProbeAvailability_DeployedNativeStack_ReportsAvailableWithoutThrowing
+              - PageRenderer_ProbeAvailability_AnyEnvironment_ReflectsUsabilityWithoutThrowing
 
           - id: DocDownPdfRendering-PageRenderer-ReportsUnavailableWithReason
             title: PageRenderer shall carry a non-empty reason on an unavailable probe result.

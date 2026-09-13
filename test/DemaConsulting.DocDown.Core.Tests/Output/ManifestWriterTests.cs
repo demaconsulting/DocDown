@@ -6,17 +6,10 @@ using DocDown.Core;
 namespace DemaConsulting.DocDown.Core.Tests.Output;
 
 /// <summary>
-///     Unit tests for <see cref="ManifestWriter"/>, proving the schema version, the machine-readable
-///     twin, the completeness ledger, the gap-synthesis invariant, the complete flag, and the
-///     deterministic JSON encoding.
+///     Unit tests for <see cref="ManifestWriter"/>, proving the reduced schema shape, the status
+///     values, note serialization, failure serialization, requested options, and deterministic JSON
+///     encoding.
 /// </summary>
-/// <remarks>
-///     These tests drive a real <see cref="ExtractionSink"/> (a documented dependency) over a
-///     prepared <see cref="ScratchFolder"/>, reconcile with <see cref="ManifestWriter.Reconcile"/>,
-///     and serialize with <see cref="ManifestWriter.WriteAsync"/>. Each is named for the unit
-///     requirement it evidences: schema version, machine twin, completeness ledger, gap synthesis,
-///     complete flag, deterministic JSON, and image-transform projection.
-/// </remarks>
 public class ManifestWriterTests
 {
     /// <summary>A fixed timestamp used to make the serialized manifest byte-reproducible across runs.</summary>
@@ -26,315 +19,269 @@ public class ManifestWriterTests
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>
-    ///     Proves the manifest declares the pinned schema version (SchemaVersion).
+    ///     Proves the manifest declares schema version 2.0.
     /// </summary>
     [Fact]
-    public async Task ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionOnePointTwo()
+    public async Task ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionTwoPointZero()
     {
-        // Arrange + Act: a clean text run serialized to a manifest
+        // Arrange / Act: a produced text run serialized to a manifest
         using var temp = new TempScratch();
-        var (folder, _) = await RunAsync(temp, WriteText);
+        var folder = await RunProducedAsync(temp, WriteText);
         using var document = await ParseManifestAsync(folder);
 
-        // Assert: the manifest pins the 1.2 schema version the contract verifier expects
-        Assert.Equal("1.2", document.RootElement.GetProperty("schemaVersion").GetString());
+        // Assert: the reduced manifest shape pins the 2.0 schema
+        Assert.Equal("2.0", document.RootElement.GetProperty("schemaVersion").GetString());
     }
 
     /// <summary>
-    ///     Proves the manifest is the machine twin naming the tool and selected backend (MachineTwin).
+    ///     Proves a produced run records the tool, selected backend, scratch path, and produced status.
     /// </summary>
     [Fact]
-    public async Task ManifestWriter_WriteAsync_SuccessfulRun_RecordsToolAndBackend()
+    public async Task ManifestWriter_WriteAsync_ProducedRun_RecordsToolBackendScratchAndStatus()
     {
-        // Arrange + Act: a clean text run serialized and re-read through the source-generated context
+        // Arrange / Act: a clean text run serialized and round-tripped
         using var temp = new TempScratch();
-        var (folder, _) = await RunAsync(temp, WriteText);
+        var folder = await RunProducedAsync(temp, WriteText);
         var json = await File.ReadAllTextAsync(Path.Combine(folder.AbsolutePath, "manifest.json"), Ct);
         var manifest = JsonSerializer.Deserialize(json, DocDownJsonContext.Default.ExtractionManifest);
 
-        // Assert: the manifest round-trips and records the DocDown tool, the backend, and the scratch path
+        // Assert: the manifest records the tool, selected backend, scratch folder, and produced status
         Assert.NotNull(manifest);
         Assert.Equal("DocDown", manifest.Tool.Name);
         Assert.Equal("text", manifest.Extractor?.Id);
         Assert.Equal(folder.AbsolutePath, manifest.ScratchFolder);
+        Assert.Equal("produced", manifest.Status);
     }
 
     /// <summary>
-    ///     Proves the completeness ledger records every artifact slot and marks written content present (CompletenessLedger).
+    ///     Proves an unreadable run serializes the failure block and unreadable status.
     /// </summary>
     [Fact]
-    public async Task ManifestWriter_Reconcile_TextWritten_MarksLedgerSlotsAndContentPresent()
+    public async Task ManifestWriter_WriteAsync_UnreadableRun_RecordsFailureAndUnreadableStatus()
     {
-        // Arrange + Act: a clean text run reconciled
+        // Arrange: an unreadable report with no selected extractor
         using var temp = new TempScratch();
-        var (_, reconciliation) = await RunAsync(temp, WriteText);
-        var ledger = reconciliation.Ledger;
+        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var sink = new ExtractionSink(folder, Options());
+        var failure = new ExtractionFailure(
+            "No available extractor can process the detected format in this environment.",
+            "No available extractor can process the detected format in this environment.\nDetected format: text (text/plain) - detected by file extension");
+        var report = BuildReport(temp, Options(), ExtractionOutcome.Unreadable, null, failure);
 
-        // Assert: the always-present slots and the written content are present in the ledger
-        Assert.Equal(ArtifactStatus.Present, ledger.Summary.Status);
-        Assert.Equal(ArtifactStatus.Present, ledger.Manifest.Status);
-        Assert.Equal(ArtifactStatus.Present, ledger.Content.Status);
-    }
-
-    /// <summary>
-    ///     Proves the manifest serializes every ledger slot (CompletenessLedger).
-    /// </summary>
-    [Fact]
-    public async Task ManifestWriter_WriteAsync_LedgerBlock_ContainsEverySlot()
-    {
-        // Arrange + Act: a clean text run serialized
-        using var temp = new TempScratch();
-        var (folder, _) = await RunAsync(temp, WriteText);
+        // Act: serialize the unreadable manifest
+        await ManifestWriter.WriteAsync(folder, sink, report, null, Ct);
         using var document = await ParseManifestAsync(folder);
-        var artifacts = document.RootElement.GetProperty("artifacts");
 
-        // Assert: the ledger block carries all five slots
-        Assert.True(artifacts.TryGetProperty("summary", out _));
-        Assert.True(artifacts.TryGetProperty("manifest", out _));
-        Assert.True(artifacts.TryGetProperty("content", out _));
-        Assert.True(artifacts.TryGetProperty("images", out _));
-        Assert.True(artifacts.TryGetProperty("pages", out _));
+        // Assert: the failure is recorded verbatim and the extractor block is null
+        Assert.Equal("unreadable", document.RootElement.GetProperty("status").GetString());
+        Assert.Equal(JsonValueKind.Null, document.RootElement.GetProperty("extractor").ValueKind);
+        Assert.Equal(
+            "No available extractor can process the detected format in this environment.",
+            document.RootElement.GetProperty("failure").GetProperty("summary").GetString());
     }
 
     /// <summary>
-    ///     Proves an unexplained absence is given a synthesized gap and a DD0701 diagnostic (GapSynthesis).
+    ///     Proves notes are serialized as a string array in emission order.
     /// </summary>
     [Fact]
-    public async Task ManifestWriter_Reconcile_UnexplainedAbsence_SynthesizesGapWithDiagnostic()
+    public async Task ManifestWriter_WriteAsync_NotesReported_SerializesMessagesInOrder()
     {
-        // Arrange + Act: a run that claims images were found but writes and explains none
+        // Arrange: a produced run that records two notes
         using var temp = new TempScratch();
-        var (_, reconciliation) = await RunAsync(temp, WriteSilentImages);
+        var folder = await RunProducedAsync(temp, async sink =>
+        {
+            await sink.WriteContentAsync("# Document\n\nWith notes.\n", CancellationToken.None);
+            sink.ReportNote(new ExtractionNote("The first note."));
+            sink.ReportNote(new ExtractionNote("The second note."));
+        });
 
-        // Assert: reconciliation makes the silent hole structurally impossible with a gap and a DD0701 warning
-        Assert.NotEmpty(reconciliation.Gaps);
-        Assert.Contains(reconciliation.Gaps, gap => gap.Target == "images/");
-        Assert.Contains(reconciliation.Diagnostics, diagnostic => diagnostic.Code == "DD0701");
-    }
-
-    /// <summary>
-    ///     Proves the synthesized gap is serialized into the manifest with a reason (GapSynthesis).
-    /// </summary>
-    [Fact]
-    public async Task ManifestWriter_WriteAsync_SynthesizedGap_AppearsInManifestWithReason()
-    {
-        // Arrange + Act: a silent-images run serialized
-        using var temp = new TempScratch();
-        var (folder, _) = await RunAsync(temp, WriteSilentImages);
+        // Act: parse the manifest
         using var document = await ParseManifestAsync(folder);
-        var gaps = document.RootElement.GetProperty("gaps");
+        var notes = document.RootElement.GetProperty("notes").EnumerateArray().Select(note => note.GetString()).ToArray();
 
-        // Assert: the manifest carries at least one gap, each with a non-empty reason
-        Assert.True(gaps.GetArrayLength() > 0);
-        Assert.All(gaps.EnumerateArray(), gap =>
-            Assert.False(string.IsNullOrWhiteSpace(gap.GetProperty("reason").GetString())));
+        // Assert: notes are plain strings, ordered as emitted
+        Assert.Equal(["The first note.", "The second note."], notes);
     }
 
     /// <summary>
-    ///     Proves the complete flag is true with no gaps and false with gaps (CompleteFlag).
+    ///     Proves the requested-options block contains only the surviving fields.
     /// </summary>
     [Fact]
-    public async Task ManifestWriter_WriteAsync_CompleteFlag_EqualsWhetherGapsAreEmpty()
+    public async Task ManifestWriter_WriteAsync_RequestedOptions_ContainsReducedFieldSet()
     {
-        // Arrange + Act: a clean run and a gapped run, both serialized
-        using var cleanTemp = new TempScratch();
-        var (cleanFolder, _) = await RunAsync(cleanTemp, WriteText);
-        using var gappedTemp = new TempScratch();
-        var (gappedFolder, _) = await RunAsync(gappedTemp, WriteSilentImages);
-        using var cleanDocument = await ParseManifestAsync(cleanFolder);
-        using var gappedDocument = await ParseManifestAsync(gappedFolder);
+        // Arrange: a produced run with distinctive requested options
+        using var temp = new TempScratch();
+        var options = new ExtractionOptions
+        {
+            TimestampUtc = FixedTimestamp,
+            RenderPages = true,
+            Pages = new PageRange(2, 4),
+            IncludeEmbeddedImages = false,
+            ImageOutput = ImageOutputMode.ForcePng,
+            MaxImageDimensionPx = 600,
+            MaxImageBytes = 1024,
+            PageRenderDpi = 300,
+            ContentSplit = ContentSplitMode.PerPart,
+            ScratchFolder = ScratchFolderMode.Overwrite
+        };
+        var folder = await RunProducedAsync(temp, WriteText, options);
 
-        // Assert: complete tracks exactly whether the gap list is empty
-        Assert.True(cleanDocument.RootElement.GetProperty("complete").GetBoolean());
-        Assert.Equal(0, cleanDocument.RootElement.GetProperty("gaps").GetArrayLength());
-        Assert.False(gappedDocument.RootElement.GetProperty("complete").GetBoolean());
-        Assert.True(gappedDocument.RootElement.GetProperty("gaps").GetArrayLength() > 0);
+        // Act: parse the manifest
+        using var document = await ParseManifestAsync(folder);
+        var requested = document.RootElement.GetProperty("requestedOptions");
+
+        // Assert: the surviving fields are present and the removed fields stay absent
+        Assert.True(requested.GetProperty("renderPages").GetBoolean());
+        Assert.Equal("2-4", requested.GetProperty("pages").GetString());
+        Assert.False(requested.GetProperty("includeEmbeddedImages").GetBoolean());
+        Assert.Equal("forcePng", requested.GetProperty("imageOutput").GetString());
+        Assert.Equal(600, requested.GetProperty("maxImageDimensionPx").GetInt32());
+        Assert.Equal(1024, requested.GetProperty("maxImageBytes").GetInt64());
+        Assert.Equal(300, requested.GetProperty("pageRenderDpi").GetInt32());
+        Assert.Equal("perPart", requested.GetProperty("contentSplit").GetString());
+        Assert.Equal("overwrite", requested.GetProperty("scratchFolder").GetString());
+        Assert.False(requested.TryGetProperty("preferredExtractorId", out _));
+        Assert.False(requested.TryGetProperty("requireCapabilities", out _));
     }
 
     /// <summary>
-    ///     Proves the JSON is deterministic: byte-identical, no BOM, and no carriage returns (DeterministicJson).
+    ///     Proves the removed top-level manifest keys are absent from the new schema.
+    /// </summary>
+    [Fact]
+    public async Task ManifestWriter_WriteAsync_ProducedRun_OmitsRemovedTopLevelKeys()
+    {
+        // Arrange / Act: a clean produced run serialized to a manifest
+        using var temp = new TempScratch();
+        var folder = await RunProducedAsync(temp, WriteText);
+        using var document = await ParseManifestAsync(folder);
+        var root = document.RootElement;
+
+        // Assert: the reduced manifest no longer serializes the removed blocks
+        Assert.False(root.TryGetProperty("complete", out _));
+        Assert.False(root.TryGetProperty("selection", out _));
+        Assert.False(root.TryGetProperty("artifacts", out _));
+        Assert.False(root.TryGetProperty("gaps", out _));
+        Assert.False(root.TryGetProperty("diagnostics", out _));
+    }
+
+    /// <summary>
+    ///     Proves the extractor block contains the reduced field set with no capabilities.
+    /// </summary>
+    [Fact]
+    public async Task ManifestWriter_WriteAsync_SelectedExtractor_SerializesReducedExtractorShape()
+    {
+        // Arrange / Act: a produced run serialized to a manifest
+        using var temp = new TempScratch();
+        var folder = await RunProducedAsync(temp, WriteText);
+        using var document = await ParseManifestAsync(folder);
+        var extractor = document.RootElement.GetProperty("extractor");
+
+        // Assert: the extractor block records identity, package, and priority only
+        Assert.Equal("text", extractor.GetProperty("id").GetString());
+        Assert.Equal("Text (stub)", extractor.GetProperty("displayName").GetString());
+        Assert.Equal("DemaConsulting.DocDown.TestSupport", extractor.GetProperty("package").GetString());
+        Assert.Equal(0, extractor.GetProperty("priority").GetInt32());
+        Assert.False(extractor.TryGetProperty("capabilities", out _));
+    }
+
+    /// <summary>
+    ///     Proves the JSON encoding is deterministic: byte-identical, no BOM, and <c>\n</c>-only.
     /// </summary>
     [Fact]
     public async Task ManifestWriter_WriteAsync_SameContentTwice_ProducesByteIdenticalNoBomJson()
     {
-        // Arrange: a prepared folder, sink, and fixed report and reconciliation
+        // Arrange: a prepared folder, sink, and fixed report
         using var temp = new TempScratch();
+        var options = Options();
         var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
-        var sink = new ExtractionSink(folder, Options());
+        var sink = new ExtractionSink(folder, options);
         await WriteText(sink);
-        var report = BuildReport(temp, Options());
-        var content = await ContentWriter.WriteAsync(sink, Options().ContentSplit, "Document", Ct);
-        var reconciliation = ManifestWriter.Reconcile(sink, report, content);
+        var report = BuildReport(temp, options, ExtractionOutcome.Produced, SuccessExtractor(), null);
+        var content = await ContentWriter.WriteAsync(sink, options.ContentSplit, "Document", Ct);
 
         // Act: serialize twice into the same folder, snapshotting the first output
-        await ManifestWriter.WriteAsync(folder, sink, report, content, reconciliation, Ct);
+        await ManifestWriter.WriteAsync(folder, sink, report, content, Ct);
         var firstSnapshot = Path.Combine(temp.Path, "first-manifest.json");
         File.Copy(Path.Combine(folder.AbsolutePath, "manifest.json"), firstSnapshot);
-        await ManifestWriter.WriteAsync(folder, sink, report, content, reconciliation, Ct);
+        await ManifestWriter.WriteAsync(folder, sink, report, content, Ct);
         var manifestBytes = await File.ReadAllBytesAsync(Path.Combine(folder.AbsolutePath, "manifest.json"), Ct);
 
-        // Assert: the two serializations are byte-identical, carry no BOM, and use \n line endings only
+        // Assert: the bytes are stable, BOM-free, and use Unix line endings only
         ContractAssert.FileEquals(firstSnapshot, Path.Combine(folder.AbsolutePath, "manifest.json"));
         Assert.False(manifestBytes.Length >= 3 && manifestBytes[0] == 0xEF && manifestBytes[1] == 0xBB && manifestBytes[2] == 0xBF);
         Assert.DoesNotContain("\r", Encoding.UTF8.GetString(manifestBytes), StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     Proves a re-encoded image reaches the manifest as the camelCase <c>decodedToPng</c> value
-    ///     (ImageTransformProjected).
+    ///     Proves a re-encoded image reaches the manifest as the camelCase <c>decodedToPng</c> value.
     /// </summary>
     [Fact]
-    public async Task ManifestWriter_Write_DecodedToPngImage_SerializesCamelCaseTransform()
+    public async Task ManifestWriter_WriteAsync_DecodedToPngImage_SerializesCamelCaseTransform()
     {
-        // Arrange + Act: a run whose single image was decoded and re-encoded as PNG
+        // Arrange / Act: a run whose single image was decoded and re-encoded as PNG
         using var temp = new TempScratch();
-        var (folder, _) = await RunAsync(temp, WriteDecodedImage);
+        var folder = await RunProducedAsync(temp, WriteDecodedImage);
         using var document = await ParseManifestAsync(folder);
 
-        // Assert: the value the schema always documented is now actually producible end to end
+        // Assert: the image transform is serialized with the expected camelCase value
         var image = Assert.Single(document.RootElement.GetProperty("images").EnumerateArray().ToList());
         Assert.Equal("decodedToPng", image.GetProperty("transform").GetString());
     }
 
     /// <summary>
-    ///     Proves the multi-referrer page associations reach the manifest: <c>sourcePages</c> lists
-    ///     every referrer, <c>sourcePage</c> is its deterministic first, and <c>referencedByTemplate</c>
-    ///     records template provenance — the honest slide/template/orphan distinction.
+    ///     Proves image referrer sets, template provenance, and descriptions reach the manifest.
     /// </summary>
     [Fact]
-    public async Task ManifestWriter_Write_ImageWithReferrers_SerializesSourcePagesAndTemplateFlag()
+    public async Task ManifestWriter_WriteAsync_ImageMetadata_SerializesReferrersTemplateAndDescription()
     {
+        // Arrange / Act: a run whose single image carries every optional manifest-facing field
         using var temp = new TempScratch();
-        var (folder, _) = await RunAsync(temp, async sink =>
-        {
-            await sink.WriteContentAsync("# Document\n\nWith a reused image.\n", CancellationToken.None);
-            using var bytes = new MemoryStream([4, 3, 2, 1]);
-            await sink.AddImageAsync(bytes, new ImageHint("figure", "image/png",
-                SourcePages: [3, 7], ReferencedByTemplate: true), CancellationToken.None);
-        });
-        using var document = await ParseManifestAsync(folder);
-
-        var image = Assert.Single(document.RootElement.GetProperty("images").EnumerateArray().ToList());
-        Assert.Equal([3, 7], image.GetProperty("sourcePages").EnumerateArray().Select(e => e.GetInt32()).ToArray());
-        Assert.Equal(3, image.GetProperty("sourcePage").GetInt32());
-        Assert.True(image.GetProperty("referencedByTemplate").GetBoolean());
-    }
-
-    /// <summary>
-    ///     Proves an image description and its provenance reach the manifest as image metadata.
-    /// </summary>
-    [Fact]
-    public async Task ManifestWriter_Write_ImageWithDescription_SerializesDescriptionAndSource()
-    {
-        // Arrange + Act: a run whose single image carries an authored description and its source
-        using var temp = new TempScratch();
-        var (folder, _) = await RunAsync(temp, async sink =>
+        var folder = await RunProducedAsync(temp, async sink =>
         {
             await sink.WriteContentAsync("# Document\n\nWith a described image.\n", CancellationToken.None);
-            using var bytes = new MemoryStream([9, 8, 7, 6]);
-            await sink.AddImageAsync(bytes, new ImageHint("figure", "image/png",
-                Description: "A wiring diagram", DescriptionSource: "caption"), CancellationToken.None);
+            using var bytes = new MemoryStream([9, 8, 7, 6], writable: false);
+            await sink.AddImageAsync(
+                bytes,
+                new ImageHint(
+                    "figure",
+                    "image/png",
+                    SourcePages: [3, 7],
+                    ReferencedByTemplate: true,
+                    Description: "A wiring diagram",
+                    DescriptionSource: "caption"),
+                CancellationToken.None);
         });
         using var document = await ParseManifestAsync(folder);
 
-        // Assert: both the description and its provenance are recorded verbatim
+        // Assert: the manifest records the full image metadata set honestly
         var image = Assert.Single(document.RootElement.GetProperty("images").EnumerateArray().ToList());
+        Assert.Equal([3, 7], image.GetProperty("sourcePages").EnumerateArray().Select(element => element.GetInt32()).ToArray());
+        Assert.Equal(3, image.GetProperty("sourcePage").GetInt32());
+        Assert.True(image.GetProperty("referencedByTemplate").GetBoolean());
         Assert.Equal("A wiring diagram", image.GetProperty("description").GetString());
         Assert.Equal("caption", image.GetProperty("descriptionSource").GetString());
     }
 
     /// <summary>
-    ///     Proves an image with no description records an explicit null rather than an invented one.
-    /// </summary>
-    [Fact]
-    public async Task ManifestWriter_Write_ImageWithoutDescription_SerializesNullDescription()
-    {
-        // Arrange + Act: a run whose single image was given no description in its hint
-        using var temp = new TempScratch();
-        var (folder, _) = await RunAsync(temp, WriteDecodedImage);
-        using var document = await ParseManifestAsync(folder);
-
-        // Assert: the absence is honest — an explicit null, never a guessed description
-        var image = Assert.Single(document.RootElement.GetProperty("images").EnumerateArray().ToList());
-        Assert.Equal(JsonValueKind.Null, image.GetProperty("description").ValueKind);
-        Assert.Equal(JsonValueKind.Null, image.GetProperty("descriptionSource").ValueKind);
-    }
-
-    /// <summary>
-    ///     Proves every declared image transform projects to a distinct camelCase manifest string
-    ///     (ImageTransformProjected).
-    /// </summary>
-    /// <remarks>
-    ///     This is the symmetry gate. The compiler already guarantees that no extractor can produce a
-    ///     transform outside the enumeration, so "producible implies documented" holds structurally.
-    ///     This test closes the other direction — "documented implies producible" — by driving every
-    ///     declared member through the real writer, so a future member added without a projection
-    ///     fails here rather than at a consumer's manifest.
-    /// </remarks>
-    [Fact]
-    public async Task ManifestWriter_TransformString_EveryImageTransformValue_Projects()
-    {
-        // Arrange: one distinctly-byte-valued image per declared transform so none is deduplicated
-        var transforms = Enum.GetValues<ImageTransform>();
-        using var temp = new TempScratch();
-
-        // Act: write every transform through the real sink and serialize the manifest
-        var (folder, _) = await RunAsync(temp, async sink =>
-        {
-            await sink.WriteContentAsync("# Document\n\nEvery transform.\n", CancellationToken.None);
-            for (var index = 0; index < transforms.Length; index++)
-            {
-                using var bytes = new MemoryStream([(byte)index, 0xAA, 0xBB]);
-                await sink.AddImageAsync(
-                    bytes, new ImageHint(null, "image/png", Transform: transforms[index]), CancellationToken.None);
-            }
-        });
-        using var document = await ParseManifestAsync(folder);
-
-        // Assert: every member produced a non-empty, camelCase, distinct manifest string
-        var serialized = document.RootElement.GetProperty("images").EnumerateArray()
-            .Select(image => image.GetProperty("transform").GetString()!).ToList();
-        Assert.Equal(transforms.Length, serialized.Count);
-        Assert.All(serialized, value =>
-        {
-            Assert.False(string.IsNullOrWhiteSpace(value));
-            Assert.True(char.IsLower(value[0]), $"'{value}' is not camelCase.");
-        });
-        Assert.Equal(transforms.Length, serialized.Distinct(StringComparer.Ordinal).Count());
-    }
-
-    /// <summary>
-    ///     Proves reconciling with a null sink is rejected as a caller error (boundary).
-    /// </summary>
-    [Fact]
-    public void ManifestWriter_Reconcile_NullSink_ThrowsArgumentNullException()
-    {
-        // Arrange: a report but no sink
-        using var temp = new TempScratch();
-        var report = BuildReport(temp, Options());
-
-        // Act + Assert: the recorded-state source is mandatory
-        Assert.Throws<ArgumentNullException>(() => ManifestWriter.Reconcile(null!, report, null));
-    }
-
-    /// <summary>
-    ///     Runs the sink, content, and manifest pipeline for a write action.
+    ///     Runs the content and manifest pipeline for a produced scenario.
     /// </summary>
     /// <param name="temp">The owning temporary folder.</param>
     /// <param name="write">The action that writes through the sink.</param>
-    /// <returns>The prepared folder and the reconciliation output.</returns>
-    /// <remarks>Drives the real writers so each test inspects an authentic manifest.</remarks>
-    private static async Task<(ScratchFolder Folder, ReconciliationResult Reconciliation)> RunAsync(
-        TempScratch temp, Func<IExtractionSink, ValueTask> write)
+    /// <param name="options">The effective options, or <see langword="null"/> for the defaults.</param>
+    /// <returns>The prepared folder whose manifest was written.</returns>
+    private static async Task<ScratchFolder> RunProducedAsync(
+        TempScratch temp,
+        Func<IExtractionSink, ValueTask> write,
+        ExtractionOptions? options = null)
     {
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
-        var sink = new ExtractionSink(folder, Options());
+        var effective = options ?? Options();
+        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), effective.ScratchFolder);
+        var sink = new ExtractionSink(folder, effective);
         await write(sink);
-        var report = BuildReport(temp, Options());
-        var content = await ContentWriter.WriteAsync(sink, Options().ContentSplit, "Document", Ct);
-        var reconciliation = ManifestWriter.Reconcile(sink, report, content);
-        await ManifestWriter.WriteAsync(folder, sink, report, content, reconciliation, Ct);
-        return (folder, reconciliation);
+        var content = await ContentWriter.WriteAsync(sink, effective.ContentSplit, "Document", Ct);
+        var report = BuildReport(temp, effective, ExtractionOutcome.Produced, SuccessExtractor(), null);
+        await ManifestWriter.WriteAsync(folder, sink, report, content, Ct);
+        return folder;
     }
 
     /// <summary>
@@ -342,7 +289,6 @@ public class ManifestWriterTests
     /// </summary>
     /// <param name="folder">The scratch folder whose manifest is read.</param>
     /// <returns>The parsed JSON document.</returns>
-    /// <remarks>The caller disposes the returned document.</remarks>
     private static async Task<JsonDocument> ParseManifestAsync(ScratchFolder folder) =>
         JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(folder.AbsolutePath, "manifest.json"), Ct));
 
@@ -351,24 +297,44 @@ public class ManifestWriterTests
     /// </summary>
     /// <param name="temp">The owning temporary folder used to materialize a source document.</param>
     /// <param name="options">The effective options the report records.</param>
-    /// <returns>The assembled report whose selection names the text backend.</returns>
-    /// <remarks>Uses a fixed timestamp and a real source file so the serialization is deterministic and disposable.</remarks>
-    private static ExtractionReport BuildReport(TempScratch temp, ExtractionOptions options)
+    /// <param name="outcome">The recorded outcome.</param>
+    /// <param name="selected">The selected extractor, or <see langword="null"/>.</param>
+    /// <param name="failure">The failure, or <see langword="null"/>.</param>
+    /// <returns>The assembled report.</returns>
+    private static ExtractionReport BuildReport(
+        TempScratch temp,
+        ExtractionOptions options,
+        ExtractionOutcome outcome,
+        ExtractorDescriptor? selected,
+        ExtractionFailure? failure)
     {
-        var descriptor = new ExtractorDescriptor("text", "Text (stub)", [DocumentFormat.Text], ExtractorCapabilities.Text, 0);
-        var trace = new[] { new CandidateVerdict("text", "Text (stub)", 0, CandidateOutcome.Selected, "selected for the test") };
-        var selection = new SelectionResult(descriptor, SelectionMode.Automatic, ExtractorCapabilities.Text, ExtractorCapabilities.Text, trace, null);
         var environment = new ExtractionEnvironment("TestOS", "X64", "test-runtime", "test-rid", []);
         var source = DocumentSource.FromFile(temp.CreateFile("source.txt", "hello"));
         var detection = new FormatDetection(DocumentFormat.Text, DetectionBasis.Extension, 0.5);
-        return new ExtractionReport(ExtractionOutcome.Succeeded, source, "0000", detection, selection, environment, options, FixedTimestamp, null);
+        return new ExtractionReport(
+            outcome,
+            source,
+            "0000",
+            detection,
+            selected,
+            environment,
+            options,
+            FixedTimestamp,
+            failure,
+            selected is null ? null : "DemaConsulting.DocDown.TestSupport");
     }
+
+    /// <summary>
+    ///     Creates the selected extractor used by the produced scenarios.
+    /// </summary>
+    /// <returns>The selected extractor descriptor.</returns>
+    private static ExtractorDescriptor SuccessExtractor() =>
+        new("text", "Text (stub)", [DocumentFormat.Text], 0);
 
     /// <summary>
     ///     Creates the fixed options used across the manifest scenarios.
     /// </summary>
     /// <returns>Options stamped with the fixed timestamp.</returns>
-    /// <remarks>The fixed timestamp makes the deterministic-JSON assertion meaningful.</remarks>
     private static ExtractionOptions Options() => new() { TimestampUtc = FixedTimestamp };
 
     /// <summary>
@@ -376,33 +342,21 @@ public class ManifestWriterTests
     /// </summary>
     /// <param name="sink">The sink to write through.</param>
     /// <returns>A task that completes when the text is written.</returns>
-    /// <remarks>The canonical clean write used by the schema, ledger, and complete-flag scenarios.</remarks>
     private static ValueTask WriteText(IExtractionSink sink) =>
         sink.WriteContentAsync("# Document\n\nManifest writer content.\n", CancellationToken.None);
-
-    /// <summary>
-    ///     Writes text and claims images were found without writing or explaining them.
-    /// </summary>
-    /// <param name="sink">The sink to write through.</param>
-    /// <returns>A task that completes when the writes finish.</returns>
-    /// <remarks>Leaves an unexplained image absence that reconciliation must catch with a synthesized gap.</remarks>
-    private static async ValueTask WriteSilentImages(IExtractionSink sink)
-    {
-        await sink.WriteContentAsync("# Document\n\nText present, images missing.\n", CancellationToken.None);
-        sink.ReportFound(GapKind.Images, 2);
-    }
 
     /// <summary>
     ///     Writes text and one image the extractor reports as decoded and re-encoded as PNG.
     /// </summary>
     /// <param name="sink">The sink to write through.</param>
     /// <returns>A task that completes when the writes finish.</returns>
-    /// <remarks>Exercises the non-default provenance path so the projected string can be asserted.</remarks>
     private static async ValueTask WriteDecodedImage(IExtractionSink sink)
     {
         await sink.WriteContentAsync("# Document\n\nWith a re-encoded image.\n", CancellationToken.None);
-        using var bytes = new MemoryStream([3, 1, 4, 1, 5]);
+        using var bytes = new MemoryStream([3, 1, 4, 1, 5], writable: false);
         await sink.AddImageAsync(
-            bytes, new ImageHint("figure", "image/png", Transform: ImageTransform.DecodedToPng), CancellationToken.None);
+            bytes,
+            new ImageHint("figure", "image/png", Transform: ImageTransform.DecodedToPng),
+            CancellationToken.None);
     }
 }

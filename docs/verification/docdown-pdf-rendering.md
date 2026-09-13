@@ -6,7 +6,7 @@ optional PDF page-rendering package.
 ## Verification Approach
 
 `DocDown.Pdf.Rendering` is verified through system-level integration tests in
-`DocDownPdfRenderingTests.cs` and unit tests per unit, all in
+`DocDownPdfRenderingTests.cs` and focused unit tests per unit, all in
 `DemaConsulting.DocDown.Pdf.Rendering.Tests`, running on xUnit v3 across net8.0, net9.0, and net10.0.
 
 ### The central scenario produces a real rendered page
@@ -17,30 +17,29 @@ requested DPI and portrait-oriented — not merely that a file appeared. A file 
 decodable image would satisfy a weaker check while failing the actual promise, so the check reads the
 image structure rather than the directory listing.
 
-### Every extraction test reconciles against the filesystem
+### Every extraction scenario confirms the invariant layout
 
-Every scenario that performs an extraction ends with `ContractAssert.NoViolations`, which runs Core's
-contract verifier over the produced folder and reports any disagreement between what the manifest
-claims and what is on disk. This applies to the degraded rows — the not-registered degradation and
-the per-page failure — as well as to the clean render, so a dishonest extraction is a test failure
-rather than a review finding.
+Every scenario that performs an extraction ends with `ContractAssert.LayoutPresent`, proving the
+standard DocDown output layout exists on disk. This applies to the clean render, the two selection
+scenarios, the page-range and DPI scenarios, and the forced page-failure unit scenario, so a missing
+core artifact or silently missing `pages/` output becomes a test failure rather than a review
+finding.
 
-### Selection is exercised both ways, and degradation without this package is proven
+### Selection is exercised both ways, with availability deciding whether rendering can win
 
 Because the engine selects one backend, two scenarios assert the selection outcome directly: with page
-rendering requested the rendering backend must win, and without it the lighter managed backend must
-win so no native code is touched. A third scenario builds an engine with only the managed backend and
-proves the engine's own `DD0301`/`DD0702` degradation path fires unchanged for a page-rendering
-request — evidence that registering this package does not alter the path for the cases it does not
-serve.
+rendering requested the rendering backend must win when its availability probe reports rendered-page
+support, and without it requested the lighter managed backend must win so no native code is touched.
+Availability itself is verified in companion unit scenarios that assert the extractor reports
+rendered-page support only when the native stack is usable and otherwise reports an unavailable reason.
 
 ### Native failure honesty is proven through an injected fault
 
 A genuine PDFium fault cannot be produced on cue, so the per-page fault-isolation path is exercised by
-injecting a rasterization function that throws. The scenario proves the run degrades with this
-package's own diagnostic code and a counted gap naming the page, produces no page, and does not throw
-to the caller — the behavior the output contract requires of the one capability that can fail at run
-time.
+injecting a rasterization function that throws. The scenario proves the run still completes as
+`Produced`, records the one-sentence note `Page 1 could not be rasterized.`, produces no page, and
+does not throw to the caller — the factual reporting the output contract requires of the one step
+this package attempted and could not complete.
 
 ### Fixtures are generated, never committed
 
@@ -67,11 +66,12 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 - Every scenario below passes on every operating system and runtime in the CI matrix, with no
   unexpected exception, wrong exception type, or wrong return value.
 - The rendered page is a valid PNG of plausible dimensions, not merely a file that exists.
-- Every extraction scenario ends with the contract verifier reporting zero violations.
-- No render fault — an injected page fault, and by construction a real one — escapes to the caller;
-  each becomes a counted, reason-bearing gap and the run continues.
-- The rendering backend is selected when and only when page rendering is requested.
-- With this package absent, the engine's existing `DD0301` degradation path fires unchanged.
+- Every extraction scenario ends with `ContractAssert.LayoutPresent`.
+- No successful render scenario emits notes; a forced per-page fault emits the plain note
+  `Page N could not be rasterized.` and still returns `Produced`.
+- The rendering backend is selected when and only when page rendering is requested and available.
+- The availability probe is cheap, non-throwing, and reports rendered-page support only when the
+  native stack is usable in the current environment.
 - Each of the six platform requirements is satisfied by a source-filtered result from the matching
   operating system or runtime; a result from another platform does not count.
 - Two renders of the same document with a fixed timestamp produce byte-identical page images.
@@ -103,7 +103,7 @@ a consumer can diff two extractions meaningfully. Evidence for `DocDownPdfRender
 **Test**: `DocDownPdfRendering_Select_PagesRequested_RenderingBackendWins`
 
 Proves selection prefers the rendering backend when page rendering is requested, that pages are
-produced, and that no `DD0301` degradation fires. Evidence for
+produced, and that a clean render completes without notes. Evidence for
 `DocDownPdfRendering-SelectedWhenPagesRequested`.
 
 ### The managed backend wins when pages are not requested
@@ -113,14 +113,6 @@ produced, and that no `DD0301` degradation fires. Evidence for
 Proves that with rendering not requested the lighter managed backend wins on the identifier tie-break
 and produces no pages, so a plain extraction touches no native code. Evidence for
 `DocDownPdfRendering-BaseSelectedWhenNotRequested`.
-
-### Absence of this package leaves the engine's degradation path unchanged
-
-**Test**: `DocDownPdfRendering_Extract_RenderingNotRegistered_DegradesWithDD0301`
-
-Proves that an engine with only the managed backend degrades a page-rendering request through the
-engine's own `DD0301`/`DD0702` path, rendering no pages, exactly as before this package existed.
-Evidence for `DocDownPdfRendering-DegradesWhenUnavailable`.
 
 ### A requested page range restricts which pages render
 
@@ -136,23 +128,19 @@ Proves only the in-range pages are rasterized, named by their document page numb
 Proves the requested DPI controls the raster: a higher-DPI render is strictly larger in both
 dimensions than a lower-DPI render of the same document. Evidence for `DocDownPdfRendering-HonorsDpi`.
 
-### The extractor declares the full superset descriptor
+### Availability reporting is cheap, honest, and selection-relevant
 
-**Test**: `PdfPageRenderingExtractor_Descriptor_DeclaresFullSupersetCapabilities`
-
-Proves the backend declares the PDF format and the four capabilities selection ranks on. Evidence for
-`DocDownPdfRendering-RenderedPagesCapability`.
-
-### The availability probe is cheap, safe, and honest
-
-**Tests**: `PdfPageRenderingExtractor_ProbeAvailability_DeployedStack_ReportsAvailableWithoutThrowing`,
-`PageRenderer_ProbeAvailability_DeployedNativeStack_ReportsAvailableWithoutThrowing`,
+**Tests**:
+`PdfPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReflectsNativeStackWithoutThrowing`,
+`PageRenderer_ProbeAvailability_AnyEnvironment_ReflectsUsabilityWithoutThrowing`,
 `NativeProbeResult_Unavailable_CarriesReason`
 
-The first two prove the probe reports available without throwing where the native stack is deployed;
-the third proves an unavailable result carries a displayable reason, which is the mechanism by which a
-missing native binary is reported honestly rather than as a crash. Evidence for
-`DocDownPdfRendering-ProbeCheapAndSafe` and `DocDownPdfRendering-ProbeReportsUnavailableWithReason`.
+The first test proves the extractor reports rendered-page support only when the native stack is usable
+and otherwise reports an unavailable reason; the second proves the native seam itself answers
+cheaply and without throwing; the third proves the unavailable result carries a displayable reason.
+Evidence for `DocDownPdfRendering-ReportsRenderedPagesAvailability`,
+`DocDownPdfRendering-ProbeCheapAndSafe`, and
+`DocDownPdfRendering-ProbeReportsUnavailableWithReason`.
 
 ### The managed aspects are delivered by delegation
 
@@ -162,13 +150,13 @@ Proves the backend delegates the managed aspects — `content.md` is written —
 PNG, so both the delegation and the rasterization happen in one run. Evidence for
 `DocDownPdfRendering-ManagedInputsDelegated`.
 
-### A per-page render fault becomes a counted gap without throwing
+### A per-page render fault becomes a note without throwing
 
-**Test**: `PdfPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsCountedGapWithoutThrowing`
+**Test**: `PdfPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsNoteWithoutThrowing`
 
-Proves a faulting rasterization degrades the run with this package's `PDFR0001` code and a counted gap
-naming the affected page, produces no page, and does not throw to the caller. Evidence for
-`DocDownPdfRendering-PerPageFailureBecomesCountedGap`.
+Proves a faulting rasterization records the plain note `Page 1 could not be rasterized.`, produces no
+page, still returns `Produced`, and does not throw to the caller. Evidence for
+`DocDownPdfRendering-PerPageFailureReportedAsNote`.
 
 ### Native calls are serialized
 
@@ -190,8 +178,8 @@ surface. Evidence for `DocDownPdfRendering-Registration`.
 
 ### The self-test proves the native stack genuinely rasterizes
 
-**Test**: `PdfPageRenderingExtractor_GetSelfTestCases_DeployedStack_ContributesPassingRenderCase`
+**Test**: `PdfPageRenderingExtractor_GetSelfTestCases_AnyEnvironment_ReportsHonestRenderCaseStatus`
 
 Proves the backend contributes a distinctly named render round-trip case that rasterizes a document it
-builds itself and passes where the native stack is deployed. Evidence for
+builds itself and reports pass or skip honestly for the current environment. Evidence for
 `DocDownPdfRendering-SelfValidation`.

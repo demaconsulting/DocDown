@@ -23,7 +23,6 @@ includes:
   - docs/reqstream/docdown-core/output/content-writer.yaml
   - docs/reqstream/docdown-core/output/summary-writer.yaml
   - docs/reqstream/docdown-core/output/manifest-writer.yaml
-  - docs/reqstream/docdown-core/output/contract-verifier.yaml
   - docs/reqstream/docdown-core/output/image-text-selector.yaml
   - docs/reqstream/docdown-pdf.yaml
   - docs/reqstream/docdown-pdf/platform-requirements.yaml

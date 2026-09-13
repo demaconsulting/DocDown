@@ -1,9 +1,9 @@
 ---
 # Software Unit Requirements for ExtractionSink
 #
-# ExtractionSink is the surface a backend writes through. It allocates dense, stable
-# relative paths for images, pages and parts, deduplicates images, and records the
-# backend's reports and gaps for later serialization.
+# SUPERSEDED REQUIREMENT: DocDownCore-Output-ExtractionSink-AllocatesGapIdentifiers
+# required numbered gap identifiers and substitute reasons. It is superseded (not satisfied) with no
+# replacement because the gap-reporting machinery was removed from Core.
 
 sections:
   - title: DocDownCore Requirements
@@ -14,110 +14,76 @@ sections:
             requirements:
               - id: DocDownCore-Output-ExtractionSink-AllocatesImagePaths
                 title: >-
-                  ExtractionSink shall allocate dense, ordinal-prefixed relative paths for images with an
-                  extension matching the bytes.
+                  ExtractionSink shall allocate dense, ordinal-prefixed relative paths for images with
+                  an extension matching the written media type.
                 justification: |
-                  Backends embed image links using the path the sink returns. Allocating a dense,
-                  ordinal-prefixed path with an extension derived from the written bytes yields stable,
-                  correct links independent of backend naming.
+                  Backends embed image links using the path the sink returns. Core-side allocation
+                  keeps image names stable and safe regardless of backend naming hints.
                 tests:
                   - ExtractionSink_AddImageAsync_ThreeDistinctImages_AllocatesDenseOrdinalPaths
                   - ExtractionSink_AddImageAsync_JpegMediaType_UsesJpgExtension
-                  - ExtractionSink_AddImageAsync_AllocatedName_BeginsWithOrdinalPrefix
+                  - ExtractionSink_AddImageAsync_VectorMediaType_UsesTrueExtension
 
               - id: DocDownCore-Output-ExtractionSink-ImageDeduplication
-                title: ExtractionSink shall write identical image bytes once and return the existing path for repeats.
+                title: ExtractionSink shall write identical image bytes once and return the same path for repeats.
                 justification: |
-                  Documents reuse the same image many times. Deduplicating identical bytes to a single
-                  file keeps output compact in large batch runs while every reference still resolves to
-                  the shared resource.
+                  Documents often reuse the same image bytes many times. Deduplication keeps output
+                  compact while preserving every reference.
                 tests:
                   - ExtractionSink_AddImageAsync_IdenticalBytesTwice_DeduplicatesToOneFile
+                  - ExtractionSink_AddImageAsync_DuplicateBytes_MergesReferrerSets
 
               - id: DocDownCore-Output-ExtractionSink-AllocatesPagePaths
                 title: ExtractionSink shall name each rendered page file by its document page number.
                 justification: |
-                  Consumers must map a page image back to the source page. Naming the file by the
-                  document page number makes that correspondence explicit and stable, and a non-positive
-                  page number is rejected as invalid.
+                  A rendered page file should map back to the source page without guesswork.
                 tests:
                   - ExtractionSink_AddPageAsync_PageNumber_NamesFileByDocumentPage
 
               - id: DocDownCore-Output-ExtractionSink-AllocatesPartPaths
-                title: >-
-                  ExtractionSink shall allocate dense ordinal-kind-slug paths for content parts regardless of
-                  advisory ordinals.
+                title: ExtractionSink shall allocate dense ordinal-kind-slug paths for content parts.
                 justification: |
-                  Backends may supply conflicting or sparse part ordinals. Reallocating dense ordinals
-                  in call order gives the part index gap-free, stable file names the content writer and
-                  consumers can rely on.
+                  Advisory part ordinals from a backend should not create sparse numbering or
+                  collisions in the output layout.
                 tests:
-                  - ExtractionSink_AddContentPartAsync_TitledPart_AllocatesOrdinalKindSlugPath
-                  - ExtractionSink_AddContentPartAsync_UntitledPart_AllocatesOrdinalKindPath
                   - ExtractionSink_AddContentPartAsync_ConflictingAdvisoryOrdinals_AllocatesDenseOrdinals
 
               - id: DocDownCore-Output-ExtractionSink-ImageSuppression
-                title: >-
-                  ExtractionSink shall suppress image writes when images are disabled and record the
-                  suppression once.
+                title: ExtractionSink shall suppress image writes when images are disabled and return an empty path.
                 justification: |
-                  A caller who disables images expects none written, but still needs to know they were
-                  skipped. Suppressing the writes and recording the fact once keeps output honest
-                  without flooding the diagnostics.
+                  A caller that disables images expects no image files and no image links to be
+                  emitted from the sink.
                 tests:
-                  - ExtractionSink_AddImageAsync_ImagesDisabled_SuppressesAndRecordsOnce
+                  - ExtractionSink_AddImageAsync_ImagesDisabled_SuppressesWritesAndReturnsEmptyPath
 
               - id: DocDownCore-Output-ExtractionSink-RecordsReports
                 title: >-
-                  ExtractionSink shall record the backend's reports for later serialization, keeping a
-                  counted content feature whose count is zero when the backend reports it looked for
-                  that feature.
+                  ExtractionSink shall record document metadata, environment facts, notes, and
+                  counted content features for later serialization.
                 justification: |
-                  Document info, diagnostics, environment facts and found-counts arrive during
-                  extraction but are written afterward. Recording them faithfully preserves the evidence
-                  the summary, manifest and ledger later depend on. A zero count is dropped by default
-                  because a feature the format cannot have adds only noise, but a backend that looked
-                  for a feature and found none has established a fact about the document, and dropping
-                  that zero would leave a consumer unable to tell it from a feature never counted.
+                  The later writers consume the sink's recorded state rather than re-reading the
+                  document or reconstructing extractor decisions.
                 tests:
                   - ExtractionSink_Reports_RecordedForLaterSerialization
+                  - ExtractionSink_ReportContentFeature_RepeatedLabels_AccumulateAndDropZeroCounts
                   - ExtractionSink_ReportContentFeature_LookedForZero_IsReported
-
-              - id: DocDownCore-Output-ExtractionSink-AllocatesGapIdentifiers
-                title: >-
-                  ExtractionSink shall assign dense, ordered identifiers to reported gaps and substitute a
-                  blank reason.
-                justification: |
-                  Gaps must be individually addressable and never silently empty. Overwriting
-                  caller-supplied ids with dense ordered ones, and replacing a blank reason, guarantees
-                  every gap has a stable identity and a meaningful explanation.
-                tests:
-                  - ExtractionSink_ReportGap_MultipleGaps_AssignsDenseIdentifiersOverwritingCallerIds
-                  - ExtractionSink_ReportGap_BlankReason_SubstitutesReasonAndRecordsDiagnostic
 
               - id: DocDownCore-Output-ExtractionSink-ImageTransformRecorded
                 title: >-
-                  ExtractionSink shall record the transform the extractor reported, defaulting to passthrough
-                  when none is reported.
+                  ExtractionSink shall preserve the transform recorded for each image so later
+                  output can report per-image provenance honestly.
                 justification: |
-                  Only the extractor knows whether it handed over the document's own bytes or a new
-                  encoding, so the provenance must be taken from its report rather than guessed. The
-                  default is passthrough because that is what is true when nothing transformed the bytes,
-                  and a repeat of identical bytes keeps the first record's claim because identical bytes
-                  cannot honestly carry two provenances.
+                  Only the extractor knows whether image bytes were passed through unchanged or
+                  were decoded and re-encoded before reaching the sink.
                 tests:
-                  - ExtractionSink_AddImageAsync_NoTransformHint_RecordsPassthrough
-                  - ExtractionSink_AddImageAsync_DecodedToPngHint_RecordsDecodedToPng
-                  - ExtractionSink_AddImageAsync_DuplicateBytes_KeepsFirstRecordedTransform
+                  - Output_ImageProvenance_MixedTransforms_ManifestRecordsEachHonestly
 
               - id: DocDownCore-Output-ExtractionSink-ImageDescriptionRecorded
                 title: >-
-                  ExtractionSink shall record an image's description and its provenance from the hint,
-                  leaving both absent when the hint carries none.
+                  ExtractionSink shall preserve each image's descriptive text, description
+                  provenance, and referrer metadata for later serialization.
                 justification: |
-                  Only the backend knows whether a document offered any text describing an image, so the
-                  description and its source are taken from the hint rather than guessed. Recording them
-                  when present, and leaving them absent otherwise, keeps the manifest's image metadata
-                  honest — an unknown description is reported as absent, never invented.
+                  Per-image descriptive text and referrer metadata originate with the extractor and
+                  must remain attached to the stored image record.
                 tests:
-                  - ManifestWriter_Write_ImageWithDescription_SerializesDescriptionAndSource
+                  - ManifestWriter_WriteAsync_ImageMetadata_SerializesReferrersTemplateAndDescription

@@ -1,30 +1,22 @@
 using System.Globalization;
 using DocDown.Core;
-using DocDown.Visio.Markdown;
 using DocDown.Visio.OpenXml;
 using CoreFormat = DocDown.Core.DocumentFormat;
 
 namespace DocDown.Visio.Com;
 
 /// <summary>
-///     The Visio COM automation backend: a full superset extractor that produces page names, shape
-///     text, and the directed connector topology by delegating to the managed Open Packaging backend,
-///     then rasterizes each page to a PNG through Microsoft Visio over late-bound COM.
+///     The Visio COM automation backend: a composing extractor that produces page names, shape text,
+///     and the directed connector topology by delegating to the managed Open Packaging backend, then
+///     rasterizes each page to a PNG through Microsoft Visio over late-bound COM.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The engine selects exactly one backend, so a rendering backend that advertised only
-///         <see cref="ExtractorCapabilities.RenderedPages"/> would lose selection to the managed
-///         backend and never render. This extractor therefore declares the full set —
-///         <see cref="ExtractorCapabilities.Text"/>, <see cref="ExtractorCapabilities.EmbeddedImages"/>,
-///         <see cref="ExtractorCapabilities.DocumentStructure"/>,
-///         <see cref="ExtractorCapabilities.DocumentMetadata"/>, and
-///         <see cref="ExtractorCapabilities.RenderedPages"/> — and delivers all five. It is chosen
-///         over the managed backend only when page rendering is actually requested; otherwise the
-///         managed backend wins on priority and no COM is touched. Its identifier <c>visio-com</c>
-///         sorts before <c>visio-openxml</c>, so the explicit priority (0 versus 10) is what keeps
-///         the deterministic managed backend the default rather than the ordinal tie-break silently
-///         selecting COM.
+///         The engine selects exactly one backend. The managed extractor remains the ordinary default
+///         because it carries the higher priority for non-rendering work, while this extractor becomes
+///         relevant only when page rendering is requested and its availability probe can honestly
+///         report rendered pages in the current environment. That keeps ordinary text-and-topology
+///         extraction deterministic and avoids touching COM unless a caller asked for rendered pages.
 ///     </para>
 ///     <para>
 ///         Rather than re-implement the topology extraction, it constructs a
@@ -32,9 +24,9 @@ namespace DocDown.Visio.Com;
 ///         suppressed, then adds the rendered pages the managed backend cannot. Everything apart from
 ///         talking to Visio is exercised cross-platform by injecting a stub
 ///         <see cref="IVisioAutomation"/>; the real adapter is the single untestable COM boundary. A
-///         page that cannot be rendered becomes a counted, reason-bearing gap while the run continues
-///         with the remaining pages, and on any host the logical topology is still delivered by the
-///         delegated managed backend.
+///         page that cannot be rendered becomes a plain note while the run continues with the
+///         remaining pages, and on any host the logical topology is still delivered by the delegated
+///         managed backend.
 ///     </para>
 /// </remarks>
 public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
@@ -76,11 +68,6 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
     public IReadOnlyCollection<CoreFormat> SupportedFormats => [CoreFormat.Vsdx, CoreFormat.Vsdm];
 
     /// <inheritdoc />
-    public ExtractorCapabilities Capabilities =>
-        ExtractorCapabilities.Text | ExtractorCapabilities.EmbeddedImages | ExtractorCapabilities.DocumentMetadata
-        | ExtractorCapabilities.DocumentStructure | ExtractorCapabilities.RenderedPages;
-
-    /// <inheritdoc />
     public int Priority => 0;
 
     /// <inheritdoc />
@@ -92,7 +79,7 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
     public ExtractorAvailability ProbeAvailability() =>
         _automationFactory is null
             ? ExtractorAvailability.Unavailable("The Visio COM automation adapter is not available in this build.")
-            : VisioComAvailability.Probe(Capabilities);
+            : VisioComAvailability.Probe();
 
     /// <inheritdoc />
     public async ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context)
@@ -109,13 +96,12 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
         var bytes = await ReadSourceAsync(source, cancellationToken).ConfigureAwait(false);
 
         // Delegate the managed aspects to the Open Packaging backend with rendering suppressed, so it
-        // writes page names, shape text, and the directed topology but not a rendering gap this backend answers
+        // writes page names, shape text, and the directed topology but does not attempt page rendering
         var delegatedContext = new DelegatedExtractionContext(context, options.Clone());
         delegatedContext.Options.RenderPages = false;
         using var delegatedStream = new MemoryStream(bytes, writable: false);
         var delegatedSource = DocumentSource.FromStream(delegatedStream, source.FileName);
-        var baseOutcome = await new VisioOpenXmlExtractor()
-            .ExtractAsync(delegatedSource, delegatedContext).ConfigureAwait(false);
+        await new VisioOpenXmlExtractor().ExtractAsync(delegatedSource, delegatedContext).ConfigureAwait(false);
 
         // Record the authoritative rendering fact, complementing the managed backend's own fact
         sink.ReportEnvironmentFact(new EnvironmentFact(
@@ -124,12 +110,8 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
         var factory = _automationFactory
             ?? throw new VisioExtractionException("The Visio COM automation adapter is not available in this build.");
 
-        var pagesDegraded = await RenderPagesAsync(bytes, source, factory, sink, options, cancellationToken)
-            .ConfigureAwait(false);
-
-        return baseOutcome == ExtractionOutcome.Degraded || pagesDegraded
-            ? ExtractionOutcome.Degraded
-            : baseOutcome;
+        await RenderPagesAsync(bytes, source, factory, sink, options, cancellationToken).ConfigureAwait(false);
+        return ExtractionOutcome.Produced;
     }
 
     /// <inheritdoc />
@@ -149,12 +131,14 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
     /// <param name="bytes">The buffered source drawing bytes.</param>
     /// <param name="source">The document source, consulted for a file path.</param>
     /// <param name="factory">The automation factory.</param>
-    /// <param name="sink">The sink to write rendered pages and gaps through.</param>
+    /// <param name="sink">The sink to write rendered pages and notes through.</param>
     /// <param name="options">The effective options carrying the render DPI.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
-    /// <returns><see langword="true"/> when any page failed to render; otherwise <see langword="false"/>.</returns>
-    /// <remarks>Renders every page in one session; a page that cannot be exported degrades the run with a counted gap.</remarks>
-    private static async ValueTask<bool> RenderPagesAsync(
+    /// <remarks>
+    ///     Renders every page in one session; a page that cannot be exported becomes a plain note
+    ///     while the run continues.
+    /// </remarks>
+    private static async ValueTask RenderPagesAsync(
         byte[] bytes, DocumentSource source, Func<IVisioAutomation> factory,
         IExtractionSink sink, ExtractionOptions options, CancellationToken cancellationToken)
     {
@@ -167,9 +151,6 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
                 pages = automation.Render(path, options.PageRenderDpi);
             }
 
-            sink.ReportFound(GapKind.Pages, pages.Count);
-
-            var failures = new List<int>();
             foreach (var page in pages)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -181,17 +162,8 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
                 else
                 {
                     ReportPageFailure(sink, page.PageNumber, page.FailureReason);
-                    failures.Add(page.PageNumber);
                 }
             }
-
-            if (failures.Count > 0)
-            {
-                ReportPageFailuresGap(sink, failures);
-                return true;
-            }
-
-            return false;
         }
         finally
         {
@@ -235,32 +207,15 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
         }
     }
 
-    /// <summary>Reports a single page's render failure as a diagnostic.</summary>
+    /// <summary>Reports a single page's render failure as a note.</summary>
     /// <param name="sink">The sink to report through.</param>
     /// <param name="pageNumber">The 1-based page number that failed.</param>
     /// <param name="detail">A short description of what went wrong for this page.</param>
     private static void ReportPageFailure(IExtractionSink sink, int pageNumber, string? detail)
     {
         var page = pageNumber.ToString(CultureInfo.InvariantCulture);
-        sink.ReportDiagnostic(new ExtractionDiagnostic(
-            VisioDiagnosticCodes.PageRenderFailed, DiagnosticSeverity.Warning,
+        sink.ReportNote(new ExtractionNote(
             $"Page {page} could not be rendered ({detail ?? "unknown reason"})."));
-    }
-
-    /// <summary>Reports the counted gap summarizing every page that could not be rendered.</summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <param name="failures">The 1-based page numbers that failed to render.</param>
-    private static void ReportPageFailuresGap(IExtractionSink sink, IReadOnlyList<int> failures)
-    {
-        var pages = failures.Select(page => page.ToString(CultureInfo.InvariantCulture)).ToList();
-        var count = failures.Count.ToString(CultureInfo.InvariantCulture);
-        sink.ReportGap(new ExtractionGap(
-            string.Empty, GapKind.Pages, "pages/", GapScope.PartiallyExtracted,
-            $"{count} page(s) could not be rendered and were omitted from the pages folder.",
-            Impact: "Rendered images for the named pages are not available; their logical topology is still present.",
-            Remedy: "Check that the pages are well-formed; the remaining pages were rendered.",
-            AffectedCount: failures.Count,
-            AffectedItems: pages));
     }
 
     /// <summary>Creates the real Visio adapter, guarding the Windows-only type so it is never constructed off Windows.</summary>
@@ -289,7 +244,7 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
             return SelfTestResult.Skipped("Microsoft Visio COM automation is available only on Windows.");
         }
 
-        var probe = VisioComAvailability.Probe(ExtractorCapabilities.Text | ExtractorCapabilities.RenderedPages);
+        var probe = VisioComAvailability.Probe();
         return probe.IsAvailable
             ? SelfTestResult.Passed(TimeSpan.Zero)
             : SelfTestResult.Skipped(probe.UnavailableReason ?? "Microsoft Visio is not available.");

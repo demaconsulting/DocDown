@@ -6,7 +6,7 @@ namespace DemaConsulting.DocDown.Word.Tests.Markdown;
 
 /// <summary>
 ///     Unit tests for <see cref="WordContentEmitter"/>, exercising the content outline, the
-///     honest gap policy, and the metadata hand-off directly from hand-built models with no
+///     extraction-note reporting, and the metadata hand-off directly from hand-built models with no
 ///     document behind them.
 /// </summary>
 public class WordContentEmitterTests
@@ -47,7 +47,7 @@ public class WordContentEmitterTests
     /// <summary>
     ///     Proves a body carrying a heading and author-attributed comments writes content and reports
     ///     the outline features — headings, comments, and distinct comment authors — that make the
-    ///     <c>## Comments</c> section discoverable, and does not degrade.
+    ///     <c>## Comments</c> section discoverable, and reports no incomplete-step notes.
     /// </summary>
     [Fact]
     public async Task WordContentEmitter_Emit_BodyWithComments_ReportsOutlineAndSucceeds()
@@ -65,11 +65,11 @@ public class WordContentEmitterTests
             ]);
         var sink = new RecordingSink();
 
-        var degraded = await WordContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await WordContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        Assert.False(degraded);
         Assert.Single(sink.ContentWrites);
         Assert.Single(sink.DocumentInfos);
+        Assert.Empty(sink.Notes);
         Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "headings", Count: 1 });
         Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "comments", Count: 2 });
         Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "distinct comment authors", Count: 2 });
@@ -98,39 +98,22 @@ public class WordContentEmitterTests
     }
 
     /// <summary>
-    ///     Proves embedded charts the backend does not read are reported as a counted gap with the
-    ///     <c>WORD0010</c> diagnostic and degrade the run, so the chart's data never vanishes silently.
+    ///     Proves embedded charts the backend does not read are reported as a plain note, so the
+    ///     chart's data never vanishes silently.
     /// </summary>
     [Fact]
-    public async Task WordContentEmitter_Emit_ChartsFound_ReportsCountedGapAndDegrades()
+    public async Task WordContentEmitter_Emit_ChartsFound_ReportsChartNote()
     {
         var model = Model(
             body: [new WordBlock(WordBlockKind.Paragraph, [new WordInline("Body text.")])],
             chartsFound: 2);
         var sink = new RecordingSink();
 
-        var degraded = await WordContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+        await WordContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        Assert.True(degraded);
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == WordDiagnosticCodes.ChartsNotExtracted);
-        Assert.Contains(sink.Gaps, gap => gap is { Kind: GapKind.Text, AffectedCount: 2 });
-    }
-
-    /// <summary>
-    ///     Proves a request to render pages is answered by a counted pages gap that names why this
-    ///     text extractor does not render, and degrades the run — the request is never met with silence.
-    /// </summary>
-    [Fact]
-    public async Task WordContentEmitter_Emit_RenderPagesRequested_ReportsPagesGapAndDegrades()
-    {
-        var model = Model([new WordBlock(WordBlockKind.Paragraph, [new WordInline("Body text.")])]);
-        var sink = new RecordingSink();
-
-        var degraded = await WordContentEmitter.EmitAsync(
-            sink, new ExtractionOptions { RenderPages = true }, model, Ct);
-
-        Assert.True(degraded);
-        Assert.Contains(sink.Gaps, gap => gap.Kind == GapKind.Pages);
+        var note = Assert.Single(sink.Notes);
+        Assert.Contains("2 charts", note.Message, StringComparison.Ordinal);
+        Assert.Contains("does not read chart parts", note.Message, StringComparison.Ordinal);
     }
 
     /// <summary>

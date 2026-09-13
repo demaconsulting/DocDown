@@ -23,9 +23,10 @@ and output.
 ### Acceptance Criteria
 
 Per IEC 62304 §5.5.2, a Cli subsystem test run passes when output is suppressed on the console under
-silence but still written to the log; when an error sets the exit code even under silence and a
-run with no error reports success; when the extraction flags project onto the engine's options; and
-when an unrecognized argument, a malformed option value, and an out-of-range heading depth are each
+silence but still written to the log; when an error sets the exit code even under silence and a run
+with no error reports success; when the supported extraction flags project onto the engine's options;
+when `--overwrite` accepts only `clean` and `overwrite`; and when an unrecognized argument, a
+removed scratch-policy token, a malformed option value, and an out-of-range heading depth are each
 rejected with an argument fault.
 
 ### Test Scenarios
@@ -46,12 +47,20 @@ Proves silence suppresses the console write while the log write still happens. E
 Proves the error flag is set regardless of silence, so a silenced run that failed still exits
 non-zero. Evidence for `DocDownTool-Cli-Output`.
 
-#### Option mapping
+#### Supported extraction flags are mapped
 
-**Test**: `Context_BuildExtractionOptions_Flags_MapOntoOptions`
+**Test**: `Context_BuildExtractionOptions_SupportedFlags_MapOntoOptions`
 
-Proves the extraction flags project onto the engine's options. Evidence for
+Proves the supported extraction flags project onto the engine's options. Evidence for
 `DocDownTool-Cli-OptionMapping`.
+
+#### Scratch-folder policy tokens are constrained
+
+**Tests**: `Context_BuildExtractionOptions_SupportedScratchPolicyToken_MapsToMode`,
+`Context_Create_RemovedScratchPolicyToken_ThrowsArgumentException`
+
+Prove `--overwrite` accepts only `clean` and `overwrite`, maps them to the supported modes, and
+rejects the removed tokens. Evidence for `DocDownTool-Cli-OptionMapping`.
 
 #### Argument validation
 

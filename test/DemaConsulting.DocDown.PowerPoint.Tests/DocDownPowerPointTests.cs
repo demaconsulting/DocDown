@@ -1,3 +1,4 @@
+using System.Text.Json;
 using DemaConsulting.DocDown.PowerPoint.Tests.TestData;
 using DemaConsulting.DocDown.TestSupport;
 using DocDown.Core;
@@ -10,9 +11,9 @@ namespace DemaConsulting.DocDown.PowerPoint.Tests;
 ///     end through <see cref="DocDownEngine"/> against decks generated at test time.
 /// </summary>
 /// <remarks>
-///     Every scenario runs the real engine over a real deck and confirms the contract verifier finds
-///     no violations, so a reported gap always matches what is on disk. Rendering is not requested,
-///     so the managed backend is selected and the tests stay green on a CI host without Office.
+///     Every scenario runs the real engine over a real deck and confirms the invariant output
+///     layout is present. Rendering is not requested, so the managed backend is selected and the
+///     tests stay green on a CI host without Office.
 /// </remarks>
 public class DocDownPowerPointTests
 {
@@ -45,19 +46,18 @@ public class DocDownPowerPointTests
         using var temp = new TempScratch();
         var (scratch, result) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithImage(), FixedOptions());
 
-        Assert.Equal(ExtractionOutcome.Succeeded, result.Outcome);
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         var images = Directory.GetFiles(Path.Combine(scratch, "images"));
         Assert.Single(images);
         Assert.EndsWith(".png", images[0], StringComparison.Ordinal);
+        Assert.Empty(result.Notes);
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>
     ///     Proves a deck whose only image is an EMF vector metafile still reports <see
-    ///     cref="ExtractionOutcome.Succeeded"/>: the bytes are written unchanged and counted, the
-    ///     <c>PPTX0003</c> caveat is stated as an informational diagnostic, and no images gap is
-    ///     opened — a well-formed vector-bearing deck must not degrade.
+    ///     cref="ExtractionOutcome.Produced"/>: the bytes are written unchanged and no vector-only
+    ///     caveat is recorded.
     /// </summary>
     [Fact]
     public async Task DocDownPowerPoint_Extract_DeckWithVectorImage_Succeeds()
@@ -65,15 +65,12 @@ public class DocDownPowerPointTests
         using var temp = new TempScratch();
         var (scratch, result) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithVectorImage(), FixedOptions());
 
-        Assert.Equal(ExtractionOutcome.Succeeded, result.Outcome);
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         var images = Directory.GetFiles(Path.Combine(scratch, "images"));
         Assert.Single(images);
         Assert.EndsWith(".emf", images[0], StringComparison.Ordinal);
-        Assert.Contains(result.Diagnostics, diagnostic =>
-            diagnostic.Code == "PPTX0003" && diagnostic.Severity == DiagnosticSeverity.Info);
-        Assert.DoesNotContain(result.Gaps, gap => gap.Kind == GapKind.Images);
+        Assert.Empty(result.Notes);
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>
@@ -91,19 +88,30 @@ public class DocDownPowerPointTests
         Assert.Contains("Remember the caveat on slide two.", content, StringComparison.Ordinal);
         Assert.Contains("Overview", content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>
-    ///     Proves a deck with speaker notes reports no speaker-notes gap.
+    ///     Proves a deck with speaker notes reports the inventory count in both the summary and the
+    ///     manifest.
     /// </summary>
     [Fact]
-    public async Task DocDownPowerPoint_Extract_DeckWithNotes_ReportsNoNotesGap()
+    public async Task DocDownPowerPoint_Extract_DeckWithNotes_ReportsSpeakerNotesInventory()
     {
         using var temp = new TempScratch();
-        var (_, result) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithNotes(), FixedOptions());
+        var (scratch, result) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithNotes(), FixedOptions());
 
-        Assert.DoesNotContain(result.Gaps, gap => gap.Target == "notes");
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Empty(result.Notes);
+
+        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        Assert.Contains("2 sets of speaker notes", summary, StringComparison.Ordinal);
+
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        var feature = manifest.RootElement
+            .GetProperty("contentFeatures")
+            .EnumerateArray()
+            .Single(candidate => candidate.GetProperty("label").GetString() == "sets of speaker notes");
+        Assert.Equal(2, feature.GetProperty("count").GetInt32());
     }
 
     /// <summary>
@@ -122,38 +130,53 @@ public class DocDownPowerPointTests
         using var temp = new TempScratch();
         var (scratch, result) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithoutNotes(), FixedOptions());
 
-        Assert.Equal(ExtractionOutcome.Succeeded, result.Outcome);
-        Assert.DoesNotContain(result.Gaps, candidate => candidate.Target == "notes");
-        Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == "PPTX0002");
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Empty(result.Notes);
 
         var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
         Assert.Contains("0 sets of speaker notes", summary, StringComparison.Ordinal);
+        Assert.Contains("Nothing was left incomplete.", summary, StringComparison.Ordinal);
 
-        var manifest = await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct);
-        Assert.Contains("\"sets of speaker notes\"", manifest, StringComparison.Ordinal);
-        ContractAssert.NoViolations(scratch);
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        Assert.Equal("2.0", manifest.RootElement.GetProperty("schemaVersion").GetString());
+        Assert.Equal("produced", manifest.RootElement.GetProperty("status").GetString());
+        Assert.Equal(0, manifest.RootElement.GetProperty("notes").GetArrayLength());
+        var feature = manifest.RootElement
+            .GetProperty("contentFeatures")
+            .EnumerateArray()
+            .Single(candidate => candidate.GetProperty("label").GetString() == "sets of speaker notes");
+        Assert.Equal(0, feature.GetProperty("count").GetInt32());
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
-    ///     Proves a legacy binary deck fails with a structured refusal whose remedy states plainly the
-    ///     format is unsupported and never instructs an installation.
+    ///     Proves a legacy binary deck fails as unreadable with a structured explanation that states
+    ///     plainly the format is unsupported and never instructs an installation.
     /// </summary>
     [Fact]
-    public async Task DocDownPowerPoint_Extract_LegacyPpt_FailsWithUnsupportedFormatRemedy()
+    public async Task DocDownPowerPoint_Extract_LegacyPpt_FailsWithUnsupportedFormatExplanation()
     {
         using var temp = new TempScratch();
         var (scratch, result) = await ExtractAsync(temp, "deck.ppt", PptxFixtures.LegacyPptBytes(), FixedOptions());
 
-        Assert.Equal(ExtractionOutcome.Failed, result.Outcome);
-        Assert.NotNull(result.Failure);
-        Assert.Equal(ExtractionFailureKind.NoExtractorForFormat, result.Failure.Kind);
+        Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
+        var failure = Assert.IsType<ExtractionFailure>(result.Failure);
+        Assert.Equal("No registered extractor supports the detected format.", failure.Summary);
         Assert.Contains(
             "DocDown does not support the legacy binary Office formats",
-            result.Failure.Remedy!,
+            failure.Explanation,
             StringComparison.Ordinal);
-        Assert.DoesNotContain("install", result.Failure.Remedy!, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("install", failure.Explanation, StringComparison.OrdinalIgnoreCase);
+
+        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        Assert.Contains("UNREADABLE  - no output could be produced; see \"Failure\"", summary, StringComparison.Ordinal);
+        Assert.Contains("No backend was selected. See \"Failure\" for the reason.", summary, StringComparison.Ordinal);
+
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        Assert.Equal("unreadable", manifest.RootElement.GetProperty("status").GetString());
+        Assert.True(manifest.RootElement.TryGetProperty("failure", out _));
+
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>

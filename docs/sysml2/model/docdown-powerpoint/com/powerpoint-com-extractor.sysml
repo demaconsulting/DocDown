@@ -1,6 +1,6 @@
 package DocDownPowerPoint {
     part def PowerPointComExtractor {
-        doc /* The full-superset rendering backend: produces slide text, titles, speaker notes, and metadata by delegating to the managed Open XML backend with rendering suppressed, then rasterizes each slide to a PNG through Microsoft PowerPoint over late-bound COM, isolating a per-slide failure into a counted gap and reconciling the composed rendering facts. */
+        doc /* The full-superset rendering backend: produces slide text, titles, speaker notes, and metadata by delegating to the managed Open XML backend with rendering suppressed, then rasterizes each slide to a PNG through Microsoft PowerPoint over late-bound COM, recording a per-slide rasterization failure as a note. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.PowerPoint/Com/PowerPointComExtractor.cs */
         comment testRef /* Test: test/DemaConsulting.DocDown.PowerPoint.Tests/Com/PowerPointComExtractorTests.cs */

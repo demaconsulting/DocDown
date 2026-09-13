@@ -1,14 +1,14 @@
 ---
 # Software Unit Requirements for VisioShapeLabeler
 #
-# VisioShapeLabeler decides how a shape is named in the rendered topology, from what the drawing actually
-# says about it and nothing more: the shape's own text, the name of the master it was instantiated from,
-# or — where neither exists — the bare shape id.
+# VisioShapeLabeler decides how a shape is named in the rendered topology, from what the drawing
+# actually says about it and nothing more: the shape's own text, the name of the master it was
+# instantiated from, or — where neither exists — the bare shape id.
 #
-# NOTE ON FORWARD-TRACE: endpoint-label provenance is an area where the implementation EXCEEDS the Visio
-# intent, which asked only for the directed source-to-target edges. These requirements are covered
-# because the behavior is genuinely tested by the VisioShapeLabeler unit tests; they are not invented to
-# retro-justify untested code. See the developer report.
+# NOTE ON FORWARD-TRACE: endpoint-label provenance is an area where the implementation exceeds the
+# Visio intent, which asked only for the directed source-to-target edges. These requirements are
+# covered because the behavior is genuinely tested by the VisioShapeLabeler unit tests; they are
+# not invented to retro-justify untested code.
 
 sections:
   - title: DocDownVisio Requirements
@@ -19,64 +19,66 @@ sections:
             requirements:
               - id: DocDownVisio-Markdown-VisioShapeLabeler-UsesShapeTextVerbatim
                 title: >-
-                  VisioShapeLabeler shall label an endpoint with the shape's own text, verbatim, whenever
-                  the shape carries any, and record that the label came from the shape's text.
+                  VisioShapeLabeler shall label an endpoint with the shape's own text, verbatim,
+                  whenever the shape carries any, and record that the label came from the shape's
+                  text.
                 justification: |
-                  The shape's own text is the only label anyone actually authored for it, so it always
-                  outranks any classification. Recording that the label is authored text — not a type
-                  derived from the master — is what lets a consumer trust the label as a name someone gave
-                  the shape.
+                  The shape's own text is the only label anyone actually authored for it, so it
+                  always outranks any classification. Recording that the label is authored text —
+                  not a type derived from the master — is what lets a consumer trust the label as a
+                  name someone gave the shape.
                 tests:
                   - VisioShapeLabeler_Label_ShapeWithText_UsesTextVerbatim
 
               - id: DocDownVisio-Markdown-VisioShapeLabeler-UsesParenthesizedMasterType
                 title: >-
-                  VisioShapeLabeler shall label a text-less shape with its master name, parenthesized and
-                  paired with the shape id, recorded as a type rather than a name.
+                  VisioShapeLabeler shall label a text-less shape with its master name,
+                  parenthesized and paired with the shape id, recorded as a type rather than a
+                  name.
                 justification: |
                   A shape drawn from a named master is that type by the drawing's own statement, so
-                  reporting the master name is recovery, not fabrication — but a type-derived label rendered
-                  as a plain name would imply someone labeled the shape when they did not. Parenthesizing it
-                  with the shape id keeps it from being mistaken for an authored name and keeps two shapes
-                  of the same type distinguishable.
+                  reporting the master name is recovery, not fabrication — but a type-derived label
+                  rendered as a plain name would imply someone labeled the shape when they did not.
+                  Parenthesizing it with the shape id keeps it from being mistaken for an authored
+                  name and keeps two shapes of the same type distinguishable.
                 tests:
                   - VisioShapeLabeler_Label_TextLessShapeWithMaster_UsesParenthesizedTypeAndId
 
               - id: DocDownVisio-Markdown-VisioShapeLabeler-RefusesConnectiveMasters
                 title: >-
-                  VisioShapeLabeler shall refuse a connective or line-drawing master as an endpoint label,
-                  falling back to the shape id instead.
+                  VisioShapeLabeler shall refuse a connective or line-drawing master as an endpoint
+                  label, falling back to the shape id instead.
                 justification: |
-                  A master describing connective geometry — a dynamic connector, a bare line — describes
-                  the stroke between two things, not the thing at the end of it. Naming an endpoint after
-                  such a master would report the wire as the equipment, which is worse than admitting the
-                  endpoint is unidentified, so those masters are refused and the honest shape-id fallback
-                  is kept.
+                  A master describing connective geometry — a dynamic connector or a bare line —
+                  describes the stroke between two things, not the thing at the end of it. Naming an
+                  endpoint after such a master would report the wire as the equipment, which is
+                  worse than admitting the endpoint is unidentified, so those masters are refused and
+                  the shape-id fallback is kept.
                 tests:
                   - VisioShapeLabeler_Label_ConnectiveMaster_FallsBackToShapeId
 
               - id: DocDownVisio-Markdown-VisioShapeLabeler-FallsBackToShapeId
                 title: >-
-                  VisioShapeLabeler shall fall back to a bare shape-id label, recorded as unresolved, when
-                  the shape carries no text and names no usable master.
+                  VisioShapeLabeler shall fall back to a bare shape-id label, recorded as
+                  unresolved, when the shape carries no text and names no usable master.
                 justification: |
-                  Where neither the shape's text nor a usable master exists, an honest gap beats a
-                  plausible guess: the endpoint is labeled only by its shape id and recorded as unresolved,
-                  so the edge list never invents a name the drawing does not carry. An endpoint naming a
-                  shape absent from the page degrades to the same fallback rather than throwing.
+                  Where neither the shape's text nor a usable master exists, an explicit unresolved
+                  label beats a plausible guess: the endpoint is labeled only by its shape id and
+                  recorded as unresolved, so the edge list never invents a name the drawing does not
+                  carry. An endpoint naming a shape absent from the page follows the same fallback
+                  rather than throwing.
                 tests:
                   - VisioShapeLabeler_Label_TextLessShapeWithNoMaster_FallsBackToShapeId
 
               - id: DocDownVisio-Markdown-VisioShapeLabeler-PublishesConvention
                 title: >-
-                  VisioShapeLabeler shall publish a single-sentence statement of the labeling convention
-                  that describes every rendered label form.
+                  VisioShapeLabeler shall publish a single-sentence statement of the labeling
+                  convention that describes every rendered label form.
                 justification: |
-                  A reader of the output — human or machine — must be able to decode a parenthesized label
-                  without reverse-engineering it, so the convention is published verbatim and describes
-                  each form: an unparenthesized label is authored text, a parenthesized type-and-id is a
-                  master type, and a bare shape id means the drawing identifies the shape only by id.
-                  Publishing the exact string once keeps the content and the manifest from ever drifting
-                  apart.
+                  A reader of the output — human or machine — must be able to decode a parenthesized
+                  label without reverse-engineering it, so the convention is published verbatim and
+                  describes each form: an unparenthesized label is authored text, a parenthesized
+                  type-and-id is a master type, and a bare shape id means the drawing identifies the
+                  shape only by id. Publishing the exact string once keeps the content from drifting.
                 tests:
                   - VisioShapeLabeler_Convention_DescribesEveryRenderedForm

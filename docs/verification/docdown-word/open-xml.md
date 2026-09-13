@@ -13,18 +13,15 @@ The OpenXml subsystem is verified through tests exercising its three units — `
 `DemaConsulting.DocDown.Word.Tests`.
 
 The extractor is driven through the engine end to end against generated documents, because its
-contract is what the engine and a host observe: a descriptor, a run over a real document, and the
-diagnostics and gaps that reach the produced folder. The reader is driven directly against
-generated documents, because its contract is the model it produces from a `.docx`; every scenario
-opens a fixture stream, calls `Read`, and asserts on the returned model. The image reader is
-driven directly against an opened `WordprocessingDocument`, because its contract is the sequence of
-image parts and their transform hints — the level at which a passthrough claim can be checked
-against the true stored bytes.
+observable contract is what the engine and a host observe: descriptor data, environment facts,
+produced content, content inventory, and any extraction notes. The reader is driven directly
+against generated documents, because its contract is the `WordDocumentModel` it produces from a
+`.docx`. The image reader is driven directly against an opened `WordprocessingDocument`, because
+its contract is the sequence of image parts and their passthrough hints.
 
-The SDK is **not** mocked. Every fixture is a real `.docx` built at test time by the Open XML SDK
+The SDK is not mocked. Every fixture is a real `.docx` built at test time by the Open XML SDK
 writer in `TestData/DocxFixtures.cs`, so each scenario exercises a genuine document rather than a
-simulation of one; mocking the SDK would verify only that the units call the API they were written
-to call.
+simulation of one.
 
 ### Test Environment
 
@@ -35,56 +32,48 @@ to call.
   image reader tests operate on streams and opened documents
 - **Mocking**: none; the SDK is exercised against real documents and the sink is Core's real writer
   through the engine
-- **Isolation**: each test opens its own document and constructs its own extractor, reader, or
-  image reader
+- **Isolation**: each test opens its own document and constructs its own extractor or reader
 
 ### Acceptance Criteria
 
-Per IEC 62304 §5.6.2, an OpenXml subsystem test run passes when the extractor declares exactly the
-supported format, priority, and capabilities and — expressly — does not declare the rendered-pages
-capability; when a merged-cell document produces a counted structural gap and its diagnostic; when
-a force-PNG request that cannot be honored is written through and explained; when an empty document
-degrades with the `WORD0001` diagnostic; when a page-rendering request degrades with a declarative
-gap and no remedy the reader could act on and fail at; when a per-part request produces a `parts/` folder split at
-each top-level heading; when a vector image is written unchanged with the `WORD0006` caveat; when
-the extractor contributes exactly two self-test cases with the round-trip case passing and the
-rendering case skipped; when the reader maps styled paragraphs, lists, and tables into structured
-blocks, builds a Document Control section from a header carrying a revision and classification,
-omits a page-number-only footer as page furniture recorded by an informational diagnostic,
-deduplicates identical headers across sections,
-renders tracked changes in the accepted view, detects a password-protected container with a
-`WordExtractionException`, collects a comment's author and text, reports the producer-stated page
-count from the extended properties, surfaces the declared title and author, and reuses a single
-image path for a logo shared between header and body; and when the image reader yields a PNG's
-bytes unchanged with a passthrough hint, unstated pixel dimensions, and the part's own media type,
-and reports the vector media type for an EMF part.
+Per IEC 62304 §5.6.2, an OpenXml subsystem test run passes when the extractor reports its managed
+availability, supports `.docx`, returns `Produced` for readable modern documents, reports zero text
+blocks for an empty document rather than a separate note, writes a vector image unchanged, writes a
+force-PNG request as source-encoded images together with a short note, writes a merged-cell
+document together with a table-flattening note, produces split content on `PerPart`, and exposes
+two honest self-test cases; when the reader maps styled paragraphs, lists, and tables into
+structured blocks, builds a Document Control section from header content, omits page-number-only
+footer content from that section, deduplicates identical headers, renders tracked changes in the
+accepted view, detects a password-protected container with `WordExtractionException`, collects
+comments, surfaces metadata, reports the producer-stated page count, and chooses image naming text
+from authored sources; and when the image reader yields a PNG's bytes unchanged with a passthrough
+hint and reports an EMF part's media type truthfully.
 
 ### Test Scenarios
 
-The subsystem's behavior is verified by the unit-level scenarios below and by the reading scenarios
-in the reader chapter; the full per-scenario detail is given in each unit chapter.
+The subsystem's behavior is verified by the unit-level scenarios below and by the detailed unit
+chapters.
 
 #### The extractor orchestrates the managed extraction end to end
 
-**Test**: `WordOpenXmlExtractor_Descriptor_HasPriority10AndCapabilities`
+**Test**: `WordOpenXmlExtractor_Descriptor_HasPriority10AndManagedAvailability`
 
-Proves the descriptor directly. The extraction-time behavior — force-PNG explanation, empty
-document, page rendering, per-part split, vector caveat, structural gap, and self-tests — is given
-in the *WordOpenXmlExtractor Verification Design*. Evidence for `DocDownWord-OpenXml-Extraction`.
+Proves the descriptor directly. The extraction-time behavior — force-PNG note, empty-document
+inventory, split output, vector passthrough, table-flattening note, and self-tests — is given in
+the *WordOpenXmlExtractor Verification Design*. Evidence for `DocDownWord-OpenXml-Extraction`.
 
 #### The reader turns a document into the backend-neutral model
 
 **Test**: `WordOpenXmlReader_Read_HeadingsListsAndTables_ProducesStructuredBlocks`
 
-Proves the mapping directly for structured blocks. The Document Control, tracked changes,
-protected-container, comment, metadata, page-count, deduplication, and page-number-footer
-scenarios are given in the *WordOpenXmlReader Verification Design*. Evidence for
-`DocDownWord-OpenXml-Reading`.
+Proves the mapping directly for structured blocks. The Document Control, tracked-changes,
+protected-container, comment, metadata, page-count, deduplication, and image-text scenarios are
+given in the *WordOpenXmlReader Verification Design*. Evidence for `DocDownWord-OpenXml-Reading`.
 
 #### The image reader yields passthrough images with honest provenance
 
 **Test**: `WordOpenXmlImageReader_Read_Png_YieldsPassthroughWithNullDimensions`
 
-Proves the passthrough hint, the null pixel dimensions, and the media type directly, with the
-vector media-type case given in the *WordOpenXmlImageReader Verification Design*. Evidence for
+Proves the passthrough hint, null pixel dimensions, and media type directly, with the vector
+media-type case given in the *WordOpenXmlImageReader Verification Design*. Evidence for
 `DocDownWord-OpenXml-Images`.

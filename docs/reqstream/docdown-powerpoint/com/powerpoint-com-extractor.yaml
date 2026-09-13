@@ -1,10 +1,22 @@
 ---
 # Software Unit Requirements for PowerPointComExtractor
 #
-# PowerPointComExtractor is the full-superset rendering backend: it produces slide text, titles, speaker
-# notes, and metadata by delegating to the managed Open XML backend, then rasterizes each slide to a PNG
-# through Microsoft PowerPoint over late-bound COM. Everything apart from talking to PowerPoint is
+# PowerPointComExtractor is the rendering backend: it produces slide text, titles, speaker notes,
+# images, and metadata by delegating to the managed Open XML backend, then rasterizes each slide to a
+# PNG through Microsoft PowerPoint over late-bound COM. Everything apart from talking to PowerPoint is
 # exercised cross-platform by injecting a stub IPowerPointAutomation.
+#
+# SUPERSEDED REQUIREMENT: DocDownPowerPoint-Com-PowerPointComExtractor-DeclaresCapabilities required a
+# capability set to describe this backend. That requirement is superseded (not satisfied) by
+# DocDownPowerPoint-Com-PowerPointComExtractor-DescribesSelectionSurface, because selection now turns
+# on supported format, priority, page-rendering applicability, and the availability result rather
+# than a capability set.
+#
+# SUPERSEDED REQUIREMENT: DocDownPowerPoint-Com-PowerPointComExtractor-IsolatesSlideRenderFailures
+# required a slide render failure to be reported as a counted shortfall. That requirement is
+# superseded (not satisfied) by
+# DocDownPowerPoint-Com-PowerPointComExtractor-ReportsSlideRenderFailureNote, because a failed render
+# attempt is now recorded as a plain note naming the slide.
 
 sections:
   - title: DocDownPowerPoint Requirements
@@ -13,16 +25,16 @@ sections:
         sections:
           - title: PowerPointComExtractor Requirements
             requirements:
-              - id: DocDownPowerPoint-Com-PowerPointComExtractor-DeclaresCapabilities
+              - id: DocDownPowerPoint-Com-PowerPointComExtractor-DescribesSelectionSurface
                 title: >-
-                  PowerPointComExtractor shall declare the full capability set including rendered-pages,
-                  at a lower selection priority than the managed backend.
+                  PowerPointComExtractor shall identify itself as a `.pptx` backend, keep a lower
+                  selection priority than the managed backend, and remain applicable to rendering
+                  requests.
                 justification: |
-                  The engine selects exactly one backend, so a backend that advertised only rendered-pages
-                  would lose selection to the managed backend and never render. Declaring the full superset
-                  — text, embedded images, document metadata, document structure, and rendered-pages — at
-                  the lower priority is what makes this backend chosen only when rendering is actually
-                  requested, and lets it deliver all five when it is.
+                  The engine selects exactly one backend, so the COM extractor must be visible as a
+                  distinct `.pptx` backend whose lower priority keeps the managed extractor as the
+                  default for content-only work. Its rendering applicability keeps it eligible when a
+                  caller requests rendered pages.
                 tests:
                   - PowerPointComExtractor_Descriptor_MatchesContract
 
@@ -33,60 +45,60 @@ sections:
                   suppressed.
                 justification: |
                   Re-implementing text and notes extraction would create a second, divergent
-                  implementation of the guaranteed content path. Running the managed backend against the
-                  same sink with rendering suppressed reuses the one emission path — so a deck's content
-                  reads identically whether or not it was rendered — while this backend adds only what the
-                  managed backend cannot: the rendered slides.
+                  implementation of the guaranteed content path. Running the managed backend against
+                  the same sink with rendering suppressed reuses the one emission path while this
+                  backend adds only what the managed backend cannot: the rendered slides.
                 tests:
                   - PowerPointComExtractor_Extract_ViaStub_WritesNotesAndRendersEverySlide
 
               - id: DocDownPowerPoint-Com-PowerPointComExtractor-ReconcilesRenderingFacts
                 title: >-
-                  PowerPointComExtractor shall suppress the delegated managed backend's "rendering not
-                  provided" fact and emit its own authoritative renderer fact, so the composed report is
-                  internally consistent.
+                  PowerPointComExtractor shall suppress the delegated managed backend's "rendering
+                  not provided" fact and emit its own authoritative renderer fact, so the composed
+                  report is internally consistent.
                 justification: |
                   The managed backend, unaware a rendering host is composing its output, reports that
-                  rendering is not provided — a statement a successful COM run makes false. Suppressing
-                  that one contradictory fact while forwarding everything else, and emitting the
-                  authoritative renderer fact on the real sink, keeps the composed report from asserting
-                  both that rendering was and was not performed.
+                  rendering is not provided — a statement a successful COM run makes false.
+                  Suppressing that one contradictory fact while forwarding everything else, and
+                  emitting the authoritative renderer fact on the real sink, keeps the composed report
+                  from asserting both that rendering was and was not performed.
                 tests:
                   - PowerPointComExtractor_Extract_ViaStub_SuppressesContradictoryPageRenderingFact
 
               - id: DocDownPowerPoint-Com-PowerPointComExtractor-RendersEverySlide
                 title: >-
-                  PowerPointComExtractor shall render every slide to a page through the automation seam at
-                  the caller's requested resolution.
+                  PowerPointComExtractor shall render every slide to a page through the automation
+                  seam at the caller's requested resolution.
                 justification: |
-                  The rendered appearance of each slide is primary evidence, so every slide is rendered
-                  and added as a page, and the caller's render resolution is passed through to the
-                  automation seam so the pages come out at the resolution the caller asked for rather than
-                  a fixed one.
+                  The rendered appearance of each slide is primary evidence, so every slide is
+                  rendered and added as a page, and the caller's render resolution is passed through
+                  to the automation seam so the pages come out at the resolution the caller asked for
+                  rather than a fixed one.
                 tests:
                   - PowerPointComExtractor_Extract_PassesRenderDpiToAutomation
 
-              - id: DocDownPowerPoint-Com-PowerPointComExtractor-IsolatesSlideRenderFailures
+              - id: DocDownPowerPoint-Com-PowerPointComExtractor-ReportsSlideRenderFailureNote
                 title: >-
-                  PowerPointComExtractor shall report a slide that could not be rendered as a counted gap
-                  naming the slide, and continue with the remaining slides.
+                  PowerPointComExtractor shall record a plain note naming any slide that could not be
+                  rendered, and continue with the remaining slides.
                 justification: |
-                  A slide that dropped out of the pages folder silently is exactly the failure the output
-                  contract forbids. Isolating each slide's export so one unrenderable slide becomes a
-                  counted, named gap and a PPTX0004 diagnostic — rather than aborting the run — keeps a
-                  partially rendered deck an honest, stated fact.
+                  A slide that dropped out of the pages folder silently is exactly the failure the
+                  output contract forbids. Isolating each slide's export so one unrenderable slide
+                  becomes a plain note — rather than aborting the run — keeps a partially rendered
+                  deck an honest, stated fact.
                 tests:
-                  - PowerPointComExtractor_Extract_SlideRenderFails_ReportsCountedGap
+                  - PowerPointComExtractor_Extract_SlideRenderFails_ReportsNote
 
               - id: DocDownPowerPoint-Com-PowerPointComExtractor-ProbesHonestly
                 title: >-
                   PowerPointComExtractor shall probe cheaply without launching PowerPoint, reporting
-                  unavailable where no adapter is present, and never instructing an installation.
+                  unavailable where no adapter is present, and reporting rendered-page support only
+                  when the environment can provide it.
                 justification: |
-                  Constructing the extractor must never launch PowerPoint, and where no automation adapter
-                  is present the backend cannot work regardless of the machine, so it reports unavailable
-                  without throwing. Otherwise it defers to the environment check. No reason it returns ever
-                  instructs an installation, matching the library-wide convention.
+                  Constructing the extractor must never launch PowerPoint, and where no automation
+                  adapter is present the backend cannot work regardless of the machine, so it reports
+                  unavailable without throwing. Otherwise it defers to the environment check, whose
+                  available result names rendered-page support explicitly.
                 tests:
                   - PowerPointComExtractor_NullFactory_ProbesUnavailable
                   - PowerPointComExtractor_PublicCtor_ProbeDoesNotThrowAndNeverInstructsInstallation

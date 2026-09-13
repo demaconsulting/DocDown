@@ -6,9 +6,9 @@ chart's cached data as markdown.
 ### Verification Approach
 
 `ExcelChartWriter` is verified through unit tests in `Markdown/ExcelChartWriterTests.cs` in
-`DemaConsulting.DocDown.Excel.Tests`. The writer is a pure function, so it is exercised from **hand-built
-`ExcelChartModel` instances** and its markdown and returned accounting are asserted directly. Every series
-name, category, and value in the models is synthetic.
+`DemaConsulting.DocDown.Excel.Tests`. The writer is a pure function, so it is exercised from
+**hand-built `ExcelChartModel` instances** and its markdown is asserted directly. Every series name,
+category, and value in the models is synthetic.
 
 ### Test Environment
 
@@ -22,12 +22,12 @@ name, category, and value in the models is synthetic.
 ### Acceptance Criteria
 
 Per IEC 62304 §5.5.2, an `ExcelChartWriter` unit test run passes when a single-series chart renders its
-labeling and a table of categories against values; when sparse indices render with empty cells rather than
-shifted values; when a multi-series chart renders one column per series; when an unnamed series is labeled
-by position; when a chart beyond the bound truncates and states what it dropped and one exactly at the
-bound does not; when a chart caching no points states its absence and reports no data; when an unreadable
-chart states its reason; when a pipe in a label is escaped; and when the description names a readable chart
-and its part. A shifted value, a silent truncation, or a corrupted column is a failure.
+labeling and a table of categories against values; when sparse indices render with empty cells rather
+than shifted values; when a multi-series chart renders one column per series; when an unnamed series is
+labeled by position; when a chart beyond the bound states what it omitted and one exactly at the bound
+does not; when a chart caching no points states its absence; when an unreadable chart states its
+reason; when a pipe in a label is escaped; and when the description names a readable chart and its part.
+A shifted value, an unstated omission, or a corrupted column is a failure.
 
 ### Test Scenarios
 
@@ -35,12 +35,13 @@ and its part. A shifted value, a silent truncation, or a corrupted column is a f
 
 **Test**: `ExcelChartWriter_Render_SingleSeries_RendersLabelingAndTable`
 
-Proves a cached single-series chart renders its context and a table of categories against values. Evidence
-for `DocDownExcel-Markdown-ExcelChartWriter-RendersCachedSeries`. The companion
+Proves a cached single-series chart renders its context and a table of categories against values.
+Evidence for `DocDownExcel-Markdown-ExcelChartWriter-RendersCachedSeries`. The companion
 `ExcelChartWriter_Render_MultipleSeries_RendersOneColumnPerSeries`,
 `ExcelChartWriter_Render_SparseIndices_RendersDeclaredIndicesWithEmptyCells`,
 `ExcelChartWriter_Render_UnnamedSeries_LabelsByPosition`, and
-`ExcelChartWriter_Render_PipeInLabel_EscapesIt` prove the multi-series, sparse, unnamed, and escaping cases.
+`ExcelChartWriter_Render_PipeInLabel_EscapesIt` prove the multi-series, sparse, unnamed, and escaping
+cases.
 
 #### An unreadable or uncached chart is stated in the part
 
@@ -48,14 +49,13 @@ for `DocDownExcel-Markdown-ExcelChartWriter-RendersCachedSeries`. The companion
 
 Proves a chart whose part could not be read states its reason in the part;
 `ExcelChartWriter_Render_NoCachedPoints_StatesAbsenceAndReportsNoData` proves a chart caching no points
-states its absence and reports no data. Evidence for
-`DocDownExcel-Markdown-ExcelChartWriter-StatesUnreadableAndUncached`.
+states its absence. Evidence for `DocDownExcel-Markdown-ExcelChartWriter-StatesUnreadableAndUncached`.
 
-#### The plotted-point bound truncates and is stated
+#### The plotted-point bound is stated when it applies
 
 **Test**: `ExcelChartWriter_Render_BeyondBound_TruncatesAndStatesIt`
 
-Proves a chart caching more than the bound truncates and states how many points it dropped, while
+Proves a chart caching more than the bound states how many points were omitted, while
 `ExcelChartWriter_Render_ExactlyAtBound_DoesNotTruncate` proves a chart exactly at the bound does not.
 Evidence for `DocDownExcel-Markdown-ExcelChartWriter-BoundsPlottedPoints`.
 

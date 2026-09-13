@@ -3,8 +3,41 @@
 #
 # ExcelContentEmitter is the single emission path: it writes the workbook model's worksheet parts and
 # chart parts, the grid tables and verbatim listings, the shape annotations, the images, the content
-# outline, the diagnostics, and the gaps through the sink, so every output the model implies is
-# produced in one place.
+# inventory, and the short notes about attempted steps that could not complete through the sink, so
+# every output the model implies is produced in one place.
+#
+# SUPERSEDED REQUIREMENT: DocDownExcel-Markdown-ExcelContentEmitter-ReportsChartGaps
+# DocDownExcel-Markdown-ExcelContentEmitter-ReportsChartGaps required counted reporting for unreadable,
+# uncached, and bounded charts. Under the current reporting rule, only an unreadable chart records a
+# note because the attempted read did not complete; a chart with no cached data or a bounded table is
+# stated in its chart part. The requirement is superseded (not satisfied) by
+# DocDownExcel-Markdown-ExcelContentEmitter-ReportsAttemptNotes and DocDownExcel-Markdown-ChartRendering.
+#
+# SUPERSEDED REQUIREMENT: DocDownExcel-Markdown-ExcelContentEmitter-ReportsVectorImageCaveat
+# DocDownExcel-Markdown-ExcelContentEmitter-ReportsVectorImageCaveat required a dedicated note for a
+# successfully written vector image. The current reporting rule records no note when the write
+# succeeded. The requirement is superseded (not satisfied) by
+# DocDownExcel-Markdown-ExcelContentEmitter-LinksImages.
+#
+# SUPERSEDED REQUIREMENT: DocDownExcel-Markdown-ExcelContentEmitter-ReportsEmptyWorkbookGap
+# DocDownExcel-Markdown-ExcelContentEmitter-ReportsEmptyWorkbookGap required an empty-workbook
+# shortfall. The current reporting rule states an empty workbook through zero-count inventory entries
+# for features the backend explicitly looked for. The requirement is superseded (not satisfied) by
+# DocDownExcel-Markdown-ExcelContentEmitter-ReportsZeroCountInventory.
+#
+# SUPERSEDED REQUIREMENT: DocDownExcel-Markdown-ExcelContentEmitter-NotesEmptySheet
+# DocDownExcel-Markdown-ExcelContentEmitter-NotesEmptySheet required an informational empty-sheet
+# report. The current reporting rule states that fact in the sheet part itself and records no note.
+# The requirement is superseded (not satisfied) by
+# DocDownExcel-Markdown-ExcelContentEmitter-WritesEmptyWorksheetMessage.
+#
+# SUPERSEDED REQUIREMENT: DocDownExcel-Markdown-ExcelContentEmitter-ReportsGapsAndDiagnostics
+# DocDownExcel-Markdown-ExcelContentEmitter-ReportsGapsAndDiagnostics described the whole reporting path
+# in terms of gaps, diagnostics, and a degraded outcome. The current reporting rule uses content
+# inventory counts plus short notes about attempted steps that could not complete. The requirement is
+# superseded (not satisfied) by DocDownExcel-Markdown-ExcelContentEmitter-ReportsAttemptNotes,
+# DocDownExcel-Markdown-ExcelContentEmitter-ReportsZeroCountInventory, and
+# DocDownExcel-Markdown-ExcelContentEmitter-ReportsContentFeatures.
 
 sections:
   - title: DocDownExcel Requirements
@@ -51,17 +84,17 @@ sections:
                   ExcelContentEmitter shall render a grid table in addition to the listing only when the
                   populated region is dense and table-shaped.
                 justification: |
-                  A grid table restores the row and column relationships a reader would otherwise rebuild
-                  mentally, but only for a region that is genuinely a table; a sparse scatter or a
-                  single-column list gains nothing from a table that a listing does not already give, and
-                  a pathologically wide region is left to the listing so the output stays readable.
+                  A grid table restores the row and column relationships a reader would otherwise
+                  rebuild mentally, but only for a region that is genuinely a table; a sparse scatter or
+                  a single-column list gains nothing from a table that a listing does not already give,
+                  and a pathologically wide region is left to the listing so the output stays readable.
                 tests:
                   - ExcelContentEmitter_Emit_DenseGrid_RendersTableAndListing
 
               - id: DocDownExcel-Markdown-ExcelContentEmitter-ElidesLongCellsInTableOnly
                 title: >-
-                  ExcelContentEmitter shall elide a long or multi-line value in the grid table only, keep
-                  its full verbatim value in the listing, and note the elision when one occurred.
+                  ExcelContentEmitter shall elide a long or multi-line value in the grid table only,
+                  keep its full verbatim value in the listing, and note the elision when one occurred.
                 justification: |
                   A Markdown table cannot hold a very long or multi-line value, so eliding it in the
                   table keeps the table readable; the full value is always present verbatim in the
@@ -77,8 +110,8 @@ sections:
                   grid table.
                 justification: |
                   A merge stores its value only in the anchor cell and a GFM table cannot visually span
-                  cells, so the merged ranges are stated as a note rather than spanned, keeping the fact
-                  that a range was merged visible without misrepresenting the grid.
+                  cells, so the merged ranges are stated as a note rather than spanned, keeping the
+                  fact that a range was merged visible without misrepresenting the grid.
                 tests:
                   - ExcelContentEmitter_Emit_MergedRanges_StatedAsNote
 
@@ -93,22 +126,25 @@ sections:
                 tests:
                   - ExcelContentEmitter_Emit_SheetWithChart_WritesChartPartAfterSheet
 
-              - id: DocDownExcel-Markdown-ExcelContentEmitter-ReportsChartGaps
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-ReportsAttemptNotes
                 title: >-
-                  ExcelContentEmitter shall report a counted gap for each chart that could not be read,
-                  cached no data, or was bounded, and report nothing for a chart-free workbook.
+                  ExcelContentEmitter shall record a short plain note only when an attempted chart or
+                  image step could not be completed.
                 justification: |
-                  Before this backend read charts, a chart vanished from the output while the summary
-                  claimed everything was extracted. A workbook whose chart yields no data must say so as
-                  a counted gap, one whose chart was bounded must say how much it dropped, and a
-                  chart-free workbook must stay a clean success.
+                  The reporting contract distinguishes facts about extracted content from facts about
+                  attempted steps that did not finish. An unreadable chart part, images skipped by
+                  caller-supplied size limits, and embedded images written in their source encoding when
+                  PNG output was requested are all incomplete steps and therefore deserve a short note.
+                  An empty worksheet, an empty workbook, a chart with no cached data, a bounded chart
+                  table, or a vector image written successfully are reported in content or inventory
+                  instead.
                 tests:
-                  - ExcelContentEmitter_Emit_ChartWithoutCache_ReportsGap
+                  - ExcelContentEmitter_Emit_UnreadableChart_ReportsNoteAndKeepsChartPart
 
               - id: DocDownExcel-Markdown-ExcelContentEmitter-WritesShapeText
                 title: >-
-                  ExcelContentEmitter shall write a worksheet's drawing-shape text under its own heading,
-                  after the cells and before the images.
+                  ExcelContentEmitter shall write a worksheet's drawing-shape text under its own
+                  heading, after the cells and before the images.
                 justification: |
                   Callouts and labels carry part numbers, warnings, and legend keys that exist in no
                   cell, so a reader of the listing alone would never see them. Writing them under their
@@ -129,68 +165,52 @@ sections:
                 tests:
                   - ExcelContentEmitter_Emit_SheetImage_LinksInlineFromSheet
 
-              - id: DocDownExcel-Markdown-ExcelContentEmitter-ReportsVectorImageCaveat
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-ReportsZeroCountInventory
                 title: >-
-                  ExcelContentEmitter shall write an EMF or WMF vector image unchanged and record the
-                  readability caveat as an informational diagnostic.
+                  ExcelContentEmitter shall preserve zero-count inventory entries for features it
+                  explicitly looked for but did not find.
                 justification: |
-                  A vector metafile's bytes are a complete image file, written and counted as extracted;
-                  because no better environment would yield more, the caveat that many viewers cannot
-                  render a metafile is informational and must not degrade the run.
+                  A reader must be able to tell "none found" from "not counted." Reporting zero counts
+                  for an empty workbook and for an ordinary workbook that embeds no images keeps that
+                  distinction explicit without characterizing the document.
                 tests:
-                  - ExcelContentEmitter_Emit_VectorImage_WritesWithInfoCaveat
+                  - ExcelContentEmitter_Emit_EmptyWorkbook_ReportsZeroCountInventory
+                  - ExcelContentEmitter_Emit_NoImages_ReportsZeroImageInventory
 
-              - id: DocDownExcel-Markdown-ExcelContentEmitter-ReportsEmptyWorkbookGap
-                title: ExcelContentEmitter shall degrade with a counted gap when the workbook has no worksheets.
-                justification: |
-                  An empty content document is indistinguishable from a broken extractor. Stating plainly
-                  that the workbook carried no worksheets turns a mystery into a fact the caller can act
-                  on.
-                tests:
-                  - ExcelContentEmitter_Emit_EmptyWorkbook_ReportsGap
-
-              - id: DocDownExcel-Markdown-ExcelContentEmitter-NotesEmptySheet
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-WritesEmptyWorksheetMessage
                 title: >-
-                  ExcelContentEmitter shall note an empty worksheet as an informational diagnostic that
-                  does not degrade the run.
+                  ExcelContentEmitter shall state in the worksheet part when a worksheet has no cell
+                  content, and shall record no note for that fact.
                 justification: |
-                  A worksheet with no populated cells is an expected authoring artifact, not a loss, so
-                  it is noted informationally and never raised as a gap, keeping a complete extraction
-                  from being falsely reported as degraded.
+                  A worksheet with no populated cells is an ordinary authoring artifact, not an
+                  incomplete extraction step. Stating that fact in the worksheet part lets a reader
+                  distinguish an empty sheet from missing content without wrongly describing the document.
                 tests:
-                  - ExcelContentEmitter_Emit_EmptySheet_NotesInformationalDiagnostic
+                  - ExcelContentEmitter_Emit_EmptySheet_WritesEmptySheetMessage
 
               - id: DocDownExcel-Markdown-ExcelContentEmitter-StaysSilentOnPageRequest
                 title: >-
-                  ExcelContentEmitter shall not answer a page-rendering request with a gap, because a
-                  workbook has no page grid to render.
+                  ExcelContentEmitter shall not answer a page-rendering request with content or a note,
+                  because a workbook has no page grid to render.
                 justification: |
-                  A page-rendering request applies to nothing on a non-paginated workbook, so the emitter
-                  reports no shortfall; the engine records the non-applicability itself, so the emitter
-                  stays silent rather than reporting a loss for a request it cannot lose.
+                  A page-rendering request applies to nothing on a non-paginated workbook, so the
+                  emitter reports nothing; the extractor surface and environment facts carry that
+                  non-applicability, and the emitter stays silent rather than implying work was left
+                  undone.
                 tests:
                   - ExcelContentEmitter_Emit_RenderPagesRequested_StaysSilent
 
               - id: DocDownExcel-Markdown-ExcelContentEmitter-ReportsContentFeatures
                 title: >-
                   ExcelContentEmitter shall report a content outline counting the model's worksheets,
-                  cells, formulas, images, charts, drawing annotations, and cached chart points.
+                  cells, formulas, images, charts, drawing annotations, and cached chart points,
+                  including zero counts for features it explicitly looked for.
                 justification: |
-                  The counts come from the model the reader built, and give a reader deciding whether to
-                  open the parts an honest shape of the workbook — one small table or tens of thousands
-                  of cells — that a character count could never convey.
+                  The counts come from the model the reader built and give a reader deciding whether to
+                  open the parts an honest shape of the workbook — one small table or tens of
+                  thousands of cells — that a character count could never convey. Preserving zero counts
+                  for explicitly looked for features distinguishes "none found" from "not counted."
                 tests:
                   - ExcelContentEmitter_Emit_Workbook_ReportsContentFeatures
-
-              - id: DocDownExcel-Markdown-ExcelContentEmitter-ReportsGapsAndDiagnostics
-                title: >-
-                  ExcelContentEmitter shall report the diagnostics and counted gaps the model implies,
-                  returning whether the outcome degraded.
-                justification: |
-                  Genuine loss — an empty workbook, an uncached chart, a size-skipped image — is emitted
-                  as a counted gap that degrades the outcome, while an expected non-loss such as an empty
-                  sheet or a vector-image caveat is emitted as an informational diagnostic that does not.
-                  Reporting each through the shared path, gap-versus-diagnostic by whether anything was
-                  actually lost, is what keeps the extraction honest without over-reporting a degrade.
-                tests:
-                  - ExcelContentEmitter_Emit_EmptyWorkbook_ReportsGap
+                  - ExcelContentEmitter_Emit_NoImages_ReportsZeroImageInventory
+                  - ExcelContentEmitter_Emit_EmptyWorkbook_ReportsZeroCountInventory

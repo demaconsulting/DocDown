@@ -6,8 +6,8 @@ namespace DemaConsulting.DocDown.Pdf.Tests;
 
 /// <summary>
 ///     Unit tests for the PDF image extractor, proving the encoding decision, the provenance it
-///     reports for each decision, the counted gaps for what it could not deliver, suppression, and
-///     the size limits.
+///     reports for each decision, the plain-language notes for what it could not deliver, suppression,
+///     and the size limits.
 /// </summary>
 /// <remarks>
 ///     These tests drive the internal extractor directly against a <see cref="RecordingSink"/>, so
@@ -21,7 +21,7 @@ public class PdfImageExtractorTests
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>
-    ///     Proves a stored JPEG is passed through unchanged and labeled as such (JpegPassthrough).
+    ///     Proves a stored JPEG is passed through unchanged and labeled as such.
     /// </summary>
     [Fact]
     public async Task PdfImageExtractor_AddImage_DctImage_SetsPassthroughTransformHint()
@@ -44,7 +44,7 @@ public class PdfImageExtractorTests
     }
 
     /// <summary>
-    ///     Proves a compressed-sample image is re-encoded and labeled as such (DecodesToPng).
+    ///     Proves a compressed-sample image is re-encoded and labeled as such.
     /// </summary>
     [Fact]
     public async Task PdfImageExtractor_AddImage_FlateImage_SetsDecodedToPngTransformHint()
@@ -64,7 +64,7 @@ public class PdfImageExtractorTests
     }
 
     /// <summary>
-    ///     Proves the hint carries the provenance fields the manifest records (ReportsImageHints).
+    ///     Proves the hint carries the provenance fields the manifest records.
     /// </summary>
     [Fact]
     public async Task PdfImageExtractor_AddImage_AnyImage_PopulatesHintProvenanceFields()
@@ -84,17 +84,10 @@ public class PdfImageExtractorTests
     }
 
     /// <summary>
-    ///     Proves a JPEG 2000 image is written verbatim as .jp2 with a readability caveat (WritesJpeg2000WithCaveat).
+    ///     Proves a JPEG 2000 image is written verbatim as <c>.jp2</c> and labeled as a passthrough.
     /// </summary>
-    /// <remarks>
-    ///     The caveat is the whole point of writing these bytes at all. A <c>.jp2</c> file some tooling
-    ///     can open is more useful to a multimodal consumer than no file, but only while the consumer
-    ///     is told plainly that many viewers and image libraries cannot read it. Asserting the bytes
-    ///     against the fixture's retained codestream keeps the passthrough label falsifiable, exactly
-    ///     as the JPEG scenario does.
-    /// </remarks>
     [Fact]
-    public async Task PdfImageExtractor_AddImage_JpxImage_WritesJp2PassthroughWithCaveat()
+    public async Task PdfImageExtractor_AddImage_JpxImage_WritesJp2PassthroughWithoutExtraNote()
     {
         // Arrange: a document with one decodable JPEG and one JPEG 2000 image
         var sink = new RecordingSink();
@@ -113,24 +106,15 @@ public class PdfImageExtractorTests
         Assert.Equal("image/jp2", recorded.Hint.MediaType);
         Assert.Equal(ImageTransform.Passthrough, recorded.Hint.Transform);
 
-        // Assert: and the run warns that the format is not widely readable, without calling it a loss
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "PDF0004");
-        Assert.DoesNotContain(sink.Diagnostics, diagnostic => diagnostic.Code == "PDF0001");
-        var gap = Assert.Single(sink.Gaps);
-        Assert.Equal("images/", gap.Target);
-        Assert.Equal(GapScope.PartiallyExtracted, gap.Scope);
-        Assert.Equal(1, gap.AffectedCount);
-        Assert.Equal(["page 1 image 2"], gap.AffectedItems);
-        Assert.Contains("Many image viewers and image libraries cannot read JPEG 2000 files.",
-            Normalize(gap.Reason), StringComparison.Ordinal);
-        Assert.Contains(".jp2", gap.Reason, StringComparison.Ordinal);
+        // Assert: nothing was left incomplete, because the image was written successfully
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
-    ///     Proves an undecodable image is counted and named rather than dropped (ReportsUndecodableEncodings).
+    ///     Proves an undecodable image is counted and named rather than dropped.
     /// </summary>
     [Fact]
-    public async Task PdfImageExtractor_Extract_UndecodableEncoding_ReportsCountedGapAndWritesNothingForIt()
+    public async Task PdfImageExtractor_Extract_UndecodableEncoding_ReportsPlainNoteAndWritesNothingForIt()
     {
         // Arrange: a document with one decodable JPEG and one JBIG2 image
         var sink = new RecordingSink();
@@ -142,48 +126,19 @@ public class PdfImageExtractorTests
         Assert.Equal(2, result.Found);
         Assert.Equal(1, result.Written);
         Assert.Single(sink.Images);
-        Assert.Equal(2, Assert.Single(sink.FoundCounts, found => found.Kind == GapKind.Images).FoundCount);
 
-        // Assert: the gap names the encoding, the count, and the consequence
-        var gap = Assert.Single(sink.Gaps);
-        Assert.Equal("images/", gap.Target);
-        Assert.Equal(GapKind.Images, gap.Kind);
-        Assert.Equal(GapScope.PartiallyExtracted, gap.Scope);
-        Assert.Contains("JBIG2Decode: 1", gap.Reason, StringComparison.Ordinal);
-        Assert.Contains("1 of 2", gap.Reason, StringComparison.Ordinal);
-        Assert.Equal(1, gap.AffectedCount);
-        Assert.Equal(["page 1 image 2"], gap.AffectedItems);
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "PDF0001");
+        // Assert: the note names the encoding, the count, and the consequence
+        var note = SingleNoteMessage(sink);
+        Assert.Contains("JBIG2Decode: 1", note, StringComparison.Ordinal);
+        Assert.Contains("1 of 2", note, StringComparison.Ordinal);
+        Assert.Contains("were not written", note, StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     Proves a document where nothing could be written reports an unavailable rather than partial scope.
-    /// </summary>
-    /// <remarks>
-    ///     The distinction is not cosmetic. Calling an empty folder "partially extracted" would both
-    ///     overstate the result and contradict the contract verifier's rule that a partial folder
-    ///     holds at least one file, so the scope has to follow what was actually written.
-    /// </remarks>
-    [Fact]
-    public async Task PdfImageExtractor_Extract_NothingWritten_ReportsUnavailableScope()
-    {
-        // Arrange: a document whose only deliverable image is excluded by a byte budget, leaving none
-        var sink = new RecordingSink();
-        var options = new ExtractionOptions { MaxImageBytes = 4 };
-
-        // Act: extract with the limit in force
-        var result = await ExtractAsync(PdfFixtures.WithUndecodableImage(), sink, options);
-
-        // Assert: nothing was written, so the scope says so rather than claiming partial success
-        Assert.Equal(0, result.Written);
-        Assert.All(sink.Gaps, gap => Assert.Equal(GapScope.Unavailable, gap.Scope));
-    }
-
-    /// <summary>
-    ///     Proves a size-limit skip is a distinct gap from a decode failure (HonorsSizeLimits).
+    ///     Proves a size-limit skip is a distinct note from a decode failure.
     /// </summary>
     [Fact]
-    public async Task PdfImageExtractor_Extract_ImageOverByteLimit_ReportsSizeGapDistinctFromDecodeGap()
+    public async Task PdfImageExtractor_Extract_ImageOverByteLimit_ReportsSizeNoteDistinctFromDecodeFailure()
     {
         // Arrange: a JPEG-bearing document with an impossibly small byte budget
         var sink = new RecordingSink();
@@ -192,20 +147,18 @@ public class PdfImageExtractorTests
         // Act: extract with the limit in force
         var result = await ExtractAsync(PdfFixtures.WithEmbeddedJpeg(), sink, options);
 
-        // Assert: nothing written, and the gap names a limit rather than an undecodable encoding
+        // Assert: nothing written, and the note names a limit rather than an undecodable encoding
         Assert.Equal(0, result.Written);
-        var gap = Assert.Single(sink.Gaps);
-        Assert.Contains("size or dimension limit", gap.Reason, StringComparison.Ordinal);
-        Assert.DoesNotContain("cannot decode", gap.Reason, StringComparison.Ordinal);
-        Assert.DoesNotContain(sink.Diagnostics, diagnostic => diagnostic.Code == "PDF0001");
-        Assert.NotNull(gap.Remedy);
+        var note = SingleNoteMessage(sink);
+        Assert.Contains("size or dimension limit", note, StringComparison.Ordinal);
+        Assert.DoesNotContain("cannot decode", note, StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     Proves a dimension limit skips the image the same way a byte limit does (HonorsSizeLimits).
+    ///     Proves a dimension limit skips the image the same way a byte limit does.
     /// </summary>
     [Fact]
-    public async Task PdfImageExtractor_Extract_ImageOverDimensionLimit_SkipsWithCountedGap()
+    public async Task PdfImageExtractor_Extract_ImageOverDimensionLimit_ReportsCountedSizeNote()
     {
         // Arrange: an 8x8 image excluded by a four-pixel dimension limit
         var sink = new RecordingSink();
@@ -217,14 +170,16 @@ public class PdfImageExtractorTests
         // Assert: the image is skipped and counted rather than written or silently ignored
         Assert.Equal(1, result.Found);
         Assert.Equal(0, result.Written);
-        Assert.Equal(1, Assert.Single(sink.Gaps).AffectedCount);
+        var note = SingleNoteMessage(sink);
+        Assert.Contains("1 of 1", note, StringComparison.Ordinal);
+        Assert.Contains("size or dimension limit", note, StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     Proves a PNG request that cannot be honored is explained (ExplainsUnhonoredForcePng).
+    ///     Proves a PNG request that cannot be honored is explained.
     /// </summary>
     [Fact]
-    public async Task PdfImageExtractor_Extract_ForcePngWithJpeg_ReportsUnhonoredModeGap()
+    public async Task PdfImageExtractor_Extract_ForcePngWithJpeg_ReportsUnhonoredModeNote()
     {
         // Arrange: a JPEG-bearing document extracted with PNG output demanded
         var sink = new RecordingSink();
@@ -238,18 +193,17 @@ public class PdfImageExtractorTests
         Assert.Equal("image/jpeg", Assert.Single(sink.Images).Hint.MediaType);
 
         // Assert: and the run explains which images defeated the requested mode and why
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "PDF0002");
-        var gap = Assert.Single(sink.Gaps);
-        Assert.Contains("PNG output was requested", gap.Reason, StringComparison.Ordinal);
-        Assert.Contains("DCTDecode", gap.Reason, StringComparison.Ordinal);
-        Assert.Equal(1, gap.AffectedCount);
+        var note = SingleNoteMessage(sink);
+        Assert.Contains("PNG output was requested", note, StringComparison.Ordinal);
+        Assert.Contains("DCTDecode: 1", note, StringComparison.Ordinal);
+        Assert.Contains("1 of 1", note, StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     Proves a PNG request that can be honored produces no explanation gap.
+    ///     Proves a PNG request that can be honored produces no explanatory note.
     /// </summary>
     [Fact]
-    public async Task PdfImageExtractor_Extract_ForcePngWithFlateImage_ReportsNoUnhonoredGap()
+    public async Task PdfImageExtractor_Extract_ForcePngWithFlateImage_ReportsNoUnhonoredNote()
     {
         // Arrange: a document whose image genuinely becomes PNG, extracted with PNG demanded
         var sink = new RecordingSink();
@@ -259,20 +213,14 @@ public class PdfImageExtractorTests
         await ExtractAsync(PdfFixtures.WithEmbeddedPng(), sink, options);
 
         // Assert: the mode was honored, so nothing needed explaining
-        Assert.Empty(sink.Gaps);
-        Assert.DoesNotContain(sink.Diagnostics, diagnostic => diagnostic.Code == "PDF0002");
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
     ///     Proves a JPEG 2000 passthrough defeats a PNG request exactly as a JPEG passthrough does.
     /// </summary>
-    /// <remarks>
-    ///     A passthrough is a passthrough whatever the container: an image written as <c>.jp2</c> under
-    ///     a PNG request is as unhonored as one written as <c>.jpg</c>, and the explanation must name
-    ///     the encoding that actually defeated the request rather than assume it was JPEG.
-    /// </remarks>
     [Fact]
-    public async Task PdfImageExtractor_Extract_ForcePngWithJpxImage_ReportsUnhonoredModeGapNamingJpx()
+    public async Task PdfImageExtractor_Extract_ForcePngWithJpxImage_ReportsUnhonoredModeNoteNamingJpx()
     {
         // Arrange: a document holding a JPEG and a JPEG 2000 image, extracted with PNG demanded
         var sink = new RecordingSink();
@@ -285,22 +233,21 @@ public class PdfImageExtractorTests
         Assert.Equal(2, result.Written);
         Assert.Equal("image/jp2", sink.Images[1].Hint.MediaType);
 
-        // Assert: the unhonored-mode gap counts both and names JPXDecode alongside DCTDecode
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "PDF0002");
-        var gap = Assert.Single(sink.Gaps, candidate =>
-            candidate.Reason.Contains("PNG output was requested", StringComparison.Ordinal));
-        Assert.Contains("DCTDecode: 1", gap.Reason, StringComparison.Ordinal);
-        Assert.Contains("JPXDecode: 1", gap.Reason, StringComparison.Ordinal);
-        Assert.Equal(2, gap.AffectedCount);
+        // Assert: the note counts both and names JPXDecode alongside DCTDecode
+        var note = SingleNoteMessage(sink);
+        Assert.Contains("PNG output was requested", note, StringComparison.Ordinal);
+        Assert.Contains("DCTDecode: 1", note, StringComparison.Ordinal);
+        Assert.Contains("JPXDecode: 1", note, StringComparison.Ordinal);
+        Assert.Contains("2 of 2", note, StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     Proves disabling embedded images attempts nothing at all (HonorsSuppression).
+    ///     Proves disabling embedded images attempts nothing at all.
     /// </summary>
     /// <remarks>
-    ///     Nothing is decoded, counted, or explained here, because Core owns the record of a
-    ///     deliberate suppression; a second account of the same decision would be redundant at best
-    ///     and contradictory at worst.
+    ///     Nothing is decoded or explained here, because Core owns the record of a deliberate
+    ///     suppression; a second account of the same decision would be redundant at best and
+    ///     contradictory at worst.
     /// </remarks>
     [Fact]
     public async Task PdfImageExtractor_Extract_ImagesDisabled_AttemptsNothing()
@@ -312,34 +259,33 @@ public class PdfImageExtractorTests
         // Act: extract with images suppressed
         var result = await ExtractAsync(PdfFixtures.WithEmbeddedJpeg(), sink, options);
 
-        // Assert: no image, no link, no count, and no gap of this unit's own
+        // Assert: no image, no link, no note of this unit's own
         Assert.Equal(0, result.Found);
         Assert.Empty(result.Images);
         Assert.Empty(sink.Images);
-        Assert.Empty(sink.Gaps);
-        Assert.Empty(sink.FoundCounts);
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
-    ///     Proves a document with no images reports a zero found count rather than staying silent.
+    ///     Proves a document with no images reports zero counts without a note.
     /// </summary>
     [Fact]
-    public async Task PdfImageExtractor_Extract_NoImages_ReportsZeroFoundCount()
+    public async Task PdfImageExtractor_Extract_NoImages_ReturnsZeroCountsWithoutNote()
     {
         // Arrange: a text-only document
         var sink = new RecordingSink();
 
-        // Act: extract its (absent) images
+        // Act: extract its absent images
         var result = await ExtractAsync(PdfFixtures.SimpleText(), sink);
 
-        // Assert: the denominator is still reported, so the ledger can state zero of zero honestly
+        // Assert: the denominator is still reported by the result counters, and there is nothing to explain
         Assert.Equal(0, result.Found);
-        Assert.Equal(0, Assert.Single(sink.FoundCounts).FoundCount);
-        Assert.Empty(sink.Gaps);
+        Assert.Equal(0, result.Written);
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
-    ///     Proves a null sink is rejected as a caller error (boundary).
+    ///     Proves a null sink is rejected as a caller error.
     /// </summary>
     [Fact]
     public async Task PdfImageExtractor_Extract_NullSink_ThrowsArgumentNullException()
@@ -355,17 +301,12 @@ public class PdfImageExtractorTests
     }
 
     /// <summary>
-    ///     Collapses all whitespace in a text into single spaces.
+    ///     Returns the single note message recorded by the sink.
     /// </summary>
-    /// <param name="text">The text to normalize.</param>
-    /// <returns>The text with every whitespace run reduced to one space.</returns>
-    /// <remarks>
-    ///     Gap prose is wrapped when it reaches <c>summary.txt</c>, so a phrase may be split across two
-    ///     lines. Normalizing before matching asserts on what is said rather than on where the wrap
-    ///     happened to fall, and keeps this assertion identical in shape to the system-level one. Pure.
-    /// </remarks>
-    private static string Normalize(string text) =>
-        string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+    /// <param name="sink">The sink whose notes are inspected.</param>
+    /// <returns>The single recorded note message.</returns>
+    /// <remarks>Used where one scenario is expected to explain itself with exactly one note.</remarks>
+    private static string SingleNoteMessage(RecordingSink sink) => Assert.Single(sink.Notes).Message;
 
     /// <summary>
     ///     Runs the image extractor over a generated document.

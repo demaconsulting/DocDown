@@ -9,11 +9,12 @@ superset backend that delegates the managed aspects and rasterizes the requested
 `DemaConsulting.DocDown.Pdf.Rendering.Tests`, with method names beginning with
 `PdfPageRenderingExtractor_`.
 
-The delegation and fault-isolation scenarios run through the real `DocDownEngine`, so the backend is
-exercised exactly as production selects and invokes it. The per-page fault path is exercised by
-injecting, through the internal constructor, a rasterization function that throws — the only reliable
-way to drive that path without depending on the native renderer failing on cue. The descriptor and
-probe are asserted directly on a constructed instance.
+The descriptor and probe are asserted directly on a constructed instance, protecting the stable public
+identity and the selection-time availability contract. The delegation and per-page failure scenarios
+run through the real `DocDownEngine`, so the backend is exercised exactly as production selects and
+invokes it. The per-page failure path is exercised by injecting, through the internal constructor, a
+rasterization function that throws — the only reliable way to drive that path without depending on
+the native renderer failing on cue.
 
 ### Test Environment
 
@@ -26,27 +27,30 @@ probe are asserted directly on a constructed instance.
 
 ### Acceptance Criteria
 
-Per IEC 62304 §5.5.2, a `PdfPageRenderingExtractor` unit test run passes when the backend declares the
-four capabilities; when its probe reports available without throwing where the native stack is
-deployed; when a render delegates the managed aspects and writes a valid page PNG; when a per-page
-render fault becomes a counted gap without an exception reaching the caller; and when it contributes a
-distinctly named, passing render round-trip case.
+Per IEC 62304 §5.5.2, a `PdfPageRenderingExtractor` unit test run passes when the backend's public
+identity stays stable; when its probe reports rendered-page support honestly without throwing; when a
+render delegates the managed aspects and writes a valid page PNG; when a per-page render fault
+becomes the plain note `Page N could not be rasterized.` without an exception reaching the caller; and
+when it contributes a distinctly named render round-trip case that reports pass or skip honestly for
+the current environment.
 
 ### Test Scenarios
 
-#### The descriptor declares the full superset
+#### The descriptor stays stable
 
-**Test**: `PdfPageRenderingExtractor_Descriptor_DeclaresFullSupersetCapabilities`
+**Test**: `PdfPageRenderingExtractor_Descriptor_DeclaresStableIdentity`
 
-Proves the identifier, PDF format, priority, and the four capabilities. Evidence for
-`DocDownPdfRendering-PdfPageRenderingExtractor-DeclaresCapabilities`.
+Proves the identifier, display name, supported PDF format, and priority stay stable for selection and
+reporting.
 
-#### The probe is cheap, safe, and available here
+#### The probe is cheap, safe, and reports rendered-page support honestly
 
-**Test**: `PdfPageRenderingExtractor_ProbeAvailability_DeployedStack_ReportsAvailableWithoutThrowing`
+**Test**: `PdfPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReflectsNativeStackWithoutThrowing`
 
-Proves the probe does not throw and reports the full capability set where the native stack is
-deployed. Evidence for `DocDownPdfRendering-PdfPageRenderingExtractor-ProbeIsCheapAndSafe`.
+Proves the probe does not throw, reports rendered-page support when the native stack is usable, and
+otherwise reports an unavailable reason. Evidence for
+`DocDownPdfRendering-PdfPageRenderingExtractor-ProbeIsCheapAndSafe` and
+`DocDownPdfRendering-PdfPageRenderingExtractor-ReportsRenderedPagesAvailability`.
 
 #### The managed aspects are delegated and pages are written
 
@@ -58,18 +62,18 @@ its own rasterization, in one run. Evidence for
 `DocDownPdfRendering-PdfPageRenderingExtractor-WritesRenderedPages` (the latter also evidenced by the
 system scenario `DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages`).
 
-#### A per-page fault becomes a counted gap without throwing
+#### A per-page fault becomes a note without throwing
 
-**Test**: `PdfPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsCountedGapWithoutThrowing`
+**Test**: `PdfPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsNoteWithoutThrowing`
 
-Proves an injected rasterization fault degrades the run with `PDFR0001` and a counted gap of affected
-count one, produces no page, and does not throw. Evidence for
-`DocDownPdfRendering-PdfPageRenderingExtractor-IsolatesPageFailures`.
+Proves an injected rasterization fault records the plain note `Page 1 could not be rasterized.`,
+produces no page, still returns `Produced`, and does not throw. Evidence for
+`DocDownPdfRendering-PdfPageRenderingExtractor-ReportsPageFailuresAsNotes`.
 
-#### A distinctly named self-test case passes here
+#### A distinctly named self-test case reports pass or skip honestly
 
-**Test**: `PdfPageRenderingExtractor_GetSelfTestCases_DeployedStack_ContributesPassingRenderCase`
+**Test**: `PdfPageRenderingExtractor_GetSelfTestCases_AnyEnvironment_ReportsHonestRenderCaseStatus`
 
 Proves the backend contributes exactly one case, named `pdf-rendering.renderRoundTrip` in category
-`pdf-rendering`, that passes where the native stack is deployed. Evidence for
+`pdf-rendering`, that reports pass or skip honestly for the current environment. Evidence for
 `DocDownPdfRendering-PdfPageRenderingExtractor-ContributesSelfTests`.

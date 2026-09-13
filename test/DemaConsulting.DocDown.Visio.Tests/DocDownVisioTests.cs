@@ -2,6 +2,7 @@ using DemaConsulting.DocDown.TestSupport;
 using DemaConsulting.DocDown.Visio.Tests.TestData;
 using DocDown.Core;
 using DocDown.Visio;
+using DocDown.Visio.Com;
 
 namespace DemaConsulting.DocDown.Visio.Tests;
 
@@ -10,10 +11,10 @@ namespace DemaConsulting.DocDown.Visio.Tests;
 ///     through <see cref="DocDownEngine"/> against drawings generated at test time.
 /// </summary>
 /// <remarks>
-///     Every scenario runs the real engine over a real drawing and confirms the contract verifier
-///     finds no violations. Rendering is not requested, so the managed backend is selected and the
-///     tests stay green on a CI host without Office — while still proving the topology, the guaranteed
-///     content, is recovered with no Visio present.
+///     Every scenario runs the real engine over a real drawing and confirms the invariant layout is
+///     present. Rendering is not requested unless a test says otherwise, so the managed backend is
+///     selected and the tests stay green on a CI host without Office — while still proving the
+///     topology, the guaranteed content, is recovered with no Visio present.
 /// </remarks>
 public class DocDownVisioTests
 {
@@ -31,32 +32,30 @@ public class DocDownVisioTests
     public async Task DocDownVisio_Extract_Vsdx_SelectsOpenXml()
     {
         using var temp = new TempScratch();
-        var (_, result) = await ExtractAsync(temp, "wash.vsdx", VsdxFixtures.WashSystem(), FixedOptions());
+        var (scratch, result) = await ExtractAsync(temp, "wash.vsdx", VsdxFixtures.WashSystem(), FixedOptions());
 
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Equal("visio-openxml", result.SelectedExtractor?.Id);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
     ///     Proves a drawing whose only image is an EMF vector metafile still reports <see
-    ///     cref="ExtractionOutcome.Succeeded"/>: the bytes are written unchanged and counted, the
-    ///     <c>VISIO0003</c> caveat is stated as an informational diagnostic, and no images gap is
-    ///     opened — a well-formed vector-bearing drawing must not degrade.
+    ///     cref="ExtractionOutcome.Produced"/>: the bytes are written unchanged with the original
+    ///     extension, and no note is needed when PNG output was not requested.
     /// </summary>
     [Fact]
-    public async Task DocDownVisio_Extract_PageWithVectorImage_Succeeds()
+    public async Task DocDownVisio_Extract_PageWithVectorImage_ProducesLayoutAndEmfImage()
     {
         using var temp = new TempScratch();
         var (scratch, result) = await ExtractAsync(temp, "schematic.vsdx", VsdxFixtures.PageWithVectorImage(), FixedOptions());
 
-        Assert.Equal(ExtractionOutcome.Succeeded, result.Outcome);
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         var images = Directory.GetFiles(Path.Combine(scratch, "images"));
         Assert.Single(images);
         Assert.EndsWith(".emf", images[0], StringComparison.Ordinal);
-        Assert.Contains(result.Diagnostics, diagnostic =>
-            diagnostic.Code == "VISIO0003" && diagnostic.Severity == DiagnosticSeverity.Info);
-        Assert.DoesNotContain(result.Gaps, gap => gap.Kind == GapKind.Images);
+        Assert.Empty(result.Notes);
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>
@@ -74,7 +73,6 @@ public class DocDownVisioTests
         Assert.Contains("Inlet Tank \u2192 Transfer Pump", content, StringComparison.Ordinal);
         Assert.Contains("Transfer Pump \u2192 Outlet Valve", content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>
@@ -90,7 +88,7 @@ public class DocDownVisioTests
         Assert.Equal("visio-openxml", result.SelectedExtractor?.Id);
         var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
         Assert.Contains("Inlet Tank \u2192 Transfer Pump", content, StringComparison.Ordinal);
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
@@ -105,20 +103,21 @@ public class DocDownVisioTests
         var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
         Assert.Contains("Schematic", content, StringComparison.Ordinal);
         Assert.Contains("Legend", content, StringComparison.Ordinal);
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
-    ///     Proves rendering degrades honestly off a host without Visio: a counted pages gap naming the
-    ///     reason, while the topology content is still delivered.
+    ///     Proves that when page rendering is requested on a host without a Visio renderer, DocDown
+    ///     still produces the layout and records the missing renderer as a plain note while keeping
+    ///     the topology content.
     /// </summary>
     [Fact]
-    public async Task DocDownVisio_Extract_RenderRequestedWithoutVisio_DegradesWithCountedPagesGapButKeepsTopology()
+    public async Task DocDownVisio_Extract_RenderRequestedWithoutVisio_RecordsNoteButKeepsTopology()
     {
-        if (OperatingSystem.IsWindows())
+        if (new VisioComExtractor().ProbeAvailability().IsAvailable)
         {
-            // On a developer machine with Visio the COM backend may actually render; this scenario
-            // pins the honest-degradation behavior where Visio is absent, which is the CI environment.
+            // On a machine with Visio available the COM backend will render pages, so this scenario
+            // is only meaningful where the managed backend remains the selected path.
             return;
         }
 
@@ -127,33 +126,40 @@ public class DocDownVisioTests
         options.RenderPages = true;
         var (scratch, result) = await ExtractAsync(temp, "wash.vsdx", VsdxFixtures.WashSystem(), options);
 
-        Assert.Equal(ExtractionOutcome.Degraded, result.Outcome);
-        Assert.Contains(result.Gaps, gap => gap.Kind == GapKind.Pages);
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Empty(result.PagePaths);
+        Assert.Contains(
+            result.Notes,
+            note => note.Message.Contains("Page rendering was requested", StringComparison.Ordinal));
         var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
         Assert.Contains("Inlet Tank \u2192 Transfer Pump", content, StringComparison.Ordinal);
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
-    ///     Proves a legacy binary drawing fails with a structured refusal whose remedy states plainly
-    ///     the format is unsupported and never instructs an installation.
+    ///     Proves a legacy binary drawing returns an unreadable result whose prose states plainly
+    ///     that the format is unsupported and never instructs an installation.
     /// </summary>
     [Fact]
-    public async Task DocDownVisio_Extract_LegacyVsd_FailsWithUnsupportedFormatRemedy()
+    public async Task DocDownVisio_Extract_LegacyVsd_ReturnsUnreadableFailure()
     {
         using var temp = new TempScratch();
         var (scratch, result) = await ExtractAsync(temp, "drawing.vsd", VsdxFixtures.LegacyVsdBytes(), FixedOptions());
 
-        Assert.Equal(ExtractionOutcome.Failed, result.Outcome);
+        Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
         Assert.NotNull(result.Failure);
-        Assert.Equal(ExtractionFailureKind.NoExtractorForFormat, result.Failure.Kind);
+        Assert.Null(result.SelectedExtractor);
+        Assert.Null(result.ContentPath);
+        Assert.Contains(
+            "No registered extractor supports the detected format.",
+            result.Failure.Summary,
+            StringComparison.Ordinal);
         Assert.Contains(
             "DocDown does not support the legacy binary Office formats",
-            result.Failure.Remedy!,
+            result.Failure.Explanation,
             StringComparison.Ordinal);
-        Assert.DoesNotContain("install", result.Failure.Remedy!, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("install", result.Failure.Explanation, StringComparison.OrdinalIgnoreCase);
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>

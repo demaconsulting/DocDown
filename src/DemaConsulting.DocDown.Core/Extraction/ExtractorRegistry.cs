@@ -23,9 +23,8 @@ namespace DocDown.Core;
 ///         Core does not trust the extractor contract: <see cref="IDocumentExtractor.ProbeAvailability"/>
 ///         is invoked inside a <c>try/catch</c>, and any thrown exception (including
 ///         <see cref="OperationCanceledException"/>, which a probe has no token to justify) is treated
-///         as unavailability with a stable reason and a <c>DD0602</c> diagnostic. Descriptors,
-///         instances, and (once computed) candidates are immutable, so the registry is safe for
-///         concurrent reads.
+///         as unavailability with a stable reason. Descriptors, instances, and (once computed)
+///         candidates are immutable, so the registry is safe for concurrent reads.
 ///     </para>
 /// </remarks>
 public sealed class ExtractorRegistry
@@ -45,10 +44,6 @@ public sealed class ExtractorRegistry
     /// <summary>The cached candidates (descriptor plus probed availability), or <see langword="null"/> before the first probe.</summary>
     /// <remarks>Guarded by <see cref="_availabilityLock"/>; cleared by <see cref="RefreshAvailability"/>.</remarks>
     private IReadOnlyList<ExtractorCandidate>? _candidates;
-
-    /// <summary>The cached availability diagnostics from the last probe pass, or <see langword="null"/> before the first probe.</summary>
-    /// <remarks>Guarded by <see cref="_availabilityLock"/>; recomputed together with <see cref="_candidates"/>.</remarks>
-    private IReadOnlyList<ExtractionDiagnostic>? _availabilityDiagnostics;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ExtractorRegistry"/> class from extractor
@@ -121,23 +116,6 @@ public sealed class ExtractorRegistry
     public IReadOnlyList<IDocumentExtractor> Extractors => _extractors;
 
     /// <summary>
-    ///     Gets the diagnostics produced by the most recent availability probe pass.
-    /// </summary>
-    /// <remarks>
-    ///     Triggers a lazy probe on first access. Contains one <c>DD0601</c> per candidate reported
-    ///     unavailable and one <c>DD0602</c> per candidate whose probe threw, so the engine can surface
-    ///     why a backend was excluded. Recomputed after <see cref="RefreshAvailability"/>.
-    /// </remarks>
-    public IReadOnlyList<ExtractionDiagnostic> AvailabilityDiagnostics
-    {
-        get
-        {
-            EnsureProbed();
-            return _availabilityDiagnostics!;
-        }
-    }
-
-    /// <summary>
     ///     Gets the candidates (descriptor plus cached availability) for every registered extractor.
     /// </summary>
     /// <returns>The candidates in registration order, using cached availability.</returns>
@@ -189,7 +167,6 @@ public sealed class ExtractorRegistry
         lock (_availabilityLock)
         {
             _candidates = null;
-            _availabilityDiagnostics = null;
         }
     }
 
@@ -219,26 +196,23 @@ public sealed class ExtractorRegistry
             }
 
             var candidates = new List<ExtractorCandidate>(_extractors.Count);
-            var diagnostics = new List<ExtractionDiagnostic>();
 
             for (var index = 0; index < _extractors.Count; index++)
             {
                 var extractor = _extractors[index];
                 var descriptor = _descriptors[index];
-                var availability = ProbeSafely(extractor, diagnostics);
+                var availability = ProbeSafely(extractor);
                 candidates.Add(new ExtractorCandidate(descriptor, availability));
             }
 
             _candidates = candidates;
-            _availabilityDiagnostics = diagnostics;
         }
     }
 
     /// <summary>
-    ///     Probes one extractor's availability, containing any fault and recording the outcome.
+    ///     Probes one extractor's availability, containing any fault.
     /// </summary>
     /// <param name="extractor">The extractor to probe.</param>
-    /// <param name="diagnostics">The diagnostic list to append availability findings to.</param>
     /// <returns>
     ///     The extractor's reported availability, or a synthesized unavailable result when the probe
     ///     threw or returned nothing.
@@ -246,14 +220,13 @@ public sealed class ExtractorRegistry
     /// <remarks>
     ///     Core does not trust the interface contract, so every outcome of the probe is handled here: a
     ///     thrown exception (any type, including <see cref="OperationCanceledException"/>, since a probe
-    ///     has no cancellation token to justify one) becomes unavailability with reason
-    ///     <c>availability probe failed: {ExceptionType}</c> and a <c>DD0602</c> warning; a null result
-    ///     is treated the same way; a normal unavailable result records a <c>DD0601</c> info. Contains
-    ///     the extractor's side effects but performs none of its own beyond appending diagnostics.
+    ///     has no cancellation token to justify one) and a null result both become unavailability with
+    ///     a stable reason. The reason surfaces later as an environment fact. Contains the extractor's
+    ///     side effects but performs none of its own.
     /// </remarks>
-    private static ExtractorAvailability ProbeSafely(IDocumentExtractor extractor, List<ExtractionDiagnostic> diagnostics)
+    private static ExtractorAvailability ProbeSafely(IDocumentExtractor extractor)
     {
-        ExtractorAvailability availability;
+        ExtractorAvailability? availability;
         try
         {
             // Trust nothing: a conforming probe must not throw, but Core defends against one that does
@@ -264,43 +237,18 @@ public sealed class ExtractorRegistry
 #pragma warning restore CA1031
         {
             // Treat a throwing probe as a contract violation, surfaced as unavailability with a reason
-            var reason = $"availability probe failed: {exception.GetType().Name}";
-            diagnostics.Add(new ExtractionDiagnostic(
-                DiagnosticCodes.AvailabilityProbeFailed, DiagnosticSeverity.Warning,
-                $"The availability probe for '{extractor.Id}' threw {exception.GetType().Name}; treating it as unavailable.",
-                extractor.Id));
-            return ExtractorAvailability.Unavailable(reason);
+            return ExtractorAvailability.Unavailable($"availability probe failed: {exception.GetType().Name}");
         }
 
         // A null result is also a contract violation; treat it as an explained unavailability
-        if (availability is null)
-        {
-            diagnostics.Add(new ExtractionDiagnostic(
-                DiagnosticCodes.AvailabilityProbeFailed, DiagnosticSeverity.Warning,
-                $"The availability probe for '{extractor.Id}' returned no result; treating it as unavailable.",
-                extractor.Id));
-            return ExtractorAvailability.Unavailable("availability probe failed: returned null");
-        }
-
-        // A backend that is simply unavailable is expected; record why it was excluded
-        if (!availability.IsAvailable)
-        {
-            var reason = string.IsNullOrEmpty(availability.UnavailableReason)
-                ? "unavailable in this environment"
-                : availability.UnavailableReason;
-            diagnostics.Add(new ExtractionDiagnostic(
-                DiagnosticCodes.CandidateUnavailable, DiagnosticSeverity.Info,
-                $"Candidate '{extractor.Id}' is unavailable: {reason}", extractor.Id));
-        }
-
-        return availability;
+        return availability ?? ExtractorAvailability.Unavailable("availability probe failed: returned null");
     }
 
     /// <summary>
     ///     Builds an immutable descriptor snapshot from a live extractor.
     /// </summary>
     /// <param name="extractor">The extractor to describe.</param>
-    /// <returns>The descriptor capturing the extractor's identity and declared abilities.</returns>
+    /// <returns>The descriptor capturing the extractor's identity and supported formats.</returns>
     /// <remarks>
     ///     Copies the supported-format collection into a fixed list so the descriptor is detached from
     ///     the extractor and cannot change if the extractor later mutates its own collection. Pure.
@@ -309,7 +257,6 @@ public sealed class ExtractorRegistry
         extractor.Id,
         extractor.DisplayName,
         extractor.SupportedFormats.ToList(),
-        extractor.Capabilities,
         extractor.Priority,
         extractor.PageRenderingApplicable);
 }

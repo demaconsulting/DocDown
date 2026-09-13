@@ -12,7 +12,7 @@ namespace DocDown.PowerPoint.Com;
 /// <remarks>
 ///     <para>
 ///         This class is the whole untestable COM boundary and is deliberately mechanical: it holds
-///         no extraction or gap policy. Which slides render, how failures become gaps, and how the
+///         no extraction or note policy. Which slides render, how failures become notes, and how the
 ///         content is delegated all live in the cross-platform-tested
 ///         <see cref="PowerPointComExtractor"/>; the low-level IDispatch plumbing, single-instance
 ///         activation, watchdog, and forced process termination live in
@@ -187,7 +187,7 @@ internal sealed class PowerPointAutomation : IPowerPointAutomation
             var bytes = File.ReadAllBytes(pngPath);
             return new PowerPointRenderedSlide(number, bytes, null);
         }
-#pragma warning disable CA1031 // Per-slide fault isolation: any export fault becomes a counted gap, never an exception
+#pragma warning disable CA1031 // Per-slide fault isolation: any export fault becomes note data, never an exception
         catch (Exception exception)
 #pragma warning restore CA1031
         {

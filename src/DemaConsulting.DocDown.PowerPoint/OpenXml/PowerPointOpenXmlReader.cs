@@ -98,38 +98,8 @@ internal static class PowerPointOpenXmlReader
                 document.PackageProperties.LastPrinted,
                 document.PackageProperties.Version,
                 document.PackageProperties.Language,
-                document.PackageProperties.Identifier)),
-                CountCharts(slideParts.Select(entry => entry.Part)));
+                document.PackageProperties.Identifier)));
         }
-    }
-
-    /// <summary>
-    ///     Counts the DrawingML chart parts the deck's slides embed, including their notes slides.
-    /// </summary>
-    /// <param name="slideParts">The slide parts, in presentation order.</param>
-    /// <returns>The number of chart parts found; zero for a deck that embeds none.</returns>
-    /// <remarks>
-    ///     A chart on a slide is anchored through a graphic frame that carries no image blip and no
-    ///     text body, so neither the shape walk nor the image walk sees it and the chart would leave no
-    ///     trace at all in the output. Counting the parts is what lets the emitter state plainly that
-    ///     the deck contains charts this backend does not read, instead of dropping them in silence.
-    ///     Read-only over the package.
-    /// </remarks>
-    private static int CountCharts(IEnumerable<SlidePart> slideParts)
-    {
-        var count = 0;
-        foreach (var slidePart in slideParts)
-        {
-            count += slidePart.GetPartsOfType<ChartPart>().Count()
-                + slidePart.GetPartsOfType<ExtendedChartPart>().Count();
-            if (slidePart.NotesSlidePart is { } notesPart)
-            {
-                count += notesPart.GetPartsOfType<ChartPart>().Count()
-                    + notesPart.GetPartsOfType<ExtendedChartPart>().Count();
-            }
-        }
-
-        return count;
     }
 
     /// <summary>

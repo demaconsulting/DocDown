@@ -29,7 +29,7 @@ internal static class WordTestHarness
         var sink = new ExtractionSink(folder, options);
         var descriptor = new ExtractorDescriptor(
             extractor.Id, extractor.DisplayName, extractor.SupportedFormats.ToList(),
-            extractor.Capabilities, extractor.Priority);
+            extractor.Priority, extractor.PageRenderingApplicable);
         var environment = new ExtractionEnvironment("TestOS 1.0", "X64", "test-runtime 8.0", "test-rid", []);
         var detection = new FormatDetection(format, DetectionBasis.Extension, 0.9);
         var context = new HarnessContext(options, sink, detection, descriptor, environment, cancellationToken);

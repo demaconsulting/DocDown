@@ -20,7 +20,7 @@ namespace DocDown.Visio;
 ///         Both backends carry no native asset: the managed backend reads the package with
 ///         <see cref="System.IO.Packaging"/>, and the COM backend reaches Visio through late-bound
 ///         IDispatch and self-disables where Visio is absent. One call therefore registers the
-///         complete Visio capability with no platform-specific dependency. All members are static and
+///         complete Visio extraction stack with no platform-specific dependency. All members are static and
 ///         thread-safe; the builder they mutate is not.
 ///     </para>
 /// </remarks>
@@ -36,9 +36,9 @@ public static class VisioDocDownBuilderExtensions
     ///     Registers factories rather than instances so construction is deferred to
     ///     <see cref="DocDownBuilder.Build"/>. The managed backend (priority 10) serves every
     ///     extraction that does not request rendering; the COM backend (priority 0) is chosen only
-    ///     when page rendering is requested and Microsoft Visio is available, and otherwise degrades
-    ///     honestly while the topology is still delivered by the managed backend. Side effect: mutates
-    ///     <paramref name="builder"/>'s registration list.
+    ///     when page rendering is requested and Microsoft Visio is available, while the managed backend
+    ///     still supplies the page names, shape text, connector topology, and embedded images. Side
+    ///     effect: mutates <paramref name="builder"/>'s registration list.
     /// </remarks>
     public static DocDownBuilder AddVisio(this DocDownBuilder builder)
     {

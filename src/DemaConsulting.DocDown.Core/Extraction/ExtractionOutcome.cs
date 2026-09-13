@@ -1,27 +1,28 @@
 namespace DocDown.Core;
 
 /// <summary>
-///     Describes the overall result of an extraction attempt at a glance.
+///     Whether an extraction produced the invariant output layout or could not read the document
+///     at all.
 /// </summary>
 /// <remarks>
-///     Reported so callers can branch on a single value without parsing diagnostics: a
-///     successful run may still be <see cref="Degraded"/> when some requested content could
-///     not be produced, which is a common and expected outcome rather than an error.
+///     This is the single value a caller branches on, and it is a fact about whether output exists,
+///     not a grade of quality. A run that wrote the standard layout is <see cref="Produced"/> even
+///     when the inventory reports zero of something or a note records a step DocDown could not
+///     complete — those are ordinary, expected outcomes, not failures. Only a document that could
+///     not be read (or a scratch folder that was refused, so no layout could be written) is
+///     <see cref="Unreadable"/>; its prose failure explains why.
 /// </remarks>
 public enum ExtractionOutcome
 {
     /// <summary>
-    ///     Everything requested was produced; the extraction is complete.
+    ///     The invariant output layout was written. The content is best-effort; the inventory and any
+    ///     notes describe what was and was not extracted.
     /// </summary>
-    Succeeded,
+    Produced,
 
     /// <summary>
-    ///     Content was produced but some requested aspect is missing; see the reported gaps.
+    ///     No output could be produced: the document could not be read, or the scratch folder was
+    ///     refused. See the structured failure for the reason.
     /// </summary>
-    Degraded,
-
-    /// <summary>
-    ///     No content could be produced; the extraction failed. See the structured failure.
-    /// </summary>
-    Failed
+    Unreadable
 }

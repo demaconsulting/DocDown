@@ -6,7 +6,8 @@ namespace DocDown.Excel.OpenXml;
 /// </summary>
 /// <param name="PartUri">
 ///     The chart part URI within the package (for example <c>/xl/charts/chart1.xml</c>); the citable
-///     identity of a chart, used to name the chart in a gap when it carries no readable data.
+///     identity of a chart, used to name the chart in its content part and in any note when its
+///     data could not be read.
 /// </param>
 /// <param name="SheetName">The name of the worksheet that shows the chart, so a chart keeps its sheet context.</param>
 /// <param name="Data">
@@ -20,8 +21,8 @@ namespace DocDown.Excel.OpenXml;
 /// </param>
 /// <remarks>
 ///     A chart is carried through the model rather than resolved at emission time so the decision
-///     about what reaches the output — a data table, or an honest gap naming the part — is made once
-///     against a model a test can build by hand. Immutable and thread-safe.
+///     about what reaches the output — a data table, or a recorded read failure naming the part —
+///     is made once against a model a test can build by hand. Immutable and thread-safe.
 /// </remarks>
 internal sealed record ExcelChartModel(
     string PartUri, string SheetName, ExcelChartData? Data, string? ReadFailureReason);

@@ -21,8 +21,8 @@ Two units divide the work along the dependency boundary that keeps Core clean:
 
 The split exists because `DemaConsulting.TestResults` must not become a Core dependency. Core defines
 its self-test contract as plain records; the adapter that turns those records into a serializable
-model lives here, on the tool side, and the driver depends on the adapter rather than on Core knowing
-anything about the results model.
+model lives here, on the tool side, and the driver depends on the adapter rather than on Core
+knowing anything about the results model.
 
 ## External Interfaces
 
@@ -37,15 +37,21 @@ anything about the results model.
 
 - **A skip is not evidence.** A skipped case is emitted as a not-executed outcome. It causes no false
   failure, but because a traceability pipeline does not count a not-executed result as executed, a
-  skip satisfies no requirement. Emitting skips is correct and safe; it is not a substitute for a run.
-- **The results-file name matters to a downstream pipeline.** The traceability tooling filters results
-  by a case-insensitive substring match against the result file's base name, so a `--validate` TRX
-  should be named to contain the platform token a platform requirement filters on — for example
+  skip satisfies no requirement. Emitting skips is correct and safe; it is not a substitute for a
+  run.
+- **The results-file name matters to a downstream pipeline.** The traceability tooling filters
+  results by a case-insensitive substring match against the result file's base name, so a `--validate`
+  TRX should be named to contain the platform token a platform requirement filters on — for example
   `docdown-validate-windows.trx`.
+- **The current Core self-tests are part of the surface.** The validation union includes
+  `core.layout-invariance` and `core.manifest-schema`, alongside the registered backend cases the tool
+  builds into its engine.
 
 ## Dependencies
 
 - **DocDown.Core** — `DocDownBuilder`, `DocDownEngine`, and the self-test seam (`SelfTestCase`,
   `SelfTestResult`, `SelfTestStatus`, `SelfTestContext`).
-- **DocDown.Pdf** — `AddPdf`, so the union includes the PDF backend's cases.
+- **DocDown.Pdf**, **DocDown.Pdf.Rendering**, **DocDown.Word**, **DocDown.Visio**,
+  **DocDown.PowerPoint**, and **DocDown.Excel** — the same backend registration seams the tool uses
+  for extraction, so validation exercises the shipped configuration.
 - **DemaConsulting.TestResults** (OTS) — the results model and serializers, referenced only here.

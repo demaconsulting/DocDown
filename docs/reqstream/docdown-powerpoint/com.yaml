@@ -1,10 +1,10 @@
 ---
 # Software Subsystem Requirements for DocDownPowerPoint Com
 #
-# The Com subsystem is the rendering seam: the full-superset extractor that reuses the managed backend's
-# content extraction and adds a rendered image of each slide by driving Microsoft PowerPoint over
-# late-bound COM, the availability probe that keeps that environment-dependent backend honest, and the
-# real automation adapter that is the single untestable boundary. These requirements decompose into the
+# The Com subsystem is the rendering seam: the extractor that reuses the managed backend's content
+# extraction and adds a rendered image of each slide by driving Microsoft PowerPoint over late-bound
+# COM, the availability probe that keeps that environment-dependent backend honest, and the real
+# automation adapter that is the single untestable boundary. These requirements decompose into the
 # PowerPointComExtractor, PowerPointComAvailability, and PowerPointAutomation units via children.
 
 sections:
@@ -15,21 +15,19 @@ sections:
           - id: DocDownPowerPoint-Com-Rendering
             title: >-
               The subsystem shall produce a full extraction — slide text, titles, speaker notes,
-              metadata, and a rendered image of each slide — by delegating the managed aspects and adding
-              the rendered pages.
+              metadata, and a rendered image of each slide — by delegating the managed aspects and
+              adding the rendered pages.
             justification: |
-              The engine selects exactly one backend, so a rendering-only backend would lose selection to
-              the managed backend and never render. The COM backend therefore declares the full superset
-              and delivers it: rather than re-implement text and notes extraction, it runs the managed
-              backend against the same sink with rendering suppressed and adds the rendered slides the
-              managed backend cannot, reconciling the two backends' rendering statements so the composed
-              report is internally consistent.
+              The engine selects exactly one backend, so a rendering backend cannot be a render-only
+              add-on. The COM backend therefore delivers the same content extraction as the managed
+              backend by delegation, then adds rendered slide pages, reconciling the two backends'
+              rendering statements so the composed report is internally consistent.
             children:
-              - DocDownPowerPoint-Com-PowerPointComExtractor-DeclaresCapabilities
+              - DocDownPowerPoint-Com-PowerPointComExtractor-DescribesSelectionSurface
               - DocDownPowerPoint-Com-PowerPointComExtractor-DelegatesManagedContent
               - DocDownPowerPoint-Com-PowerPointComExtractor-ReconcilesRenderingFacts
               - DocDownPowerPoint-Com-PowerPointComExtractor-RendersEverySlide
-              - DocDownPowerPoint-Com-PowerPointComExtractor-IsolatesSlideRenderFailures
+              - DocDownPowerPoint-Com-PowerPointComExtractor-ReportsSlideRenderFailureNote
               - DocDownPowerPoint-Com-PowerPointComExtractor-ProbesHonestly
             tests:
               - PowerPointComExtractor_Extract_ViaStub_WritesNotesAndRendersEverySlide
@@ -40,10 +38,11 @@ sections:
               reporting unavailable with a declarative reason where Microsoft PowerPoint cannot be
               reached.
             justification: |
-              Availability probing must not open a deck, launch an application, or throw, and it must run
-              everywhere CI does. Checking the operating system first and then, on Windows, whether the
-              PowerPoint ProgID is registered is what lets the probe report unavailable off Windows or
-              without PowerPoint with a reason that states a fact rather than instructing an installation.
+              Availability probing must not open a deck, launch an application, or throw, and it must
+              run everywhere CI does. Checking the operating system first and then, on Windows,
+              whether the PowerPoint ProgID is registered is what lets the probe report unavailable
+              off Windows or without PowerPoint with a reason that states a fact rather than
+              instructing an installation.
             children:
               - DocDownPowerPoint-Com-PowerPointComAvailability-ProbesWithoutSideEffects
               - DocDownPowerPoint-Com-PowerPointComAvailability-ReportsDeclarativeReason
@@ -52,16 +51,15 @@ sections:
 
           - id: DocDownPowerPoint-Com-Automation
             title: >-
-              The subsystem shall confine every interaction with Microsoft PowerPoint to a single adapter
-              that opens a deck read-only, exports each slide to a PNG, and tears its session down on
-              every path.
+              The subsystem shall confine every interaction with Microsoft PowerPoint to a single
+              adapter that opens a deck read-only, exports each slide to a PNG, and tears its session
+              down on every path.
             justification: |
               The one thing that cannot be exercised cross-platform is talking to PowerPoint, so it is
-              isolated behind a narrow seam: a single Windows-only adapter holds no extraction or gap
+              isolated behind a narrow seam: a single Windows-only adapter holds no extraction
               policy and runs a whole session — activate, open read-only, export every slide, close,
-              quit, release — inside one watchdog-guarded call, so no COM object outlives the timeout and
-              a modal-dialog hang is bounded by force-terminating the owned process. Its correctness in a
-              deployed environment is proven by release-time self-tests rather than by CI.
+              quit, release — inside one watchdog-guarded call, so no COM object outlives the timeout
+              and a modal-dialog hang is bounded by force-terminating the owned process.
             children:
               - DocDownPowerPoint-Com-PowerPointAutomation-RendersEachSlideAtRequestedDpi
               - DocDownPowerPoint-Com-PowerPointAutomation-ProducesPerSlideResults

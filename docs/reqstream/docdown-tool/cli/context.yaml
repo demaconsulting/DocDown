@@ -39,9 +39,9 @@ sections:
                   silence, and shall report success otherwise.
                 justification: |
                   The exit code is how automation learns an outcome, so a silenced run that hit an
-                  error must still exit non-zero. Setting the error flag unconditionally when an error
-                  is written, independently of whether the console showed it, keeps the exit code
-                  truthful.
+                  error must still exit non-zero. Setting the error flag unconditionally when an
+                  error is written, independently of whether the console showed it, keeps the exit
+                  code truthful.
                 tests:
                   - Context_WriteError_SilentMode_StillSetsExitCodeOne
                   - Context_ExitCode_NoErrors_ReturnsZero
@@ -54,8 +54,19 @@ sections:
                   Building the options in one place makes the mapping testable in isolation from an
                   extraction.
                 tests:
-                  - Context_BuildExtractionOptions_Flags_MapOntoOptions
-                  - Context_BuildExtractionOptions_ScratchPolicyToken_MapsToMode
+                  - Context_BuildExtractionOptions_SupportedFlags_MapOntoOptions
+
+              - id: DocDownTool-Context-ScratchPolicy
+                title: >-
+                  Context shall accept only clean and overwrite as scratch-folder policy tokens,
+                  mapping them to the supported scratch modes and rejecting removed tokens.
+                justification: |
+                  The tool exposes only the two scratch-folder behaviors the engine now supports.
+                  Accepting any retired token would promise a mode the engine no longer provides,
+                  while rejecting it at parse time keeps the command line truthful.
+                tests:
+                  - Context_BuildExtractionOptions_SupportedScratchPolicyToken_MapsToMode
+                  - Context_Create_RemovedScratchPolicyToken_ThrowsArgumentException
 
               - id: DocDownTool-Context-UnknownArgument
                 title: Context shall reject an unrecognized argument with an argument fault.

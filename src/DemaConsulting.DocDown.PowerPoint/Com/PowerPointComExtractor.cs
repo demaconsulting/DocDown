@@ -1,6 +1,5 @@
 using System.Globalization;
 using DocDown.Core;
-using DocDown.PowerPoint.Markdown;
 using DocDown.PowerPoint.OpenXml;
 using CoreFormat = DocDown.Core.DocumentFormat;
 
@@ -13,15 +12,11 @@ namespace DocDown.PowerPoint.Com;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The engine selects exactly one backend, so a rendering backend that advertised only
-///         <see cref="ExtractorCapabilities.RenderedPages"/> would lose selection to the managed
-///         backend and never render. This extractor therefore declares the full set —
-///         <see cref="ExtractorCapabilities.Text"/>, <see cref="ExtractorCapabilities.EmbeddedImages"/>,
-///         <see cref="ExtractorCapabilities.DocumentStructure"/>,
-///         <see cref="ExtractorCapabilities.DocumentMetadata"/>, and
-///         <see cref="ExtractorCapabilities.RenderedPages"/> — and delivers all five. It is chosen
-///         over the managed backend only when page rendering is actually requested; otherwise the
-///         managed backend wins on priority and no COM is touched.
+///         The engine selects exactly one backend, so the COM path cannot be a render-only add-on:
+///         it must produce the same slide text, titles, speaker notes, and metadata as the managed
+///         backend, then add the slide images the managed backend cannot. It is chosen over the
+///         managed backend only when page rendering is actually requested; otherwise the managed
+///         backend wins on priority and no COM is touched.
 ///     </para>
 ///     <para>
 ///         Rather than re-implement text and notes extraction, it constructs a
@@ -29,10 +24,9 @@ namespace DocDown.PowerPoint.Com;
 ///         suppressed, then adds the rendered slides the managed backend cannot. Everything apart
 ///         from talking to PowerPoint is exercised cross-platform by injecting a stub
 ///         <see cref="IPowerPointAutomation"/>; the real adapter is the single untestable COM
-///         boundary, proven by release-time self-tests. Rendering is environment-dependent, so
-///         honesty is enforced: the backend reports unavailable off Windows or without PowerPoint,
-///         and a slide that cannot be rendered becomes a counted, reason-bearing gap while the run
-///         continues with the remaining slides.
+///         boundary, proven by release-time self-tests. Rendering is environment-dependent, so the
+///         backend reports unavailable off Windows or without PowerPoint, and a slide that cannot be
+///         rendered becomes a plain-language note while the run continues with the remaining slides.
 ///     </para>
 /// </remarks>
 public sealed class PowerPointComExtractor : IDocumentExtractor, ISelfValidating
@@ -74,11 +68,6 @@ public sealed class PowerPointComExtractor : IDocumentExtractor, ISelfValidating
     public IReadOnlyCollection<CoreFormat> SupportedFormats => [CoreFormat.Pptx];
 
     /// <inheritdoc />
-    public ExtractorCapabilities Capabilities =>
-        ExtractorCapabilities.Text | ExtractorCapabilities.EmbeddedImages | ExtractorCapabilities.DocumentMetadata
-        | ExtractorCapabilities.DocumentStructure | ExtractorCapabilities.RenderedPages;
-
-    /// <inheritdoc />
     public int Priority => 0;
 
     /// <inheritdoc />
@@ -91,7 +80,7 @@ public sealed class PowerPointComExtractor : IDocumentExtractor, ISelfValidating
         _automationFactory is null
             ? ExtractorAvailability.Unavailable(
                 "The PowerPoint COM automation adapter is not available in this build.")
-            : PowerPointComAvailability.Probe(Capabilities);
+            : PowerPointComAvailability.Probe();
 
     /// <inheritdoc />
     public async ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context)
@@ -108,7 +97,7 @@ public sealed class PowerPointComExtractor : IDocumentExtractor, ISelfValidating
         var bytes = await ReadSourceAsync(source, cancellationToken).ConfigureAwait(false);
 
         // Delegate the managed aspects to the Open XML backend with rendering suppressed, so it writes
-        // slide text, titles, speaker notes, and its own gaps but not a rendering gap this backend answers
+        // slide text, titles, speaker notes, and inventory without any contradictory rendering fact
         var delegatedContext = new DelegatedExtractionContext(context, options.Clone());
         delegatedContext.Options.RenderPages = false;
         using var delegatedStream = new MemoryStream(bytes, writable: false);
@@ -124,12 +113,8 @@ public sealed class PowerPointComExtractor : IDocumentExtractor, ISelfValidating
             ?? throw new PowerPointExtractionException(
                 "The PowerPoint COM automation adapter is not available in this build.");
 
-        var pagesDegraded = await RenderSlidesAsync(bytes, source, factory, sink, options, cancellationToken)
-            .ConfigureAwait(false);
-
-        return baseOutcome == ExtractionOutcome.Degraded || pagesDegraded
-            ? ExtractionOutcome.Degraded
-            : baseOutcome;
+        await RenderSlidesAsync(bytes, source, factory, sink, options, cancellationToken).ConfigureAwait(false);
+        return baseOutcome;
     }
 
     /// <inheritdoc />
@@ -150,15 +135,15 @@ public sealed class PowerPointComExtractor : IDocumentExtractor, ISelfValidating
     /// <param name="bytes">The buffered source deck bytes.</param>
     /// <param name="source">The document source, consulted for a file path.</param>
     /// <param name="factory">The automation factory.</param>
-    /// <param name="sink">The sink to write rendered slides and gaps through.</param>
+    /// <param name="sink">The sink to write rendered slides and notes through.</param>
     /// <param name="options">The effective options carrying the render DPI.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
-    /// <returns><see langword="true"/> when any slide failed to render; otherwise <see langword="false"/>.</returns>
     /// <remarks>
-    ///     Renders every slide in one session; a slide that cannot be exported degrades the run with a
-    ///     counted gap rather than aborting it. Side effect: writes pages and gaps on the sink.
+    ///     Renders every slide in one session; a slide that cannot be exported is recorded as a
+    ///     plain-language note rather than aborting the extraction. Side effect: writes pages and
+    ///     notes on the sink.
     /// </remarks>
-    private static async ValueTask<bool> RenderSlidesAsync(
+    private static async ValueTask RenderSlidesAsync(
         byte[] bytes, DocumentSource source, Func<IPowerPointAutomation> factory,
         IExtractionSink sink, ExtractionOptions options, CancellationToken cancellationToken)
     {
@@ -173,9 +158,6 @@ public sealed class PowerPointComExtractor : IDocumentExtractor, ISelfValidating
                 slides = automation.Render(path, options.PageRenderDpi);
             }
 
-            sink.ReportFound(GapKind.Pages, slides.Count);
-
-            var failures = new List<int>();
             foreach (var slide in slides)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -186,18 +168,9 @@ public sealed class PowerPointComExtractor : IDocumentExtractor, ISelfValidating
                 }
                 else
                 {
-                    ReportSlideFailure(sink, slide.SlideNumber, slide.FailureReason);
-                    failures.Add(slide.SlideNumber);
+                    ReportSlideFailureNote(sink, slide.SlideNumber, slide.FailureReason);
                 }
             }
-
-            if (failures.Count > 0)
-            {
-                ReportSlideFailuresGap(sink, failures);
-                return true;
-            }
-
-            return false;
         }
         finally
         {
@@ -240,32 +213,20 @@ public sealed class PowerPointComExtractor : IDocumentExtractor, ISelfValidating
         }
     }
 
-    /// <summary>Reports a single slide's render failure as a diagnostic.</summary>
+    /// <summary>Reports a single slide's render failure as a plain-language note.</summary>
     /// <param name="sink">The sink to report through.</param>
     /// <param name="slideNumber">The 1-based slide number that failed.</param>
     /// <param name="detail">A short description of what went wrong for this slide.</param>
-    private static void ReportSlideFailure(IExtractionSink sink, int slideNumber, string? detail)
+    /// <remarks>
+    ///     A render attempt that did not complete is a fact about this extraction, not a judgment
+    ///     about the presentation, so it is stated as a plain note with the slide number and the
+    ///     renderer's detail when one is available. Side effect: records a note on the sink.
+    /// </remarks>
+    private static void ReportSlideFailureNote(IExtractionSink sink, int slideNumber, string? detail)
     {
         var slide = slideNumber.ToString(CultureInfo.InvariantCulture);
-        sink.ReportDiagnostic(new ExtractionDiagnostic(
-            PowerPointDiagnosticCodes.SlideRenderFailed, DiagnosticSeverity.Warning,
+        sink.ReportNote(new ExtractionNote(
             $"Slide {slide} could not be rendered ({detail ?? "unknown reason"})."));
-    }
-
-    /// <summary>Reports the counted gap summarizing every slide that could not be rendered.</summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <param name="failures">The 1-based slide numbers that failed to render.</param>
-    private static void ReportSlideFailuresGap(IExtractionSink sink, IReadOnlyList<int> failures)
-    {
-        var slides = failures.Select(slide => slide.ToString(CultureInfo.InvariantCulture)).ToList();
-        var count = failures.Count.ToString(CultureInfo.InvariantCulture);
-        sink.ReportGap(new ExtractionGap(
-            string.Empty, GapKind.Pages, "pages/", GapScope.PartiallyExtracted,
-            $"{count} slide(s) could not be rendered and were omitted from the pages folder.",
-            Impact: "Rendered images for the named slides are not available.",
-            Remedy: "Check that the slides are well-formed; the remaining slides were rendered.",
-            AffectedCount: failures.Count,
-            AffectedItems: slides));
     }
 
     /// <summary>Creates the real PowerPoint adapter, guarding the Windows-only type so it is never constructed off Windows.</summary>
@@ -294,8 +255,7 @@ public sealed class PowerPointComExtractor : IDocumentExtractor, ISelfValidating
             return SelfTestResult.Skipped("Microsoft PowerPoint COM automation is available only on Windows.");
         }
 
-        var probe = PowerPointComAvailability.Probe(
-            ExtractorCapabilities.Text | ExtractorCapabilities.RenderedPages);
+        var probe = PowerPointComAvailability.Probe();
         return probe.IsAvailable
             ? SelfTestResult.Passed(TimeSpan.Zero)
             : SelfTestResult.Skipped(probe.UnavailableReason ?? "Microsoft PowerPoint is not available.");

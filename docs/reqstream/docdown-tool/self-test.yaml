@@ -14,13 +14,13 @@ sections:
           - id: DocDownTool-SelfTest-Validation
             title: >-
               The subsystem shall drive self-validation: print an environment header, run the tool's
-              own functionality and the backend self-test union, and write the results file.
+              own functionality and the current Core plus registered-backend self-test union, and
+              write the results file.
             justification: |
               An operator confirming the tool works where it is installed needs one command that
-              exercises both the tool's commands and each backend's own cases, reports the outcome
-              legibly, and leaves a machine-readable artifact. Doing all of that in the validation
-              driver keeps the self-test a single, repeatable operation, and the backend self-test
-              union now spans the PDF, page-rendering, and Word backends the tool registers.
+              exercises both the tool's commands and the shipped self-test union, reports the
+              outcome legibly, and leaves a machine-readable artifact. Doing all of that in the
+              validation driver keeps the self-test a single, repeatable operation.
             children:
               - DocDownTool-Validation-Header
               - DocDownTool-Validation-RunsUnion
@@ -28,6 +28,7 @@ sections:
               - DocDownTool-Validation-Outcome
             tests:
               - DocDownTool_Validate_ResultsTrx_ProducesWellFormedTrx
+              - DocDownTool_Validate_RenderingSelfTestCase_IsRecordedAndNotFailed
 
           - id: DocDownTool-SelfTest-Adaptation
             title: >-

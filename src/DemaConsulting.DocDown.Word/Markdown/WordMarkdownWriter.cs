@@ -10,9 +10,9 @@ namespace DocDown.Word.Markdown;
 ///     <para>
 ///         This unit is the whole markdown mapping, and it is 100% testable from a hand-built model
 ///         with no document behind it. It is deliberately presentational —
-///         it emits markdown and nothing else. The diagnostics and gaps that describe a table's
-///         flattening, a tracked-change decision, or an omitted header live with the extractor,
-///         which has the sink; the writer only shapes text.
+///         it emits markdown and nothing else. The inventory counts and notes that describe a
+///         flattened table structure or another extraction fact live with the emitter, which has the
+///         sink; the writer only shapes text.
 ///     </para>
 ///     <para>
 ///         Inline formatting is intentionally minimal (bold, italic, hyperlinks) and every literal

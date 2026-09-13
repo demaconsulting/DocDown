@@ -1,10 +1,9 @@
 ---
 # Software Subsystem Requirements for DocDownWord OpenXml
 #
-# The OpenXml subsystem is the managed backend: the extractor the engine selects, the reader
-# that turns the Open XML DOM into the backend-neutral model, and the image reader that yields
-# each embedded image's bytes and provenance. These requirements decompose into the
-# WordOpenXmlExtractor, WordOpenXmlReader, and WordOpenXmlImageReader units via children.
+# The OpenXml subsystem is the managed backend: the extractor the engine selects, the reader that
+# turns the Open XML DOM into the backend-neutral model, and the image reader that yields each
+# embedded image's bytes and provenance.
 
 sections:
   - title: DocDownWord Requirements
@@ -13,39 +12,35 @@ sections:
         requirements:
           - id: DocDownWord-OpenXml-Extraction
             title: >-
-              The subsystem shall orchestrate a managed extraction: declare its capabilities, read the
-              document, emit the content, and explain every shortfall only it can explain.
+              The subsystem shall orchestrate a managed `.docx` extraction, report its availability,
+              and emit content through the shared pipeline.
             justification: |
-              The extractor is the backend the engine selects and invokes, so it owns the whole
-              managed extraction path — capabilities and availability, metadata and environment facts,
-              content emission and split handling, and the force-PNG, empty-document, and
-              page-rendering gaps that only this backend can name.
+              The extractor is the backend the engine selects and invokes, so it owns the managed
+              extraction path: availability, environment facts, document buffering, reader
+              invocation, split handling, and self-validation.
             children:
-              - DocDownWord-OpenXml-WordOpenXmlExtractor-DeclaresCapabilities
-              - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsStructuralGap
-              - DocDownWord-OpenXml-WordOpenXmlExtractor-ExplainsUnhonoredForcePng
-              - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsEmptyDocumentGap
-              - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsPageRenderingGap
+              - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsManagedAvailability
               - DocDownWord-OpenXml-WordOpenXmlExtractor-SplitsPerPart
-              - DocDownWord-OpenXml-WordOpenXmlExtractor-WritesVectorImageWithCaveat
+              - DocDownWord-OpenXml-WordOpenXmlExtractor-WritesVectorImageAsIs
               - DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests
             tests:
-              - WordOpenXmlExtractor_Descriptor_HasPriority10AndCapabilities
+              - WordOpenXmlExtractor_Descriptor_HasPriority10AndManagedAvailability
 
           - id: DocDownWord-OpenXml-Reading
             title: >-
               The subsystem shall read the Open XML document into the backend-neutral model, mapping
               structure and detecting the conditions the model must record.
             justification: |
-              The reader is where a .docx becomes the model the rest of the package works on, so it
-              maps headings, lists, tables, fields, comments, footnotes, and Document Control, accepts
-              tracked changes, detects the protected container, and surfaces the document metadata.
+              The reader is where a `.docx` becomes the model the rest of the package works on, so
+              it maps headings, lists, tables, fields, comments, footnotes, and Document Control,
+              renders the accepted tracked-change view, detects the protected container, and
+              surfaces the document metadata.
             children:
               - DocDownWord-OpenXml-WordOpenXmlReader-ReadsStructuredBlocks
               - DocDownWord-OpenXml-WordOpenXmlReader-BuildsDocumentControl
-              - DocDownWord-OpenXml-WordOpenXmlReader-OmitsFurnitureAsDiagnostic
+              - DocDownWord-OpenXml-WordOpenXmlReader-OmitsPageFurnitureFromDocumentControl
               - DocDownWord-OpenXml-WordOpenXmlReader-DeduplicatesHeaders
-              - DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedRevisions
+              - DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedView
               - DocDownWord-OpenXml-WordOpenXmlReader-DetectsPasswordProtected
               - DocDownWord-OpenXml-WordOpenXmlReader-CollectsComments
               - DocDownWord-OpenXml-WordOpenXmlReader-SurfacesMetadata
@@ -59,13 +54,12 @@ sections:
 
           - id: DocDownWord-OpenXml-Images
             title: >-
-              The subsystem shall yield each embedded image's bytes with a passthrough transform and an
-              honest media type.
+              The subsystem shall yield each embedded image's bytes with a passthrough transform and
+              an honest media type.
             justification: |
               An Open XML image part is a complete image file, so the image reader passes its bytes
-              through unchanged, leaves the pixel dimensions unstated because the stored extent is a
-              display size, and reports the part's own media type — including the vector metafile types
-              that carry a readability caveat.
+              through unchanged, leaves pixel dimensions unstated when only a display extent is
+              available, and reports the part's own media type.
             children:
               - DocDownWord-OpenXml-WordOpenXmlImageReader-YieldsPassthroughImages
               - DocDownWord-OpenXml-WordOpenXmlImageReader-RecordsPassthroughProvenance

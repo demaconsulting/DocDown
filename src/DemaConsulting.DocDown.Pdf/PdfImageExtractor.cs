@@ -7,7 +7,7 @@ namespace DocDown.Pdf;
 
 /// <summary>
 ///     Extracts the embedded images of a PDF through the sink, choosing an encoding per image and
-///     accounting honestly for every image it could not deliver.
+///     recording plain notes for every image it could not deliver as requested.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -24,27 +24,27 @@ namespace DocDown.Pdf;
 ///         viewable, because interpreting them requires the width, height, color space, and
 ///         bits-per-component that live in the image dictionary and not in the stream. Do not
 ///         "optimize" those rows into a passthrough by dumping <c>RawBytes</c> to a file: the result
-///         is a file that opens in nothing, which is the exact failure this unit exists to prevent. The
-///         only honest routes for those rows are a genuine decode-and-re-encode to PNG, or a counted
-///         gap saying the image could not be delivered.
+///         is a file that opens in nothing, which is the exact failure this unit exists to prevent.
+///         The only honest routes for those rows are a genuine decode-and-re-encode to PNG, or a
+///         plain note saying the image could not be delivered.
 ///     </para>
 ///     <para>
 ///         The two exceptions are real image containers. A <c>DCTDecode</c> stream is already a
 ///         complete JPEG file, so it is written through unchanged as <c>.jpg</c> and reported as a
 ///         passthrough — a claim that is exactly true and, because the test suite compares the written
 ///         file against the embedded source bytes, one that is falsifiable rather than decorative. A
-///         <c>JPXDecode</c> stream is a JPEG 2000 codestream; this library takes no JPEG 2000 decoder,
-///         so the bytes are written unchanged as <c>.jp2</c> and likewise labeled a passthrough, with
-///         a gap warning that many viewers and image libraries cannot read that format. A file with a
-///         caveat is more useful to a multimodal consumer than no file at all, provided the caveat is
-///         never omitted.
+///         <c>JPXDecode</c> stream is a JPEG 2000 codestream; this library takes no JPEG 2000
+///         decoder, so the bytes are written unchanged as <c>.jp2</c> and likewise labeled a
+///         passthrough. When the caller explicitly requests PNG, any image that must remain in its
+///         source encoding is called out with a plain note rather than hidden behind a mislabeled
+///         file.
 ///     </para>
 ///     <para>
 ///         Encodings that are neither container nor decodable — <c>JBIG2Decode</c> and, where the
 ///         parser refuses them, <c>CCITTFaxDecode</c> — are counted, grouped by encoding name, and
-///         reported as a gap that says how many were lost and why. The same accounting reports
-///         size-limit skips separately, so a caller can never mistake a deliberate size skip for a
-///         decoding failure, nor either of those for an image that was written with a caveat.
+///         reported in a plain note that says how many were lost and why. The same accounting
+///         reports size-limit skips separately, so a caller can never mistake a deliberate size skip
+///         for a decoding failure, nor either of those for an image that was written successfully.
 ///     </para>
 ///     <para>
 ///         Performs no filesystem I/O of its own: every byte goes through the sink. Stateless and
@@ -69,7 +69,7 @@ internal static class PdfImageExtractor
             // A complete JPEG file: write it straight to .jpg, byte-identical
             [DctDecodeFilter] = new(RawBytesMeaning.CompleteImageFile, "image/jpeg"),
 
-            // A JPEG 2000 codestream: a real container we cannot decode, written to .jp2 with a caveat
+            // A JPEG 2000 codestream: a real container we cannot decode, written to .jp2 as-is
             [JpxDecodeFilter] = new(RawBytesMeaning.UndecodableImageFile, "image/jp2"),
 
             // zlib over raw pixel samples: decode and re-encode, never pass through
@@ -93,7 +93,7 @@ internal static class PdfImageExtractor
     /// <remarks>
     ///     An unrecognized filter is assumed to hold samples rather than a file, because that is both
     ///     the overwhelmingly common case and the safe direction to be wrong in: the worst outcome is
-    ///     an explained gap, whereas guessing "file" would write bytes under an extension that lies.
+    ///     an explained note, whereas guessing "file" would write bytes under an extension that lies.
     /// </remarks>
     private static readonly FilterClassification UnlistedFilter = new(RawBytesMeaning.CompressedSamples, null);
 
@@ -102,19 +102,19 @@ internal static class PdfImageExtractor
     private const string DctDecodeFilter = "DCTDecode";
 
     /// <summary>The PDF filter name whose stored stream is a JPEG 2000 codestream.</summary>
-    /// <remarks>Named once so the passthrough decision and the readability caveat agree.</remarks>
+    /// <remarks>Named once so the passthrough decision and the forced-PNG note agree.</remarks>
     private const string JpxDecodeFilter = "JPXDecode";
 
     /// <summary>The name used for an image whose dictionary declares no filter at all.</summary>
     /// <remarks>
-    ///     Such an image holds uncompressed samples. The name doubles as the grouping key in gap text,
+    ///     Such an image holds uncompressed samples. The name doubles as the grouping key in note text,
     ///     so it is deliberately a word a reader can make sense of rather than an empty string.
     /// </remarks>
     private const string NoFilterName = "unknown";
 
-    /// <summary>The maximum number of affected item references recorded on any one gap.</summary>
+    /// <summary>The maximum number of affected item references recorded in any one note.</summary>
     /// <remarks>
-    ///     Bounds the gap text for a pathological document while still naming enough items to be
+    ///     Bounds the note text for a pathological document while still naming enough items to be
     ///     actionable; the count is always exact even when the item list is truncated.
     /// </remarks>
     private const int MaxAffectedItems = 20;
@@ -133,9 +133,9 @@ internal static class PdfImageExtractor
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when any argument is <see langword="null"/>.</exception>
     /// <remarks>
-    ///     Reports the found count, and any decode-failure, size-skip, or unhonored-<c>ForcePng</c>
-    ///     gaps, before returning, so the sink's ledger denominators and explanations are complete by
-    ///     the time the engine reconciles. Side effect: writes images and records reports on the sink.
+    ///     Reports any decode-failure, size-skip, or unhonored-<c>ForcePng</c> notes before
+    ///     returning, so the extraction record explains every image this backend did not write as
+    ///     requested. Side effect: writes images and records notes on the sink.
     /// </remarks>
     internal static async ValueTask<PdfImageResult> ExtractAsync(
         IReadOnlyList<Page> pages, IExtractionSink sink, ExtractionOptions options, CancellationToken cancellationToken)
@@ -170,9 +170,7 @@ internal static class PdfImageExtractor
             }
         }
 
-        // Report the denominator unconditionally, including zero, so the ledger can state "n of m"
-        sink.ReportFound(GapKind.Images, accounting.Found);
-        ReportAccountingGaps(sink, options, accounting, written.Count);
+        ReportAccountingNotes(sink, options, accounting);
         return new PdfImageResult(written, accounting.Found, written.Count);
     }
 
@@ -188,10 +186,10 @@ internal static class PdfImageExtractor
     /// <returns>The written image, or <see langword="null"/> when nothing was written.</returns>
     /// <remarks>
     ///     Applies the size limits first — a skip for size is a different fact from a decode failure
-    ///     and must not be conflated with one — then classifies the filter and chooses the encoding.
-    ///     A written image whose bytes are a container this extractor cannot decode is recorded as a
-    ///     readability caveat rather than as a loss, because the file is there. Side effect: writes
-    ///     through the sink and mutates <paramref name="accounting"/>.
+    ///     and must not be conflated with one — then classifies the filter and chooses the
+    ///     encoding. A written image may still defeat a forced-PNG request, which is recorded as a
+    ///     note rather than by mislabeling the written file. Side effect: writes through the sink and
+    ///     mutates <paramref name="accounting"/>.
     /// </remarks>
     private static async ValueTask<PdfExtractedImage?> WriteImageAsync(
         Page page, IPdfImage image, ImageAccounting accounting,
@@ -240,13 +238,6 @@ internal static class PdfImageExtractor
         if (string.IsNullOrEmpty(path))
         {
             return null;
-        }
-
-        // A written file whose format many consumers cannot open is delivered, but not silently:
-        // the caveat is the only thing standing between a useful artifact and a misleading one
-        if (classification.Meaning == RawBytesMeaning.UndecodableImageFile)
-        {
-            accounting.RecordLimitedReadability(filter, reference);
         }
 
         // Record an image written in its source encoding under a PNG request so the mode can be explained
@@ -351,195 +342,138 @@ internal static class PdfImageExtractor
     /// <returns>A reference such as <c>page 2 image 3</c>.</returns>
     /// <remarks>
     ///     PdfPig does not surface the XObject's resource name, so the page and discovery ordinal are
-    ///     used instead: they are stable for a given document and page range, which keeps gap text
+    ///     used instead: they are stable for a given document and page range, which keeps note text
     ///     and manifest provenance byte-deterministic across runs. Pure.
     /// </remarks>
     private static string DescribeImage(int pageNumber, int ordinal) =>
         string.Format(CultureInfo.InvariantCulture, "page {0} image {1}", pageNumber, ordinal);
 
     /// <summary>
-    ///     Reports the decode-failure, readability-caveat, size-skip, and unhonored-<c>ForcePng</c> gaps.
+    ///     Reports the decode-failure, size-skip, and unhonored-<c>ForcePng</c> notes.
     /// </summary>
     /// <param name="sink">The sink to report through.</param>
     /// <param name="options">The effective options, consulted for the requested output mode.</param>
     /// <param name="accounting">The completed accounting for the run.</param>
-    /// <param name="written">The number of images actually written.</param>
     /// <remarks>
-    ///     Each condition gets its own gap so a reader can tell a decode failure from an image written
-    ///     with a caveat from a size skip from an unhonored option; collapsing them into one would be
-    ///     less informative than the counts deserve, and would blur the line between an image that is
-    ///     absent and one that is present but awkward to open. Side effect: records diagnostics and
-    ///     gaps on the sink.
+    ///     Each condition gets its own note so a reader can tell a decode failure from a size skip
+    ///     from an unhonored option; collapsing them into one would blur the difference between
+    ///     "could not decode" and "did not write because of the chosen limits". Side effect: records
+    ///     notes on the sink.
     /// </remarks>
-    private static void ReportAccountingGaps(
-        IExtractionSink sink, ExtractionOptions options, ImageAccounting accounting, int written)
+    private static void ReportAccountingNotes(
+        IExtractionSink sink, ExtractionOptions options, ImageAccounting accounting)
     {
         if (accounting.UndecodableCount > 0)
         {
-            ReportUndecodableGap(sink, accounting, written);
-        }
-
-        if (accounting.LimitedReadabilityCount > 0)
-        {
-            ReportLimitedReadabilityGap(sink, accounting);
+            ReportUndecodableNote(sink, accounting);
         }
 
         if (accounting.SizeSkippedCount > 0)
         {
-            ReportSizeSkipGap(sink, accounting, written);
+            ReportSizeSkipNote(sink, accounting);
         }
 
         if (options.ImageOutput == ImageOutputMode.ForcePng && accounting.UnhonoredForcePngCount > 0)
         {
-            ReportUnhonoredForcePngGap(sink, accounting);
+            ReportUnhonoredForcePngNote(sink, accounting);
         }
     }
 
     /// <summary>
-    ///     Reports the counted gap for images whose encoding this extractor cannot decode.
+    ///     Reports a note for images whose encoding this extractor cannot decode.
     /// </summary>
     /// <param name="sink">The sink to report through.</param>
     /// <param name="accounting">The completed accounting supplying the counts and encoding names.</param>
-    /// <param name="written">The number of images actually written.</param>
     /// <remarks>
-    ///     The scope distinguishes a partial extraction from a total one: when nothing was written the
-    ///     folder is genuinely empty, and calling that "partially extracted" would both overstate the
-    ///     result and contradict the contract verifier's rule that a partial folder holds at least one
-    ///     file. Side effect: records on the sink.
+    ///     A decode refusal means DocDown tried to produce an extracted image and could not complete
+    ///     that step, which is exactly the kind of fact an <see cref="ExtractionNote"/> exists to
+    ///     carry. Side effect: records a note on the sink.
     /// </remarks>
-    private static void ReportUndecodableGap(IExtractionSink sink, ImageAccounting accounting, int written)
+    private static void ReportUndecodableNote(IExtractionSink sink, ImageAccounting accounting)
     {
         var encodings = accounting.DescribeUndecodableEncodings();
         var counted = Counted(accounting.UndecodableCount, accounting.Found);
+        var affectedItems = DescribeAffectedItems(accounting.UndecodableItems, accounting.UndecodableCount);
 
-        sink.ReportDiagnostic(new ExtractionDiagnostic(
-            PdfDiagnosticCodes.UndecodableImageEncoding, DiagnosticSeverity.Warning,
-            $"{counted} embedded images use an encoding this extractor cannot decode."));
-
-        sink.ReportGap(new ExtractionGap(
-            Id: string.Empty,
-            Kind: GapKind.Images,
-            Target: ImagesTarget,
-            Scope: written > 0 ? GapScope.PartiallyExtracted : GapScope.Unavailable,
-            Reason: $"{counted} embedded images use encodings this extractor cannot decode "
-                  + $"({encodings}); they were not written.",
-            Impact: "The information in those images is not available in the extracted output.",
-            Remedy: null,
-            AffectedCount: accounting.UndecodableCount,
-            AffectedItems: accounting.UndecodableItems));
+        sink.ReportNote(new ExtractionNote(
+            $"{counted} embedded images use encodings this extractor cannot decode ({encodings}); "
+            + $"those images were not written{affectedItems}."));
     }
 
     /// <summary>
-    ///     Reports the counted caveat for images written in a format many consumers cannot read.
-    /// </summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <param name="accounting">The completed accounting supplying the counts and encoding names.</param>
-    /// <remarks>
-    ///     These images are <em>written</em>, so this is a caveat and not a loss: it is deliberately
-    ///     kept out of the undecodable count, whose denominator has to keep meaning "images that never
-    ///     reached the output". The scope is always partial because the gap is only reported when at
-    ///     least one such file exists on disk, which is what the contract verifier's rule requires.
-    ///     The prose names JPEG 2000 because that is the sole row of <see cref="FilterTable"/>
-    ///     classified <see cref="RawBytesMeaning.UndecodableImageFile"/>; adding another such row means
-    ///     revisiting this wording. Side effect: records on the sink.
-    /// </remarks>
-    private static void ReportLimitedReadabilityGap(IExtractionSink sink, ImageAccounting accounting)
-    {
-        var encodings = accounting.DescribeLimitedReadabilityEncodings();
-        var counted = Counted(accounting.LimitedReadabilityCount, accounting.Found);
-
-        sink.ReportDiagnostic(new ExtractionDiagnostic(
-            PdfDiagnosticCodes.Jpeg2000WrittenAsIs, DiagnosticSeverity.Warning,
-            $"{counted} embedded images were written as JPEG 2000 files, which many viewers cannot read."));
-
-        sink.ReportGap(new ExtractionGap(
-            Id: string.Empty,
-            Kind: GapKind.Images,
-            Target: ImagesTarget,
-            Scope: GapScope.PartiallyExtracted,
-            Reason: $"{counted} embedded images use the JPEG 2000 encoding ({encodings}); this extractor "
-                  + "does not decode it, so their codestream was written unchanged with a .jp2 extension. "
-                  + "Many image viewers and image libraries cannot read JPEG 2000 files.",
-            Impact: "Those images are present in the extracted output, but a consumer without JPEG 2000 "
-                  + "support may be unable to open them.",
-            Remedy: "Convert the .jp2 files with a JPEG 2000-capable tool if your consumer cannot read them.",
-            AffectedCount: accounting.LimitedReadabilityCount,
-            AffectedItems: accounting.LimitedReadabilityItems));
-    }
-
-    /// <summary>
-    ///     Reports the counted gap for images skipped because they exceed a caller-supplied limit.
+    ///     Reports a note for images skipped because they exceed a caller-supplied limit.
     /// </summary>
     /// <param name="sink">The sink to report through.</param>
     /// <param name="accounting">The completed accounting supplying the counts and references.</param>
-    /// <param name="written">The number of images actually written.</param>
     /// <remarks>
-    ///     Kept separate from the decode-failure gap because the two have different remedies: a size
-    ///     skip is undone by relaxing an option the caller chose, whereas a decode failure is a
-    ///     property of the document. The remedy names the options rather than instructing an install.
-    ///     Side effect: records on the sink.
+    ///     Kept separate from the decode-failure note because the two facts mean different things: a
+    ///     size skip came from the chosen extraction options rather than from the document encoding.
+    ///     Side effect: records a note on the sink.
     /// </remarks>
-    private static void ReportSizeSkipGap(IExtractionSink sink, ImageAccounting accounting, int written)
+    private static void ReportSizeSkipNote(IExtractionSink sink, ImageAccounting accounting)
     {
         var counted = Counted(accounting.SizeSkippedCount, accounting.Found);
-        sink.ReportGap(new ExtractionGap(
-            Id: string.Empty,
-            Kind: GapKind.Images,
-            Target: ImagesTarget,
-            Scope: written > 0 ? GapScope.PartiallyExtracted : GapScope.Unavailable,
-            Reason: $"{counted} embedded images exceed the caller's image size or dimension limit; "
-                  + "they were not written.",
-            Impact: "Those images are not available in the extracted output.",
-            Remedy: "Raise or clear MaxImageBytes and MaxImageDimensionPx to extract images of any size.",
-            AffectedCount: accounting.SizeSkippedCount,
-            AffectedItems: accounting.SizeSkippedItems));
+        var affectedItems = DescribeAffectedItems(accounting.SizeSkippedItems, accounting.SizeSkippedCount);
+        sink.ReportNote(new ExtractionNote(
+            $"{counted} embedded images exceeded the caller's image size or dimension limit and were "
+            + $"not written{affectedItems}."));
     }
 
     /// <summary>
-    ///     Reports the counted gap explaining why PNG output could not be honored for some images.
+    ///     Reports a note explaining why PNG output could not be honored for some images.
     /// </summary>
     /// <param name="sink">The sink to report through.</param>
     /// <param name="accounting">The completed accounting supplying the count and references.</param>
     /// <remarks>
     ///     Core's naming rule already guarantees the file on disk is not mislabeled: the extension
     ///     follows the bytes actually written, never the requested format. What is missing without
-    ///     this gap is the <em>explanation</em> — a caller who asked for PNG and received JPEG would
-    ///     otherwise have to infer why. The encodings are named from what was actually written rather
-    ///     than assumed to be JPEG, because a JPEG 2000 passthrough defeats the request in exactly the
-    ///     same way and naming the wrong encoding would be its own small dishonesty. Side effect:
-    ///     records on the sink.
+    ///     this note is the <em>explanation</em> — a caller who asked for PNG and received source
+    ///     encodings would otherwise have to infer why. The encodings are named from what was
+    ///     actually written rather than assumed to be JPEG, because a JPEG 2000 passthrough defeats
+    ///     the request in exactly the same way and naming the wrong encoding would be its own small
+    ///     dishonesty. Side effect: records a note on the sink.
     /// </remarks>
-    private static void ReportUnhonoredForcePngGap(IExtractionSink sink, ImageAccounting accounting)
+    private static void ReportUnhonoredForcePngNote(IExtractionSink sink, ImageAccounting accounting)
     {
         var counted = Counted(accounting.UnhonoredForcePngCount, accounting.Found);
         var encodings = accounting.DescribeUnhonoredForcePngEncodings();
+        var affectedItems = DescribeAffectedItems(accounting.UnhonoredForcePngItems, accounting.UnhonoredForcePngCount);
 
-        sink.ReportDiagnostic(new ExtractionDiagnostic(
-            PdfDiagnosticCodes.ForcePngNotHonored, DiagnosticSeverity.Warning,
-            $"PNG output was requested but {accounting.UnhonoredForcePngCount.ToString(CultureInfo.InvariantCulture)} "
-            + "images were written in their source encoding."));
-
-        sink.ReportGap(new ExtractionGap(
-            Id: string.Empty,
-            Kind: GapKind.Images,
-            Target: ImagesTarget,
-            Scope: GapScope.PartiallyExtracted,
-            Reason: $"PNG output was requested, but {counted} embedded images use an encoding this "
-                  + $"extractor does not decode ({encodings}); they were written in their source "
-                  + "encoding with a matching file extension rather than converted.",
-            Impact: "Those images are not in the requested PNG format; their file extensions and the "
-                  + "manifest media types describe what was actually written.",
-            Remedy: null,
-            AffectedCount: accounting.UnhonoredForcePngCount,
-            AffectedItems: accounting.UnhonoredForcePngItems));
+        sink.ReportNote(new ExtractionNote(
+            $"PNG output was requested, but {counted} embedded images use encodings this extractor "
+            + $"does not decode ({encodings}); those images were written in their source encoding "
+            + $"instead{affectedItems}."));
     }
 
-    /// <summary>The ledger path every image gap must name for the contract verifier to accept it.</summary>
+    /// <summary>
+    ///     Formats the affected item list for inclusion in a note.
+    /// </summary>
+    /// <param name="items">The bounded list of item references.</param>
+    /// <param name="totalCount">The true number of affected items represented by the list.</param>
+    /// <returns>
+    ///     A semicolon-prefixed clause naming the affected items, or an empty string when no item was
+    ///     recorded.
+    /// </returns>
     /// <remarks>
-    ///     Held as a constant because a gap whose target does not match the ledger entry exactly is
-    ///     reported by the verifier as an unexplained absence, so the spelling is load-bearing.
+    ///     The clause stays within one sentence by using semicolons, which lets the surrounding note
+    ///     remain a single factual statement while still naming specific examples. Pure.
     /// </remarks>
-    private const string ImagesTarget = "images/";
+    private static string DescribeAffectedItems(IReadOnlyList<string> items, int totalCount)
+    {
+        if (items.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var description = string.Join(", ", items);
+        return totalCount > items.Count
+            ? string.Format(
+                CultureInfo.InvariantCulture,
+                "; affected items: {0} (first {1} shown)",
+                description,
+                items.Count)
+            : "; affected items: " + description;
+    }
 
     /// <summary>
     ///     Formats an "n of m" phrase with invariant digits.
@@ -547,7 +481,7 @@ internal static class PdfImageExtractor
     /// <param name="count">The affected count.</param>
     /// <param name="found">The total number of images found.</param>
     /// <returns>A phrase such as <c>2 of 8</c>.</returns>
-    /// <remarks>Invariant formatting keeps gap text byte-identical across locales. Pure.</remarks>
+    /// <remarks>Invariant formatting keeps note text byte-identical across locales. Pure.</remarks>
     private static string Counted(int count, int found) => string.Format(
         CultureInfo.InvariantCulture, "{0} of {1}", count, found);
 
@@ -555,10 +489,10 @@ internal static class PdfImageExtractor
     ///     The running tally of what an image extraction found, skipped, and could not decode.
     /// </summary>
     /// <remarks>
-    ///     Separated from the extraction walk so the gap-reporting rules can be read and tested as one
+    ///     Separated from the extraction walk so the note-reporting rules can be read and tested as one
     ///     coherent accounting policy rather than as side effects scattered through a loop. Encoding
     ///     names are held in a sorted map and item lists are appended in document order, which is what
-    ///     makes the resulting gap text byte-deterministic across runs. Not thread-safe.
+    ///     makes the resulting note text byte-deterministic across runs. Not thread-safe.
     /// </remarks>
     private sealed class ImageAccounting
     {
@@ -570,12 +504,6 @@ internal static class PdfImageExtractor
 
         /// <summary>The references of images skipped for size, in document order and bounded in length.</summary>
         private readonly List<string> _sizeSkippedItems = [];
-
-        /// <summary>Counts of images written with a readability caveat, by PDF filter name.</summary>
-        private readonly SortedDictionary<string, int> _limitedReadabilityByEncoding = new(StringComparer.Ordinal);
-
-        /// <summary>The references of images written with a readability caveat, in document order.</summary>
-        private readonly List<string> _limitedReadabilityItems = [];
 
         /// <summary>Counts of images that defeated a PNG request, by PDF filter name.</summary>
         private readonly SortedDictionary<string, int> _unhonoredForcePngByEncoding = new(StringComparer.Ordinal);
@@ -590,15 +518,12 @@ internal static class PdfImageExtractor
         /// <summary>Gets the number of images that could not be decoded and were not written.</summary>
         /// <remarks>
         ///     Counts losses only. An image written in a format many viewers cannot read is not counted
-        ///     here, because it is on disk and this number is what the "not written" gap reports.
+        ///     here, because it is on disk and this number is what the "not written" note reports.
         /// </remarks>
         public int UndecodableCount { get; private set; }
 
         /// <summary>Gets the number of images skipped because of a caller size limit.</summary>
         public int SizeSkippedCount { get; private set; }
-
-        /// <summary>Gets the number of images written in a format many consumers cannot read.</summary>
-        public int LimitedReadabilityCount { get; private set; }
 
         /// <summary>Gets the number of images written in their source encoding despite a PNG request.</summary>
         public int UnhonoredForcePngCount { get; private set; }
@@ -609,9 +534,6 @@ internal static class PdfImageExtractor
         /// <summary>Gets the bounded, ordered references of the size-skipped images.</summary>
         public IReadOnlyList<string> SizeSkippedItems => _sizeSkippedItems;
 
-        /// <summary>Gets the bounded, ordered references of the images written with a readability caveat.</summary>
-        public IReadOnlyList<string> LimitedReadabilityItems => _limitedReadabilityItems;
-
         /// <summary>Gets the bounded, ordered references of the images that defeated the PNG request.</summary>
         public IReadOnlyList<string> UnhonoredForcePngItems => _unhonoredForcePngItems;
 
@@ -620,7 +542,7 @@ internal static class PdfImageExtractor
         /// </summary>
         /// <param name="encoding">The PDF filter name that could not be decoded.</param>
         /// <param name="reference">The image's stable reference.</param>
-        /// <remarks>Grouping by encoding is what lets the gap name the reason rather than just a count.</remarks>
+        /// <remarks>Grouping by encoding is what lets the note name the reason rather than just a count.</remarks>
         public void RecordUndecodable(string encoding, string reference)
         {
             UndecodableCount++;
@@ -632,28 +554,11 @@ internal static class PdfImageExtractor
         ///     Records an image skipped because it exceeds a caller-supplied limit.
         /// </summary>
         /// <param name="reference">The image's stable reference.</param>
-        /// <remarks>Tracked apart from decode failures so the two are never conflated in a gap.</remarks>
+        /// <remarks>Tracked apart from decode failures so the two are never conflated in a note.</remarks>
         public void RecordSizeSkip(string reference)
         {
             SizeSkippedCount++;
             Append(_sizeSkippedItems, reference);
-        }
-
-        /// <summary>
-        ///     Records an image that was written but in a format many consumers cannot read.
-        /// </summary>
-        /// <param name="encoding">The PDF filter name the bytes were written in.</param>
-        /// <param name="reference">The image's stable reference.</param>
-        /// <remarks>
-        ///     Deliberately separate from <see cref="RecordUndecodable"/>: this image is in the output,
-        ///     so counting it as a loss would understate what was extracted, and omitting it entirely
-        ///     would leave a file no one warned the consumer about.
-        /// </remarks>
-        public void RecordLimitedReadability(string encoding, string reference)
-        {
-            LimitedReadabilityCount++;
-            _limitedReadabilityByEncoding[encoding] = _limitedReadabilityByEncoding.GetValueOrDefault(encoding) + 1;
-            Append(_limitedReadabilityItems, reference);
         }
 
         /// <summary>
@@ -677,17 +582,10 @@ internal static class PdfImageExtractor
         /// </summary>
         /// <returns>A phrase such as <c>JBIG2Decode: 1; JPXDecode: 2</c>.</returns>
         /// <remarks>
-        ///     Sorted by encoding name so two runs over the same document produce byte-identical gap
+        ///     Sorted by encoding name so two runs over the same document produce byte-identical note
         ///     text regardless of the order the images happened to be visited. Pure.
         /// </remarks>
         public string DescribeUndecodableEncodings() => Describe(_undecodableByEncoding);
-
-        /// <summary>
-        ///     Renders the caveated encodings and their counts as deterministic text.
-        /// </summary>
-        /// <returns>A phrase such as <c>JPXDecode: 1</c>.</returns>
-        /// <remarks>Sorted for the same byte-determinism reason as the undecodable list. Pure.</remarks>
-        public string DescribeLimitedReadabilityEncodings() => Describe(_limitedReadabilityByEncoding);
 
         /// <summary>
         ///     Renders the encodings that defeated a PNG request and their counts as deterministic text.
@@ -701,7 +599,7 @@ internal static class PdfImageExtractor
         /// </summary>
         /// <param name="tally">The encoding counts to render, already sorted by name.</param>
         /// <returns>A phrase such as <c>DCTDecode: 1; JPXDecode: 2</c>.</returns>
-        /// <remarks>Shared so every gap names its encodings in one recognizable shape. Pure.</remarks>
+        /// <remarks>Shared so every note names its encodings in one recognizable shape. Pure.</remarks>
         private static string Describe(SortedDictionary<string, int> tally) => string.Join("; ", tally.Select(
             entry => string.Format(CultureInfo.InvariantCulture, "{0}: {1}", entry.Key, entry.Value)));
 
@@ -710,7 +608,7 @@ internal static class PdfImageExtractor
         /// </summary>
         /// <param name="items">The list to append to.</param>
         /// <param name="reference">The reference to append.</param>
-        /// <remarks>Bounded so a pathological document cannot produce an unreadable gap. Pure apart from the append.</remarks>
+        /// <remarks>Bounded so a pathological document cannot produce an unreadable note. Pure apart from the append.</remarks>
         private static void Append(List<string> items, string reference)
         {
             if (items.Count < MaxAffectedItems)

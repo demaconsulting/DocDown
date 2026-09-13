@@ -10,14 +10,15 @@ The Markdown subsystem is verified through unit tests exercising its two units �
 and `ExcelChartWriter` — in `Markdown/ExcelContentEmitterTests.cs` and `Markdown/ExcelChartWriterTests.cs`,
 plus system-level scenarios in `DocDownExcelTests.cs`, all in `DemaConsulting.DocDown.Excel.Tests`.
 
-Both units are tested against **hand-built models with no workbook behind them**, because the subsystem's
-contract is the projection from a model onto markdown; a workbook read is the reader's job, and mixing the
-two would obscure which unit was responsible for a defect. The emitter is driven through a recording sink
-so the parts, diagnostics, and counted gaps it produces can be asserted directly, and the chart writer is
-a pure function whose markdown and accounting are asserted from a hand-built chart model. The
-gap-versus-diagnostic policy is the subsystem's whole honesty and is asserted case by case: an empty
-workbook degrades, an empty sheet does not, a vector caveat is informational, and an unreadable, uncached,
-or bounded chart is a counted gap.
+Both units are tested against **hand-built models with no workbook behind them**, because the
+subsystem's contract is the projection from a model onto markdown; a workbook read is the reader's job,
+and mixing the two would obscure which unit was responsible for a defect. The emitter is driven through
+a recording sink so the parts, content counts, and short notes it produces can be asserted directly, and
+the chart writer is a pure function whose markdown is asserted from a hand-built chart model. The
+reporting rule is asserted case by case: an empty workbook is reported through zero-count inventory, an
+empty sheet states its own absence of cell content, an unreadable chart records a short note, a chart
+with no cached data or a bounded table states that fact in the chart part, and a successfully written
+vector image records no vector-only note.
 
 ### Test Environment
 
@@ -32,12 +33,14 @@ or bounded chart is a counted gap.
 
 Per IEC 62304 §5.6.2, a Markdown subsystem test run passes when the emitter writes a titled sheet part
 per worksheet, renders the verbatim listing and the additive grid table with its table-only elision and
-merged-range note, writes a chart part per chart, links images inline only when a path was returned, and
-reports the empty-workbook, empty-sheet, vector-caveat, and chart gaps with the correct
-degrade-versus-inform outcome; and when the chart writer renders a cached series as a table with a leading
-point-index column, honors sparse indices, escapes pipes, bounds the plotted points and states what it
-dropped, and states an unreadable or uncached chart in the part itself. A missing part, a wrong outcome, a
-weakened verbatim listing, or an uncounted gap is a failure.
+merged-range note, writes a chart part per chart, links images inline only when a path was returned,
+reports zero counts for features it explicitly looked for but did not find, records a short note only
+when an attempted chart or image step could not complete, states an empty worksheet in the sheet part,
+keeps page requests silent, and reports the content outline from the model; and when the chart writer
+renders a cached series as a table with a leading point-index column, honors sparse indices, escapes
+pipes, bounds the plotted points and states what it omitted, and states an unreadable or uncached chart
+in the part itself. A missing part, a wrong note, a missing zero count, or a weakened verbatim listing
+is a failure.
 
 ### Test Scenarios
 

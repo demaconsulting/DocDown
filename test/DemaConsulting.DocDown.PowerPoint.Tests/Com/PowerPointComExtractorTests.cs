@@ -16,19 +16,18 @@ public class PowerPointComExtractorTests
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>
-    ///     Proves the descriptor: identifier, format, capabilities (including rendered pages), and the
+    ///     Proves the descriptor: identifier, format, page-rendering applicability, and the
     ///     priority-zero tie-break that keeps the managed backend the default.
     /// </summary>
     [Fact]
     public void PowerPointComExtractor_Descriptor_MatchesContract()
     {
-        var extractor = new PowerPointComExtractor();
+        IDocumentExtractor extractor = new PowerPointComExtractor();
 
         Assert.Equal("powerpoint-com", extractor.Id);
         Assert.Contains(CoreFormat.Pptx, extractor.SupportedFormats);
         Assert.Equal(0, extractor.Priority);
-        Assert.True(extractor.Capabilities.HasFlag(ExtractorCapabilities.RenderedPages));
-        Assert.True(extractor.Capabilities.HasFlag(ExtractorCapabilities.Text));
+        Assert.True(extractor.PageRenderingApplicable);
     }
 
     /// <summary>
@@ -45,6 +44,10 @@ public class PowerPointComExtractorTests
 
         var result = extractor.ProbeAvailability();
         Assert.DoesNotContain("install", result.UnavailableReason ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        if (result.IsAvailable)
+        {
+            Assert.True(result.ProvidesRenderedPages);
+        }
     }
 
     /// <summary>
@@ -92,15 +95,15 @@ public class PowerPointComExtractorTests
         Assert.Contains(sink.EnvironmentFacts, fact => fact.Key == "pages.renderer");
         Assert.NotNull(created);
         Assert.True(created.Disposed);
-        Assert.Equal(ExtractionOutcome.Succeeded, outcome);
+        Assert.Equal(ExtractionOutcome.Produced, outcome);
     }
 
     /// <summary>
-    ///     Proves a slide that fails to render becomes a counted gap while the remaining slides are
-    ///     still rendered — never a silent absence.
+    ///     Proves a slide that fails to render becomes a plain-language note while the remaining
+    ///     slides are still rendered — never a silent absence.
     /// </summary>
     [Fact]
-    public async Task PowerPointComExtractor_Extract_SlideRenderFails_ReportsCountedGap()
+    public async Task PowerPointComExtractor_Extract_SlideRenderFails_ReportsNote()
     {
         using var temp = new TempScratch();
         var input = WriteFixture(temp, "deck.pptx", PptxFixtures.DeckWithNotes());
@@ -115,11 +118,12 @@ public class PowerPointComExtractorTests
         var outcome = await extractor.ExtractAsync(
             DocumentSource.FromFile(input), new CapturingContext(sink, Ct));
 
-        Assert.Equal(ExtractionOutcome.Degraded, outcome);
+        Assert.Equal(ExtractionOutcome.Produced, outcome);
         Assert.Single(sink.Pages);
-        var gap = Assert.Single(sink.Gaps, candidate => candidate.Kind == GapKind.Pages && candidate.Scope == GapScope.PartiallyExtracted);
-        Assert.Equal(1, gap.AffectedCount);
-        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "PPTX0004");
+        var note = Assert.Single(sink.Notes);
+        Assert.Equal(
+            "Slide 2 could not be rendered (the slide contained an unsupported effect).",
+            note.Message);
     }
 
     /// <summary>

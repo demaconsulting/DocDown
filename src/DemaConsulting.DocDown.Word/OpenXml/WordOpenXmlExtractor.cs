@@ -18,20 +18,18 @@ namespace DocDown.Word.OpenXml;
 ///         already contains — styled paragraphs, genuine table grids, embedded image parts, and the
 ///         document information — and it does materially better than the PDF backend on tables, which
 ///         Open XML preserves where a PDF flattened them. It cannot render a page, because
-///         rasterization needs a renderer this package deliberately does not ship, so it declares
-///         <see cref="ExtractorCapabilities.Text"/>, <see cref="ExtractorCapabilities.EmbeddedImages"/>,
-///         <see cref="ExtractorCapabilities.DocumentMetadata"/>, and
-///         <see cref="ExtractorCapabilities.DocumentStructure"/> and pointedly not
-///         <see cref="ExtractorCapabilities.RenderedPages"/>.
+///         rasterization needs a renderer this package deliberately does not ship, so
+///         <see cref="ProbeAvailability"/> reports the extractor available without rendered-page
+///         support.
 ///     </para>
 ///     <para>
 ///         Because nothing about this backend is environment-dependent — no native binary, no
 ///         external application — <see cref="ProbeAvailability"/> is unconditional and performs no
 ///         I/O. Adverse documents are not translated into results here: Core catches any exception
-///         and converts it into a structured failure with the full layout still written, so an
-///         encrypted or malformed document surfaces as a failed result carrying a plain explanation
-///         and never as an exception reaching the caller. Instances hold no per-extraction state and
-///         are safe to register once and reuse.
+///         and converts it into an <see cref="ExtractionOutcome.Unreadable"/> result carrying a plain
+///         explanation, so an encrypted or malformed document never reaches the caller as a raw
+///         parser exception. Instances hold no per-extraction state and are safe to register once and
+///         reuse.
 ///     </para>
 /// </remarks>
 public sealed class WordOpenXmlExtractor : IDocumentExtractor, ISelfValidating
@@ -59,20 +57,15 @@ public sealed class WordOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     public IReadOnlyCollection<CoreFormat> SupportedFormats => [CoreFormat.Docx];
 
     /// <inheritdoc />
-    public ExtractorCapabilities Capabilities =>
-        ExtractorCapabilities.Text | ExtractorCapabilities.EmbeddedImages
-        | ExtractorCapabilities.DocumentMetadata | ExtractorCapabilities.DocumentStructure;
-
-    /// <inheritdoc />
     public int Priority => 10;
 
     /// <inheritdoc />
     /// <remarks>
-    ///     Always available, with the full declared capability set. There is nothing to probe: the
-    ///     Open XML SDK is a managed assembly that ships inside this package, so if this type could be
-    ///     constructed the extractor can run. Performs no I/O and cannot throw.
+    ///     Always available. There is nothing to probe: the Open XML SDK is a managed assembly that
+    ///     ships inside this package, so if this type could be constructed the extractor can run.
+    ///     Performs no I/O and cannot throw.
     /// </remarks>
-    public ExtractorAvailability ProbeAvailability() => ExtractorAvailability.Available(Capabilities);
+    public ExtractorAvailability ProbeAvailability() => ExtractorAvailability.Available();
 
     /// <inheritdoc />
     public async ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context)
@@ -96,23 +89,23 @@ public sealed class WordOpenXmlExtractor : IDocumentExtractor, ISelfValidating
         using var stream = new MemoryStream(bytes, writable: false);
         var model = new WordOpenXmlReader().Read(stream);
 
-        var degraded = await WordContentEmitter.EmitAsync(sink, context.Options, model, cancellationToken)
+        await WordContentEmitter.EmitAsync(sink, context.Options, model, cancellationToken)
             .ConfigureAwait(false);
-        return degraded ? ExtractionOutcome.Degraded : ExtractionOutcome.Succeeded;
+        return ExtractionOutcome.Produced;
     }
 
     /// <inheritdoc />
     /// <remarks>
     ///     The cases describe this backend's own behavior in its deployed environment: that it can
-    ///     read a document it builds itself, and that page rendering is genuinely unavailable rather
-    ///     than merely untested. The rendering case reports as skipped with a reason, because a
-    ///     capability this package does not claim must not be reported as a failure.
+    ///     read a document it builds itself, and that page rendering is outside this backend's scope
+    ///     rather than merely untested. The rendering case reports as skipped with a reason because
+    ///     this package does not attempt page rendering.
     /// </remarks>
     public IEnumerable<SelfTestCase> GetSelfTestCases() =>
     [
         new SelfTestCase("word.openxml.parseRoundTrip", Id, RunParseRoundTrip),
         new SelfTestCase("word.pageRendering", Id, static _ => SelfTestResult.Skipped(
-            "This extractor does not provide the renderedPages capability; page rendering is not attempted."))
+            "This extractor does not render pages; page rendering is not attempted."))
     ];
 
     /// <summary>

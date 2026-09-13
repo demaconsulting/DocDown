@@ -7,15 +7,13 @@ Scratch folder  : <scratch-folder>
 Source document : <source-document>
 Detected format : docx (application/vnd.openxmlformats-officedocument.wordprocessingml.document) - detected by file extension
 Extracted (UTC) : 2026-01-02T03:04:05Z
-Status          : DEGRADED  - this extraction is INCOMPLETE; see "What was NOT extracted"
+Status          : PRODUCED  - the standard output layout was written.
 
 All paths below are relative to the scratch folder shown above.
 
 Backend
 -------
-  Selected  : word-openxml - Word (Open XML SDK)      [selected automatically]
-  Fidelity  : best-effort
-  Why       : satisfies 2 of 2 requested capabilities.
+  Selected  : word-openxml - Word (Open XML SDK)
 
 Environment
 -----------
@@ -36,30 +34,17 @@ Layout
   summary.txt          this file
   manifest.json        machine-readable form of this summary
   metadata.json        what the document asserts about itself
-  content.md           PRESENT but PARTIAL - see gaps below
-  images/              not present - none were found
-  pages/               not present - none were found
+  content.md           PRESENT
+  images/              not present - none were written
+  pages/               not present - none were written
 
 What WAS extracted
 ------------------
   content.md   67 characters of text.
-               Contains 1 heading and 1 table.
+               Contains 2 text blocks, 1 heading, 1 table, 0 comments, 0 distinct comment authors, and 0
+               footnotes.
 
-What was NOT extracted
-----------------------
-  [GAP-1] content.md -- PARTIALLY EXTRACTED
-          Reason : 1 merged (gridSpan/vMerge) or nested table cells were flattened because GitHub-flavored
-                   markdown cannot express a merge or a nested table; their content is preserved but the cell
-                   structure is not.
-          Impact : The affected tables read as flat grids rather than reproducing the original merges.
-
-Completeness
-------------
-  content.md : PARTIAL
-  images/    : COMPLETE   (0 of 0)
-  pages/     : COMPLETE   (0 of 0)
-  Every absence above is explained by a numbered gap. There are no unexplained gaps.
-
-Diagnostics (1 warnings, 0 errors)
-----------------------------------
-  [WORD0005] 1 merged or nested table cells were flattened.
+Could not read
+--------------
+  - 1 merged or nested table cells were flattened because GitHub-flavored markdown cannot represent that table
+    structure.

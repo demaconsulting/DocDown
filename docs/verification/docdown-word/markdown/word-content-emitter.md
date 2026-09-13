@@ -5,26 +5,25 @@ model-to-sink emission path.
 
 ### Verification Approach
 
-`WordContentEmitter` is verified at two complementary levels. Dedicated **unit** tests in
-`Markdown/WordContentEmitterTests.cs` drive `WordContentEmitter.EmitAsync` directly from hand-built
-`WordDocumentModel` instances through a `RecordingSink`, with no document behind them — the same
-model-only pattern the sibling Excel, PowerPoint, and Visio content emitters use — so a mapping,
-outline, gap, or metadata decision can be proven in isolation. **Integration** tests in
-`OpenXml/WordOpenXmlExtractorTests.cs` then drive a real extraction and assert what reaches the sink,
-proving the extractor really routes through the emitter rather than writing content around it. Both
-projects live in `DemaConsulting.DocDown.Word.Tests`.
+`WordContentEmitter` is verified at two complementary levels. Dedicated unit tests in
+`Markdown/WordContentEmitterTests.cs` drive `WordContentEmitter.EmitAsync()` directly from
+hand-built `WordDocumentModel` instances through a `RecordingSink`, with no document behind them,
+so content-inventory, metadata, and chart-note decisions can be proven in isolation. Integration
+tests in `OpenXml/WordOpenXmlExtractorTests.cs` then drive a real extraction and assert what
+reaches the sink for split output, force-PNG notes, merged-cell notes, and empty-document
+inventory.
 
-The two levels answer different questions and neither alone is sufficient. A hand-built-model unit test
-proves the emitter internally consistent but not that the extractor uses it; an integration test proves
-the routing but is a coarse instrument for a specific reporting decision. Together they prove the
-emitter both correct in isolation and actually on the extraction path.
+The two levels answer different questions and neither alone is sufficient. A hand-built-model unit
+test proves the emitter internally consistent but not that the extractor routes through it; an
+integration test proves the routing but is a coarse instrument for a specific emitter-only
+decision. Together they prove the emitter both correct in isolation and actually on the extraction
+path.
 
 ### Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
-- **Inputs**: hand-built `WordDocumentModel` instances through a `RecordingSink` for the unit tests;
-  a generated `.docx` multi-heading fixture and a generated `.docx` merged-cells
-  fixture from `TestData/DocxFixtures.cs` for the integration tests
+- **Inputs**: hand-built `WordDocumentModel` instances through a `RecordingSink` for the unit
+  tests; generated `.docx` fixtures from `TestData/DocxFixtures.cs` for the integration tests
 - **Filesystem**: the unit tests touch no filesystem; per-test `TempScratch` folders receive one
   output folder per integration run
 - **Mocking**: a `RecordingSink` substitutes for the write path in the unit tests; the integration
@@ -33,36 +32,54 @@ emitter both correct in isolation and actually on the extraction path.
 
 ### Acceptance Criteria
 
-Per IEC 62304 §5.5.2, a `WordContentEmitter` unit test run passes when a per-part extraction
-produces the split content the model implies; and when the model's structural findings are reported
-through the emitter as diagnostics whose codes match the pinned contract and as counted,
-reason-bearing gaps that name the affected target, with the outcome degraded where the shortfall
-warrants. Missing or unsplit content, a missing diagnostic, an uncounted gap, or a clean outcome for
-a document that required flattening is a failure.
+Per IEC 62304 §5.5.2, a `WordContentEmitter` unit test run passes when the emitted content reaches
+the sink in single-flow or split form as requested; when the content inventory reports looked-for
+counts, including zero text blocks for an empty document and distinct comment-author counts for
+reviewed drafts; when document metadata is handed to the sink exactly once when present and not at
+all when absent; and when incomplete steps are surfaced only as short notes for charts, flattened
+merged or nested table structure, and force-PNG requests.
 
 ### Test Scenarios
 
-#### The emitter writes the model's content in the requested split form
+#### The emitter writes content and reports inventory
 
 **Tests**: `WordContentEmitter_Emit_BodyWithComments_ReportsOutlineAndSucceeds`,
+`WordOpenXmlExtractor_Extract_EmptyDocument_ProducesZeroCountTextInventory`,
 `WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1`
 
-Proves the emitter, driven only by a hand-built model, writes the content and reports the content
-outline (headings, comments, and distinct comment authors) that makes the `## Comments` section
-discoverable, and that a per-part extraction through the real backend produces a `parts/` folder with
-one file per top-level heading — so the content reaching the sink is the content the model implies,
-driven by the model alone and actually routed through the emitter. Evidence for
-`DocDownWord-Markdown-WordContentEmitter-EmitsModelContent`.
+Prove the emitter writes content from the model, reports headings, comments, and distinct comment
+authors in the inventory, reports zero text blocks for an empty document, and writes per-part
+content when requested through the real backend. Evidence for
+`DocDownWord-Markdown-WordContentEmitter-EmitsModelContent` and
+`DocDownWord-Markdown-WordContentEmitter-ReportsContentInventory`.
 
-#### Diagnostics and counted gaps reach the output through the emitter
+#### Charts are surfaced as a short note
 
-**Tests**: `WordContentEmitter_Emit_ChartsFound_ReportsCountedGapAndDegrades`,
-`WordContentEmitter_Emit_RenderPagesRequested_ReportsPagesGapAndDegrades`,
-`WordOpenXmlExtractor_Extract_MergedCells_ReportsCountedStructuralGap`
+**Test**: `WordContentEmitter_Emit_ChartsFound_ReportsChartNote`
 
-Proves the emitter reports the model's structural findings as counted, degrading gaps: embedded charts
-the backend does not read surface as `WORD0010` with a counted `Text`/`Unavailable` gap, a page-render
-request surfaces as a `Pages` gap that never meets silence, and — through a real extraction — a
-flattened-cell finding surfaces as `WORD0005` with a `PartiallyExtracted` structural gap while the
-contract verifier reports no violations, so the reported gaps match what is on disk. Evidence for
-`DocDownWord-Markdown-WordContentEmitter-ReportsGapsAndDiagnostics`.
+Proves the emitter reports a note naming the chart count and stating that chart parts were not
+read. Evidence for `DocDownWord-Markdown-WordContentEmitter-ReportsChartNote`.
+
+#### Flattened table structure is surfaced as a short note
+
+**Test**: `WordOpenXmlExtractor_Extract_MergedCells_ReportsFlatteningNote`
+
+Proves a real extraction reports a note when merged or nested table structure had to be flattened
+for markdown. Evidence for `DocDownWord-Markdown-WordContentEmitter-ReportsFlattenedTableNote`.
+
+#### A force-PNG request that cannot be honored is surfaced as a short note
+
+**Test**: `WordOpenXmlExtractor_Extract_ForcePng_ReportsUnhonoredModeNote`
+
+Proves a real extraction reports a note when PNG output was requested but the embedded image files
+were written in their source encoding. Evidence for
+`DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote`.
+
+#### Metadata is handed to the sink once when present
+
+**Tests**: `WordContentEmitter_Emit_WithMetadata_ReportsDocumentMetadataOnce`,
+`WordContentEmitter_Emit_NoMetadata_ReportsNoDocumentMetadata`
+
+Prove the emitter reports captured document metadata once when the model carries it and reports
+nothing when the model does not. Supporting evidence for the metadata handoff described in the
+Markdown subsystem design.

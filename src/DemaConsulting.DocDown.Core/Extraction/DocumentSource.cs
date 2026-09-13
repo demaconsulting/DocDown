@@ -140,9 +140,8 @@ public sealed class DocumentSource
     /// <exception cref="IOException">Thrown when a file source cannot be opened for reading.</exception>
     /// <remarks>
     ///     The read error for a missing or unreadable file surfaces here (not at construction) so
-    ///     the engine can catch it and report a <see cref="ExtractionFailureKind.SourceUnreadable"/>
-    ///     failure. For a stream source the underlying stream is rewound to position zero so each
-    ///     open reads from the beginning.
+    ///     the engine can catch it and report an unreadable-source failure. For a stream source the
+    ///     underlying stream is rewound to position zero so each open reads from the beginning.
     /// </remarks>
     public Stream OpenRead()
     {

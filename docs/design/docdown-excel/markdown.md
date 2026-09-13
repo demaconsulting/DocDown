@@ -10,11 +10,12 @@ model through the extraction sink — one content part per worksheet and one per
 writer that renders a chart's cached series as a table of categories against series values. Every
 mapping decision that differentiates an Excel extraction — the verbatim address/value/formula listing,
 the additive grid table and its elision note, the merged-range note, the chart data table, the
-drawing-shape annotations, the inline image links, and the honest gap-versus-diagnostic policy — lives
-here and is testable from a hand-built model with no workbook and no Open XML SDK.
+drawing-shape annotations, the inline image links, the content inventory counts, and the short notes
+about incomplete chart or image steps — lives here and is testable from a hand-built model with no
+workbook and no Open XML SDK.
 
 The subsystem exists because reading a workbook and rendering what was read are separate concerns.
-Holding the whole projection apart from the reader is what makes every mapping decision provable from a
+Holding the projection apart from the reader is what makes every mapping decision provable from a
 hand-built model, and what keeps the output contract from acquiring a second implementation that could
 drift from the first.
 
@@ -22,10 +23,9 @@ drift from the first.
 
 | Interface | Direction | Format | Constraints |
 | --------- | --------- | ------ | ----------- |
-| `ExcelWorkbookModel` | Inbound, from the reader | .NET record | The pivot between reading and rendering |
+| `ExcelWorkbookModel` | Inbound, from the reader | .NET record | The pivot between reading and emission |
 | `IExtractionSink` | Outbound, from the emitter to Core | .NET interface | The only output channel |
-| `ExtractionOptions` | Inbound, from `IExtractionContext` | .NET record | Split mode, force-PNG, images |
-| `ExcelDiagnosticCodes` | Outbound to callers | .NET constants | The `XLSX0001`–`XLSX0006` codes this package owns |
+| `ExtractionOptions` | Inbound, from `IExtractionContext` | .NET record | Split mode, page request, image policy |
 
 ### Design
 
@@ -33,36 +33,33 @@ drift from the first.
 workbook order, the deduplicated embedded images, and the workbook metadata. Each `ExcelSheetModel`
 carries its tab name, its non-empty cells in row-major order, its merged ranges, the images it
 references, the charts it shows, and the text of the shapes drawn over it; an `ExcelCellModel` carries
-the A1 address, the value verbatim (or null when the cell holds only a formula), and the formula (or
-null). These model records, and the chart model records, are the inbound contract this subsystem
-renders; they are defined and documented by the OpenXml subsystem, where the files live, and are the
-pivot both subsystems agree on.
+the A1 address, the value verbatim (or null when the cell holds only a formula), and the formula
+(or null).
 
-**The content emitter.** `ExcelContentEmitter` is the single emission path. It counts the worksheets
-and charts, writes the embedded images first so each worksheet can link its pictures inline, writes one
-`ContentPartKind.Sheet` part per worksheet and one `ContentPartKind.Chart` part per chart, reports the
-document info and metadata, and reports every diagnostic and counted gap the model implies. Its gap
-policy is the whole honesty of the extraction: an empty workbook is a counted gap that degrades, an
-empty sheet is an informational diagnostic that does not, a vector image carries an informational
-readability caveat, and an unreadable, uncached, or bounded chart is a counted gap. The worksheet
-renderer emits the verbatim listing always and the grid table additively, eliding a long or multi-line
-value in the table alone with a note that names the cause and points to the full value in the listing.
+**The content emitter.** `ExcelContentEmitter` is the single emission path. It writes embedded images
+first so each worksheet can link them inline, writes one `ContentPartKind.Sheet` part per worksheet and
+one `ContentPartKind.Chart` part per chart, reports document info and metadata, reports content
+inventory counts from the model, and records short notes only when DocDown attempted a chart or image
+step and could not complete it. An empty workbook is conveyed through zero-count inventory entries, an
+empty worksheet says so in its sheet part, a vector image written successfully records no special note,
+an unreadable chart records a short note and still keeps its own chart part, and a chart with no cached
+data or a bounded table states that fact in the chart part itself.
 
 **The chart writer.** `ExcelChartWriter` renders one chart's cached data: the labeling that makes the
 numbers mean something — plot type, axis titles, per-series counts and source references — then a table
 with a leading point-index column, one column per series, pipe characters escaped, and sparse indices
-honored so a gap in the cache renders as the gap it is. The rendered table is bounded at a fixed number
-of plotted points, and both the table and the emitter state what was dropped. A chart that could not be
-read and one that cached no points are stated in the part itself so neither is ever a silent absence.
+honored so a hole in the cache renders as the hole it is. A chart part that could not be read states the
+reason, a chart with no cached data points states that no table could be produced, and a bounded table
+states how many plotted points were omitted.
 
-**The diagnostic-code contract.** `ExcelDiagnosticCodes` defines the six codes this package owns —
-`XLSX0001` `NoWorksheets`, `XLSX0002` `EmptySheet`, `XLSX0003` `VectorImageWrittenAsIs`, `XLSX0004`
-`ChartUnreadable`, `XLSX0005` `ChartWithoutCachedData`, `XLSX0006` `ChartPointsTruncated`. The distinct
-`XLSX` prefix cannot collide with Core's `DD` range or another package's prefix in any shared manifest,
-which makes ownership self-evident. It is a supporting type documented here.
+**The reporting rule.** The subsystem reports what DocDown extracted and where. Content inventory counts
+say what kinds of content were looked for and how many were found, including zero when the backend
+explicitly looked. A short plain note is reserved for an attempted step DocDown could not complete,
+such as an unreadable chart part or an image write the caller's limits or `ForcePng` request prevented.
+A note never characterizes the workbook itself.
 
 **The unit split.** Two units divide the work along the boundaries their responsibilities draw:
-`ExcelContentEmitter` owns the sink walk, the worksheet and grid rendering, and the whole
-gap-and-diagnostic policy; `ExcelChartWriter` owns the rendering of a chart's cached series and the
-plotted-point bound. The supporting model, chart-model, diagnostic-code, and `NamespaceDoc` types live
-in the same subsystem folder because they are the vocabulary of the units, not units of their own.
+`ExcelContentEmitter` owns the sink walk, worksheet rendering, content inventory, and note policy;
+`ExcelChartWriter` owns chart-part wording and the plotted-point bound. The supporting model,
+chart-model, and `NamespaceDoc` types live in the same subsystem folder because they are the vocabulary
+of the units, not units of their own.

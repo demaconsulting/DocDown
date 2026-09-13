@@ -1,17 +1,17 @@
 ---
 # Software Subsystem Requirements for DocDownVisio Markdown
 #
-# The Markdown subsystem owns the projection of the backend-neutral drawing model onto markdown: the
-# content emitter that drives every output the model implies — per-page content carrying the page name,
-# shape text, and the directed topology, the inline images, the diagnostics, and the honest gaps — and
-# the shape labeler that decides how each topology endpoint is named from what the drawing actually says
-# about it. These requirements decompose into the VisioContentEmitter and VisioShapeLabeler units via
-# children.
+# The Markdown subsystem owns the projection of the backend-neutral drawing model onto markdown:
+# the content emitter that drives every output the model implies — per-page content carrying the
+# page name, shape text, directed topology, looked-for content inventory, image links, and short
+# plain notes — and the shape labeler that decides how each topology endpoint is named from what
+# the drawing actually says about it. These requirements decompose into the VisioContentEmitter and
+# VisioShapeLabeler units via children.
 #
 # NOTE ON FORWARD-TRACE: DocDownVisio-Markdown-TopologyLabeling and its VisioShapeLabeler unit
-# requirements describe endpoint-label provenance, which the Visio intent did not call for — the intent
-# asked for the directed source-to-target edges and no more. These requirements are covered because the
-# behavior is genuinely tested; they are not invented to justify untested code. See the developer report.
+# requirements describe endpoint-label provenance, which the Visio intent did not call for — the
+# intent asked for the directed source-to-target edges and no more. These requirements are covered
+# because the behavior is genuinely tested; they are not invented to justify untested code.
 
 sections:
   - title: DocDownVisio Requirements
@@ -20,14 +20,16 @@ sections:
         requirements:
           - id: DocDownVisio-Markdown-ModelEmission
             title: >-
-              The subsystem shall emit a drawing model's per-page content, directed topology, images,
-              diagnostics, and gaps through one path that is independent of how the model was read.
+              The subsystem shall emit a drawing model's per-page content, looked-for inventory,
+              image links, and plain notes through one path that is independent of how the model was
+              read.
             justification: |
-              Reading a drawing and rendering what was read are separate concerns. Holding every emission
-              decision in one path, driven only by the model, is what makes each mapping decision testable
-              from a hand-built model with no drawing behind it, and what keeps the output contract from
-              acquiring a second, divergent implementation. The same path serves the managed backend and
-              the COM backend, so a drawing's content reads identically whether or not it was rendered.
+              Reading a drawing and rendering what was read are separate concerns. Holding every
+              emission decision in one path, driven only by the model, is what makes each mapping
+              decision testable from a hand-built model with no drawing behind it, and what keeps
+              the output contract from acquiring a second, divergent implementation. The same path
+              serves the managed backend and the COM backend, so a drawing's content reads
+              identically whether or not it was rendered.
             children:
               - DocDownVisio-Markdown-VisioContentEmitter-WritesPageName
               - DocDownVisio-Markdown-VisioContentEmitter-WritesShapeText
@@ -36,26 +38,25 @@ sections:
               - DocDownVisio-Markdown-VisioContentEmitter-PreservesMultiLineShapeText
               - DocDownVisio-Markdown-VisioContentEmitter-OmitsEdgesBetweenUnnamedShapes
               - DocDownVisio-Markdown-VisioContentEmitter-LinksImages
-              - DocDownVisio-Markdown-VisioContentEmitter-ReportsVectorImageCaveat
-              - DocDownVisio-Markdown-VisioContentEmitter-ReportsEmptyDrawingGap
+              - DocDownVisio-Markdown-VisioContentEmitter-ReportsLookedForInventory
+              - DocDownVisio-Markdown-VisioContentEmitter-ReportsForcePngNote
+              - DocDownVisio-Markdown-VisioContentEmitter-ReportsEmptyDrawingInInventory
               - DocDownVisio-Markdown-VisioContentEmitter-SplitsLargeDrawings
             tests:
               - VisioContentEmitter_Emit_RendersDirectedTopologyWithShapeText
 
           - id: DocDownVisio-Markdown-TopologyLabeling
             title: >-
-              The subsystem shall label each topology endpoint from what the drawing says about it — its
-              own text, its master type, or only its shape id — and publish the labeling convention and
-              the honest endpoint coverage alongside the edges.
+              The subsystem shall label each topology endpoint from what the drawing says about it
+              — its own text, its master type, or only its shape id — and state the labeling
+              convention in the content whenever a rendered label is not authored text.
             justification: |
-              The Visio intent asks for the directed edges and no more; this labeling provenance is an
-              additional honesty measure this backend provides, covered because it is tested. Its value is
-              real: an endpoint that renders as a bare shape id is unreadable, but the cure must not be
-              invention. The shape's own text is the only authored name; failing that, the master the shape
-              was instantiated from classifies it — but a master describing connective geometry is refused
-              so a wire is never reported as the equipment. The convention is stated in the content and the
-              manifest, and the counts of endpoints resolved by text, by type, and not at all let a
-              consumer judge how readable the edge list really is.
+              The Visio intent asks for the directed edges and no more; this labeling provenance is
+              an additional honesty measure this backend provides, covered because it is tested. Its
+              value is real: an endpoint that renders as a bare shape id is unreadable, but the cure
+              must not be invention. The shape's own text is the only authored name; failing that,
+              the master the shape was instantiated from classifies it — but a master describing
+              connective geometry is refused so a wire is never reported as the equipment.
             children:
               - DocDownVisio-Markdown-VisioShapeLabeler-UsesShapeTextVerbatim
               - DocDownVisio-Markdown-VisioShapeLabeler-UsesParenthesizedMasterType
@@ -63,6 +64,5 @@ sections:
               - DocDownVisio-Markdown-VisioShapeLabeler-FallsBackToShapeId
               - DocDownVisio-Markdown-VisioShapeLabeler-PublishesConvention
               - DocDownVisio-Markdown-VisioContentEmitter-StatesConventionInContent
-              - DocDownVisio-Markdown-VisioContentEmitter-ReportsEndpointCoverage
             tests:
               - VisioShapeLabeler_Convention_DescribesEveryRenderedForm

@@ -5,39 +5,37 @@ namespace DemaConsulting.DocDown.Core.Tests.Extraction;
 
 /// <summary>
 ///     Unit tests for <see cref="ExtractorRegistry"/>, exercising descriptor exposure, identifier
-///     lookup, lazy availability probing with caching, throwing-probe containment, explicit
+///     lookup, lazy availability probing with caching, probe-failure containment, explicit
 ///     re-probing, and candidate enumeration.
 /// </summary>
 /// <remarks>
-///     These tests construct the registry directly through its internal constructor (visible via
-///     <c>InternalsVisibleTo</c>). Each is named for the unit requirement it evidences: descriptor
-///     exposure, lookup by id, probe caching, probe-failure containment, refresh availability, and
-///     candidate enumeration.
+///     These tests construct the registry directly through its internal constructor and assert the
+///     new reduced candidate surface: descriptor plus availability only.
 /// </remarks>
 public class ExtractorRegistryTests
 {
     /// <summary>
-    ///     Proves the registry exposes a descriptor per extractor in registration order (DescriptorExposure).
+    ///     Proves the registry exposes one descriptor per extractor in registration order.
     /// </summary>
     [Fact]
-    public void ExtractorRegistry_Descriptors_TwoExtractors_ExposedInRegistrationOrder()
+    public void ExtractorRegistry_Descriptors_TwoExtractors_AppearInRegistrationOrder()
     {
-        // Arrange: a registry built from two extractors with distinct identities and abilities
+        // Arrange: a registry built from two distinct extractors
         var registry = new ExtractorRegistry(Factories(
-            StubExtractor.Available("alpha", [DocumentFormat.Text], ExtractorCapabilities.Text),
+            StubExtractor.Available("alpha", [DocumentFormat.Text]),
             new StubExtractor
             {
                 Id = "beta",
                 DisplayName = "Beta backend",
                 SupportedFormats = [DocumentFormat.Pdf],
-                Capabilities = ExtractorCapabilities.Text | ExtractorCapabilities.RenderedPages,
+                ProvidesRenderedPages = true,
                 Priority = 7
             }));
 
         // Act: read the exposed descriptors
         var descriptors = registry.Descriptors;
 
-        // Assert: both descriptors appear in registration order with their declared identity and abilities
+        // Assert: both descriptors appear with their identity and ranking data intact
         Assert.Equal(2, descriptors.Count);
         Assert.Equal("alpha", descriptors[0].Id);
         Assert.Equal("beta", descriptors[1].Id);
@@ -47,16 +45,16 @@ public class ExtractorRegistryTests
     }
 
     /// <summary>
-    ///     Proves a registered extractor resolves to its instance by identifier (LookupById).
+    ///     Proves a registered extractor resolves to its original instance by identifier.
     /// </summary>
     [Fact]
     public void ExtractorRegistry_Resolve_KnownId_ReturnsRegisteredInstance()
     {
-        // Arrange: a registry with a single named extractor
-        var extractor = StubExtractor.Available("target", [DocumentFormat.Text], ExtractorCapabilities.Text);
+        // Arrange: a registry with one named extractor
+        var extractor = StubExtractor.Available("target", [DocumentFormat.Text]);
         var registry = new ExtractorRegistry(Factories(extractor));
 
-        // Act: resolve the extractor by its identifier
+        // Act: resolve by identifier
         var resolved = registry.Resolve("target");
 
         // Assert: the exact registered instance is returned
@@ -64,72 +62,67 @@ public class ExtractorRegistryTests
     }
 
     /// <summary>
-    ///     Proves resolving an unknown identifier throws a key-not-found exception (LookupById boundary).
+    ///     Proves resolving an unknown identifier fails loudly.
     /// </summary>
     [Fact]
     public void ExtractorRegistry_Resolve_UnknownId_ThrowsKeyNotFoundException()
     {
         // Arrange: a registry with one unrelated extractor
-        var registry = new ExtractorRegistry(Factories(
-            StubExtractor.Available("known", [DocumentFormat.Text], ExtractorCapabilities.Text)));
+        var registry = new ExtractorRegistry(Factories(StubExtractor.Available("known", [DocumentFormat.Text])));
 
-        // Act + Assert: an unknown identifier fails loudly
+        // Act / Assert: the missing identifier is rejected
         Assert.Throws<KeyNotFoundException>(() => registry.Resolve("missing"));
     }
 
     /// <summary>
-    ///     Proves resolving a null or empty identifier is rejected (LookupById boundary).
+    ///     Proves resolving an empty identifier is rejected as a caller error.
     /// </summary>
     [Fact]
     public void ExtractorRegistry_Resolve_EmptyId_ThrowsArgumentException()
     {
         // Arrange: a registry with one extractor
-        var registry = new ExtractorRegistry(Factories(
-            StubExtractor.Available("known", [DocumentFormat.Text], ExtractorCapabilities.Text)));
+        var registry = new ExtractorRegistry(Factories(StubExtractor.Available("known", [DocumentFormat.Text])));
 
-        // Act + Assert: an empty identifier resolves nothing and is a caller error
+        // Act / Assert: an empty identifier is invalid
         Assert.Throws<ArgumentException>(() => registry.Resolve(string.Empty));
     }
 
     /// <summary>
-    ///     Proves resolving a null identifier is rejected (LookupById boundary).
+    ///     Proves resolving a null identifier is rejected as a caller error.
     /// </summary>
     [Fact]
     public void ExtractorRegistry_Resolve_NullId_ThrowsArgumentNullException()
     {
         // Arrange: a registry with one extractor
-        var registry = new ExtractorRegistry(Factories(
-            StubExtractor.Available("known", [DocumentFormat.Text], ExtractorCapabilities.Text)));
+        var registry = new ExtractorRegistry(Factories(StubExtractor.Available("known", [DocumentFormat.Text])));
 
-        // Act + Assert: the null branch of the guard is a distinct code path from the empty branch,
-        // and the requirement covers both, so it is asserted separately
+        // Act / Assert: the null guard is distinct from the empty-string guard
         Assert.Throws<ArgumentNullException>(() => registry.Resolve(null!));
     }
 
     /// <summary>
-    ///     Proves availability is probed once and cached across repeated candidate enumerations (ProbeCaching).
+    ///     Proves availability is probed once and cached across repeated candidate enumerations.
     /// </summary>
     [Fact]
     public void ExtractorRegistry_GetCandidates_RepeatedCalls_ProbesOnce()
     {
-        // Arrange: a registry whose extractor counts how many times it is probed
+        // Arrange: a registry whose extractor counts its availability probes
         var counting = new CountingProbeExtractor("counter");
         var registry = new ExtractorRegistry(Factories(counting));
 
-        // Act: enumerate candidates several times and read the diagnostics
+        // Act: enumerate candidates several times
         registry.GetCandidates();
         registry.GetCandidates();
-        _ = registry.AvailabilityDiagnostics;
 
-        // Assert: the availability probe ran exactly once because the result is cached
+        // Assert: the probe ran only once because the result was cached
         Assert.Equal(1, counting.ProbeCount);
     }
 
     /// <summary>
-    ///     Proves a throwing availability probe is contained as unavailable with a DD0602 diagnostic (ProbeFailureContainment).
+    ///     Proves a throwing availability probe is contained as an unavailable candidate.
     /// </summary>
     [Fact]
-    public void ExtractorRegistry_GetCandidates_ThrowingProbe_ContainedAsUnavailableWithDiagnostic()
+    public void ExtractorRegistry_GetCandidates_ThrowingProbe_ContainedAsUnavailable()
     {
         // Arrange: a registry with a backend whose availability probe throws
         var registry = new ExtractorRegistry(Factories(
@@ -137,39 +130,33 @@ public class ExtractorRegistryTests
 
         // Act: enumerate candidates, forcing the contained probe pass
         var candidate = Assert.Single(registry.GetCandidates());
-        var diagnostic = Assert.Single(registry.AvailabilityDiagnostics);
 
-        // Assert: the throwing probe is unavailable, the reason names the exception type, and DD0602 is recorded
+        // Assert: the throwing probe is surfaced as ordinary unavailability with a stable reason
         Assert.False(candidate.Availability.IsAvailable);
         Assert.Equal("availability probe failed: InvalidOperationException", candidate.Availability.UnavailableReason);
-        Assert.Equal("DD0602", diagnostic.Code);
-        Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
     }
 
     /// <summary>
-    ///     Proves an ordinarily unavailable backend records a DD0601 informational diagnostic (ProbeFailureContainment).
+    ///     Proves an ordinarily unavailable backend keeps its reason on the candidate surface.
     /// </summary>
     [Fact]
-    public void ExtractorRegistry_GetCandidates_UnavailableBackend_RecordsInfoDiagnostic()
+    public void ExtractorRegistry_GetCandidates_UnavailableBackend_PreservesReason()
     {
-        // Arrange: a registry with a backend that reports itself unavailable with a reason
+        // Arrange: a registry with one backend that reports itself unavailable
         const string reason = "the native library is not installed";
         var registry = new ExtractorRegistry(Factories(
             StubExtractor.Unavailable("offline", [DocumentFormat.Text], reason)));
 
-        // Act: enumerate candidates and read the diagnostic
+        // Act: enumerate the candidates
         var candidate = Assert.Single(registry.GetCandidates());
-        var diagnostic = Assert.Single(registry.AvailabilityDiagnostics);
 
-        // Assert: the backend is unavailable with its reason and the exclusion is recorded as DD0601 info
+        // Assert: the candidate stays unavailable and carries its reason verbatim
         Assert.False(candidate.Availability.IsAvailable);
-        Assert.Equal("DD0601", diagnostic.Code);
-        Assert.Equal(DiagnosticSeverity.Info, diagnostic.Severity);
-        Assert.Contains(reason, diagnostic.Message, StringComparison.Ordinal);
+        Assert.Equal(reason, candidate.Availability.UnavailableReason);
     }
 
     /// <summary>
-    ///     Proves RefreshAvailability discards the cache so the next enumeration re-probes (RefreshAvailability).
+    ///     Proves refreshing availability discards the cache so the next enumeration re-probes.
     /// </summary>
     [Fact]
     public void ExtractorRegistry_RefreshAvailability_AfterCaching_ReprobesOnNextEnumeration()
@@ -183,42 +170,42 @@ public class ExtractorRegistryTests
         registry.RefreshAvailability();
         registry.GetCandidates();
 
-        // Assert: the refresh forced a second probe pass
+        // Assert: the second enumeration performed a fresh probe
         Assert.Equal(2, counting.ProbeCount);
     }
 
     /// <summary>
-    ///     Proves candidate enumeration yields one candidate per extractor with its availability (CandidateEnumeration).
+    ///     Proves candidate enumeration yields one candidate per extractor with its availability.
     /// </summary>
     [Fact]
     public void ExtractorRegistry_GetCandidates_MixedAvailability_YieldsOneCandidatePerExtractor()
     {
-        // Arrange: a registry with one available and one unavailable backend
+        // Arrange: one available and one unavailable backend
         var registry = new ExtractorRegistry(Factories(
-            StubExtractor.Available("up", [DocumentFormat.Text], ExtractorCapabilities.Text),
+            StubExtractor.Available("up", [DocumentFormat.Text]),
             StubExtractor.Unavailable("down", [DocumentFormat.Text], "offline")));
 
         // Act: enumerate the candidates
         var candidates = registry.GetCandidates();
 
-        // Assert: each extractor is represented once with its own availability
+        // Assert: each backend is represented once with its own availability
         Assert.Equal(2, candidates.Count);
         Assert.True(candidates.Single(candidate => candidate.Descriptor.Id == "up").Availability.IsAvailable);
         Assert.False(candidates.Single(candidate => candidate.Descriptor.Id == "down").Availability.IsAvailable);
     }
 
     /// <summary>
-    ///     Proves the constructor rejects a duplicate identifier across extractors (build-time invariant).
+    ///     Proves duplicate extractor identifiers are rejected at construction time.
     /// </summary>
     [Fact]
     public void ExtractorRegistry_Construct_DuplicateIds_ThrowsArgumentException()
     {
-        // Arrange: two factories producing extractors that share an identifier
+        // Arrange: two factories producing the same identifier
         var factories = Factories(
-            StubExtractor.Available("dup", [DocumentFormat.Text], ExtractorCapabilities.Text),
-            StubExtractor.Available("dup", [DocumentFormat.Pdf], ExtractorCapabilities.Text));
+            StubExtractor.Available("dup", [DocumentFormat.Text]),
+            StubExtractor.Available("dup", [DocumentFormat.Pdf]));
 
-        // Act + Assert: identifier uniqueness is a hard build-time invariant
+        // Act / Assert: identifier uniqueness is a hard invariant
         Assert.Throws<ArgumentException>(() => new ExtractorRegistry(factories));
     }
 
@@ -226,8 +213,7 @@ public class ExtractorRegistryTests
     ///     Wraps ready extractor instances as the factory list the registry constructor expects.
     /// </summary>
     /// <param name="extractors">The extractor instances to wrap.</param>
-    /// <returns>A registration-ordered list of factories returning those instances.</returns>
-    /// <remarks>Keeps each test declarative by hiding the instance-to-factory wrapping.</remarks>
+    /// <returns>The registration-ordered factory list.</returns>
     private static IReadOnlyList<Func<IDocumentExtractor>> Factories(params IDocumentExtractor[] extractors) =>
         extractors.Select<IDocumentExtractor, Func<IDocumentExtractor>>(extractor => () => extractor).ToList();
 
@@ -235,8 +221,8 @@ public class ExtractorRegistryTests
     ///     An extractor that counts how many times its availability probe is invoked.
     /// </summary>
     /// <remarks>
-    ///     Used to prove the registry probes availability lazily and caches the result, re-probing
-    ///     only after an explicit refresh. Never used for a real extraction.
+    ///     Used to prove the registry probes lazily, caches the result, and re-probes only after an
+    ///     explicit refresh.
     /// </remarks>
     private sealed class CountingProbeExtractor : IDocumentExtractor
     {
@@ -244,37 +230,32 @@ public class ExtractorRegistryTests
         ///     Initializes a new instance of the <see cref="CountingProbeExtractor"/> class.
         /// </summary>
         /// <param name="id">The extractor identifier.</param>
-        /// <remarks>The identifier is the only configurable trait these tests need.</remarks>
         public CountingProbeExtractor(string id) => Id = id;
 
         /// <summary>Gets the number of times <see cref="ProbeAvailability"/> has been called.</summary>
-        /// <remarks>Asserted by the caching and refresh tests to prove the probe cadence.</remarks>
         public int ProbeCount { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public string Id { get; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public string DisplayName => Id + " (counting)";
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public IReadOnlyCollection<DocumentFormat> SupportedFormats => [DocumentFormat.Text];
 
-        /// <inheritdoc/>
-        public ExtractorCapabilities Capabilities => ExtractorCapabilities.Text;
-
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int Priority => 0;
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public ExtractorAvailability ProbeAvailability()
         {
             ProbeCount++;
-            return ExtractorAvailability.Available(ExtractorCapabilities.Text);
+            return ExtractorAvailability.Available();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context) =>
-            ValueTask.FromResult(ExtractionOutcome.Succeeded);
+            ValueTask.FromResult(ExtractionOutcome.Produced);
     }
 }

@@ -15,9 +15,15 @@ public class PowerPointComAvailabilityTests
     [Fact]
     public void PowerPointComAvailability_Probe_NeverThrowsAndNeverInstructsInstallation()
     {
-        var result = PowerPointComAvailability.Probe(ExtractorCapabilities.Text | ExtractorCapabilities.RenderedPages);
+        var thrown = Record.Exception(PowerPointComAvailability.Probe);
+        var result = PowerPointComAvailability.Probe();
 
+        Assert.Null(thrown);
         Assert.DoesNotContain("install", result.UnavailableReason ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        if (result.IsAvailable)
+        {
+            Assert.True(result.ProvidesRenderedPages);
+        }
     }
 
     /// <summary>
@@ -31,7 +37,7 @@ public class PowerPointComAvailabilityTests
             return;
         }
 
-        var result = PowerPointComAvailability.Probe(ExtractorCapabilities.RenderedPages);
+        var result = PowerPointComAvailability.Probe();
 
         Assert.False(result.IsAvailable);
         Assert.Contains("Windows", result.UnavailableReason!, StringComparison.Ordinal);

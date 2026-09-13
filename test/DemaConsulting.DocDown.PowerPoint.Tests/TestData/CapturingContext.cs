@@ -34,7 +34,7 @@ internal sealed class CapturingContext : IExtractionContext
     /// <inheritdoc />
     public ExtractorDescriptor SelectedExtractor { get; } = new(
         "powerpoint-com", "PowerPoint (COM automation)", [CoreFormat.Pptx],
-        ExtractorCapabilities.Text | ExtractorCapabilities.RenderedPages, 0);
+        0);
 
     /// <inheritdoc />
     public ExtractionEnvironment Environment { get; } = new("TestOS 1.0", "X64", "test-runtime 8.0", "test-rid", []);

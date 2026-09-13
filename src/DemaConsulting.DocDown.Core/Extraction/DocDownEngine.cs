@@ -48,10 +48,6 @@ public sealed class DocDownEngine
     /// <remarks>Never mutated; each extraction clones it (or the caller's options) so defaults stay pristine.</remarks>
     private readonly ExtractionOptions _defaults;
 
-    /// <summary>The pure selector used to rank candidates.</summary>
-    /// <remarks>Stateless and reusable across concurrent extractions.</remarks>
-    private readonly ExtractorSelector _selector = new();
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="DocDownEngine"/> class.
     /// </summary>
@@ -75,7 +71,7 @@ public sealed class DocDownEngine
     /// <summary>
     ///     Gets the descriptors of the registered extractors in registration order.
     /// </summary>
-    /// <remarks>Probe-free, so reading it never inspects the environment; use <see cref="GetBackendStatus"/> for availability.</remarks>
+    /// <remarks>Probe-free, so reading it never inspects the environment; use <see cref="GetBackends"/> for availability.</remarks>
     public IReadOnlyList<ExtractorDescriptor> Extractors => _registry.Descriptors;
 
     /// <summary>
@@ -127,9 +123,6 @@ public sealed class DocDownEngine
         // Step 2 (C5/D5): take a private snapshot of the options before touching anything else
         var effective = options?.Clone() ?? _defaults.Clone();
         var timestamp = effective.TimestampUtc ?? DateTimeOffset.UtcNow;
-        var mode = string.IsNullOrEmpty(effective.PreferredExtractorId)
-            ? SelectionMode.Automatic
-            : SelectionMode.CallerOverride;
 
         // Step 3: resolve the scratch folder; a refusal is the one failure with no writable layout
         ScratchFolder folder;
@@ -139,37 +132,22 @@ public sealed class DocDownEngine
         }
         catch (ScratchFolderException exception)
         {
-            return BuildScratchRefusedResult(scratchFolder, mode, exception);
+            return BuildScratchRefusedResult(scratchFolder, exception);
         }
 
-        return await RunPipelineAsync(folder, source, effective, timestamp, mode, cancellationToken).ConfigureAwait(false);
+        return await RunPipelineAsync(folder, source, effective, timestamp, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
-    ///     Gets the current availability status of every registered backend.
+    ///     Gets the registered backends with their current cached availability.
     /// </summary>
-    /// <returns>One <see cref="BackendStatus"/> per registered extractor, in registration order.</returns>
+    /// <returns>One candidate (descriptor plus availability) per registered extractor, in registration order.</returns>
     /// <remarks>
     ///     Uses the registry's cached availability, so it reflects the last probe pass without opening
     ///     any document. Useful for diagnosing a deployment — for example seeing a backend present but
     ///     unavailable and the reason — without triggering an extraction.
     /// </remarks>
-    public IReadOnlyList<BackendStatus> GetBackendStatus()
-    {
-        // Project each candidate's descriptor and cached availability into a flat status record
-        var statuses = new List<BackendStatus>();
-        foreach (var candidate in _registry.GetCandidates())
-        {
-            var descriptor = candidate.Descriptor;
-            var availability = candidate.Availability;
-            statuses.Add(new BackendStatus(
-                descriptor.Id, descriptor.DisplayName, descriptor.SupportedFormats,
-                descriptor.Capabilities, availability.EffectiveCapabilities, descriptor.Priority,
-                availability.IsAvailable, availability.UnavailableReason));
-        }
-
-        return statuses;
-    }
+    public IReadOnlyList<ExtractorCandidate> GetBackends() => _registry.GetCandidates();
 
     /// <summary>
     ///     Discards cached backend availability so the next query or extraction re-probes.
@@ -190,11 +168,11 @@ public sealed class DocDownEngine
     ///     order.
     /// </returns>
     /// <remarks>
-    ///     Core's three cases genuinely exercise the contract (layout invariance, gap accuracy via
-    ///     <see cref="ContractVerifier"/>, and manifest schema validity) by running an in-process
-    ///     extraction and cleaning up after themselves. An extractor whose cached probe reports
-    ///     unavailable has its cases wrapped so they return <see cref="SelfTestResult.Skipped(string)"/>
-    ///     without running, so a case that cannot run in this environment is never mistaken for a pass.
+    ///     Core's two cases genuinely exercise the contract (layout invariance and manifest schema
+    ///     validity) by running an in-process extraction and cleaning up after themselves. An
+    ///     extractor whose cached probe reports unavailable has its cases wrapped so they return
+    ///     <see cref="SelfTestResult.Skipped(string)"/> without running, so a case that cannot run in
+    ///     this environment is never mistaken for a pass.
     /// </remarks>
     public IReadOnlyList<SelfTestCase> GetSelfTestCases()
     {
@@ -202,7 +180,6 @@ public sealed class DocDownEngine
         var cases = new List<SelfTestCase>
         {
             new("core.layout-invariance", "core", context => ExecuteCoreCase(context, AssertLayout)),
-            new("core.gap-accuracy", "core", context => ExecuteCoreCase(context, AssertGapAccuracy)),
             new("core.manifest-schema", "core", context => ExecuteCoreCase(context, AssertManifestSchema))
         };
 
@@ -236,7 +213,6 @@ public sealed class DocDownEngine
     /// <param name="source">The source document.</param>
     /// <param name="options">The already-cloned effective options.</param>
     /// <param name="timestamp">The resolved extraction timestamp.</param>
-    /// <param name="mode">The selection mode implied by the options.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>The extraction result for this run.</returns>
     /// <remarks>
@@ -246,17 +222,11 @@ public sealed class DocDownEngine
     /// </remarks>
     private async ValueTask<ExtractionResult> RunPipelineAsync(
         ScratchFolder folder, DocumentSource source, ExtractionOptions options,
-        DateTimeOffset timestamp, SelectionMode mode, CancellationToken cancellationToken)
+        DateTimeOffset timestamp, CancellationToken cancellationToken)
     {
         // The sink is the sole write path; create it early so every failure branch can write the layout
         var sink = new ExtractionSink(folder, options);
         var candidates = _registry.GetCandidates();
-
-        // Surface why any backend was excluded so the manifest and summary can explain the environment
-        foreach (var diagnostic in _registry.AvailabilityDiagnostics)
-        {
-            sink.ReportDiagnostic(diagnostic);
-        }
 
         // Step 4: read the source fully so it can be hashed and sniffed from a seekable buffer
         byte[] bytes;
@@ -271,11 +241,9 @@ public sealed class DocDownEngine
         }
         catch (Exception exception) when (IsIoFault(exception))
         {
-            var failure = MakeSimpleFailure(ExtractionFailureKind.SourceUnreadable, DiagnosticCodes.SourceUnreadable,
-                $"The source document '{source.FileName}' could not be read.", UnknownDetection(),
-                "Verify the document exists and is readable, then retry.");
+            var failure = MakeSimpleFailure($"The source document '{source.FileName}' could not be read.", UnknownDetection());
             var inputs = new PipelineInputs(source, null, UnknownDetection(), options, timestamp, candidates);
-            return await WriteFailureAsync(folder, sink, inputs, EmptySelection(mode, failure), failure, cancellationToken).ConfigureAwait(false);
+            return await WriteFailureAsync(folder, sink, inputs, null, failure, cancellationToken).ConfigureAwait(false);
         }
 
         var sha = ComputeSha(bytes);
@@ -285,56 +253,54 @@ public sealed class DocDownEngine
         // Step 5: an unrecognized format cannot be routed to any backend
         if (detection.Format.IsUnknown)
         {
-            var failure = MakeSimpleFailure(ExtractionFailureKind.FormatNotRecognized, DiagnosticCodes.FormatNotRecognized,
-                $"The format of '{source.FileName}' could not be recognized.", detection,
-                "Supply a document with a recognized format or a known file extension.");
-            return await WriteFailureAsync(folder, sink, baseInputs, EmptySelection(mode, failure), failure, cancellationToken).ConfigureAwait(false);
+            var failure = MakeSimpleFailure($"The format of '{source.FileName}' could not be recognized.", detection);
+            return await WriteFailureAsync(folder, sink, baseInputs, null, failure, cancellationToken).ConfigureAwait(false);
         }
 
-        // Step 6: rank the candidates; a selection failure is fully explained by the selector
-        var selection = _selector.Select(detection, options, candidates);
-        if (selection.Failure is not null)
+        // Step 6: choose a backend; a selection failure carries prose naming the format and its package
+        var selected = ExtractorSelector.Select(detection, options, candidates, out var selectionFailure);
+        if (selectionFailure is not null)
         {
-            return await WriteFailureAsync(folder, sink, baseInputs, selection, selection.Failure, cancellationToken).ConfigureAwait(false);
+            return await WriteFailureAsync(folder, sink, baseInputs, null, selectionFailure, cancellationToken).ConfigureAwait(false);
         }
 
-        // Step 7 onward: invoke the backend and finalize the successful (or degraded) layout
-        return await RunExtractionAsync(folder, sink, baseInputs, selection, cancellationToken).ConfigureAwait(false);
+        // Step 7 onward: invoke the backend and finalize the produced layout
+        return await RunExtractionAsync(folder, sink, baseInputs, selected!, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
-    ///     Invokes the selected backend and finalizes the output layout for a non-selection failure.
+    ///     Invokes the selected backend and finalizes the produced output layout.
     /// </summary>
     /// <param name="folder">The prepared scratch folder.</param>
     /// <param name="sink">The sink the backend writes through.</param>
     /// <param name="inputs">The gathered pipeline inputs (source, hash, detection, options, timestamp, candidates).</param>
-    /// <param name="selection">The successful selection whose extractor will run.</param>
+    /// <param name="selected">The selected extractor descriptor that will run.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>The extraction result for this run.</returns>
     /// <remarks>
     ///     The backend receives only the <see cref="DocumentSource"/> and an
     ///     <see cref="IExtractionContext"/>; it never learns the scratch path. A thrown exception
     ///     (other than <see cref="OperationCanceledException"/>, which propagates) is contained and
-    ///     converted into an <see cref="ExtractionFailureKind.ExtractorFailed"/> failure with the full
-    ///     layout still written. Performs filesystem I/O.
+    ///     converted into an unreadable result with a prose failure, with the full layout still
+    ///     written. Performs filesystem I/O.
     /// </remarks>
     private async ValueTask<ExtractionResult> RunExtractionAsync(
-        ScratchFolder folder, ExtractionSink sink, PipelineInputs inputs, SelectionResult selection, CancellationToken cancellationToken)
+        ScratchFolder folder, ExtractionSink sink, PipelineInputs inputs, ExtractorDescriptor selected, CancellationToken cancellationToken)
     {
-        var selected = selection.Selected!;
         var selectedCandidate = inputs.Candidates.First(
             candidate => string.Equals(candidate.Descriptor.Id, selected.Id, StringComparison.Ordinal));
-        var selectedEffective = selectedCandidate.Availability.EffectiveCapabilities;
+        var providesRenderedPages = selectedCandidate.Availability.ProvidesRenderedPages;
 
         // Build the context the backend sees; it exposes the sink and options but no output path
         var baseEnvironment = BuildEnvironment(AvailabilityFacts(inputs.Candidates, selected.Id));
         var context = new ExtractionContext(inputs.Options, sink, inputs.Detection, selected, baseEnvironment, cancellationToken);
         var extractor = _registry.Resolve(selected.Id);
 
-        ExtractionOutcome extractorOutcome;
         try
         {
-            extractorOutcome = await extractor.ExtractAsync(inputs.Source, context).ConfigureAwait(false);
+            // The backend's returned outcome is informational; the engine derives the outcome from
+            // whether a failure occurred, so the value is deliberately discarded
+            _ = await extractor.ExtractAsync(inputs.Source, context).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -345,142 +311,93 @@ public sealed class DocDownEngine
         catch (Exception exception)
 #pragma warning restore CA1031
         {
-            var failure = MakeExtractorFailure(selected, exception, inputs.Detection, selection.Trace);
-            return await WriteFailureAsync(folder, sink, inputs, selection, failure, cancellationToken).ConfigureAwait(false);
+            var failure = MakeExtractorFailure(selected, exception, inputs.Detection);
+            return await WriteFailureAsync(folder, sink, inputs, selected, failure, cancellationToken).ConfigureAwait(false);
         }
 
-        // Step 8: record the gaps Core knows about that the backend cannot report itself
-        EmitCoreDerivedGaps(sink, inputs.Options, selected, selectedEffective, inputs.Detection, inputs.Candidates);
+        // Step 8: record the notes Core knows about that the backend cannot report itself
+        EmitCoreDerivedNotes(sink, inputs.Options, selected, providesRenderedPages, inputs.Detection);
 
-        // Step 9: finalize content, then reconcile and serialize the manifest and summary
+        // Step 9: finalize content, then serialize the manifest and summary
         var content = await ContentWriter.WriteAsync(
             sink, inputs.Options.ContentSplit, sink.DocumentInfo?.Title, cancellationToken).ConfigureAwait(false);
-        if (!content.ContentPresent)
-        {
-            EmitNoTextGap(sink);
-        }
 
         var environment = BuildEnvironment(FinalFacts(sink, inputs.Candidates, selected.Id));
         var report = new ExtractionReport(
-            ExtractionOutcome.Succeeded, inputs.Source, inputs.Sha, inputs.Detection, selection,
+            ExtractionOutcome.Produced, inputs.Source, inputs.Sha, inputs.Detection, selected,
             environment, inputs.Options, inputs.Timestamp, null);
-        return await ProduceResultAsync(folder, sink, report, content, extractorOutcome, cancellationToken).ConfigureAwait(false);
+        return await ProduceResultAsync(folder, sink, report, content, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
-    ///     Writes the full layout for a failed extraction and builds its result.
+    ///     Writes the full layout for an unreadable extraction and builds its result.
     /// </summary>
     /// <param name="folder">The prepared scratch folder.</param>
-    /// <param name="sink">The sink to record the failure artifacts through.</param>
+    /// <param name="sink">The sink to record through.</param>
     /// <param name="inputs">The gathered pipeline inputs.</param>
-    /// <param name="selection">The selection (possibly empty) associated with the failure.</param>
+    /// <param name="selected">The selected extractor descriptor, or <see langword="null"/> when none was selected.</param>
     /// <param name="failure">The structured failure to record and serialize.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
-    /// <returns>The failed extraction result, with the full layout written.</returns>
+    /// <returns>The unreadable extraction result, with the full layout written.</returns>
     /// <remarks>
-    ///     Records a failure diagnostic and the failed-artifact gaps, then serializes the manifest and
-    ///     summary so even a failure produces a self-describing layout. Content is not written, so
-    ///     <c>content.md</c> is honestly absent. Performs filesystem I/O.
+    ///     Serializes the manifest and summary so even an unreadable run produces a self-describing
+    ///     layout carrying the prose failure. Content is not written, so <c>content.md</c> is honestly
+    ///     absent. Performs filesystem I/O.
     /// </remarks>
     private static async ValueTask<ExtractionResult> WriteFailureAsync(
         ScratchFolder folder, ExtractionSink sink, PipelineInputs inputs,
-        SelectionResult selection, ExtractionFailure failure, CancellationToken cancellationToken)
+        ExtractorDescriptor? selected, ExtractionFailure failure, CancellationToken cancellationToken)
     {
-        // Record the failure once as a diagnostic and as failed-artifact gaps so nothing is unexplained
-        EmitFailureArtifacts(sink, failure);
-
-        var environment = BuildEnvironment(FinalFacts(sink, inputs.Candidates, selection.Selected?.Id));
+        var environment = BuildEnvironment(FinalFacts(sink, inputs.Candidates, selected?.Id));
         var report = new ExtractionReport(
-            ExtractionOutcome.Failed, inputs.Source, inputs.Sha, inputs.Detection, selection,
+            ExtractionOutcome.Unreadable, inputs.Source, inputs.Sha, inputs.Detection, selected,
             environment, inputs.Options, inputs.Timestamp, failure);
-        return await ProduceResultAsync(folder, sink, report, null, null, cancellationToken).ConfigureAwait(false);
+        return await ProduceResultAsync(folder, sink, report, null, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
-    ///     Reconciles, resolves the outcome, serializes the manifest and summary, and builds the result.
+    ///     Resolves the outcome, serializes the manifest and summary, and builds the result.
     /// </summary>
     /// <param name="folder">The prepared scratch folder.</param>
     /// <param name="sink">The sink holding the recorded content.</param>
     /// <param name="report">The report with a provisional outcome; the final outcome is resolved here.</param>
     /// <param name="content">The content-write result, or <see langword="null"/> when no content was written.</param>
-    /// <param name="extractorOutcome">The backend's own reported outcome, or <see langword="null"/> when it did not run.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>The assembled extraction result.</returns>
     /// <remarks>
-    ///     Reconciliation runs before serialization so the ledger and gaps are consistent; the outcome
-    ///     is resolved from the failure, the backend's outcome, the presence of any gap, and whether
-    ///     selection satisfied fewer than the required capabilities. Performs filesystem I/O.
+    ///     The outcome is resolved from a single fact — whether a failure was recorded: a failure is
+    ///     <see cref="ExtractionOutcome.Unreadable"/>, and everything else is
+    ///     <see cref="ExtractionOutcome.Produced"/>. Performs filesystem I/O.
     /// </remarks>
     private static async ValueTask<ExtractionResult> ProduceResultAsync(
         ScratchFolder folder, ExtractionSink sink, ExtractionReport report,
-        ContentWriteResult? content, ExtractionOutcome? extractorOutcome, CancellationToken cancellationToken)
+        ContentWriteResult? content, CancellationToken cancellationToken)
     {
-        // Reconcile first so ledger, gaps, and diagnostics are settled before anything is serialized
-        var reconciliation = ManifestWriter.Reconcile(sink, report, content);
-        var outcome = ResolveOutcome(report, reconciliation, extractorOutcome);
+        // The outcome is a fact about whether output exists: a failure is unreadable, anything else produced
+        var outcome = report.Failure is not null ? ExtractionOutcome.Unreadable : ExtractionOutcome.Produced;
         var finalReport = report with { Outcome = outcome };
 
-        await ManifestWriter.WriteAsync(folder, sink, finalReport, content, reconciliation, cancellationToken).ConfigureAwait(false);
+        await ManifestWriter.WriteAsync(folder, sink, finalReport, content, cancellationToken).ConfigureAwait(false);
         await MetadataWriter.WriteAsync(folder, sink, cancellationToken).ConfigureAwait(false);
-        await SummaryWriter.WriteAsync(folder, sink, finalReport, content, reconciliation, cancellationToken).ConfigureAwait(false);
+        await SummaryWriter.WriteAsync(folder, sink, finalReport, content, cancellationToken).ConfigureAwait(false);
 
-        return BuildResult(folder, sink, finalReport, content, reconciliation);
-    }
-
-    /// <summary>
-    ///     Resolves the final extraction outcome from the failure, backend outcome, gaps, and capability fit.
-    /// </summary>
-    /// <param name="report">The report carrying any failure and the selection.</param>
-    /// <param name="reconciliation">The reconciliation output whose gaps signal degradation.</param>
-    /// <param name="extractorOutcome">The backend's own reported outcome, or <see langword="null"/>.</param>
-    /// <returns>The resolved outcome.</returns>
-    /// <remarks>
-    ///     A failure is decisive. Otherwise the run is degraded when the backend degraded, any gap
-    ///     exists, or the selected backend satisfied fewer than the required capabilities; only a run
-    ///     with none of these is a clean success. Pure.
-    /// </remarks>
-    private static ExtractionOutcome ResolveOutcome(
-        ExtractionReport report, ReconciliationResult reconciliation, ExtractionOutcome? extractorOutcome)
-    {
-        // A recorded failure always wins over any partial-success signal
-        if (report.Failure is not null)
-        {
-            return ExtractionOutcome.Failed;
-        }
-
-        // Any gap, a self-reported degrade, or an unmet requirement all mean the result is not clean.
-        // Page rendering that does not apply to a non-paginated format is not an unmet requirement: the
-        // request was honored with silence, so renderedPages is masked out of the fit comparison here.
-        var required = report.Selection.RequiredCapabilities;
-        var satisfied = report.Selection.SatisfiedCapabilities;
-        if (report.Selection.Selected is { PageRenderingApplicable: false })
-        {
-            required &= ~ExtractorCapabilities.RenderedPages;
-            satisfied &= ~ExtractorCapabilities.RenderedPages;
-        }
-
-        var degraded = extractorOutcome == ExtractionOutcome.Degraded
-            || reconciliation.Gaps.Count > 0
-            || satisfied != required;
-        return degraded ? ExtractionOutcome.Degraded : ExtractionOutcome.Succeeded;
+        return BuildResult(folder, sink, finalReport, content);
     }
 
     /// <summary>
     ///     Assembles the immutable <see cref="ExtractionResult"/> from the finalized facts.
     /// </summary>
     /// <param name="folder">The prepared scratch folder, whose absolute path anchors the result.</param>
-    /// <param name="sink">The sink holding the recorded images and pages.</param>
-    /// <param name="report">The final report (with resolved outcome, selection, detection, environment).</param>
+    /// <param name="sink">The sink holding the recorded images, pages, and notes.</param>
+    /// <param name="report">The final report (with resolved outcome, selected extractor, detection, environment).</param>
     /// <param name="content">The content-write result, or <see langword="null"/> when none was written.</param>
-    /// <param name="reconciliation">The reconciliation output supplying gaps, diagnostics, and the ledger.</param>
     /// <returns>The assembled result.</returns>
     /// <remarks>
     ///     The summary and manifest paths are absolute so a caller can use them directly; the content,
     ///     image, page, and part paths stay relative to the scratch folder to match the manifest. Pure.
     /// </remarks>
     private static ExtractionResult BuildResult(
-        ScratchFolder folder, ExtractionSink sink, ExtractionReport report,
-        ContentWriteResult? content, ReconciliationResult reconciliation)
+        ScratchFolder folder, ExtractionSink sink, ExtractionReport report, ContentWriteResult? content)
     {
         var absolute = folder.AbsolutePath;
         return new ExtractionResult(
@@ -493,44 +410,32 @@ public sealed class DocDownEngine
             sink.Pages.Select(page => page.Path).ToList(),
             content?.PartPaths ?? [],
             report.DetectedFormat,
-            report.Selection.Selected,
-            report.Selection.Mode,
-            report.Selection.Trace,
+            report.SelectedExtractor,
             report.Failure,
-            reconciliation.Diagnostics,
-            reconciliation.IsComplete,
             report.Environment,
-            reconciliation.Gaps,
-            reconciliation.Ledger);
+            sink.Notes);
     }
 
     /// <summary>
     ///     Builds the result for a refused scratch folder, the one failure that writes no layout.
     /// </summary>
     /// <param name="scratchFolder">The originally requested scratch folder path.</param>
-    /// <param name="mode">The selection mode implied by the options.</param>
     /// <param name="exception">The refusal carrying the reason.</param>
-    /// <returns>A failed result with the requested absolute path and the would-be summary and manifest paths.</returns>
+    /// <returns>An unreadable result with the requested absolute path and the would-be summary and manifest paths.</returns>
     /// <remarks>
     ///     Core cannot write into a folder it refused, so this is the single case where
     ///     <c>summary.txt</c> and <c>manifest.json</c> are not produced. The result nonetheless carries
     ///     the requested absolute path and the paths the summary and manifest would have used so the
     ///     caller can report them. Pure apart from resolving the absolute path.
     /// </remarks>
-    private static ExtractionResult BuildScratchRefusedResult(string scratchFolder, SelectionMode mode, ScratchFolderException exception)
+    private static ExtractionResult BuildScratchRefusedResult(string scratchFolder, ScratchFolderException exception)
     {
         var requested = SafeFullPath(scratchFolder);
         var summary = $"The scratch folder '{requested}' was refused: {exception.Message}";
-        var failure = MakeSimpleFailure(ExtractionFailureKind.ScratchFolderRefused, DiagnosticCodes.ScratchFolderRefused,
-            summary, UnknownDetection(),
-            "Choose an empty folder, a dedicated DocDown output folder, or a different scratch-folder mode.");
-        var diagnostics = new List<ExtractionDiagnostic>
-        {
-            new(DiagnosticCodes.ScratchFolderRefused, DiagnosticSeverity.Error, summary)
-        };
+        var failure = MakeSimpleFailure(summary, UnknownDetection());
 
         return new ExtractionResult(
-            ExtractionOutcome.Failed,
+            ExtractionOutcome.Unreadable,
             requested,
             Path.Combine(requested, "summary.txt"),
             Path.Combine(requested, "manifest.json"),
@@ -540,165 +445,51 @@ public sealed class DocDownEngine
             [],
             UnknownDetection(),
             null,
-            mode,
-            [],
             failure,
-            diagnostics,
-            false,
             BuildEnvironment([]),
-            [],
-            AbsentLedger());
+            []);
     }
 
     /// <summary>
-    ///     Emits the gaps and diagnostics Core can derive without any backend cooperation.
+    ///     Emits the notes Core can derive without any backend cooperation.
     /// </summary>
-    /// <param name="sink">The sink to report the gaps and diagnostics through.</param>
+    /// <param name="sink">The sink to record notes through.</param>
     /// <param name="options">The effective options driving the suppression and render requests.</param>
     /// <param name="selected">The selected extractor descriptor.</param>
-    /// <param name="selectedEffective">The selected extractor's effective capabilities in this environment.</param>
-    /// <param name="detection">The detected format, used to identify alternate page-rendering backends.</param>
-    /// <param name="candidates">All candidates, used to name unavailable backends that could have rendered pages.</param>
+    /// <param name="providesRenderedPages">Whether the selected backend can render pages in this environment.</param>
+    /// <param name="detection">The detected format, named in a note about an absent renderer.</param>
     /// <remarks>
-    ///     Encodes the knowledge the engine has that the backend does not: suppressed images, a render
-    ///     request the selected backend cannot satisfy (naming every unavailable backend that could
-    ///     have), and a render request that produced no pages. Each condition emits both the gap and
-    ///     the matching diagnostics. Side effect: records on the sink.
+    ///     Encodes the facts the engine knows that the backend does not: that embedded images were
+    ///     suppressed by the caller, that page rendering was requested but no renderer was available
+    ///     for a paginated format, or that a renderer ran but produced no pages. Each is a fact about
+    ///     the extraction, not a grade of the document. Side effect: records on the sink.
     /// </remarks>
-    private static void EmitCoreDerivedGaps(
+    private static void EmitCoreDerivedNotes(
         ExtractionSink sink, ExtractionOptions options, ExtractorDescriptor selected,
-        ExtractorCapabilities selectedEffective, FormatDetection detection, IReadOnlyList<ExtractorCandidate> candidates)
+        bool providesRenderedPages, FormatDetection detection)
     {
-        // Suppressed embedded images: record the deliberate, gap-worthy absence
+        // Suppressed embedded images: state the caller-chosen absence plainly so it is never ambiguous
         if (!options.IncludeEmbeddedImages)
         {
-            // Avoid duplicating the sink's own suppression diagnostic when the backend already tripped it
-            if (!sink.ImagesSuppressed)
-            {
-                sink.ReportDiagnostic(new ExtractionDiagnostic(
-                    DiagnosticCodes.EmbeddedImagesDisabled, DiagnosticSeverity.Info,
-                    "Embedded-image extraction was disabled by the caller options."));
-            }
-
-            sink.ReportGap(new ExtractionGap(
-                string.Empty, GapKind.Images, "images/", GapScope.NotAttempted,
-                "Embedded-image extraction was disabled by the caller options.",
-                Impact: "Images embedded in the document are not available.",
-                Remedy: "Enable IncludeEmbeddedImages to extract embedded images."));
+            sink.ReportNote(new ExtractionNote(
+                "Embedded image extraction was disabled by the caller; no images were written."));
         }
 
-        // A render request the selected backend cannot meet degrades the run and names who could have
-        if (options.RenderPages && !selectedEffective.HasFlag(ExtractorCapabilities.RenderedPages))
+        // Page rendering applies only to a paginated format; a non-paginated one honors the request with silence
+        if (options.RenderPages && selected.PageRenderingApplicable)
         {
-            if (selected.PageRenderingApplicable)
+            if (!providesRenderedPages)
             {
-                EmitRenderUnavailableGap(sink, selected, detection, candidates);
+                sink.ReportNote(new ExtractionNote(
+                    $"Page rendering was requested, but no page renderer is available for the '{detection.Format.Id}' "
+                    + "format in this environment; pages were not rendered."));
             }
-            else
+            else if (sink.Pages.Count == 0)
             {
-                // Page rendering does not apply to a non-paginated format, so the request is honored
-                // with silence: an informational diagnostic records that it applied to nothing, and no
-                // gap is emitted, so the run is not falsely degraded.
-                sink.ReportDiagnostic(new ExtractionDiagnostic(
-                    DiagnosticCodes.PageRenderingNotApplicable, DiagnosticSeverity.Info,
-                    $"Page rendering was requested, but the '{detection.Format.Id}' format is not paginated, "
-                    + "so there is no page grid to render and the request applies to nothing."));
+                sink.ReportNote(new ExtractionNote(
+                    "Page rendering was requested and a renderer was available, but no pages were produced."));
             }
         }
-        else if (options.RenderPages && sink.Pages.Count == 0)
-        {
-            // Rendering was possible but produced nothing; a partial-extraction gap explains the shortfall
-            sink.ReportDiagnostic(new ExtractionDiagnostic(
-                DiagnosticCodes.NoPagesProduced, DiagnosticSeverity.Warning,
-                "Page rendering was requested but the backend produced no pages."));
-            sink.ReportGap(new ExtractionGap(
-                string.Empty, GapKind.Pages, "pages/", GapScope.PartiallyExtracted,
-                "Page rendering was requested and supported, but the backend produced no pages.",
-                Impact: "Rendered page images are not available."));
-        }
-    }
-
-    /// <summary>
-    ///     Emits the render-unavailable gap and diagnostics, naming the unavailable backends that could
-    ///     have rendered pages.
-    /// </summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <param name="selected">The selected extractor descriptor.</param>
-    /// <param name="detection">The detected format, used to filter alternate backends by format.</param>
-    /// <param name="candidates">All candidates, scanned for unavailable page-rendering backends.</param>
-    /// <remarks>
-    ///     The clause naming the unavailable-but-capable backends is the whole point: it tells the
-    ///     reader precisely which backend would have delivered rendered pages and why it did not. Side
-    ///     effect: records on the sink.
-    /// </remarks>
-    private static void EmitRenderUnavailableGap(
-        ExtractionSink sink, ExtractorDescriptor selected, FormatDetection detection, IReadOnlyList<ExtractorCandidate> candidates)
-    {
-        // Collect the registered-but-unavailable backends that declare page rendering for this format
-        var offenders = candidates
-            .Where(candidate => !string.Equals(candidate.Descriptor.Id, selected.Id, StringComparison.Ordinal))
-            .Where(candidate => !candidate.Availability.IsAvailable)
-            .Where(candidate => candidate.Descriptor.Capabilities.HasFlag(ExtractorCapabilities.RenderedPages))
-            .Where(candidate => Supports(candidate.Descriptor, detection.Format))
-            .Select(candidate => $"{candidate.Descriptor.DisplayName} ({candidate.Descriptor.Id}): {ReasonOf(candidate.Availability)}")
-            .ToList();
-
-        var reason = new StringBuilder();
-        reason.Append("Page rendering was requested but the selected backend '").Append(selected.Id)
-            .Append("' does not provide the renderedPages capability in this environment.");
-        if (offenders.Count > 0)
-        {
-            reason.Append(" Backends that could render pages but are unavailable: ")
-                .Append(string.Join("; ", offenders)).Append('.');
-        }
-
-        sink.ReportDiagnostic(new ExtractionDiagnostic(
-            DiagnosticCodes.RenderedPagesUnavailable, DiagnosticSeverity.Warning,
-            "The requested renderedPages capability is unavailable in this environment."));
-        sink.ReportDiagnostic(new ExtractionDiagnostic(
-            DiagnosticCodes.DegradedMissingCapability, DiagnosticSeverity.Warning,
-            $"Degraded: the selected backend '{selected.Id}' lacks the requested renderedPages capability."));
-        sink.ReportGap(new ExtractionGap(
-            string.Empty, GapKind.Pages, "pages/", GapScope.Unavailable, reason.ToString(),
-            Impact: "Rendered page images are not available.",
-            Remedy: "Run in an environment where a page-rendering backend for this format is available."));
-    }
-
-    /// <summary>
-    ///     Emits the no-text gap and diagnostic for an extraction that produced no textual content.
-    /// </summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <remarks>
-    ///     A document-to-markdown extraction that yields no text is a real shortfall worth flagging, so
-    ///     the absence is both diagnosed and recorded as a gap. Side effect: records on the sink.
-    /// </remarks>
-    private static void EmitNoTextGap(ExtractionSink sink)
-    {
-        // Text is the primary artifact; its absence must be explained rather than passed over
-        sink.ReportDiagnostic(new ExtractionDiagnostic(
-            DiagnosticCodes.NoTextContent, DiagnosticSeverity.Warning, "The extraction produced no text content."));
-        sink.ReportGap(new ExtractionGap(
-            string.Empty, GapKind.Text, "content.md", GapScope.PartiallyExtracted,
-            "The extractor produced no text content.",
-            Impact: "No textual content is available for downstream consumers."));
-    }
-
-    /// <summary>
-    ///     Records a failed extraction's diagnostic and the failed-artifact gaps.
-    /// </summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <param name="failure">The structured failure whose summary explains each gap.</param>
-    /// <remarks>
-    ///     Records one error diagnostic plus a failed gap for text, images, and pages so a failed run's
-    ///     ledger has no unexplained absence. Side effect: records on the sink.
-    /// </remarks>
-    private static void EmitFailureArtifacts(ExtractionSink sink, ExtractionFailure failure)
-    {
-        // One diagnostic captures the failure with its code; the gaps explain each missing artifact
-        sink.ReportDiagnostic(new ExtractionDiagnostic(failure.Code, DiagnosticSeverity.Error, failure.Summary));
-        sink.ReportGap(new ExtractionGap(string.Empty, GapKind.Text, "content.md", GapScope.Failed, failure.Summary));
-        sink.ReportGap(new ExtractionGap(string.Empty, GapKind.Images, "images/", GapScope.Failed, failure.Summary));
-        sink.ReportGap(new ExtractionGap(string.Empty, GapKind.Pages, "pages/", GapScope.Failed, failure.Summary));
     }
 
     /// <summary>
@@ -707,7 +498,7 @@ public sealed class DocDownEngine
     /// <param name="facts">The facts to attach, already in their intended order.</param>
     /// <returns>The environment description.</returns>
     /// <remarks>
-    ///     The four runtime fields are read from <see cref="RuntimeInformation"/> so a degraded result
+    ///     The four runtime fields are read from <see cref="RuntimeInformation"/> so an incomplete result
     ///     is reproducible and explicable by its platform; the facts are attached verbatim and never
     ///     re-sorted. Pure apart from reading immutable runtime information.
     /// </remarks>
@@ -728,7 +519,7 @@ public sealed class DocDownEngine
     /// <returns>The ordered fact list.</returns>
     /// <remarks>
     ///     Emitting the backend's facts first and then what was missing lets the summary explain a
-    ///     degraded result by its environment. Pure.
+    ///     incomplete result by its environment. Pure.
     /// </remarks>
     private static IReadOnlyList<EnvironmentFact> FinalFacts(
         ExtractionSink sink, IReadOnlyList<ExtractorCandidate> candidates, string? selectedId)
@@ -898,9 +689,9 @@ public sealed class DocDownEngine
     private static (bool Ok, string? Message) AssertLayout(ExtractionResult result)
     {
         // The trivial extraction must succeed and produce the always-present artifacts
-        if (result.Outcome == ExtractionOutcome.Failed)
+        if (result.Outcome == ExtractionOutcome.Unreadable)
         {
-            return (false, $"the self-test extraction failed: {result.Failure?.Summary}");
+            return (false, $"the self-test extraction was unreadable: {result.Failure?.Summary}");
         }
 
         if (!File.Exists(result.SummaryPath))
@@ -919,21 +710,6 @@ public sealed class DocDownEngine
     }
 
     /// <summary>
-    ///     Asserts that the contract verifier finds no violations after a self-test extraction.
-    /// </summary>
-    /// <param name="result">The extraction result to verify.</param>
-    /// <returns>A success flag and, on failure, the list of violations.</returns>
-    /// <remarks>Runs the same machine-checkable honesty verification a consumer would, over a genuine run. Read-only I/O.</remarks>
-    private static (bool Ok, string? Message) AssertGapAccuracy(ExtractionResult result)
-    {
-        // An honest extraction must verify clean; any violation names a broken honesty invariant
-        var violations = ContractVerifier.Verify(result.ScratchFolder);
-        return violations.Count == 0
-            ? (true, null)
-            : (false, "contract violations: " + string.Join("; ", violations.Select(violation => $"{violation.Code} {violation.Detail}")));
-    }
-
-    /// <summary>
     ///     Asserts that the manifest is schema-valid after a self-test extraction.
     /// </summary>
     /// <param name="result">The extraction result whose manifest is parsed.</param>
@@ -945,12 +721,12 @@ public sealed class DocDownEngine
         using var document = JsonDocument.Parse(File.ReadAllText(result.ManifestPath));
         var root = document.RootElement;
 
-        if (!root.TryGetProperty("schemaVersion", out var schema) || schema.GetString() != "1.2")
+        if (!root.TryGetProperty("schemaVersion", out var schema) || schema.GetString() != "2.0")
         {
             return (false, "manifest schemaVersion is missing or unsupported");
         }
 
-        foreach (var field in new[] { "tool", "status", "complete", "artifacts", "gaps" })
+        foreach (var field in new[] { "tool", "status", "source", "notes" })
         {
             if (!root.TryGetProperty(field, out _))
             {
@@ -1075,38 +851,19 @@ public sealed class DocDownEngine
             : availability.UnavailableReason;
 
     /// <summary>
-    ///     Determines whether an extractor supports the given format by identifier.
+    ///     Builds a plain-language failure with a displayable explanation.
     /// </summary>
-    /// <param name="descriptor">The extractor descriptor.</param>
-    /// <param name="format">The detected format.</param>
-    /// <returns><see langword="true"/> when the descriptor lists a format with a matching identifier.</returns>
-    /// <remarks>Matches on the format identifier so a same-identifier custom format still matches. Pure.</remarks>
-    private static bool Supports(ExtractorDescriptor descriptor, DocumentFormat format) =>
-        descriptor.SupportedFormats.Any(supported => string.Equals(supported.Id, format.Id, StringComparison.Ordinal));
-
-    /// <summary>
-    ///     Builds a simple, candidate-free selection failure with a displayable explanation.
-    /// </summary>
-    /// <param name="kind">The failure kind.</param>
-    /// <param name="code">The fixed diagnostic code.</param>
     /// <param name="summary">The one-line headline.</param>
     /// <param name="detection">The detected format named in the explanation.</param>
-    /// <param name="remedy">A suggested remedy, or <see langword="null"/>.</param>
     /// <returns>The composed failure.</returns>
-    /// <remarks>Used for failures that occur before candidate ranking, so there are no candidate verdicts to render. Pure.</remarks>
-    private static ExtractionFailure MakeSimpleFailure(
-        ExtractionFailureKind kind, string code, string summary, FormatDetection detection, string? remedy)
+    /// <remarks>Used for failures that occur before a backend runs, carrying prose only. Pure.</remarks>
+    private static ExtractionFailure MakeSimpleFailure(string summary, FormatDetection detection)
     {
-        // Compose a headline plus detected format, and a remedy line when one exists
+        // Compose a headline plus the detected format so the failure is self-describing
         var builder = new StringBuilder();
         builder.Append(summary).Append('\n');
-        builder.Append("Detected format: ").Append(detection.Describe()).Append('\n');
-        if (!string.IsNullOrEmpty(remedy))
-        {
-            builder.Append('\n').Append("Remedy: ").Append(remedy).Append('\n');
-        }
-
-        return new ExtractionFailure(kind, code, summary, builder.ToString().TrimEnd('\n'), [], remedy);
+        builder.Append("Detected format: ").Append(detection.Describe());
+        return new ExtractionFailure(summary, builder.ToString().TrimEnd('\n'));
     }
 
     /// <summary>
@@ -1115,21 +872,18 @@ public sealed class DocDownEngine
     /// <param name="selected">The selected extractor descriptor.</param>
     /// <param name="exception">The exception the backend threw.</param>
     /// <param name="detection">The detected format named in the explanation.</param>
-    /// <param name="trace">The selection trace to carry as the failure's candidate list.</param>
     /// <returns>The composed failure carrying the exception type and message.</returns>
     /// <remarks>Records the exception type and message so a backend fault is diagnosable from the output alone. Pure.</remarks>
     private static ExtractionFailure MakeExtractorFailure(
-        ExtractorDescriptor selected, Exception exception, FormatDetection detection, IReadOnlyList<CandidateVerdict> trace)
+        ExtractorDescriptor selected, Exception exception, FormatDetection detection)
     {
         var summary = $"The selected extractor '{selected.Id}' failed while extracting.";
         var builder = new StringBuilder();
         builder.Append(summary).Append('\n');
         builder.Append("Detected format: ").Append(detection.Describe()).Append('\n');
         builder.Append('\n').Append("The backend threw ").Append(exception.GetType().Name)
-            .Append(": ").Append(exception.Message).Append('\n');
-        return new ExtractionFailure(
-            ExtractionFailureKind.ExtractorFailed, DiagnosticCodes.ExtractorFailed, summary,
-            builder.ToString().TrimEnd('\n'), trace, null);
+            .Append(": ").Append(exception.Message);
+        return new ExtractionFailure(summary, builder.ToString().TrimEnd('\n'));
     }
 
     /// <summary>
@@ -1139,29 +893,6 @@ public sealed class DocDownEngine
     /// <remarks>Used for scratch-refusal and unreadable-source failures, which fail before sniffing. Pure.</remarks>
     private static FormatDetection UnknownDetection() =>
         new(DocumentFormat.Unknown, DetectionBasis.Extension, 0.0);
-
-    /// <summary>
-    ///     Creates an empty selection carrying a failure for a pre-ranking failure.
-    /// </summary>
-    /// <param name="mode">The selection mode implied by the options.</param>
-    /// <param name="failure">The failure to attach.</param>
-    /// <returns>A selection with no winner, no required or satisfied capabilities, and an empty trace.</returns>
-    /// <remarks>Gives the manifest and summary a consistent selection object even when ranking never ran. Pure.</remarks>
-    private static SelectionResult EmptySelection(SelectionMode mode, ExtractionFailure failure) =>
-        new(null, mode, ExtractorCapabilities.None, ExtractorCapabilities.None, [], failure);
-
-    /// <summary>
-    ///     Builds an all-absent ledger for a run that wrote no layout.
-    /// </summary>
-    /// <returns>A ledger marking every artifact absent.</returns>
-    /// <remarks>Used only for a scratch refusal, where nothing was written; keeps the result's ledger non-null. Pure.</remarks>
-    private static ArtifactLedger AbsentLedger() => new(
-        new ArtifactEntry("summary.txt", ArtifactStatus.Absent),
-        new ArtifactEntry("manifest.json", ArtifactStatus.Absent),
-        new ArtifactEntry("metadata.json", ArtifactStatus.Absent),
-        new ArtifactEntry("content.md", ArtifactStatus.Absent),
-        new ArtifactEntry("images/", ArtifactStatus.Absent, 0, 0),
-        new ArtifactEntry("pages/", ArtifactStatus.Absent, 0, 0));
 
     /// <summary>
     ///     The immutable bundle of per-run inputs shared by the pipeline's finalization helpers.
@@ -1186,9 +917,9 @@ public sealed class DocDownEngine
     /// </summary>
     /// <remarks>
     ///     Deliberately trivial and dependency-free: it writes a small block of markdown so a self-test
-    ///     exercises the genuine pipeline (sink, content, manifest, summary, and contract verification)
-    ///     without needing any real backend. It is always available and supports only plain text.
-    ///     Stateless and safe to construct per self-test run.
+    ///     exercises the genuine pipeline (sink, content, manifest, and summary) without needing any
+    ///     real backend. It is always available and supports only plain text. Stateless and safe to
+    ///     construct per self-test run.
     /// </remarks>
     private sealed class InProcessSelfTestExtractor : IDocumentExtractor
     {
@@ -1206,14 +937,10 @@ public sealed class DocDownEngine
         public IReadOnlyCollection<DocumentFormat> SupportedFormats => SupportedFormatsValue;
 
         /// <inheritdoc />
-        public ExtractorCapabilities Capabilities => ExtractorCapabilities.Text;
-
-        /// <inheritdoc />
         public int Priority => 0;
 
         /// <inheritdoc />
-        public ExtractorAvailability ProbeAvailability() =>
-            ExtractorAvailability.Available(ExtractorCapabilities.Text);
+        public ExtractorAvailability ProbeAvailability() => ExtractorAvailability.Available();
 
         /// <inheritdoc />
         public async ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context)
@@ -1222,7 +949,7 @@ public sealed class DocDownEngine
             await context.Sink.WriteContentAsync(
                 "# DocDown Core Self-Test\n\nThis content validates the extraction contract.\n",
                 context.CancellationToken).ConfigureAwait(false);
-            return ExtractionOutcome.Succeeded;
+            return ExtractionOutcome.Produced;
         }
     }
 }

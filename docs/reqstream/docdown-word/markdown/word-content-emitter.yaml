@@ -1,9 +1,17 @@
 ---
 # Software Unit Requirements for WordContentEmitter
 #
-# WordContentEmitter is the single emission path: it writes the model's
-# content (single-flow or per-part), the images, the diagnostics, and the gaps through the
-# sink, so every output the model implies is produced in one place.
+# WordContentEmitter is the single emission path: it writes the model's content, images, content
+# inventory, metadata, and extraction notes through the sink, so every output the model implies is
+# produced in one place.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-Markdown-WordContentEmitter-ReportsGapsAndDiagnostics
+# required emission through gap and diagnostic machinery. It is superseded (not satisfied) by
+# DocDownWord-Markdown-WordContentEmitter-ReportsContentInventory,
+# DocDownWord-Markdown-WordContentEmitter-ReportsChartNote,
+# DocDownWord-Markdown-WordContentEmitter-ReportsFlattenedTableNote, and
+# DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote because the governing principle now
+# limits reporting to the content inventory and short extraction notes.
 
 sections:
   - title: DocDownWord Requirements
@@ -24,19 +32,49 @@ sections:
                   - WordContentEmitter_Emit_BodyWithComments_ReportsOutlineAndSucceeds
                   - WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1
 
-              - id: DocDownWord-Markdown-WordContentEmitter-ReportsGapsAndDiagnostics
+              - id: DocDownWord-Markdown-WordContentEmitter-ReportsContentInventory
                 title: >-
-                  WordContentEmitter shall report the diagnostics and counted gaps the model records,
-                  returning whether the outcome degraded.
+                  WordContentEmitter shall report the document's content inventory, including looked-
+                  for zero counts where the extractor genuinely inspected that category.
                 justification: |
-                  A model carries the facts about what could not be fully represented and the expected
-                  decisions it made. Genuine loss — flattened cells, an unhonored output mode — is
-                  emitted as a counted gap that degrades the outcome, while an expected non-loss such as
-                  an empty or page-furniture-only header or footer is emitted as an informational
-                  diagnostic that does not degrade the run. Reporting each through the shared path,
-                  gap-versus-diagnostic by whether anything was actually lost, is what keeps the
-                  extraction honest without over-reporting a degrade.
+                  A consumer must be able to distinguish "nothing was found" from "this extractor
+                  never looked." Reporting content features from the model, and marking the looked-
+                  for categories explicitly, preserves that distinction without characterizing the
+                  document as acceptable or deficient.
                 tests:
-                  - WordContentEmitter_Emit_ChartsFound_ReportsCountedGapAndDegrades
-                  - WordContentEmitter_Emit_RenderPagesRequested_ReportsPagesGapAndDegrades
-                  - WordOpenXmlExtractor_Extract_MergedCells_ReportsCountedStructuralGap
+                  - WordContentEmitter_Emit_BodyWithComments_ReportsOutlineAndSucceeds
+                  - WordOpenXmlExtractor_Extract_EmptyDocument_ProducesZeroCountTextInventory
+
+              - id: DocDownWord-Markdown-WordContentEmitter-ReportsChartNote
+                title: >-
+                  WordContentEmitter shall report embedded charts whose chart parts were not read as
+                  a short extraction note.
+                justification: |
+                  A chart can carry titles and plotted values the text and image walks never see.
+                  Stating that uncompleted step as a note keeps the incomplete extraction visible
+                  without inventing missing content.
+                tests:
+                  - WordContentEmitter_Emit_ChartsFound_ReportsChartNote
+                  - DocDownWord_Extract_DocxWithChart_ReportsChartNote
+
+              - id: DocDownWord-Markdown-WordContentEmitter-ReportsFlattenedTableNote
+                title: >-
+                  WordContentEmitter shall report merged or nested table structure flattened for
+                  markdown as a short extraction note.
+                justification: |
+                  GitHub-Flavored Markdown cannot represent merged spans or nested tables. The
+                  extracted table should still be delivered, but the incomplete preservation must be
+                  stated plainly.
+                tests:
+                  - WordOpenXmlExtractor_Extract_MergedCells_ReportsFlatteningNote
+
+              - id: DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote
+                title: >-
+                  WordContentEmitter shall report a requested PNG image output it could not produce
+                  as a short extraction note.
+                justification: |
+                  This package does not re-encode embedded images. When PNG output was requested but
+                  source-encoded files were written instead, the uncompleted re-encoding step must
+                  be stated explicitly.
+                tests:
+                  - WordOpenXmlExtractor_Extract_ForcePng_ReportsUnhonoredModeNote

@@ -8,37 +8,30 @@ namespace DemaConsulting.DocDown.Core.Tests.Extraction;
 ///     default-option configuration, duplicate-identifier rejection, the build-time snapshot, and
 ///     null-argument guards.
 /// </summary>
-/// <remarks>
-///     These tests bind to <see cref="DocDownBuilder"/> and its documented product,
-///     <see cref="DocDownEngine"/>. Each is named for the unit requirement it evidences: register
-///     an instance, register a factory, configure defaults, reject duplicate ids, take an immutable
-///     snapshot at build time, and reject null arguments.
-/// </remarks>
 public class DocDownBuilderTests
 {
     /// <summary>Gets the ambient test cancellation token so async calls stay responsive to cancellation.</summary>
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>
-    ///     Proves a registered extractor instance appears on the built engine (RegisterInstance).
+    ///     Proves a registered extractor instance appears on the built engine.
     /// </summary>
     [Fact]
     public void DocDownBuilder_AddExtractor_Instance_AppearsOnBuiltEngine()
     {
         // Arrange: a builder with one explicitly registered instance
         var builder = new DocDownBuilder()
-            .AddExtractor(StubExtractor.Available("alpha", [DocumentFormat.Text], ExtractorCapabilities.Text));
+            .AddExtractor(StubExtractor.Available("alpha", [DocumentFormat.Text]));
 
         // Act: build the engine
         var engine = builder.Build();
 
-        // Assert: the registered instance is the sole descriptor on the engine
-        var descriptor = Assert.Single(engine.Extractors);
-        Assert.Equal("alpha", descriptor.Id);
+        // Assert: the registered descriptor appears on the engine
+        Assert.Equal("alpha", Assert.Single(engine.Extractors).Id);
     }
 
     /// <summary>
-    ///     Proves a registered factory is materialized exactly once at build time (RegisterFactory).
+    ///     Proves a registered factory is materialized exactly once at build time.
     /// </summary>
     [Fact]
     public void DocDownBuilder_AddExtractor_Factory_IsMaterializedOnceAtBuild()
@@ -48,29 +41,29 @@ public class DocDownBuilderTests
         var builder = new DocDownBuilder().AddExtractor(() =>
         {
             invocations++;
-            return StubExtractor.Available("beta", [DocumentFormat.Text], ExtractorCapabilities.Text);
+            return StubExtractor.Available("beta", [DocumentFormat.Text]);
         });
 
-        // Act: the factory should not run until Build, and then exactly once
+        // Act: build the engine
         var beforeBuild = invocations;
         var engine = builder.Build();
 
-        // Assert: registration deferred construction, and Build materialized the factory a single time
+        // Assert: registration deferred construction and Build ran the factory once
         Assert.Equal(0, beforeBuild);
         Assert.Equal(1, invocations);
         Assert.Equal("beta", Assert.Single(engine.Extractors).Id);
     }
 
     /// <summary>
-    ///     Proves configured defaults flow into the engine and govern extraction (ConfigureDefaults).
+    ///     Proves configured defaults flow into the engine and are visible in extraction results.
     /// </summary>
     [Fact]
-    public async Task DocDownBuilder_ConfigureDefaults_RenderPages_ProducesPageGapByDefault()
+    public async Task DocDownBuilder_ConfigureDefaults_RenderPages_RecordsRenderNoteByDefault()
     {
-        // Arrange: a text-only backend and defaults that request page rendering it cannot satisfy
+        // Arrange: defaults request page rendering a text backend cannot provide
         using var temp = new TempScratch();
         var engine = new DocDownBuilder()
-            .AddExtractor(StubExtractor.Available("text", [DocumentFormat.Text], ExtractorCapabilities.Text))
+            .AddExtractor(StubExtractor.Available("text", [DocumentFormat.Text]))
             .ConfigureDefaults(options =>
             {
                 options.RenderPages = true;
@@ -79,32 +72,37 @@ public class DocDownBuilderTests
             })
             .Build();
         var input = temp.CreateFile("document.txt", "hello world");
-        var scratch = Path.Combine(temp.Path, "out");
 
         // Act: run with no per-call options so the configured defaults apply
-        var result = await engine.ExtractAsync(input, scratch, null, Ct);
+        var result = await engine.ExtractAsync(input, Path.Combine(temp.Path, "out"), null, Ct);
 
-        // Assert: the configured render request surfaced as a pages gap, proving defaults took effect
-        Assert.Contains(result.Gaps, gap => gap.Kind == GapKind.Pages);
+        // Assert: the render request and image suppression defaults reached the run
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Contains(
+            result.Notes,
+            note => note.Message.Contains("Page rendering was requested", StringComparison.Ordinal));
+        Assert.Contains(
+            result.Notes,
+            note => note.Message.Contains("Embedded image extraction was disabled by the caller", StringComparison.Ordinal));
     }
 
     /// <summary>
-    ///     Proves two extractors sharing an identifier are rejected at build time (RejectDuplicateIds).
+    ///     Proves duplicate extractor identifiers are rejected at build time.
     /// </summary>
     [Fact]
     public void DocDownBuilder_Build_DuplicateIds_ThrowsArgumentException()
     {
-        // Arrange: a builder with two backends that share the same identifier
+        // Arrange: a builder with two backends sharing one identifier
         var builder = new DocDownBuilder()
-            .AddExtractor(StubExtractor.Available("dup", [DocumentFormat.Text], ExtractorCapabilities.Text))
-            .AddExtractor(StubExtractor.Available("dup", [DocumentFormat.Pdf], ExtractorCapabilities.Text));
+            .AddExtractor(StubExtractor.Available("dup", [DocumentFormat.Text]))
+            .AddExtractor(StubExtractor.Available("dup", [DocumentFormat.Pdf]));
 
-        // Act + Assert: the identifier is the override and manifest key, so a collision fails the build
+        // Act / Assert: identifier uniqueness is a hard invariant
         Assert.Throws<ArgumentException>(() => builder.Build());
     }
 
     /// <summary>
-    ///     Proves a factory that returns null is rejected at build time (RejectDuplicateIds boundary).
+    ///     Proves a factory that returns null is rejected at build time.
     /// </summary>
     [Fact]
     public void DocDownBuilder_Build_FactoryReturnsNull_ThrowsArgumentException()
@@ -112,41 +110,41 @@ public class DocDownBuilderTests
         // Arrange: a builder whose factory yields no extractor
         var builder = new DocDownBuilder().AddExtractor(() => null!);
 
-        // Act + Assert: a null-producing factory violates the registration contract
+        // Act / Assert: a null-producing factory violates the registration contract
         Assert.Throws<ArgumentException>(() => builder.Build());
     }
 
     /// <summary>
-    ///     Proves mutating the builder after Build does not alter the already-built engine (ImmutableSnapshot).
+    ///     Proves mutating the builder after Build does not alter the already-built engine.
     /// </summary>
     [Fact]
     public void DocDownBuilder_Build_MutatedAfterBuild_DoesNotAffectSnapshot()
     {
         // Arrange: a builder with one backend, built into an engine
         var builder = new DocDownBuilder()
-            .AddExtractor(StubExtractor.Available("first", [DocumentFormat.Text], ExtractorCapabilities.Text));
+            .AddExtractor(StubExtractor.Available("first", [DocumentFormat.Text]));
         var engine = builder.Build();
 
-        // Act: add another backend to the builder after the snapshot was taken
-        builder.AddExtractor(StubExtractor.Available("second", [DocumentFormat.Pdf], ExtractorCapabilities.Text));
+        // Act: mutate the builder after the engine snapshot was taken
+        builder.AddExtractor(StubExtractor.Available("second", [DocumentFormat.Pdf]));
 
-        // Assert: the built engine still carries only the snapshot's single backend
+        // Assert: the built engine still reflects only the earlier snapshot
         Assert.Equal("first", Assert.Single(engine.Extractors).Id);
     }
 
     /// <summary>
-    ///     Proves the builder remains reusable and produces independent engines (ImmutableSnapshot).
+    ///     Proves the builder remains reusable and produces independent engines.
     /// </summary>
     [Fact]
     public void DocDownBuilder_Build_CalledTwiceWithMoreRegistrations_ProducesIndependentEngines()
     {
         // Arrange: a builder with one backend
         var builder = new DocDownBuilder()
-            .AddExtractor(StubExtractor.Available("first", [DocumentFormat.Text], ExtractorCapabilities.Text));
+            .AddExtractor(StubExtractor.Available("first", [DocumentFormat.Text]));
 
         // Act: build once, register another backend, then build again
         var firstEngine = builder.Build();
-        builder.AddExtractor(StubExtractor.Available("second", [DocumentFormat.Pdf], ExtractorCapabilities.Text));
+        builder.AddExtractor(StubExtractor.Available("second", [DocumentFormat.Pdf]));
         var secondEngine = builder.Build();
 
         // Assert: each engine reflects the registrations present at its own build time
@@ -155,7 +153,7 @@ public class DocDownBuilderTests
     }
 
     /// <summary>
-    ///     Proves registering a null instance is rejected at the call site (RejectNullArguments).
+    ///     Proves registering a null instance is rejected at the call site.
     /// </summary>
     [Fact]
     public void DocDownBuilder_AddExtractor_NullInstance_ThrowsArgumentNullException()
@@ -163,12 +161,12 @@ public class DocDownBuilderTests
         // Arrange: a fresh builder
         var builder = new DocDownBuilder();
 
-        // Act + Assert: a null extractor is a caller error named at the registration site
+        // Act / Assert: a null extractor is a caller error
         Assert.Throws<ArgumentNullException>(() => builder.AddExtractor((IDocumentExtractor)null!));
     }
 
     /// <summary>
-    ///     Proves registering a null factory is rejected at the call site (RejectNullArguments).
+    ///     Proves registering a null factory is rejected at the call site.
     /// </summary>
     [Fact]
     public void DocDownBuilder_AddExtractor_NullFactory_ThrowsArgumentNullException()
@@ -176,12 +174,12 @@ public class DocDownBuilderTests
         // Arrange: a fresh builder
         var builder = new DocDownBuilder();
 
-        // Act + Assert: a null factory cannot produce an extractor and is rejected
+        // Act / Assert: a null factory cannot produce an extractor
         Assert.Throws<ArgumentNullException>(() => builder.AddExtractor((Func<IDocumentExtractor>)null!));
     }
 
     /// <summary>
-    ///     Proves a null configuration action is rejected at the call site (RejectNullArguments).
+    ///     Proves a null configuration action is rejected at the call site.
     /// </summary>
     [Fact]
     public void DocDownBuilder_ConfigureDefaults_NullAction_ThrowsArgumentNullException()
@@ -189,7 +187,7 @@ public class DocDownBuilderTests
         // Arrange: a fresh builder
         var builder = new DocDownBuilder();
 
-        // Act + Assert: a null configuration action has nothing to apply and is rejected
+        // Act / Assert: a null configuration action has nothing to apply
         Assert.Throws<ArgumentNullException>(() => builder.ConfigureDefaults(null!));
     }
 }

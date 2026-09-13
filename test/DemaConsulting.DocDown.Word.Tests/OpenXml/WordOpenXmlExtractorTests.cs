@@ -1,3 +1,4 @@
+using System.Text.Json;
 using DemaConsulting.DocDown.TestSupport;
 using DemaConsulting.DocDown.Word.Tests.TestData;
 using DocDown.Core;
@@ -20,101 +21,110 @@ public class WordOpenXmlExtractorTests
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>
-    ///     Proves the descriptor advertises priority 10 and the declared capabilities.
+    ///     Proves the descriptor advertises the managed backend's identity and that its availability
+    ///     truthfully states page rendering is not provided here.
     /// </summary>
     [Fact]
-    public void WordOpenXmlExtractor_Descriptor_HasPriority10AndCapabilities()
+    public void WordOpenXmlExtractor_Descriptor_HasPriority10AndManagedAvailability()
     {
         var extractor = new WordOpenXmlExtractor();
+        var availability = extractor.ProbeAvailability();
 
         Assert.Equal("word-openxml", extractor.Id);
         Assert.Equal(10, extractor.Priority);
         Assert.Contains(CoreFormat.Docx, extractor.SupportedFormats);
-        Assert.True(extractor.Capabilities.HasFlag(ExtractorCapabilities.DocumentStructure));
-        Assert.False(extractor.Capabilities.HasFlag(ExtractorCapabilities.RenderedPages));
+        Assert.True(((IDocumentExtractor)extractor).PageRenderingApplicable);
+        Assert.True(availability.IsAvailable);
+        Assert.False(availability.ProvidesRenderedPages);
+        Assert.Null(availability.UnavailableReason);
     }
 
     /// <summary>
-    ///     Proves a force-PNG request that cannot be honored is explained rather than hidden.
+    ///     Proves a force-PNG request that cannot be honored is explained by a note rather than hidden.
     /// </summary>
     [Fact]
-    public async Task WordOpenXmlExtractor_Extract_ForcePng_ExplainsUnhonoredMode()
+    public async Task WordOpenXmlExtractor_Extract_ForcePng_ReportsUnhonoredModeNote()
     {
         using var temp = new TempScratch();
         var scratch = await ExtractAsync(temp, "images.docx", DocxFixtures.DocumentWithImage(),
             options => options.ImageOutput = ImageOutputMode.ForcePng);
 
-        Assert.Contains(scratch.Result.Diagnostics, diagnostic => diagnostic.Code == "WORD0007");
-        Assert.Contains(scratch.Result.Gaps, gap => gap.Target == "images/"
-            && gap.Reason.Contains("PNG output was requested", StringComparison.Ordinal));
-        ContractAssert.NoViolations(scratch.Folder);
+        Assert.Equal(ExtractionOutcome.Produced, scratch.Result.Outcome);
+        Assert.Contains(scratch.Result.Notes, note => note.Message.Contains("PNG output was requested", StringComparison.Ordinal));
+        Assert.Contains(scratch.Result.Notes, note => note.Message.Contains("source encoding", StringComparison.Ordinal));
+        ContractAssert.LayoutPresent(scratch.Folder);
     }
 
     /// <summary>
-    ///     Proves an EMF image is written as-is with an informational readability caveat rather than
-    ///     lost, and — because the bytes are byte-complete and no better environment would yield more
-    ///     — the run still reports <see cref="ExtractionOutcome.Succeeded"/> with no images gap.
+    ///     Proves an EMF image is written as-is rather than lost, and the run still reports
+    ///     <see cref="ExtractionOutcome.Produced"/>.
     /// </summary>
     [Fact]
-    public async Task WordOpenXmlExtractor_Extract_VectorImage_WritesAsIsWithCaveat()
+    public async Task WordOpenXmlExtractor_Extract_VectorImage_WritesAsIs()
     {
         using var temp = new TempScratch();
         var scratch = await ExtractAsync(temp, "vector.docx", DocxFixtures.DocumentWithVectorImage());
 
-        Assert.Equal(ExtractionOutcome.Succeeded, scratch.Result.Outcome);
+        Assert.Equal(ExtractionOutcome.Produced, scratch.Result.Outcome);
         Assert.Single(Directory.GetFiles(Path.Combine(scratch.Folder, "images")));
-        Assert.Contains(scratch.Result.Diagnostics, diagnostic =>
-            diagnostic.Code == "WORD0006" && diagnostic.Severity == DiagnosticSeverity.Info);
-        Assert.DoesNotContain(scratch.Result.Gaps, gap => gap.Kind == GapKind.Images);
-        ContractAssert.NoViolations(scratch.Folder);
+        Assert.Empty(scratch.Result.Notes);
+        ContractAssert.LayoutPresent(scratch.Folder);
     }
 
     /// <summary>
-    ///     Proves merged table cells produce a counted structural gap.
+    ///     Proves merged table cells produce a note describing the flattening required by markdown.
     /// </summary>
     [Fact]
-    public async Task WordOpenXmlExtractor_Extract_MergedCells_ReportsCountedStructuralGap()
+    public async Task WordOpenXmlExtractor_Extract_MergedCells_ReportsFlatteningNote()
     {
         using var temp = new TempScratch();
         var scratch = await ExtractAsync(temp, "merged.docx", DocxFixtures.DocumentWithMergedCells());
 
-        var gap = Assert.Single(scratch.Result.Gaps, candidate => candidate.Kind == GapKind.Structure);
-        Assert.Equal(GapScope.PartiallyExtracted, gap.Scope);
-        Assert.True(gap.AffectedCount >= 1);
-        Assert.Contains(scratch.Result.Diagnostics, diagnostic => diagnostic.Code == "WORD0005");
-        ContractAssert.NoViolations(scratch.Folder);
+        Assert.Equal(ExtractionOutcome.Produced, scratch.Result.Outcome);
+        Assert.Contains(scratch.Result.Notes, note => note.Message.Contains("flattened", StringComparison.Ordinal));
+        Assert.Contains(scratch.Result.Notes, note => note.Message.Contains("table structure", StringComparison.Ordinal));
+        ContractAssert.LayoutPresent(scratch.Folder);
     }
 
     /// <summary>
-    ///     Proves an empty document degrades with an honest no-text gap.
+    ///     Proves an empty document still produces the invariant layout and records a zero-count text
+    ///     inventory instead of a separate gap.
     /// </summary>
     [Fact]
-    public async Task WordOpenXmlExtractor_Extract_EmptyDocument_DegradesWithNoTextGap()
+    public async Task WordOpenXmlExtractor_Extract_EmptyDocument_ProducesZeroCountTextInventory()
     {
         using var temp = new TempScratch();
         var scratch = await ExtractAsync(temp, "empty.docx", DocxFixtures.EmptyDocument());
 
-        Assert.Equal(ExtractionOutcome.Degraded, scratch.Result.Outcome);
-        Assert.Contains(scratch.Result.Diagnostics, diagnostic => diagnostic.Code == "WORD0001");
-        ContractAssert.NoViolations(scratch.Folder);
+        Assert.Equal(ExtractionOutcome.Produced, scratch.Result.Outcome);
+        Assert.Empty(scratch.Result.Notes);
+
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch.Folder, "manifest.json"), Ct));
+        var textBlocks = manifest.RootElement
+            .GetProperty("contentFeatures")
+            .EnumerateArray()
+            .Single(feature => feature.GetProperty("label").GetString() == "text blocks");
+
+        Assert.Equal(0, textBlocks.GetProperty("count").GetInt32());
+        ContractAssert.LayoutPresent(scratch.Folder);
     }
 
     /// <summary>
-    ///     Proves a page-rendering request degrades with a reasoned, declarative gap.
+    ///     Proves a page-rendering request records a reasoned note without making the extraction unreadable.
     /// </summary>
     [Fact]
-    public async Task WordOpenXmlExtractor_Extract_PagesRequested_DegradesWithReasonedGap()
+    public async Task WordOpenXmlExtractor_Extract_PagesRequested_ReportsReasonedNote()
     {
         using var temp = new TempScratch();
         var scratch = await ExtractAsync(temp, "clean.docx", DocxFixtures.CleanDocument(),
             options => options.RenderPages = true);
 
-        Assert.Equal(ExtractionOutcome.Degraded, scratch.Result.Outcome);
-        Assert.Contains(scratch.Result.Gaps, gap => gap.Kind == GapKind.Pages
-            && gap.Reason.Contains("does not render pages", StringComparison.Ordinal));
+        Assert.Equal(ExtractionOutcome.Produced, scratch.Result.Outcome);
+        Assert.Contains(scratch.Result.Notes, note => note.Message.Contains("Page rendering was requested", StringComparison.Ordinal));
+        Assert.Contains(scratch.Result.Notes, note => note.Message.Contains("pages were not rendered", StringComparison.Ordinal));
         var summary = await File.ReadAllTextAsync(Path.Combine(scratch.Folder, "summary.txt"), Ct);
         Assert.DoesNotContain("install", summary, StringComparison.OrdinalIgnoreCase);
-        ContractAssert.NoViolations(scratch.Folder);
+        ContractAssert.LayoutPresent(scratch.Folder);
     }
 
     /// <summary>
@@ -130,7 +140,7 @@ public class WordOpenXmlExtractorTests
         var partsDir = Path.Combine(scratch.Folder, "parts");
         Assert.True(Directory.Exists(partsDir), "a parts/ folder should exist for per-part mode");
         Assert.True(Directory.GetFiles(partsDir).Length >= 2, "each Heading 1 should become a part");
-        ContractAssert.NoViolations(scratch.Folder);
+        ContractAssert.LayoutPresent(scratch.Folder);
     }
 
     /// <summary>
@@ -143,7 +153,7 @@ public class WordOpenXmlExtractorTests
         var scratch = await ExtractAsync(temp, "logo.docx", DocxFixtures.DocumentWithHeaderLogo());
 
         Assert.Single(Directory.GetFiles(Path.Combine(scratch.Folder, "images")));
-        ContractAssert.NoViolations(scratch.Folder);
+        ContractAssert.LayoutPresent(scratch.Folder);
     }
 
     /// <summary>
@@ -186,7 +196,7 @@ public class WordOpenXmlExtractorTests
         Assert.True(Directory.Exists(Path.Combine(scratch.Folder, "parts")), "per-part mode should create parts/");
         var resolved = MarkdownImageLinks.AssertAllImageLinksResolveOnDisk(scratch.Folder);
         Assert.True(resolved >= 1);
-        ContractAssert.NoViolations(scratch.Folder);
+        ContractAssert.LayoutPresent(scratch.Folder);
     }
 
     /// <summary>

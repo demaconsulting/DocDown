@@ -11,8 +11,8 @@ namespace DemaConsulting.DocDown.Word.Tests;
 ///     through <see cref="DocDownEngine"/> against documents generated at test time.
 /// </summary>
 /// <remarks>
-///     Every scenario runs the real engine over a real document and confirms the contract verifier
-///     finds no violations, so a reported gap always matches what is on disk.
+///     Every scenario runs the real engine over a real document and confirms the invariant layout is
+///     written, so reported notes and inventory match what is on disk.
 /// </remarks>
 public class DocDownWordTests
 {
@@ -24,7 +24,7 @@ public class DocDownWordTests
 
     /// <summary>
     ///     Proves a generated document produces the full contract layout with a real table and a
-    ///     document-control section, and no gaps.
+    ///     document-control section, and no incomplete-step notes.
     /// </summary>
     [Fact]
     public async Task DocDownWord_Extract_GeneratedDocx_ProducesContractLayout()
@@ -32,16 +32,14 @@ public class DocDownWordTests
         using var temp = new TempScratch();
         var (scratch, result) = await ExtractAsync(temp, "clean.docx", DocxFixtures.CleanDocument());
 
-        Assert.Equal(ExtractionOutcome.Succeeded, result.Outcome);
-        Assert.True(result.IsComplete);
-        Assert.Empty(result.Gaps);
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Empty(result.Notes);
         Assert.Equal("word-openxml", result.SelectedExtractor?.Id);
 
         var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
         Assert.Contains("| --- | --- |", content, StringComparison.Ordinal);
         Assert.Contains("## Document Control", content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>
@@ -70,7 +68,7 @@ public class DocDownWordTests
         var manifest = await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct);
         Assert.Contains("\"contentFeatures\"", manifest, StringComparison.Ordinal);
         Assert.Contains("\"label\": \"comments\"", manifest, StringComparison.Ordinal);
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
@@ -89,7 +87,7 @@ public class DocDownWordTests
 
         var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
         Assert.Contains("](images/", content, StringComparison.Ordinal);
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
@@ -106,37 +104,29 @@ public class DocDownWordTests
         Assert.Contains("Revision", content, StringComparison.Ordinal);
         Assert.Contains("CONFIDENTIAL", content, StringComparison.Ordinal);
 
-        // The page-number footer is furniture: it is omitted and recorded as an informational
-        // diagnostic, not a gap, so nothing was lost and the run stays complete
-        Assert.Equal(ExtractionOutcome.Succeeded, result.Outcome);
-        Assert.True(result.IsComplete);
-        Assert.DoesNotContain(result.Gaps, gap => gap.Reason.Contains("page numbering", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(result.Diagnostics, diagnostic =>
-            diagnostic.Code == "WORD0009"
-            && diagnostic.Severity == DiagnosticSeverity.Info
-            && diagnostic.Message.Contains("page-numbering fields", StringComparison.OrdinalIgnoreCase));
+        // Page-number furniture is omitted silently; that commentary is no longer surfaced as a note
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Empty(result.Notes);
         Assert.DoesNotContain("Page 1 of", content, StringComparison.Ordinal);
-        ContractAssert.NoViolations(scratch);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
-    ///     Proves a document embedding a chart reports it as a counted gap naming the loss, instead of
-    ///     dropping a chart that carries no image blip and so would otherwise leave no trace at all.
+    ///     Proves a document embedding a chart reports it as a note naming the loss, instead of
+    ///     dropping a chart that carries no image blip and would otherwise leave no trace at all.
     /// </summary>
     [Fact]
-    public async Task DocDownWord_Extract_DocxWithChart_ReportsChartGap()
+    public async Task DocDownWord_Extract_DocxWithChart_ReportsChartNote()
     {
         // Arrange / Act: extract a document carrying one embedded chart
         using var temp = new TempScratch();
         var (scratch, result) = await ExtractAsync(temp, "charted.docx", DocxFixtures.DocumentWithChart());
 
-        // Assert: the chart is counted, explained, and remedied rather than silently absent
-        Assert.Equal(ExtractionOutcome.Degraded, result.Outcome);
-        var gap = Assert.Single(result.Gaps, candidate => candidate.Reason.Contains("charts", StringComparison.Ordinal));
-        Assert.Equal(1, gap.AffectedCount);
-        Assert.NotNull(gap.Remedy);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "WORD0010");
-        ContractAssert.NoViolations(scratch);
+        // Assert: the chart is counted and explained rather than silently absent
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Contains(result.Notes, note => note.Message.Contains("1 charts", StringComparison.Ordinal));
+        Assert.Contains(result.Notes, note => note.Message.Contains("does not read chart parts", StringComparison.Ordinal));
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
@@ -156,18 +146,17 @@ public class DocDownWordTests
     }
 
     /// <summary>
-    ///     Proves a legacy binary document fails with a structured refusal whose remedy states
-    ///     plainly that the format is unsupported.
+    ///     Proves a legacy binary document fails with a structured refusal whose prose states plainly
+    ///     that the format is unsupported.
     /// </summary>
     /// <remarks>
     ///     This package reads Open XML documents and nothing else, so a <c>.doc</c> has no reader
     ///     here and never will. The value of the test is the shape of the refusal: a structured
-    ///     failure with the full output layout still written, a remedy that promises no capability,
-    ///     and no exception reaching the caller — never a silent omission and never an install
-    ///     directive the reader cannot act on.
+    ///     failure with the full output layout still written and no exception reaching the caller —
+    ///     never a silent omission and never an install directive the reader cannot act on.
     /// </remarks>
     [Fact]
-    public async Task DocDownWord_Extract_LegacyDoc_FailsWithUnsupportedFormatRemedy()
+    public async Task DocDownWord_Extract_LegacyDoc_IsUnreadableWithUnsupportedFormatExplanation()
     {
         using var temp = new TempScratch();
         var engine = new DocDownBuilder().AddWord().Build();
@@ -176,18 +165,18 @@ public class DocDownWordTests
 
         var result = await engine.ExtractAsync(DocumentSource.FromFile(input), scratch, FixedOptions(), Ct);
 
-        Assert.Equal(ExtractionOutcome.Failed, result.Outcome);
+        Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
+        Assert.Null(result.SelectedExtractor);
         Assert.NotNull(result.Failure);
-        Assert.Equal(ExtractionFailureKind.NoExtractorForFormat, result.Failure.Kind);
-        Assert.Contains("doc", result.Failure.Remedy!, StringComparison.Ordinal);
+        Assert.Equal("No registered extractor supports the detected format.", result.Failure.Summary);
+        Assert.Contains("doc", result.Failure.Explanation, StringComparison.Ordinal);
         Assert.Contains(
             "DocDown does not support the legacy binary Office formats",
-            result.Failure.Remedy!,
+            result.Failure.Explanation,
             StringComparison.Ordinal);
-        Assert.DoesNotContain("Microsoft Office", result.Failure.Remedy!, StringComparison.Ordinal);
-        Assert.DoesNotContain("install", result.Failure.Remedy!, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Microsoft Office", result.Failure.Explanation, StringComparison.Ordinal);
+        Assert.DoesNotContain("install", result.Failure.Explanation, StringComparison.OrdinalIgnoreCase);
         ContractAssert.LayoutPresent(scratch);
-        ContractAssert.NoViolations(scratch);
     }
 
     /// <summary>

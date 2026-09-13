@@ -6,21 +6,15 @@ namespace DocDown.Core;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Two independent controls need the same proposition. <see cref="ContractVerifier"/> asks
-///         it after a run ("is every file on disk accounted for?", reported as <c>DD0717</c>), and
-///         <see cref="ScratchFolder"/> asks it before a destructive reuse ("is everything here
-///         accounted for by this folder's manifest, so that I may delete exactly those files, or
-///         is something present that we never wrote?"). If each computed the answer for itself the
-///         two would drift, and a drift in either direction is a defect: a verifier that accounts
-///         for more than the cleaner does reports phantom divergence, and a cleaner that accounts
-///         for more than the verifier does deletes files nobody promised to write. Holding the
-///         definition once removes that possibility by construction.
+///         <see cref="ScratchFolder"/> needs this proposition before a destructive reuse ("is
+///         everything here accounted for by this folder's manifest, so that I may delete exactly
+///         those files, or is something present that we never wrote?"). Holding the definition in one
+///         place keeps the accounted set and the safe-deletion set byte-for-byte the same, so the
+///         cleaner never deletes a file nobody promised to write.
 ///     </para>
 ///     <para>
 ///         This is a leaf supporting type. It depends only on <see cref="ExtractionManifest"/> and
-///         <c>System.IO</c> path arithmetic, and on neither of its two consumers, so sharing the
-///         predicate introduces no dependency between <see cref="ScratchFolder"/> and
-///         <see cref="ContractVerifier"/>.
+///         <c>System.IO</c> path arithmetic.
 ///     </para>
 ///     <para>
 ///         The inventory is deliberately <strong>file-only</strong>. Directories are never

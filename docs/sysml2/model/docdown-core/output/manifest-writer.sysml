@@ -1,6 +1,6 @@
 package DocDownCore {
     part def ManifestWriter {
-        doc /* Serializes manifest.json and reconciles the completeness ledger before serialization. */
+        doc /* Serializes manifest.json, the machine-readable twin of the summary, from the recorded content, inventory, and notes. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ManifestWriter.cs */
         comment testRef /* Test: test/DemaConsulting.DocDown.Core.Tests/Output/ManifestWriterTests.cs */

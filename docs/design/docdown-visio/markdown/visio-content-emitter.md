@@ -4,62 +4,55 @@
 
 ### Purpose
 
-`VisioContentEmitter` is the single emission path of `DocDown.Visio`: it writes a read `VisioDocumentModel`
-through the sink as per-page content in document order — the page name, the shape text, and the directed
-connector topology — plus its inline images, its diagnostics, and the honest gaps the model and options
-imply. The topology is the engineering content, so it is the emitter's central concern.
+`VisioContentEmitter` is the single emission path of `DocDown.Visio`. Its single responsibility is
+to turn a read `VisioDocumentModel` into per-page content, looked-for content inventory, image
+links, document info, metadata, and plain notes, all written through the sink. The topology is the
+engineering content, so the emitter centers the output on readable directed connections.
 
 ### Data Model
 
-`VisioContentEmitter` is an `internal static class`. It holds no state; it drives everything from the model
-and the options handed to `EmitAsync`. The directed edge is rendered with a Unicode right arrow, and a
-shape's multi-line text is kept inside its markdown list item with a continuation indent and a hard line
-break.
+`VisioContentEmitter` is an `internal static class`. It holds no state; it drives everything from
+the model and the options handed to `EmitAsync`. Named constants pin the arrow used between
+connected shapes and the markdown formatting needed to keep multi-line shape text inside one list
+item.
 
 ### Key Methods
 
-- **`ValueTask<bool> EmitAsync(IExtractionSink sink, ExtractionOptions options, VisioDocumentModel model,
-  CancellationToken cancellationToken)`** — reports the page count, writes an empty-drawing gap
-  (`VISIO0001`) and returns when the drawing has no pages, writes the embedded images first, writes the
-  content, reports the document info and metadata, publishes the topology labeling convention and coverage,
-  notes each empty page (`VISIO0002`), and reports the image gaps and caveats. Returns whether the run
-  degraded.
-- **`RenderPage`** (private) — renders one page: its name as a heading, its informative shape text as a
-  list, its meaningful directed edges as a `source -> target` list, and the images it shows linked inline.
-  Bare-callout shapes and edges between two unidentified shapes are dropped and counted so the omission is
-  visible; the labeling convention is stated in the content whenever a label is not the shape's own text.
-- **`ReportContentFeatures`** (private) — reports the outline counts (pages, labeled shapes, connections)
-  from the model, counting only edges that reach the output.
-- **`ReportTopologyLabeling`** (private) — publishes the `VISIO0005` convention diagnostic and the
-  `VISIO0006` endpoint coverage counts (by text, by master type, and unresolved), reporting neither when
-  the drawing has no connections.
-- **`ReportImages`** / **`ReportVectorImageDiagnostic`** / **`ReportSizeSkipGap`** / **`ReportForcePngGap`**
-  (private) — report the vector-image caveat (`VISIO0003`, informational, never a gap), a size-skip counted
-  gap, and a force-PNG counted gap for the image write accounting.
-- **`AsListItem`** / **`Informative`** / **`IndexShapes`** (private) — keep multi-line text inside its item
-  without truncation, drop shapes whose text carries no letter, and index a page's shapes by id for
-  endpoint resolution.
-
-The force-PNG and size-skip image behavior is inherited from the product-wide embedded-image contract; the
-Visio suite exercises the vector-caveat, raster-write, and inline-link paths but has no force-PNG or
-size-skip scenario, so those paths are described here as inherited behavior rather than claimed as
-Visio-specific evidence. *(See the developer report.)*
+- **`ValueTask EmitAsync(IExtractionSink sink, ExtractionOptions options, VisioDocumentModel model,
+  CancellationToken cancellationToken)`** — reports looked-for inventory for pages, labeled shapes,
+  and connections; writes empty content immediately when the drawing has no pages; otherwise writes
+  images first, writes page content as one flow or one part per page, writes document info and any
+  captured metadata, and records a plain note when a requested PNG output could not be honored for
+  embedded images.
+- **`WriteContentAsync`** (private) — writes the drawing as one content flow or, in per-part mode,
+  one part per page under `parts/`.
+- **`RenderPage`** (private) — renders one page: its name as a heading, informative shape text as a
+  list, meaningful directed edges as a `source -> target` list, the labeling convention when needed,
+  omitted-callout and omitted-edge counts, and inline images whose paths were returned by the sink.
+- **`ReportContentFeatures`** (private) — reports looked-for counts for pages, labeled shapes, and
+  connections, counting only the edges that reach the output.
+- **`ReportImages`** / **`ReportForcePngNote`** (private) — emit the plain note for an unhonored
+  force-PNG request. A drawing that embeds no content images reports nothing here.
+- **`AsListItem`** / **`Informative`** / **`IndexShapes`** (private) — preserve multi-line text,
+  decide whether a shape text is informative, and build a page-local shape map for endpoint
+  resolution.
 
 ### Error Handling
 
-Null arguments are rejected with `ArgumentNullException`. Cancellation is observed between pages. The
-emitter performs no filesystem I/O of its own; every byte goes through the sink, and a malformed drawing
-that repeats a shape id degrades to reporting the first declaration rather than throwing.
+Null arguments are rejected with `ArgumentNullException`. Cancellation is observed between pages.
+The emitter performs no filesystem I/O of its own; every byte goes through the sink. A malformed
+page that repeats a shape id keeps the first declaration rather than aborting an otherwise complete
+extraction.
 
 ### Dependencies
 
-- **DocDown.Core** — the sink, the options, the content-part and gap types, and the diagnostic types.
+- **DocDown.Core** — the sink, options, content-part types, `DocumentInfo`, `ContentFeature`,
+  `EmbeddedImageWriter`, and `ExtractionNote`.
 - **VisioDocumentModel** — the model it projects.
-- **VisioShapeLabeler** — the endpoint-label decision and the published convention.
-- **VisioDiagnosticCodes** — the `VISIO0001`–`VISIO0006` codes.
+- **VisioShapeLabeler** — the endpoint-label decision and published convention.
 
 ### Callers
 
-`VisioOpenXmlExtractor.ExtractAsync` calls `EmitAsync` after reading the model, and the COM backend reaches
-it through the same delegated managed extraction, so a drawing's content reads identically whether or not
-it was rendered.
+`VisioOpenXmlExtractor.ExtractAsync` calls `EmitAsync` after reading the model, and the COM backend
+reaches it through the same delegated managed extraction, so a drawing's content reads identically
+whether or not it was rendered.

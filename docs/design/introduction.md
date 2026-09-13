@@ -38,13 +38,13 @@ folder:
 
 Three principles constrain every design decision in this document:
 
-- **The output layout is invariant; the output content is best-effort and
-  environment-dependent.** What can be extracted legitimately varies with the operating system,
-  the installed applications, and the available native binaries. A consumer may therefore rely on
-  the *shape* of the output without relying on its completeness.
-- **Reporting is always honest.** Whatever was not extracted is stated explicitly, with a reason.
-  An absence is never merely implied by a missing folder, because a missing folder is
-  indistinguishable from a folder that was legitimately empty.
+- **The output layout is invariant; an extraction is either produced or unreadable.** What can be
+  extracted legitimately varies with the operating system, the installed applications, and the
+  available native binaries. A consumer may therefore rely on the *shape* of produced output
+  without treating the result as a quality grade.
+- **Reporting is factual and limited.** The content inventory counts what the extractor looked for,
+  including deliberate zeros, and notes record only steps DocDown attempted but could not
+  complete.
 - **Extractors are registered explicitly.** No reflection or assembly scanning is used to
   discover extractors, so the command-line tool can be published as a single-file executable.
 
@@ -59,26 +59,26 @@ items, specifically:
   identification
   - **FormatSniffer (Unit)** — Names a format from the file extension, falling back to a
     leading-byte content signature
-- **Extraction (Subsystem)** — Registration, capability negotiation, deterministic selection, and
-  pipeline orchestration
+- **Extraction (Subsystem)** — Registration, deterministic selection, and pipeline orchestration
   - **DocDownBuilder (Unit)** — Fluent builder that collects registrations and produces an engine
   - **ExtractorRegistry (Unit)** — Immutable snapshot of registered extractors with cached
     availability
-  - **ExtractorSelector (Unit)** — Pure ranking function that chooses the best extractor and records
-    the decision
+  - **ExtractorSelector (Unit)** — Pure ranking function that chooses the best available extractor
+    deterministically
   - **DocDownEngine (Unit)** — Public facade that orchestrates one extraction end to end
 - **Output (Subsystem)** — The sole write path: scratch preparation, path containment, and artifact
   serialization
   - **ScratchFolder (Unit)** — Owns the output directory and the path-safety gate
-  - **ExtractionSink (Unit)** — Allocates every path, writes bytes, and records the honesty stream
+  - **ExtractionSink (Unit)** — Allocates every path, writes bytes, and records notes and the
+    content inventory
   - **ContentWriter (Unit)** — Finalizes `content.md` and any `parts/` files
   - **SummaryWriter (Unit)** — Serializes the human-readable `summary.txt`
-  - **ManifestWriter (Unit)** — Serializes `manifest.json` and reconciles the completeness ledger
-  - **ContractVerifier (Unit)** — Reconciles a scratch folder against its own manifest
+  - **ManifestWriter (Unit)** — Serializes `manifest.json` from the recorded output, inventory,
+    and notes
 - **DocDown.Pdf (System)** — PDF text, embedded-image, and document-metadata extraction; flat, with
   no subsystems, because there is one architectural boundary here rather than several
-  - **PdfDocumentExtractor (Unit)** — The backend the engine selects: capabilities, availability,
-    metadata, delegation, and the degradation gaps only a PDF reader can explain
+  - **PdfDocumentExtractor (Unit)** — The backend the engine selects: availability, metadata,
+    delegation, the content inventory, and notes
   - **PdfTextExtractor (Unit)** — Renders a page's glyphs into markdown paragraphs in reading
     order, with image links and page markers
   - **PdfImageExtractor (Unit)** — Writes the embedded images, labeling how each was produced and
@@ -86,17 +86,16 @@ items, specifically:
   - **PdfDocDownBuilderExtensions (Unit)** — The reflection-free registration seam
 - **DocDown.Pdf.Rendering (System)** — Optional PDF page rendering (rasterization); flat, with no
   subsystems, and the first and only DocDown package that carries native binaries
-  - **PdfPageRenderingExtractor (Unit)** — The superset backend the engine selects when rendering is
-    requested: declares the four capabilities, delegates the managed aspects, rasterizes the pages,
-    and isolates each page's faults into a counted gap
+  - **PdfPageRenderingExtractor (Unit)** — The page-rendering backend the engine selects when
+    rendering is requested and available: delegates the managed aspects, rasterizes pages, and
+    records notes for pages it cannot render
   - **PageRenderer (Unit)** — The single native-interop seam: rasterizes one page to PNG behind a
     process-wide lock and answers a cheap, non-throwing availability probe
   - **PdfRenderingDocDownBuilderExtensions (Unit)** — The reflection-free registration seam,
     carrying no native-rasterizer type on its surface
 - **DocDown.Tool (System)** — The `docdown` command-line tool; two subsystems and one direct unit
   - **Program (Unit, direct)** — The entry point: priority-ordered dispatch, banner and help,
-    explicit engine registration, extraction and reporting, and the auxiliary list-backends and
-    verify commands
+    explicit engine registration, extraction and reporting, and the auxiliary commands
   - **Cli (Subsystem)** — Command-line parsing, validation, option mapping, and output routing
     - **Context (Unit)** — The parsed arguments and the silence-aware console and log channels
   - **SelfTest (Subsystem)** — The `--validate` self-validation
@@ -114,8 +113,8 @@ items, specifically:
     - **WordTableWriter (Unit)** — Renders a table model as a GFM table, counting every flattened cell
     - **WordContentEmitter (Unit)** — The model-to-sink emission path
   - **OpenXml (Subsystem)** — The managed backend that reads a `.docx` through the Open XML SDK
-    - **WordOpenXmlExtractor (Unit)** — The managed backend the engine selects: capabilities, split
-      modes, and the shortfalls only it can explain
+    - **WordOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
+      including split modes and page-rendering absence
     - **WordOpenXmlReader (Unit)** — Turns the Open XML DOM into the backend-neutral model
     - **WordOpenXmlImageReader (Unit)** — Yields each embedded image's bytes with passthrough
       provenance
@@ -125,14 +124,14 @@ items, specifically:
   - **ExcelDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
     Excel backend
   - **Markdown (Subsystem)** — The projection of the workbook model onto markdown
-    - **ExcelContentEmitter (Unit)** — The model-to-sink emission path: one Sheet part per worksheet
-      and one Chart part per chart, the verbatim listing and the additive grid table, and the honest
-      gap policy
+    - **ExcelContentEmitter (Unit)** — The model-to-sink emission path: one Sheet part per
+      worksheet and one Chart part per chart, the verbatim listing, the additive grid table,
+      inventory counts, and notes
     - **ExcelChartWriter (Unit)** — Renders a chart's cached data series as a table of categories
       against series values, bounded and stated
   - **OpenXml (Subsystem)** — The managed backend that reads an `.xlsx` through the Open XML SDK
-    - **ExcelOpenXmlExtractor (Unit)** — The managed backend the engine selects: capabilities,
-      page-rendering non-applicability, and orchestration
+    - **ExcelOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
+      including page-rendering non-applicability
     - **ExcelOpenXmlReader (Unit)** — Turns the spreadsheet package into the backend-neutral model,
       preserving values and formulas verbatim
     - **ExcelOpenXmlImageReader (Unit)** — Yields each embedded image's bytes and records its
@@ -148,16 +147,16 @@ items, specifically:
   - **Com (Subsystem)** — The rendering seam, active where Microsoft PowerPoint is installed
     - **PowerPointComExtractor (Unit)** — The full-superset backend that delegates content to the managed
       backend and adds a rendered image of each slide over late-bound COM
-    - **PowerPointComAvailability (Unit)** — The cheap, side-effect-free probe that keeps the
-      environment-dependent rendering backend honest
+    - **PowerPointComAvailability (Unit)** — The cheap, side-effect-free probe that reports whether
+      slide rendering is available here
     - **PowerPointAutomation (Unit)** — The real COM automation adapter, the single untestable boundary
       proven by release-time self-tests
   - **Markdown (Subsystem)** — The projection of the deck model onto markdown
-    - **PowerPointContentEmitter (Unit)** — The model-to-sink emission path: per-slide title, text, and
-      speaker notes, the inline images, the content outline, and the honest gaps
+    - **PowerPointContentEmitter (Unit)** — The model-to-sink emission path: per-slide title,
+      text, speaker notes, inline images, inventory counts, and notes
   - **OpenXml (Subsystem)** — The guaranteed managed backend that reads a `.pptx` through the Open XML SDK
-    - **PowerPointOpenXmlExtractor (Unit)** — The managed backend the engine selects: capabilities,
-      the not-provided rendering statement, and orchestration
+    - **PowerPointOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
+      including the not-provided rendering fact
     - **PowerPointOpenXmlReader (Unit)** — Turns the presentation package into the backend-neutral model,
       preserving slide order, titles, body text, and speaker notes
     - **PowerPointOpenXmlImageReader (Unit)** — Yields each embedded image's bytes and records its slide
@@ -170,19 +169,19 @@ items, specifically:
   - **Com (Subsystem)** — The rendering seam, active where Microsoft Visio is installed
     - **VisioComExtractor (Unit)** — The full-superset backend that delegates content to the managed
       backend and adds a rendered image of each page over late-bound COM
-    - **VisioComAvailability (Unit)** — The cheap, side-effect-free probe that keeps the
-      environment-dependent rendering backend honest
+    - **VisioComAvailability (Unit)** — The cheap, side-effect-free probe that reports whether page
+      rendering is available here
     - **VisioAutomation (Unit)** — The real COM automation adapter, the single untestable boundary
       proven by release-time self-tests
   - **Markdown (Subsystem)** — The projection of the drawing model onto markdown
-    - **VisioContentEmitter (Unit)** — The model-to-sink emission path: per-page name, shape text, the
-      directed topology, the inline images, and the honest gaps
+    - **VisioContentEmitter (Unit)** — The model-to-sink emission path: per-page name, shape
+      text, directed topology, inline images, inventory counts, and notes
     - **VisioShapeLabeler (Unit)** — Decides how each topology endpoint is named from what the drawing
       says about it — its own text, its master type, or only its shape id
   - **OpenXml (Subsystem)** — The guaranteed managed backend that reads a `.vsdx`/`.vsdm` through
     `System.IO.Packaging`
-    - **VisioOpenXmlExtractor (Unit)** — The managed backend the engine selects: capabilities,
-      the not-provided rendering statement, and orchestration
+    - **VisioOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
+      including the not-provided rendering fact
     - **VisioPackageReader (Unit)** — Turns the Visio package into the backend-neutral model, resolving
       page names, shape text, master classification, and the directed connector topology
     - **VisioImageReader (Unit)** — Yields each embedded image's bytes and records its page association,
@@ -238,12 +237,13 @@ diagram or the prose below.
 ![Software Structure](SoftwareStructureView.svg)
 
 DocDown.Core is organized into three subsystems that form a one-directional pipeline: **Detection**
-identifies a document's format, **Extraction** registers backends and selects the best available one,
-and **Output** is the sole write path that produces the invariant scratch-folder layout. Each
-subsystem is a distinct architectural boundary with its own public surface, and the subsystems
-collaborate only through immutable value types. Twelve software units sit under these subsystems; a
-larger set of supporting value, contract, and enumeration types is documented inline within each
-subsystem's design document rather than as separate units.
+identifies a document's format, **Extraction** registers backends and selects the best available one
+deterministically, and **Output** is the sole write path that produces the invariant scratch-folder
+layout. Each subsystem is a distinct architectural boundary with its own public surface, and the
+subsystems collaborate only through immutable value types. Twelve software units sit under these
+subsystems; a larger set of supporting value, contract, and enumeration types — including
+`ExtractionNote` — is documented inline within each subsystem's design document rather than as
+separate units.
 
 DocDown.Pdf sits alongside DocDown.Core as the second system and the first real extraction backend. It
 is flat - four units, no subsystems - because it spans one architectural boundary, the PDF, rather
@@ -255,9 +255,9 @@ only DocDown package that carries native binaries. It too is flat - three units,
 because it spans one boundary, rasterization. It depends on DocDown.Core for the contract and on
 DocDown.Pdf for the managed text/image/metadata extraction it delegates to, and it wraps the
 PDFtoImage OTS API (with its transitive PDFium and SkiaSharp native stack) in a single native-interop
-seam. Because the engine selects one backend, it declares the full superset of capabilities and is
-chosen over the managed backend only when page rendering is requested; a host that never registers it
-never loads a native binary.
+seam. Because selection is deterministic, the rendering backend is chosen over the managed backend
+only when page rendering is requested and available; a host that never registers it never loads a
+native binary.
 
 DocDown.Tool is the fourth system: the `docdown` command-line tool, a thin executable shell over
 DocDown.Core and the registered backends. It has two subsystems - Cli, which owns the command line,
@@ -276,9 +276,9 @@ document model and its projection onto markdown; and OpenXml, the fully managed 
 direct unit. It
 depends on DocDown.Core for the contract and on the Open XML SDK (with its transitive
 System.IO.Packaging container reader) for document structure, and it is 100% managed and
-runtime-identifier agnostic: it ships no native asset, and it therefore declares no rendered-pages
-capability. The legacy binary `.doc` format is not supported by DocDown at all, so the package ships
-one backend and the engine has one candidate for a Word document.
+runtime-identifier agnostic: it ships no native asset, and it therefore reports availability without
+page rendering. The legacy binary `.doc` format is not supported by DocDown at all, so the package
+ships one backend and the engine has one candidate for a Word document.
 
 DocDown.Excel is the sixth system: the Excel extraction backend. Like DocDown.Word it has two
 subsystems - Markdown, which projects the workbook model onto markdown; and OpenXml, the fully managed
@@ -289,9 +289,9 @@ the formulas behind computed cells alongside their values, cites every fact by s
 surfaces each chart's cached data series as its own content part, and extracts drawing annotations and
 embedded images. It depends on DocDown.Core and on the Open XML SDK (with its transitive
 System.IO.Packaging container reader), and it is 100% managed and runtime-identifier agnostic. It
-deliberately never renders — a workbook has no page grid — so it declares no rendered-pages capability
-and answers a page-rendering request as not applicable rather than as a shortfall. The legacy binary
-`.xls` format is not supported by DocDown at all, so the package ships one backend.
+deliberately never renders — a workbook has no page grid — so it reports page rendering as not
+applicable and answers a page request with silence rather than a note. The legacy binary `.xls`
+format is not supported by DocDown at all, so the package ships one backend.
 
 DocDown.PowerPoint is the seventh system: the PowerPoint extraction backend. Unlike the other extraction
 systems it has three subsystems — OpenXml, the guaranteed managed backend that reads a `.pptx` through the
@@ -316,11 +316,11 @@ rendering seam that drives Microsoft Visio over late-bound COM where it is insta
 VisioDocDownBuilderExtensions, the registration seam, as a direct unit. The page names, shape text, and
 directed source-to-target topology are always extracted from the file itself with no Visio present, so the
 schematic's logical content is recoverable on any machine and in CI; the rendered appearance of each page,
-which the XML cannot recover, is added when an environment can supply it, and a render requested where
-Visio is absent is a counted gap rather than a silent omission. It depends on DocDown.Core and on
-System.IO.Packaging; its managed backend is 100% managed and runtime-identifier agnostic, and its COM
-backend is Windows-only, self-disabling where Visio is absent, and carries no native asset. The legacy
-binary `.vsd` format is not supported by DocDown at all.
+which the XML cannot recover, is added when an environment can supply it, and a page-rendering request
+made where Visio is absent is recorded as a note rather than silently omitted. It depends on
+DocDown.Core and on System.IO.Packaging; its managed backend is 100% managed and runtime-identifier
+agnostic, and its COM backend is Windows-only, self-disabling where Visio is absent, and carries no
+native asset. The legacy binary `.vsd` format is not supported by DocDown at all.
 
 ## Folder Layout
 
@@ -337,28 +337,18 @@ src/DemaConsulting.DocDown.Core/
 ├── Extraction/
 │   ├── DocDownBuilder.cs           — Unit: fluent builder collecting registrations and defaults
 │   ├── ExtractorRegistry.cs        — Unit: immutable snapshot of registered extractors with cached availability
-│   ├── ExtractorSelector.cs        — Unit: pure ranking function that selects the best extractor
+│   ├── ExtractorSelector.cs        — Unit: pure ranking function that selects the best available extractor
 │   ├── DocDownEngine.cs            — Unit: public facade that orchestrates one extraction end to end
 │   ├── IDocumentExtractor.cs       — Interface: the backend contract implemented by extractor packages
 │   ├── IExtractionContext.cs       — Interface: the context handed to a backend during extraction
 │   ├── ExtractionContext.cs        — Internal: the concrete extraction context
-│   ├── ExtractorAvailability.cs    — Value type: probed availability and effective capabilities
-│   ├── ExtractorCapabilities.cs    — Flags enum: the capabilities a backend can provide
-│   ├── ExtractorDescriptor.cs      — Value type: immutable snapshot of a backend's identity and abilities
+│   ├── ExtractorAvailability.cs    — Value type: probed availability and whether the backend renders pages here
+│   ├── ExtractorDescriptor.cs      — Value type: immutable snapshot of a backend's identity and ranking inputs
 │   ├── ExtractorCandidate.cs       — Value type: a descriptor paired with its current availability
-│   ├── BackendStatus.cs            — Value type: flattened backend status for reporting
-│   ├── SelectionMode.cs            — Enum: automatic versus caller-override selection
-│   ├── SelectionResult.cs          — Value type: the selection outcome, trace, and any failure
-│   ├── CandidateOutcome.cs         — Enum: the per-candidate selection classification
-│   ├── CandidateVerdict.cs         — Value type: one candidate's verdict and reason
-│   ├── ExtractionOutcome.cs        — Enum: succeeded, degraded, or failed
-│   ├── ExtractionFailureKind.cs    — Enum: the kind of extraction failure
-│   ├── ExtractionFailure.cs        — Value type: a structured failure with a displayable explanation
-│   ├── ExtractionDiagnostic.cs     — Value type: a coded, located diagnostic
-│   ├── DiagnosticSeverity.cs       — Enum: info, warning, or error
-│   ├── DiagnosticCodes.cs          — Internal static: the Core diagnostic-code constants
+│   ├── ExtractionOutcome.cs        — Enum: produced or unreadable
+│   ├── ExtractionFailure.cs        — Value type: a displayable failure summary and explanation
 │   ├── ExtractionOptions.cs        — Options: mutable request configuration with a Clone method
-│   ├── ScratchFolderMode.cs        — Enum: the scratch-folder preparation policy
+│   ├── ScratchFolderMode.cs        — Enum: clean a DocDown folder safely or overwrite contents
 │   ├── ContentSplitMode.cs         — Enum: the content-split policy
 │   ├── ImageOutputMode.cs          — Enum: the image-output policy
 │   ├── PageRange.cs                — Value type: an inclusive page range
@@ -373,27 +363,21 @@ src/DemaConsulting.DocDown.Core/
 │   ├── SelfTestResult.cs           — Value type: a self-test status, message, and duration
 │   └── SelfTestStatus.cs           — Enum: passed, failed, or skipped
 └── Output/
-    ├── ScratchFolder.cs            — Unit: owns the output directory and the path-safety gate
-    ├── ExtractionSink.cs           — Unit: allocates every path, writes bytes, and records the honesty stream
+    ├── ScratchFolder.cs            — Unit: owns the output directory and enforces safe scratch reuse
+    ├── ExtractionSink.cs           — Unit: allocates paths, writes bytes, and records notes and content inventory
     ├── ContentWriter.cs            — Unit: finalizes content.md and any parts/ files
     ├── SummaryWriter.cs            — Unit: serializes the human-readable summary.txt
-    ├── ManifestWriter.cs           — Unit: serializes manifest.json and reconciles the completeness ledger
-    ├── MetadataWriter.cs           — Writer (supporting type): serializes metadata.json, the document's self-reported metadata
-    ├── ContractVerifier.cs         — Unit: reconciles a scratch folder against its own manifest
+    ├── ManifestWriter.cs           — Unit: serializes manifest.json from recorded output, inventory, and notes
+    ├── MetadataWriter.cs           — Writer: serializes metadata.json from self-reported document metadata
     ├── IExtractionSink.cs          — Interface: the write surface handed to a backend
     ├── ImageHint.cs                — Value type: extractor-supplied image metadata hint
     ├── ContentPart.cs              — Value type: a content part (page, sheet, slide, section, attachment)
     ├── ContentPartKind.cs          — Enum: the kind of a content part
-    ├── ExtractionGap.cs            — Value type: an enumerated gap with a mandatory reason
-    ├── GapKind.cs                  — Enum: the kind of a gap
-    ├── GapScope.cs                 — Enum: why content is missing (not attempted, unavailable, partial, failed)
-    ├── ArtifactLedger.cs           — Value type: the completeness ledger of the six core artifacts
-    ├── ArtifactEntry.cs            — Value type: one ledger entry (path, status, counts)
-    ├── ArtifactStatus.cs           — Enum: present, partial, or absent
+    ├── ArtifactInventory.cs        — Helper: the manifest-accounted file inventory used for safe scratch reuse
     ├── ExtractionEnvironment.cs    — Value type: operating system, runtime, and environment facts
     ├── EnvironmentFact.cs          — Value type: one environment fact
-    ├── ContractViolation.cs        — Value type: a contract-verification finding
     ├── ExtractionManifest.cs       — DTO graph: the manifest.json serialization model
+    ├── ExtractionNote.cs           — Value type: a plain-language extraction note
     ├── DocDownJsonContext.cs       — Source-gen: the trim- and AOT-safe JSON serializer context
     └── ScratchFolderException.cs   — Exception: a structured scratch-folder refusal
 ```
@@ -407,9 +391,9 @@ The PDF extraction package mirrors the same organization. It is flat, so every s
 
 ```text
 src/DemaConsulting.DocDown.Pdf/
-├── PdfDocumentExtractor.cs         — Unit: orchestrates an extraction; also holds this package's diagnostic codes
+├── PdfDocumentExtractor.cs         — Unit: orchestrates PDF extraction, content inventory, and notes
 ├── PdfTextExtractor.cs             — Unit: renders a page's glyphs into markdown in reading order
-├── PdfImageExtractor.cs            — Unit: writes embedded images and accounts for those it cannot deliver
+├── PdfImageExtractor.cs            — Unit: writes embedded images and records notes when one cannot be delivered
 └── PdfDocDownBuilderExtensions.cs  — Unit: the reflection-free AddPdf registration seam
 ```
 
@@ -417,7 +401,7 @@ The optional page-rendering package mirrors the same flat organization; every so
 
 ```text
 src/DemaConsulting.DocDown.Pdf.Rendering/
-├── PdfPageRenderingExtractor.cs            — Unit: superset backend; delegates managed aspects, rasterizes pages
+├── PdfPageRenderingExtractor.cs            — Unit: page-rendering backend; delegates, rasterizes, and records notes
 ├── PageRenderer.cs                         — Unit: the single native-interop seam behind a process-wide lock
 └── PdfRenderingDocDownBuilderExtensions.cs — Unit: the reflection-free AddPdfRendering registration seam
 ```
@@ -451,8 +435,7 @@ src/DemaConsulting.DocDown.Word/
 │   ├── WordBlockKind.cs             — Enum: the kind of a content block
 │   ├── WordInline.cs                — Value type: an inline run with bold/italic/link
 │   ├── WordListInfo.cs              — Value type: a list item's level and ordered/bulleted kind
-│   ├── WordTableModel.cs            — Value type: a table's rows, header flag, and flatten counts
-│   └── WordDiagnosticCodes.cs       — Internal static: the WORD diagnostic-code constants
+│   └── WordTableModel.cs            — Value type: a table's rows, header flag, and flatten counts
 └── OpenXml/
     ├── WordOpenXmlExtractor.cs      — Unit: the managed backend the engine selects and invokes
     ├── WordOpenXmlReader.cs         — Unit: turns the Open XML DOM into the backend-neutral model
@@ -461,17 +444,16 @@ src/DemaConsulting.DocDown.Word/
 ```
 
 The Excel extraction package has two subsystems and one direct unit. As with Word, each subsystem
-folder holds its software-unit source files together with the supporting model, chart-model, exception,
-and diagnostic-code types the subsystem defines; the supporting types are documented inline within
-their subsystem's design document rather than as separate units:
+folder holds its software-unit source files together with the supporting model, chart-model, and
+exception types the subsystem defines; the supporting types are documented inline within their
+subsystem's design document rather than as separate units:
 
 ```text
 src/DemaConsulting.DocDown.Excel/
 ├── ExcelDocDownBuilderExtensions.cs — Unit: the reflection-free AddExcel registration seam
 ├── Markdown/
-│   ├── ExcelContentEmitter.cs        — Unit: the model-to-sink emission path, sheet and chart parts
-│   ├── ExcelChartWriter.cs           — Unit: renders a chart's cached series as a table
-│   └── ExcelDiagnosticCodes.cs       — Internal static: the XLSX diagnostic-code constants
+│   ├── ExcelContentEmitter.cs        — Unit: emits sheet and chart parts, inventory, and notes
+│   └── ExcelChartWriter.cs           — Unit: renders a chart's cached series as a table
 └── OpenXml/
     ├── ExcelOpenXmlExtractor.cs      — Unit: the managed backend the engine selects and invokes
     ├── ExcelOpenXmlReader.cs         — Unit: turns the spreadsheet package into the backend-neutral model
@@ -485,8 +467,8 @@ src/DemaConsulting.DocDown.Excel/
 
 The PowerPoint extraction package has three subsystems and one direct unit. As with the other extraction
 packages, each subsystem folder holds its software-unit source files together with the supporting model,
-exception, diagnostic-code, and COM-plumbing types the subsystem defines; the supporting types are
-documented inline within their subsystem's design document rather than as separate units:
+exception, and COM-plumbing types the subsystem defines; the supporting types are documented inline
+within their subsystem's design document rather than as separate units:
 
 ```text
 src/DemaConsulting.DocDown.PowerPoint/
@@ -500,8 +482,7 @@ src/DemaConsulting.DocDown.PowerPoint/
 │   ├── DelegatedExtractionContext.cs  — Internal: the render-suppressed context for the delegated managed run
 │   └── PowerPointComDispatch.cs       — Internal: the low-level IDispatch plumbing, watchdog, and teardown
 ├── Markdown/
-│   ├── PowerPointContentEmitter.cs    — Unit: the model-to-sink emission path, per-slide content and gaps
-│   └── PowerPointDiagnosticCodes.cs   — Internal static: the PPTX diagnostic-code constants
+│   └── PowerPointContentEmitter.cs    — Unit: the model-to-sink emission path, per-slide content, inventory, and notes
 └── OpenXml/
     ├── PowerPointOpenXmlExtractor.cs  — Unit: the managed backend the engine selects and invokes
     ├── PowerPointOpenXmlReader.cs     — Unit: turns the presentation package into the backend-neutral model
@@ -512,8 +493,8 @@ src/DemaConsulting.DocDown.PowerPoint/
 
 The Visio extraction package has three subsystems and one direct unit. As with the other extraction
 packages, each subsystem folder holds its software-unit source files together with the supporting model,
-exception, diagnostic-code, and COM-plumbing types the subsystem defines; the supporting types are
-documented inline within their subsystem's design document rather than as separate units:
+exception, and COM-plumbing types the subsystem defines; the supporting types are documented inline
+within their subsystem's design document rather than as separate units:
 
 ```text
 src/DemaConsulting.DocDown.Visio/
@@ -527,15 +508,14 @@ src/DemaConsulting.DocDown.Visio/
 │   ├── DelegatedExtractionContext.cs  — Internal: the render-suppressed context for the delegated managed run
 │   └── VisioComDispatch.cs            — Internal: the low-level IDispatch plumbing and teardown
 ├── Markdown/
-│   ├── VisioContentEmitter.cs         — Unit: the model-to-sink emission path, per-page content and gaps
-│   ├── VisioShapeLabeler.cs           — Unit: the endpoint-labeling decision and its provenance types
-│   └── VisioDiagnosticCodes.cs        — Internal static: the VISIO diagnostic-code constants
+│   ├── VisioContentEmitter.cs         — Unit: the model-to-sink emission path, per-page content, inventory, and notes
+│   └── VisioShapeLabeler.cs           — Unit: the endpoint-labeling decision and its provenance types
 └── OpenXml/
     ├── VisioOpenXmlExtractor.cs       — Unit: the managed backend the engine selects and invokes
     ├── VisioPackageReader.cs          — Unit: turns the Visio package into the backend-neutral model
     ├── VisioImageReader.cs            — Unit: yields embedded image bytes and page association
-    ├── VisioDocumentModel.cs          — Value type: the reader-neutral drawing, page, shape, and connection model
-    ├── VisioPackageBuilder.cs         — Internal: the in-memory Visio package synthesizer for the self-test and fixtures
+    ├── VisioDocumentModel.cs          — Value type: the reader-neutral drawing, page, shape, and edge model
+    ├── VisioPackageBuilder.cs         — Internal: builds in-memory Visio packages for self-tests and fixtures
     └── VisioExtractionException.cs    — Exception: a structured Visio extraction failure
 ```
 

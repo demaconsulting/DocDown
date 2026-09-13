@@ -7,15 +7,13 @@ Scratch folder  : <scratch-folder>
 Source document : <source-document>
 Detected format : docx (application/vnd.openxmlformats-officedocument.wordprocessingml.document) - detected by file extension
 Extracted (UTC) : 2026-01-02T03:04:05Z
-Status          : SUCCEEDED  - all requested content was extracted.
+Status          : PRODUCED  - the standard output layout was written.
 
 All paths below are relative to the scratch folder shown above.
 
 Backend
 -------
-  Selected  : word-openxml - Word (Open XML SDK)      [selected automatically]
-  Fidelity  : best-effort
-  Why       : satisfies 2 of 2 requested capabilities.
+  Selected  : word-openxml - Word (Open XML SDK)
 
 Environment
 -----------
@@ -38,27 +36,17 @@ Layout
   metadata.json        what the document asserts about itself
   content.md           PRESENT
   images/              PRESENT - 1 extracted
-  pages/               not present - none were found
+  pages/               not present - none were written
 
 What WAS extracted
 ------------------
   content.md   289 characters of text.
-               Contains 2 headings, 1 table, 2 list items, and 1 inline image.
+               Contains 7 text blocks, 2 headings, 1 table, 2 list items, 1 inline image, 0 comments, 0 distinct
+               comment authors, and 0 footnotes.
   images/      1 embedded image, 240 bytes total.
                It carries no page number: the backend could not attribute it to a page.
                See manifest.json for the per-image inventory.
 
-What was NOT extracted
-----------------------
-  No gaps: everything requested was extracted.
-
-Completeness
-------------
-  content.md : COMPLETE
-  images/    : COMPLETE   (1 of 1)
-  pages/     : COMPLETE   (0 of 0)
-  Every absence above is explained by a numbered gap. There are no unexplained gaps.
-
-Diagnostics (0 warnings, 0 errors)
-----------------------------------
-  No diagnostics were emitted.
+Could not read
+--------------
+  Nothing was left incomplete.

@@ -18,7 +18,7 @@ namespace DemaConsulting.DocDown.Word.Tests;
 ///         only machine-specific lines are the absolute scratch path, the temporary source path, and
 ///         the three host-environment lines (operating system, runtime, runtime identifier); each is
 ///         replaced with a fixed placeholder before comparison. Everything else — the backend block,
-///         the extractor-reported environment facts, the layout, the gaps, and the diagnostics — is
+///         the extractor-reported environment facts, the layout, and the extraction notes — is
 ///         deterministic and byte-compared.
 ///     </para>
 ///     <para>
@@ -59,7 +59,7 @@ public class WordGoldenTests
         AssertGoldenAsync("summary-word-openxml-tables-and-images.txt", "clean.docx", DocxFixtures.CleanDocument());
 
     /// <summary>
-    ///     Proves the summary for a document with merged cells and its counted gap matches its golden.
+    ///     Proves the summary for a document with merged cells and its flattening note matches its golden.
     /// </summary>
     [Fact]
     public Task WordGolden_MergedCellsGap_MatchesCommittedGolden() =>

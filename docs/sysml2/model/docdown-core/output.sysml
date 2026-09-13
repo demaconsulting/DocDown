@@ -1,6 +1,6 @@
 package DocDownCore {
     part def Output {
-        doc /* The sole write path for an extraction: prepares the scratch folder, contains every path, writes the artifacts, and verifies the result. */
+        doc /* The sole write path for an extraction: prepares the scratch folder, contains every path, and writes the artifacts. */
 
         comment testRef /* Test: test/DemaConsulting.DocDown.Core.Tests/Output/OutputTests.cs */
         comment designRef /* Design: docs/design/docdown-core/output.md */
@@ -12,12 +12,11 @@ package DocDownCore {
         part contentWriter : ContentWriter;
         part summaryWriter : SummaryWriter;
         part manifestWriter : ManifestWriter;
-        part contractVerifier : ContractVerifier;
         part imageTextSelector : ImageTextSelector;
     }
 
     part def IExtractionSink {
-        doc /* The write surface a backend uses to add images, pages, content, and report the honesty stream. */
+        doc /* The write surface a backend uses to add images, pages, and content, and to report notes and the content inventory. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/IExtractionSink.cs */
         comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
@@ -88,37 +87,10 @@ package DocDownCore {
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
     }
 
-    part def ExtractionGap {
-        doc /* An enumerated, explained gap in the extraction with a mandatory reason. */
+    part def ExtractionNote {
+        doc /* A short plain-language note recorded when DocDown attempted a step and could not complete it; carries a message only, never a code, severity, remedy, or impact. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ExtractionGap.cs */
-        comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
-    }
-
-    part def GapKind {
-        doc /* The kind of content a gap concerns: Text, Images, Pages, Structure, Metadata, or Parts. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/GapKind.cs */
-        comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
-    }
-
-    part def GapScope {
-        doc /* Why content is missing: NotAttempted, Unavailable, PartiallyExtracted, or Failed. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/GapScope.cs */
-        comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
-    }
-
-    part def ArtifactLedger {
-        doc /* The six-entry completeness ledger stating what the extraction produced. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ArtifactLedger.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ExtractionNote.cs */
         comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
@@ -129,24 +101,6 @@ package DocDownCore {
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/MetadataWriter.cs */
         comment testRef /* Test: test/DemaConsulting.DocDown.Core.Tests/Output/MetadataWriterTests.cs */
-        comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
-    }
-
-    part def ArtifactEntry {
-        doc /* One completeness-ledger entry: path, status, and optional obtained/found counts. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ArtifactEntry.cs */
-        comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
-    }
-
-    part def ArtifactStatus {
-        doc /* The status of a ledger artifact: Present, Partial, or Absent. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ArtifactStatus.cs */
         comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
@@ -170,17 +124,8 @@ package DocDownCore {
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
     }
 
-    part def ContractViolation {
-        doc /* One contract-verification finding: a code and a detail. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ContractViolation.cs */
-        comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
-    }
-
     part def ArtifactInventory {
-        doc /* The single shared definition of what a manifest accounts for, used by the contract verifier and by the scratch-folder reuse guard. */
+        doc /* The single shared definition of what a manifest accounts for, used by the scratch-folder reuse guard to delete only what this library wrote. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ArtifactInventory.cs */
         comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
@@ -207,7 +152,7 @@ package DocDownCore {
     }
 
     part def ScratchFolderException {
-        doc /* A structured scratch-folder refusal carrying a machine reason; converted by the engine into a ScratchFolderRefused failure. */
+        doc /* A structured scratch-folder refusal carrying a machine reason; converted by the engine into a prose extraction failure. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ScratchFolderException.cs */
         comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */

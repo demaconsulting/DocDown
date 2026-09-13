@@ -16,13 +16,13 @@ namespace DocDown.Core;
 ///     <para>
 ///         The options mirror the manifest contract: camelCase property names, indented output
 ///         for human readability, and no ignore condition so absent optional values serialize as
-///         explicit <c>null</c> rather than being dropped — which keeps the shape stable for the
-///         contract verifier.
+///         explicit <c>null</c> rather than being dropped — which keeps the shape stable for
+///         consumers.
 ///     </para>
 ///     <para>
 ///         Declared <see langword="internal"/> because only Core's <c>ManifestWriter</c> and
-///         <c>ContractVerifier</c> (same assembly) serialize and deserialize the manifest; the
-///         DTOs themselves are public for inspection, but the serialization context is an internal
+///         <c>ScratchFolder</c> (same assembly) serialize and deserialize the manifest; the DTOs
+///         themselves are public for inspection, but the serialization context is an internal
 ///         implementation detail. Generated contexts are thread-safe for concurrent use.
 ///     </para>
 /// </remarks>

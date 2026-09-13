@@ -5,9 +5,9 @@
 ### Purpose
 
 `ExcelOpenXmlExtractor` is the managed Excel backend the engine selects and invokes for an `.xlsx`. Its
-single responsibility is orchestration: it declares what this backend can deliver, answers the
-availability probe unconditionally, records the environment facts, buffers and opens the workbook, hands
-the stream to `ExcelOpenXmlReader`, and delegates every artifact to `ExcelContentEmitter`. It writes no
+single responsibility is orchestration: it identifies the backend, answers the availability probe
+unconditionally, records the environment facts, buffers and opens the workbook, hands the stream to
+`ExcelOpenXmlReader`, and delegates every extracted artifact to `ExcelContentEmitter`. It writes no
 bytes itself and constructs no path, because Core's sink is the only output channel.
 
 ### Data Model
@@ -16,57 +16,55 @@ bytes itself and constructs no path, because Core's sink is the only output chan
 `ISelfValidating`. It holds no per-extraction state, so one registered instance safely serves every
 extraction.
 
-- **`Id`** (`string`) — `excel-openxml`; the stable key for selection, caller override, and manifest use.
+- **`Id`** (`string`) — `excel-openxml`; the stable key for selection, caller override, and manifest
+  use.
 - **`DisplayName`** (`string`) — `Excel (Open XML SDK)`.
 - **`SupportedFormats`** — `Xlsx` only. The legacy binary `.xls` format is not supported by DocDown.
-- **`Capabilities`** — `Text | EmbeddedImages | DocumentMetadata | DocumentStructure`. `RenderedPages` is
-  pointedly absent, because a workbook is deliberately never rendered.
 - **`Priority`** (`int`) — `10`; the package's only backend, placing Excel extraction above a
   hypothetical lower-priority generic reader a host might also register.
-- **`PageRenderingApplicable`** (`bool`) — `false`; a workbook has no page grid, so page rendering applies
-  to nothing rather than being merely unavailable.
+- **`PageRenderingApplicable`** (`bool`) — `false`; a workbook has no page grid, so page rendering
+  applies to nothing rather than being deferred work.
 
 ### Key Methods
 
-- **`ExtractorAvailability ProbeAvailability()`** — returns `Available(Capabilities)` unconditionally,
-  performing no I/O. Precondition: none. Postcondition: never throws, completes well under the 50 ms the
-  contract allows. There is nothing to probe: the Open XML SDK is a managed assembly shipped inside this
-  package.
+- **`ExtractorAvailability ProbeAvailability()`** — returns `ExtractorAvailability.Available()`
+  unconditionally, performing no I/O. Precondition: none. Postcondition: never throws and completes
+  well under the 50 ms the contract allows. There is nothing to probe: the Open XML SDK is a managed
+  assembly shipped inside this package.
 - **`ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context)`** —
-  reports two environment facts (`excel.backend = Open XML SDK (managed) (available)`,
-  `excel.pageRendering = not applicable to a non-paginated workbook (NOT available)`), buffers the source
-  through `ReadSourceAsync`, opens a read-only `MemoryStream` over the buffered bytes, calls
-  `ExcelOpenXmlReader.Read` to produce an `ExcelWorkbookModel`, and delegates to
-  `ExcelContentEmitter.EmitAsync`. Returns `Degraded` when the emitter reported any gap and `Succeeded`
-  otherwise. Preconditions: both arguments non-null. Buffering is what makes a stream source and a file
-  source behave identically and gives the reader the seekable stream the package reader needs.
+  reports two environment facts (`excel.backend = Open XML SDK (managed)` and
+  `excel.pageRendering = not applicable to a non-paginated workbook`), buffers the source through
+  `ReadSourceAsync`, opens a read-only `MemoryStream` over the buffered bytes, calls
+  `ExcelOpenXmlReader.Read` to produce an `ExcelWorkbookModel`, delegates to
+  `ExcelContentEmitter.EmitAsync`, and returns `ExtractionOutcome.Produced` when those steps complete.
+  Preconditions: both arguments non-null. Buffering is what makes a stream source and a file source
+  behave identically and gives the package reader the seekable stream it needs.
 - **`IEnumerable<SelfTestCase> GetSelfTestCases()`** — returns two cases:
   - `excel.openxml.parseRoundTrip`, which builds a one-sheet workbook in memory with
-    `SpreadsheetDocument.Create`, reads it back, and passes when the model carries at least one worksheet.
-    Building rather than embedding a fixture keeps the case free of a shipped binary payload.
+    `SpreadsheetDocument.Create`, reads it back, and passes when the model carries at least one
+    worksheet. Building rather than embedding a fixture keeps the case free of a shipped binary
+    payload.
   - `excel.pageRendering`, which reports a reasoned skip because a workbook is non-paginated and page
-    rendering does not apply. A traceability pipeline does not count a skip as executed evidence, so the
-    skip satisfies no requirement — see the *SelfTest* subsystem design.
+    rendering does not apply.
 - **`ReadSourceAsync`** (private) — copies the source into memory, because a stream-backed
   `DocumentSource` is not guaranteed seekable and the SDK's package reader must seek.
-- **`RunParseRoundTrip`** / **`BuildProbeWorkbook`** (private) — the round-trip case body and the one-sheet
-  workbook it reads back; the case catches every exception and reports it as a failed result rather than
-  throwing (so `CA1031` is deliberately suppressed there).
+- **`RunParseRoundTrip`** / **`BuildProbeWorkbook`** (private) — the round-trip case body and the
+  one-sheet workbook it reads back; the case catches every exception and reports it as a failed result
+  rather than throwing.
 
 ### Error Handling
 
-Null arguments are rejected with `ArgumentNullException`. The reader translates a package it cannot open or a
-missing workbook part into an `ExcelExtractionException`; every other fault propagates to Core, which
-converts it into a coded, structured `ExtractorFailed` failure with the full output layout still written.
-`OperationCanceledException` propagates. The self-test cases are the one exception to this rule: a case
-reports every fault as a failed result rather than throwing.
+Null arguments are rejected with `ArgumentNullException`. `ExcelOpenXmlReader` throws
+`ExcelExtractionException` for a package it cannot open or a missing workbook part; every other fault
+propagates to Core, which converts it into a structured `Unreadable` result with the full output layout
+still written where possible. `OperationCanceledException` propagates. The self-test cases are the one
+exception to this rule: a case reports every fault as data rather than throwing.
 
 ### Dependencies
 
 - **DocDown.Core** — `IDocumentExtractor`, `ISelfValidating`, `IExtractionSink`, `IExtractionContext`,
-  `DocumentSource`, `ExtractionOptions`, `ExtractorAvailability`, `ExtractorCapabilities`,
-  `ExtractionOutcome`, `SelfTestCase`, `SelfTestResult`, `DocumentFormat` (as `CoreFormat`),
-  `EnvironmentFact`.
+  `DocumentSource`, `ExtractionOptions`, `ExtractorAvailability`, `ExtractionOutcome`, `SelfTestCase`,
+  `SelfTestResult`, `DocumentFormat` (as `CoreFormat`), `EnvironmentFact`.
 - **DocumentFormat.OpenXml** (OTS) — `SpreadsheetDocument.Create` used only by the self-test probe
   workbook.
 - **ExcelOpenXmlReader** — the SDK-to-model translation.

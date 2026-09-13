@@ -24,12 +24,14 @@ namespace DocDown.Visio.Com;
 internal static class VisioComAvailability
 {
     /// <summary>
-    ///     Probes availability, returning the declared capabilities when Visio automation can run.
+    ///     Probes availability, returning whether Visio automation can run and render pages here.
     /// </summary>
-    /// <param name="declared">The capabilities the extractor declares.</param>
-    /// <returns>An availability result: available with the declared capabilities, or unavailable with a declarative reason.</returns>
+    /// <returns>
+    ///     An availability result: available with rendered-page support, or unavailable with a
+    ///     declarative reason.
+    /// </returns>
     /// <remarks>Cheap, side-effect free, and never throws. Pure apart from the registry read on Windows.</remarks>
-    public static ExtractorAvailability Probe(ExtractorCapabilities declared)
+    public static ExtractorAvailability Probe()
     {
         if (!OperatingSystem.IsWindows())
         {
@@ -39,7 +41,7 @@ internal static class VisioComAvailability
         }
 
         return IsVisioRegistered()
-            ? ExtractorAvailability.Available(declared)
+            ? ExtractorAvailability.Available(providesRenderedPages: true)
             : ExtractorAvailability.Unavailable(
                 "Microsoft Visio is not registered on this machine; the Visio COM automation backend is "
                 + "available only where Microsoft Visio is present.");

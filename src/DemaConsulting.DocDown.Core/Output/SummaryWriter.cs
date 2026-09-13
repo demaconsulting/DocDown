@@ -18,7 +18,7 @@ namespace DocDown.Core;
 ///     </para>
 ///     <para>
 ///         Output is plain UTF-8 without a BOM, uses <c>\n</c> line endings always, and stays within
-///         120 columns (long gap prose is word-wrapped with a hanging indent). Combined with a fixed
+///         120 columns (long note prose is word-wrapped with a hanging indent). Combined with a fixed
 ///         timestamp, that makes the file byte-identical across runs and platforms. The writer holds
 ///         no state and performs filesystem I/O through the scratch-folder gate; it is intended for
 ///         the single extraction flow, not concurrent invocation against one folder.
@@ -41,7 +41,6 @@ public static class SummaryWriter
     /// <param name="sink">The sink holding the recorded content. Must not be null.</param>
     /// <param name="report">The engine-side facts describing the extraction. Must not be null.</param>
     /// <param name="content">The content-write result, or <see langword="null"/> when no content was written.</param>
-    /// <param name="reconciliation">The reconciliation output whose ledger, gaps, and diagnostics are rendered. Must not be null.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>A task that completes when the summary has been written.</returns>
     /// <exception cref="ArgumentNullException">Thrown when any required argument is <see langword="null"/>.</exception>
@@ -51,15 +50,13 @@ public static class SummaryWriter
     /// </remarks>
     public static async ValueTask WriteAsync(
         ScratchFolder folder, ExtractionSink sink, ExtractionReport report,
-        ContentWriteResult? content, ReconciliationResult reconciliation, CancellationToken cancellationToken)
+        ContentWriteResult? content, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(folder);
         ArgumentNullException.ThrowIfNull(sink);
         ArgumentNullException.ThrowIfNull(report);
-        ArgumentNullException.ThrowIfNull(reconciliation);
 
         var builder = new StringBuilder();
-        var ledger = reconciliation.Ledger;
 
         // Emit the fixed sections in their fixed order so the shape never varies
         AppendTitleAndHeader(builder, folder, report, sink, content);
@@ -67,11 +64,9 @@ public static class SummaryWriter
         AppendBackend(builder, report);
         AppendEnvironment(builder, report.Environment);
         AppendDocumentMetadata(builder, sink.DocumentMetadata);
-        AppendLayout(builder, ledger);
+        AppendLayout(builder, sink, content);
         AppendWhatWasExtracted(builder, sink, content, report.DetectedFormat.Format.Id);
-        AppendWhatWasNotExtracted(builder, reconciliation.Gaps);
-        AppendCompleteness(builder, ledger);
-        AppendDiagnostics(builder, reconciliation.Diagnostics);
+        AppendNotes(builder, sink.Notes);
 
         await folder.WriteTextAsync(SummaryFileName, builder.ToString(), cancellationToken).ConfigureAwait(false);
     }
@@ -308,8 +303,8 @@ public static class SummaryWriter
     /// </remarks>
     private static void AppendFailure(StringBuilder builder, ExtractionReport report)
     {
-        // Only a failed outcome carries a failure block
-        if (report.Outcome != ExtractionOutcome.Failed || report.Failure is null)
+        // Only an unreadable outcome carries a failure block
+        if (report.Outcome != ExtractionOutcome.Unreadable || report.Failure is null)
         {
             return;
         }
@@ -320,37 +315,28 @@ public static class SummaryWriter
     }
 
     /// <summary>
-    ///     Appends the backend block naming the selected extractor and why it was chosen.
+    ///     Appends the backend block naming the selected extractor.
     /// </summary>
     /// <param name="builder">The buffer to append to.</param>
     /// <param name="report">The engine-side facts for the selection.</param>
     /// <remarks>
-    ///     Names the backend the manifest also records, which the contract verifier cross-checks; when
-    ///     no backend was selected it says so and points at the failure block.
+    ///     Names the backend the manifest also records; when no backend was selected it says so and
+    ///     points at the failure block.
     /// </remarks>
     private static void AppendBackend(StringBuilder builder, ExtractionReport report)
     {
         AppendHeader(builder, "Backend");
 
-        var selected = report.Selection.Selected;
+        var selected = report.SelectedExtractor;
         if (selected is null)
         {
             builder.Append("  No backend was selected. See \"Failure\" for the reason.\n\n");
             return;
         }
 
-        // Name the backend, its fidelity, and a plain-language reason it won
-        var modeNote = report.Selection.Mode == SelectionMode.CallerOverride
-            ? "[selected by caller override]"
-            : "[selected automatically]";
-        var satisfied = report.Selection.SatisfiedCapabilities.CountFlags();
-        var required = report.Selection.RequiredCapabilities.CountFlags();
+        // Name the backend that ran; selection is by format and page-rendering preference only
         builder.Append("  Selected  : ").Append(selected.Id).Append(" - ").Append(selected.DisplayName)
-            .Append("      ").Append(modeNote).Append('\n');
-        builder.Append("  Fidelity  : ").Append(HumanizeFidelity(report.ExtractorFidelity)).Append('\n');
-        builder.Append("  Why       : satisfies ").Append(satisfied.ToString(CultureInfo.InvariantCulture))
-            .Append(" of ").Append(required.ToString(CultureInfo.InvariantCulture))
-            .Append(" requested capabilities.\n\n");
+            .Append('\n').Append('\n');
     }
 
     /// <summary>
@@ -457,22 +443,37 @@ public static class SummaryWriter
     ///     Appends the layout block listing the standard artifacts and their presence.
     /// </summary>
     /// <param name="builder">The buffer to append to.</param>
-    /// <param name="ledger">The completeness ledger.</param>
+    /// <param name="sink">The sink holding the recorded images and pages.</param>
+    /// <param name="content">The content-write result, or <see langword="null"/> when no content was written.</param>
     /// <remarks>
-    ///     Every standard artifact is listed with a short presence phrase, so an absent folder is
-    ///     always accompanied here by an explicit statement rather than silence.
+    ///     Every standard artifact is listed with a short presence phrase (a count for the resource
+    ///     folders), so an absent folder is always accompanied here by an explicit statement rather
+    ///     than silence. The counts are the plain facts of what was written; there is no completeness
+    ///     grade.
     /// </remarks>
-    private static void AppendLayout(StringBuilder builder, ArtifactLedger ledger)
+    private static void AppendLayout(StringBuilder builder, ExtractionSink sink, ContentWriteResult? content)
     {
         AppendHeader(builder, "Layout");
         builder.Append("  summary.txt          this file\n");
         builder.Append("  manifest.json        machine-readable form of this summary\n");
         builder.Append("  metadata.json        what the document asserts about itself\n");
-        builder.Append("  content.md           ").Append(ContentLayoutPhrase(ledger.Content)).Append('\n');
-        builder.Append("  images/              ").Append(FolderLayoutPhrase(ledger.Images)).Append('\n');
-        builder.Append("  pages/               ").Append(FolderLayoutPhrase(ledger.Pages)).Append('\n');
+        builder.Append("  content.md           ")
+            .Append(content is { ContentPresent: true } ? "PRESENT" : "not present").Append('\n');
+        builder.Append("  images/              ").Append(FolderCountPhrase(sink.Images.Count, "extracted")).Append('\n');
+        builder.Append("  pages/               ").Append(FolderCountPhrase(sink.Pages.Count, "rendered")).Append('\n');
         builder.Append('\n');
     }
+
+    /// <summary>
+    ///     Produces the presence phrase for a resource folder from its written count.
+    /// </summary>
+    /// <param name="count">The number of files written into the folder.</param>
+    /// <param name="verb">The past participle describing what was done (for example <c>extracted</c>).</param>
+    /// <returns>A short presence phrase.</returns>
+    /// <remarks>States the plain count; a folder with nothing written reads as "not present". Pure.</remarks>
+    private static string FolderCountPhrase(int count, string verb) => count > 0
+        ? $"PRESENT - {count.ToString(CultureInfo.InvariantCulture)} {verb}"
+        : "not present - none were written";
 
     /// <summary>
     ///     Appends the document-metadata block, inlining the author and modified date and naming
@@ -744,95 +745,31 @@ public static class SummaryWriter
     }
 
     /// <summary>
-    ///     Appends the block enumerating every gap, or a note when there are none.
+    ///     Appends the notes block listing steps DocDown attempted but could not complete.
     /// </summary>
     /// <param name="builder">The buffer to append to.</param>
-    /// <param name="gaps">The reconciled gaps.</param>
+    /// <param name="notes">The recorded notes in emission order.</param>
     /// <remarks>
-    ///     Each gap is rendered with its identifier, target, scope headline, and wrapped reason,
-    ///     impact, remedy, and affected items — the heart of the honesty guarantee.
+    ///     Each note is one plain-language fact about the extraction — for example that page rendering
+    ///     was requested but no renderer was available. When there are none the block states so in
+    ///     words, keeping the section shape stable. These are facts about the extraction only, never
+    ///     a grade of the document; an absence of content the document does not contain is described
+    ///     by the inventory above, not here.
     /// </remarks>
-    private static void AppendWhatWasNotExtracted(StringBuilder builder, IReadOnlyList<ExtractionGap> gaps)
+    private static void AppendNotes(StringBuilder builder, IReadOnlyList<ExtractionNote> notes)
     {
-        AppendHeader(builder, "What was NOT extracted");
+        AppendHeader(builder, "Could not read");
 
-        // An empty gap list is stated in words rather than left blank
-        if (gaps.Count == 0)
+        // An empty note list is stated in words rather than left blank
+        if (notes.Count == 0)
         {
-            builder.Append("  No gaps: everything requested was extracted.\n\n");
+            builder.Append("  Nothing was left incomplete.\n");
             return;
         }
 
-        foreach (var gap in gaps)
+        foreach (var note in notes)
         {
-            builder.Append("  [").Append(gap.Id).Append("] ").Append(gap.Target)
-                .Append(" -- ").Append(ScopeHeadline(gap.Scope)).Append('\n');
-            AppendWrapped(builder, "          Reason : ", gap.Reason);
-            if (!string.IsNullOrWhiteSpace(gap.Impact))
-            {
-                AppendWrapped(builder, "          Impact : ", gap.Impact);
-            }
-
-            if (!string.IsNullOrWhiteSpace(gap.Remedy))
-            {
-                AppendWrapped(builder, "          Remedy : ", gap.Remedy);
-            }
-
-            if (gap.AffectedItems is { Count: > 0 })
-            {
-                AppendWrapped(builder, "          Affected: ", string.Join(", ", gap.AffectedItems));
-            }
-
-            builder.Append('\n');
-        }
-    }
-
-    /// <summary>
-    ///     Appends the completeness block reconciling each artifact and the no-unexplained-gaps line.
-    /// </summary>
-    /// <param name="builder">The buffer to append to.</param>
-    /// <param name="ledger">The completeness ledger.</param>
-    /// <remarks>
-    ///     The closing literal line is the human form of the reconciliation invariant; because Core
-    ///     synthesizes a gap for any unexplained absence, it can always be stated truthfully.
-    /// </remarks>
-    private static void AppendCompleteness(StringBuilder builder, ArtifactLedger ledger)
-    {
-        AppendHeader(builder, "Completeness");
-        builder.Append("  content.md : ").Append(ContentCompletenessPhrase(ledger.Content)).Append('\n');
-        builder.Append("  images/    : ").Append(FolderCompletenessPhrase(ledger.Images)).Append('\n');
-        builder.Append("  pages/     : ").Append(FolderCompletenessPhrase(ledger.Pages)).Append('\n');
-        builder.Append("  Every absence above is explained by a numbered gap. There are no unexplained gaps.\n\n");
-    }
-
-    /// <summary>
-    ///     Appends the diagnostics block with a dynamic header counting warnings and errors.
-    /// </summary>
-    /// <param name="builder">The buffer to append to.</param>
-    /// <param name="diagnostics">The reconciled diagnostics.</param>
-    /// <remarks>
-    ///     The header states the warning and error counts so the reader gauges severity at a glance;
-    ///     an empty stream is stated explicitly rather than omitted.
-    /// </remarks>
-    private static void AppendDiagnostics(StringBuilder builder, IReadOnlyList<ExtractionDiagnostic> diagnostics)
-    {
-        // Count by severity so the header can summarize the stream
-        var warnings = diagnostics.Count(diagnostic => diagnostic.Severity == DiagnosticSeverity.Warning);
-        var errors = diagnostics.Count(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
-
-        var header = $"Diagnostics ({warnings.ToString(CultureInfo.InvariantCulture)} warnings, {errors.ToString(CultureInfo.InvariantCulture)} errors)";
-        AppendHeader(builder, header);
-
-        if (diagnostics.Count == 0)
-        {
-            builder.Append("  No diagnostics were emitted.\n");
-            return;
-        }
-
-        foreach (var diagnostic in diagnostics)
-        {
-            var location = string.IsNullOrWhiteSpace(diagnostic.Location) ? string.Empty : diagnostic.Location + ": ";
-            AppendWrapped(builder, $"  [{diagnostic.Code}] ", location + diagnostic.Message);
+            AppendWrapped(builder, "  - ", note.Message);
         }
     }
 
@@ -909,107 +846,12 @@ public static class SummaryWriter
     /// </summary>
     /// <param name="outcome">The extraction outcome.</param>
     /// <returns>The status phrase, including a pointer to the relevant section.</returns>
-    /// <remarks>Degraded and failed phrases direct the reader to where the detail lives. Pure.</remarks>
+    /// <remarks>An unreadable phrase directs the reader to the failure block. Pure.</remarks>
     private static string StatusLine(ExtractionOutcome outcome) => outcome switch
     {
-        ExtractionOutcome.Succeeded => "SUCCEEDED  - all requested content was extracted.",
-        ExtractionOutcome.Degraded => "DEGRADED  - this extraction is INCOMPLETE; see \"What was NOT extracted\"",
-        ExtractionOutcome.Failed => "FAILED  - extraction did not complete; see \"Failure\"",
+        ExtractionOutcome.Produced => "PRODUCED  - the standard output layout was written.",
+        ExtractionOutcome.Unreadable => "UNREADABLE  - no output could be produced; see \"Failure\"",
         _ => outcome.ToString()
-    };
-
-    /// <summary>
-    ///     Produces the layout phrase for the content document from its ledger entry.
-    /// </summary>
-    /// <param name="entry">The content ledger entry.</param>
-    /// <returns>A short presence phrase.</returns>
-    /// <remarks>Directs the reader to the gaps section for a partial or absent document. Pure.</remarks>
-    private static string ContentLayoutPhrase(ArtifactEntry entry) => entry.Status switch
-    {
-        ArtifactStatus.Present => "PRESENT",
-        ArtifactStatus.Partial => "PRESENT but PARTIAL - see gaps below",
-        _ => "ABSENT - see gaps below"
-    };
-
-    /// <summary>
-    ///     Produces the layout phrase for a folder artifact from its ledger entry.
-    /// </summary>
-    /// <param name="entry">The folder ledger entry.</param>
-    /// <returns>A short presence phrase including counts.</returns>
-    /// <remarks>
-    ///     Distinguishes a genuine shortfall (absent with a gap) from an empty-but-expected result
-    ///     (present, nothing found) so the phrase never misleads. Pure.
-    /// </remarks>
-    private static string FolderLayoutPhrase(ArtifactEntry entry)
-    {
-        var obtained = entry.Obtained ?? 0;
-        var found = entry.Found ?? 0;
-        return entry.Status switch
-        {
-            ArtifactStatus.Partial => $"PRESENT but PARTIAL - {obtained.ToString(CultureInfo.InvariantCulture)} of {found.ToString(CultureInfo.InvariantCulture)}",
-            ArtifactStatus.Absent => "ABSENT - see gaps below",
-            _ => obtained > 0
-                ? $"PRESENT - {obtained.ToString(CultureInfo.InvariantCulture)} extracted"
-                : "not present - none were found"
-        };
-    }
-
-    /// <summary>
-    ///     Produces the completeness phrase for the content document from its ledger entry.
-    /// </summary>
-    /// <param name="entry">The content ledger entry.</param>
-    /// <returns>The status word.</returns>
-    /// <remarks>
-    ///     A single word here because the counts are folder-specific. Uses completeness vocabulary
-    ///     (<c>COMPLETE</c>/<c>PARTIAL</c>/<c>MISSING</c>) that is disjoint from the Layout section's
-    ///     presence vocabulary (<c>PRESENT</c>/<c>not present</c>/<c>ABSENT</c>), so no single word
-    ///     describes both on-disk presence and completeness. Pure.
-    /// </remarks>
-    private static string ContentCompletenessPhrase(ArtifactEntry entry) => entry.Status switch
-    {
-        ArtifactStatus.Present => "COMPLETE",
-        ArtifactStatus.Partial => "PARTIAL",
-        _ => "MISSING"
-    };
-
-    /// <summary>
-    ///     Produces the completeness phrase for a folder artifact with its counts.
-    /// </summary>
-    /// <param name="entry">The folder ledger entry.</param>
-    /// <returns>The status word and an obtained-of-found count.</returns>
-    /// <remarks>
-    ///     Pairs the status with the precise counts so partial success is unambiguous. Uses
-    ///     completeness vocabulary (<c>COMPLETE</c>/<c>PARTIAL</c>/<c>MISSING</c>) that is disjoint
-    ///     from the Layout section's presence vocabulary, so an empty-but-expected folder reads
-    ///     <c>COMPLETE (0 of 0)</c> here while Layout says <c>not present</c> without contradiction.
-    ///     Pure.
-    /// </remarks>
-    private static string FolderCompletenessPhrase(ArtifactEntry entry)
-    {
-        var obtained = (entry.Obtained ?? 0).ToString(CultureInfo.InvariantCulture);
-        var found = (entry.Found ?? 0).ToString(CultureInfo.InvariantCulture);
-        var word = entry.Status switch
-        {
-            ArtifactStatus.Present => "COMPLETE",
-            ArtifactStatus.Partial => "PARTIAL",
-            _ => "MISSING"
-        };
-        return $"{word}   ({obtained} of {found})";
-    }
-
-    /// <summary>
-    ///     Produces the scope headline used at the top of a gap entry.
-    /// </summary>
-    /// <param name="scope">The gap scope.</param>
-    /// <returns>An upper-case headline phrase.</returns>
-    /// <remarks>Upper-case so the reader's eye lands on the nature of each absence. Pure.</remarks>
-    private static string ScopeHeadline(GapScope scope) => scope switch
-    {
-        GapScope.NotAttempted => "NOT ATTEMPTED",
-        GapScope.Unavailable => "UNAVAILABLE",
-        GapScope.PartiallyExtracted => "PARTIALLY EXTRACTED",
-        GapScope.Failed => "FAILED",
-        _ => scope.ToString()
     };
 
     /// <summary>
@@ -1024,15 +866,6 @@ public static class SummaryWriter
         false => "  (NOT available)",
         _ => string.Empty
     };
-
-    /// <summary>
-    ///     Humanizes a camelCase fidelity descriptor for display.
-    /// </summary>
-    /// <param name="fidelity">The fidelity descriptor (for example <c>bestEffort</c>).</param>
-    /// <returns>A human-friendly phrase.</returns>
-    /// <remarks>Maps the common value and otherwise returns the descriptor unchanged. Pure.</remarks>
-    private static string HumanizeFidelity(string fidelity) =>
-        string.Equals(fidelity, "bestEffort", StringComparison.Ordinal) ? "best-effort" : fidelity;
 
     /// <summary>
     ///     Formats a timestamp as ISO-8601 UTC with second precision.

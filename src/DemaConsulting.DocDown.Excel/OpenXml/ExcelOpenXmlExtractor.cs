@@ -17,21 +17,19 @@ namespace DocDown.Excel.OpenXml;
 ///         requirement quotations, pasted transcripts, exact numbers, and the formulas that produced
 ///         them, and its worksheets may also carry embedded pictures. This backend preserves cell
 ///         values verbatim at full length, keeps formulas alongside their computed values, cites
-///         every fact by sheet and cell address, and extracts the workbook's embedded images through
-///         the sink. It declares <see cref="ExtractorCapabilities.Text"/>,
-///         <see cref="ExtractorCapabilities.EmbeddedImages"/>,
-///         <see cref="ExtractorCapabilities.DocumentStructure"/>, and
-///         <see cref="ExtractorCapabilities.DocumentMetadata"/> and pointedly not
-///         <see cref="ExtractorCapabilities.RenderedPages"/>: a workbook has no page grid to
-///         rasterize, so page rendering is not applicable rather than merely unavailable, and a
-///         page request against it is honored with silence.
+///         every fact by sheet and cell address, extracts the workbook's embedded images through
+///         the sink, and records inventory counts and plain-language notes for any attempted chart
+///         or image step it could not complete. A workbook has no page grid to rasterize, so page
+///         rendering is not applicable rather than merely unavailable, and a page request against
+///         it is honored with silence.
 ///     </para>
 ///     <para>
 ///         Because nothing about this backend is environment-dependent — no native binary, no
-///         external application — <see cref="ProbeAvailability"/> is unconditional and performs no
-///         I/O. Adverse workbooks are not translated into results here: Core catches any exception
-///         and converts it into a structured failure with the full layout still written. Instances
-///         hold no per-extraction state and are safe to register once and reuse.
+///         external application — <see cref="ProbeAvailability"/> is unconditional, performs no
+///         I/O, and reports an available extractor that does not render pages. Adverse workbooks are
+///         not translated into results here: Core catches any exception and converts it into a
+///         structured unreadable result with the full layout still written where possible.
+///         Instances hold no per-extraction state and are safe to register once and reuse.
 ///     </para>
 /// </remarks>
 public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
@@ -59,11 +57,6 @@ public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     public IReadOnlyCollection<CoreFormat> SupportedFormats => [CoreFormat.Xlsx];
 
     /// <inheritdoc />
-    public ExtractorCapabilities Capabilities =>
-        ExtractorCapabilities.Text | ExtractorCapabilities.EmbeddedImages
-        | ExtractorCapabilities.DocumentMetadata | ExtractorCapabilities.DocumentStructure;
-
-    /// <inheritdoc />
     public int Priority => 10;
 
     /// <inheritdoc />
@@ -76,11 +69,11 @@ public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
 
     /// <inheritdoc />
     /// <remarks>
-    ///     Always available, with the full declared capability set. There is nothing to probe: the
-    ///     Open XML SDK is a managed assembly that ships inside this package. Performs no I/O and
-    ///     cannot throw.
+    ///     Always available, and never reports rendered pages. There is nothing to probe: the Open
+    ///     XML SDK is a managed assembly that ships inside this package, and a spreadsheet has no
+    ///     page grid to render in the first place. Performs no I/O and cannot throw.
     /// </remarks>
-    public ExtractorAvailability ProbeAvailability() => ExtractorAvailability.Available(Capabilities);
+    public ExtractorAvailability ProbeAvailability() => ExtractorAvailability.Available();
 
     /// <inheritdoc />
     public async ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context)
@@ -105,9 +98,9 @@ public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
         using var stream = new MemoryStream(bytes, writable: false);
         var model = ExcelOpenXmlReader.Read(stream);
 
-        var degraded = await ExcelContentEmitter.EmitAsync(sink, context.Options, model, cancellationToken)
+        await ExcelContentEmitter.EmitAsync(sink, context.Options, model, cancellationToken)
             .ConfigureAwait(false);
-        return degraded ? ExtractionOutcome.Degraded : ExtractionOutcome.Succeeded;
+        return ExtractionOutcome.Produced;
     }
 
     /// <inheritdoc />
@@ -121,7 +114,7 @@ public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     [
         new SelfTestCase("excel.openxml.parseRoundTrip", Id, RunParseRoundTrip),
         new SelfTestCase("excel.pageRendering", Id, static _ => SelfTestResult.Skipped(
-            "This extractor does not provide the renderedPages capability; a workbook is non-paginated, so page rendering does not apply."))
+            "This extractor does not render pages; a workbook is non-paginated, so page rendering does not apply."))
     ];
 
     /// <summary>

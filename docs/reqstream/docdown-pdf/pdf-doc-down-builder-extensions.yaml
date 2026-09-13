@@ -1,22 +1,28 @@
 ---
 # Software Unit Requirements for PdfDocDownBuilderExtensions
 #
-# PdfDocDownBuilderExtensions is the one visible edge from a host to this package: the
-# explicit, reflection-free call that adds the PDF backend to a DocDown builder.
+# PdfDocDownBuilderExtensions is the one visible edge from a host to this package: the explicit,
+# reflection-free call that adds the managed PDF backend to a DocDown builder.
+#
+# SUPERSEDED REQUIREMENT: DocDownPdf-PdfDocDownBuilderExtensions-RegistersExtractor
+# required the registration seam to expose removed capability-declaration behavior. It is
+# superseded, not satisfied, because DocDown now reports what it extracted and where and makes no
+# acceptability judgment; the managed PDF backend no longer publishes capability data here. The
+# replacement is DocDownPdf-PdfDocDownBuilderExtensions-RegistersSupportedPdfExtractor.
 
 sections:
   - title: DocDownPdf Requirements
     sections:
       - title: PdfDocDownBuilderExtensions Requirements
         requirements:
-          - id: DocDownPdf-PdfDocDownBuilderExtensions-RegistersExtractor
+          - id: DocDownPdf-PdfDocDownBuilderExtensions-RegistersSupportedPdfExtractor
             title: >-
-              PdfDocDownBuilderExtensions shall add exactly one PDF extractor, declaring the PDF format
-              and its supported capabilities, to the builder it is called on.
+              PdfDocDownBuilderExtensions shall add exactly one PDF extractor whose descriptor reports
+              the managed PDF identity, format, and priority surface.
             justification: |
-              A host builds an engine expecting the backends it asked for and no others. Adding
-              exactly one, with the declared format and capabilities the engine ranks on, is what
-              makes the resulting engine's behavior predictable from the host's own code.
+              A host builds an engine expecting the backend it asked for and no others. Adding exactly
+              one extractor with a stable observable descriptor is what makes the resulting engine's
+              behavior predictable from the host's own code.
             tests:
               - PdfDocDownBuilderExtensions_AddPdf_EmptyBuilder_RegistersTheSinglePdfExtractor
 

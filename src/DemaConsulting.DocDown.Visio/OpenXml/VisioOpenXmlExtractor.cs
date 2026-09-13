@@ -6,7 +6,7 @@ namespace DocDown.Visio.OpenXml;
 
 /// <summary>
 ///     The Visio Open Packaging backend: extracts every page's name, shape text, and — the headline
-///     capability — the directed connector topology from a <c>.vsdx</c> or <c>.vsdm</c> into the
+///     extraction — the directed connector topology from a <c>.vsdx</c> or <c>.vsdm</c> into the
 ///     DocDown output contract, with no Visio installation present.
 /// </summary>
 /// <remarks>
@@ -16,20 +16,17 @@ namespace DocDown.Visio.OpenXml;
 ///         list of disconnected strings is not a schematic, so this backend resolves each connector
 ///         into a real directed edge (<c>Inlet Tank → Transfer Pump</c>) and surfaces every page name.
 ///         It is 100% managed — <c>DocumentFormat.OpenXml</c> has zero Visio types, so it reads the
-///         package directly with <see cref="System.IO.Packaging"/> — and declares
-///         <see cref="ExtractorCapabilities.Text"/>, <see cref="ExtractorCapabilities.EmbeddedImages"/>,
-///         <see cref="ExtractorCapabilities.DocumentStructure"/>,
-///         and <see cref="ExtractorCapabilities.DocumentMetadata"/> and pointedly not
-///         <see cref="ExtractorCapabilities.RenderedPages"/>: the spatial arrangement that only a
-///         render can recover is delivered by the separate COM backend when Microsoft Visio is
-///         available.
+///         package directly with <see cref="System.IO.Packaging"/> — and it deliberately stops at the
+///         logical document structure: page names, shape text, connector topology, embedded images,
+///         and document metadata. The spatial arrangement that only a render can recover is delivered
+///         by the separate COM backend when Microsoft Visio is available.
 ///     </para>
 ///     <para>
 ///         Because nothing about this backend is environment-dependent, <see cref="ProbeAvailability"/>
-///         is unconditional and performs no I/O. Adverse drawings are not translated into results
-///         here: Core catches any exception and converts it into a structured failure with the full
-///         layout still written. Instances hold no per-extraction state and are safe to register once
-///         and reuse.
+///         is unconditional and performs no I/O, reporting that this backend is available but does
+///         not render pages. Adverse drawings are not translated into results here: Core catches any
+///         exception and converts it into a structured failure with the full layout still written.
+///         Instances hold no per-extraction state and are safe to register once and reuse.
 ///     </para>
 /// </remarks>
 public sealed class VisioOpenXmlExtractor : IDocumentExtractor, ISelfValidating
@@ -57,20 +54,15 @@ public sealed class VisioOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     public IReadOnlyCollection<CoreFormat> SupportedFormats => [CoreFormat.Vsdx, CoreFormat.Vsdm];
 
     /// <inheritdoc />
-    public ExtractorCapabilities Capabilities =>
-        ExtractorCapabilities.Text | ExtractorCapabilities.EmbeddedImages
-        | ExtractorCapabilities.DocumentMetadata | ExtractorCapabilities.DocumentStructure;
-
-    /// <inheritdoc />
     public int Priority => 10;
 
     /// <inheritdoc />
     /// <remarks>
-    ///     Always available, with the full declared capability set. <see cref="System.IO.Packaging"/>
-    ///     is a managed assembly, so if this type could be constructed the extractor can run. Performs
-    ///     no I/O and cannot throw.
+    ///     Always available, without rendered-page support. <see cref="System.IO.Packaging"/> is a
+    ///     managed assembly, so if this type could be constructed the extractor can run. Performs no
+    ///     I/O and cannot throw.
     /// </remarks>
-    public ExtractorAvailability ProbeAvailability() => ExtractorAvailability.Available(Capabilities);
+    public ExtractorAvailability ProbeAvailability() => ExtractorAvailability.Available();
 
     /// <inheritdoc />
     public async ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context)
@@ -94,9 +86,8 @@ public sealed class VisioOpenXmlExtractor : IDocumentExtractor, ISelfValidating
         using var stream = new MemoryStream(bytes, writable: false);
         var model = VisioPackageReader.Read(stream);
 
-        var degraded = await VisioContentEmitter.EmitAsync(sink, context.Options, model, cancellationToken)
-            .ConfigureAwait(false);
-        return degraded ? ExtractionOutcome.Degraded : ExtractionOutcome.Succeeded;
+        await VisioContentEmitter.EmitAsync(sink, context.Options, model, cancellationToken).ConfigureAwait(false);
+        return ExtractionOutcome.Produced;
     }
 
     /// <inheritdoc />
@@ -109,7 +100,7 @@ public sealed class VisioOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     [
         new SelfTestCase("visio.openxml.parseRoundTrip", Id, RunParseRoundTrip),
         new SelfTestCase("visio.pageRendering", Id, static _ => SelfTestResult.Skipped(
-            "This extractor does not provide the renderedPages capability; page rendering needs the COM backend."))
+            "This extractor does not render pages; page rendering needs the COM backend."))
     ];
 
     /// <summary>

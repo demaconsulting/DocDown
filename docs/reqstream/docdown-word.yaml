@@ -1,11 +1,57 @@
 ---
 # Software System Requirements for DocDown.Word
 #
-# These requirements describe the externally visible behavior of the Word extraction
-# package from the perspective of a host that registers it, without specifying
-# implementation details. Each decomposes into subsystem and unit requirements linked
-# below via children, and is proven by system-level tests. DocDown.Word has two
-# subsystems (Markdown, OpenXml) and one direct unit (WordDocDownBuilderExtensions).
+# These requirements describe the externally visible behavior of the Word extraction package from
+# the perspective of a host that registers it, without specifying implementation details. Each
+# decomposes into subsystem and unit requirements linked below via children, and is proven by
+# system-level tests plus focused subsystem and unit tests where appropriate.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-StructuralFidelity
+# required merged or nested table cells to be reported as a counted structural gap. It is
+# superseded (not satisfied) by DocDownWord-TableStructureNotes because the governing principle now
+# allows only the content inventory and short extraction notes; table flattening is an incomplete
+# step DocDown attempted, so it is reported as a plain note rather than a gap.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-TrackedChanges
+# required the accepted-revisions view to be accompanied by commentary that a view was chosen. It
+# is superseded (not satisfied) by DocDownWord-TrackedChangesAcceptedView because the retained
+# behavior is the accepted view itself; the extra commentary was removed under the governing
+# principle.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-VectorImages
+# required EMF or WMF images to be written with a caveat. It is superseded (not satisfied) by
+# DocDownWord-VectorImagesWrittenAsIs because the package now reports only what it extracted; a
+# vector image written unchanged needs no extra note.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-ImageOutput
+# required force-PNG requests to be reported as counted gaps. It is superseded (not satisfied) by
+# DocDownWord-ImageOutputNote because an uncompleted re-encoding step is now expressed as a short
+# extraction note.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-DeclaredCapabilities
+# required a capability declaration for the managed backend. It is superseded (not satisfied) by
+# DocDownWord-ManagedAvailability because the backend now reports availability through
+# ExtractorAvailability rather than through a capability contract.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-NoPageRendering
+# required page-rendering absence to be expressed through the removed capability and gap machinery.
+# It is superseded (not satisfied) by DocDownWord-ManagedAvailability because the remaining
+# externally visible behavior is that the backend reports itself available for `.docx` extraction
+# while stating that page rendering is not provided.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-EmptyDocument
+# required an empty document to degrade with an explicit gap. It is superseded (not satisfied) by
+# DocDownWord-EmptyDocumentInventory because an empty document is now reported as produced output
+# with a zero-count looked-for inventory feature.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-DiagnosticCodeStability
+# required a stable package-local diagnostic-code table. It is superseded without replacement
+# because the backend-local Word diagnostic-code machinery was removed.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-LegacyFormatRefusal
+# required the legacy-format unreadable result to carry remedy-oriented prose. It is superseded
+# (not satisfied) by DocDownWord-LegacyFormatUnreadable because remedy and impact reporting were
+# removed; the remaining behavior is a plain unsupported-format explanation.
 
 sections:
   - title: DocDownWord Requirements
@@ -18,8 +64,8 @@ sections:
         justification: |
           A host must be able to read its own dependency graph off its own code. Registration that
           happens because a package is present on disk makes the set of active backends a deployment
-          accident rather than a decision, which cannot be audited; one explicit call keeps the edge
-          from host to backend visible and reviewable.
+          accident rather than a decision, which cannot be audited; one explicit call keeps the
+          edge from host to backend visible and reviewable.
         children:
           - DocDownWord-WordDocDownBuilderExtensions-RegistersOpenXmlBackend
           - DocDownWord-WordDocDownBuilderExtensions-ReturnsBuilderForChaining
@@ -29,15 +75,15 @@ sections:
 
       - id: DocDownWord-Extraction
         title: >-
-          The system shall extract a Word document's text, structure, images, and metadata into the
-          DocDown output contract.
+          The system shall extract a Word document's text, structure, images, comments, and
+          metadata into the DocDown output contract.
         tags: [system]
         justification: |
           The package exists to turn a Word document into the invariant DocDown output layout so a
-          downstream agent sees the same four artifacts it sees for every other format. Reading the
-          structure the document already carries — styled paragraphs, real tables, embedded image
-          parts, and the document information — is what makes the Word output as useful as the format
-          allows rather than a flattened approximation.
+          downstream agent sees the same core artifact set it sees for every other format. Reading
+          the structure the document already carries — styled paragraphs, real tables, embedded
+          image parts, reviewer comments, and document information — is what makes the Word output
+          materially more useful than a flattened approximation.
         children:
           - DocDownWord-OpenXml-Extraction
           - DocDownWord-OpenXml-Reading
@@ -49,33 +95,30 @@ sections:
 
       - id: DocDownWord-Tables
         title: >-
-          The system shall render a Word table as a GitHub-Flavored-Markdown table, stating any
-          structure the format cannot express.
+          The system shall render a Word table as a GitHub-Flavored-Markdown table.
         tags: [system]
         justification: |
           Tables are the headline advantage of reading the Word model rather than a rasterized or
-          flattened rendering: Open XML preserves a genuine grid where a PDF lost it. Emitting a real
-          GFM table — and stating plainly where a merged or nested cell had to be flattened, because
-          GFM cannot express it — keeps the table both usable and honest.
+          flattened rendering: Open XML preserves a genuine grid where a PDF lost it. Emitting a
+          real GFM table keeps the extracted table readable and machine-consumable.
         children:
           - DocDownWord-Markdown-TableRendering
         tests:
           - WordTableWriter_Write_FullTable_ProducesGfmWithHeaderAndAlignment
 
-      - id: DocDownWord-StructuralFidelity
+      - id: DocDownWord-TableStructureNotes
         title: >-
-          The system shall report every flattened merged or nested table cell as a counted,
-          reason-bearing structural gap.
+          The system shall report merged or nested table structure it could not preserve in
+          markdown as a short extraction note.
         tags: [system]
         justification: |
-          GitHub-Flavored Markdown cannot represent a merged span or a nested table, so any such cell
-          is necessarily flattened. Counting each flattened cell and naming the reason turns a silent
-          misrepresentation into a fact the consumer can weigh, rather than letting the output imply a
-          fidelity it does not have.
+          GitHub-Flavored Markdown cannot express a merged span or nested table. The extracted table
+          should still be delivered, but the incomplete preservation must be stated as a fact about
+          the attempted step rather than left silent.
         children:
-          - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsStructuralGap
+          - DocDownWord-Markdown-WordContentEmitter-ReportsFlattenedTableNote
         tests:
-          - WordOpenXmlExtractor_Extract_MergedCells_ReportsCountedStructuralGap
+          - WordOpenXmlExtractor_Extract_MergedCells_ReportsFlatteningNote
 
       - id: DocDownWord-DocumentControl
         title: >-
@@ -83,32 +126,44 @@ sections:
           Control heading placed after the title and before the body.
         tags: [system]
         justification: |
-          A Word document's identifying furniture — document number, revision, classification — lives
-          in its headers and footers, repeated on every page. Surfacing that content once, near the
-          top where a reader expects it, preserves the information a page-image extraction would smear
-          across every page or drop entirely.
+          A Word document's identifying furniture — document number, revision, classification, and
+          similar control text — often lives in headers and footers. Surfacing that content once,
+          near the top where a reader expects it, preserves information a page-image extraction
+          would otherwise smear across repeated pages or miss entirely.
         children:
           - DocDownWord-OpenXml-WordOpenXmlReader-BuildsDocumentControl
-          - DocDownWord-OpenXml-WordOpenXmlReader-OmitsFurnitureAsDiagnostic
+          - DocDownWord-OpenXml-WordOpenXmlReader-OmitsPageFurnitureFromDocumentControl
           - DocDownWord-OpenXml-WordOpenXmlReader-DeduplicatesHeaders
           - DocDownWord-Markdown-WordMarkdownWriter-PlacesDocumentControl
         tests:
-          - WordOpenXmlReader_Read_HeaderWithRevisionAndClassification_ProducesDocumentControlSection
+          - DocDownWord_Extract_EngineeringStyleDocx_PreservesRevisionInDocumentControl
 
-      - id: DocDownWord-TrackedChanges
+      - id: DocDownWord-TrackedChangesAcceptedView
         title: >-
-          The system shall render a document carrying tracked changes in its accepted-revisions view
-          and record that a view was chosen.
+          The system shall render tracked changes in the accepted view.
         tags: [system]
         justification: |
-          A document under revision has two readings, and extracting the markup verbatim would produce
-          neither. Rendering the accepted view — insertions kept, deletions dropped — yields the text a
-          reader would see with changes accepted, and stating that choice with a count keeps the
-          decision visible rather than implicit.
+          A document under revision has more than one possible reading. Rendering the accepted view
+          keeps inserted text, drops deleted text, and yields one coherent content flow for a
+          downstream reader.
         children:
-          - DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedRevisions
+          - DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedView
         tests:
           - WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewWithDiagnostic
+
+      - id: DocDownWord-ChartNotes
+        title: >-
+          The system shall report embedded charts whose chart parts it did not read as a short
+          extraction note.
+        tags: [system]
+        justification: |
+          A Word chart stores its plotted values in a chart part that is separate from the text walk
+          and the image walk. Without a note, a chart could disappear from the extracted content
+          without any record that DocDown attempted but did not complete that step.
+        children:
+          - DocDownWord-Markdown-WordContentEmitter-ReportsChartNote
+        tests:
+          - DocDownWord_Extract_DocxWithChart_ReportsChartNote
 
       - id: DocDownWord-EmbeddedImages
         title: >-
@@ -121,7 +176,6 @@ sections:
           consumer's view of the document complete rather than textually complete.
         children:
           - DocDownWord-OpenXml-Images
-          - DocDownWord-OpenXml-WordOpenXmlImageReader-YieldsPassthroughImages
           - DocDownWord-Markdown-WordMarkdownWriter-RendersImageLink
           - DocDown-OTS-OpenXml-Images
         tests:
@@ -129,90 +183,75 @@ sections:
 
       - id: DocDownWord-ImageProvenance
         title: >-
-          The system shall pass an embedded image's bytes through unchanged and record that the image
-          was passed through rather than re-encoded.
+          The system shall pass an embedded image's bytes through unchanged and record that the
+          image was passed through rather than re-encoded.
         tags: [system]
         justification: |
-          An Open XML image part is already a complete image file, so the honest transform is to pass
-          the bytes through unchanged. Recording that provenance — and leaving the pixel dimensions
-          unstated, because the stored extent is a display size in EMUs rather than a pixel count —
-          keeps the machine-readable record true to what was actually done.
+          An Open XML image part is already a complete image file, so the honest transform is to
+          pass the bytes through unchanged. Recording that provenance — and leaving pixel dimensions
+          unstated when the document offers only a display extent — keeps the machine-readable
+          record true to what was actually extracted.
         children:
           - DocDownWord-OpenXml-WordOpenXmlImageReader-RecordsPassthroughProvenance
         tests:
           - WordOpenXmlImageReader_Read_Png_YieldsPassthroughWithNullDimensions
 
-      - id: DocDownWord-VectorImages
+      - id: DocDownWord-VectorImagesWrittenAsIs
         title: >-
-          The system shall write an EMF or WMF vector image unchanged, with a caveat that many viewers
-          cannot render it.
+          The system shall write an EMF or WMF image in the vector format the document stored.
         tags: [system]
         justification: |
-          A vector metafile's stored bytes are a complete image file, so writing them through loses
-          nothing the document carried. Adding the readability caveat — that many viewers and image
-          libraries cannot open a metafile — is the honest complement, and mirrors the PDF package's
-          JPEG 2000 passthrough.
+          A vector metafile's stored bytes are the extracted image bytes. Writing them unchanged
+          preserves what the document carried instead of substituting a re-encoded surrogate or
+          dropping the image.
         children:
+          - DocDownWord-OpenXml-WordOpenXmlExtractor-WritesVectorImageAsIs
           - DocDownWord-OpenXml-WordOpenXmlImageReader-ReportsVectorMediaType
         tests:
-          - WordOpenXmlExtractor_Extract_VectorImage_WritesAsIsWithCaveat
+          - WordOpenXmlExtractor_Extract_VectorImage_WritesAsIs
 
-      - id: DocDownWord-ImageOutput
+      - id: DocDownWord-ImageOutputNote
         title: >-
-          The system shall explain, as a counted gap, any image it could not produce in a requested
-          PNG output form.
+          The system shall report a requested PNG image output it could not produce as a short
+          extraction note.
         tags: [system]
         justification: |
-          This package ships no imaging stack, so a request to force every image to PNG cannot be
-          honored by decoding and re-encoding. Writing the source bytes and explaining which images
-          defeated the request is more useful than either refusing the image or mislabeling its
-          format.
+          This package ships no imaging stack, so a force-PNG request cannot be completed by
+          re-encoding the source bytes. Writing the source bytes and stating the uncompleted
+          re-encoding step is more truthful than mislabeling the output or remaining silent.
         children:
-          - DocDownWord-OpenXml-WordOpenXmlExtractor-ExplainsUnhonoredForcePng
+          - DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote
         tests:
-          - WordOpenXmlExtractor_Extract_ForcePng_ExplainsUnhonoredMode
+          - WordOpenXmlExtractor_Extract_ForcePng_ReportsUnhonoredModeNote
 
-      - id: DocDownWord-DeclaredCapabilities
+      - id: DocDownWord-ManagedAvailability
         title: >-
-          The system shall declare exactly the text, embedded-image, document-metadata, and
-          document-structure capabilities for its managed backend.
+          The system shall report its managed `.docx` extractor available and shall report that page
+          rendering is not provided by that extractor.
         tags: [system]
         justification: |
-          Backend selection negotiates over declared capabilities, so a declaration that overstates
-          what a backend can deliver causes the wrong backend to be chosen and the shortfall to
-          surface only as missing output. Declaring exactly what is deliverable — and pointedly not
-          the rendered-pages capability — keeps selection honest before any work begins.
+          Backend selection needs a truthful statement of whether modern Word extraction is
+          available. Because this backend is fully managed and ships inside the package, its probe is
+          satisfied by construction; page rendering remains outside its scope and is reported
+          plainly rather than implied.
         children:
-          - DocDownWord-OpenXml-WordOpenXmlExtractor-DeclaresCapabilities
+          - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsManagedAvailability
         tests:
-          - WordOpenXmlExtractor_Descriptor_HasPriority10AndCapabilities
+          - WordOpenXmlExtractor_Descriptor_HasPriority10AndManagedAvailability
 
-      - id: DocDownWord-NoPageRendering
+      - id: DocDownWord-EmptyDocumentInventory
         title: >-
-          The system shall not declare the rendered-pages capability, and shall explain where that
-          capability lives when page rendering is requested.
+          The system shall report an empty document by a zero-count looked-for text-block inventory
+          entry and still produce normal output.
         tags: [system]
         justification: |
-          This package ships no renderer, and a caller who asked for rendered pages deserves to learn
-          why none arrived rather than to find an empty folder. Naming the class of package that
-          would provide the capability, as a statement of fact rather than an instruction, is useful
-          today and stays true if such a package is later published.
+          An empty content flow must be distinguishable from a broken extractor. Reporting zero text
+          blocks in the content inventory states that the extractor looked for text and found none,
+          without treating the document itself as a defect.
         children:
-          - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsPageRenderingGap
+          - DocDownWord-Markdown-WordContentEmitter-ReportsContentInventory
         tests:
-          - WordOpenXmlExtractor_Extract_PagesRequested_DegradesWithReasonedGap
-
-      - id: DocDownWord-EmptyDocument
-        title: The system shall degrade with an explicit gap when a document carries no extractable text.
-        tags: [system]
-        justification: |
-          An empty content document is indistinguishable from a broken extractor. Saying plainly that
-          the document carried no extractable text turns a mystery into a fact the caller can act on,
-          while the synthesized title keeps the output self-identifying.
-        children:
-          - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsEmptyDocumentGap
-        tests:
-          - WordOpenXmlExtractor_Extract_EmptyDocument_DegradesWithNoTextGap
+          - WordOpenXmlExtractor_Extract_EmptyDocument_ProducesZeroCountTextInventory
 
       - id: DocDownWord-ContentSplitting
         title: >-
@@ -220,10 +259,10 @@ sections:
           per-part output is requested.
         tags: [system]
         justification: |
-          A caller asking for per-part output wants the document broken where its own structure breaks
-          it. Splitting at every Heading 1, with the leading matter and Document Control forming the
-          first part, honors that request instead of returning a single flow the caller then has to
-          re-segment.
+          A caller asking for per-part output wants the document broken where its own structure
+          breaks it. Splitting at every Heading 1, with the leading matter and Document Control
+          forming the first part, honors that request instead of returning a single flow the caller
+          then has to re-segment.
         children:
           - DocDownWord-OpenXml-WordOpenXmlExtractor-SplitsPerPart
         tests:
@@ -231,14 +270,13 @@ sections:
 
       - id: DocDownWord-ProtectedDocument
         title: >-
-          The system shall report a structured failure, without an exception reaching the caller, when
-          a document is encrypted or password-protected.
+          The system shall report a password-protected document as unreadable without letting a raw
+          parser exception reach the caller.
         tags: [system]
         justification: |
-          Batch pipelines process documents they did not choose, and a protected document must not be
-          able to abort the run. Detecting the encrypted container and raising a structured failure —
-          which Core renders with the full output layout still written — lets the pipeline record the
-          outcome and continue.
+          Batch pipelines process documents they did not choose, and a protected document must not
+          be able to abort the run. Detecting the encrypted container and converting it into the
+          DocDown unreadable path lets the pipeline record the outcome and continue.
         children:
           - DocDownWord-OpenXml-WordOpenXmlReader-DetectsPasswordProtected
         tests:
@@ -247,13 +285,13 @@ sections:
       - id: DocDownWord-DocumentMetadata
         title: >-
           The system shall report the document's declared title and author and its producer-stated
-          page count, and report nothing where the document declares nothing.
+          page count, and shall report nothing where the document declares nothing.
         tags: [system]
         justification: |
           Downstream indexing and routing decisions are made on document metadata before any content
           is read. Reporting what the document itself declares, taking the page count only from the
-          producer's own extended-properties value rather than computing one, keeps those decisions on
-          facts rather than guesses.
+          producer's own extended-properties value rather than computing one, keeps those decisions
+          on facts rather than guesses.
         children:
           - DocDownWord-OpenXml-WordOpenXmlReader-SurfacesMetadata
           - DocDownWord-OpenXml-WordOpenXmlReader-ReportsProducerPageCount
@@ -268,39 +306,24 @@ sections:
         justification: |
           The content document is markdown, so the structure a Word document carries has to be
           projected onto markdown's own vocabulary faithfully. Rendering heading levels, ordered and
-          bulleted lists, bold, italic, and links, and escaping characters that markdown would
-          otherwise consume, keeps the rendered content both readable and unambiguous.
+          bulleted lists, emphasis, links, comments, and footnotes while escaping markdown
+          metacharacters keeps the rendered content both readable and unambiguous.
         children:
           - DocDownWord-Markdown-ModelRendering
         tests:
           - WordMarkdownWriter_Write_Headings_RendersHashLevels
 
-      - id: DocDownWord-DiagnosticCodeStability
+      - id: DocDownWord-LegacyFormatUnreadable
         title: >-
-          The system shall publish a stable, contiguous set of diagnostic codes under a distinct WORD
-          prefix.
-        tags: [system]
-        justification: |
-          A consumer that branches on a diagnostic code is relying on the code meaning the same thing
-          across releases. Pinning the code table with a test makes the numbering a contract rather
-          than an implementation detail, and the distinct WORD prefix keeps the package's codes from
-          colliding with Core's DD range or the PDF package's PDF range in any shared manifest.
-        tests:
-          - WordDiagnosticCodes_Table_MatchesPinnedContract
-
-      - id: DocDownWord-LegacyFormatRefusal
-        title: >-
-          The system shall refuse a legacy binary Word document with a structured failure whose
-          remedy promises no capability, and without an exception reaching the caller.
+          The system shall report a legacy binary Word document as unreadable with a plain
+          unsupported-format explanation.
         tags: [system]
         justification: |
           This package reads Open XML documents and nothing else, and DocDown does not support the
-          legacy binary formats at all. A caller who hands the engine a .doc therefore deserves a
-          plain statement of that fact with the full output layout still written — not an exception,
-          not a silent omission, and not a remedy pointing at a package or an environment that will
-          never deliver the capability.
+          legacy binary Office formats. A caller who hands the engine a `.doc` therefore deserves a
+          plain statement of that fact with the expected output layout still written.
         tests:
-          - DocDownWord_Extract_LegacyDoc_FailsWithUnsupportedFormatRemedy
+          - DocDownWord_Extract_LegacyDoc_IsUnreadableWithUnsupportedFormatExplanation
 
       - id: DocDownWord-Determinism
         title: >-
@@ -309,8 +332,8 @@ sections:
         tags: [system]
         justification: |
           Reproducible output is what lets a consumer diff two extractions and conclude that the
-          document changed. Pinning the summary output for representative documents against committed
-          goldens proves the extraction is deterministic rather than incidentally stable.
+          document changed. Pinning representative summary output against committed goldens proves
+          the extraction is deterministic rather than incidentally stable.
         tests:
           - WordGolden_Simple_MatchesCommittedGolden
           - WordGolden_TablesAndImages_MatchesCommittedGolden
@@ -323,8 +346,8 @@ sections:
         justification: |
           An operator needs to confirm the backend actually works where it is deployed, not merely
           that it is present. Cases the backend contributes about itself — including an honest skip
-          for the page-rendering capability it does not claim — make that confirmation available on
-          demand.
+          for page rendering because this package does not attempt it — make that confirmation
+          available on demand.
         children:
           - DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests
           - DocDown-OTS-OpenXml-DocumentCreation

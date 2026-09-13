@@ -41,7 +41,7 @@ package DocDownCore {
     }
 
     part def ExtractorAvailability {
-        doc /* Whether a backend is usable now, an optional reason, and its effective capabilities. */
+        doc /* Whether a backend is usable now, an optional reason, and whether it can render pages here. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/ExtractorAvailability.cs */
         comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
@@ -49,17 +49,8 @@ package DocDownCore {
         comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
     }
 
-    part def ExtractorCapabilities {
-        doc /* The capabilities a backend can provide, as a flags enumeration. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/ExtractorCapabilities.cs */
-        comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/extraction.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
-    }
-
     part def ExtractorDescriptor {
-        doc /* An immutable snapshot of a backend's identity and declared abilities, detached from the live instance. */
+        doc /* An immutable snapshot of a backend's identity and supported formats, detached from the live instance. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/ExtractorDescriptor.cs */
         comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
@@ -76,53 +67,8 @@ package DocDownCore {
         comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
     }
 
-    part def BackendStatus {
-        doc /* A flattened backend status for reporting via GetBackendStatus. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/BackendStatus.cs */
-        comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/extraction.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
-    }
-
-    part def SelectionMode {
-        doc /* Whether selection ran automatically or under a caller override. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/SelectionMode.cs */
-        comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/extraction.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
-    }
-
-    part def SelectionResult {
-        doc /* The selection outcome: the selected descriptor, mode, capabilities, trace, and any failure. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/SelectionResult.cs */
-        comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/extraction.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
-    }
-
-    part def CandidateOutcome {
-        doc /* The per-candidate classification produced by selection. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/CandidateOutcome.cs */
-        comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/extraction.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
-    }
-
-    part def CandidateVerdict {
-        doc /* One candidate's identifier, priority, outcome, and a human-readable detail. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/CandidateVerdict.cs */
-        comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/extraction.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
-    }
-
     part def ExtractionOutcome {
-        doc /* Whether an extraction succeeded, degraded, or failed. */
+        doc /* Whether an extraction produced the invariant output layout or the document was unreadable. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/ExtractionOutcome.cs */
         comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
@@ -130,46 +76,10 @@ package DocDownCore {
         comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
     }
 
-    part def ExtractionFailureKind {
-        doc /* Enumerates the failure kinds an extraction can report. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/ExtractionFailureKind.cs */
-        comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/extraction.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
-    }
-
     part def ExtractionFailure {
-        doc /* A structured failure: kind, code, summary, displayable explanation, candidates, and optional remedy. */
+        doc /* A plain-language failure: a one-line summary and a multi-line displayable explanation. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/ExtractionFailure.cs */
-        comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/extraction.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
-    }
-
-    part def ExtractionDiagnostic {
-        doc /* A coded, severity-tagged, optionally-located diagnostic message. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/ExtractionDiagnostic.cs */
-        comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/extraction.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
-    }
-
-    part def DiagnosticSeverity {
-        doc /* The severity of a diagnostic: Info, Warning, or Error. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/DiagnosticSeverity.cs */
-        comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/extraction.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
-    }
-
-    part def DiagnosticCodes {
-        doc /* The Core diagnostic-code constants used across the pipeline. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/DiagnosticCodes.cs */
         comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/extraction.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
@@ -185,7 +95,7 @@ package DocDownCore {
     }
 
     part def ScratchFolderMode {
-        doc /* How the scratch folder is prepared: RequireEmpty, CleanIfDocDownFolder, Overwrite, or CreateUnique. */
+        doc /* How the scratch folder is prepared: CleanIfDocDownFolder or Overwrite. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/ScratchFolderMode.cs */
         comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
@@ -267,7 +177,7 @@ package DocDownCore {
     }
 
     part def ExtractionResult {
-        doc /* The full outcome returned to the caller: outcome, output paths, selection, diagnostics, gaps, and ledger. */
+        doc /* The full outcome returned to the caller: outcome, output paths, detected format, selected extractor, environment, and notes. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/ExtractionResult.cs */
         comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
