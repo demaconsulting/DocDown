@@ -96,8 +96,8 @@ internal static class ArtifactInventory
     /// <returns>The relative, forward-slash paths of the unaccounted files, in enumeration order.</returns>
     /// <remarks>
     ///     Takes the file listing as a parameter rather than performing the walk, so the caller
-    ///     owns how enumeration failures are surfaced — the verifier reports them, the scratch
-    ///     folder refuses on them — while the accounting rule itself stays identical for both.
+    ///     owns how enumeration failures are surfaced — the scratch folder refuses on them —
+    ///     while the accounting rule itself stays identical for every caller.
     ///     Pure.
     /// </remarks>
     internal static IReadOnlyList<string> UnaccountedFiles(string root, HashSet<string> accounted, IEnumerable<string> files)

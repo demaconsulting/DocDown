@@ -232,6 +232,34 @@ public class OutputTests
     }
 
     /// <summary>
+    ///     Proves the output pipeline records each image's referring pages, the scalar alias for the
+    ///     first of them, and the template-only flag.
+    /// </summary>
+    [Fact]
+    public async Task Output_ImageReferrers_PagesAndTemplate_ManifestRecordsAliasAndFlag()
+    {
+        // Arrange: a scratch folder and a write that adds a page-referenced and a template-only image
+        using var temp = new TempScratch();
+        var scratch = Path.Combine(temp.Path, "out");
+
+        // Act: run the output pipeline
+        await RunPipelineAsync(temp, scratch, WriteImagesWithReferrers);
+
+        // Assert: the referrer set reaches the manifest and the scalar alias is its first entry
+        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        var images = document.RootElement.GetProperty("images");
+        Assert.Equal(2, images.GetArrayLength());
+        Assert.Equal(
+            [2, 5],
+            images[0].GetProperty("sourcePages").EnumerateArray().Select(element => element.GetInt32()).ToArray());
+        Assert.Equal(2, images[0].GetProperty("sourcePage").GetInt32());
+        Assert.False(images[0].GetProperty("referencedByTemplate").GetBoolean());
+
+        // Assert: the template-only image is flagged rather than given a fabricated page
+        Assert.True(images[1].GetProperty("referencedByTemplate").GetBoolean());
+    }
+
+    /// <summary>
     ///     Runs the output pipeline for a write action.
     /// </summary>
     /// <param name="temp">The owning temporary folder used to materialize a source document.</param>
@@ -334,6 +362,31 @@ public class OutputTests
             await sink.AddImageAsync(
                 two,
                 new ImageHint("chart", "image/png", Transform: ImageTransform.DecodedToPng),
+                CancellationToken.None);
+        }
+    }
+
+    /// <summary>
+    ///     Writes one image referenced by two pages and one image reached only through a template.
+    /// </summary>
+    /// <param name="sink">The sink the images are written through.</param>
+    /// <returns>A task that completes when both images have been written.</returns>
+    private static async ValueTask WriteImagesWithReferrers(IExtractionSink sink)
+    {
+        await sink.WriteContentAsync("# Document\n\nTwo images.\n", CancellationToken.None);
+        using (var referenced = new MemoryStream([12, 22, 32, 42], writable: false))
+        {
+            await sink.AddImageAsync(
+                referenced,
+                new ImageHint("figure", "image/png", SourcePages: [2, 5]),
+                CancellationToken.None);
+        }
+
+        using (var template = new MemoryStream([13, 23, 33, 43], writable: false))
+        {
+            await sink.AddImageAsync(
+                template,
+                new ImageHint("watermark", "image/png", ReferencedByTemplate: true),
                 CancellationToken.None);
         }
     }

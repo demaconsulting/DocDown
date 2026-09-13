@@ -11,12 +11,13 @@ net8.0, net9.0, and net10.0.
 
 ### Every extraction test reconciles against the filesystem
 
-Every scenario that performs an extraction ends with Core's contract verifier over the produced
-folder, which reports any disagreement between what the manifest claims and what is on disk. This is
-the highest-value assertion available to this package: it makes a dishonest extraction a test
-failure rather than a review finding, and it applies to successful and unreadable runs alike. The
-reconciliation covers the legacy `.vsd` refusal scenario, so the full-layout claim on an unreadable
-result is machine-checked alongside the successful ones.
+Every scenario that performs an extraction ends with layout assertions proving the invariant output
+folders and files are present on disk. This is the highest-value assertion available to this package:
+it makes a dishonest extraction a test failure rather than a review finding, and it applies to
+`Produced` and `Unreadable` outcomes alike. The layout assertions cover the legacy `.vsd` refusal
+scenario, so the full-layout claim on an unreadable result is machine-checked alongside the
+successful ones. Each scenario additionally asserts the extraction outcome, the inventory counts
+written into `summary.txt` and `manifest.json`, and the exact set of notes the run recorded.
 
 ### Two backends, one reader, one emitter
 
@@ -77,7 +78,8 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 
 - Every scenario below passes on every operating system and runtime in the CI matrix, with no
   unexpected exception, wrong exception type, or wrong return value.
-- Every extraction scenario ends with the contract verifier reporting zero violations.
+- Every extraction scenario produces the expected DocDown layout on disk, and the notes the run
+  records are exactly the notes the scenario expects.
 - Normal extractions return `Produced`, and unreadable drawings return `Unreadable` with the
   standard output layout still present.
 - Every page's name, shape text, and directed connector topology reach the output, extracted from
@@ -112,8 +114,8 @@ backend and the COM automation backend on the resulting engine. Evidence for
 **Test**: `DocDownVisio_Extract_Vsdx_SelectsOpenXml`
 
 Proves a normal extraction: the managed backend is selected for a `.vsdx`, the full output layout
-is produced, and the contract verifier reports no violations. This is also the anchor for the
-platform requirements and for the no-installation guarantee. Evidence for
+is produced, and the run completes as `Produced` with no notes recorded. This is also the anchor for
+the platform requirements and for the no-installation guarantee. Evidence for
 `DocDownVisio-Extraction` and, under source filters, the six `DocDownVisio-Platform-*`
 requirements.
 

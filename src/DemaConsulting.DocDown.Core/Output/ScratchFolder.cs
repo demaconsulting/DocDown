@@ -547,8 +547,7 @@ public sealed class ScratchFolder
     ///         a structurally valid DocDown manifest (<see cref="LoadDocDownManifest"/>); that
     ///         manifest's <c>scratchFolder</c> names this very folder (<see cref="PathBinds"/>);
     ///         every file present is accounted for by that manifest
-    ///         (<see cref="ArtifactInventory"/>, the same rule the contract verifier applies as
-    ///         <c>DD0717</c>); every inventoried path resolves inside the folder
+    ///         (<see cref="ArtifactInventory"/>); every inventoried path resolves inside the folder
     ///         (<see cref="SafePathCombine"/>); and each target still matches, at the moment it is
     ///         about to be deleted, the state it had when the folder was inventoried. Only then is
     ///         each inventoried file deleted individually. No code path here empties a directory.

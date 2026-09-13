@@ -28,6 +28,24 @@ reference distributed with the NuGet packages.
 - [REF-1] Continuous Compliance Methodology
   (<https://github.com/demaconsulting/ContinuousCompliance>)
 
+## Terms used in this guide
+
+Three words recur throughout this guide, and they name different things:
+
+- **Backend** — the component that reads one document format, or renders its pages. It is the
+  primary term used here: `docdown --list-backends` prints the registered backends, `summary.txt`
+  names the selected one in its *Backend* section, and one format may be served by more than one
+  backend, as PowerPoint is by its managed backend and its automation backend.
+- **Format package** — the NuGet package that ships one or more backends for a format, such as
+  `DemaConsulting.DocDown.Word`. You install format packages; DocDown selects a backend.
+- **Extractor** — the spelling the API and the CLI use where a backend needs an identifier:
+  `DocDownBuilder.AddExtractor`, `engine.Extractors`, `result.SelectedExtractor`, and the extractor
+  id that breaks selection ties. Read it as the code-level name for a backend.
+
+`DemaConsulting.DocDown.Core` holds the abstractions every backend implements. A format package
+brings it along as a transitive dependency, so ordinary use never references Core directly; you
+reference it yourself only when you are building a backend of your own.
+
 # Quick Start
 
 Two audiences, two short paths. Both produce the same output layout.
@@ -78,13 +96,40 @@ format package you reference. Nothing else changes.
 
 ## Command-line user
 
+Install the tool, run it once, and read the three things it tells you — the outcome, the note count,
+and the path to paste into a model:
+
 ```bash
 dotnet tool install -g DemaConsulting.DocDown.Tool
 docdown --input sample-agreement.docx --scratch ./out
 ```
 
-The tool prints the absolute path to the produced `summary.txt` and exits `0`. On an unreadable
-document or a bad argument it prints the failure explanation and exits `1`.
+```text
+DocDown Tool version 1.2.3
+Copyright (c) DEMA Consulting
+
+Extraction produced the output layout.
+1 note(s) recorded; see summary.txt for detail.
+/home/user/project/out/summary.txt
+```
+
+```bash
+echo $?   # 0
+```
+
+The last line is always the absolute path to `summary.txt`, and the notes line appears only when
+notes were recorded. Exit codes are `0` when the output layout was written, whether or not notes
+were recorded, and `1` when the document was unreadable, the scratch folder was refused, or an
+argument was bad. On exit `1` the failure explanation is printed on standard error in place of the
+summary path:
+
+```text
+DocDown Tool version 1.2.3
+Copyright (c) DEMA Consulting
+
+DocDown does not support the legacy binary Office formats, so 'ppt' cannot be extracted by any
+DocDown package; only the modern XML-based Office formats are supported.
+```
 
 ## Outcomes in one paragraph
 
@@ -118,7 +163,7 @@ section.
 
 DocDown reports extraction details in only two ways:
 
-1. **Inventory counts** — what is present, including an explicit `0` for any feature the extractor
+1. **Inventory counts** — what is present, including an explicit `0` for any feature the backend
    genuinely looked for. For example, a deck with no speaker notes still reports `0 sets of speaker
    notes`.
 2. **Plain-language notes** — short factual messages about a step DocDown attempted but could not
@@ -143,8 +188,8 @@ Page rendering follows the same reporting model:
 The scratch folder is an explicit boundary. DocDown writes fixed artifact names beneath that root
 and refuses unsafe or unusable scratch targets rather than guessing at another location.
 
-Extractors are registered explicitly rather than discovered by reflection or assembly scanning, so
-a host decides exactly which readers are available and the command-line tool can be published as a
+Backends are registered explicitly rather than discovered by reflection or assembly scanning, so
+a host decides exactly which backends are available and the command-line tool can be published as a
 single-file executable.
 
 # Project Status
@@ -165,7 +210,7 @@ runtime-identifier specific and must be published with `dotnet publish -r <rid>`
 
 `DocDown.Word` and `DocDown.Excel` are fully managed and read `.docx` and `.xlsx` on every platform
 with no native dependency. `DocDown.PowerPoint` and `DocDown.Visio` extract on every platform
-through managed readers and additionally rasterize slides and pages to PNG on Windows when the
+through managed backends and additionally rasterize slides and pages to PNG on Windows when the
 corresponding Microsoft Office application is installed.
 
 DocDown does not support the legacy binary Office formats (`.doc`, `.xls`, `.ppt`, `.vsd`). It
@@ -190,9 +235,9 @@ ensures compliance evidence is generated automatically on every CI run.
 
 # Installation
 
-Install one package per format you actually read. Each format package brings
-`DemaConsulting.DocDown.Core` with it, so Core is referenced directly only when writing a new
-backend.
+Install one format package per format you actually read. Each format package brings
+`DemaConsulting.DocDown.Core` with it as a transitive dependency, so ordinary use never references
+Core directly; install Core yourself only when you are building a backend of your own.
 
 | Format | Package (all prefixed `DemaConsulting.`) | Optional extra | Platform note |
 | --- | --- | --- | --- |
@@ -240,7 +285,7 @@ framework-dependent reference works on every supported runtime identifier:
 dotnet add package DemaConsulting.DocDown.Pdf.Rendering
 ```
 
-To extract Word documents, add the Word package. Its Open XML reader is fully managed and reads a
+To extract Word documents, add the Word package. Its Open XML backend is fully managed and reads a
 `.docx` on every platform with no native dependency. The legacy binary `.doc` format is not
 supported by DocDown; it is recognized and refused with a plain explanation:
 
@@ -284,17 +329,17 @@ API. Its interface is the command line documented below, so it ships no `api/` f
 
 `DemaConsulting.DocDown.Core` provides the extraction engine and the abstractions that define the
 output contract. It extracts nothing on its own: a host registers one or more format-specific
-readers with it. `DemaConsulting.DocDown.Pdf`, `.Word`, `.Excel`, `.PowerPoint`, and `.Visio` are
-those readers, and each is registered by an explicit `Add…()` call.
+backends with it. `DemaConsulting.DocDown.Pdf`, `.Word`, `.Excel`, `.PowerPoint`, and `.Visio` are
+those backends, and each is registered by an explicit `Add…()` call.
 
-Selection is deterministic. DocDown detects the document format, keeps the readers that both match
-that format and are available in the current environment, prefers a reader that can render pages
-when pages were requested and a renderer is available, and then breaks any remaining tie by reader
+Selection is deterministic. DocDown detects the document format, keeps the backends that both match
+that format and are available in the current environment, prefers a backend that can render pages
+when pages were requested and a renderer is available, and then breaks any remaining tie by backend
 priority and extractor id.
 
 ## Extracting a PDF
 
-Register the PDF reader, build an engine, and extract:
+Register the PDF backend, build an engine, and extract:
 
 ```csharp
 using System;
@@ -328,8 +373,8 @@ foreach (var note in result.Notes)
 return 0;
 ```
 
-`AddPdf()` is the entire registration surface for the managed PDF reader. Registration is explicit
-rather than reflection-based, so the set of readers in an engine is exactly the set your code asked
+`AddPdf()` is the entire registration surface for the managed PDF backend. Registration is explicit
+rather than reflection-based, so the set of backends in an engine is exactly the set your code asked
 for.
 
 ## What the PDF package provides, and what it does not
@@ -349,7 +394,7 @@ page images need the separate PDF page-rendering package.
 ## Rendering pages with DocDown.Pdf.Rendering
 
 `DemaConsulting.DocDown.Pdf.Rendering` is that separate package. Register it alongside the managed
-PDF reader and request rendered pages:
+PDF backend and request rendered pages:
 
 ```csharp
 using System.Threading;
@@ -373,8 +418,8 @@ var result = await engine.ExtractAsync(
 
 A few things are worth knowing:
 
-- **Selection is still automatic.** For a PDF, DocDown prefers the page-rendering reader only when
-  pages were requested and a renderer is available. Otherwise the lighter managed reader runs.
+- **Selection is still automatic.** For a PDF, DocDown prefers the page-rendering backend only when
+  pages were requested and a renderer is available. Otherwise the lighter managed backend runs.
 - **`--dpi` (or `PageRenderDpi`) controls resolution.** A higher DPI produces a larger, more
   detailed page image and a larger file. The default is 150.
 - **Notes stay factual.** If a page cannot be rasterized, or the native renderer for your platform
@@ -386,7 +431,7 @@ A few things are worth knowing:
 
 ## Notes you may see while reading PDFs
 
-The PDF readers still tell you what happened plainly:
+The PDF backends still tell you what happened plainly:
 
 - **The PDF has no text layer.** A scan can still produce page images and embedded images, but a
   note states that the pages carried no extractable text.
@@ -443,8 +488,8 @@ var result = await engine.ExtractAsync(
     cancellationToken: CancellationToken.None);
 ```
 
-`AddWord()` registers the package's single Open XML reader. There is no second call and no second
-reader: the result is the same fully managed, deterministic extraction on every platform.
+`AddWord()` registers the package's single Open XML backend. There is no second call and no second
+backend: the result is the same fully managed, deterministic extraction on every platform.
 
 ## What the Word package provides, and what it does not
 
@@ -489,8 +534,8 @@ var result = await engine.ExtractAsync(
     cancellationToken: CancellationToken.None);
 ```
 
-`AddExcel()` registers the package's single Open XML reader, `excel-openxml`. There is no second
-reader, and that is deliberate rather than incidental: a workbook is not a paginated format, so
+`AddExcel()` registers the package's single Open XML backend, `excel-openxml`. There is no second
+backend, and that is deliberate rather than incidental: a workbook is not a paginated format, so
 there is no rendering-oriented sibling to register.
 
 ## What the Excel package provides, and what it does not
@@ -552,9 +597,9 @@ var result = await engine.ExtractAsync(
     CancellationToken.None);
 ```
 
-`AddPowerPoint()` registers two readers in one call: the managed Open XML reader
+`AddPowerPoint()` registers two backends in one call: the managed Open XML backend
 `powerpoint-openxml`, which is the guaranteed content path on every platform, and the automation
-reader `powerpoint-com`, which can also rasterize slides through Microsoft PowerPoint when that
+backend `powerpoint-com`, which can also rasterize slides through Microsoft PowerPoint when that
 application is installed on Windows.
 
 ## What the PowerPoint package provides, and what it does not
@@ -570,7 +615,7 @@ application is installed on Windows.
 - **Embedded images** — written to `images/`, deduplicated where the same picture is reused, and
   linked inline from the slides that show them. `sourcePages` records every referring slide, and an
   image reached only through a layout or master is flagged `referencedByTemplate`.
-- **Rendered slides, when the automation reader is selected** — each slide is exported to `pages/`
+- **Rendered slides, when the automation backend is selected** — each slide is exported to `pages/`
   at the requested DPI.
 
 The honest limits on rendering are straightforward:
@@ -602,7 +647,7 @@ var result = await engine.ExtractAsync(
     cancellationToken: CancellationToken.None);
 ```
 
-As with PowerPoint, `AddVisio()` registers two readers: the managed Open Packaging reader
+As with PowerPoint, `AddVisio()` registers two backends: the managed Open Packaging backend
 `visio-openxml`, which needs no Visio installation, and `visio-com`, which can also rasterize pages
 through Microsoft Visio.
 
@@ -611,7 +656,7 @@ through Microsoft Visio.
 `DemaConsulting.DocDown.Visio` extracts:
 
 - **Page names and shape text**, in document order, for `.vsdx` and `.vsdm` alike.
-- **Symbol-font glyphs recovered where the drawing proves what they are.** The reader corrects
+- **Symbol-font glyphs recovered where the drawing proves what they are.** The backend corrects
   shape text only when the document's own font information proves the intended symbol.
 - **Zero-information output suppressed, with counts stated plainly.** A bare callout number or a
   connector between two unnamed shapes is not promoted into a misleading narrative item.
@@ -619,7 +664,7 @@ through Microsoft Visio.
   relationships.
 - **Honest endpoint labels** — labels come from the shape's own text when possible, otherwise from a
   clearly marked type-derived label or the shape id.
-- **Rendered pages, when the automation reader is selected** — each foreground page is exported to
+- **Rendered pages, when the automation backend is selected** — each foreground page is exported to
   `pages/` at the requested DPI.
 - **Embedded images** — pictures stored in `ForeignData` shapes are written to `images/` with their
   true file extension and linked from the page that shows them. `sourcePages` records each referring
@@ -632,7 +677,7 @@ The rendering limits match the PowerPoint package in spirit:
   completed.
 - **A failed page is not fatal to the whole extraction.** Other pages still render, and a note
   identifies the page that could not be exported.
-- **Background pages are not rendered.** The automation reader exports foreground pages only.
+- **Background pages are not rendered.** The automation backend exports foreground pages only.
 - **Metadata is thin.** The package reports the page count; it does not provide a full title and
   author record.
 
@@ -672,13 +717,13 @@ Across all the format packages, `docdown --list-backends` reports eight register
 
 | Backend id | Formats | Role |
 | ---------- | ------- | ---- |
-| `pdf` | `pdf` | Managed PDF reader |
-| `pdf-rendering` | `pdf` | PDF reader with page rendering |
-| `word-openxml` | `docx` | Managed Word reader |
-| `excel-openxml` | `xlsx` | Managed Excel reader |
-| `powerpoint-openxml` | `pptx` | Managed PowerPoint reader |
+| `pdf` | `pdf` | Managed PDF backend |
+| `pdf-rendering` | `pdf` | PDF backend with page rendering |
+| `word-openxml` | `docx` | Managed Word backend |
+| `excel-openxml` | `xlsx` | Managed Excel backend |
+| `powerpoint-openxml` | `pptx` | Managed PowerPoint backend |
 | `powerpoint-com` | `pptx` | PowerPoint slide renderer on Windows |
-| `visio-openxml` | `vsdx`, `vsdm` | Managed Visio reader |
+| `visio-openxml` | `vsdx`, `vsdm` | Managed Visio backend |
 | `visio-com` | `vsdx`, `vsdm` | Visio page renderer on Windows |
 
 `--list-backends` prints each backend in this shape:
@@ -692,31 +737,31 @@ status: available
 If a backend is not usable in the current environment, the last line becomes
 `status: unavailable (reason)`. There is no extra feature-summary line.
 
-The engine chooses exactly one reader per document. Selection is a pure function of the detected
-format, the readers registered in the host, their availability in the current environment, and the
+The engine chooses exactly one backend per document. Selection is a pure function of the detected
+format, the backends registered in the host, their availability in the current environment, and the
 page-rendering request:
 
 1. Detect the document format.
-2. Keep the registered readers that apply to that format.
+2. Keep the registered backends that apply to that format.
 3. Keep the ones available in the current environment.
-4. If pages were requested and a renderer is available, prefer a reader that can render pages.
+4. If pages were requested and a renderer is available, prefer a backend that can render pages.
 5. Break any remaining tie by priority and then extractor id.
 
 The practical consequences are:
 
-- **A PowerPoint or Visio automation reader runs only when pages were requested and the Office
-  application is available.** Otherwise the managed reader handles the extraction.
-- **A `.docx`, `.xlsx`, `.pptx`, `.vsdx`, or `.vsdm` is handled by a fully managed reader on every
+- **A PowerPoint or Visio automation backend runs only when pages were requested and the Office
+  application is available.** Otherwise the managed backend handles the extraction.
+- **A `.docx`, `.xlsx`, `.pptx`, `.vsdx`, or `.vsdm` is handled by a fully managed backend on every
   platform.** Page rendering is an optional add-on for PDFs, PowerPoint decks, and Visio drawings.
 - **A `.doc`, `.xls`, `.ppt`, or `.vsd` is recognized as a legacy binary Office format and
   refused.** The failure explanation says so plainly.
-- **When no reader matches, the failure explanation names the detected format.** For a well-known
-  format it also names the package that provides the extractor, or states that legacy binary Office
+- **When no backend matches, the failure explanation names the detected format.** For a well-known
+  format it also names the format package that provides the backend, or states that legacy binary Office
   formats are unsupported.
 
 # The Command-Line Tool
 
-`docdown` drives the same engine from a shell or a pipeline. It registers its readers explicitly, so
+`docdown` drives the same engine from a shell or a pipeline. It registers its backends explicitly, so
 it can be published as a single-file, trimmed executable.
 
 ## Extracting a document

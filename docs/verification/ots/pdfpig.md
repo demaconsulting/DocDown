@@ -79,16 +79,17 @@ the parser exposed the position information required. Evidence for
 
 **Tests**: `PdfImageExtractor_AddImage_DctImage_SetsPassthroughTransformHint`,
 `PdfImageExtractor_AddImage_FlateImage_SetsDecodedToPngTransformHint`,
-`PdfImageExtractor_AddImage_JpxImage_WritesJp2PassthroughWithCaveat`,
-`PdfImageExtractor_Extract_UndecodableEncoding_ReportsCountedGapAndWritesNothingForIt`
+`PdfImageExtractor_AddImage_JpxImage_WritesJp2PassthroughWithoutExtraNote`,
+`PdfImageExtractor_Extract_UndecodableEncoding_ReportsPlainNoteAndWritesNothingForIt`
 
 Together these exercise all three things the parser must supply. The first proves the stored bytes of
 a JPEG XObject are exposed and are exactly the embedded file. The second proves a compressed-sample
 image is converted to a usable format. The third proves the same raw-byte access holds for an
-encoding the parser cannot decode at all — a JPEG 2000 codestream is exposed intact and written as
-`.jp2` — and that the encoding is identifiable, the gap naming `JPXDecode` specifically. The fourth
-proves an image the parser can neither decode nor expose as a file, a JBIG2 segment, is reported as a
-counted refusal naming `JBIG2Decode` rather than as corrupt output. Evidence for
+encoding the parser cannot decode at all — a JPEG 2000 codestream is exposed intact, typed
+`image/jp2`, and written as a passthrough, so the image counts as written and the run records no
+note. The fourth proves an image the parser can neither decode nor expose as a file, a JBIG2 segment,
+is enumerated rather than dropped: the run reports two images found and one written, and records a
+plain note naming `JBIG2Decode` and the count that was not written. Evidence for
 `DocDown-OTS-PdfPig-ImageExtraction`.
 
 #### Document information and page count

@@ -19,7 +19,7 @@ input-files:
   - docs/design/docdown-core/output/content-writer.md
   - docs/design/docdown-core/output/summary-writer.md
   - docs/design/docdown-core/output/manifest-writer.md
-  - docs/design/docdown-core/output/contract-verifier.md
+  - docs/design/docdown-core/output/image-text-selector.md
   - docs/design/docdown-pdf.md
   - docs/design/docdown-pdf/pdf-document-extractor.md
   - docs/design/docdown-pdf/pdf-text-extractor.md

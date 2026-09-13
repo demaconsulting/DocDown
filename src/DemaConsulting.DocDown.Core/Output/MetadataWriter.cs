@@ -11,8 +11,9 @@ namespace DocDown.Core;
 /// <remarks>
 ///     <para>
 ///         <c>metadata.json</c> is the third machine-readable root artifact, distinct in purpose from
-///         its siblings: <c>summary.txt</c> orients a reader, <c>manifest.json</c> is the integrity
-///         ledger the contract verifier reconciles, and <c>metadata.json</c> is read on demand for
+///         its siblings: <c>summary.txt</c> orients a reader, <c>manifest.json</c> is the
+///         machine-readable inventory of what was written, and <c>metadata.json</c> is read on
+///         demand for
 ///         the document's own claims. It is <strong>always written</strong>, on both the success and
 ///         failure paths, so a reader can always find it; when the backend supplied nothing it says
 ///         so in a note rather than emitting an unexplained empty object.

@@ -13,17 +13,17 @@ namespace DemaConsulting.DocDown.Pdf.Tests;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Every scenario runs the real engine over a real PDF and ends by confirming the contract
-///         verifier finds no violations, so a reported gap always matches what is on disk. That
-///         reconciliation is the highest-value assertion available: it makes a dishonest extraction
-///         a test failure rather than a review finding.
+///         Every scenario runs the real engine over a real PDF and ends by confirming the invariant
+///         output layout is present on disk, so what the run reports always matches what was
+///         written. That reconciliation is the highest-value assertion available: it makes a
+///         dishonest extraction a test failure rather than a review finding.
 ///     </para>
 ///     <para>
-///         Degradation is treated as the common case, not the exception. A PDF extractor that ships
-///         no renderer degrades on every page-rendering request; a scanned document has no text to
-///         find; a JPEG 2000 image cannot be decoded here. Most rows below therefore assert an
-///         honest, explained shortfall rather than a clean success — which is what the library
-///         promises.
+///         An incomplete step is treated as the common case, not the exception. A PDF extractor that
+///         ships no renderer records a note on every page-rendering request; a scanned document has
+///         no text to find; a JPEG 2000 image cannot be decoded here. Most rows below therefore
+///         assert an honest, explained outcome rather than a clean success — which is what the
+///         library promises.
 ///     </para>
 ///     <para>
 ///         Text-extraction quality is heuristic, so these tests assert properties of the output
@@ -549,7 +549,7 @@ public class DocDownPdfTests
         var input = WriteFixture(temp, scenario + ".pdf", FixtureFor(scenario));
         var scratch = Path.Combine(temp.Path, "out");
 
-        // Act: extract whatever this scenario produces, clean or degraded or failed
+        // Act: extract whatever this scenario produces, clean or noted or failed
         await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
         // Assert: whatever the outcome, the standard layout is present

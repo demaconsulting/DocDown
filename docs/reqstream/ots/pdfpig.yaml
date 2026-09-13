@@ -50,8 +50,8 @@ sections:
             tests:
               - PdfImageExtractor_AddImage_DctImage_SetsPassthroughTransformHint
               - PdfImageExtractor_AddImage_FlateImage_SetsDecodedToPngTransformHint
-              - PdfImageExtractor_AddImage_JpxImage_WritesJp2PassthroughWithCaveat
-              - PdfImageExtractor_Extract_UndecodableEncoding_ReportsCountedGapAndWritesNothingForIt
+              - PdfImageExtractor_AddImage_JpxImage_WritesJp2PassthroughWithoutExtraNote
+              - PdfImageExtractor_Extract_UndecodableEncoding_ReportsPlainNoteAndWritesNothingForIt
 
           - id: DocDown-OTS-PdfPig-DocumentMetadata
             title: PdfPig shall expose a document's information dictionary and its page count.

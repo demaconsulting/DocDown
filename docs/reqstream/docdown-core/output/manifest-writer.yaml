@@ -74,6 +74,19 @@ sections:
                 tests:
                   - ManifestWriter_WriteAsync_DecodedToPngImage_SerializesCamelCaseTransform
 
+              - id: DocDownCore-Output-ManifestWriter-ImageReferrerFields
+                title: >-
+                  ManifestWriter shall name each image's referrers as sourcePages, expose the first
+                  referrer as the scalar alias sourcePage, and flag a template-only image as
+                  referencedByTemplate.
+                justification: |
+                  Consumers parse manifest.json directly, so the field names and the alias rule are
+                  part of the published contract rather than an implementation detail: a consumer
+                  that reads only the scalar must still see the first referrer, and a consumer that
+                  reads the array must be able to tell a template-only image from a page reference.
+                tests:
+                  - ManifestWriter_WriteAsync_ImageMetadata_SerializesReferrersTemplateAndDescription
+
               - id: DocDownCore-Output-ManifestWriter-ImageDescriptionSerialized
                 title: >-
                   ManifestWriter shall serialize each image's referrers, template flag,

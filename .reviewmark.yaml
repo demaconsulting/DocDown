@@ -54,6 +54,7 @@ reviews:
     paths:
       - "requirements.yaml"                                         # root requirements file
       - "docs/reqstream/quality.yaml"                               # repository-level quality requirements
+      - "test/DemaConsulting.DocDown.Core.Tests/ApiExampleCoverageTests.cs"  # API example coverage tests
       - "docs/design/introduction.md"                               # design introduction
       - "docs/sysml2/**/*.sysml"                                    # SysML2 model (authoritative structure)
 

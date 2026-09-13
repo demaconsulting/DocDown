@@ -116,3 +116,22 @@ Proves the built-in case names are `core.layout-invariance` and `core.manifest-s
 
 Proves the manifest records each image's transform individually rather than flattening provenance to a
 single run-level claim.
+
+### Image referrers, the scalar alias, and the template flag reach the manifest
+
+**Test**: `DocDownCore_Extract_ImageReferrers_ManifestRecordsPagesAliasAndTemplateFlag`
+
+Proves the manifest names every referring page of an image in `sourcePages`, repeats the first of
+them in the scalar `sourcePage` alias, and sets `referencedByTemplate` for an image reached only
+through a template container rather than giving it a fabricated page. Evidence for
+`DocDownCore-ImageReferrersReported`.
+
+### Every consumer entry point ships a runnable example
+
+**Test**: `DocDownCore_ApiExamples_ConsumerEntryPoints_CarryRunnableExamples`
+
+Proves the builder, the extraction entry point, and all six backend registration methods each carry
+an example with a C# code block that builds an engine, so the API reference generated into every
+package's `api/` folder ships a runnable sample offline. The registration set is asserted by name, so
+a newly added format package cannot pass the check by being absent. Evidence for the repository-level
+`Quality-ApiExampleCoverage` requirement.

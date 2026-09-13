@@ -86,6 +86,21 @@ sections:
           - DocDown-OTS-WeasyPrint
           - DocDown-OTS-ApiMark-DotNetGeneration
 
+      - id: Quality-ApiExampleCoverage
+        title: >-
+          The repository shall document the builder, the extraction entry point, and every backend
+          registration method with a runnable example in the API reference shipped inside each
+          library package.
+        tags: [quality]
+        justification: |
+          The README tells a consumer that a complete, runnable example travels offline inside the
+          installed package for every entry point they start from, so a member documented without
+          one breaks a stated promise rather than merely thinning the documentation. Making the
+          coverage a checked requirement keeps a newly added registration method from shipping
+          without its example.
+        tests:
+          - DocDownCore_ApiExamples_ConsumerEntryPoints_CarryRunnableExamples
+
       - id: Quality-RequirementsTraceability
         title: >-
           The repository shall rely on ReqStream and FileAssert to validate

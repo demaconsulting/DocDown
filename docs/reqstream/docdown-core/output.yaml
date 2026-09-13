@@ -207,3 +207,19 @@ sections:
               - DocDownCore-Output-ManifestWriter-ImageDescriptionSerialized
             tests:
               - Output_ImageProvenance_MixedTransforms_ManifestRecordsEachHonestly
+
+          - id: DocDownCore-Output-ImageReferrers
+            title: >-
+              The subsystem shall record, for each extracted image, every page that references it,
+              the first of those pages as a scalar alias, and whether the image is reached only
+              through a template container.
+            justification: |
+              An image is only useful evidence when a reader can tell which pages showed it. The
+              scalar alias serves consumers that read a single page number, and the template flag
+              keeps an image reached only through a layout or master from being given a fabricated
+              page.
+            children:
+              - DocDownCore-Output-ExtractionSink-ImageDescriptionRecorded
+              - DocDownCore-Output-ManifestWriter-ImageReferrerFields
+            tests:
+              - Output_ImageReferrers_PagesAndTemplate_ManifestRecordsAliasAndFlag

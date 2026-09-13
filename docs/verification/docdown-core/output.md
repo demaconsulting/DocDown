@@ -65,3 +65,10 @@ and records image provenance per image.
 #### Image provenance is recorded per image
 
 **Test**: `Output_ImageProvenance_MixedTransforms_ManifestRecordsEachHonestly`
+
+#### Image referrers and the template flag are recorded per image
+
+**Test**: `Output_ImageReferrers_PagesAndTemplate_ManifestRecordsAliasAndFlag`
+
+Proves the pipeline writes every referring page into `sourcePages`, aliases its first entry as
+`sourcePage`, and marks a template-only image with `referencedByTemplate`.

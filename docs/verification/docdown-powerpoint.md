@@ -11,12 +11,13 @@ real COM automation boundary.
 
 ### Every extraction test reconciles against the filesystem
 
-Every scenario that performs an extraction ends with Core's contract verifier over the produced
-folder, which reports any disagreement between what the manifest claims and what is on disk. This is
-the highest-value assertion available to this package: it makes a dishonest extraction a test failure
-rather than a review finding, and it applies to both clean `Produced` runs and `Unreadable` runs.
-The legacy `.ppt` refusal scenario is checked the same way, so the structured unreadable layout is
-verified alongside successful modern-deck extractions.
+Every scenario that performs an extraction ends with layout assertions proving the invariant output
+folders and files are present on disk. This is the highest-value assertion available to this package:
+it makes a dishonest extraction a test failure rather than a review finding, and it applies to both
+clean `Produced` runs and `Unreadable` runs. The legacy `.ppt` refusal scenario is checked the same
+way, so the structured unreadable layout is verified alongside successful modern-deck extractions.
+Beyond the layout, each scenario asserts the extraction outcome, the inventory counts written into
+`summary.txt` and `manifest.json`, and the exact set of notes the run recorded.
 
 ### Two backends, one reader, one emitter
 
@@ -77,7 +78,8 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 
 - Every scenario below passes on every operating system and runtime in the CI matrix, with no
   unexpected exception or wrong return value.
-- Every extraction scenario ends with the contract verifier reporting zero violations.
+- Every extraction scenario produces the expected DocDown layout on disk, and the notes the run
+  records are exactly the notes the scenario expects.
 - Every successful deck extraction completes as `Produced`, including a deck with no speaker notes, a
   deck whose only image is an EMF, and a deck with no slides.
 - Every slide's text, title, and speaker notes reach the output, extracted from the file itself, in
@@ -118,7 +120,7 @@ page-rendering applicability through the selection surface the engine reads. Evi
 **Test**: `DocDownPowerPoint_Extract_Pptx_SelectsOpenXml`
 
 Proves a clean extraction: the managed backend is selected for a `.pptx`, the full output layout is
-produced, and the contract verifier reports no violations. Evidence for
+produced, and the run completes as `Produced` with no notes recorded. Evidence for
 `DocDownPowerPoint-Extraction`.
 
 ### Slide body text is extracted

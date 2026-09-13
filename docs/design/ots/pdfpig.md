@@ -34,11 +34,11 @@ deliberately **not** referenced. Each would be a further OTS software item with 
 maintainer, and framework-currency constraint, and each would need its own full artifact set, in
 exchange for decoding two encodings that are rare in practice. Neither omission causes a silent loss:
 a JPEG XObject's stored bytes are already a JPEG file and are written through unchanged, and a JPEG
-2000 XObject's stored bytes are already a JPEG 2000 file and are written through unchanged as `.jp2`
-with a gap warning that many viewers and image libraries cannot read the format. Encodings whose
-stored bytes are not a file at all — JBIG2 in particular — are reported as counted, reason-bearing
-gaps instead, which is the behavior the output contract requires regardless of which encodings can be
-decoded, and which the `DocDown.Pdf` tests exercise directly.
+2000 XObject's stored bytes are already a JPEG 2000 file and are written through unchanged as `.jp2`,
+which many viewers and image libraries cannot read. Encodings whose stored bytes are not a file at
+all — JBIG2 in particular — are enumerated, counted, and named in a plain note instead of being
+written as bytes a consumer cannot open, which is the behavior the output contract requires
+regardless of which encodings can be decoded, and which the `DocDown.Pdf` tests exercise directly.
 
 ### Integration Pattern
 

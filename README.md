@@ -16,11 +16,25 @@ predictable scratch-folder layout for multimodal AI agents and other automation.
 read, what was counted, and any plain-language notes about steps that could not be completed; it
 does not judge whether document content is acceptable.
 
+## Terms Used Here
+
+Three words appear throughout this README and the user guide, and they are not interchangeable:
+
+- **Backend** — the component that reads one document format, or renders its pages. `docdown
+  --list-backends` prints them, `summary.txt` names the one that ran in its *Backend* section, and a
+  single format may be served by more than one, such as PowerPoint's managed backend and its
+  automation backend. This is the primary term.
+- **Format package** — the NuGet package that ships one or more backends for a format, such as
+  `DemaConsulting.DocDown.Word`. You install format packages; you select backends.
+- **Extractor** — the name the API and the CLI give a backend where an identifier is needed:
+  `DocDownBuilder.AddExtractor`, `result.SelectedExtractor`, and the extractor id used to break
+  selection ties. Read it as the code-level spelling of *backend*.
+
 ## Which Package Do I Need?
 
-Install one package per format you actually read. Each format package brings
-`DemaConsulting.DocDown.Core` with it, so you only reference Core directly when you are writing your
-own backend.
+Install one format package per format you actually read. Each format package brings
+`DemaConsulting.DocDown.Core` with it as a transitive dependency, so ordinary use never references
+Core directly — you reference it yourself only when you are writing a backend of your own.
 
 | Format | Package (all prefixed `DemaConsulting.`) | Optional extra | Platform note |
 | --- | --- | --- | --- |
@@ -99,13 +113,46 @@ The annotated full menu is in *Registering Several Backends*, below.
 
 ### Command Line
 
+Install the tool, run it once, and read the three things it tells you — the outcome, the note count,
+and the path to paste into a model:
+
 ```bash
 dotnet tool install -g DemaConsulting.DocDown.Tool
 docdown --input sample-agreement.docx --scratch ./out
 ```
 
-The tool prints the absolute path to the produced `summary.txt`, exits `0` when the output layout
-was written, and exits `1` on an unreadable document or a bad argument.
+```text
+DocDown Tool version 1.2.3
+Copyright (c) DEMA Consulting
+
+Extraction produced the output layout.
+1 note(s) recorded; see summary.txt for detail.
+/home/user/project/out/summary.txt
+```
+
+```bash
+echo $?   # 0
+```
+
+The last line of output is always the absolute path to `summary.txt`, so `docdown ... | tail -1`
+gives you the file to feed to an agent. The notes line appears only when notes were recorded. Exit
+codes are the whole contract:
+
+| Exit code | Meaning |
+| --- | --- |
+| `0` | The output layout was written, whether or not notes were recorded |
+| `1` | The document was unreadable, the scratch folder was refused, or an argument was bad |
+
+An unreadable document prints the failure explanation on standard error instead of a summary path,
+and exits `1`:
+
+```text
+DocDown Tool version 1.2.3
+Copyright (c) DEMA Consulting
+
+DocDown does not support the legacy binary Office formats, so 'ppt' cannot be extracted by any
+DocDown package; only the modern XML-based Office formats are supported.
+```
 
 ## Outcomes and Notes
 
@@ -156,7 +203,7 @@ out/
   including the absolute scratch path. It opens with a plain-English gist, records the Scratch,
   Source, Detected, Extracted, and Status fields, then summarizes the backend, environment,
   document metadata, layout, what **was** extracted, and anything DocDown could not finish reading.
-  Counts are explicit, including a plain `0` for features the extractor genuinely looked for, such
+  Counts are explicit, including a plain `0` for features the backend genuinely looked for, such
   as PowerPoint speaker notes in a deck that has none.
 - **`manifest.json`** — the machine-readable twin of `summary.txt`. Its schema version is now
   `2.0`; it carries a `notes` string array and preserves per-image provenance, content inventory,
@@ -174,7 +221,7 @@ no "What was NOT extracted", "Completeness", or "Diagnostics" section.
 
 DocDown reports extraction details in only two ways:
 
-1. **Inventory counts** — what is present, including an explicit `0` for anything the reader
+1. **Inventory counts** — what is present, including an explicit `0` for anything the backend
    genuinely checked.
 2. **Plain-language notes** — short factual messages about a step DocDown attempted but could not
    complete. A note carries only a message and no extra classification or follow-up fields, and it
@@ -183,7 +230,7 @@ DocDown reports extraction details in only two ways:
 The scratch folder is an explicit boundary. DocDown writes fixed artifact names beneath that root
 and refuses unsafe or unusable scratch targets rather than guessing at another location.
 
-Extractors are registered explicitly rather than discovered by reflection or assembly scanning, so
+Backends are registered explicitly rather than discovered by reflection or assembly scanning, so
 the command-line tool can be published as a single-file executable.
 
 ### What to expect
@@ -196,9 +243,9 @@ collection.
 
 For paginated formats, if page rendering was requested but no renderer is available, the layout is
 still produced and a note explains that pages were not rendered. For a non-paginated format such as
-an Excel workbook, a page request is honored with silence. When no reader matches a detected format,
-the failure explanation names the format and, for a well-known format, the package that provides its
-extractor or states that a legacy binary Office format is unsupported.
+an Excel workbook, a page request is honored with silence. When no backend matches a detected format,
+the failure explanation names the format and, for a well-known format, the format package that
+provides its backend, or states that a legacy binary Office format is unsupported.
 
 ## Registering Several Backends
 
@@ -241,7 +288,7 @@ images are produced by driving Microsoft Office over COM, so they are Windows-on
 application to be installed. Without it the managed backend still extracts the text, and
 `summary.txt` records that pages were not rendered.
 
-Selection stays deterministic: DocDown detects the format, keeps the readers that match it and are
+Selection stays deterministic: DocDown detects the format, keeps the backends that match it and are
 available, prefers a page renderer when pages were requested and one is available, then breaks ties
 by priority and extractor id.
 
@@ -284,13 +331,31 @@ Common options:
 Run `docdown --help` for the full list. Exit codes are `0` when output was produced, even if notes
 were recorded, and `1` on an unreadable document or a bad argument.
 
+## Documentation
+
+Generated documentation includes:
+
+- **Build Notes**: Release information and changes
+- **User Guide**: Comprehensive usage documentation
+- **Code Quality Report**: CodeQL and SonarCloud analysis results
+- **Requirements**: Functional and non-functional requirements
+- **Requirements Justifications**: Detailed requirement rationale
+- **Trace Matrix**: Requirements to test traceability
+
+## API Documentation
+
+Detailed API documentation for all public types and members is distributed in the `api/` folder
+of each NuGet package. `DocDownBuilder`, `DocDownEngine.ExtractAsync`, and every `Add…()`
+registration method carry a complete, runnable example, so the sample is available offline with the
+package you installed.
+
 ## Features
 
 - **Uniform Output Layout**: The same five artifacts for every produced extraction
-- **Inventory-First Reporting**: Explicit counts, including `0` for features the extractor checked
+- **Inventory-First Reporting**: Explicit counts, including `0` for features the backend checked
 - **Plain Notes**: Message-only extraction notes with no diagnostic taxonomy or acceptability
   judgment
-- **Deterministic Reader Selection**: Detect format, keep available readers, prefer a page renderer
+- **Deterministic Backend Selection**: Detect format, keep available backends, prefer a page renderer
   when pages were requested and one is available, then break ties by priority and extractor id
 - **PDF Extraction**: Text in reading order, embedded images, and document metadata, with no native
   dependency in the base package
@@ -305,7 +370,7 @@ were recorded, and `1` on an unreadable document or a bad argument.
 - **Optional Page Rendering**: PDF pages, PowerPoint slides, and Visio pages can be rasterized when
   the matching renderer is available and pages were requested
 - **Per-Field Metadata Provenance**: `metadata.json` records where each metadata value came from
-- **Reflection-Free Registration**: Explicit extractor registration, suitable for single-file
+- **Reflection-Free Registration**: Explicit backend registration, suitable for single-file
   publishing
 - **Multi-Platform Support**: Builds and runs on Windows, Linux, and macOS
 - **Multi-Runtime Support**: Targets .NET 8, 9, and 10
@@ -334,24 +399,6 @@ every platform through managed backends and additionally rasterize slides and pa
 Windows when the corresponding Microsoft Office application is installed; without it, the managed
 content is still produced and, when page rendering was requested, a note records that the request
 could not be completed.
-
-## Documentation
-
-Generated documentation includes:
-
-- **Build Notes**: Release information and changes
-- **User Guide**: Comprehensive usage documentation
-- **Code Quality Report**: CodeQL and SonarCloud analysis results
-- **Requirements**: Functional and non-functional requirements
-- **Requirements Justifications**: Detailed requirement rationale
-- **Trace Matrix**: Requirements to test traceability
-
-## API Documentation
-
-Detailed API documentation for all public types and members is distributed in the `api/` folder
-of each NuGet package. `DocDownBuilder`, `DocDownEngine.ExtractAsync`, and every `Add…()`
-registration method carry a complete, runnable example, so the sample is available offline with the
-package you installed.
 
 ## Contributing
 

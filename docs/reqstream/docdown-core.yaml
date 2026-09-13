@@ -308,3 +308,20 @@ sections:
           - DocDownCore-Output-ImageProvenance
         tests:
           - DocDownCore_Extract_ImageProvenance_ManifestRecordsTransformPerImage
+
+      - id: DocDownCore-ImageReferrersReported
+        title: >-
+          The library shall record, for every extracted image, every page of the document that
+          references it, the first such page as a scalar alias, and whether the image is reached
+          only through a template container.
+        tags: [system]
+        justification: |
+          Consumers parse the extraction record to connect an extracted image back to the part of
+          the document that showed it. Publishing the full referrer set, a scalar alias for readers
+          that want a single page, and an explicit template-only flag gives an honest three-way
+          distinction — referenced by a page, referenced only through a template, or referenced by
+          nothing — without ever inventing a page for an image that has none.
+        children:
+          - DocDownCore-Output-ImageReferrers
+        tests:
+          - DocDownCore_Extract_ImageReferrers_ManifestRecordsPagesAliasAndTemplateFlag

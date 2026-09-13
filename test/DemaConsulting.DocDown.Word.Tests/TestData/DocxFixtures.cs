@@ -109,8 +109,8 @@ public static class DocxFixtures
     /// </summary>
     /// <returns>The document bytes.</returns>
     /// <remarks>
-    ///     Used to prove the Word backend reports an embedded chart as a counted gap rather than
-    ///     dropping it without a word: a chart carries no image blip, so nothing else in the reader
+    ///     Used to prove the Word backend reports an embedded chart in a plain note rather than
+    ///     dropping it without a word: a chart carries no image blip, so nothing else in the backend
     ///     would ever notice it. The chart's content is invented and belongs to no real document.
     /// </remarks>
     public static byte[] DocumentWithChart() => BuildDocx((document, mainPart) =>
@@ -252,7 +252,7 @@ public static class DocxFixtures
     ///     Builds a document with a header carrying a revision and a footer carrying only a page number.
     /// </summary>
     /// <returns>The document bytes.</returns>
-    /// <remarks>Used to prove document control survives while page furniture is omitted with a counted gap.</remarks>
+    /// <remarks>Used to prove document control survives while page furniture is omitted silently.</remarks>
     public static byte[] EngineeringStyleDocument() => BuildDocx((document, mainPart) =>
     {
         var body = new W.Body();

@@ -312,6 +312,48 @@ public class DocDownCoreTests
     }
 
     /// <summary>
+    ///     Proves the manifest names every page that references an image, exposes the first as a
+    ///     scalar alias, and flags an image reached only through a template container.
+    /// </summary>
+    [Fact]
+    public async Task DocDownCore_Extract_ImageReferrers_ManifestRecordsPagesAliasAndTemplateFlag()
+    {
+        // Arrange: a backend scripted to add one page-referenced image and one template-only image
+        using var temp = new TempScratch();
+        var engine = BuildEngine(new StubExtractor
+        {
+            Id = "text",
+            SupportedFormats = [DocumentFormat.Text],
+            ExtractBehavior = WriteImagesOfDifferingReferrersAsync
+        });
+        var scratch = Path.Combine(temp.Path, "out");
+
+        // Act: run the extraction end to end through the engine
+        var result = await engine.ExtractAsync(
+            temp.CreateFile("document.txt", "hello world"),
+            scratch,
+            FixedOptions(),
+            Ct);
+
+        // Assert: the manifest records the referrer set, the scalar alias, and the template flag
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        var images = manifest.RootElement.GetProperty("images");
+        Assert.Equal(2, images.GetArrayLength());
+
+        // The page-referenced image lists every referrer and aliases the first
+        Assert.Equal(
+            [3, 7],
+            images[0].GetProperty("sourcePages").EnumerateArray().Select(element => element.GetInt32()).ToArray());
+        Assert.Equal(3, images[0].GetProperty("sourcePage").GetInt32());
+        Assert.False(images[0].GetProperty("referencedByTemplate").GetBoolean());
+
+        // The template-only image is flagged rather than given a fabricated page
+        Assert.True(images[1].GetProperty("referencedByTemplate").GetBoolean());
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
     ///     Builds an engine from the given extractors.
     /// </summary>
     /// <param name="extractors">The extractors to register.</param>
@@ -382,6 +424,38 @@ public class DocDownCoreTests
             await context.Sink.AddImageAsync(
                 second,
                 new ImageHint("chart", "image/png", Transform: ImageTransform.DecodedToPng),
+                context.CancellationToken);
+        }
+
+        return ExtractionOutcome.Produced;
+    }
+
+    /// <summary>
+    ///     Writes one image referenced by two pages and one image reached only through a template.
+    /// </summary>
+    /// <param name="source">The document source, unused by this scripted behavior.</param>
+    /// <param name="context">The extraction context whose sink receives the images.</param>
+    /// <returns>The produced outcome.</returns>
+    private static async ValueTask<ExtractionOutcome> WriteImagesOfDifferingReferrersAsync(
+        DocumentSource source,
+        IExtractionContext context)
+    {
+        _ = source;
+        await context.Sink.WriteContentAsync("# Document\n\nTwo images.\n", context.CancellationToken);
+
+        using (var referenced = new MemoryStream([12, 22, 32, 42], writable: false))
+        {
+            await context.Sink.AddImageAsync(
+                referenced,
+                new ImageHint("figure", "image/png", SourcePages: [3, 7]),
+                context.CancellationToken);
+        }
+
+        using (var template = new MemoryStream([13, 23, 33, 43], writable: false))
+        {
+            await context.Sink.AddImageAsync(
+                template,
+                new ImageHint("watermark", "image/png", ReferencedByTemplate: true),
                 context.CancellationToken);
         }
 

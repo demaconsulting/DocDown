@@ -64,3 +64,8 @@ template flags, and descriptions.
 ##### Image metadata carries referrers, template flags, and descriptions
 
 **Test**: `ManifestWriter_WriteAsync_ImageMetadata_SerializesReferrersTemplateAndDescription`
+
+The same test pins the published field names: the referrer array is written as `sourcePages`, the
+scalar alias `sourcePage` repeats its first entry, and a template-only image is flagged
+`referencedByTemplate`. Evidence for `DocDownCore-Output-ManifestWriter-ImageReferrerFields` as well
+as `DocDownCore-Output-ManifestWriter-ImageDescriptionSerialized`.

@@ -555,7 +555,8 @@ public sealed class ExtractionSink : IExtractionSink
     /// <returns>The 64-character lowercase hex digest.</returns>
     /// <remarks>
     ///     Lowercase hex is used consistently across images, pages, and the source hash so the
-    ///     manifest and the contract verifier compare digests byte-for-byte. Pure and side-effect free.
+    ///     manifest and any consumer re-hashing the files compare digests byte-for-byte. Pure and
+    ///     side-effect free.
     /// </remarks>
     private static string ComputeSha256(byte[] bytes)
     {
@@ -752,7 +753,7 @@ internal sealed class RecordedPage
     public long SizeBytes { get; init; }
 
     /// <summary>Gets the lowercase hexadecimal SHA-256 digest of the page bytes.</summary>
-    /// <remarks>The integrity hash the contract verifier recomputes from disk.</remarks>
+    /// <remarks>The integrity hash a consumer can recompute from the file on disk.</remarks>
     public required string Sha256 { get; init; }
 }
 
