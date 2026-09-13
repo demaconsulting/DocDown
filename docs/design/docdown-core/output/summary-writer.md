@@ -53,7 +53,10 @@ omitted):
 9. **What WAS extracted** — the concrete outputs: `content.md`'s character count **and** a one-line
    **content outline** of the structure it carries (`Contains 3 headings, 2 tables, 53 comments, …`),
    counted from the model and drawn from the same content features the manifest records, so an agent
-   can tell that (say) author-attributed comments are present without reading the whole file; an
+   can tell that (say) author-attributed comments are present without reading the whole file. A feature
+   the backend declared it looked for appears even at zero (`Contains 50 slides, …, 0 sets of speaker
+   notes, …`), so a reader can tell "we looked; there are none" from "this is not something DocDown
+   counts"; an
    **aggregate** description of the images (how many, how many bytes, the unit range they span, and how
    many carry no unit number and why) that ends by pointing at `manifest.json` for the per-image
    inventory rather than printing one line per image; and the rendered-page and content-part counts.

@@ -136,7 +136,11 @@ public interface IExtractionSink
     ///     counts exactly; deriving them by scanning the rendered markdown would be a guess about a
     ///     rendering rather than a statement about the document. Repeated calls for the same label
     ///     accumulate, so a backend emitting per-part may report each part's contribution
-    ///     separately. A zero count is ignored: the summary never prints a line of zeroes.
+    ///     separately. A zero count is ignored unless the feature is marked
+    ///     <see cref="ContentFeature.LookedFor"/>: a feature the format cannot have contributes
+    ///     nothing but noise, while a feature the backend genuinely looked for is reported at zero so
+    ///     a reader can tell "we looked; there are none" from "we never looked". Reporting an absence
+    ///     here is a statement about the document, never a gap and never a degradation.
     /// </remarks>
     void ReportContentFeature(ContentFeature feature);
 

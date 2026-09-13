@@ -605,9 +605,11 @@ public static class SummaryWriter
     ///     A character count tells a reader how much text there is and nothing about what it is. That
     ///     omission is not cosmetic: an agent asked to find reviewer commentary in a document whose
     ///     <c>content.md</c> carried 53 author-attributed comments never learned they existed and
-    ///     answered from a different document by inference. One line naming the structural features
-    ///     actually present — and only those, since the sink drops zero counts — costs a handful of
-    ///     tokens and makes that content discoverable. Pure apart from the buffer.
+    ///     answered from a different document by inference. One line naming the structural features —
+    ///     those present, plus any the backend declared it looked for and found none of — costs a
+    ///     handful of tokens and makes that content discoverable. The line is inventory, not verdict:
+    ///     a reported zero says what the document does not contain, never what DocDown could not do.
+    ///     Pure apart from the buffer.
     /// </remarks>
     private static void AppendContentOutline(StringBuilder builder, IReadOnlyList<ContentFeature> features)
     {

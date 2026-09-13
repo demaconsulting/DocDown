@@ -84,18 +84,25 @@ sections:
 
           - id: DocDownCore-Output-ContentOutline
             title: >-
-              The subsystem shall record the counted structural features of the extracted content and
-              surface them as the summary's content outline and the manifest's machine-readable twin.
+              The subsystem shall record the counted structural features of the extracted content,
+              including a count of zero for a feature the backend reports it looked for, and surface
+              them as the summary's content outline and the manifest's machine-readable twin.
             justification: |
               A character count tells a reader how much text there is and nothing about what it is, so
               an agent asked to find (say) author-attributed reviewer comments cannot tell they exist.
-              Accumulating each reported feature under its label, dropping zero counts as noise, and
-              rendering the surviving features as a one-line outline in summary.txt and as the
-              contentFeatures array in manifest.json makes the structure of content.md discoverable
-              from the same source, without parsing the markdown.
+              Accumulating each reported feature under its label and rendering the result as a one-line
+              outline in summary.txt and as the contentFeatures array in manifest.json makes the
+              structure of content.md discoverable from the same source, without parsing the markdown.
+              A feature the source format cannot have is noise and its zero is dropped, but a zero the
+              backend reports it looked for is itself information — "we looked; there are none" is a
+              fact about the document that a consumer cannot otherwise tell from "this is not something
+              DocDown counts" — so it is kept. The outline is inventory: it states what the document
+              does or does not contain, and never treats an absence as a shortfall of the extraction.
             tests:
               - ExtractionSink_ReportContentFeature_RepeatedLabels_AccumulateAndDropZeroCounts
+              - ExtractionSink_ReportContentFeature_LookedForZero_IsReported
               - SummaryWriter_WriteAsync_WithContentFeatures_OpensWithGistAndOutlinesContent
+              - SummaryWriter_WriteAsync_LookedForZeroFeature_OutlinesTheZero
 
           - id: DocDownCore-Output-ContentDocument
             title: The subsystem shall write the extracted content as Markdown, split into parts when appropriate.

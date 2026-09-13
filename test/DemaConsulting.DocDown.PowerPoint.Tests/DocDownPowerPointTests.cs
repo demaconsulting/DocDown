@@ -107,19 +107,30 @@ public class DocDownPowerPointTests
     }
 
     /// <summary>
-    ///     Proves a deck without speaker notes states the whole-deck absence as an informational
-    ///     diagnostic and succeeds cleanly — a notes-less deck is well-formed and must not degrade.
+    ///     Proves a deck without speaker notes succeeds cleanly and states the absence as a counted
+    ///     zero in the summary's content outline and the manifest's <c>contentFeatures</c> — a
+    ///     notes-less deck is well-formed, so the absence is inventory, never a gap or a diagnostic.
     /// </summary>
+    /// <remarks>
+    ///     This is the end-to-end proof that a looked-for feature survives to both artifacts at zero:
+    ///     a consuming agent reading either one can tell "we read every notes slide and there are
+    ///     none" from "notes are not something DocDown counts".
+    /// </remarks>
     [Fact]
-    public async Task DocDownPowerPoint_Extract_DeckWithoutNotes_ReportsInfoDiagnosticAndSucceeds()
+    public async Task DocDownPowerPoint_Extract_DeckWithoutNotes_ReportsZeroNotesInSummaryAndManifest()
     {
         using var temp = new TempScratch();
         var (scratch, result) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithoutNotes(), FixedOptions());
 
         Assert.Equal(ExtractionOutcome.Succeeded, result.Outcome);
         Assert.DoesNotContain(result.Gaps, candidate => candidate.Target == "notes");
-        Assert.Contains(result.Diagnostics, diagnostic =>
-            diagnostic.Code == "PPTX0002" && diagnostic.Severity == DiagnosticSeverity.Info);
+        Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == "PPTX0002");
+
+        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        Assert.Contains("0 sets of speaker notes", summary, StringComparison.Ordinal);
+
+        var manifest = await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct);
+        Assert.Contains("\"sets of speaker notes\"", manifest, StringComparison.Ordinal);
         ContractAssert.NoViolations(scratch);
     }
 

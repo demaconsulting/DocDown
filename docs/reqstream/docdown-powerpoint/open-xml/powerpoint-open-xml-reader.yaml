@@ -68,7 +68,8 @@ sections:
                 justification: |
                   A slide with no notes must be distinguishable from one whose notes were missed, so the
                   reader yields no notes text rather than an empty string, letting the emitter count the
-                  genuine whole-deck absence and report it honestly.
+                  slides that carry notes exactly and state that count — zero included — in the content
+                  inventory.
                 tests:
                   - PowerPointOpenXmlReader_Read_DeckWithoutNotes_YieldsNullNotes
 

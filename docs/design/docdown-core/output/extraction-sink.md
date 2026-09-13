@@ -28,8 +28,9 @@ driven by a single extractor on a single logical flow, matching the interface co
 - **`_content`** (`StringBuilder`) — Buffered single-flow markdown, accumulated across calls.
 - **`_diagnostics`, `_gaps`, `_environmentFacts`, `_foundCounts`, `_contentFeatures`** (collections) —
   The honesty stream in emission order. `_contentFeatures` accumulates the counted structural features
-  (headings, tables, comments, sheets, charts) under their label, dropping any zero count, and feeds
-  both the summary's content outline and the manifest's `contentFeatures` twin.
+  (headings, tables, comments, sheets, charts) under their label, dropping a zero count only when the
+  backend did not declare it looked for that feature, and feeds both the summary's content outline and
+  the manifest's `contentFeatures` twin.
 - **`_documentInfo`** (`DocumentInfo?`) — The most recent reported orientation metadata (last write wins).
 - **`_documentMetadata`** (`DocumentMetadata?`) — The most recent reported **self-reported** document
   metadata (last write wins), consumed by `MetadataWriter` for `metadata.json` and by the summary's
@@ -80,8 +81,9 @@ claim and accepts the passthrough default.
   `ReportGap` / `ReportEnvironmentFact` / `ReportFound`** —
   record the honesty stream. `ReportDocumentMetadata` captures the document's own self-reported claims
   for `metadata.json`; `ReportContentFeature` accumulates a counted feature under its label (rejecting a
-  blank label or negative count, and silently dropping a zero count so the outline never prints "0
-  tables"). `ReportGap` overwrites any caller-supplied `Id` with a dense `GAP-n`, and
+  blank label or negative count, and dropping a zero count unless the feature carries `LookedFor`, so
+  the outline never prints "0 worksheets" for a PDF but does print "0 sets of speaker notes" for a deck
+  whose notes slides were all read). `ReportGap` overwrites any caller-supplied `Id` with a dense `GAP-n`, and
   substitutes a Core-authored reason (plus a `DD0701`-adjacent warning) if the gap arrives with no
   reason, so a gap is never silent. `ReportFound` records the ledger denominators (for example "4
   found").

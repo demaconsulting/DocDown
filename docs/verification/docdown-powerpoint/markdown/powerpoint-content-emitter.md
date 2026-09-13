@@ -44,17 +44,18 @@ marked as notes. Evidence for `DocDownPowerPoint-Markdown-PowerPointContentEmitt
 `DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesSlideText`, and
 `DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesNotes`.
 
-#### A deck with no speaker notes is a counted gap (intent; divergence recorded)
+#### A deck with no speaker notes is stated as a counted zero in the inventory
 
-**Intended test**: `PowerPointContentEmitter_Emit_NoNotes_ReportsCountedGap` *(does not yet exist)*
+**Test**: `PowerPointContentEmitter_Emit_NoNotes_ReportsZeroNotesFeatureNotGapOrDiagnostic`
 
-The intent requires the whole-deck absence of speaker notes to be a counted gap with a reason. The shipped
-emitter reports it as an informational `PPTX0002` diagnostic and does not degrade — proved by
-`PowerPointContentEmitter_Emit_NoNotes_ReportsInfoDiagnosticNotGap`, with the complementary
-`PowerPointContentEmitter_Emit_NotesPresent_NoNotesGap` proving no gap when notes are present. Requirement
-`DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceGap` is written to the intent
-and is not satisfied by the current code; the divergence is a candidate defect recorded in the developer
-report, not back-written to match the code.
+Proves a deck carrying no speaker notes reports the note-set count as `0` in the content outline and raises
+neither a gap nor a diagnostic, with the complementary `PowerPointContentEmitter_Emit_NotesPresent_NoNotesGap`
+proving the count is reported and no gap raised when notes are present. Evidence for
+`DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceInInventory`, which supersedes
+the earlier counted-gap requirement
+`DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceGap` — authored as intent
+before the governing principle that DocDown makes no acceptability judgement about a document's content —
+together with the retired `PPTX0002` diagnostic.
 
 #### A slide's images are linked inline, with no dangling link when suppressed
 

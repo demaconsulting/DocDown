@@ -107,7 +107,8 @@ public class PowerPointContentEmitterTests
     }
 
     /// <summary>
-    ///     Proves a deck whose slides carry notes reports no speaker-notes gap.
+    ///     Proves a deck whose slides carry notes reports the notes in the content outline and raises
+    ///     neither a notes gap nor any diagnostic about the notes.
     /// </summary>
     [Fact]
     public async Task PowerPointContentEmitter_Emit_NotesPresent_NoNotesGap()
@@ -119,17 +120,24 @@ public class PowerPointContentEmitterTests
         await PowerPointContentEmitter.EmitAsync(
             sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
 
-        Assert.DoesNotContain(sink.Diagnostics, diagnostic => diagnostic.Code == "PPTX0002");
         Assert.DoesNotContain(sink.Gaps, gap => gap.Target == "notes");
+        Assert.Contains(
+            sink.ContentFeatures,
+            feature => feature.Label == "sets of speaker notes" && feature.Count == 1);
     }
 
     /// <summary>
-    ///     Proves a deck with no speaker notes states the whole-deck absence as an informational
-    ///     diagnostic (visible in the summary), not a gap — a notes-less deck is well-formed and must
-    ///     not degrade the run.
+    ///     Proves a deck with no speaker notes states the whole-deck absence as a counted zero in the
+    ///     content outline — a fact about the deck — and raises neither a gap nor a diagnostic, so a
+    ///     notes-less deck never degrades the run.
     /// </summary>
+    /// <remarks>
+    ///     The zero is what lets a reader tell "we read every notes slide and there are none" from
+    ///     "notes are not something this backend counts"; the retired PPTX0002 diagnostic said the
+    ///     same thing as a judgement about the deck's content, which is not DocDown's role.
+    /// </remarks>
     [Fact]
-    public async Task PowerPointContentEmitter_Emit_NoNotes_ReportsInfoDiagnosticNotGap()
+    public async Task PowerPointContentEmitter_Emit_NoNotes_ReportsZeroNotesFeatureNotGapOrDiagnostic()
     {
         var model = new PowerPointDeckModel(
         [
@@ -143,8 +151,10 @@ public class PowerPointContentEmitterTests
 
         Assert.False(degraded);
         Assert.DoesNotContain(sink.Gaps, gap => gap.Target == "notes");
-        Assert.Contains(sink.Diagnostics, diagnostic =>
-            diagnostic.Code == "PPTX0002" && diagnostic.Severity == DiagnosticSeverity.Info);
+        Assert.Empty(sink.Diagnostics);
+        Assert.Contains(
+            sink.ContentFeatures,
+            feature => feature is { Label: "sets of speaker notes", Count: 0, LookedFor: true });
     }
 
     /// <summary>

@@ -85,13 +85,17 @@ ISO-8601 date normalization once for every OPC backend. Evidence for
 #### The content outline names the structure of content.md
 
 **Tests**: `ExtractionSink_ReportContentFeature_RepeatedLabels_AccumulateAndDropZeroCounts`,
-`SummaryWriter_WriteAsync_WithContentFeatures_OpensWithGistAndOutlinesContent`
+`ExtractionSink_ReportContentFeature_LookedForZero_IsReported`,
+`SummaryWriter_WriteAsync_WithContentFeatures_OpensWithGistAndOutlinesContent`,
+`SummaryWriter_WriteAsync_LookedForZeroFeature_OutlinesTheZero`
 
 Proves the subsystem accumulates the counted structural features a backend reports — folding repeated
-labels together and dropping any zero count — and renders the surviving features as the summary's
-one-line content outline (the machine-readable twin is the manifest's `contentFeatures` array), so a
-reader learns that (for example) author-attributed comments are present without parsing the markdown.
-Evidence for `DocDownCore-Output-ContentOutline`.
+labels together, dropping a zero count for a feature the backend did not declare it looked for, and
+keeping the zero for one it did — and renders the surviving features as the summary's one-line content
+outline (the machine-readable twin is the manifest's `contentFeatures` array), so a reader learns that
+(for example) author-attributed comments are present without parsing the markdown, and can tell a
+looked-for feature the document does not carry from one that was never counted. Evidence for
+`DocDownCore-Output-ContentOutline`.
 
 #### Text content produces a Markdown document
 

@@ -25,7 +25,7 @@ sections:
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesTitle
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesSlideText
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesNotes
-              - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceGap
+              - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceInInventory
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-LinksImages
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsVectorImageCaveat
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsChartsNotExtracted

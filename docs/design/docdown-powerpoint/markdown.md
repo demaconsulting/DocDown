@@ -45,21 +45,23 @@ model implies. Its gap policy is the honesty of the extraction: an empty deck is
 degrades, a vector image carries an informational readability caveat, and charts the backend does not read
 are a counted gap naming them with a remedy that points at the workbook route.
 
-**The speaker-notes accounting.** The emitter counts the slides that carry speaker notes. It reports the
-content-outline count of note sets so a paste-in reader can see the narration is present, and it addresses
-the whole-deck absence of notes. *Forward-trace note:* the PowerPoint intent requires the absence of
-notes to be reported as a **counted gap** with a reason, so a reader can tell "this deck has no speaker
-notes" from "notes were not looked for". The shipped emitter instead reports that absence as an
-**informational** `PPTX0002` diagnostic (severity `Info`) and does not degrade the run. The unit
-requirement `DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceGap` is written
-to the intent (a counted gap); the divergence is recorded as a finding in the developer report rather than
-back-written to match the code.
+**The speaker-notes accounting.** The emitter counts the slides that carry speaker notes and reports that
+count in the content outline, declared as a feature it looked for. A deck carrying none therefore reads
+`0 sets of speaker notes` rather than dropping the line, which is exactly what lets a reader tell "every
+notes slide was read and there are none" from "notes are not something DocDown counts". The absence
+raises no gap, no diagnostic, and no degradation: it is a fact about the deck, and DocDown's gaps state
+only what DocDown could not do. *Supersession note:* an earlier statement of intent required this
+absence to be a **counted gap**, and the shipped emitter reported it as an **informational** `PPTX0002`
+diagnostic. Both are superseded by the inventory zero; the unit requirement
+`DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceGap` is replaced by
+`...-ReportsSpeakerNotesAbsenceInInventory`.
 
-**The diagnostic-code contract.** `PowerPointDiagnosticCodes` defines the five codes this package owns —
-`PPTX0001` `NoSlides`, `PPTX0002` `NoSpeakerNotes`, `PPTX0003` `VectorImageWrittenAsIs`, `PPTX0004`
-`SlideRenderFailed`, `PPTX0005` `ChartsNotExtracted`. The distinct `PPTX` prefix cannot collide with
-Core's `DD` range or another package's prefix in any shared manifest, which makes ownership self-evident.
-The numbering is contiguous and stable, and a table-pinning test treats it as a contract. It is a
+**The diagnostic-code contract.** `PowerPointDiagnosticCodes` defines the four codes this package owns —
+`PPTX0001` `NoSlides`, `PPTX0003` `VectorImageWrittenAsIs`, `PPTX0004` `SlideRenderFailed`, `PPTX0005`
+`ChartsNotExtracted`. The distinct `PPTX` prefix cannot collide with Core's `DD` range or another
+package's prefix in any shared manifest, which makes ownership self-evident. A published code number is
+never reused, so the set is stable rather than contiguous: `PPTX0002` `NoSpeakerNotes` is retired and
+permanently reserved, and a table-pinning test guards both the surviving set and the hole. It is a
 supporting type documented here.
 
 **The unit split.** The subsystem has one unit, `PowerPointContentEmitter`, which owns the sink walk, the

@@ -249,6 +249,33 @@ public class SummaryWriterTests
     }
 
     /// <summary>
+    ///     Proves the content outline prints a feature the backend declared it looked for even at a
+    ///     count of zero, while still omitting a zero it never declared.
+    /// </summary>
+    /// <remarks>
+    ///     A reader of a deck with no speaker notes must be able to tell "we read every notes slide
+    ///     and there are none" from "notes are not something DocDown counts". The declared zero says
+    ///     the first; the undeclared zero would only add noise, so it stays out.
+    /// </remarks>
+    [Fact]
+    public async Task SummaryWriter_WriteAsync_LookedForZeroFeature_OutlinesTheZero()
+    {
+        // Arrange: a run whose backend looked for a feature this document does not carry
+        using var temp = new TempScratch();
+
+        // Act: render the summary
+        var summary = await RenderSummaryAsync(
+            temp, WriteTextWithLookedForZero, ExtractionOutcome.Succeeded, SuccessSelection(), null);
+
+        // Assert: the zero reads naturally alongside the present counts, and the undeclared zero is absent
+        Assert.Contains(
+            "Contains 50 slides, 44 slide titles, 0 sets of speaker notes, and 42 inline images.",
+            summary,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("charts", summary, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves the gist is omitted entirely when the detected format has no plain-English name,
     ///     rather than describing an unrecognized stream as some guessed kind of document.
     /// </summary>
@@ -479,6 +506,28 @@ public class SummaryWriterTests
         sink.ReportContentFeature(new ContentFeature("tables", 1));
         sink.ReportContentFeature(new ContentFeature("inline images", 0));
         sink.ReportContentFeature(new ContentFeature("comments", 53));
+    }
+
+    /// <summary>
+    ///     Writes text and reports a deck-shaped outline in which the looked-for speaker-notes count
+    ///     is zero, alongside an undeclared zero that must be dropped.
+    /// </summary>
+    /// <param name="sink">The sink to write through.</param>
+    /// <returns>A task that completes when the writes finish.</returns>
+    /// <remarks>
+    ///     Mirrors what a PowerPoint backend reports for a 50-slide deck that carries no notes, so the
+    ///     rendered line can be compared against the intended wording verbatim.
+    /// </remarks>
+    private static async ValueTask WriteTextWithLookedForZero(IExtractionSink sink)
+    {
+        await sink.WriteContentAsync("# Deck\n\nSlide content.\n", CancellationToken.None);
+        sink.ReportDocumentInfo(new DocumentInfo("Deck Report", PageCount: 50));
+        sink.ReportContentFeature(new ContentFeature("slides", 50));
+        sink.ReportContentFeature(new ContentFeature("slide titles", 44));
+        sink.ReportContentFeature(new ContentFeature(
+            "sets of speaker notes", 0, "set of speaker notes", LookedFor: true));
+        sink.ReportContentFeature(new ContentFeature("inline images", 42));
+        sink.ReportContentFeature(new ContentFeature("charts", 0));
     }
 
     /// <summary>

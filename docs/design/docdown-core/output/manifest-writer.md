@@ -34,7 +34,8 @@ shape carries:
   the summary elides — so `manifest.json` is where the complete provenance is read.
 - `contentFeatures` — the counted structural features of the extracted content (headings, tables,
   comments, sheets, charts, and the like), the machine-readable twin of the summary's content outline;
-  empty when the backend reported none.
+  a feature the backend declared it looked for appears with a `count` of `0` when the document carries
+  none, and the array is empty when the backend reported nothing.
 - `artifacts` — the completeness ledger, one entry per root artifact and resource folder (`summary`,
   `manifest`, `metadata`, `content`, `images`, `pages`) with its status and counts.
 - `images`, `pages`, and **`parts`**, each listing the produced resources. `images` carries the full

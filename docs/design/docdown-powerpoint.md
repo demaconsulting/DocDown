@@ -128,10 +128,12 @@ late binding with no interop assembly.
   hand-built model with no deck behind it. The COM backend reuses that same emitter through delegation, so
   a deck's content reads identically whether or not it was rendered.
 - **Notes are always read.** The reader reads the notes slide's body placeholder on every extraction, so
-  the narration no render can supply is recovered from the file itself; a deck that carries no notes is
-  reported so a reader can tell a notes-less deck from one whose notes were missed. *(See the finding in
-  the developer report: the intent requires this whole-deck absence to be a counted gap, but the shipped
-  code reports it as an informational `PPTX0002` diagnostic. The requirement is written to the intent.)*
+  the narration no render can supply is recovered from the file itself; the count of slides carrying
+  notes is stated in the content inventory whether or not any exist, so a reader can tell a notes-less
+  deck from one whose notes were never counted. That absence is a fact about the deck, not a shortfall
+  of the extraction, so it raises no gap and no diagnostic. *(Supersedes the earlier behavior, in which
+  the whole-deck absence raised the informational `PPTX0002` diagnostic and the requirement called for a
+  counted gap; both are retired.)*
 - **The single untestable boundary is isolated.** Everything the COM backend does apart from talking to
   PowerPoint — content delegation, availability, the gap and diagnostic policy, per-slide fault
   isolation, and outcome mapping — is exercised cross-platform by injecting a stub `IPowerPointAutomation`.
@@ -163,9 +165,9 @@ late binding with no interop assembly.
    deduplicated images, the deck metadata, and the count of charts the deck embeds.
 4. `PowerPointContentEmitter.EmitAsync` writes every image first (so each slide can link its pictures
    inline), writes one section per slide carrying its title, text, and notes, reports the document info
-   and metadata, and reports every diagnostic and gap the model implies: `PPTX0001` for an empty deck,
-   `PPTX0002` for a deck with no speaker notes, `PPTX0003` for a vector image, `PPTX0005` for charts this
-   backend does not read.
+   and metadata, reports the content outline (slides, slide titles, sets of speaker notes — stated even
+   when zero — and inline images), and reports every diagnostic and gap the model implies: `PPTX0001`
+   for an empty deck, `PPTX0003` for a vector image, `PPTX0005` for charts this backend does not read.
 5. When the COM backend runs, it delegates steps 2–4 to the managed backend against a composing sink,
    records the authoritative `pages.renderer` fact, materializes the deck to a temporary path, and drives
    Microsoft PowerPoint to export each slide to a PNG; a slide that fails becomes a counted `pages` gap

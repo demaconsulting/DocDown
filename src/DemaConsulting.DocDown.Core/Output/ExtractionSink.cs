@@ -396,23 +396,32 @@ public sealed class ExtractionSink : IExtractionSink
             throw new ArgumentOutOfRangeException(nameof(feature), feature.Count, "The feature count cannot be negative.");
         }
 
-        // A zero count is silently dropped: the summary's whole point here is to say what is present,
-        // and a "0 tables" line costs tokens while telling a reader nothing
-        if (feature.Count == 0)
-        {
-            return;
-        }
-
-        // Accumulate under an existing label so a per-part backend can report each part separately
+        // Accumulate under an existing label so a per-part backend can report each part separately.
+        // The lookup happens before the zero-count rule because a backend that looked for a feature may
+        // report it per part: an earlier part contributing a count must not be erased by a later zero.
         var index = _contentFeatures.FindIndex(
             entry => string.Equals(entry.Label, feature.Label, StringComparison.Ordinal));
-        if (index < 0)
+        if (index >= 0)
         {
-            _contentFeatures.Add(feature);
+            var accumulated = _contentFeatures[index];
+            _contentFeatures[index] = feature with
+            {
+                Count = accumulated.Count + feature.Count,
+                LookedFor = accumulated.LookedFor || feature.LookedFor,
+            };
             return;
         }
 
-        _contentFeatures[index] = feature with { Count = _contentFeatures[index].Count + feature.Count };
+        // A zero count for a feature the backend did not declare it looked for is silently dropped:
+        // a PDF has no worksheets, and a "0 worksheets" line costs tokens while telling a reader
+        // nothing. A zero the backend did look for is kept, because "we looked; there are none" is a
+        // fact about the document a consuming agent cannot recover any other way
+        if (feature.Count == 0 && !feature.LookedFor)
+        {
+            return;
+        }
+
+        _contentFeatures.Add(feature);
     }
 
     /// <inheritdoc />
@@ -467,10 +476,11 @@ public sealed class ExtractionSink : IExtractionSink
     /// <remarks>Consumed by the writers for the manifest and summary environment blocks.</remarks>
     internal IReadOnlyList<EnvironmentFact> EnvironmentFacts => _environmentFacts;
 
-    /// <summary>Gets the accumulated content features in first-reported order, zero counts excluded.</summary>
+    /// <summary>Gets the accumulated content features in first-reported order.</summary>
     /// <remarks>
     ///     Consumed by the summary's content outline and by the manifest's <c>contentFeatures</c>
-    ///     block, so the two describe the same structure from the same source.
+    ///     block, so the two describe the same structure from the same source. A zero count survives
+    ///     only for a feature the backend declared it looked for.
     /// </remarks>
     internal IReadOnlyList<ContentFeature> ContentFeatures => _contentFeatures;
 
@@ -644,6 +654,11 @@ public sealed class ExtractionSink : IExtractionSink
 ///     <see langword="null"/> for a regular label; the singular is then the label with any trailing
 ///     <c>s</c> removed.
 /// </param>
+/// <param name="LookedFor">
+///     <see langword="true"/> when the backend actively looked for this feature in <em>this</em>
+///     document, so a count of zero is itself a finding and must be reported; <see langword="false"/>
+///     (the default) for a feature that may simply not apply, whose zero is dropped as noise.
+/// </param>
 /// <remarks>
 ///     <para>
 ///         The summary's bare character count tells a reader how <em>much</em> text
@@ -655,12 +670,19 @@ public sealed class ExtractionSink : IExtractionSink
 ///         counts — state what the content contains, with no one regex-scanning rendered markdown.
 ///     </para>
 ///     <para>
-///         Only genuinely present features reach the output: a zero count is dropped by
-///         <see cref="ExtractionSink.ReportContentFeature"/>, because a line of zeroes costs tokens
-///         and tells a reader nothing. Instances are immutable and thread-safe.
+///         A feature the format cannot have is simply never reported, and a zero count for a feature
+///         the backend did not declare it looked for is dropped by
+///         <see cref="ExtractionSink.ReportContentFeature"/>, because a PDF's "0 worksheets" costs
+///         tokens and tells a reader nothing. A feature the backend <em>did</em> look for is reported
+///         even at zero, by setting <see cref="LookedFor"/>: "this deck has no speaker notes" is a
+///         fact about the document that a consuming agent cannot otherwise tell apart from "speaker
+///         notes are not something DocDown counts". The inventory states that fact plainly, with no
+///         verdict attached — an absence the backend looked for is never a gap and never degrades the
+///         run. Instances are immutable and thread-safe.
 ///     </para>
 /// </remarks>
-public sealed record ContentFeature(string Label, int Count, string? SingularLabel = null)
+public sealed record ContentFeature(
+    string Label, int Count, string? SingularLabel = null, bool LookedFor = false)
 {
     /// <summary>
     ///     Gets the label agreeing in number with <see cref="Count"/>.

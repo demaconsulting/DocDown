@@ -23,7 +23,8 @@ folder:
 - **`summary.txt`** — a human- and LLM-readable write-up of what was extracted and where,
   including the absolute path to the scratch folder. It opens with a one-sentence plain-English
   description of the document, outlines what `content.md` contains (headings, tables, comments,
-  speaker notes, and the like), and describes the extracted images in aggregate rather than one
+  speaker notes, and the like — including a plain `0` for anything the backend looked for and the
+  document does not carry), and describes the extracted images in aggregate rather than one
   line each. This is what a user pastes into an LLM context window, so it is kept short; the
   per-image inventory and the full environment record live in `manifest.json`.
 - **`manifest.json`** — the machine-readable twin of `summary.txt`, and the authoritative record

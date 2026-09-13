@@ -13,10 +13,10 @@ namespace DocDown.PowerPoint.Markdown;
 /// <remarks>
 ///     The guaranteed half of PowerPoint extraction lives here: the text of every slide, its title,
 ///     the speaker notes, and the deck's embedded images. Nothing is omitted silently: a deck with
-///     no notes is stated as an informational diagnostic (a notes-less deck is well-formed); the
-///     embedded images are extracted through the sink and counted; an empty deck is a counted gap.
-///     Performs no filesystem I/O of its own; every byte goes through the sink. Stateless and
-///     thread-safe.
+///     no notes is stated as a counted zero in the content outline (an inventory fact about the
+///     deck, not a shortfall of the extraction); the embedded images are extracted through the sink
+///     and counted; an empty deck is a counted gap. Performs no filesystem I/O of its own; every
+///     byte goes through the sink. Stateless and thread-safe.
 /// </remarks>
 internal static class PowerPointContentEmitter
 {
@@ -79,16 +79,10 @@ internal static class PowerPointContentEmitter
         }
 
         // Speaker notes are the half no render can supply. A notes-less deck is well-formed and no
-        // better environment would yield more, so its whole-deck absence is stated as an informational
-        // diagnostic — visible in the summary — rather than a gap that would degrade every such deck.
+        // better environment would yield more, so its whole-deck absence is not a shortfall of the
+        // extraction at all: it is a fact about the document, stated as a counted "0" in the content
+        // outline below rather than as a diagnostic or a gap.
         var notesCount = model.Slides.Count(slide => slide.Notes is not null);
-        if (notesCount == 0)
-        {
-            sink.ReportDiagnostic(new ExtractionDiagnostic(
-                PowerPointDiagnosticCodes.NoSpeakerNotes, DiagnosticSeverity.Info,
-                $"Speaker notes were read from all {model.Slides.Count.ToString(CultureInfo.InvariantCulture)} slide(s); "
-                + "the deck carries none."));
-        }
 
         // Report the honest gaps and caveats for the images written above
         degraded |= ReportImages(sink, options, imageResult);
@@ -145,7 +139,11 @@ internal static class PowerPointContentEmitter
     ///     A character count alone does not tell a paste-in reader that the deck's speaker notes —
     ///     the half no rendered slide image can supply — are present in the text, nor how many slides
     ///     carry a title worth navigating by. The counts come from the model the reader built, not
-    ///     from scanning the rendered markdown, and Core drops any zero count. Side effect: records
+    ///     from scanning the rendered markdown. The notes count is declared as looked-for, so a deck
+    ///     that carries none reads "0 sets of speaker notes" instead of dropping the line: that zero
+    ///     is the whole distinction between "we read every notes slide and there are none" and
+    ///     "notes are not something this backend counts", and it belongs in the inventory rather than
+    ///     in a diagnostic that would pass judgement on the deck's content. Side effect: records
     ///     reports on the sink.
     /// </remarks>
     private static void ReportContentFeatures(IExtractionSink sink, PowerPointDeckModel model, int notesCount)
@@ -154,7 +152,7 @@ internal static class PowerPointContentEmitter
         sink.ReportContentFeature(new ContentFeature(
             "slide titles", model.Slides.Count(slide => slide.Title is not null)));
         sink.ReportContentFeature(new ContentFeature(
-            "sets of speaker notes", notesCount, "set of speaker notes"));
+            "sets of speaker notes", notesCount, "set of speaker notes", LookedFor: true));
         sink.ReportContentFeature(new ContentFeature(
             "inline images", model.Slides.Sum(slide => slide.Images.Count)));
     }

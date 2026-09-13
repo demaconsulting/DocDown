@@ -14,7 +14,7 @@ XML SDK behind them, because its contract is the mapping from the model to the o
 text, and notes, the inline image links, the vector-image caveat, the charts-not-read gap, the empty-deck
 gap, the content outline, and the single-flow-versus-per-part split. Building the model by hand is what lets
 each mapping decision be proved in isolation. The diagnostic-code constants are pinned by a table test that
-treats the contiguous `PPTX` numbering as a contract.
+treats the `PPTX` set as a contract, including the hole left by the retired `PPTX0002`.
 
 ### Test Environment
 
@@ -31,18 +31,21 @@ Per IEC 62304 §5.6.2, a Markdown subsystem test run passes when the emitter wri
 text, and speaker notes; links a slide's images inline only when a path was returned; writes a vector image
 with an informational caveat and no gap; reports a counted gap for charts the deck embeds and none for a
 chart-free deck; degrades with a counted gap for an empty deck; reports the content outline including the
-speaker-notes count; and writes the deck as a single flow or one part per slide with links resolving on
-disk. The diagnostic-code set must be exact and contiguous.
+speaker-notes count — stated even when it is zero, and never as a gap or a diagnostic; and writes the deck
+as a single flow or one part per slide with links resolving on disk. The diagnostic-code set must be exact,
+and must exclude the retired `PPTX0002`.
 
-**Recorded divergence.** The intent requires the whole-deck absence of speaker notes to be a **counted gap**;
-the shipped emitter reports it as an **informational** `PPTX0002` diagnostic (proved by
-`PowerPointContentEmitter_Emit_NoNotes_ReportsInfoDiagnosticNotGap`). Requirement
-`DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceGap` is written to the intent
-and is not satisfied by the current code; see the developer report.
+**Supersession.** An earlier statement of intent required the whole-deck absence of speaker notes to be a
+**counted gap**, and the shipped emitter reported it as an **informational** `PPTX0002` diagnostic. Both
+are superseded: a notes-less deck cost the extraction nothing, so the absence belongs in the inventory as
+a counted zero. Requirement
+`DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceGap` is superseded by
+`DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceInInventory`.
 
 ### Test Scenarios
 
 The per-unit scenarios are given in the `PowerPointContentEmitter` unit verification chapter, each naming the
 requirement it evidences. The diagnostic-code constants are pinned by
-`PowerPointDiagnosticCodes_Constants_MatchContract` and `PowerPointDiagnosticCodes_Set_IsExactAndContiguous`,
-which verify the supporting `PowerPointDiagnosticCodes` type documented in the subsystem design.
+`PowerPointDiagnosticCodes_Constants_MatchContract` and
+`PowerPointDiagnosticCodes_Set_IsExactAndExcludesRetiredCode`, which verify the supporting
+`PowerPointDiagnosticCodes` type documented in the subsystem design.

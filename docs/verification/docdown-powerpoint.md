@@ -31,19 +31,21 @@ release-time self-tests. A legacy binary `.ppt` has no reader here and none anyw
 request fails with a structured, reasoned outcome — never with an exception, and never with a remedy that
 promises a capability that does not exist.
 
-### The speaker-notes guarantee is the headline property under test — with one recorded divergence
+### The speaker-notes guarantee is the headline property under test
 
 Speaker notes are the half of a deck no render can supply, so the suite asserts they are extracted from the
-file itself for every slide, in presentation order, alongside the slide text and title. The forward-trace
-from the PowerPoint intent requires more: the **absence** of speaker notes across a whole deck must be a
-**counted gap** with a reason, so a reader can tell "this deck has no speaker notes" from "notes were not
-looked for". The shipped code instead reports that absence as an **informational** `PPTX0002` diagnostic and
-does not degrade the run — the tests `PowerPointContentEmitter_Emit_NoNotes_ReportsInfoDiagnosticNotGap` and
-`DocDownPowerPoint_Extract_DeckWithoutNotes_ReportsInfoDiagnosticAndSucceeds` lock in that informational
-behavior. The requirement `DocDownPowerPoint-SpeakerNotesAbsenceGap` is written to the intent (a counted
-gap); it is therefore not satisfied by the current code, and the divergence is recorded as a finding in the
-developer report. Its named intended test, `PowerPointContentEmitter_Emit_NoNotes_ReportsCountedGap`, does
-not yet exist.
+file itself for every slide, in presentation order, alongside the slide text and title. The whole-deck
+**absence** of notes is verified as an inventory fact rather than a shortfall: the count of note sets is
+reported whether or not any exist, so a reader can tell "every notes slide was read and there are none"
+from "notes are not something DocDown counts". `PowerPointContentEmitter_Emit_NoNotes_ReportsZeroNotesFeatureNotGapOrDiagnostic`
+proves the emitter reports the zero and raises neither a gap nor a diagnostic, and
+`DocDownPowerPoint_Extract_DeckWithoutNotes_ReportsZeroNotesInSummaryAndManifest` proves the zero reaches
+both `summary.txt` and `manifest.json` end to end, with the run still a clean success. This supersedes the
+earlier expectation, recorded against `DocDownPowerPoint-SpeakerNotesAbsenceGap`, that the absence be a
+counted gap: that requirement was authored before the owner established that DocDown reports what was
+extracted and where and makes no acceptability judgement about the content, and is superseded by
+`DocDownPowerPoint-SpeakerNotesAbsenceInventory`. The `PPTX0002` diagnostic that carried the same absence
+is retired.
 
 ### Rendering is captured when available and honest when not
 
@@ -139,16 +141,18 @@ navigate the deck by its titles. Evidence for `DocDownPowerPoint-SlideTitle`.
 Proves the speaker notes that never appear in any render are read from the notes slide's body placeholder for
 each slide, recovered from the file itself. Evidence for `DocDownPowerPoint-SpeakerNotes`.
 
-### A deck with no speaker notes is a counted gap (intent; divergence recorded)
+### A deck with no speaker notes is stated as a counted zero in the inventory
 
-**Intended test**: `PowerPointContentEmitter_Emit_NoNotes_ReportsCountedGap` *(does not yet exist)*
+**Tests**: `PowerPointContentEmitter_Emit_NoNotes_ReportsZeroNotesFeatureNotGapOrDiagnostic`,
+`DocDownPowerPoint_Extract_DeckWithoutNotes_ReportsZeroNotesInSummaryAndManifest`
 
-The PowerPoint intent requires a deck that carries no speaker notes to be reported as a counted gap with a
-reason. The shipped code reports this whole-deck absence as an informational `PPTX0002` diagnostic instead
-(proved by `PowerPointContentEmitter_Emit_NoNotes_ReportsInfoDiagnosticNotGap` and
-`DocDownPowerPoint_Extract_DeckWithoutNotes_ReportsInfoDiagnosticAndSucceeds`). Requirement
-`DocDownPowerPoint-SpeakerNotesAbsenceGap` is written to the intent and is not satisfied by the current code
-— a candidate defect recorded in the developer report, not back-written to match the code.
+Proves a deck carrying no speaker notes reports `0 sets of speaker notes` in the summary's content outline
+and in the manifest's `contentFeatures`, raises neither a gap nor a diagnostic, and still succeeds — so a
+consuming agent can tell "every notes slide was read and there are none" from "notes are not something
+DocDown counts" without that absence being dressed up as a shortfall of the extraction. Evidence for
+`DocDownPowerPoint-SpeakerNotesAbsenceInventory`, which supersedes the earlier counted-gap requirement
+`DocDownPowerPoint-SpeakerNotesAbsenceGap` (authored as intent before the governing principle that
+DocDown makes no acceptability judgement about content) and the retired `PPTX0002` diagnostic.
 
 ### Slides are returned in presentation order
 

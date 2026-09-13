@@ -68,13 +68,20 @@ sections:
                   - ExtractionSink_AddImageAsync_ImagesDisabled_SuppressesAndRecordsOnce
 
               - id: DocDownCore-Output-ExtractionSink-RecordsReports
-                title: ExtractionSink shall record the backend's reports for later serialization.
+                title: >-
+                  ExtractionSink shall record the backend's reports for later serialization, keeping a
+                  counted content feature whose count is zero when the backend reports it looked for
+                  that feature.
                 justification: |
                   Document info, diagnostics, environment facts and found-counts arrive during
                   extraction but are written afterward. Recording them faithfully preserves the evidence
-                  the summary, manifest and ledger later depend on.
+                  the summary, manifest and ledger later depend on. A zero count is dropped by default
+                  because a feature the format cannot have adds only noise, but a backend that looked
+                  for a feature and found none has established a fact about the document, and dropping
+                  that zero would leave a consumer unable to tell it from a feature never counted.
                 tests:
                   - ExtractionSink_Reports_RecordedForLaterSerialization
+                  - ExtractionSink_ReportContentFeature_LookedForZero_IsReported
 
               - id: DocDownCore-Output-ExtractionSink-AllocatesGapIdentifiers
                 title: >-

@@ -11,9 +11,18 @@
 # capture the rendered appearance of each slide when PowerPoint is available, but always extract — from
 # the file itself, independent of whether rendering is possible — the text of every slide, the slide
 # title where one exists, the speaker notes that never appear in any render, and the slide order,
-# because a deck's argument is sequential. Neither half substitutes for the other, so the absence of
-# either must be reported as a counted gap with a reason; and the legacy binary format must be refused
-# honestly.
+# because a deck's argument is sequential. Neither half substitutes for the other, so anything DocDown
+# could not deliver must be reported as a counted gap with a reason; and the legacy binary format must
+# be refused honestly.
+#
+# SUPERSEDED REQUIREMENT: DocDownPowerPoint-SpeakerNotesAbsenceGap required a deck carrying no speaker
+# notes to be reported as a counted gap. That requirement was authored as a statement of intent before
+# the repository owner established the governing principle that DocDown reports what was extracted and
+# where, and makes no acceptability judgement about the content: a gap, and the degradation it implies,
+# must describe what DocDown could not do, never what the document does not contain. A deck with no
+# notes cost the extraction nothing — every notes slide was read. The requirement is therefore
+# superseded (not satisfied) by DocDownPowerPoint-SpeakerNotesAbsenceInventory, which places the same
+# distinction in the content inventory as a counted zero.
 
 sections:
   - title: DocDownPowerPoint Requirements
@@ -97,24 +106,26 @@ sections:
         tests:
           - PowerPointOpenXmlReader_Read_Slide_ExtractsSpeakerNotes
 
-      - id: DocDownPowerPoint-SpeakerNotesAbsenceGap
+      - id: DocDownPowerPoint-SpeakerNotesAbsenceInventory
         title: >-
-          The system shall report a deck that carries no speaker notes as a counted gap naming the
-          reason, so a reader can tell a deck that has no notes apart from notes that were not looked
-          for.
+          The system shall state the number of slides carrying speaker notes in the content
+          inventory, including a count of zero, so a reader can tell a deck that has no notes apart
+          from notes that were not looked for.
         tags: [system]
         justification: |
-          Speaker notes are half the deck's content and no render can supply them, so their whole-deck
-          absence is a real shortfall of the extracted output, not a mere formatting detail. The
-          PowerPoint intent is explicit that the absence of either half — the render or the notes — must
-          be reported as a counted gap with a reason, precisely so a reader can distinguish "this deck
-          has no speaker notes" from "notes were not looked for." Counting the absence, rather than
-          noting it informationally, is what makes that distinction survive into the ledger a consumer
-          reads.
+          Speaker notes are half the deck's content and no render can supply them, so a reader must be
+          able to tell "this deck carries no speaker notes" from "speaker notes are not something
+          DocDown counts." That distinction is a fact about the deck, and the inventory is where facts
+          about the document belong: the notes count is reported whether or not any notes exist, and a
+          notes-less deck stays a clean success. A deck that carries no notes has lost nothing in
+          extraction — every notes slide was read — so the absence must not be reported as a gap, a
+          diagnostic, or a degradation, which would be DocDown passing judgement on the content it was
+          asked only to break apart.
         children:
-          - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceGap
+          - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceInInventory
         tests:
-          - PowerPointContentEmitter_Emit_NoNotes_ReportsCountedGap
+          - PowerPointContentEmitter_Emit_NoNotes_ReportsZeroNotesFeatureNotGapOrDiagnostic
+          - DocDownPowerPoint_Extract_DeckWithoutNotes_ReportsZeroNotesInSummaryAndManifest
 
       - id: DocDownPowerPoint-SlideOrder
         title: The system shall preserve the slides in presentation order.
@@ -272,6 +283,8 @@ sections:
           slide image can supply — are present in the text, nor how many slides carry a title worth
           navigating by. Counting each content kind from the model the reader built gives a reader
           deciding whether to open the parts an honest shape of the deck before reading a single slide.
+          The speaker-notes count is stated even when it is zero, because an agent cannot otherwise
+          tell an unnoted deck from one whose notes were never counted.
         children:
           - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsContentFeatures
         tests:

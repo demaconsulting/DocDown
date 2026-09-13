@@ -33,17 +33,23 @@ target paths (`content.md`, `images/`) and the empty image-path map used when im
 - **`ReportImages`** (private) — reports the vector-metafile caveat (`PPTX0003`, informational), a
   size-skip gap, and an unhonored force-PNG gap; a deck that embeds no images reports nothing here.
 - **`ReportContentFeatures`** (private) — reports the outline counts (slides, slide titles, sets of
-  speaker notes, inline images) from the model; Core drops any zero count.
+  speaker notes, inline images) from the model. The speaker-notes count is declared **looked-for**, so
+  it is stated even at zero; the remaining counts are dropped by Core when zero, keeping the outline
+  compact.
 
-### The speaker-notes accounting (forward-trace finding)
+### The speaker-notes accounting
 
-`EmitAsync` counts the slides carrying speaker notes. When that count is zero, the shipped code reports an
-**informational** `PPTX0002` diagnostic (severity `Info`) stating the deck carries no notes, and does not
-degrade the run. The PowerPoint statement of intent requires the absence of notes to be a **counted gap**
-with a reason, so a reader can tell "this deck has no speaker notes" from "notes were not looked for". The
-unit requirement `DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceGap` is
-written to that intent; the implementation diverges, and the divergence is recorded as a finding in the
-developer report rather than back-written to match the code.
+`EmitAsync` counts the slides carrying speaker notes and hands that count to `ReportContentFeatures`.
+A deck that carries none reads `0 sets of speaker notes` in the summary's content outline and appears
+with `"count": 0` in the manifest's `contentFeatures`, so a reader can tell "every notes slide was read
+and there are none" from "notes are not something DocDown counts". No gap, no diagnostic, and no
+degradation accompany it: a notes-less deck cost the extraction nothing, and `Degraded` describes only
+what DocDown could not do. This supersedes the earlier design, in which the absence was an
+informational `PPTX0002` diagnostic and the unit requirement
+`DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceGap` called for a counted
+gap; that requirement is superseded by
+`DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceInInventory`, and
+`PPTX0002` is retired and permanently reserved.
 
 ### Error Handling
 

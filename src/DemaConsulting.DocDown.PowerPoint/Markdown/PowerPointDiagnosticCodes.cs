@@ -7,8 +7,12 @@ namespace DocDown.PowerPoint.Markdown;
 ///     Core's <c>DD</c> range is internal to Core and each backend owns its own prefix, so a
 ///     distinct <c>PPTX</c> prefix makes the ownership boundary self-evident in any manifest and
 ///     cannot collide with another package's range. Internal because the codes are a published
-///     output value, not an API consumers program against. The numbering is contiguous and stable —
-///     a table-pinning test treats it as a contract. All members are constants and thread-safe.
+///     output value, not an API consumers program against. A code number is never reused once
+///     published, so the set is stable rather than contiguous: <c>PPTX0002</c> is retired and
+///     permanently reserved — it announced that a deck carries no speaker notes, which is a fact
+///     about the document rather than about the extraction, and is now reported as a counted zero in
+///     the content outline. A table-pinning test treats the surviving set as a contract. All members
+///     are constants and thread-safe.
 /// </remarks>
 internal static class PowerPointDiagnosticCodes
 {
@@ -16,15 +20,9 @@ internal static class PowerPointDiagnosticCodes
     /// <remarks>Accompanies the empty-deck gap so the absence is machine-detectable.</remarks>
     internal const string NoSlides = "PPTX0001";
 
-    /// <summary>The deck's slides carry no speaker notes, though notes were read from every slide.</summary>
-    /// <remarks>
-    ///     Informational, never a gap: a notes-less deck is well-formed and no better environment
-    ///     would yield notes that do not exist, so the whole-deck absence is stated as an
-    ///     informational diagnostic rather than a shortfall. Distinguishes "this deck has no speaker
-    ///     notes" (notes were looked for and none exist) from "notes were not looked for", which
-    ///     never happens because this backend always reads the notes slide.
-    /// </remarks>
-    internal const string NoSpeakerNotes = "PPTX0002";
+    // PPTX0002 is retired and must never be reused: it reported that a deck carries no speaker
+    // notes, a judgement about the deck's content rather than a statement about what DocDown could
+    // do. The content outline now carries "0 sets of speaker notes" instead.
 
     /// <summary>Embedded images include EMF or WMF vector metafiles, written unchanged with a readability caveat.</summary>
     /// <remarks>

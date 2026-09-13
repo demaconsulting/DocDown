@@ -317,11 +317,11 @@ public class ExtractionSinkTests
 
     /// <summary>
     ///     Proves repeated reports of one content-feature label accumulate in first-reported order
-    ///     and that a zero count never reaches the output (RecordsReports).
+    ///     and that a zero count the backend did not look for never reaches the output (RecordsReports).
     /// </summary>
     /// <remarks>
-    ///     Accumulation lets a per-part backend report each part separately; dropping zeros is what
-    ///     keeps the summary's content outline from ever printing a line of zeroes.
+    ///     Accumulation lets a per-part backend report each part separately; dropping an undeclared
+    ///     zero is what keeps the summary's content outline from printing a line of irrelevant zeroes.
     /// </remarks>
     [Fact]
     public void ExtractionSink_ReportContentFeature_RepeatedLabels_AccumulateAndDropZeroCounts()
@@ -341,6 +341,39 @@ public class ExtractionSinkTests
             sink.ContentFeatures,
             feature => Assert.Equal(new ContentFeature("tables", 5), feature),
             feature => Assert.Equal(new ContentFeature("comments", 5), feature));
+    }
+
+    /// <summary>
+    ///     Proves a zero count the backend declared it looked for is kept and reported (RecordsReports).
+    /// </summary>
+    /// <remarks>
+    ///     This is the distinction a consuming agent needs: "we looked and there are none" is a fact
+    ///     about the document worth stating, while "this feature does not apply to the format" is
+    ///     noise. Only the declared zero survives, and a later per-part contribution still accumulates
+    ///     onto it rather than starting a second entry.
+    /// </remarks>
+    [Fact]
+    public void ExtractionSink_ReportContentFeature_LookedForZero_IsReported()
+    {
+        // Arrange: a sink over a prepared scratch folder
+        using var temp = new TempScratch();
+        var sink = NewSink(temp, new ExtractionOptions());
+
+        // Act: declare one looked-for feature with no occurrences, one undeclared zero, and one
+        // looked-for feature that later gains a count from a second part
+        sink.ReportContentFeature(new ContentFeature(
+            "sets of speaker notes", 0, "set of speaker notes", LookedFor: true));
+        sink.ReportContentFeature(new ContentFeature("worksheets", 0));
+        sink.ReportContentFeature(new ContentFeature("comments", 0, LookedFor: true));
+        sink.ReportContentFeature(new ContentFeature("comments", 4));
+
+        // Assert: the declared zero survives, the undeclared zero does not, and the accumulated
+        // entry keeps its looked-for standing
+        Assert.Collection(
+            sink.ContentFeatures,
+            feature => Assert.Equal(
+                new ContentFeature("sets of speaker notes", 0, "set of speaker notes", LookedFor: true), feature),
+            feature => Assert.Equal(new ContentFeature("comments", 4, LookedFor: true), feature));
     }
 
     /// <summary>

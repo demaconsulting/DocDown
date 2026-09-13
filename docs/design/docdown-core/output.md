@@ -168,10 +168,13 @@ dedicated unit design. Most are immutable value types and thread-safe; `Metadata
   data, instead reports the charts as a counted gap). It is declared **last** so the numeric value of
   every pre-existing kind is unchanged.
 - **`ContentFeature`** (`sealed record`) — One counted structural feature of the extracted content: a
-  plural `Label` (for example `comments` or `tables`) and a positive `Count`. `ExtractionSink`
-  accumulates these under their label and drops any zero count; they are rendered as the summary's
-  one-line content outline and as the manifest's `contentFeatures` array, so both describe the same
-  structure from the same source.
+  plural `Label` (for example `comments` or `tables`), a non-negative `Count`, an optional
+  `SingularLabel`, and a `LookedFor` flag. `ExtractionSink` accumulates these under their label and
+  drops a zero count **unless** the backend set `LookedFor`, declaring that it counted this feature in
+  this document; they are rendered as the summary's one-line content outline and as the manifest's
+  `contentFeatures` array, so both describe the same structure from the same source. The outline is
+  inventory — a reported zero states what the document does not contain, never a shortfall of the
+  extraction.
 - **`ExtractionGap`** (`sealed record`) — An enumerated gap: Core-assigned `Id`, `Kind`, `Target`,
   `Scope`, a **mandatory** `Reason`, optional `Impact`/`Remedy`, and optional affected count/items.
 - **`GapKind`** (`enum`) — `Text`, `Images`, `Pages`, `Structure`, `Metadata`, `Parts`.

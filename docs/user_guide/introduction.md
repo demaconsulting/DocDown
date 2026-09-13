@@ -27,7 +27,9 @@ folder:
   the document, composed only from facts already established (never inferred, and omitted
   entirely when the facts do not support one); it outlines what `content.md` contains — headings,
   tables, comments and their distinct comment authors, speaker notes, worksheets, and the like, naming
-  only what is genuinely present; and it describes the extracted images in aggregate (how many,
+  what is genuinely present plus any feature the backend looked for and found none of (reported as a
+  plain `0`, so an absence the backend checked reads differently from one it never counted); and it
+  describes the extracted images in aggregate (how many,
   how large, which pages or slides they span) rather than one line each. It reports the selected
   backend's environment facts and any genuine unavailability, and counts the remaining registered
   backends that did not run.
@@ -480,9 +482,11 @@ platform-specific dependency.
   `--split part` (or `ContentSplitMode.PerPart`) each slide becomes its own content part
 - **Each slide's title** — read from the slide itself rather than inferred from the text
 - **Speaker notes** — the half of a deck that appears in no rendering at all, and therefore must be
-  recovered from the file. Where a deck genuinely carries none, that is stated as an informational
-  `PPTX0002` diagnostic (visible in `summary.txt`) rather than a gap: a notes-less deck is well-formed,
-  and no better environment would yield notes that do not exist, so it must not degrade the run
+  recovered from the file. The number of slides carrying notes is always stated in the content
+  outline, so a deck that genuinely carries none reads `0 sets of speaker notes` — that is how you
+  tell "every notes slide was read and there are none" from "notes are not something DocDown counts".
+  It is an inventory fact about the deck, not a gap and not a diagnostic: a notes-less deck is
+  well-formed, nothing was lost in extracting it, and it must not degrade the run
 - **Embedded images** — every picture embedded anywhere in the deck (on slides, notes, layouts, and
   masters) is written to `images/`, deduplicated so a logo reused across many slides is stored once,
   with its bytes passed through unchanged and its true file extension; where a picture carries both a
@@ -797,10 +801,14 @@ The PowerPoint package's `PPTX` range:
 | Code | Meaning |
 | ---- | ------- |
 | `PPTX0001` | The presentation contains no slides |
-| `PPTX0002` | Notes were read from every slide; the deck carries none |
 | `PPTX0003` | Embedded images include EMF or WMF vector metafiles, written unchanged with a readability caveat |
 | `PPTX0004` | A slide could not be rendered and was omitted |
 | `PPTX0005` | The deck embeds charts whose plotted data this backend does not read |
+
+`PPTX0002` is retired and permanently reserved: it reported that a deck carries no speaker notes,
+which is a fact about the deck rather than about the extraction. That absence now reads
+`0 sets of speaker notes` in the content outline of `summary.txt` and appears with a `count` of `0`
+in the manifest's `contentFeatures`.
 
 The Visio package's `VISIO` range:
 
