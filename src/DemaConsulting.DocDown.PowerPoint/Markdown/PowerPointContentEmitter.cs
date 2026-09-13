@@ -93,9 +93,46 @@ internal static class PowerPointContentEmitter
         // Report the honest gaps and caveats for the images written above
         degraded |= ReportImages(sink, options, imageResult);
 
+        // A chart carries its plotted data in a part this backend does not read; say so rather than
+        // letting the chart leave no trace at all in a deck claiming a complete extraction
+        if (model.ChartsFound > 0)
+        {
+            ReportChartsNotExtracted(sink, model.ChartsFound);
+            degraded = true;
+        }
+
         ReportContentFeatures(sink, model, notesCount);
 
         return degraded;
+    }
+
+    /// <summary>
+    ///     Reports the counted gap for charts the deck embeds but this backend does not read.
+    /// </summary>
+    /// <param name="sink">The sink to report through.</param>
+    /// <param name="count">The number of chart parts found; always greater than zero.</param>
+    /// <remarks>
+    ///     A chart on a slide is anchored through a graphic frame that carries neither text nor an
+    ///     image blip, so it is invisible to both the shape walk and the image walk: without this gap
+    ///     the quantities it plots — often the whole point of the slide — would be absent with nothing
+    ///     said about them. The remedy points at the workbook route because a chart on a slide is very
+    ///     often a view of a spreadsheet that this product's Excel backend extracts in full. Side
+    ///     effect: records reports on the sink.
+    /// </remarks>
+    private static void ReportChartsNotExtracted(IExtractionSink sink, int count)
+    {
+        var counted = count.ToString(CultureInfo.InvariantCulture);
+        sink.ReportDiagnostic(new ExtractionDiagnostic(
+            PowerPointDiagnosticCodes.ChartsNotExtracted, DiagnosticSeverity.Warning,
+            $"The deck embeds {counted} charts whose plotted data this backend does not read."));
+        sink.ReportGap(new ExtractionGap(
+            string.Empty, GapKind.Text, ContentTarget, GapScope.Unavailable,
+            $"The deck embeds {counted} charts. Their plotted data is stored in chart parts this backend does not "
+            + "yet read, so neither the values nor the chart titles appear in the extracted content.",
+            Impact: "The quantities those charts plot are not available as data or as text.",
+            Remedy: "Extract the source workbook with the Excel backend, which reads a chart's cached data series "
+            + "in full.",
+            AffectedCount: count));
     }
 
     /// <summary>

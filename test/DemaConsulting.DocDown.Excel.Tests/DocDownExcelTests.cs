@@ -152,6 +152,29 @@ public class DocDownExcelTests
     }
 
     /// <summary>
+    ///     Proves a workbook's chart reaches the output as its own part carrying the cached data
+    ///     series, its title, and both axis titles — the defect this fixture exists to prevent was a
+    ///     chart that vanished while the run still reported a complete extraction.
+    /// </summary>
+    [Fact]
+    public async Task DocDownExcel_Extract_ChartWorkbook_WritesChartDataPart()
+    {
+        using var temp = new TempScratch();
+        var (scratch, result) = await ExtractAsync(temp, "book.xlsx", XlsxFixtures.ChartWorkbook(), FixedOptions());
+
+        Assert.Equal(ExtractionOutcome.Succeeded, result.Outcome);
+        var chartPart = Assert.Single(
+            Directory.GetFiles(Path.Combine(scratch, "parts"), "*chart*.md"));
+        var markdown = await File.ReadAllTextAsync(chartPart, Ct);
+        Assert.Contains("# Tank Pressure Trend", markdown, StringComparison.Ordinal);
+        Assert.Contains("- Category axis: Elapsed time (min)", markdown, StringComparison.Ordinal);
+        Assert.Contains("- Value axis: Pressure (kPa)", markdown, StringComparison.Ordinal);
+        Assert.Contains("| 2 | 10 | 109.2 |", markdown, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch);
+        ContractAssert.NoViolations(scratch);
+    }
+
+    /// <summary>
     ///     Extracts a fixture through the full Excel system and returns the folder and result.
     /// </summary>
     private static async Task<(string Folder, ExtractionResult Result)> ExtractAsync(

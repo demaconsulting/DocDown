@@ -120,6 +120,26 @@ public class DocDownWordTests
     }
 
     /// <summary>
+    ///     Proves a document embedding a chart reports it as a counted gap naming the loss, instead of
+    ///     dropping a chart that carries no image blip and so would otherwise leave no trace at all.
+    /// </summary>
+    [Fact]
+    public async Task DocDownWord_Extract_DocxWithChart_ReportsChartGap()
+    {
+        // Arrange / Act: extract a document carrying one embedded chart
+        using var temp = new TempScratch();
+        var (scratch, result) = await ExtractAsync(temp, "charted.docx", DocxFixtures.DocumentWithChart());
+
+        // Assert: the chart is counted, explained, and remedied rather than silently absent
+        Assert.Equal(ExtractionOutcome.Degraded, result.Outcome);
+        var gap = Assert.Single(result.Gaps, candidate => candidate.Reason.Contains("charts", StringComparison.Ordinal));
+        Assert.Equal(1, gap.AffectedCount);
+        Assert.NotNull(gap.Remedy);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "WORD0010");
+        ContractAssert.NoViolations(scratch);
+    }
+
+    /// <summary>
     ///     Proves the Open XML backend is the one selected for a modern document.
     /// </summary>
     [Fact]

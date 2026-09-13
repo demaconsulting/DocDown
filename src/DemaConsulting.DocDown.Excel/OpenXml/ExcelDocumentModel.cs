@@ -56,20 +56,63 @@ internal sealed record ExcelWorkbookModel(
 ///     picture shared across sheets appears in each sheet's list, recording every reference. Empty
 ///     when the worksheet carries no picture.
 /// </param>
+/// <param name="Charts">
+///     The charts this worksheet shows, in drawing order, each carrying the data cached in its chart
+///     part or the reason that data could not be read. Empty when the worksheet shows no chart. A
+///     chart is carried on its owning sheet because a chart's numbers are only meaningful beside the
+///     sheet whose cells they were plotted from.
+/// </param>
+/// <param name="ShapeTexts">
+///     The text of the drawing shapes floating over the worksheet — callouts, labels, and
+///     annotations that live in the drawing layer and in no cell — in drawing order. Empty when the
+///     worksheet carries no annotated shape.
+/// </param>
 /// <remarks>Immutable and thread-safe.</remarks>
 internal sealed record ExcelSheetModel(
     string Name, IReadOnlyList<ExcelCellModel> Cells, IReadOnlyList<string> MergedRanges,
-    IReadOnlyList<ExcelSheetImageRef> Images)
+    IReadOnlyList<ExcelSheetImageRef> Images, IReadOnlyList<ExcelChartModel> Charts,
+    IReadOnlyList<string> ShapeTexts)
 {
+    /// <summary>
+    ///     Initializes a worksheet model that carries no annotated shapes, for a hand-built model.
+    /// </summary>
+    /// <param name="name">The worksheet name.</param>
+    /// <param name="cells">The worksheet's non-empty cells.</param>
+    /// <param name="mergedRanges">The A1-style merged ranges.</param>
+    /// <param name="images">The images the worksheet references.</param>
+    /// <param name="charts">The charts the worksheet shows.</param>
+    /// <remarks>A convenience for tests that exercise charts but not shape text; shape texts default to empty.</remarks>
+    public ExcelSheetModel(
+        string name, IReadOnlyList<ExcelCellModel> cells, IReadOnlyList<string> mergedRanges,
+        IReadOnlyList<ExcelSheetImageRef> images, IReadOnlyList<ExcelChartModel> charts)
+        : this(name, cells, mergedRanges, images, charts, [])
+    {
+    }
+
+    /// <summary>
+    ///     Initializes a worksheet model that shows no charts, for a hand-built model.
+    /// </summary>
+    /// <param name="name">The worksheet name.</param>
+    /// <param name="cells">The worksheet's non-empty cells.</param>
+    /// <param name="mergedRanges">The A1-style merged ranges.</param>
+    /// <param name="images">The images the worksheet references.</param>
+    /// <remarks>A convenience for tests that exercise images but not charts; charts default to empty.</remarks>
+    public ExcelSheetModel(
+        string name, IReadOnlyList<ExcelCellModel> cells, IReadOnlyList<string> mergedRanges,
+        IReadOnlyList<ExcelSheetImageRef> images)
+        : this(name, cells, mergedRanges, images, [], [])
+    {
+    }
+
     /// <summary>
     ///     Initializes a worksheet model that references no images inline, for a hand-built model.
     /// </summary>
     /// <param name="name">The worksheet name.</param>
     /// <param name="cells">The worksheet's non-empty cells.</param>
     /// <param name="mergedRanges">The A1-style merged ranges.</param>
-    /// <remarks>A convenience for tests that do not exercise inline image links; images default to empty.</remarks>
+    /// <remarks>A convenience for tests that do not exercise inline image links; images, charts, and shape texts default to empty.</remarks>
     public ExcelSheetModel(string name, IReadOnlyList<ExcelCellModel> cells, IReadOnlyList<string> mergedRanges)
-        : this(name, cells, mergedRanges, [])
+        : this(name, cells, mergedRanges, [], [], [])
     {
     }
 }

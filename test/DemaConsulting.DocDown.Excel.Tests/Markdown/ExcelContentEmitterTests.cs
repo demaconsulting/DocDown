@@ -339,6 +339,192 @@ public class ExcelContentEmitterTests
     }
 
     /// <summary>
+    ///     Proves each chart a worksheet shows becomes its own titled chart part, emitted straight
+    ///     after the sheet that shows it, and is counted among the parts found.
+    /// </summary>
+    /// <remarks>
+    ///     A chart's cached series can run to hundreds of rows; emitting it as its own part keeps the
+    ///     sheet's cells readable and gives the data a path a consumer can cite directly.
+    /// </remarks>
+    [Fact]
+    public async Task ExcelContentEmitter_Emit_SheetWithChart_WritesChartPartAfterSheet()
+    {
+        // Arrange: a one-sheet workbook whose sheet shows one readable chart
+        var model = new ExcelWorkbookModel([SheetWithChart(ReadableChart())]);
+        var sink = new RecordingSink();
+
+        // Act: emit the workbook
+        var degraded = await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+
+        // Assert: two parts, the chart second, titled by the chart and typed as a chart
+        Assert.False(degraded);
+        Assert.Equal(2, sink.Parts.Count);
+        Assert.Equal(ContentPartKind.Sheet, sink.Parts[0].Part.Kind);
+        Assert.Equal(ContentPartKind.Chart, sink.Parts[1].Part.Kind);
+        Assert.Equal("Tank Pressure Trend", sink.Parts[1].Part.Title);
+        Assert.Contains("| 0 | 0 | 101.3 |", sink.Parts[1].Markdown, StringComparison.Ordinal);
+        Assert.Contains(sink.FoundCounts, found => found.Kind == GapKind.Parts && found.FoundCount == 2);
+    }
+
+    /// <summary>
+    ///     Proves the worksheet part names the chart it shows, so a reader of the sheet alone learns
+    ///     the chart exists and that its data is elsewhere.
+    /// </summary>
+    [Fact]
+    public async Task ExcelContentEmitter_Emit_SheetWithChart_NamesChartUnderTheSheet()
+    {
+        // Arrange: a one-sheet workbook showing one chart
+        var model = new ExcelWorkbookModel([SheetWithChart(ReadableChart())]);
+        var sink = new RecordingSink();
+
+        // Act: emit the workbook
+        await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+
+        // Assert: the sheet part carries the chart reference
+        Assert.Contains("Tank Pressure Trend", sink.Parts[0].Markdown, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves a chart carrying no cached data is reported as a counted gap with a remedy — the
+    ///     defect this feature exists to fix was a chart that disappeared while the summary claimed
+    ///     everything requested had been extracted.
+    /// </summary>
+    [Fact]
+    public async Task ExcelContentEmitter_Emit_ChartWithoutCache_ReportsGap()
+    {
+        // Arrange: a chart whose series references a range but caches no values
+        var chart = new ExcelChartModel("/xl/charts/chart1.xml", "Results", new ExcelChartData(
+            "Uncached chart", TitleIsAutomatic: false, ["line"], null, null, [], null,
+            [new ExcelChartSeries("Run A", "Sheet1!$A$1:$A$9", null, 0, [])]), null);
+        var model = new ExcelWorkbookModel([SheetWithChart(chart)]);
+        var sink = new RecordingSink();
+
+        // Act: emit the workbook
+        var degraded = await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+
+        // Assert: the loss is a counted, remedied gap rather than silence
+        Assert.True(degraded);
+        var gap = Assert.Single(sink.Gaps, candidate => candidate.Reason.Contains(
+            "no cached data points", StringComparison.Ordinal));
+        Assert.Equal(1, gap.AffectedCount);
+        Assert.NotNull(gap.Remedy);
+        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "XLSX0005");
+    }
+
+    /// <summary>
+    ///     Proves a chart part that could not be read at all is reported as a failed gap naming the
+    ///     chart, so an unreadable chart is never mistaken for an absent one.
+    /// </summary>
+    [Fact]
+    public async Task ExcelContentEmitter_Emit_UnreadableChart_ReportsFailedGap()
+    {
+        // Arrange: a chart the reader could not parse
+        var chart = new ExcelChartModel("/xl/charts/chart1.xml", "Results", null, "the part is not well-formed XML");
+        var model = new ExcelWorkbookModel([SheetWithChart(chart)]);
+        var sink = new RecordingSink();
+
+        // Act: emit the workbook
+        var degraded = await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+
+        // Assert: the chart is named in a failed gap and still has a part of its own
+        Assert.True(degraded);
+        var gap = Assert.Single(sink.Gaps, candidate => candidate.Scope == GapScope.Failed);
+        Assert.Contains(gap.AffectedItems!, item => item.Contains("/xl/charts/chart1.xml", StringComparison.Ordinal));
+        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "XLSX0004");
+    }
+
+    /// <summary>
+    ///     Proves a chart cached beyond the rendering bound reports a counted truncation gap stating
+    ///     how much was dropped.
+    /// </summary>
+    [Fact]
+    public async Task ExcelContentEmitter_Emit_ChartBeyondBound_ReportsTruncationGap()
+    {
+        // Arrange: a chart with one more point than the bound allows
+        var count = ExcelChartWriter.MaxPlottedPoints + 1;
+        var points = Enumerable.Range(0, count).Select(index => new ExcelChartPoint(index, "1")).ToList();
+        var chart = new ExcelChartModel("/xl/charts/chart1.xml", "Results", new ExcelChartData(
+            "Long sweep", TitleIsAutomatic: false, ["line"], null, null, [], null,
+            [new ExcelChartSeries("Sweep", null, null, count, points)]), null);
+        var model = new ExcelWorkbookModel([SheetWithChart(chart)]);
+        var sink = new RecordingSink();
+
+        // Act: emit the workbook
+        var degraded = await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+
+        // Assert: the truncation is stated as a counted gap, not performed quietly
+        Assert.True(degraded);
+        var gap = Assert.Single(sink.Gaps, candidate => candidate.Reason.Contains(
+            "plotted points", StringComparison.Ordinal));
+        Assert.Equal(GapScope.PartiallyExtracted, gap.Scope);
+        Assert.Contains(gap.AffectedItems!, item => item.Contains(
+            $"{ExcelChartWriter.MaxPlottedPoints} of {count}", StringComparison.Ordinal));
+        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "XLSX0006");
+    }
+
+    /// <summary>
+    ///     Proves a workbook showing no chart reports no chart gap, so the chart ledger never degrades
+    ///     an ordinary chart-free workbook.
+    /// </summary>
+    [Fact]
+    public async Task ExcelContentEmitter_Emit_NoCharts_ReportsNoChartGap()
+    {
+        // Arrange: an ordinary one-sheet workbook
+        var model = new ExcelWorkbookModel([new ExcelSheetModel("S", [new ExcelCellModel("A1", "x", null)], [])]);
+        var sink = new RecordingSink();
+
+        // Act: emit the workbook
+        var degraded = await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+
+        // Assert: nothing is said about charts that do not exist
+        Assert.False(degraded);
+        Assert.DoesNotContain(sink.Gaps, candidate => candidate.Reason.Contains("chart", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    ///     Proves the text of a worksheet's drawing shapes reaches the sheet part, because a callout
+    ///     carrying a part number lives in no cell and would otherwise be dropped in silence.
+    /// </summary>
+    [Fact]
+    public async Task ExcelContentEmitter_Emit_ShapeText_WritesUnderTheSheet()
+    {
+        // Arrange: a sheet with one annotated drawing shape
+        var sheet = new ExcelSheetModel(
+            "Layout", [new ExcelCellModel("A1", "x", null)], [], [], [], ["Bearing retainer, part LX-4120"]);
+        var model = new ExcelWorkbookModel([sheet]);
+        var sink = new RecordingSink();
+
+        // Act: emit the workbook
+        await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+
+        // Assert: the annotation appears under its own heading and is counted
+        Assert.Contains("Text on drawing shapes:", sink.Parts[0].Markdown, StringComparison.Ordinal);
+        Assert.Contains("Bearing retainer, part LX-4120", sink.Parts[0].Markdown, StringComparison.Ordinal);
+        Assert.Contains(
+            sink.ContentFeatures, feature => feature.Label == "annotated drawing shapes" && feature.Count == 1);
+    }
+
+    /// <summary>
+    ///     Builds a one-sheet model showing the supplied chart.
+    /// </summary>
+    /// <param name="chart">The chart the sheet shows.</param>
+    /// <returns>The sheet model.</returns>
+    private static ExcelSheetModel SheetWithChart(ExcelChartModel chart) =>
+        new("Results", [new ExcelCellModel("A1", "x", null)], [], [], [chart]);
+
+    /// <summary>
+    ///     Builds a readable two-point chart with an invented title and axes.
+    /// </summary>
+    /// <returns>The chart model.</returns>
+    private static ExcelChartModel ReadableChart() =>
+        new("/xl/charts/chart1.xml", "Results", new ExcelChartData(
+            "Tank Pressure Trend", TitleIsAutomatic: false, ["line"],
+            "Elapsed time (min)", "Pressure (kPa)",
+            [new ExcelChartPoint(0, "0"), new ExcelChartPoint(1, "5")], "General",
+            [new ExcelChartSeries("Vessel A", "Sheet1!$B$2:$B$3", "0.0", 2,
+                [new ExcelChartPoint(0, "101.3"), new ExcelChartPoint(1, "104.8")])]), null);
+
+    /// <summary>
     ///     Proves an Excel workbook's inline image links resolve on disk from their <c>parts/*.md</c>
     ///     files under the default Auto layout — the exact default-mode defect this fix targets.
     /// </summary>

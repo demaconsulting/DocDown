@@ -67,4 +67,13 @@ internal static class WordDiagnosticCodes
     /// <summary>A header or footer carrying only page-numbering fields (or empty) was omitted from Document Control.</summary>
     /// <remarks>Accompanies the counted, reasoned gap recording the omission.</remarks>
     internal const string HeaderFooterPageNumberingOnly = "WORD0009";
+
+    /// <summary>The document embeds charts whose plotted data this backend does not read.</summary>
+    /// <remarks>
+    ///     Accompanies the counted gap naming the charts. A Word chart stores its plotted values in a
+    ///     DrawingML chart part that carries no image blip, so without this the chart would leave no
+    ///     trace whatever in the output while the summary still claimed a complete extraction — the
+    ///     exact silent-loss failure the output contract exists to prevent.
+    /// </remarks>
+    internal const string ChartsNotExtracted = "WORD0010";
 }

@@ -20,6 +20,7 @@ public class PowerPointDiagnosticCodesTests
         Assert.Equal("PPTX0002", PowerPointDiagnosticCodes.NoSpeakerNotes);
         Assert.Equal("PPTX0003", PowerPointDiagnosticCodes.VectorImageWrittenAsIs);
         Assert.Equal("PPTX0004", PowerPointDiagnosticCodes.SlideRenderFailed);
+        Assert.Equal("PPTX0005", PowerPointDiagnosticCodes.ChartsNotExtracted);
     }
 
     /// <summary>
@@ -37,6 +38,6 @@ public class PowerPointDiagnosticCodesTests
             .OrderBy(code => code, StringComparer.Ordinal)
             .ToList();
 
-        Assert.Equal(["PPTX0001", "PPTX0002", "PPTX0003", "PPTX0004"], codes);
+        Assert.Equal(["PPTX0001", "PPTX0002", "PPTX0003", "PPTX0004", "PPTX0005"], codes);
     }
 }

@@ -330,4 +330,44 @@ public class PowerPointContentEmitterTests
 
         return MarkdownImageLinks.AssertAllImageLinksResolveOnDisk(folder.AbsolutePath);
     }
+
+    /// <summary>
+    ///     Proves a deck embedding charts reports a counted gap naming them, so a chart on a slide is
+    ///     never dropped while the summary still claims a complete extraction.
+    /// </summary>
+    [Fact]
+    public async Task PowerPointContentEmitter_Emit_DeckWithCharts_ReportsCountedGap()
+    {
+        // Arrange: a one-slide deck the reader found two chart parts in
+        var model = new PowerPointDeckModel(
+            [new PowerPointSlideModel(1, "Results", ["Body"], null)], [], null, ChartsFound: 2);
+        var sink = new RecordingSink();
+
+        // Act: emit the deck
+        var degraded = await PowerPointContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+
+        // Assert: the charts are counted, explained, and given a remedy
+        Assert.True(degraded);
+        var gap = Assert.Single(sink.Gaps, candidate => candidate.Reason.Contains("charts", StringComparison.Ordinal));
+        Assert.Equal(2, gap.AffectedCount);
+        Assert.Equal(GapScope.Unavailable, gap.Scope);
+        Assert.Contains(sink.Diagnostics, diagnostic => diagnostic.Code == "PPTX0005");
+    }
+
+    /// <summary>
+    ///     Proves a deck embedding no chart reports no chart gap, so an ordinary deck stays clean.
+    /// </summary>
+    [Fact]
+    public async Task PowerPointContentEmitter_Emit_DeckWithoutCharts_ReportsNoChartGap()
+    {
+        // Arrange: an ordinary one-slide deck
+        var model = new PowerPointDeckModel([new PowerPointSlideModel(1, "Results", ["Body"], null)], []);
+        var sink = new RecordingSink();
+
+        // Act: emit the deck
+        await PowerPointContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+
+        // Assert: nothing is said about charts that do not exist
+        Assert.DoesNotContain(sink.Gaps, candidate => candidate.Reason.Contains("chart", StringComparison.OrdinalIgnoreCase));
+    }
 }

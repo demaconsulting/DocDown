@@ -114,6 +114,7 @@ internal sealed class WordOpenXmlReader
             HeaderFooterPartsEmpty: emptyParts,
             HeaderFooterPartsPageFurniture: furnitureParts,
             EmptyTablesSkipped: _emptyTables,
+            ChartsFound: CountCharts(mainPart),
             Metadata: OpcMetadataMapper.From(new OpcCoreProperties(
                 document.PackageProperties.Creator,
                 document.PackageProperties.LastModifiedBy,
@@ -130,6 +131,28 @@ internal sealed class WordOpenXmlReader
                 document.PackageProperties.Version,
                 document.PackageProperties.Language,
                 document.PackageProperties.Identifier)));
+    }
+
+    /// <summary>
+    ///     Counts the DrawingML chart parts the document embeds, across the body and its headers and footers.
+    /// </summary>
+    /// <param name="mainPart">The main document part whose related parts are inspected.</param>
+    /// <returns>The number of chart parts found; zero for a document that embeds none.</returns>
+    /// <remarks>
+    ///     A Word chart is the same DrawingML chart part a workbook uses, anchored through a graphic
+    ///     frame that carries no image blip, so the image walk sees nothing and the chart would leave no
+    ///     trace at all in the output. Counting the parts is what lets the emitter state plainly that
+    ///     the document contains charts this backend does not read, instead of dropping them in silence.
+    ///     Headers and footers are included because a chart can be anchored in either. Read-only over
+    ///     the package.
+    /// </remarks>
+    private static int CountCharts(MainDocumentPart mainPart)
+    {
+        var containers = new List<OpenXmlPartContainer> { mainPart };
+        containers.AddRange(mainPart.HeaderParts);
+        containers.AddRange(mainPart.FooterParts);
+        return containers.Sum(container =>
+            container.GetPartsOfType<ChartPart>().Count() + container.GetPartsOfType<ExtendedChartPart>().Count());
     }
 
     /// <summary>

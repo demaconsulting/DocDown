@@ -7,14 +7,18 @@ namespace DocDown.Excel.Markdown;
 
 /// <summary>
 ///     Emits a read <see cref="ExcelWorkbookModel"/> through the extraction sink: one content part
-///     per worksheet, each cell's address, value, and formula preserved, plus the honest gaps the
-///     model and options imply.
+///     per worksheet and one per chart, each cell's address, value, and formula preserved, plus the
+///     honest gaps the model and options imply.
 /// </summary>
 /// <remarks>
 ///     Every worksheet becomes a <see cref="ContentPartKind.Sheet"/> part so a workbook stays
-///     navigable and a cited fact keeps its sheet identity. Nothing is truncated and nothing is
+///     navigable and a cited fact keeps its sheet identity, and every chart the worksheet shows
+///     becomes a <see cref="ContentPartKind.Chart"/> part carrying the values it cached as last
+///     plotted. Nothing is truncated and nothing is
 ///     omitted silently: an empty sheet is noted informationally, an empty workbook is a counted
-///     gap, and the workbook's embedded images are extracted through the sink and counted. A
+///     gap, a chart that cached no data is a counted gap, a chart bounded by the plotted-point limit
+///     says how much it dropped, and the workbook's embedded images are extracted through the sink
+///     and counted. A
 ///     spreadsheet has no page grid, so a page-rendering request applies to nothing and the engine
 ///     honors it with silence rather than a false shortfall. Performs no filesystem I/O of its own;
 ///     every byte goes through the sink. Stateless and thread-safe.
@@ -79,7 +83,8 @@ internal static class ExcelContentEmitter
 
         var degraded = false;
 
-        sink.ReportFound(GapKind.Parts, model.Sheets.Count);
+        var chartCount = model.Sheets.Sum(sheet => sheet.Charts.Count);
+        sink.ReportFound(GapKind.Parts, model.Sheets.Count + chartCount);
 
         // An empty workbook has nothing to write; say so as a counted gap rather than an empty file
         if (model.Sheets.Count == 0)
@@ -103,6 +108,7 @@ internal static class ExcelContentEmitter
         var imagePaths = imageResult?.PathsBySourceRef ?? EmptyImagePaths;
 
         var ordinal = 1;
+        var chartAccounting = new ChartAccounting();
         foreach (var sheet in model.Sheets)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -113,6 +119,17 @@ internal static class ExcelContentEmitter
                 .ConfigureAwait(false);
             ordinal++;
 
+            // A chart's cached data becomes its own part, written straight after the sheet that shows it
+            foreach (var chart in sheet.Charts)
+            {
+                var render = ExcelChartWriter.Render(chart);
+                await sink.AddContentPartAsync(
+                    new ContentPart(ContentPartKind.Chart, ordinal, ChartPartTitle(chart)),
+                    render.Markdown, cancellationToken).ConfigureAwait(false);
+                ordinal++;
+                chartAccounting.Record(chart, render);
+            }
+
             if (sheet.Cells.Count == 0)
             {
                 sink.ReportDiagnostic(new ExtractionDiagnostic(
@@ -121,7 +138,11 @@ internal static class ExcelContentEmitter
             }
         }
 
-        sink.ReportDocumentInfo(new DocumentInfo(Title: null, Author: null, PageCount: null, PartCount: model.Sheets.Count));
+        // The gist line speaks of a workbook in sheets, so the reported part count stays the sheet
+        // count; the chart parts are counted in their own content feature and in the parts ledger,
+        // and calling a 6-sheet workbook a 7-sheet one to account for its chart would be false
+        sink.ReportDocumentInfo(new DocumentInfo(
+            Title: null, Author: null, PageCount: null, PartCount: model.Sheets.Count));
 
         // Report the workbook's self-reported metadata for metadata.json when the reader captured it
         if (model.Metadata is { } metadata)
@@ -131,6 +152,9 @@ internal static class ExcelContentEmitter
 
         // Report the honest gaps and caveats for the images written above
         degraded |= ReportImages(sink, options, imageResult);
+
+        // Report the honest gaps for every chart that yielded less than its full cached data
+        degraded |= ReportCharts(sink, chartAccounting);
 
         ReportContentFeatures(sink, model);
 
@@ -162,6 +186,168 @@ internal static class ExcelContentEmitter
             "cell carrying a formula"));
         sink.ReportContentFeature(new ContentFeature(
             "inline images", model.Sheets.Sum(sheet => sheet.Images.Count)));
+        sink.ReportContentFeature(new ContentFeature(
+            "charts", model.Sheets.Sum(sheet => sheet.Charts.Count)));
+        sink.ReportContentFeature(new ContentFeature(
+            "annotated drawing shapes", model.Sheets.Sum(sheet => sheet.ShapeTexts.Count),
+            "annotated drawing shape"));
+        sink.ReportContentFeature(new ContentFeature(
+            "cached chart data points",
+            model.Sheets.Sum(sheet => sheet.Charts.Sum(chart =>
+                chart.Data?.Series.Sum(series => series.Points.Count) ?? 0)),
+            "cached chart data point"));
+    }
+
+    /// <summary>The ledger path every chart gap names.</summary>
+    /// <remarks>Charts are emitted as content parts, so a chart gap is a shortfall in the content document.</remarks>
+    private const string ChartsTarget = ContentTarget;
+
+    /// <summary>
+    ///     Produces the part title for a chart, so its file name and index entry identify it.
+    /// </summary>
+    /// <param name="chart">The chart being emitted.</param>
+    /// <returns>The chart's title, or a worksheet-qualified fallback when it has none.</returns>
+    /// <remarks>
+    ///     A chart part named only <c>chart</c> would be indistinguishable from every other chart in a
+    ///     workbook, so a titleless chart borrows its worksheet's name. Pure.
+    /// </remarks>
+    private static string ChartPartTitle(ExcelChartModel chart) =>
+        chart.Data?.Title is { Length: > 0 } title ? title : $"Chart on {chart.SheetName}";
+
+    /// <summary>
+    ///     Reports the honest gaps for charts that could not be read, cached no data, or were truncated.
+    /// </summary>
+    /// <param name="sink">The sink to report through.</param>
+    /// <param name="accounting">What the chart emission produced.</param>
+    /// <returns><see langword="true"/> when any chart gap was reported; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    ///     This is the whole point of extracting charts at all: before this backend read them, a chart
+    ///     vanished from the output while the summary still claimed everything requested was extracted.
+    ///     A workbook whose chart yields no data must therefore say so as a counted gap, and one whose
+    ///     chart was bounded must say how much it dropped. A workbook with no charts reports nothing, so
+    ///     a chart-free workbook stays a clean success. Side effect: records reports on the sink.
+    /// </remarks>
+    private static bool ReportCharts(IExtractionSink sink, ChartAccounting accounting)
+    {
+        // A workbook that shows no chart has no chart ledger to open
+        if (accounting.Found == 0)
+        {
+            return false;
+        }
+
+        var degraded = false;
+
+        if (accounting.UnreadableItems.Count > 0)
+        {
+            sink.ReportDiagnostic(new ExtractionDiagnostic(
+                ExcelDiagnosticCodes.ChartUnreadable, DiagnosticSeverity.Warning,
+                $"{Counted(accounting.UnreadableItems.Count, accounting.Found)} charts could not be read."));
+            sink.ReportGap(new ExtractionGap(
+                string.Empty, GapKind.Text, ChartsTarget, GapScope.Failed,
+                $"{Counted(accounting.UnreadableItems.Count, accounting.Found)} charts could not be read, so their "
+                + "plotted data is absent; each chart's existence and the reason are stated in its content part.",
+                Impact: "The values those charts plot are not available as data.",
+                AffectedCount: accounting.UnreadableItems.Count,
+                AffectedItems: accounting.UnreadableItems));
+            degraded = true;
+        }
+
+        if (accounting.UncachedItems.Count > 0)
+        {
+            sink.ReportDiagnostic(new ExtractionDiagnostic(
+                ExcelDiagnosticCodes.ChartWithoutCachedData, DiagnosticSeverity.Warning,
+                $"{Counted(accounting.UncachedItems.Count, accounting.Found)} charts carry no cached data points."));
+            sink.ReportGap(new ExtractionGap(
+                string.Empty, GapKind.Text, ChartsTarget, GapScope.PartiallyExtracted,
+                $"{Counted(accounting.UncachedItems.Count, accounting.Found)} charts carry no cached data points, so "
+                + "only their titles, axes, and source references could be extracted.",
+                Impact: "The values those charts plot are not available as data.",
+                Remedy: "Open the workbook in a spreadsheet application and save it again; saving refreshes each "
+                + "chart's cached values inside the file.",
+                AffectedCount: accounting.UncachedItems.Count,
+                AffectedItems: accounting.UncachedItems));
+            degraded = true;
+        }
+
+        if (accounting.TruncatedItems.Count > 0)
+        {
+            sink.ReportDiagnostic(new ExtractionDiagnostic(
+                ExcelDiagnosticCodes.ChartPointsTruncated, DiagnosticSeverity.Warning,
+                $"{Counted(accounting.TruncatedItems.Count, accounting.Found)} charts cached more plotted points "
+                + "than the rendering bound allows."));
+            sink.ReportGap(new ExtractionGap(
+                string.Empty, GapKind.Text, ChartsTarget, GapScope.PartiallyExtracted,
+                $"{Counted(accounting.TruncatedItems.Count, accounting.Found)} charts cached more than "
+                + $"{MaxChartPointsText} plotted points; only the first "
+                + $"{MaxChartPointsText} of each are in the extracted data table.",
+                Impact: "The later plotted points of those charts are not present in the extracted output.",
+                AffectedCount: accounting.TruncatedItems.Count,
+                AffectedItems: accounting.TruncatedItems));
+            degraded = true;
+        }
+
+        return degraded;
+    }
+
+    /// <summary>The chart point bound rendered for gap prose.</summary>
+    /// <remarks>Formatted once so the gap text and the writer's bound cannot drift apart.</remarks>
+    private static string MaxChartPointsText =>
+        ExcelChartWriter.MaxPlottedPoints.ToString(CultureInfo.InvariantCulture);
+
+    /// <summary>
+    ///     Accumulates what chart emission produced, so every chart shortfall is reported in one place.
+    /// </summary>
+    /// <remarks>
+    ///     Mutable scratch state confined to a single emission; never shared across extractions and
+    ///     therefore never contended.
+    /// </remarks>
+    private sealed class ChartAccounting
+    {
+        /// <summary>Gets the number of charts the workbook shows.</summary>
+        public int Found { get; private set; }
+
+        /// <summary>Gets the descriptions of charts whose part could not be read.</summary>
+        public List<string> UnreadableItems { get; } = [];
+
+        /// <summary>Gets the descriptions of charts that were read but cache no data points.</summary>
+        public List<string> UncachedItems { get; } = [];
+
+        /// <summary>Gets the descriptions of charts whose data table was bounded.</summary>
+        public List<string> TruncatedItems { get; } = [];
+
+        /// <summary>
+        ///     Records one emitted chart against the accounting.
+        /// </summary>
+        /// <param name="chart">The chart that was emitted.</param>
+        /// <param name="render">What rendering it produced.</param>
+        /// <remarks>
+        ///     An unreadable chart and an uncached one are counted apart because their remedies differ:
+        ///     one is a limitation of this backend, the other is fixed by re-saving the workbook. Side
+        ///     effect: mutates this instance.
+        /// </remarks>
+        public void Record(ExcelChartModel chart, ExcelChartRender render)
+        {
+            Found++;
+            var label = $"{ChartPartTitle(chart)} ({chart.PartUri})";
+            if (chart.Data is null)
+            {
+                UnreadableItems.Add(label);
+                return;
+            }
+
+            if (!render.HasData)
+            {
+                UncachedItems.Add(label);
+                return;
+            }
+
+            if (render.Truncated)
+            {
+                TruncatedItems.Add(
+                    $"{label}: {render.RenderedPoints.ToString(CultureInfo.InvariantCulture)} of "
+                    + $"{render.TotalPoints.ToString(CultureInfo.InvariantCulture)} plotted points");
+            }
+        }
     }
 
     /// <summary>The empty path map used when images are suppressed, so content rendering emits no links.</summary>
@@ -335,6 +521,8 @@ internal static class ExcelContentEmitter
         if (sheet.Cells.Count == 0)
         {
             builder.Append("_This worksheet has no cell content._").Append('\n');
+            AppendChartReferences(builder, sheet);
+            AppendShapeTexts(builder, sheet);
             AppendImageLinks(builder, sheet, imagePaths);
             return builder.ToString();
         }
@@ -367,8 +555,61 @@ internal static class ExcelContentEmitter
             builder.Append('\n');
         }
 
+        AppendChartReferences(builder, sheet);
+        AppendShapeTexts(builder, sheet);
         AppendImageLinks(builder, sheet, imagePaths);
         return builder.ToString();
+    }
+
+    /// <summary>
+    ///     Appends the text of the worksheet's drawing shapes, when it carries any.
+    /// </summary>
+    /// <param name="builder">The buffer to append to.</param>
+    /// <param name="sheet">The worksheet whose shape annotations are written.</param>
+    /// <remarks>
+    ///     Callouts and labels drawn over a sheet carry part numbers, warnings, and legend keys that
+    ///     exist in no cell, so a reader of the cell listing alone would never see them. They are
+    ///     written under their own heading, after the cells and before the pictures they annotate, so
+    ///     their provenance as drawing-layer text rather than cell content stays obvious. Side effect:
+    ///     appends to <paramref name="builder"/>.
+    /// </remarks>
+    private static void AppendShapeTexts(StringBuilder builder, ExcelSheetModel sheet)
+    {
+        if (sheet.ShapeTexts.Count == 0)
+        {
+            return;
+        }
+
+        builder.Append('\n').Append("Text on drawing shapes:").Append('\n').Append('\n');
+        foreach (var text in sheet.ShapeTexts)
+        {
+            builder.Append("- ").Append(text).Append('\n');
+        }
+    }
+
+    /// <summary>
+    ///     Appends a line for each chart the worksheet shows, naming it and pointing at its own part.
+    /// </summary>
+    /// <param name="builder">The buffer to append to.</param>
+    /// <param name="sheet">The worksheet whose charts are named.</param>
+    /// <remarks>
+    ///     A reader who opens only a worksheet part must still learn that the sheet carries a chart;
+    ///     without this line the chart's data would be reachable only by noticing an unfamiliar entry in
+    ///     the content index. The data itself stays in the chart's own part so hundreds of plotted
+    ///     points cannot bury the sheet's cells. Side effect: appends to <paramref name="builder"/>.
+    /// </remarks>
+    private static void AppendChartReferences(StringBuilder builder, ExcelSheetModel sheet)
+    {
+        if (sheet.Charts.Count == 0)
+        {
+            return;
+        }
+
+        builder.Append('\n').Append(sheet.Charts.Count == 1 ? "Chart:" : "Charts:").Append('\n').Append('\n');
+        foreach (var chart in sheet.Charts)
+        {
+            builder.Append(ExcelChartWriter.Describe(chart)).Append('\n');
+        }
     }
 
     /// <summary>

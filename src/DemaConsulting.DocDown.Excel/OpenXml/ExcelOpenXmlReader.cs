@@ -69,7 +69,9 @@ internal static class ExcelOpenXmlReader
                 var cells = worksheetPart is not null ? ReadCells(worksheetPart, sharedStrings) : [];
                 var merges = worksheetPart is not null ? ReadMergedRanges(worksheetPart) : [];
                 var images = imageCollection.SheetImageRefs.TryGetValue(sheetIndex, out var refs) ? refs : [];
-                sheets.Add(new ExcelSheetModel(name, cells, merges, images));
+                var charts = ExcelChartReader.Collect(worksheetPart, name);
+                var shapeTexts = ExcelDrawingTextReader.Collect(worksheetPart);
+                sheets.Add(new ExcelSheetModel(name, cells, merges, images, charts, shapeTexts));
                 sheetIndex++;
             }
 

@@ -52,7 +52,7 @@ embedded images, and document metadata from PDFs; `DemaConsulting.DocDown.Pdf.Re
 optional add-on that rasterizes PDF pages to images; `DemaConsulting.DocDown.Word`, which extracts
 text, real tables, embedded images, document control, and metadata from Word documents;
 `DemaConsulting.DocDown.Excel`, which extracts every worksheet's cell values, preserves formulas,
-and extracts embedded images;
+recovers each chart's cached data series, and extracts embedded images;
 `DemaConsulting.DocDown.PowerPoint`, which extracts slide text, titles, speaker notes, and embedded
 images; `DemaConsulting.DocDown.Visio`, which extracts page names, shape text, connector topology,
 and embedded images; and
@@ -84,6 +84,13 @@ planned and not yet available.
   that shows them — fully managed for `.xlsx`. A dense region also renders as a grid table; a value
   a Markdown table cannot carry is shown there as `…` and a note beside the table says so and points
   at the cell listing that holds the full value
+- **Excel Chart Data**: Each chart becomes its own content part holding the values it cached as last
+  plotted — the numbers themselves, not a picture of them — as a table of categories against one
+  column per series, under the chart's title, plot type, and axis titles. A model can therefore
+  compute from a chart it can never see. Beyond 500 plotted points a chart's table is bounded, and
+  the bound, like a chart that cached no values at all, is reported as a counted gap rather than
+  applied in silence. Text on drawing shapes floating over a worksheet — callouts, part numbers,
+  legend keys that live in no cell — is extracted under the sheet that shows them
 - **PowerPoint Extraction**: Slide text, titles, speaker notes, and embedded images linked from
   `content.md` at each slide that shows them — fully managed for `.pptx`, with optional slide
   rasterization on Windows when PowerPoint is installed

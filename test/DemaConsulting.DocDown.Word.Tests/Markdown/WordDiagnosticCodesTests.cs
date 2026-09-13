@@ -29,7 +29,8 @@ public class WordDiagnosticCodesTests
             ["VectorImageWrittenAsIs"] = "WORD0006",
             ["ForcePngNotHonored"] = "WORD0007",
             ["TrackedChangesAccepted"] = "WORD0008",
-            ["HeaderFooterPageNumberingOnly"] = "WORD0009"
+            ["HeaderFooterPageNumberingOnly"] = "WORD0009",
+            ["ChartsNotExtracted"] = "WORD0010"
         };
 
         // Act: reflect over every public constant the table exposes

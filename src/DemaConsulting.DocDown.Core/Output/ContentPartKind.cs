@@ -23,5 +23,14 @@ public enum ContentPartKind
     Section,
 
     /// <summary>An attachment embedded in the document.</summary>
-    Attachment
+    Attachment,
+
+    /// <summary>A chart whose cached data series were extracted from the document.</summary>
+    /// <remarks>
+    ///     A chart is not a page, sheet, or slide: it is a data object that belongs to one of those and
+    ///     carries its own title, axes, and plotted values. Giving it its own kind lets a consumer find
+    ///     the extracted data table directly instead of scanning the sheet it happened to be drawn on.
+    ///     Declared last so the numeric value of every existing kind is unchanged.
+    /// </remarks>
+    Chart
 }

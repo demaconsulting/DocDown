@@ -18,6 +18,12 @@ namespace DocDown.PowerPoint.OpenXml;
 ///     first-slide title used as the document title is a heuristic and is deliberately not part of
 ///     this authored metadata.
 /// </param>
+/// <param name="ChartsFound">
+///     The number of DrawingML chart parts the deck's slides embed. A chart on a slide carries its
+///     plotted data in a chart part exactly as a workbook's does, and this backend does not read that
+///     data, so the count exists solely to let the emitter report the charts as a counted gap rather
+///     than let them vanish from a deck that claims a complete extraction.
+/// </param>
 /// <remarks>
 ///     The reader populates this model from the Open XML package and hands it to the emitter, so
 ///     every decision about what reaches the output is made once against a model that can be built
@@ -26,7 +32,8 @@ namespace DocDown.PowerPoint.OpenXml;
 internal sealed record PowerPointDeckModel(
     IReadOnlyList<PowerPointSlideModel> Slides,
     IReadOnlyList<EmbeddedImage> Images,
-    DocumentMetadata? Metadata = null)
+    DocumentMetadata? Metadata = null,
+    int ChartsFound = 0)
 {
     /// <summary>
     ///     Initializes a deck model that embeds no images, for a hand-built model with no deck behind it.

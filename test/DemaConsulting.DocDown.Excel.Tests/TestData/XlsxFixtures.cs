@@ -153,6 +153,114 @@ public static class XlsxFixtures
     });
 
     /// <summary>
+    ///     Builds a workbook whose single worksheet anchors one line chart with cached category and
+    ///     value data, so the chart reader's package walk can be exercised end to end.
+    /// </summary>
+    /// <returns>The workbook bytes.</returns>
+    /// <remarks>
+    ///     The chart part XML is written directly rather than assembled from the typed chart classes,
+    ///     because what this fixture must pin is the exact on-disk grammar a real chart uses — the
+    ///     cached <c>c:numCache</c> points the reader recovers. Every value is invented: a fictional
+    ///     vessel's pressure over time, belonging to no real document.
+    /// </remarks>
+    public static byte[] ChartWorkbook() => Build(workbookPart =>
+    {
+        var sheets = new S.Sheets();
+
+        var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+        var sheetData = new S.SheetData();
+        var row = new S.Row();
+        row.AppendChild(InlineStringCell("A1", "Pressure log"));
+        sheetData.AppendChild(row);
+        var worksheet = new S.Worksheet();
+        worksheet.AppendChild(sheetData);
+
+        var drawingsPart = worksheetPart.AddNewPart<DrawingsPart>();
+        var chartPart = drawingsPart.AddNewPart<ChartPart>();
+        using (var stream = chartPart.GetStream(FileMode.Create, FileAccess.Write))
+        using (var writer = new StreamWriter(stream))
+        {
+            writer.Write(ChartPartXml);
+        }
+
+        drawingsPart.WorksheetDrawing = BuildChartDrawing(drawingsPart.GetIdOfPart(chartPart));
+
+        worksheet.AppendChild(new S.Drawing { Id = worksheetPart.GetIdOfPart(drawingsPart) });
+        worksheetPart.Worksheet = worksheet;
+
+        sheets.AppendChild(new S.Sheet
+        {
+            Id = workbookPart.GetIdOfPart(worksheetPart),
+            SheetId = 1U,
+            Name = "Pressure"
+        });
+
+        workbookPart.Workbook!.AppendChild(sheets);
+    });
+
+    /// <summary>
+    ///     The chart part XML of <see cref="ChartWorkbook"/>: an authored title, both axis titles, and
+    ///     three cached points.
+    /// </summary>
+    /// <remarks>
+    ///     Entirely invented content describing a fictional pressure vessel, so no confidential
+    ///     material from any real workbook can reach this repository.
+    /// </remarks>
+    public const string ChartPartXml =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+        + "<c:chartSpace xmlns:c=\"http://schemas.openxmlformats.org/drawingml/2006/chart\" "
+        + "xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><c:chart>"
+        + "<c:title><c:tx><c:rich><a:p><a:r><a:t>Tank Pressure Trend</a:t></a:r></a:p></c:rich></c:tx></c:title>"
+        + "<c:plotArea><c:lineChart><c:ser><c:tx><c:v>Vessel A</c:v></c:tx>"
+        + "<c:cat><c:numRef><c:f>Pressure!$A$2:$A$4</c:f><c:numCache><c:formatCode>General</c:formatCode>"
+        + "<c:ptCount val=\"3\"/><c:pt idx=\"0\"><c:v>0</c:v></c:pt><c:pt idx=\"1\"><c:v>5</c:v></c:pt>"
+        + "<c:pt idx=\"2\"><c:v>10</c:v></c:pt></c:numCache></c:numRef></c:cat>"
+        + "<c:val><c:numRef><c:f>Pressure!$B$2:$B$4</c:f><c:numCache><c:formatCode>0.0</c:formatCode>"
+        + "<c:ptCount val=\"3\"/><c:pt idx=\"0\"><c:v>101.3</c:v></c:pt><c:pt idx=\"1\"><c:v>104.8</c:v></c:pt>"
+        + "<c:pt idx=\"2\"><c:v>109.2</c:v></c:pt></c:numCache></c:numRef></c:val></c:ser></c:lineChart>"
+        + "<c:catAx><c:title><c:tx><c:rich><a:p><a:r><a:t>Elapsed time (min)</a:t></a:r></a:p></c:rich></c:tx>"
+        + "</c:title></c:catAx>"
+        + "<c:valAx><c:title><c:tx><c:rich><a:p><a:r><a:t>Pressure (kPa)</a:t></a:r></a:p></c:rich></c:tx>"
+        + "</c:title></c:valAx></c:plotArea></c:chart></c:chartSpace>";
+
+    /// <summary>
+    ///     Builds a worksheet drawing anchoring one graphic frame that references the chart part.
+    /// </summary>
+    /// <param name="relationshipId">The relationship id of the chart part.</param>
+    /// <returns>The worksheet drawing.</returns>
+    /// <remarks>
+    ///     The frame is written with the same graphic-data grammar a spreadsheet application emits, so
+    ///     the reader's frame walk is exercised rather than only its relationship sweep.
+    /// </remarks>
+    private static Xdr.WorksheetDrawing BuildChartDrawing(string relationshipId)
+    {
+        var chartReference = new DocumentFormat.OpenXml.Drawing.Charts.ChartReference { Id = relationshipId };
+        var graphicData = new D.GraphicData { Uri = "http://schemas.openxmlformats.org/drawingml/2006/chart" };
+        graphicData.AppendChild(chartReference);
+        var graphic = new D.Graphic();
+        graphic.AppendChild(graphicData);
+
+        var frame = new Xdr.GraphicFrame();
+        frame.AppendChild(new Xdr.NonVisualGraphicFrameProperties(
+            new Xdr.NonVisualDrawingProperties { Id = 2U, Name = "Chart 1" },
+            new Xdr.NonVisualGraphicFrameDrawingProperties()));
+        frame.AppendChild(new Xdr.Transform());
+        frame.AppendChild(graphic);
+
+        var anchor = new Xdr.OneCellAnchor(
+            new Xdr.FromMarker(
+                new Xdr.ColumnId("1"), new Xdr.ColumnOffset("0"),
+                new Xdr.RowId("1"), new Xdr.RowOffset("0")),
+            new Xdr.Extent { Cx = 100L, Cy = 100L },
+            frame,
+            new Xdr.ClientData());
+
+        var worksheetDrawing = new Xdr.WorksheetDrawing();
+        worksheetDrawing.AppendChild(anchor);
+        return worksheetDrawing;
+    }
+
+    /// <summary>
     ///     Builds a worksheet drawing anchoring one picture that references the embedded image part.
     /// </summary>
     /// <param name="relationshipId">The relationship id of the embedded image part.</param>

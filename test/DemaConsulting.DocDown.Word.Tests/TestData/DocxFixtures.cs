@@ -104,6 +104,66 @@ public static class DocxFixtures
     });
 
     /// <summary>
+    ///     Builds a document embedding one DrawingML chart, anchored inline as a spreadsheet
+    ///     application writes it.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>
+    ///     Used to prove the Word backend reports an embedded chart as a counted gap rather than
+    ///     dropping it without a word: a chart carries no image blip, so nothing else in the reader
+    ///     would ever notice it. The chart's content is invented and belongs to no real document.
+    /// </remarks>
+    public static byte[] DocumentWithChart() => BuildDocx((document, mainPart) =>
+    {
+        var chartPart = mainPart.AddNewPart<ChartPart>();
+        using (var stream = chartPart.GetStream(FileMode.Create, FileAccess.Write))
+        using (var writer = new StreamWriter(stream))
+        {
+            writer.Write(MinimalChartXml);
+        }
+
+        var body = new W.Body();
+        body.AppendChild(StyledParagraph("Test results", "Heading1"));
+        body.AppendChild(ChartParagraph(mainPart.GetIdOfPart(chartPart)));
+        SetBody(mainPart, body);
+        SetProperties(document, "Charted Report", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     A minimal chart part body: one series of two invented points.
+    /// </summary>
+    /// <remarks>Invented content only, so no confidential material can reach this repository.</remarks>
+    private const string MinimalChartXml =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+        + "<c:chartSpace xmlns:c=\"http://schemas.openxmlformats.org/drawingml/2006/chart\">"
+        + "<c:chart><c:plotArea><c:lineChart><c:ser><c:val><c:numLit><c:ptCount val=\"2\"/>"
+        + "<c:pt idx=\"0\"><c:v>3</c:v></c:pt><c:pt idx=\"1\"><c:v>7</c:v></c:pt>"
+        + "</c:numLit></c:val></c:ser></c:lineChart></c:plotArea></c:chart></c:chartSpace>";
+
+    /// <summary>
+    ///     Builds a paragraph anchoring a chart inline through a graphic frame.
+    /// </summary>
+    /// <param name="relationshipId">The relationship id of the chart part.</param>
+    /// <returns>The paragraph.</returns>
+    /// <remarks>The graphic data carries a chart reference and no blip, exactly as a real chart anchor does.</remarks>
+    private static W.Paragraph ChartParagraph(string relationshipId)
+    {
+        var graphicData = new A.GraphicData { Uri = "http://schemas.openxmlformats.org/drawingml/2006/chart" };
+        graphicData.AppendChild(new DocumentFormat.OpenXml.Drawing.Charts.ChartReference { Id = relationshipId });
+
+        var inline = new WP.Inline(
+            new WP.Extent { Cx = 100L, Cy = 100L },
+            new WP.DocProperties { Id = 3U, Name = "Chart 1" },
+            Compose(new A.Graphic(), graphicData));
+
+        var run = new W.Run();
+        run.AppendChild(Compose(new W.Drawing(), inline));
+        var paragraph = new W.Paragraph();
+        paragraph.AppendChild(run);
+        return paragraph;
+    }
+
+    /// <summary>
     ///     Builds a document embedding an EMF vector metafile image.
     /// </summary>
     /// <returns>The document bytes.</returns>

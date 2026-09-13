@@ -39,6 +39,12 @@ namespace DocDown.Word.Markdown;
 ///     the run nor marks <c>content.md</c> partial.
 /// </param>
 /// <param name="EmptyTablesSkipped">The number of tables skipped because they held no cell content, so the caller can note <c>WORD0003</c>.</param>
+/// <param name="ChartsFound">
+///     The number of DrawingML chart parts the document embeds. A chart in a Word document carries
+///     its plotted data in a chart part exactly as a workbook's does, and this backend does not read
+///     that data, so the count exists solely to let the emitter report the charts as a counted gap
+///     rather than let them vanish from a document that claims a complete extraction.
+/// </param>
 /// <param name="Metadata">
 ///     What the document asserts about itself, mapped from the OPC core properties, or
 ///     <see langword="null"/> when not captured (for example a hand-built test model). Carried on the
@@ -62,6 +68,7 @@ internal sealed record WordDocumentModel(
     int HeaderFooterPartsEmpty,
     int HeaderFooterPartsPageFurniture,
     int EmptyTablesSkipped,
+    int ChartsFound = 0,
     DocumentMetadata? Metadata = null);
 
 /// <summary>

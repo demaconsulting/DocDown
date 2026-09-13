@@ -335,6 +335,12 @@ is what lets it run anywhere .NET runs, and it therefore declares no rendered-pa
 request for rendered pages degrades with a reasoned explanation rather than producing an empty
 `pages/` folder.
 
+It does **not** read the plotted data of a chart embedded in a document. A chart is anchored through
+a graphic frame carrying no image and no text, so it would otherwise leave no trace at all; instead,
+every embedded chart is counted and reported as a gap (`WORD0010`) that points at extracting the
+source workbook with `DemaConsulting.DocDown.Excel`, which does read a chart's cached data series in
+full. The PowerPoint package reports the same way (`PPTX0005`).
+
 A word on why a future Word page-rendering package, if one is ever built, would not undermine this:
 
 > Exporting a document to PDF **purely to rasterize page images** is legitimate: a page image is
@@ -398,6 +404,19 @@ no rendering, so there is no environment-dependent sibling to register.
   cell is cited by its address, so a fact drawn out of the extraction can be traced back to the cell
   it came from
 - **Structure** — the worksheet count and order the workbook declares
+- **Each chart's cached data series** — a chart part stores the values as last plotted, not merely a
+  picture of them, and those values are what a consumer that cannot recalculate the workbook can
+  actually use. Every chart becomes its own content part (kind `chart`, written straight after the
+  worksheet that shows it and named in that worksheet's part) carrying the chart title, the plot
+  type, the category and value axis titles, each series' name, number format and source range, and a
+  table of point index and category label against one column per series. Multiple series each get
+  their own column, and a cache that omits points — a chart whose source cells were partly empty —
+  keeps its declared point indices rather than packing values into rows they do not belong to. A
+  chart's table is bounded at 500 plotted points: 500 keeps every ordinary engineering chart whole
+  while stopping one logged sweep from crowding out the rest of a workbook, and when the bound
+  applies the part says so and a counted gap records it
+- **Text on drawing shapes** — callouts, labels, and annotations floating over a worksheet live in
+  the drawing layer and in no cell, so they are extracted under the worksheet that carries them
 - **Embedded images** — every picture embedded in a worksheet is written to `images/` with its bytes
   passed through unchanged and its true file extension (a `.png` stays a `.png`, a `.emf` metafile
   stays a `.emf`), named from the picture's own description, title, or object name where the document
@@ -416,6 +435,11 @@ capability that could never be delivered.
 
 Two further honest limits are worth stating plainly:
 
+- **A chart that cached no values yields only its labeling.** A chart saved without its cached data
+  can be reported by title, axes, and source range but not by value, so the absence is a counted gap
+  naming the chart, with the remedy of opening and re-saving the workbook so the chart caches its
+  plotted values again. The extended chart types (waterfall, funnel, tree map, box-and-whisker) use a
+  different cache grammar this backend does not yet read and are reported the same way.
 - **Document metadata now reaches `metadata.json`, but the manifest's `document` block stays thin.**
   The workbook's self-reported OPC core properties (creator, dates, revision) are written to
   `metadata.json`; the manifest `document` block still reports only the worksheet count, because a
@@ -755,6 +779,7 @@ The Word package's `WORD` range:
 | `WORD0007` | PNG output was requested but this package ships no imaging stack |
 | `WORD0008` | Tracked changes were rendered in the accepted-revisions view |
 | `WORD0009` | A header or footer carrying only page-numbering fields was omitted from Document Control |
+| `WORD0010` | The document embeds charts whose plotted data this backend does not read |
 
 The Excel package's `XLSX` range:
 
@@ -763,6 +788,9 @@ The Excel package's `XLSX` range:
 | `XLSX0001` | The workbook contains no worksheets |
 | `XLSX0002` | A worksheet carried no non-empty cells |
 | `XLSX0003` | Embedded images include EMF or WMF vector metafiles, written unchanged with a readability caveat |
+| `XLSX0004` | A chart was found whose cached data could not be read |
+| `XLSX0005` | A chart carries no cached data points |
+| `XLSX0006` | A chart's cached data exceeded the rendering bound and was truncated |
 
 The PowerPoint package's `PPTX` range:
 
@@ -772,6 +800,7 @@ The PowerPoint package's `PPTX` range:
 | `PPTX0002` | Notes were read from every slide; the deck carries none |
 | `PPTX0003` | Embedded images include EMF or WMF vector metafiles, written unchanged with a readability caveat |
 | `PPTX0004` | A slide could not be rendered and was omitted |
+| `PPTX0005` | The deck embeds charts whose plotted data this backend does not read |
 
 The Visio package's `VISIO` range:
 
