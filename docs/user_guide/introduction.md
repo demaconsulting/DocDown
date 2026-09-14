@@ -37,7 +37,7 @@ Three words recur throughout this guide, and they name different things:
   names the selected one in its *Backend* section, and one format may be served by more than one
   backend, as PowerPoint is by its managed backend and its automation backend.
 - **Format package** — the NuGet package that ships one or more backends for a format, such as
-  `DemaConsulting.DocDown.Word`. You install format packages; DocDown selects a backend.
+  `DemaConsulting.DocDown.Office`. You install format packages; DocDown selects a backend.
 - **Extractor** — the spelling the API and the CLI use where a backend needs an identifier:
   `DocDownBuilder.AddExtractor`, `engine.Extractors`, `result.SelectedExtractor`, and the extractor
   id that breaks selection ties. Read it as the code-level name for a backend.
@@ -56,7 +56,7 @@ Install the package for the format you read, register that one backend, extract,
 outcome:
 
 ```bash
-dotnet add package DemaConsulting.DocDown.Word
+dotnet add package DemaConsulting.DocDown.Office
 ```
 
 ```csharp
@@ -202,10 +202,9 @@ single-file executable.
 Eight packages are implemented and under active development:
 `DemaConsulting.DocDown.Core`, which holds the shared abstractions and output contract;
 `DemaConsulting.DocDown.Pdf`, which extracts PDFs; `DemaConsulting.DocDown.Pdf.Rendering`, an
-optional add-on that rasterizes PDF pages to images; `DemaConsulting.DocDown.Word`, which extracts
-Word documents; `DemaConsulting.DocDown.Excel`, which extracts workbooks;
-`DemaConsulting.DocDown.PowerPoint`, which extracts presentations;
-`DemaConsulting.DocDown.Visio`, which extracts drawings; and `DemaConsulting.DocDown.Tool`, the
+optional add-on that rasterizes PDF pages to images; `DemaConsulting.DocDown.Office`, which extracts
+Word documents, Excel workbooks, PowerPoint presentations and Visio drawings; and
+`DemaConsulting.DocDown.Tool`, the
 `docdown` command-line tool.
 
 `DocDown.Pdf` is fully managed and ships no native assets. `DocDown.Pdf.Rendering` is the one
@@ -213,8 +212,8 @@ package that carries native binaries (PDFium and SkiaSharp, via PDFtoImage): a f
 install works on supported runtime identifiers, but a self-contained single-file build is
 runtime-identifier specific and must be published with `dotnet publish -r <rid>`.
 
-`DocDown.Word` and `DocDown.Excel` are fully managed and read `.docx` and `.xlsx` on every platform
-with no native dependency. `DocDown.PowerPoint` and `DocDown.Visio` extract on every platform
+The Word and Excel backends are fully managed and read `.docx` and `.xlsx` on every platform
+with no native dependency. the PowerPoint and Visio backends extract on every platform
 through managed backends and additionally rasterize slides and pages to PNG on Windows when the
 corresponding Microsoft Office application is installed.
 
@@ -247,10 +246,10 @@ Core directly; install Core yourself only when you are building a backend of you
 | Format | Package (all prefixed `DemaConsulting.`) | Optional extra | Platform note |
 | --- | --- | --- | --- |
 | PDF `.pdf` | `DocDown.Pdf` | `DocDown.Pdf.Rendering` for page images | Managed; the add-on has native binaries |
-| Word `.docx` | `DocDown.Word` | — | Managed; every platform |
-| Excel `.xlsx` | `DocDown.Excel` | — | Managed; a workbook is not paginated |
-| PowerPoint `.pptx` | `DocDown.PowerPoint` | — | Slide images need Windows and PowerPoint |
-| Visio `.vsdx`, `.vsdm` | `DocDown.Visio` | — | Page images need Windows and Visio |
+| Word `.docx` | `DocDown.Office` | — | Managed; every platform |
+| Excel `.xlsx` | `DocDown.Office` | — | Managed; a workbook is not paginated |
+| PowerPoint `.pptx` | `DocDown.Office` | — | Slide images need Windows and PowerPoint |
+| Visio `.vsdx`, `.vsdm` | `DocDown.Office` | — | Page images need Windows and Visio |
 | Any format, from a shell | `DocDown.Tool` | — | Global or local tool manifest install |
 | Your own backend | `DocDown.Core` | — | Abstractions only; extracts nothing itself |
 
@@ -259,10 +258,10 @@ Core directly; install Core yourself only when you are building a backend of you
 | Format | Extensions | Package | Text, tables, images | Page images |
 | --- | --- | --- | --- | --- |
 | PDF | `.pdf` | `DocDown.Pdf` | Yes | With `DocDown.Pdf.Rendering` |
-| Word | `.docx` | `DocDown.Word` | Yes | No |
-| Excel | `.xlsx` | `DocDown.Excel` | Yes | Not applicable; not paginated |
-| PowerPoint | `.pptx` | `DocDown.PowerPoint` | Yes | Windows, with PowerPoint |
-| Visio | `.vsdx`, `.vsdm` | `DocDown.Visio` | Yes | Windows, with Visio |
+| Word | `.docx` | `DocDown.Office` | Yes | No |
+| Excel | `.xlsx` | `DocDown.Office` | Yes | Not applicable; not paginated |
+| PowerPoint | `.pptx` | `DocDown.Office` | Yes | Windows, with PowerPoint |
+| Visio | `.vsdx`, `.vsdm` | `DocDown.Office` | Yes | Windows, with Visio |
 
 Formats DocDown recognizes but does not extract today:
 
@@ -295,7 +294,7 @@ To extract Word documents, add the Word package. Its Open XML backend is fully m
 supported by DocDown; it is recognized and refused with a plain explanation:
 
 ```bash
-dotnet add package DemaConsulting.DocDown.Word
+dotnet add package DemaConsulting.DocDown.Office
 ```
 
 To extract Excel workbooks, PowerPoint presentations, or Visio drawings, add the matching packages.
@@ -307,9 +306,7 @@ The legacy binary `.xls`, `.ppt`, and `.vsd` formats are not supported; each is 
 refused with an explanation:
 
 ```bash
-dotnet add package DemaConsulting.DocDown.Excel
-dotnet add package DemaConsulting.DocDown.PowerPoint
-dotnet add package DemaConsulting.DocDown.Visio
+dotnet add package DemaConsulting.DocDown.Office
 ```
 
 Install the command-line tool globally, or into a local tool manifest so the version travels with
@@ -487,7 +484,7 @@ fabricated page.
 
 ## Extracting a Word document
 
-`DemaConsulting.DocDown.Word` reads Word documents:
+The Word backend in `DemaConsulting.DocDown.Office` reads Word documents:
 
 ```csharp
 using System.Threading;
@@ -509,7 +506,7 @@ backend: the result is the same fully managed, deterministic extraction on every
 
 ## What the Word package provides, and what it does not
 
-`DemaConsulting.DocDown.Word` extracts:
+The Word backend extracts:
 
 - **Text and structure** — headings, ordered and bulleted lists, inline emphasis, and links in
   document order.
@@ -533,7 +530,7 @@ that chart data matters.
 
 ## Extracting an Excel workbook
 
-`DemaConsulting.DocDown.Excel` reads Excel workbooks:
+The Excel backend in `DemaConsulting.DocDown.Office` reads Excel workbooks:
 
 ```csharp
 using System.Threading;
@@ -556,7 +553,7 @@ there is no rendering-oriented sibling to register.
 
 ## What the Excel package provides, and what it does not
 
-`DemaConsulting.DocDown.Excel` extracts:
+The Excel backend extracts:
 
 - **Every worksheet's cell values, verbatim and at full length** — nothing is truncated and nothing
   is summarized.
@@ -593,7 +590,7 @@ says the workbook could not be opened.
 
 ## Extracting a PowerPoint presentation
 
-`DemaConsulting.DocDown.PowerPoint` reads PowerPoint presentations:
+The PowerPoint backend in `DemaConsulting.DocDown.Office` reads PowerPoint presentations:
 
 ```csharp
 using System.Threading;
@@ -620,7 +617,7 @@ application is installed on Windows.
 
 ## What the PowerPoint package provides, and what it does not
 
-`DemaConsulting.DocDown.PowerPoint` extracts:
+The PowerPoint backend extracts:
 
 - **Every slide's text, in presentation order** — each slide becomes its own section, under its
   own heading, in a single `content.md`.
@@ -646,7 +643,7 @@ The honest limits on rendering are straightforward:
 
 ## Extracting a Visio drawing
 
-`DemaConsulting.DocDown.Visio` reads Visio drawings — both `.vsdx` and the macro-enabled `.vsdm`:
+The Visio backend in `DemaConsulting.DocDown.Office` reads Visio drawings — both `.vsdx` and the macro-enabled `.vsdm`:
 
 ```csharp
 using System.Threading;
@@ -669,7 +666,7 @@ through Microsoft Visio.
 
 ## What the Visio package provides, and what it does not
 
-`DemaConsulting.DocDown.Visio` extracts:
+The Visio backend extracts:
 
 - **Page names and shape text**, in document order, for `.vsdx` and `.vsdm` alike.
 - **Symbol-font glyphs recovered where the drawing proves what they are.** The backend corrects
