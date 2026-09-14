@@ -91,8 +91,9 @@ sections:
         tags: [system]
         justification: |
           Automated consumers need a stable machine-readable record of the extraction. The manifest
-          carries the format, source, selected backend, output inventories, requested options, and
-          any unreadable failure.
+          carries the format, source, selected backend, output inventories, and any unreadable
+          failure. It does not echo the options it was run with: a consumer reading the manifest
+          wants to know what was produced, not what was asked for.
         children:
           - DocDownCore-Output-ManifestContent
         tests:

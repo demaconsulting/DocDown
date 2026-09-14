@@ -13,4 +13,13 @@ package DocDownOffice {
         part excelChartReader : ExcelChartReader;
         part excelDrawingTextReader : ExcelDrawingTextReader;
     }
+
+    part def ExcelDocumentModel {
+        doc /* The reader-neutral model of a workbook: its sheets, their cells, and the charts drawn on them. */
+
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelDocumentModel.cs */
+        comment designRef /* Design: docs/design/docdown-office/excel/open-xml.md (documented as a supporting type) */
+        comment verificationRef /* Verification: docs/verification/docdown-office/excel/open-xml.md (documented as a supporting type) */
+        comment reqRef /* Requirements: docs/reqstream/docdown-office/excel/open-xml.yaml (documented as a supporting type) */
+    }
 }

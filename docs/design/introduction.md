@@ -75,6 +75,8 @@ items, specifically:
   - **SummaryWriter (Unit)** — Serializes the human-readable `summary.txt`
   - **ManifestWriter (Unit)** — Serializes `manifest.json` from the recorded output, inventory,
     and notes
+  - **ImageTextSelector (Unit)** — Chooses which of the texts a document offered for an image is
+    the most direct, so an image link carries the document's own words rather than invented ones
 - **DocDown.Pdf (System)** — PDF text, embedded-image, and document-metadata extraction; flat, with
   no subsystems, because there is one architectural boundary here rather than several
   - **PdfDocumentExtractor (Unit)** — The backend the engine selects: availability, metadata,
@@ -169,7 +171,7 @@ DocDown.Core is organized into three subsystems that form a one-directional pipe
 identifies a document's format, **Extraction** registers backends and selects the best available one
 deterministically, and **Output** is the sole write path that produces the invariant scratch-folder
 layout. Each subsystem is a distinct architectural boundary with its own public surface, and the
-subsystems collaborate only through immutable value types. Twelve software units sit under these
+subsystems collaborate only through immutable value types. Eleven software units sit under these
 subsystems; a larger set of supporting value, contract, and enumeration types — including
 `ExtractionNote` — is documented inline within each subsystem's design document rather than as
 separate units.
@@ -219,197 +221,137 @@ late-bound IDispatch with no interop assembly. The legacy binary formats — `.d
 
 ## Folder Layout
 
-The source code folder structure mirrors the software structure organization, with file paths
-and descriptions as follows:
+The source folder structure mirrors the software structure. The SysML2 model under `docs/sysml2/`
+is the authoritative record of that structure; this listing is a reading aid.
 
 ```text
-src/DemaConsulting.DocDown.Core/
+DemaConsulting.DocDown.Core/
+├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
 ├── Detection/
-│   ├── FormatSniffer.cs            — Unit: names a format from the file extension, falling back to a content signature
-│   ├── DocumentFormat.cs           — Value type: format identifier and media type, with well-known formats
-│   ├── DetectionBasis.cs           — Enum: the kind of evidence a detection is based on
-│   └── FormatDetection.cs          — Value type: detected format plus basis and confidence
+│   ├── DocumentFormat.cs                — Value type: format identifier and media type, with well-known formats
+│   ├── FormatSniffer.cs                 — Unit: names a format from the file extension, falling back to a content signature
 ├── Extraction/
-│   ├── DocDownBuilder.cs           — Unit: fluent builder collecting registrations and defaults
-│   ├── ExtractorRegistry.cs        — Unit: immutable snapshot of registered extractors with cached availability
-│   ├── ExtractorSelector.cs        — Unit: pure ranking function that selects the best available extractor
-│   ├── DocDownEngine.cs            — Unit: public facade that orchestrates one extraction end to end
-│   ├── IDocumentExtractor.cs       — Interface: the backend contract implemented by extractor packages
-│   ├── IExtractionContext.cs       — Interface: the context handed to a backend during extraction
-│   ├── ExtractionContext.cs        — Internal: the concrete extraction context
-│   ├── ExtractorAvailability.cs    — Value type: probed availability and whether the backend renders pages here
-│   ├── ExtractorDescriptor.cs      — Value type: immutable snapshot of a backend's identity and ranking inputs
-│   ├── ExtractorCandidate.cs       — Value type: a descriptor paired with its current availability
-│   ├── ExtractionOutcome.cs        — Enum: produced or unreadable
-│   ├── ExtractionFailure.cs        — Value type: a displayable failure summary and explanation
-│   ├── ExtractionOptions.cs        — Options: mutable request configuration with a Clone method
-│   ├── ScratchFolderMode.cs        — Enum: clean a DocDown folder safely or overwrite contents
-│   ├── PageRange.cs                — Value type: an inclusive page range
-│   ├── DocumentSource.cs           — Source: a file- or stream-backed document input
-│   ├── DocumentInfo.cs             — Value type: extractor-reported document metadata
-│   ├── DocumentMetadata.cs         — Value type: what a document asserts about itself, with per-field provenance
-│   ├── OpcMetadataMapper.cs        — Mapper: shared OPC core-property snapshot to DocumentMetadata
-│   ├── ExtractionResult.cs         — Result: the full outcome returned to the caller
-│   ├── ISelfValidating.cs          — Interface: opt-in self-test contribution by a backend
-│   ├── SelfTestCase.cs             — Value type: a named, runnable self-test case
-│   ├── SelfTestContext.cs          — Context: the working folder and cancellation for a self-test
-│   ├── SelfTestResult.cs           — Value type: a self-test status, message, and duration
-│   └── SelfTestStatus.cs           — Enum: passed, failed, or skipped
-└── Output/
-    ├── ScratchFolder.cs            — Unit: owns the output directory and enforces safe scratch reuse
-    ├── ExtractionSink.cs           — Unit: allocates paths, writes bytes, and records notes and content inventory
-    ├── ContentWriter.cs            — Unit: finalizes content.md and any parts/ files
-    ├── SummaryWriter.cs            — Unit: serializes the human-readable summary.txt
-    ├── ManifestWriter.cs           — Unit: serializes manifest.json from recorded output, inventory, and notes
-    ├── MetadataWriter.cs           — Writer: serializes metadata.json from self-reported document metadata
-    ├── IExtractionSink.cs          — Interface: the write surface handed to a backend
-    ├── ImageHint.cs                — Value type: extractor-supplied image metadata hint
-    ├── ContentPart.cs              — Value type: a content part (page, sheet, slide, section, attachment)
-    ├── ContentPartKind.cs          — Enum: the kind of a content part
-    ├── ArtifactInventory.cs        — Helper: the manifest-accounted file inventory used for safe scratch reuse
-    ├── ExtractionEnvironment.cs    — Value type: operating system, runtime, and environment facts
-    ├── EnvironmentFact.cs          — Value type: one environment fact
-    ├── ExtractionManifest.cs       — DTO graph: the manifest.json serialization model
-    ├── ExtractionNote.cs           — Value type: a plain-language extraction note
-    ├── DocDownJsonContext.cs       — Source-gen: the trim- and AOT-safe JSON serializer context
-    └── ScratchFolderException.cs   — Exception: a structured scratch-folder refusal
-```
+│   ├── DocDownBuilder.cs                — Unit: fluent builder collecting registrations and defaults
+│   ├── DocDownEngine.cs                 — Unit: public facade that orchestrates one extraction end to end
+│   ├── DocumentSource.cs                — Source: a file- or stream-backed document input
+│   ├── ExtractionContext.cs             — Internal: the concrete extraction context
+│   ├── ExtractionOptions.cs             — Options: mutable request configuration with a Clone method
+│   ├── ExtractionResult.cs              — Result: the full outcome returned to the caller
+│   ├── ExtractorRegistry.cs             — Unit: immutable snapshot of registered extractors with cached availability
+│   ├── ExtractorSelector.cs             — Unit: pure ranking function that selects the best available extractor
+│   ├── IDocumentExtractor.cs            — Interface: the backend contract implemented by extractor packages
+│   ├── OpcMetadataMapper.cs             — Mapper: shared OPC core-property snapshot to DocumentMetadata
+│   ├── SelfTestProbe.cs                 — Internal: reads a backend's embedded self-test probe document from its assembly
+│   ├── SelfTestResult.cs                — Value type: a self-test status, message, and duration
+├── Output/
+│   ├── ArtifactInventory.cs             — Helper: the manifest-accounted file inventory used for safe scratch reuse
+│   ├── ContentWriter.cs                 — Unit: finalizes content.md and any parts/ files
+│   ├── EmbeddedImageWriter.cs           — Unit: writes an embedded image and its supporting value types
+│   ├── ExtractionManifest.cs            — DTO graph: the manifest.json serialization model
+│   ├── ExtractionSink.cs                — Unit: allocates paths, writes bytes, and records notes and content inventory
+│   ├── ImageDimensions.cs               — Internal: reads pixel dimensions from image headers without decoding
+│   ├── ImageLinkText.cs                 — Internal: the alt text policy for an inline markdown image link
+│   ├── ImageTextSelector.cs             — Unit: chooses the most direct image text a document offered
+│   ├── ManifestWriter.cs                — Unit: serializes manifest.json from recorded output, inventory, and notes
+│   ├── MetadataWriter.cs                — Writer: serializes metadata.json from self-reported document metadata
+│   ├── PartResourceLinkRewriter.cs      — Internal: rewrites resource links so they resolve from a content part's folder
+│   ├── ScratchFolder.cs                 — Unit: owns the output directory and enforces safe scratch reuse
+│   ├── SummaryWriter.cs                 — Unit: serializes the human-readable summary.txt
 
-The folder structure mirrors the three-subsystem software architecture. Each subsystem folder holds
-its software-unit source files together with the supporting value, contract, and enumeration types the
-subsystem defines; the supporting types are documented inline within their subsystem's design document
-rather than as separate units.
+DemaConsulting.DocDown.Office/
+├── OfficeDocDownBuilderExtensions.cs — Unit: registers every Office backend in one call
+├── Com/
+│   ├── ComposingDelegatedSink.cs        — Internal: reconciles the delegated backend's rendering facts
+│   ├── DelegatedExtractionContext.cs    — Internal: the render-suppressed context for the delegated managed run
+│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+│   ├── OfficeComAvailability.cs         — Internal: probes whether an Office application's COM automation can run here
+├── Excel/
+│   ├── ExcelDocDownBuilderExtensions.cs — Unit: the reflection-free AddExcel registration seam
+│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+├── Excel/Markdown/
+│   ├── ExcelChartWriter.cs              — Unit: renders a chart's cached series as a table
+│   ├── ExcelContentEmitter.cs           — Unit: emits sheet and chart parts, inventory, and notes
+│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+├── Excel/OpenXml/
+│   ├── ExcelChartReader.cs              — Unit: recovers each chart's cached data series
+│   ├── ExcelDocumentModel.cs            — Value type: the reader-neutral workbook, sheet, and cell model
+│   ├── ExcelDrawingTextReader.cs        — Unit: recovers the text of drawing shapes over a worksheet
+│   ├── ExcelOpenXmlExtractor.cs         — Unit: the managed backend the engine selects and invokes
+│   ├── ExcelOpenXmlImageReader.cs       — Unit: yields embedded image bytes and worksheet association
+│   ├── ExcelOpenXmlReader.cs            — Unit: turns the spreadsheet package into the backend-neutral model
+│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+├── PowerPoint/
+│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+│   ├── PowerPointDocDownBuilderExtensions.cs — Unit: the reflection-free AddPowerPoint registration seam
+├── PowerPoint/Com/
+│   ├── IPowerPointAutomation.cs         — Interface: the render seam and its per-slide result type
+│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+│   ├── PowerPointAutomation.cs          — Unit: the real COM automation adapter (Windows-only)
+│   ├── PowerPointComAvailability.cs     — Unit: the cheap, side-effect-free rendering-availability probe
+│   ├── PowerPointComDispatch.cs         — Internal: the low-level IDispatch plumbing, watchdog, and teardown
+│   ├── PowerPointComExtractor.cs        — Unit: the full-superset backend that delegates content and renders slides
+├── PowerPoint/Markdown/
+│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+│   ├── PowerPointContentEmitter.cs      — Unit: the model-to-sink emission path, per-slide content, inventory, and notes
+├── PowerPoint/OpenXml/
+│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+│   ├── PowerPointOpenXmlExtractor.cs    — Unit: the managed backend the engine selects and invokes
+│   ├── PowerPointOpenXmlImageReader.cs  — Unit: yields embedded image bytes and slide association
+│   ├── PowerPointOpenXmlReader.cs       — Unit: turns the presentation package into the backend-neutral model
+├── Visio/
+│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+│   ├── VisioDocDownBuilderExtensions.cs — Unit: the reflection-free AddVisio registration seam
+├── Visio/Com/
+│   ├── IVisioAutomation.cs              — Interface: the render seam and its per-page result type
+│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+│   ├── VisioAutomation.cs               — Unit: the real COM automation adapter (Windows-only)
+│   ├── VisioComAvailability.cs          — Unit: the cheap, side-effect-free rendering-availability probe
+│   ├── VisioComDispatch.cs              — Internal: the low-level IDispatch plumbing and teardown
+│   ├── VisioComExtractor.cs             — Unit: the full-superset backend that delegates content and renders pages
+├── Visio/Markdown/
+│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+│   ├── VisioContentEmitter.cs           — Unit: the model-to-sink emission path, per-page content, inventory, and notes
+│   ├── VisioShapeLabeler.cs             — Unit: the endpoint-labeling decision and its provenance types
+├── Visio/OpenXml/
+│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+│   ├── VisioImageReader.cs              — Unit: yields embedded image bytes and page association
+│   ├── VisioOpenXmlExtractor.cs         — Unit: the managed backend the engine selects and invokes
+│   ├── VisioPackageReader.cs            — Unit: turns the Visio package into the backend-neutral model
+├── Word/
+│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+│   ├── WordDocDownBuilderExtensions.cs  — Unit: the reflection-free AddWord registration seam
+├── Word/Markdown/
+│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+│   ├── WordContentEmitter.cs            — Unit: the model-to-sink emission path
+│   ├── WordDocumentModel.cs             — Value type: the reader-neutral document model
+│   ├── WordMarkdownWriter.cs            — Unit: renders the document model to a markdown flow
+│   ├── WordTableWriter.cs               — Unit: renders a table model as a GFM table, counting flattened cells
+├── Word/OpenXml/
+│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+│   ├── WordOpenXmlExtractor.cs          — Unit: the managed backend the engine selects and invokes
+│   ├── WordOpenXmlImageReader.cs        — Unit: yields embedded image bytes with passthrough provenance
+│   ├── WordOpenXmlReader.cs             — Unit: turns the Open XML DOM into the backend-neutral model
 
-The PDF extraction package mirrors the same organization. It is flat, so every source file is a unit:
+DemaConsulting.DocDown.Pdf/
+├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+├── PdfDocDownBuilderExtensions.cs   — Unit: the reflection-free AddPdf registration seam
+├── PdfDocumentExtractor.cs          — Unit: orchestrates PDF extraction, content inventory, and notes
+├── PdfImageExtractor.cs             — Unit: writes embedded images and records notes when one cannot be delivered
+├── PdfTextExtractor.cs              — Unit: renders a page's glyphs into markdown in reading order
 
-```text
-src/DemaConsulting.DocDown.Pdf/
-├── PdfDocumentExtractor.cs         — Unit: orchestrates PDF extraction, content inventory, and notes
-├── PdfTextExtractor.cs             — Unit: renders a page's glyphs into markdown in reading order
-├── PdfImageExtractor.cs            — Unit: writes embedded images and records notes when one cannot be delivered
-└── PdfDocDownBuilderExtensions.cs  — Unit: the reflection-free AddPdf registration seam
-```
+DemaConsulting.DocDown.Pdf.Rendering/
+├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+├── PageRenderer.cs                  — Unit: the single native-interop seam behind a process-wide lock
+├── PdfPageRenderingExtractor.cs     — Unit: page-rendering backend; delegates, rasterizes, and records notes
+├── PdfRenderingDocDownBuilderExtensions.cs — Unit: the reflection-free AddPdfRendering registration seam
 
-The optional page-rendering package mirrors the same flat organization; every source file is a unit:
-
-```text
-src/DemaConsulting.DocDown.Pdf.Rendering/
-├── PdfPageRenderingExtractor.cs            — Unit: page-rendering backend; delegates, rasterizes, and records notes
-├── PageRenderer.cs                         — Unit: the single native-interop seam behind a process-wide lock
-└── PdfRenderingDocDownBuilderExtensions.cs — Unit: the reflection-free AddPdfRendering registration seam
-```
-
-The command-line tool has two subsystems and one direct unit, mirroring the same organization:
-
-```text
-src/DemaConsulting.DocDown.Tool/
-├── Program.cs                      — Unit: entry point, priority dispatch, banner/help, extraction and reporting
+DemaConsulting.DocDown.Tool/
+├── Program.cs                       — Unit: entry point, priority dispatch, banner/help, extraction and reporting
 ├── Cli/
-│   └── Context.cs                  — Unit: parsed arguments, option mapping, and silence-aware console/log output
-└── SelfTest/
-    ├── Validation.cs               — Unit: the --validate driver: header, in-process checks, self-test union, TRX/JUnit
-    └── SelfTestAdapter.cs          — Unit: maps Core self-test records into the TestResults model
-```
-
-The Word extraction package has two subsystems and one direct unit. Each subsystem folder holds its
-software-unit source files together with the supporting model, contract, and enumeration types the
-subsystem defines; the supporting types are documented inline within their subsystem's design document
-rather than as separate units:
-
-```text
-src/DemaConsulting.DocDown.Office/Word/
-├── WordDocDownBuilderExtensions.cs — Unit: the reflection-free AddWord registration seam
-├── Markdown/
-│   ├── WordMarkdownWriter.cs        — Unit: renders the document model to a markdown flow
-│   ├── WordTableWriter.cs           — Unit: renders a table model as a GFM table, counting flattened cells
-│   ├── WordContentEmitter.cs        — Unit: the model-to-sink emission path
-│   ├── WordDocumentModel.cs         — Value type: the reader-neutral document model
-│   ├── WordBlock.cs                 — Value type: one content block (heading, paragraph, list item, table, image)
-│   ├── WordBlockKind.cs             — Enum: the kind of a content block
-│   ├── WordInline.cs                — Value type: an inline run with bold/italic/link
-│   ├── WordListInfo.cs              — Value type: a list item's level and ordered/bulleted kind
-│   └── WordTableModel.cs            — Value type: a table's rows, header flag, and flatten counts
-└── OpenXml/
-    ├── WordOpenXmlExtractor.cs      — Unit: the managed backend the engine selects and invokes
-    ├── WordOpenXmlReader.cs         — Unit: turns the Open XML DOM into the backend-neutral model
-    ├── WordOpenXmlImageReader.cs    — Unit: yields embedded image bytes with passthrough provenance
-    └── WordExtractionException.cs   — Exception: a structured Word extraction failure
-```
-
-The Excel extraction package has two subsystems and one direct unit. As with Word, each subsystem
-folder holds its software-unit source files together with the supporting model, chart-model, and
-exception types the subsystem defines; the supporting types are documented inline within their
-subsystem's design document rather than as separate units:
-
-```text
-src/DemaConsulting.DocDown.Office/Excel/
-├── ExcelDocDownBuilderExtensions.cs — Unit: the reflection-free AddExcel registration seam
-├── Markdown/
-│   ├── ExcelContentEmitter.cs        — Unit: emits sheet and chart parts, inventory, and notes
-│   └── ExcelChartWriter.cs           — Unit: renders a chart's cached series as a table
-└── OpenXml/
-    ├── ExcelOpenXmlExtractor.cs      — Unit: the managed backend the engine selects and invokes
-    ├── ExcelOpenXmlReader.cs         — Unit: turns the spreadsheet package into the backend-neutral model
-    ├── ExcelOpenXmlImageReader.cs    — Unit: yields embedded image bytes and worksheet association
-    ├── ExcelChartReader.cs           — Unit: recovers each chart's cached data series
-    ├── ExcelDrawingTextReader.cs     — Unit: recovers the text of drawing shapes over a worksheet
-    ├── ExcelDocumentModel.cs         — Value type: the reader-neutral workbook, sheet, and cell model
-    ├── ExcelChartModel.cs            — Value type: a chart's cached data, series, and points
-    └── ExcelExtractionException.cs   — Exception: a structured Excel extraction failure
-```
-
-The PowerPoint extraction package has three subsystems and one direct unit. As with the other extraction
-packages, each subsystem folder holds its software-unit source files together with the supporting model,
-exception, and COM-plumbing types the subsystem defines; the supporting types are documented inline
-within their subsystem's design document rather than as separate units:
-
-```text
-src/DemaConsulting.DocDown.Office/PowerPoint/
-├── PowerPointDocDownBuilderExtensions.cs — Unit: the reflection-free AddPowerPoint registration seam
-├── Com/
-│   ├── PowerPointComExtractor.cs      — Unit: the full-superset backend that delegates content and renders slides
-│   ├── PowerPointComAvailability.cs   — Unit: the cheap, side-effect-free rendering-availability probe
-│   ├── PowerPointAutomation.cs        — Unit: the real COM automation adapter (Windows-only)
-│   ├── IPowerPointAutomation.cs       — Interface: the render seam and its per-slide result type
-│   ├── ComposingDelegatedSink.cs      — Internal: reconciles the delegated backend's rendering facts
-│   ├── DelegatedExtractionContext.cs  — Internal: the render-suppressed context for the delegated managed run
-│   └── PowerPointComDispatch.cs       — Internal: the low-level IDispatch plumbing, watchdog, and teardown
-├── Markdown/
-│   └── PowerPointContentEmitter.cs    — Unit: the model-to-sink emission path, per-slide content, inventory, and notes
-└── OpenXml/
-    ├── PowerPointOpenXmlExtractor.cs  — Unit: the managed backend the engine selects and invokes
-    ├── PowerPointOpenXmlReader.cs     — Unit: turns the presentation package into the backend-neutral model
-    ├── PowerPointOpenXmlImageReader.cs — Unit: yields embedded image bytes and slide association
-    ├── PowerPointDocumentModel.cs     — Value type: the reader-neutral deck, slide, and image-reference model
-    └── PowerPointExtractionException.cs — Exception: a structured PowerPoint extraction failure
-```
-
-The Visio extraction package has three subsystems and one direct unit. As with the other extraction
-packages, each subsystem folder holds its software-unit source files together with the supporting model,
-exception, and COM-plumbing types the subsystem defines; the supporting types are documented inline
-within their subsystem's design document rather than as separate units:
-
-```text
-src/DemaConsulting.DocDown.Office/Visio/
-├── VisioDocDownBuilderExtensions.cs  — Unit: the reflection-free AddVisio registration seam
-├── Com/
-│   ├── VisioComExtractor.cs           — Unit: the full-superset backend that delegates content and renders pages
-│   ├── VisioComAvailability.cs        — Unit: the cheap, side-effect-free rendering-availability probe
-│   ├── VisioAutomation.cs             — Unit: the real COM automation adapter (Windows-only)
-│   ├── IVisioAutomation.cs            — Interface: the render seam and its per-page result type
-│   ├── ComposingDelegatedSink.cs      — Internal: reconciles the delegated backend's rendering facts
-│   ├── DelegatedExtractionContext.cs  — Internal: the render-suppressed context for the delegated managed run
-│   └── VisioComDispatch.cs            — Internal: the low-level IDispatch plumbing and teardown
-├── Markdown/
-│   ├── VisioContentEmitter.cs         — Unit: the model-to-sink emission path, per-page content, inventory, and notes
-│   └── VisioShapeLabeler.cs           — Unit: the endpoint-labeling decision and its provenance types
-└── OpenXml/
-    ├── VisioOpenXmlExtractor.cs       — Unit: the managed backend the engine selects and invokes
-    ├── VisioPackageReader.cs          — Unit: turns the Visio package into the backend-neutral model
-    ├── VisioImageReader.cs            — Unit: yields embedded image bytes and page association
-    ├── VisioDocumentModel.cs          — Value type: the reader-neutral drawing, page, shape, and edge model
-    ├── VisioPackageBuilder.cs         — Internal: builds in-memory Visio packages for self-tests and fixtures
-    └── VisioExtractionException.cs    — Exception: a structured Visio extraction failure
+│   ├── Context.cs                       — Unit: parsed arguments, option mapping, and silence-aware console/log output
+├── SelfTest/
+│   ├── SelfTestAdapter.cs               — Unit: maps Core self-test records into the TestResults model
+│   ├── Validation.cs                    — Unit: the --validate driver: header, in-process checks, self-test union, TRX/JUnit
 ```
 
 ## Code Coverage Policy

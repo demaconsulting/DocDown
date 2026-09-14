@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Runtime.Versioning;
 using DocDown.Core;
-using DocDown.Extraction;
 using DocDown.Office.Com;
 using DocDown.Visio.OpenXml;
 using CoreFormat = DocDown.Core.DocumentFormat;

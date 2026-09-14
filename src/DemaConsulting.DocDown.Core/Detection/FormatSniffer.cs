@@ -14,7 +14,7 @@ namespace DocDown.Core;
 ///         caller already possesses the document and named it; sniffing the bytes changes only
 ///         which parser runs, not whether hostile bytes are parsed, and a wrongly-named file is
 ///         rejected honestly by the decoder that receives it. Reporting the
-///         <see cref="DetectionBasis"/> and a confidence score alongside the format keeps the
+///         <see cref="DetectionBasis"/> alongside the format keeps the
 ///         record of <em>how</em> the format was determined available to <c>manifest.json</c>,
 ///         downstream selection, and human reviewers.
 ///     </para>
@@ -79,8 +79,7 @@ public static class FormatSniffer
     ///     no name is available.
     /// </param>
     /// <returns>
-    ///     A <see cref="FormatDetection"/> carrying the identified format, the evidence basis, and a
-    ///     confidence score.
+    ///     A <see cref="FormatDetection"/> carrying the identified format and the evidence basis.
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="content"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="content"/> is not readable or not seekable.</exception>
@@ -153,19 +152,19 @@ public static class FormatSniffer
     /// </summary>
     /// <param name="fileName">The file name to inspect, or <see langword="null"/>.</param>
     /// <returns>
-    ///     A matching known format with basis <see cref="DetectionBasis.Extension"/> and confidence
-    ///     <c>0.9</c>, or an <see cref="DocumentFormat.Unknown"/> detection with confidence
-    ///     <c>0.0</c> when the name has no extension or an unrecognized one.
+    ///     A matching known format with basis <see cref="DetectionBasis.Extension"/>, or an
+    ///     <see cref="DocumentFormat.Unknown"/> detection when the name has no extension or an
+    ///     unrecognized one.
     /// </returns>
     /// <remarks>
     ///     Extensions are matched case-insensitively via an invariant-lowercase comparison so
-    ///     <c>.PDF</c> and <c>.pdf</c> are equivalent. Confidence is high but deliberately short of
+    ///     <c>.PDF</c> and <c>.pdf</c> are equivalent. An extension is weaker evidence than
     ///     <c>1.0</c>: the name is trusted, but only the decoder can prove the bytes agree with it.
     ///     Pure and side-effect free.
     /// </remarks>
     private static FormatDetection DetectByExtension(string? fileName)
     {
-        // With no name there is no extension evidence; report unknown with zero confidence
+        // With no name there is no extension evidence; report unknown
         if (!string.IsNullOrEmpty(fileName))
         {
             // Compare against the table using an invariant lowercase extension for stable results

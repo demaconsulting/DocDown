@@ -1,4 +1,4 @@
-using DocDown.Extraction;
+using DocDown.Core;
 using DocDown.Word;
 
 namespace DemaConsulting.DocDown.Office.Tests;

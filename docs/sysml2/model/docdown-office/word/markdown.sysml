@@ -11,4 +11,13 @@ package DocDownOffice {
         part wordTableWriter : WordTableWriter;
         part wordContentEmitter : WordContentEmitter;
     }
+
+    part def WordDocumentModel {
+        doc /* The reader-neutral model of a Word document: its blocks, inlines, lists, and tables. */
+
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Office/Word/Markdown/WordDocumentModel.cs */
+        comment designRef /* Design: docs/design/docdown-office/word/markdown.md (documented as a supporting type) */
+        comment verificationRef /* Verification: docs/verification/docdown-office/word/markdown.md (documented as a supporting type) */
+        comment reqRef /* Requirements: docs/reqstream/docdown-office/word/markdown.yaml (documented as a supporting type) */
+    }
 }

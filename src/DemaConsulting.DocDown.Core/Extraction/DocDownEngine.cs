@@ -204,7 +204,7 @@ public sealed class DocDownEngine
     ///     Returns Core's own self-test cases followed by those of every registered extractor.
     /// </summary>
     /// <returns>
-    ///     The self-test cases: three Core cases in category <c>core</c>, then the union of the cases
+    ///     The self-test cases: two Core cases in category <c>core</c>, then the union of the cases
     ///     contributed by each registered <see cref="ISelfValidating"/> extractor, in registration
     ///     order.
     /// </returns>

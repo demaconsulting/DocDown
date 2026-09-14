@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace DocDown.Extraction;
+namespace DocDown.Core;
 
 /// <summary>
 ///     Reads a backend's embedded self-test probe document.

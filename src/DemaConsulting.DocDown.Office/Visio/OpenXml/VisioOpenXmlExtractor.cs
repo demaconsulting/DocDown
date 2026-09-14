@@ -1,5 +1,4 @@
 using DocDown.Core;
-using DocDown.Extraction;
 using DocDown.Visio.Markdown;
 using CoreFormat = DocDown.Core.DocumentFormat;
 

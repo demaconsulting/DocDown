@@ -1,5 +1,4 @@
 using DocDown.Core;
-using DocDown.Extraction;
 using DocDown.Word.Markdown;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;

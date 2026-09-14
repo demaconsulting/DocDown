@@ -1,5 +1,5 @@
 using System.Reflection;
-using DocDown.Extraction;
+using DocDown.Core;
 
 namespace DemaConsulting.DocDown.Core.Tests.Extraction;
 

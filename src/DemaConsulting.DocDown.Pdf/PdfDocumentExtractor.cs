@@ -1,6 +1,5 @@
 using System.Globalization;
 using DocDown.Core;
-using DocDown.Extraction;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 

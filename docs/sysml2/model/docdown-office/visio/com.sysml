@@ -11,4 +11,22 @@ package DocDownOffice {
         part visioComAvailability : VisioComAvailability;
         part visioAutomation : VisioAutomation;
     }
+
+    part def IVisioAutomation {
+        doc /* The seam the Visio COM backend renders through, so the backend is testable without Visio. */
+
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Office/Visio/Com/IVisioAutomation.cs */
+        comment designRef /* Design: docs/design/docdown-office/visio/com.md (documented as a supporting type) */
+        comment verificationRef /* Verification: docs/verification/docdown-office/visio/com.md (documented as a supporting type) */
+        comment reqRef /* Requirements: docs/reqstream/docdown-office/visio/com.yaml (documented as a supporting type) */
+    }
+
+    part def VisioComDispatch {
+        doc /* The late-bound IDispatch calls the Visio automation adapter makes, with its timeout and teardown. */
+
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Office/Visio/Com/VisioComDispatch.cs */
+        comment designRef /* Design: docs/design/docdown-office/visio/com.md (documented as a supporting type) */
+        comment verificationRef /* Verification: docs/verification/docdown-office/visio/com.md (documented as a supporting type) */
+        comment reqRef /* Requirements: docs/reqstream/docdown-office/visio/com.yaml (documented as a supporting type) */
+    }
 }

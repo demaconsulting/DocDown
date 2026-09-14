@@ -1,6 +1,5 @@
 using DocDown.Core;
 using DocDown.Excel.Markdown;
-using DocDown.Extraction;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
