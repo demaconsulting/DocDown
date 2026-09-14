@@ -398,8 +398,8 @@ package you installed.
 
 ## Project Status
 
-Eight packages are implemented and under active development: `DemaConsulting.DocDown.Core`, the
-shared abstractions and output contract; the five format packages and the one rendering add-on
+Five packages are implemented and under active development: `DemaConsulting.DocDown.Core`, the
+shared abstractions and output contract; the two format packages and the one rendering add-on
 listed in the package table above; and `DemaConsulting.DocDown.Tool`, the `docdown` command-line
 tool. `DocDown.Html` is planned and not yet available.
 

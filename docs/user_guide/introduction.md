@@ -199,7 +199,7 @@ single-file executable.
 
 # Project Status
 
-Eight packages are implemented and under active development:
+Five packages are implemented and under active development:
 `DemaConsulting.DocDown.Core`, which holds the shared abstractions and output contract;
 `DemaConsulting.DocDown.Pdf`, which extracts PDFs; `DemaConsulting.DocDown.Pdf.Rendering`, an
 optional add-on that rasterizes PDF pages to images; `DemaConsulting.DocDown.Office`, which extracts
@@ -342,7 +342,7 @@ API. Its interface is the command line documented below, so it ships no `api/` f
 
 `DemaConsulting.DocDown.Core` provides the extraction engine and the abstractions that define the
 output contract. It extracts nothing on its own: a host registers one or more format-specific
-backends with it. `DemaConsulting.DocDown.Pdf`, `.Word`, `.Excel`, `.PowerPoint`, and `.Visio` are
+backends with it. `DemaConsulting.DocDown.Pdf` and `DemaConsulting.DocDown.Office` are
 those backends, and each is registered by an explicit `Add…()` call.
 
 Selection is deterministic. DocDown detects the document format, keeps the backends that both match
@@ -854,18 +854,22 @@ that legitimately cannot run it:
   layout and a valid manifest.
 - `pdf.parseRoundTrip`, `word.openxml.parseRoundTrip`, `visio.openxml.parseRoundTrip`,
   `powerpoint.openxml.parseRoundTrip`, and `excel.openxml.parseRoundTrip` — each managed backend
-  reads a document it built itself.
-- `pdf-rendering.renderRoundTrip` — the native PDF rasterizer renders a page it built itself.
+  reads an embedded document authored in the application whose format it reads.
+- `pdf-rendering.renderRoundTrip` — the native PDF rasterizer renders a page of an embedded PDF
+  exported from Microsoft Word.
 - `pdf.pageRendering`, `word.pageRendering`, `visio.pageRendering`, `powerpoint.pageRendering`, and
   `excel.pageRendering` — always skipped: these backends state that they do not render pages.
 - `visio.com.available` and `powerpoint.com.available` — Microsoft Visio and Microsoft PowerPoint can
   be reached over COM on this machine.
-- `visio.com.render` — Microsoft Visio renders a synthetic single-page drawing to a PNG through COM,
-  and the Visio process the render started is gone afterwards.
-- `powerpoint.com.render` — Microsoft PowerPoint renders a synthetic single-slide deck to a PNG
+- `visio.com.render` — Microsoft Visio renders the embedded drawing to a PNG through COM, and the
+  Visio process the render started is gone afterwards.
+- `powerpoint.com.render` — Microsoft PowerPoint renders every slide of the embedded deck to a PNG
   through COM, and the PowerPoint process the render started is gone afterwards.
 
-The two COM render cases build their own documents, render them through the same automation path an
-extraction uses, and check that a real image of plausible size came back. On a machine without the
+Every case reads a document embedded in the package and authored in the application whose format it
+exercises, rather than one DocDown wrote for itself to read: a backend that synthesized its own
+document could only prove a library agreed with itself, never that it can read what the application
+emits. The two COM render cases drive the same automation path an extraction uses and check that a
+real image of plausible size came back for every page or slide. On a machine without the
 Microsoft Office application — including every non-Windows machine — the matching cases skip with a
 reason naming the missing application.
