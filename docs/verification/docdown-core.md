@@ -95,8 +95,8 @@ manifest record in place.
 
 **Test**: `DocDownCore_Extract_RepeatedRun_IsByteIdentical`
 
-Proves `summary.txt` and `manifest.json` are byte-identical between two runs with the same fixed
-TimestampUtc in one environment.
+Proves `summary.txt` and `manifest.json` are byte-identical between two runs with the same
+extraction timestamp in one environment.
 
 ### Option mutation after the call does not affect the completed run
 

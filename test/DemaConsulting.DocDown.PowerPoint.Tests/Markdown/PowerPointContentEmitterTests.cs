@@ -240,26 +240,6 @@ public class PowerPointContentEmitterTests
     }
 
     /// <summary>
-    ///     Proves per-slide parts are written under the per-part split mode.
-    /// </summary>
-    [Fact]
-    public async Task PowerPointContentEmitter_Emit_PerPart_WritesSlideParts()
-    {
-        var model = new PowerPointDeckModel(
-        [
-            new PowerPointSlideModel(1, "A", ["a"], "n1"),
-            new PowerPointSlideModel(2, "B", ["b"], "n2")
-        ]);
-        var sink = new RecordingSink();
-        var options = new ExtractionOptions { IncludeEmbeddedImages = false, ContentSplit = ContentSplitMode.PerPart };
-
-        await PowerPointContentEmitter.EmitAsync(sink, options, model, Ct);
-
-        Assert.Equal(2, sink.Parts.Count);
-        Assert.All(sink.Parts, part => Assert.Equal(ContentPartKind.Slide, part.Part.Kind));
-    }
-
-    /// <summary>
     ///     Proves an empty deck is emitted as empty content plus zero-count inventory, so the
     ///     absence is described as document content rather than an extraction failure.
     /// </summary>
@@ -282,40 +262,17 @@ public class PowerPointContentEmitterTests
     }
 
     /// <summary>
-    ///     Proves that under <c>--split per-part</c> every inline image link a slide emits resolves on
-    ///     disk from its own <c>parts/*.md</c> file, exercising the real sink and content writer.
+    ///     Proves the single-flow <c>content.md</c> image links resolve on disk from the scratch root.
     /// </summary>
     /// <remarks>
-    ///     PerPart routes each slide into <c>parts/</c>, where the extractor's root-relative
-    ///     <c>images/…</c> link would dangle without the write-path rewrite. This drives the real
-    ///     <see cref="ExtractionSink"/> + <see cref="ContentWriter"/> over a temp scratch folder and
-    ///     resolves each link against its containing file, catching exactly the defect string
-    ///     assertions missed.
+    ///     A deck single-flows into the root <c>content.md</c>, so its links must remain
+    ///     root-relative and resolve unchanged.
     /// </remarks>
     [Fact]
-    public async Task PowerPointContentEmitter_Emit_PerPartImageLinks_ResolveOnDisk()
+    public async Task PowerPointContentEmitter_Emit_ImageLinks_ResolveOnDisk()
     {
-        // Act: emit an image-bearing deck through the real sink and finalize as per-part files
-        var resolved = await EmitAndResolveLinksAsync(ContentSplitMode.PerPart);
-
-        // Assert: at least one image link was checked and all of them resolved on disk
-        Assert.True(resolved >= 1);
-    }
-
-    /// <summary>
-    ///     Proves that under the default Auto layout the single-flow <c>content.md</c> image links
-    ///     resolve on disk from the scratch root.
-    /// </summary>
-    /// <remarks>
-    ///     Auto single-flows the deck into the root <c>content.md</c>, so its links must remain
-    ///     root-relative and resolve unchanged; this guards that the fix does not disturb the
-    ///     already-correct root layout.
-    /// </remarks>
-    [Fact]
-    public async Task PowerPointContentEmitter_Emit_AutoImageLinks_ResolveOnDisk()
-    {
-        // Act: emit through the real sink and finalize in the default Auto layout
-        var resolved = await EmitAndResolveLinksAsync(ContentSplitMode.Auto);
+        // Act: emit through the real sink and finalize the content document
+        var resolved = await EmitAndResolveLinksAsync();
 
         // Assert: the root content.md image link resolved on disk
         Assert.True(resolved >= 1);
@@ -325,16 +282,15 @@ public class PowerPointContentEmitterTests
     ///     Emits an image-bearing deck through a real sink and content writer, then asserts every
     ///     inline image link resolves on disk.
     /// </summary>
-    /// <param name="split">The content split mode to emit and finalize under.</param>
     /// <returns>The number of local resource links that were checked and resolved.</returns>
     /// <remarks>
     ///     Uses a real <see cref="ExtractionSink"/> over a temporary scratch folder (not the recording
     ///     sink) so the image bytes and part files actually reach disk and link resolution is genuine.
     /// </remarks>
-    private static async Task<int> EmitAndResolveLinksAsync(ContentSplitMode split)
+    private static async Task<int> EmitAndResolveLinksAsync()
     {
         using var temp = new TempScratch();
-        var options = new ExtractionOptions { IncludeEmbeddedImages = true, ContentSplit = split };
+        var options = new ExtractionOptions { IncludeEmbeddedImages = true };
         var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, options);
         var image = new EmbeddedImage([1, 2, 3, 4], "image/png",
@@ -344,7 +300,7 @@ public class PowerPointContentEmitterTests
         var model = new PowerPointDeckModel([slide], [image]);
 
         await PowerPointContentEmitter.EmitAsync(sink, options, model, Ct);
-        await ContentWriter.WriteAsync(sink, split, "Deck", Ct);
+        await ContentWriter.WriteAsync(sink, "Deck", Ct);
 
         return MarkdownImageLinks.AssertAllImageLinksResolveOnDisk(folder.AbsolutePath);
     }

@@ -12,8 +12,8 @@ namespace DemaConsulting.DocDown.Pdf.Tests;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         These make the generated summary a reviewable artifact. The runs use a fixed timestamp
-///         and the single managed PDF backend, so the only machine-specific lines are the absolute
+///         These make the generated summary a reviewable artifact. The runs use the single managed
+///         PDF backend, so the only run-specific lines are the extraction timestamp, the absolute
 ///         scratch path, the temporary source path, and the three host-environment lines
 ///         (operating system, runtime, runtime identifier); each is replaced with a fixed
 ///         placeholder before comparison. Everything else is deterministic and byte-compared.
@@ -25,12 +25,10 @@ namespace DemaConsulting.DocDown.Pdf.Tests;
 /// </remarks>
 public class PdfGoldenTests
 {
-    /// <summary>A fixed timestamp so the rendered header is reproducible across runs.</summary>
-    private static readonly DateTimeOffset FixedTimestamp = new(2026, 1, 2, 3, 4, 5, TimeSpan.Zero);
-
     /// <summary>The line prefixes whose values are machine-specific and are normalized away.</summary>
     private static readonly (string Prefix, string Placeholder)[] VariableLines =
     [
+        ("Extracted (UTC) : ", "Extracted (UTC) : <timestamp>"),
         ("Scratch folder  : ", "Scratch folder  : <scratch-folder>"),
         ("Source document : ", "Source document : <source-document>"),
         ("  Operating system   : ", "  Operating system   : <operating-system>"),
@@ -46,14 +44,14 @@ public class PdfGoldenTests
     /// </summary>
     [Fact]
     public Task PdfGolden_Simple_MatchesCommittedGolden() =>
-        AssertGoldenAsync("summary-pdf-simple.txt", "simple.pdf", PdfFixtures.SimpleText(), new ExtractionOptions { TimestampUtc = FixedTimestamp });
+        AssertGoldenAsync("summary-pdf-simple.txt", "simple.pdf", PdfFixtures.SimpleText(), new ExtractionOptions());
 
     /// <summary>
     ///     Proves the summary for an undecodable-image scenario matches its committed golden.
     /// </summary>
     [Fact]
     public Task PdfGolden_UndecodableImageNote_MatchesCommittedGolden() =>
-        AssertGoldenAsync("summary-pdf-undecodable-image-note.txt", "undecodable.pdf", PdfFixtures.WithUndecodableImage(), new ExtractionOptions { TimestampUtc = FixedTimestamp });
+        AssertGoldenAsync("summary-pdf-undecodable-image-note.txt", "undecodable.pdf", PdfFixtures.WithUndecodableImage(), new ExtractionOptions());
 
     /// <summary>
     ///     Proves the summary for a page-rendering request with no renderer matches its committed golden.
@@ -64,14 +62,14 @@ public class PdfGoldenTests
             "summary-pdf-render-pages-note.txt",
             "render-note.pdf",
             PdfFixtures.SimpleText(),
-            new ExtractionOptions { TimestampUtc = FixedTimestamp, RenderPages = true });
+            new ExtractionOptions { RenderPages = true });
 
     /// <summary>
     ///     Proves the summary for an unreadable encrypted PDF matches its committed golden.
     /// </summary>
     [Fact]
     public Task PdfGolden_UnreadableEncrypted_MatchesCommittedGolden() =>
-        AssertGoldenAsync("summary-pdf-unreadable-encrypted.txt", "encrypted.pdf", PdfFixtures.Encrypted(), new ExtractionOptions { TimestampUtc = FixedTimestamp });
+        AssertGoldenAsync("summary-pdf-unreadable-encrypted.txt", "encrypted.pdf", PdfFixtures.Encrypted(), new ExtractionOptions());
 
     /// <summary>
     ///     Extracts a fixture and asserts the normalized summary matches its committed golden.

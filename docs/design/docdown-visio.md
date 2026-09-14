@@ -98,7 +98,7 @@ public surface.
   machine that can run the package.
 - **Reporting stays factual.** The content emitter reports looked-for counts for pages, labeled
   shapes, and connections, including zero. When DocDown attempted a step and could not complete it —
-  such as honoring a force-PNG request or rendering one page through COM — it records a short note
+  such as rendering one page through COM — it records a short note
   rather than inventing a judgment about the document.
 - **COM is tightly contained.** No COM type appears on the public registration surface, and the real
   automation adapter is the single Windows-only boundary.

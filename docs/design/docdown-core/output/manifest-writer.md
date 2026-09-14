@@ -17,7 +17,7 @@ serialized object uses only strings, numbers, booleans, nulls, and lists.
 
 #### On-disk format
 
-`manifest.json` is emitted with schema version `2.0`, `
+`manifest.json` is emitted with schema version `3.0`, `
 ` line endings, and UTF-8 without a byte
 order mark. The top-level shape contains:
 
@@ -28,19 +28,20 @@ order mark. The top-level shape contains:
 - `status` (`produced` or `unreadable`)
 - `source`
 - `extractor`
-- `environment`
 - `document`
 - `contentFeatures`
 - `images`
 - `pages`
 - `parts`
 - `notes`
-- `requestedOptions`
 - `failure`
 
-The file contains only the schema 2.0 top-level fields listed above. The selected extractor shape is
-limited to identifier, display name, owning package, and priority. Notes are emitted as plain
-strings in emission order.
+The file contains only the schema 3.0 top-level fields listed above. Schema 3.0 dropped the
+`environment` block, the `requestedOptions` echo, and every SHA-256 digest, because the manifest
+describes the document that was extracted rather than the machine that ran the extraction or the
+arguments the caller supplied; `summary.txt` keeps its Environment section. The selected extractor
+shape is limited to identifier, display name, owning package, and priority. Notes are emitted as
+plain strings in emission order.
 
 #### Key Methods
 
@@ -51,8 +52,8 @@ strings in emission order.
 - **`BuildSource`**, **`BuildExtractor`**, **`BuildEnvironment`**, **`BuildDocument`**,
   **`BuildContentFeatures`**, **`BuildImages`**, **`BuildPages`**, **`BuildParts`**,
   **`BuildNotes`**, **`BuildOptions`**, and **`BuildFailure`** — focused mapping helpers.
-- **`OutcomeString`**, **`BasisString`**, **`ImageOutputString`**, **`TransformString`**,
-  **`SplitString`**, and **`ScratchModeString`** — projection helpers for stable schema strings.
+- **`OutcomeString`**, **`BasisString`**, **`TransformString`**,
+  and **`ScratchModeString`** — projection helpers for stable schema strings.
 
 #### Error Handling
 

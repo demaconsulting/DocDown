@@ -12,6 +12,13 @@
 # DocDownWord-Markdown-WordContentEmitter-ReportsFlattenedTableNote, and
 # DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote because the governing principle now
 # limits reporting to the content inventory and short extraction notes.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote
+# (named in the supersession above) required a requested PNG image output that could not be produced
+# to be reported as a short extraction note. It is itself superseded (not satisfied) with no
+# replacement because the caller-facing PNG request was removed under the simplicity principle: the
+# request never re-encoded anything, so there is no uncompleted step left to report. The remaining
+# reporting requirements named in that supersession stand unchanged.
 
 sections:
   - title: DocDownWord Requirements
@@ -22,15 +29,15 @@ sections:
             requirements:
               - id: DocDownWord-Markdown-WordContentEmitter-EmitsModelContent
                 title: >-
-                  WordContentEmitter shall emit a document model's content through the sink in the
-                  requested split form, driven only by the model.
+                  WordContentEmitter shall emit a document model's content through the sink as one
+                  continuous flow, driven only by the model.
                 justification: |
                   Emission that depends only on the model, and never on how the model was read, is
                   what keeps the output contract in one testable place and lets a hand-built model
                   prove a mapping decision without a document behind it.
                 tests:
                   - WordContentEmitter_Emit_BodyWithComments_ReportsOutlineAndSucceeds
-                  - WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1
+                  - WordOpenXmlExtractor_Extract_ImageLinks_ResolveOnDisk
 
               - id: DocDownWord-Markdown-WordContentEmitter-ReportsContentInventory
                 title: >-
@@ -67,14 +74,3 @@ sections:
                   stated plainly.
                 tests:
                   - WordOpenXmlExtractor_Extract_MergedCells_ReportsFlatteningNote
-
-              - id: DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote
-                title: >-
-                  WordContentEmitter shall report a requested PNG image output it could not produce
-                  as a short extraction note.
-                justification: |
-                  This package does not re-encode embedded images. When PNG output was requested but
-                  source-encoded files were written instead, the uncompleted re-encoding step must
-                  be stated explicitly.
-                tests:
-                  - WordOpenXmlExtractor_Extract_ForcePng_ReportsUnhonoredModeNote

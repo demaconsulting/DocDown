@@ -69,7 +69,7 @@ internal static class VisioContentEmitter
             : null;
         var imagePaths = imageResult?.PathsBySourceRef ?? EmptyImagePaths;
 
-        var partCount = await WriteContentAsync(sink, options, model, imagePaths, cancellationToken).ConfigureAwait(false);
+        var partCount = await WriteContentAsync(sink, model, imagePaths, cancellationToken).ConfigureAwait(false);
         sink.ReportDocumentInfo(new DocumentInfo(
             Title: null, Author: null, PageCount: model.Pages.Count, PartCount: partCount));
 
@@ -78,11 +78,6 @@ internal static class VisioContentEmitter
         {
             sink.ReportDocumentMetadata(metadata);
         }
-
-        // Report any extraction note implied by the image-writing outcome. A drawing whose only
-        // metafile is the package thumbnail (excluded by the reader) embeds no content images, so it
-        // reports nothing here.
-        ReportImages(sink, options, imageResult);
     }
 
     /// <summary>The empty path map used when images are suppressed, so content rendering emits no links.</summary>
@@ -126,93 +121,21 @@ internal static class VisioContentEmitter
     }
 
     /// <summary>
-    ///     Reports the extraction note implied by the drawing's embedded images written earlier.
-    /// </summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <param name="options">The effective options, consulted for suppression and force-PNG.</param>
-    /// <param name="result">The image write accounting from the earlier write, or <see langword="null"/> when images were suppressed.</param>
-    /// <remarks>
-    ///     When images are suppressed nothing was written and Core records the suppression itself, so
-    ///     this reports nothing. A drawing that embeds no content images reports nothing here. A
-    ///     force-PNG request the backend cannot honor becomes a plain note because DocDown attempted
-    ///     a conversion step and could not complete it. Side effect: records reports on the sink.
-    /// </remarks>
-    private static void ReportImages(IExtractionSink sink, ExtractionOptions options, EmbeddedImageWriteResult? result)
-    {
-        // A caller who disabled embedded images asked for none to be attempted; Core records that
-        // deliberate absence itself, so this unit reports nothing here
-        if (result is null)
-        {
-            return;
-        }
-
-        if (options.ImageOutput == ImageOutputMode.ForcePng && result.ForcePngUnhonoredCount > 0)
-        {
-            ReportForcePngNote(sink, result);
-        }
-    }
-
-    /// <summary>
-    ///     Reports that PNG output could not be honored, explaining that source bytes were written instead.
-    /// </summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <param name="result">The image write accounting carrying the unhonored-force-PNG count and found total.</param>
-    /// <remarks>
-    ///     The file extension follows the bytes actually written; this backend ships no imaging stack,
-    ///     so it cannot re-encode. Side effect: records a note on the sink.
-    /// </remarks>
-    private static void ReportForcePngNote(IExtractionSink sink, EmbeddedImageWriteResult result)
-    {
-        var counted = Counted(result.ForcePngUnhonoredCount, result.Found);
-        sink.ReportNote(new ExtractionNote(
-            $"PNG output was requested, but {counted} embedded images were written in their source encoding "
-            + "with matching file extensions because this extractor does not re-encode images."));
-    }
-
-    /// <summary>
-    ///     Renders a "{count} of {found}" or bare-count phrase for note prose.
-    /// </summary>
-    /// <param name="count">The affected count.</param>
-    /// <param name="found">The total found.</param>
-    /// <returns>The phrase.</returns>
-    /// <remarks>Reads naturally whether or not the affected set is the whole set. Pure.</remarks>
-    private static string Counted(int count, int found)
-    {
-        var countText = count.ToString(CultureInfo.InvariantCulture);
-        return count == found
-            ? countText
-            : $"{countText} of {found.ToString(CultureInfo.InvariantCulture)}";
-    }
-
-    /// <summary>
-    ///     Writes the drawing content, either as one flow or as per-page parts, honoring the split mode.
+    ///     Writes the drawing content as one continuous flow, one section per page.
     /// </summary>
     /// <param name="sink">The sink to write content through.</param>
-    /// <param name="options">The effective options carrying the split mode.</param>
     /// <param name="model">The drawing model.</param>
     /// <param name="imagePaths">The map from an image part reference to its written relative path.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
-    /// <returns>The number of parts written, or <see langword="null"/> for a single flow.</returns>
-    /// <remarks>Side effect: writes content on the sink.</remarks>
+    /// <returns>Always <see langword="null"/>, meaning a single flow rather than a part count.</returns>
+    /// <remarks>
+    ///     Every page carries its own name heading in the flow, so a reader finds a page in
+    ///     <c>content.md</c> without a file per page. Side effect: writes content on the sink.
+    /// </remarks>
     private static async ValueTask<int?> WriteContentAsync(
-        IExtractionSink sink, ExtractionOptions options, VisioDocumentModel model,
+        IExtractionSink sink, VisioDocumentModel model,
         IReadOnlyDictionary<string, string> imagePaths, CancellationToken cancellationToken)
     {
-        if (options.ContentSplit == ContentSplitMode.PerPart)
-        {
-            var ordinal = 1;
-            foreach (var page in model.Pages)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                await sink.AddContentPartAsync(
-                    new ContentPart(ContentPartKind.Page, ordinal, page.Name), RenderPage(page, imagePaths), cancellationToken)
-                    .ConfigureAwait(false);
-                ordinal++;
-            }
-
-            return model.Pages.Count;
-        }
-
         var builder = new StringBuilder();
         foreach (var page in model.Pages)
         {

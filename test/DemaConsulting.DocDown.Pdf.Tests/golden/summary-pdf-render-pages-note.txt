@@ -6,7 +6,7 @@ A 1-page PDF document titled "DocDown Simple Text"; extracted 107 characters of 
 Scratch folder  : <scratch-folder>
 Source document : <source-document>
 Detected format : pdf (application/pdf) - detected by file extension
-Extracted (UTC) : 2026-01-02T03:04:05Z
+Extracted (UTC) : <timestamp>
 Status          : PRODUCED  - the standard output layout was written.
 
 All paths below are relative to the scratch folder shown above.

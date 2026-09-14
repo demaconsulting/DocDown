@@ -48,10 +48,6 @@ state.
   started has exited within a short grace period. It skips with a reason naming Microsoft Visio off
   Windows or where the probe reports unavailable, and reports every fault as a failure message rather
   than an exception. It deletes its drawing on every path.
-- **`RenderExclusively`** (private) — holds a machine-wide gate across the render, because Visio
-  automation shares one host per session: two self-tests running at once would tear each other's
-  session down and each would see the other's process. Waiting is bounded, and a case that cannot get
-  the gate skips with that reason. The adapter's own watchdog still bounds the render itself.
 - **`BuildSelfTestDrawing`** and its element builders (private) — synthesize the render case's
   drawing: the document part, the window part, a letter-sized page, and two invented labeled
   rectangles with explicit geometry. It writes more than `VisioPackageBuilder` does because that

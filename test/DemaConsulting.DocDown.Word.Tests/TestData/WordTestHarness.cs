@@ -35,7 +35,7 @@ internal static class WordTestHarness
         var context = new HarnessContext(options, sink, detection, descriptor, environment, cancellationToken);
 
         var outcome = await extractor.ExtractAsync(source, context);
-        await ContentWriter.WriteAsync(sink, options.ContentSplit, null, cancellationToken);
+        await ContentWriter.WriteAsync(sink, null, cancellationToken);
         return (folder.AbsolutePath, outcome);
     }
 

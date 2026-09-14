@@ -67,17 +67,11 @@ internal sealed class Context : IDisposable
     /// <summary>Gets the requested page-render DPI, or <see langword="null"/> to use the engine default.</summary>
     public int? Dpi { get; private init; }
 
-    /// <summary>Gets the requested image output mode, or <see langword="null"/> to use the engine default.</summary>
-    public ImageOutputMode? ImageOutput { get; private init; }
-
     /// <summary>Gets the maximum image dimension in pixels, or <see langword="null"/> for no limit.</summary>
     public int? MaxImageDimensionPx { get; private init; }
 
     /// <summary>Gets the maximum image size in bytes, or <see langword="null"/> for no limit.</summary>
     public long? MaxImageBytes { get; private init; }
-
-    /// <summary>Gets the requested content-split mode, or <see langword="null"/> to use the engine default.</summary>
-    public ContentSplitMode? ContentSplit { get; private init; }
 
     /// <summary>Gets the requested scratch-folder policy, or <see langword="null"/> to use the engine default.</summary>
     public ScratchFolderMode? ScratchMode { get; private init; }
@@ -121,10 +115,8 @@ internal sealed class Context : IDisposable
             IncludeEmbeddedImages = parser.IncludeEmbeddedImages,
             Pages = parser.Pages,
             Dpi = parser.Dpi,
-            ImageOutput = parser.ImageOutput,
             MaxImageDimensionPx = parser.MaxImageDimensionPx,
             MaxImageBytes = parser.MaxImageBytes,
-            ContentSplit = parser.ContentSplit,
             ScratchMode = parser.ScratchMode
         };
 
@@ -163,11 +155,6 @@ internal sealed class Context : IDisposable
             options.PageRenderDpi = Dpi.Value;
         }
 
-        if (ImageOutput.HasValue)
-        {
-            options.ImageOutput = ImageOutput.Value;
-        }
-
         if (MaxImageDimensionPx.HasValue)
         {
             options.MaxImageDimensionPx = MaxImageDimensionPx.Value;
@@ -176,11 +163,6 @@ internal sealed class Context : IDisposable
         if (MaxImageBytes.HasValue)
         {
             options.MaxImageBytes = MaxImageBytes.Value;
-        }
-
-        if (ContentSplit.HasValue)
-        {
-            options.ContentSplit = ContentSplit.Value;
         }
 
         if (ScratchMode.HasValue)
@@ -303,17 +285,11 @@ internal sealed class Context : IDisposable
         /// <summary>Gets the requested page-render DPI.</summary>
         public int? Dpi { get; private set; }
 
-        /// <summary>Gets the requested image output mode.</summary>
-        public ImageOutputMode? ImageOutput { get; private set; }
-
         /// <summary>Gets the maximum image dimension in pixels.</summary>
         public int? MaxImageDimensionPx { get; private set; }
 
         /// <summary>Gets the maximum image size in bytes.</summary>
         public long? MaxImageBytes { get; private set; }
-
-        /// <summary>Gets the requested content-split mode.</summary>
-        public ContentSplitMode? ContentSplit { get; private set; }
 
 
         /// <summary>Gets the requested scratch-folder policy.</summary>
@@ -407,20 +383,12 @@ internal sealed class Context : IDisposable
                     Dpi = GetRequiredIntArgument(arg, args, index, "a DPI argument", 36, 1200);
                     return index + 1;
 
-                case "--images":
-                    ImageOutput = ParseImageOutput(arg, GetRequiredStringArgument(arg, args, index, "an image mode argument (preserve|png)"));
-                    return index + 1;
-
                 case "--max-image-dim":
                     MaxImageDimensionPx = GetRequiredIntArgument(arg, args, index, "a pixel dimension argument", 1, int.MaxValue);
                     return index + 1;
 
                 case "--max-image-bytes":
                     MaxImageBytes = GetRequiredLongArgument(arg, args, index, "a byte-count argument", 1, long.MaxValue);
-                    return index + 1;
-
-                case "--split":
-                    ContentSplit = ParseContentSplit(arg, GetRequiredStringArgument(arg, args, index, "a split mode argument (auto|single|part)"));
                     return index + 1;
 
                 case "--overwrite":
@@ -482,23 +450,6 @@ internal sealed class Context : IDisposable
 
             return new PageRange(first, last);
         }
-
-        /// <summary>Parses an image output token into an <see cref="ImageOutputMode"/>.</summary>
-        private static ImageOutputMode ParseImageOutput(string arg, string value) => value switch
-        {
-            "preserve" => ImageOutputMode.Preserve,
-            "png" => ImageOutputMode.ForcePng,
-            _ => throw new ArgumentException($"{arg} requires 'preserve' or 'png'", nameof(arg))
-        };
-
-        /// <summary>Parses a content-split token into a <see cref="ContentSplitMode"/>.</summary>
-        private static ContentSplitMode ParseContentSplit(string arg, string value) => value switch
-        {
-            "auto" => ContentSplitMode.Auto,
-            "single" => ContentSplitMode.Single,
-            "part" => ContentSplitMode.PerPart,
-            _ => throw new ArgumentException($"{arg} requires 'auto', 'single', or 'part'", nameof(arg))
-        };
 
         /// <summary>Parses a scratch-policy token into a <see cref="ScratchFolderMode"/>.</summary>
         private static ScratchFolderMode ParseScratchMode(string arg, string value) => value switch

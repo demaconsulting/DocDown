@@ -38,7 +38,7 @@ explains why.
 ### Determinism is scoped to one environment
 
 Selection and serialization are deterministic inside one environment. When the caller supplies
-`ExtractionOptions.TimestampUtc`, two runs with the same inputs and the same available extractors
+the extraction timestamp, two runs with the same inputs and the same available extractors
 produce byte-identical `summary.txt` and `manifest.json`. Core does not claim identical content
 across operating systems or across installations with different extractors available.
 
@@ -101,7 +101,7 @@ A single extraction follows this fixed sequence:
    work.
 2. **Prepare scratch** — `ScratchFolder` accepts or refuses the target folder under the requested
    mode.
-3. **Read source** — Core reads the source bytes once and computes the SHA-256 hash used in the
+3. **Read source** — Core reads the source bytes once into a seekable buffer used for the
    manifest.
 4. **Detect format** — `FormatSniffer` names the format and the basis for that decision.
 5. **Enumerate candidates** — `ExtractorRegistry` returns each registered extractor paired with its

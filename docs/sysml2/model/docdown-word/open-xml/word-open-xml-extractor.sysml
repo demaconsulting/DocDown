@@ -1,6 +1,6 @@
 package DocDownWord {
     part def WordOpenXmlExtractor {
-        doc /* The managed backend the engine selects and invokes: reads the document, emits content through the shared emitter, honors split modes, and records the content inventory and notes for the force-PNG shortfall only it can explain. */
+        doc /* The managed backend the engine selects and invokes: reads the document, emits content through the shared emitter as one continuous flow, and records the content inventory and the notes only it can explain. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Word/OpenXml/WordOpenXmlExtractor.cs */
         comment testRef /* Test: test/DemaConsulting.DocDown.Word.Tests/OpenXml/WordOpenXmlExtractorTests.cs */

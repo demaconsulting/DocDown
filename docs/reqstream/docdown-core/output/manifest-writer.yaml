@@ -11,6 +11,12 @@
 # SUPERSEDED REQUIREMENT: DocDownCore-Output-ManifestWriter-CompleteFlag
 # required the removed complete flag. It is superseded (not satisfied) with no replacement because
 # manifest schema 2.0 no longer carries a completeness verdict.
+#
+# SUPERSEDED REQUIREMENT: DocDownCore-Output-ManifestWriter-SchemaVersion (2.0 wording)
+# is retained at version 3.0 rather than retired; the manifest still declares a schema version, but
+# the declared value moved to 3.0 when the digests, environment block, and requested-options echo
+# were removed, because a consumer pinned to 2.0 would otherwise meet a manifest missing fields
+# that schema promised.
 
 sections:
   - title: DocDownCore Requirements
@@ -20,11 +26,11 @@ sections:
           - title: ManifestWriter Requirements
             requirements:
               - id: DocDownCore-Output-ManifestWriter-SchemaVersion
-                title: ManifestWriter shall declare manifest schema version 2.0.
+                title: ManifestWriter shall declare manifest schema version 3.0.
                 justification: |
                   Machine consumers need an explicit schema version before they act on the file.
                 tests:
-                  - ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionTwoPointZero
+                  - ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionThreePointZero
 
               - id: DocDownCore-Output-ManifestWriter-MachineTwin
                 title: >-
@@ -39,14 +45,18 @@ sections:
 
               - id: DocDownCore-Output-ManifestWriter-ReducedSchema
                 title: >-
-                  ManifestWriter shall emit the reduced top-level schema, including the reduced
-                  requested-options block and reduced extractor shape, and omit removed keys.
+                  ManifestWriter shall emit the reduced top-level schema with the reduced extractor
+                  shape, and shall omit the removed keys, the environment block, the
+                  requested-options echo, and every integrity digest.
                 justification: |
-                  Schema 2.0 removes prior reporting structures, so the serialized manifest must
-                  expose only the surviving fields.
+                  The manifest describes the document that was extracted. Schema 3.0 therefore
+                  carries neither a description of the machine that ran the extraction, nor an echo
+                  of the options the caller just supplied, nor digests no consumer reads.
                 tests:
-                  - ManifestWriter_WriteAsync_RequestedOptions_ContainsReducedFieldSet
                   - ManifestWriter_WriteAsync_ProducedRun_OmitsRemovedTopLevelKeys
+                  - ManifestWriter_WriteAsync_ProducedRun_OmitsRequestedOptions
+                  - ManifestWriter_WriteAsync_ProducedRun_OmitsEnvironment
+                  - ManifestWriter_WriteAsync_ProducedRun_OmitsDigests
                   - ManifestWriter_WriteAsync_SelectedExtractor_SerializesReducedExtractorShape
 
               - id: DocDownCore-Output-ManifestWriter-NotesSerialized

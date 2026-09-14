@@ -10,7 +10,7 @@ single emission path from the deck model to the output contract.
 hand-built deck models through a recording sink. Building the model by hand is what lets each mapping
 decision be proved in isolation: the per-slide title, text, and notes; the inline image links and
 their suppression; the speaker-notes inventory; the vector-image passthrough; the empty-deck
-inventory; and the single-flow-versus-per-part split with links resolving on disk.
+inventory; and the single content flow with links resolving on disk.
 
 ### Test Environment
 
@@ -91,12 +91,10 @@ Prove the outline counts — slides, slide titles, sets of speaker notes, and in
 reported from the model, including zero inline images for an image-free deck. Evidence for
 `DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsContentFeatures`.
 
-#### A large deck is written as one part per slide
+#### The deck is written as one flow whose image links resolve on disk
 
-**Tests**: `PowerPointContentEmitter_Emit_PerPart_WritesSlideParts`,
-`PowerPointContentEmitter_Emit_PerPartImageLinks_ResolveOnDisk`,
-`PowerPointContentEmitter_Emit_AutoImageLinks_ResolveOnDisk`
+**Test**: `PowerPointContentEmitter_Emit_ImageLinks_ResolveOnDisk`
 
-Prove the emitter honors the per-part split mode, writing one part per slide, and that inline image
-links resolve on disk under both per-part and default layouts. Evidence for
-`DocDownPowerPoint-Markdown-PowerPointContentEmitter-SplitsLargeDecks`.
+Proves the deck is written as one `content.md` and that its inline image links resolve on disk from
+the scratch root. Evidence for
+`DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesSingleFlow`.

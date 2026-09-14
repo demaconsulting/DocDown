@@ -15,7 +15,14 @@ real, so the self-test union the driver runs is exactly the one the shipped tool
 
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
 - **Filesystem**: a per-test `TempScratch` folder holds the requested results file
-- **Isolation**: each test owns its captured log and results file
+- **Engine**: these are unit tests of the `Validation` unit, so they supply their own engine —
+  the managed PDF backends only. Every property asserted here (the header and its depth, the
+  results-file shapes, the pass/skip/fail accounting, the exit code) belongs to the unit rather than
+  to which backends happen to be registered, so none of them needs Microsoft Office driven. The
+  managed engine still produces every case shape the accounting must handle: a passing round trip,
+  an always-skipped page-rendering case, and a native-stack render.
+- **Isolation**: each test owns its captured log and results file, and starts no application, so
+  these tests create no contention and run fully in parallel
 
 ### Acceptance Criteria
 
@@ -38,7 +45,7 @@ timestamp. Evidence for `DocDownTool-Validation-Header`.
 
 #### The self-test union runs the current Core and PDF cases
 
-**Test**: `Validation_Run_DefaultEngine_RunsCoreAndPdfSelfTestUnion`
+**Test**: `Validation_Run_RegisteredBackends_RunsCoreAndBackendSelfTestUnion`
 
 Proves the run includes `core.layout-invariance`, `core.manifest-schema`, the PDF parse round trip,
 and the PDF page-rendering case shown as a skip rather than a failure. Evidence for

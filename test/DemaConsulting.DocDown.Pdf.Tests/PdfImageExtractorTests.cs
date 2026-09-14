@@ -176,69 +176,39 @@ public class PdfImageExtractorTests
     }
 
     /// <summary>
-    ///     Proves a PNG request that cannot be honored is explained.
+    ///     Proves a JPEG stored in a PDF is written in its own encoding, with nothing to explain.
     /// </summary>
     [Fact]
-    public async Task PdfImageExtractor_Extract_ForcePngWithJpeg_ReportsUnhonoredModeNote()
+    public async Task PdfImageExtractor_Extract_JpegImage_WritesSourceEncodingWithoutNote()
     {
-        // Arrange: a JPEG-bearing document extracted with PNG output demanded
+        // Arrange: a JPEG-bearing document
         var sink = new RecordingSink();
-        var options = new ExtractionOptions { ImageOutput = ImageOutputMode.ForcePng };
 
-        // Act: extract with an output mode that cannot be honored
-        var result = await ExtractAsync(PdfFixtures.WithEmbeddedJpeg(), sink, options);
+        // Act: extract with the default options
+        var result = await ExtractAsync(PdfFixtures.WithEmbeddedJpeg(), sink, new ExtractionOptions());
 
-        // Assert: the image is still delivered, truthfully, as the JPEG it is
+        // Assert: the image is delivered, truthfully, as the JPEG it is, and nothing is reported
         Assert.Equal(1, result.Written);
         Assert.Equal("image/jpeg", Assert.Single(sink.Images).Hint.MediaType);
-
-        // Assert: and the run explains which images defeated the requested mode and why
-        var note = SingleNoteMessage(sink);
-        Assert.Contains("PNG output was requested", note, StringComparison.Ordinal);
-        Assert.Contains("DCTDecode: 1", note, StringComparison.Ordinal);
-        Assert.Contains("1 of 1", note, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Proves a PNG request that can be honored produces no explanatory note.
-    /// </summary>
-    [Fact]
-    public async Task PdfImageExtractor_Extract_ForcePngWithFlateImage_ReportsNoUnhonoredNote()
-    {
-        // Arrange: a document whose image genuinely becomes PNG, extracted with PNG demanded
-        var sink = new RecordingSink();
-        var options = new ExtractionOptions { ImageOutput = ImageOutputMode.ForcePng };
-
-        // Act: extract with an output mode that can be honored
-        await ExtractAsync(PdfFixtures.WithEmbeddedPng(), sink, options);
-
-        // Assert: the mode was honored, so nothing needed explaining
         Assert.Empty(sink.Notes);
     }
 
     /// <summary>
-    ///     Proves a JPEG 2000 passthrough defeats a PNG request exactly as a JPEG passthrough does.
+    ///     Proves a JPEG 2000 codestream is passed through in its own encoding like a JPEG.
     /// </summary>
     [Fact]
-    public async Task PdfImageExtractor_Extract_ForcePngWithJpxImage_ReportsUnhonoredModeNoteNamingJpx()
+    public async Task PdfImageExtractor_Extract_Jpeg2000Image_WritesSourceEncodingWithoutNote()
     {
-        // Arrange: a document holding a JPEG and a JPEG 2000 image, extracted with PNG demanded
+        // Arrange: a document holding a JPEG and a JPEG 2000 image
         var sink = new RecordingSink();
-        var options = new ExtractionOptions { ImageOutput = ImageOutputMode.ForcePng };
 
-        // Act: extract with an output mode neither image can honor
-        var result = await ExtractAsync(PdfFixtures.WithJpeg2000Image(), sink, options);
+        // Act: extract with the default options
+        var result = await ExtractAsync(PdfFixtures.WithJpeg2000Image(), sink, new ExtractionOptions());
 
-        // Assert: both images are still delivered in their true encodings
+        // Assert: both images are delivered in their true encodings with nothing to explain
         Assert.Equal(2, result.Written);
         Assert.Equal("image/jp2", sink.Images[1].Hint.MediaType);
-
-        // Assert: the note counts both and names JPXDecode alongside DCTDecode
-        var note = SingleNoteMessage(sink);
-        Assert.Contains("PNG output was requested", note, StringComparison.Ordinal);
-        Assert.Contains("DCTDecode: 1", note, StringComparison.Ordinal);
-        Assert.Contains("JPXDecode: 1", note, StringComparison.Ordinal);
-        Assert.Contains("2 of 2", note, StringComparison.Ordinal);
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>

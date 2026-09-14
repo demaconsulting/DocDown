@@ -109,27 +109,6 @@ public class EmbeddedImageWriterTests
     }
 
     /// <summary>
-    ///     Proves a non-PNG image written under a force-PNG request is counted as unhonored, while an
-    ///     already-PNG image is not.
-    /// </summary>
-    [Fact]
-    public async Task EmbeddedImageWriter_Write_ForcePng_CountsOnlyNonPngAsUnhonored()
-    {
-        var sink = new RecordingSink();
-        var options = new ExtractionOptions { ImageOutput = ImageOutputMode.ForcePng };
-        var images = new List<EmbeddedImage>
-        {
-            new([1, 2, 3], "image/png", SourceRef: "/a.png"),
-            new([4, 5, 6], "image/jpeg", SourceRef: "/b.jpg")
-        };
-
-        var result = await EmbeddedImageWriter.WriteAsync(sink, options, images, Ct);
-
-        Assert.Equal(2, result.WrittenCount);
-        Assert.Equal(1, result.ForcePngUnhonoredCount);
-    }
-
-    /// <summary>
     ///     Builds a minimal PNG header carrying the given pixel dimensions.
     /// </summary>
     /// <param name="width">The pixel width.</param>

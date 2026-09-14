@@ -86,11 +86,14 @@ installation. Evidence for `DocDownPowerPoint-Com-PowerPointComExtractor-ProbesH
 #### Both release-time COM cases are contributed, and the render case skips where PowerPoint is absent
 
 **Tests**: `PowerPointComExtractor_GetSelfTestCases_ReturnsAvailabilityAndRenderCases`,
-`PowerPointComExtractor_RenderSelfTest_UnavailableBackend_SkipsWithReason`
+`PowerPointComExtractor_RenderSelfTest_UnavailableBackend_SkipsWithReason`,
+`DocDownTool_Validate_ComRenderCases_ExecuteAndPassWhereOfficeIsInstalled`
 
 Prove the backend contributes exactly `powerpoint.com.available` and `powerpoint.com.render` under
-its own category, and that the render case reports a reasoned skip — never a failure and never a
-launched application — where the backend probes unavailable, which is every machine without
+its own category; that on a machine where PowerPoint *is* installed the case actually executes and
+passes under the shipped tool's `--validate`; and that the render case reports a reasoned skip —
+never a failure and never a launched application — where the backend probes unavailable, which is
+every machine without
 Microsoft PowerPoint. Evidence for
 `DocDownPowerPoint-Com-PowerPointComExtractor-ContributesComSelfTests`.
 

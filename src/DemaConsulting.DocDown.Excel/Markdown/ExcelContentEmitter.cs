@@ -123,7 +123,7 @@ internal static class ExcelContentEmitter
         }
 
         // Report the plain-language notes for any image step that could not complete
-        ReportImageNotes(sink, options, imageResult);
+        ReportImageNotes(sink, imageResult);
 
         ReportContentFeatures(sink, model);
 
@@ -208,16 +208,15 @@ internal static class ExcelContentEmitter
     ///     Reports plain-language notes for image steps DocDown attempted but could not complete.
     /// </summary>
     /// <param name="sink">The sink to report through.</param>
-    /// <param name="options">The effective options, consulted for suppression and force-PNG.</param>
     /// <param name="result">The image write accounting from the earlier write, or <see langword="null"/> when images were suppressed.</param>
     /// <remarks>
     ///     When images are suppressed nothing was attempted and Core records that caller choice
     ///     itself, so this reports nothing. A workbook that embeds no images likewise records nothing
-    ///     here. Size-limited skips and an unhonored force-PNG request are both facts about an
-    ///     attempted step that did not complete, so they become notes. Vector metafiles do not: the
-    ///     bytes were written successfully. Side effect: records notes on the sink.
+    ///     here. Size-limited skips are facts about an attempted step that did not complete, so they
+    ///     become notes. Vector metafiles do not: the bytes were written successfully. Side effect:
+    ///     records notes on the sink.
     /// </remarks>
-    private static void ReportImageNotes(IExtractionSink sink, ExtractionOptions options, EmbeddedImageWriteResult? result)
+    private static void ReportImageNotes(IExtractionSink sink, EmbeddedImageWriteResult? result)
     {
         // A caller who disabled embedded images asked for none to be attempted; Core records that
         // deliberate absence itself, so this unit reports nothing here
@@ -236,11 +235,6 @@ internal static class ExcelContentEmitter
         {
             ReportSizeSkipNote(sink, result);
         }
-
-        if (options.ImageOutput == ImageOutputMode.ForcePng && result.ForcePngUnhonoredCount > 0)
-        {
-            ReportForcePngNote(sink, result);
-        }
     }
 
     /// <summary>
@@ -257,23 +251,6 @@ internal static class ExcelContentEmitter
         var counted = Counted(result.SizeSkippedCount, result.Found);
         sink.ReportNote(new ExtractionNote(
             $"{counted} embedded images exceeded caller-supplied size limits and were not written."));
-    }
-
-    /// <summary>
-    ///     Reports that PNG output could not be honored, explaining that source bytes were written instead.
-    /// </summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <param name="result">The image write accounting carrying the unhonored-force-PNG count and found total.</param>
-    /// <remarks>
-    ///     The file extension follows the bytes actually written; this backend ships no imaging
-    ///     stack, so it cannot re-encode. Side effect: records a note.
-    /// </remarks>
-    private static void ReportForcePngNote(IExtractionSink sink, EmbeddedImageWriteResult result)
-    {
-        var counted = Counted(result.ForcePngUnhonoredCount, result.Found);
-        sink.ReportNote(new ExtractionNote(
-            $"PNG output was requested, but {counted} embedded images were written in their source "
-            + "encoding because this backend does not re-encode images."));
     }
 
     /// <summary>

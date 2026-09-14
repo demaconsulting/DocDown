@@ -88,8 +88,8 @@ application.
   `ImageTransform.Passthrough`, because the stored part bytes are the extracted image bytes.
 - **Report-only completeness.** The package describes what it produced in the content inventory and
   uses a short note only when it attempted a step it could not complete. Empty content is therefore
-  conveyed by a zero inventory count, while chart extraction, table flattening, and force-PNG
-  requests are conveyed by notes.
+  conveyed by a zero inventory count, while chart extraction and table flattening are conveyed by
+  notes.
 - **Unreadable isolation.** The reader detects encrypted containers up front and raises a plain
   `WordExtractionException`. Any other adverse document state propagates to Core, which converts it
   into an `Unreadable` result without leaving a partial layout behind.
@@ -106,8 +106,8 @@ application.
 4. `WordOpenXmlReader` walks the document and produces a `WordDocumentModel` containing the body
    flow, deduplicated document-control content, comments, footnotes, image references, metadata,
    and the counts the emitter needs for inventory and notes.
-5. `WordContentEmitter.EmitAsync()` writes images first, writes either a single `content.md` or
-   split `parts/*.md` files, reports `DocumentInfo`, reports the content inventory, reports
+5. `WordContentEmitter.EmitAsync()` writes images first, writes a single `content.md`, reports
+   `DocumentInfo`, reports the content inventory, reports
    document metadata when captured, and emits short notes for incomplete steps the model implies.
 6. Normal completion returns `ExtractionOutcome.Produced`. If reading or emission throws, Core
    records the extraction as `ExtractionOutcome.Unreadable` and writes the structured failure
@@ -133,14 +133,12 @@ Word extraction reads materially better than the same document routed through PD
   inline images, comments, distinct comment authors, and footnotes. Categories a reader genuinely
   looked for, such as text blocks, comments, distinct comment authors, and footnotes, are marked
   looked-for so a zero count remains explicit.
-- **Extraction notes.** The system currently emits notes for three incomplete steps only: embedded
-  charts whose chart parts are not read, merged or nested table structure that had to be flattened
-  for markdown, and force-PNG requests that could not be honored because this package does not
-  re-encode images. An empty document is never a note; it is conveyed by a zero-count inventory
-  feature.
-- **Split modes.** `Auto` and `Single` both produce a single-flow `content.md`. `PerPart` splits
-  at every `Heading 1`, with the leading matter and `## Document Control` section in the first
-  part.
+- **Extraction notes.** The system currently emits notes for two incomplete steps only: embedded
+  charts whose chart parts are not read, and merged or nested table structure that had to be
+  flattened for markdown. An empty document is never a note; it is conveyed by a zero-count
+  inventory feature.
+- **Content layout.** A Word document is one continuous flow, so it is written as a single
+  `content.md` with the leading matter and the `## Document Control` section in place.
 
 ## Design Constraints
 

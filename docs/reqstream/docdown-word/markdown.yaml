@@ -64,6 +64,5 @@ sections:
               - DocDownWord-Markdown-WordContentEmitter-ReportsContentInventory
               - DocDownWord-Markdown-WordContentEmitter-ReportsChartNote
               - DocDownWord-Markdown-WordContentEmitter-ReportsFlattenedTableNote
-              - DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote
             tests:
               - WordContentEmitter_Emit_BodyWithComments_ReportsOutlineAndSucceeds

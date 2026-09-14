@@ -43,7 +43,7 @@ for the determinism scenario, where repeated runs are expected to be identical.
   extraction output
 - **Inputs**: PDFs generated at test time; no committed binaries and no network access
 - **Mocking**: none for system tests; the real engine, real backend, and real parser are exercised
-- **Determinism**: a fixed `TimestampUtc` is supplied so repeated runs are byte-comparable
+- **Determinism**: the run-varying timestamp line is normalized so repeated runs are byte-comparable
 - **Isolation**: each test owns and disposes its own scratch folder
 
 ## Acceptance Criteria
@@ -116,12 +116,13 @@ labeled as a passthrough, counted as extracted, and not accompanied by an explan
 that extraction step completed successfully. Evidence for `DocDownPdf-EmbeddedImages` and
 `DocDownPdf-ImageProvenance`.
 
-### A PNG request that cannot be honored is explained with a note
+### An embedded JPEG is written in the document's own encoding
 
-**Test**: `DocDownPdf_Extract_ForcePngWithJpegImage_ExplainsUnhonoredMode`
+**Test**: `DocDownPdf_Extract_JpegImage_WritesDocumentsOwnEncoding`
 
-Proves the written image remains truthfully typed and that the run adds a plain note naming the
-encodings that prevented PNG output. Evidence for `DocDownPdf-ForcePngUsesNote`.
+Proves the written image remains truthfully typed, is written in the encoding the document stored it
+in, and needs no note because nothing was attempted that could not complete. Evidence for
+`DocDownPdf-ImagesKeepSourceEncoding`.
 
 ### A size-limit skip is reported as its own note
 

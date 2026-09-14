@@ -121,7 +121,7 @@ internal static class Program
         // Priority 4: self-validation
         if (context.Validate)
         {
-            Validation.Run(context);
+            Validation.Run(context, BuildEngine());
             return;
         }
 
@@ -161,11 +161,9 @@ internal static class Program
         context.WriteLine("  --no-pages                 Do not render page images (default)");
         context.WriteLine("  --page-range <a-b>         Restrict extraction to a page range");
         context.WriteLine("  --dpi <#>                  Page render DPI (range 36-1200)");
-        context.WriteLine("  --images <preserve|png>    Embedded image output mode");
         context.WriteLine("  --no-images                Do not extract embedded images");
-        context.WriteLine("  --max-image-dim <#>        Downscale images exceeding this pixel dimension");
+        context.WriteLine("  --max-image-dim <#>        Skip images exceeding this pixel dimension");
         context.WriteLine("  --max-image-bytes <#>      Skip images exceeding this byte size");
-        context.WriteLine("  --split <auto|single|part> content.md splitting strategy");
         context.WriteLine("  --overwrite <clean|overwrite>  Scratch folder policy (default: clean)");
     }
 

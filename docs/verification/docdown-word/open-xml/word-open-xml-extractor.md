@@ -26,13 +26,12 @@ genuine `.docx` files rather than against a simulation of one.
 ### Acceptance Criteria
 
 Per IEC 62304 §5.5.2, a `WordOpenXmlExtractor` test run passes when the descriptor's identity,
-priority, supported format, and managed availability are reported correctly; when a force-PNG
-request produces a short note but still writes the image files truthfully; when a vector image is
+priority, supported format, and managed availability are reported correctly; when a vector image is
 written unchanged; when a merged-cell document produces a table-flattening note; when an empty
-document produces zero text blocks in the content inventory and no separate note; when per-part
-mode produces a `parts/` folder split at each top-level heading; when a header logo identical to a
-body image reuses one written image path; and when the extractor contributes exactly two self-test
-cases with one passing round trip and one skipped page-rendering case.
+document produces zero text blocks in the content inventory and no separate note; when an
+image-bearing document's inline links resolve on disk; when a header logo identical to a body image
+reuses one written image path; and when the extractor contributes exactly two self-test cases with
+one passing round trip and one skipped page-rendering case.
 
 ### Test Scenarios
 
@@ -43,14 +42,6 @@ cases with one passing round trip and one skipped page-rendering case.
 Proves the identity is `word-openxml`, the priority is 10, `.docx` is supported, and the
 availability report states the extractor is available while page rendering is not provided here.
 Evidence for `DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsManagedAvailability`.
-
-#### A force-PNG request that cannot be honored is explained by a note
-
-**Test**: `WordOpenXmlExtractor_Extract_ForcePng_ReportsUnhonoredModeNote`
-
-Proves the result remains `Produced` and a note states that PNG output was requested but the
-embedded image files were written in their source encoding. Evidence for
-`DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote`.
 
 #### A vector image is written as-is
 
@@ -76,13 +67,12 @@ flattened because markdown cannot represent that structure. Evidence for
 Proves the result remains `Produced`, no note is emitted, and `manifest.json` records a `text
 blocks` content feature with a count of zero. Evidence for `DocDownWord-EmptyDocumentInventory`.
 
-#### Per-part mode splits at Heading 1
+#### Inline image links resolve on disk
 
-**Test**: `WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1`
+**Test**: `WordOpenXmlExtractor_Extract_ImageLinks_ResolveOnDisk`
 
-Proves a `parts/` folder exists and holds at least two files for a document with two top-level
-headings. Evidence for `DocDownWord-ContentSplitting` and
-`DocDownWord-OpenXml-WordOpenXmlExtractor-SplitsPerPart`.
+Proves an image-bearing document's inline links resolve on disk from the root `content.md` the
+backend writes. Evidence for `DocDownWord-Markdown-WordContentEmitter-EmitsModelContent`.
 
 #### A header logo is deduplicated with the body image
 

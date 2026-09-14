@@ -32,6 +32,6 @@ sections:
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesVectorImagesWithoutNote
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsEmptyDeckInInventory
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsContentFeatures
-              - DocDownPowerPoint-Markdown-PowerPointContentEmitter-SplitsLargeDecks
+              - DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesSingleFlow
             tests:
               - PowerPointContentEmitter_Emit_WritesTitleBodyAndNotes

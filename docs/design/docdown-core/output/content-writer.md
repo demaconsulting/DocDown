@@ -17,13 +17,11 @@ files written.
 
 #### Key Methods
 
-- **`WriteAsync(ExtractionSink sink, ContentSplitMode mode, string? documentTitle,
-  CancellationToken)`** — chooses one of three layouts:
+- **`WriteAsync(ExtractionSink sink, string? documentTitle, CancellationToken)`** — chooses one of
+  two layouts, driven by the document rather than by the caller:
   - single-flow `content.md` when no parts were buffered;
-  - concatenated `content.md` for `ContentSplitMode.Single` with parts;
-  - index `content.md` plus part files for `Auto` or `PerPart` with parts.
+  - index `content.md` plus part files under `parts/` when the backend offered parts.
 - **`WriteSingleFlowAsync`** — writes the buffered markdown verbatim, preserving page markers.
-- **`WriteConcatenatedAsync`** — renders buffered parts into one document under headings.
 - **`WriteIndexAsync`** — writes the part files and an index linking to them.
 
 #### Error Handling
@@ -39,7 +37,6 @@ later summary and manifest serialization can state honestly that no textual cont
 
 - **`ExtractionSink`** — buffered content and parts plus the scratch-folder gate.
 - **`ScratchFolder`** — deterministic contained text writes.
-- **`ContentSplitMode`** — caller-controlled layout policy.
 
 #### Callers
 

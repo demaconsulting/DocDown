@@ -10,9 +10,6 @@ namespace DemaConsulting.DocDown.Core.Tests;
 /// </summary>
 public class DocDownCoreTests
 {
-    /// <summary>A fixed timestamp used to make output byte-reproducible across runs.</summary>
-    private static readonly DateTimeOffset FixedTimestamp = new(2024, 1, 2, 3, 4, 5, TimeSpan.Zero);
-
     /// <summary>Gets the ambient test cancellation token so async calls stay responsive to cancellation.</summary>
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -202,12 +199,12 @@ public class DocDownCoreTests
     }
 
     /// <summary>
-    ///     Proves two runs into the same folder with a fixed timestamp are byte-identical.
+    ///     Proves two runs into the same folder differ in nothing but the extraction timestamp.
     /// </summary>
     [Fact]
     public async Task DocDownCore_Extract_RepeatedRun_IsByteIdentical()
     {
-        // Arrange: a deterministic engine, a fixed timestamp, and a stable scratch folder
+        // Arrange: a deterministic engine and a stable scratch folder
         using var temp = new TempScratch();
         var engine = BuildEngine(StubExtractor.Available("text", [DocumentFormat.Text]));
         var input = temp.CreateFile("document.txt", "hello world");
@@ -221,9 +218,9 @@ public class DocDownCoreTests
         File.Copy(Path.Combine(scratch, "manifest.json"), firstManifest);
         await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
-        // Assert: both outputs are byte-identical between runs
-        ContractAssert.FileEquals(firstSummary, Path.Combine(scratch, "summary.txt"));
-        ContractAssert.FileEquals(firstManifest, Path.Combine(scratch, "manifest.json"));
+        // Assert: both outputs are identical between runs apart from the wall-clock stamp
+        ContractAssert.FileEqualsIgnoringTimestamp(firstSummary, Path.Combine(scratch, "summary.txt"));
+        ContractAssert.FileEqualsIgnoringTimestamp(firstManifest, Path.Combine(scratch, "manifest.json"));
     }
 
     /// <summary>
@@ -373,7 +370,7 @@ public class DocDownCoreTests
     ///     Creates options with a fixed timestamp for deterministic output.
     /// </summary>
     /// <returns>Options stamped with a fixed UTC timestamp.</returns>
-    private static ExtractionOptions FixedOptions() => new() { TimestampUtc = FixedTimestamp };
+    private static ExtractionOptions FixedOptions() => new();
 
     /// <summary>
     ///     Writes one image so the image-suppression option is observable in end-to-end output.

@@ -79,11 +79,18 @@ public class ContextTests
         Assert.Throws<ArgumentException>(() => Context.Create(["--page-range", "3"]));
     }
 
-    /// <summary>Proves an unknown image output token is rejected.</summary>
+    /// <summary>Proves a removed option is rejected as unsupported rather than silently ignored.</summary>
     [Fact]
-    public void Context_Create_UnknownImageMode_ThrowsArgumentException()
+    public void Context_Create_RemovedImagesOption_ThrowsArgumentException()
     {
-        Assert.Throws<ArgumentException>(() => Context.Create(["--images", "webp"]));
+        Assert.Throws<ArgumentException>(() => Context.Create(["--images", "png"]));
+    }
+
+    /// <summary>Proves the removed split option is rejected as unsupported.</summary>
+    [Fact]
+    public void Context_Create_RemovedSplitOption_ThrowsArgumentException()
+    {
+        Assert.Throws<ArgumentException>(() => Context.Create(["--split", "part"]));
     }
 
     /// <summary>Proves writing in silent mode suppresses the console but still writes the log.</summary>
@@ -127,10 +134,8 @@ public class ContextTests
             "--pages",
             "--page-range", "2-5",
             "--dpi", "300",
-            "--images", "png",
             "--max-image-dim", "1024",
             "--max-image-bytes", "2048",
-            "--split", "part",
             "--overwrite", "overwrite"
         ]);
 
@@ -139,10 +144,8 @@ public class ContextTests
         Assert.True(options.RenderPages);
         Assert.Equal(new PageRange(2, 5), options.Pages);
         Assert.Equal(300, options.PageRenderDpi);
-        Assert.Equal(ImageOutputMode.ForcePng, options.ImageOutput);
         Assert.Equal(1024, options.MaxImageDimensionPx);
         Assert.Equal(2048L, options.MaxImageBytes);
-        Assert.Equal(ContentSplitMode.PerPart, options.ContentSplit);
         Assert.Equal(ScratchFolderMode.Overwrite, options.ScratchFolder);
     }
 

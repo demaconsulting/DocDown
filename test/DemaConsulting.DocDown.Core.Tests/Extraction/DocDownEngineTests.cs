@@ -11,9 +11,6 @@ namespace DemaConsulting.DocDown.Core.Tests.Extraction;
 /// </summary>
 public class DocDownEngineTests
 {
-    /// <summary>A fixed timestamp used to keep engine output deterministic across runs.</summary>
-    private static readonly DateTimeOffset FixedTimestamp = new(2026, 3, 4, 5, 6, 7, TimeSpan.Zero);
-
     /// <summary>Gets the ambient test cancellation token so async calls stay responsive to cancellation.</summary>
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -470,5 +467,5 @@ public class DocDownEngineTests
     ///     Creates options with a fixed timestamp for deterministic output.
     /// </summary>
     /// <returns>Options stamped with a fixed UTC timestamp.</returns>
-    private static ExtractionOptions FixedOptions() => new() { TimestampUtc = FixedTimestamp };
+    private static ExtractionOptions FixedOptions() => new();
 }

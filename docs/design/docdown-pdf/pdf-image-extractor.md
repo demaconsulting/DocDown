@@ -48,7 +48,7 @@ lives for the duration of one call.
 - **`FilterNameOf`** (private) - reads the effective PDF filter name from the image dictionary.
 - **`DescribeImage`** (private) - builds a stable reference such as `page 2 image 3`.
 - **`ReportAccountingNotes`** and helpers (private) - emit one-sentence notes for undecodable
-  encodings, size-limit skips, and unhonored `ForcePng` requests.
+  encodings and size-limit skips.
 
 ### Filter handling
 
@@ -77,7 +77,7 @@ Cancellation is observed per page and propagates.
 - **PdfPig** (OTS) - `Page.GetImages`, `IPdfImage.RawBytes`, `IPdfImage.TryGetPng`, and the image
   dictionary used to identify the effective filter.
 - **DocDown.Core** - `IExtractionSink`, `ImageHint`, `ImageTransform`, `ExtractionOptions`,
-  `ExtractionNote`, and `ImageOutputMode`.
+  and `ExtractionNote`.
 
 ### Callers
 

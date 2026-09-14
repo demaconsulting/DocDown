@@ -116,8 +116,8 @@ interop assembly.
    embedded images and document metadata.
 4. `PowerPointContentEmitter.EmitAsync` writes embedded images, writes the deck content, reports
    document information and metadata, and reports the content inventory. A deck with no slides becomes
-   an empty content file plus zero-count inventory. Image steps that exceed a caller size limit or
-   cannot honor `ForcePng` become short plain notes.
+   an empty content file plus zero-count inventory. Image steps that exceed a caller size limit
+   become short plain notes.
 5. When the COM backend runs, it delegates steps 2-4 to the managed backend against a composing sink,
    records the authoritative `pages.renderer` fact, materializes the deck to a file path, and asks
    Microsoft PowerPoint to render each slide. A slide that cannot be rendered produces a plain note

@@ -25,12 +25,10 @@ namespace DemaConsulting.DocDown.Pdf.Rendering.Tests;
 /// </remarks>
 public class PdfRenderingGoldenTests
 {
-    /// <summary>A fixed timestamp so the rendered header is reproducible across runs.</summary>
-    private static readonly DateTimeOffset FixedTimestamp = new(2026, 1, 2, 3, 4, 5, TimeSpan.Zero);
-
     /// <summary>The line prefixes whose values are machine-specific and are normalized away.</summary>
     private static readonly (string Prefix, string Placeholder)[] VariableLines =
     [
+        ("Extracted (UTC) : ", "Extracted (UTC) : <timestamp>"),
         ("Scratch folder  : ", "Scratch folder  : <scratch-folder>"),
         ("Source document : ", "Source document : <source-document>"),
         ("  Operating system   : ", "  Operating system   : <operating-system>"),
@@ -54,7 +52,7 @@ public class PdfRenderingGoldenTests
         var input = Path.Combine(temp.Path, "simple.pdf");
         await File.WriteAllBytesAsync(input, RenderingFixtures.SimpleText(), Ct);
         var scratch = Path.Combine(temp.Path, "out");
-        var options = new ExtractionOptions { TimestampUtc = FixedTimestamp, RenderPages = true };
+        var options = new ExtractionOptions { RenderPages = true };
 
         // Act: extract and capture the rendered summary
         var result = await engine.ExtractAsync(input, scratch, options, Ct);

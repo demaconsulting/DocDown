@@ -9,13 +9,11 @@ namespace DocDown.Core;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         <c>content.md</c> is always the single entry point, but its shape depends on the content
-///         and the requested split mode: a single-flow document writes its whole text (with the
-///         extractor's <c>&lt;!-- docdown:page N --&gt;</c> markers passed through untouched); a
-///         multi-part document writes an index that links each part; and
-///         <see cref="ContentSplitMode.Single"/> concatenates the parts under headings with no
-///         <c>parts/</c> folder. Deferring this decision to write time is why the sink buffers parts
-///         instead of writing them eagerly.
+///         <c>content.md</c> is always the single entry point, but its shape depends on the content:
+///         a single-flow document writes its whole text (with the extractor's
+///         <c>&lt;!-- docdown:page N --&gt;</c> markers passed through untouched), and a multi-part
+///         document writes an index that links each part written under <c>parts/</c>. Deferring this
+///         decision to write time is why the sink buffers parts instead of writing them eagerly.
 ///     </para>
 ///     <para>
 ///         The writer invents no content: page markers originate in the extractor's markdown, and
@@ -35,7 +33,6 @@ public static class ContentWriter
     ///     Finalizes the content document and any part files, returning what was written.
     /// </summary>
     /// <param name="sink">The sink holding the buffered content and parts. Must not be null.</param>
-    /// <param name="mode">The content split mode governing the output shape.</param>
     /// <param name="documentTitle">
     ///     The document title used for the index heading, or <see langword="null"/> to fall back to
     ///     the sink's reported document title and then to a generic label.
@@ -48,12 +45,11 @@ public static class ContentWriter
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="sink"/> is <see langword="null"/>.</exception>
     /// <remarks>
     ///     Chooses the single-flow layout whenever no parts were buffered (so buffered single content
-    ///     is never lost), the concatenated layout for <see cref="ContentSplitMode.Single"/> with
-    ///     parts, and the index layout otherwise. Always writes <c>content.md</c>. Performs
-    ///     filesystem I/O.
+    ///     is never lost) and the index layout whenever the backend offered parts. Always writes
+    ///     <c>content.md</c>. Performs filesystem I/O.
     /// </remarks>
     public static async ValueTask<ContentWriteResult> WriteAsync(
-        ExtractionSink sink, ContentSplitMode mode, string? documentTitle, CancellationToken cancellationToken)
+        ExtractionSink sink, string? documentTitle, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(sink);
 
@@ -67,10 +63,9 @@ public static class ContentWriter
             return await WriteSingleFlowAsync(folder, sink.BufferedContent, cancellationToken).ConfigureAwait(false);
         }
 
-        // Single mode concatenates parts into one document; the other modes index separate part files
-        return mode == ContentSplitMode.Single
-            ? await WriteConcatenatedAsync(folder, parts, cancellationToken).ConfigureAwait(false)
-            : await WriteIndexAsync(folder, parts, title, cancellationToken).ConfigureAwait(false);
+        // A backend that offered parts gets an index over separate part files, which is what lets a
+        // consumer read one sheet or one section instead of a single enormous document
+        return await WriteIndexAsync(folder, parts, title, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -95,37 +90,6 @@ public static class ContentWriter
     }
 
     /// <summary>
-    ///     Writes a concatenated <c>content.md</c> with each part under a <c>##</c> heading and no
-    ///     <c>parts/</c> folder.
-    /// </summary>
-    /// <param name="folder">The scratch folder to write into.</param>
-    /// <param name="parts">The buffered parts in document order.</param>
-    /// <param name="cancellationToken">A token to observe for cancellation.</param>
-    /// <returns>The write result for the concatenated layout.</returns>
-    /// <remarks>
-    ///     Used for <see cref="ContentSplitMode.Single"/>: the parts become sections of one document,
-    ///     which keeps small multi-part documents in a single readable file. Part markdown, including
-    ///     any page markers, is passed through unchanged.
-    /// </remarks>
-    private static async ValueTask<ContentWriteResult> WriteConcatenatedAsync(
-        ScratchFolder folder, IReadOnlyList<RecordedPart> parts, CancellationToken cancellationToken)
-    {
-        // Build one document by heading each part and appending its body
-        var builder = new StringBuilder();
-        var characters = 0;
-        foreach (var part in parts)
-        {
-            builder.Append("## ").Append(HeadingFor(part)).Append('\n').Append('\n');
-            builder.Append(part.Markdown.TrimEnd('\n')).Append('\n').Append('\n');
-            characters += part.CharacterCount;
-        }
-
-        var text = builder.ToString().TrimEnd('\n') + "\n";
-        await folder.WriteTextAsync(ContentFileName, text, cancellationToken).ConfigureAwait(false);
-        return new ContentWriteResult(ContentFileName, characters > 0, characters, []);
-    }
-
-    /// <summary>
     ///     Writes the index <c>content.md</c> plus one file per part under <c>parts/</c>.
     /// </summary>
     /// <param name="folder">The scratch folder to write into.</param>
@@ -134,15 +98,14 @@ public static class ContentWriter
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>The write result for the index layout, listing the part paths written.</returns>
     /// <remarks>
-    ///     Used for <see cref="ContentSplitMode.Auto"/> with parts and for
-    ///     <see cref="ContentSplitMode.PerPart"/>: the index keeps a large, sectioned document
-    ///     navigable and lets a consumer read parts selectively. Each part file is written through the
+    ///     The index keeps a large, sectioned document navigable and lets a consumer read parts
+    ///     selectively. Each part file is written through the
     ///     scratch-folder gate at the path the sink allocated. Because a part file lives under
     ///     <c>parts/</c> rather than at the scratch root, the extractor's root-relative resource links
     ///     (<c>images/…</c>, <c>pages/…</c>) are rewritten by <see cref="PartResourceLinkRewriter"/> to
     ///     the equivalent <c>../</c>-prefixed path so they resolve on disk from the part's own
-    ///     directory; only this layout applies the rewrite, since the single-flow and concatenated
-    ///     layouts write <c>content.md</c> at the root where the original links are already correct.
+    ///     directory; the single-flow layout needs no rewrite, since it writes <c>content.md</c> at
+    ///     the root where the original links are already correct.
     ///     The reported <see cref="ContentWriteResult.CharacterCount"/> still reflects the extractor
     ///     body the sink buffered — the write-time <c>../</c> prefix is a path adjustment, not content.
     /// </remarks>

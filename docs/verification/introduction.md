@@ -87,7 +87,7 @@ constituent software items, specifically:
     - **WordContentEmitter (Unit)** — The model-to-sink emission path
   - **OpenXml (Subsystem)** — The managed backend that reads a `.docx` through the Open XML SDK
     - **WordOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
-      including split modes and page-rendering absence
+      including page-rendering absence
     - **WordOpenXmlReader (Unit)** — Turns the Open XML DOM into the backend-neutral model
     - **WordOpenXmlImageReader (Unit)** — Yields each embedded image's bytes with passthrough
       provenance

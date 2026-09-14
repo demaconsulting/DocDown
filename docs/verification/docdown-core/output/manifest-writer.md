@@ -17,17 +17,17 @@ exact schema it emits, so the real file is the verification target.
 
 #### Acceptance Criteria
 
-Per IEC 62304 §5.5.2, `ManifestWriter` passes when it declares schema version 2.0, records the tool,
-selected backend, scratch path, and status, emits notes in order, records the reduced requested
-options and reduced extractor shape, omits the removed top-level keys, writes deterministic no-BOM
-JSON, projects image transforms to the manifest vocabulary, and records per-image referrers,
-template flags, and descriptions.
+Per IEC 62304 §5.5.2, `ManifestWriter` passes when it declares schema version 3.0, records the tool,
+selected backend, scratch path, and status, emits notes in order, records the reduced extractor shape,
+omits the removed top-level keys, the environment block, the requested-options echo, and every
+integrity digest, writes deterministic no-BOM JSON, projects image transforms to the manifest
+vocabulary, and records per-image referrers, template flags, and descriptions.
 
 #### Test Scenarios
 
-##### The schema version is declared as 2.0
+##### The schema version is declared as 3.0
 
-**Test**: `ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionTwoPointZero`
+**Test**: `ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionThreePointZero`
 
 ##### A produced run records tool, backend, scratch folder, and status
 
@@ -41,9 +41,17 @@ template flags, and descriptions.
 
 **Test**: `ManifestWriter_WriteAsync_NotesReported_SerializesMessagesInOrder`
 
-##### Requested options use the reduced field set
+##### The caller's requested options are not echoed back
 
-**Test**: `ManifestWriter_WriteAsync_RequestedOptions_ContainsReducedFieldSet`
+**Test**: `ManifestWriter_WriteAsync_ProducedRun_OmitsRequestedOptions`
+
+##### The environment block is absent
+
+**Test**: `ManifestWriter_WriteAsync_ProducedRun_OmitsEnvironment`
+
+##### No integrity digest is recorded for the source, an image, or a page
+
+**Test**: `ManifestWriter_WriteAsync_ProducedRun_OmitsDigests`
 
 ##### Removed top-level keys stay absent
 

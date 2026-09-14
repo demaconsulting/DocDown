@@ -376,7 +376,7 @@ public class ScratchFolderTests
     {
         var manifest = new
         {
-            schemaVersion = "2.0",
+            schemaVersion = "3.0",
             tool = new { name = "DocDown", package = "DemaConsulting.DocDown.Core" },
             scratchFolder,
             extractedAtUtc = "2024-01-02T03:04:05Z",

@@ -34,8 +34,16 @@
 # required counted gaps for suppressed images, size-limited skips, and unhonored PNG requests. It is
 # superseded, not satisfied, because DocDown now reports what it extracted and where and makes no
 # acceptability judgment. Attempted-but-incomplete image work is now described with plain notes by
-# DocDownPdf-ForcePngUsesNote and DocDownPdf-ImageSizeLimitsUseNotes; deliberate suppression is
-# covered by DocDownPdf-ImageSuppressionUsesNote.
+# DocDownPdf-ImageSizeLimitsUseNotes; deliberate suppression is covered by
+# DocDownPdf-ImageSuppressionUsesNote.
+#
+# SUPERSEDED REQUIREMENT: DocDownPdf-ForcePngUsesNote
+# required a plain note whenever a requested PNG output could not be honored. It is superseded (not
+# satisfied) with no replacement because the caller-facing PNG request was removed under the
+# simplicity principle: the option never converted anything, it only counted what it could not
+# convert, so with the request gone there is nothing left to report. Images are written in whatever
+# format the document stored them in, and DocDownPdf-PdfImageExtractor-RecordsTransformProvenance
+# still records how each written image was produced.
 #
 # SUPERSEDED REQUIREMENT: DocDownPdf-GapReporting
 # required counted gaps as the general absence-reporting mechanism. It is superseded, not satisfied,
@@ -190,20 +198,19 @@ sections:
         tests:
           - DocDownPdf_Extract_UndecodableImage_ReportsPlainNoteNamingEncoding
 
-      - id: DocDownPdf-ForcePngUsesNote
+      - id: DocDownPdf-ImagesKeepSourceEncoding
         title: >-
-          The system shall report a plain note when requested PNG output cannot be honored and shall
+          The system shall write each embedded image in the encoding the document stored it in and
           keep written images truthfully typed.
         tags: [system]
         justification: |
-          A caller who requested PNG needs to know when a written image remained in its source
-          encoding. The note supplies that fact, while the file name and media type continue to
-          describe the bytes actually written.
+          DocDown exposes document content rather than re-encoding it, so a reader receives the
+          document's own bytes; the file name and media type therefore always describe the bytes
+          actually written.
         children:
-          - DocDownPdf-PdfImageExtractor-NotesUnhonoredForcePng
           - DocDownPdf-PdfImageExtractor-RecordsTransformProvenance
         tests:
-          - DocDownPdf_Extract_ForcePngWithJpegImage_ExplainsUnhonoredMode
+          - DocDownPdf_Extract_JpegImage_WritesDocumentsOwnEncoding
 
       - id: DocDownPdf-ImageSizeLimitsUseNotes
         title: >-

@@ -24,8 +24,23 @@ namespace DemaConsulting.DocDown.Tool.Tests;
 ///     <c>new DocDownBuilder().AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().Build()</c> — so these tests exercise the
 ///     same explicit, reflection-free registration the shipped tool uses.
 /// </remarks>
-public class DocDownToolTests
+public class DocDownToolTests : IClassFixture<ValidationRuns>
 {
+    /// <summary>The system-level validation runs shared by the scenarios in this class.</summary>
+    private readonly ValidationRuns _runs;
+
+    /// <summary>
+    ///     Initializes the test class with its shared validation runs.
+    /// </summary>
+    /// <param name="runs">The shared runs, injected by xUnit.</param>
+    /// <remarks>
+    ///     A class fixture is the narrowest scope that works: xUnit already runs one class's tests
+    ///     sequentially, so the two runs never overlap, and no other class is constrained. These are
+    ///     the suite's only command-line validation runs, and the only place Microsoft Office is
+    ///     driven — every unit-level assertion about <c>--validate</c> uses a managed engine instead.
+    /// </remarks>
+    public DocDownToolTests(ValidationRuns runs) => _runs = runs;
+
     /// <summary>
     ///     Proves a generated PDF extracts cleanly: the tool prints the absolute path to
     ///     <c>summary.txt</c> and exits zero.
@@ -42,7 +57,7 @@ public class DocDownToolTests
         var (exit, log) = CliHarness.Run("--input", input, "--scratch", scratch);
 
         // Assert: exit zero and an absolute summary.txt path that exists on disk
-        Assert.Equal(0, exit);
+        Assert.True(exit == 0, log);
         Assert.Contains("Extraction produced the output layout.", log, StringComparison.Ordinal);
         Assert.DoesNotContain("note(s) recorded", log, StringComparison.Ordinal);
         var summaryLine = FindSummaryLine(log);
@@ -112,7 +127,7 @@ public class DocDownToolTests
         var (exit, log) = CliHarness.Run("--input", input, "--scratch", scratch, "--no-images");
 
         // Assert: output is still produced, with one recorded note and the new produced wording
-        Assert.Equal(0, exit);
+        Assert.True(exit == 0, log);
         Assert.Contains("Extraction produced the output layout.", log, StringComparison.Ordinal);
         Assert.Contains("1 note(s) recorded; see summary.txt for detail.", log, StringComparison.Ordinal);
 
@@ -132,7 +147,7 @@ public class DocDownToolTests
         Assert.True(File.Exists(manifestPath));
         using var manifest = JsonDocument.Parse(File.ReadAllText(manifestPath));
         var root = manifest.RootElement;
-        Assert.Equal("2.0", root.GetProperty("schemaVersion").GetString());
+        Assert.Equal("3.0", root.GetProperty("schemaVersion").GetString());
         var note = Assert.Single(root.GetProperty("notes").EnumerateArray().Select(static element => element.GetString()));
         Assert.Equal("Embedded image extraction was disabled by the caller; no images were written.", note);
         Assert.False(root.TryGetProperty("artifacts", out _));
@@ -148,15 +163,12 @@ public class DocDownToolTests
     [Fact]
     public void DocDownTool_Validate_ResultsTrx_ProducesWellFormedTrx()
     {
-        // Arrange
-        using var temp = new TempScratch();
-        var trx = Path.Combine(temp.Path, "docdown-validate-windows.trx");
-
-        // Act
-        var (exit, _) = CliHarness.Run("--validate", "--results", trx);
+        // Arrange / Act: the class's shared self-validation that wrote a TRX results file
+        var (exit, log) = (_runs.Trx.ExitCode, _runs.Trx.Log);
+        var trx = _runs.Trx.ResultsPath;
 
         // Assert: the file exists, re-parses, and carries the engine self-test cases
-        Assert.Equal(0, exit);
+        Assert.True(exit == 0, log);
         Assert.True(File.Exists(trx));
         var parsed = TrxSerializer.Deserialize(File.ReadAllText(trx));
         Assert.NotEmpty(parsed.Results);
@@ -172,15 +184,12 @@ public class DocDownToolTests
     [Fact]
     public void DocDownTool_Validate_ResultsXml_ProducesWellFormedJUnit()
     {
-        // Arrange
-        using var temp = new TempScratch();
-        var xml = Path.Combine(temp.Path, "docdown-validate-windows.xml");
-
-        // Act
-        var (exit, _) = CliHarness.Run("--validate", "--results", xml);
+        // Arrange / Act: the class's shared self-validation that wrote a JUnit results file
+        var (exit, log) = (_runs.JUnit.ExitCode, _runs.JUnit.Log);
+        var xml = _runs.JUnit.ResultsPath;
 
         // Assert
-        Assert.Equal(0, exit);
+        Assert.True(exit == 0, log);
         Assert.True(File.Exists(xml));
         var parsed = JUnitSerializer.Deserialize(File.ReadAllText(xml));
         Assert.NotEmpty(parsed.Results);
@@ -193,12 +202,8 @@ public class DocDownToolTests
     [Fact]
     public void DocDownTool_Validate_SkippedPdfRenderCase_RecordedAsNotExecuted()
     {
-        // Arrange
-        using var temp = new TempScratch();
-        var trx = Path.Combine(temp.Path, "docdown-validate-windows.trx");
-
-        // Act
-        var (_, _) = CliHarness.Run("--validate", "--results", trx);
+        // Arrange / Act: the class's shared self-validation that wrote a TRX results file
+        var trx = _runs.Trx.ResultsPath;
 
         // Assert: the page-rendering case is not-executed, and not a failure
         var parsed = TrxSerializer.Deserialize(File.ReadAllText(trx));
@@ -215,17 +220,73 @@ public class DocDownToolTests
     [Fact]
     public void DocDownTool_Validate_RenderingSelfTestCase_IsRecordedAndNotFailed()
     {
-        // Arrange
-        using var temp = new TempScratch();
-        var trx = Path.Combine(temp.Path, "docdown-validate-windows.trx");
-
-        // Act
-        var (_, _) = CliHarness.Run("--validate", "--results", trx);
+        // Arrange / Act: the class's shared self-validation that wrote a TRX results file
+        var trx = _runs.Trx.ResultsPath;
 
         // Assert: the distinctly named rendering case is present and did not fail
         var parsed = TrxSerializer.Deserialize(File.ReadAllText(trx));
         var render = Assert.Single(parsed.Results, r => r.Name == "pdf-rendering.renderRoundTrip");
         Assert.NotEqual(TestOutcome.Failed, render.Outcome);
+    }
+
+    /// <summary>
+    ///     Proves the Visio and PowerPoint COM render cases actually execute and pass where the
+    ///     application is installed.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         These two cases are the only place the COM boundary — activation, read-only open,
+    ///         export, and session teardown — is exercised anywhere, so a machine that has Office
+    ///         must prove it works rather than accept a skip. A skip here would mean the suite had
+    ///         quietly stopped testing the thing these cases exist for.
+    ///     </para>
+    ///     <para>
+    ///         Where the application is absent the case is legitimately not executed, which is the
+    ///         honest answer for that environment and is the only reason this test tolerates
+    ///         anything other than a pass. A failure is never tolerated on any machine.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void DocDownTool_Validate_ComRenderCases_ExecuteAndPassWhereOfficeIsInstalled()
+    {
+        // Arrange / Act: the shared command-line self-validation over the shipped engine
+        var trx = _runs.Trx.ResultsPath;
+        var parsed = TrxSerializer.Deserialize(File.ReadAllText(trx));
+
+        // The engine's own availability report decides what to expect, so the expectation is
+        // derived from this environment rather than assumed from the platform
+        var backends = new DocDownBuilder().AddVisio().AddPowerPoint().Build().GetBackends();
+        bool Available(string id) =>
+            backends.Any(b => b.Descriptor.Id == id && b.Availability.IsAvailable);
+
+        // Assert: each COM render case ran, and passed wherever its application is present
+        AssertComRenderCase(parsed, "visio.com.render", Available("visio-com"));
+        AssertComRenderCase(parsed, "powerpoint.com.render", Available("powerpoint-com"));
+    }
+
+    /// <summary>
+    ///     Asserts one COM render case is present, never failed, and passed where its application is installed.
+    /// </summary>
+    /// <param name="results">The parsed results of the shared validation run.</param>
+    /// <param name="caseName">The self-test case name to inspect.</param>
+    /// <param name="applicationAvailable">Whether the backing Office application is available here.</param>
+    /// <remarks>
+    ///     The availability flag comes from the engine's own backend report, which is the same answer
+    ///     selection acts on, so the expectation is derived from the environment rather than assumed.
+    /// </remarks>
+    private static void AssertComRenderCase(
+        DemaConsulting.TestResults.TestResults results, string caseName, bool applicationAvailable)
+    {
+        var renderCase = Assert.Single(results.Results, r => r.Name == caseName);
+        Assert.NotEqual(TestOutcome.Failed, renderCase.Outcome);
+
+        if (applicationAvailable)
+        {
+            Assert.True(
+                renderCase.Outcome == TestOutcome.Passed,
+                $"'{caseName}' must execute and pass where its application is installed, but was "
+                + $"{renderCase.Outcome}: {renderCase.ErrorMessage}");
+        }
     }
 
     /// <summary>
@@ -241,7 +302,7 @@ public class DocDownToolTests
         var renderingIndex = lines.FindIndex(static line => line == "  pdf-rendering - PDF pages (PDFtoImage/PDFium)");
 
         // Assert
-        Assert.Equal(0, exit);
+        Assert.True(exit == 0, log);
         Assert.Contains("Registered backends:", log, StringComparison.Ordinal);
         Assert.DoesNotContain("capabilities:", log, StringComparison.Ordinal);
         Assert.True(pdfIndex >= 0);
@@ -265,7 +326,7 @@ public class DocDownToolTests
         var (exit, log) = CliHarness.Run("--version");
 
         // Assert
-        Assert.Equal(0, exit);
+        Assert.True(exit == 0, log);
         Assert.Matches(@"\d+\.\d+\.\d+", log);
     }
 
@@ -279,7 +340,7 @@ public class DocDownToolTests
         var (exit, log) = CliHarness.Run("--help");
 
         // Assert
-        Assert.Equal(0, exit);
+        Assert.True(exit == 0, log);
         Assert.Contains("Usage:", log, StringComparison.Ordinal);
         Assert.Contains("Options:", log, StringComparison.Ordinal);
     }

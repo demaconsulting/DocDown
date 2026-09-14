@@ -6,7 +6,7 @@ A Word document titled "Control Board Resources"; extracted 150 characters of te
 Scratch folder  : <scratch-folder>
 Source document : <source-document>
 Detected format : docx (application/vnd.openxmlformats-officedocument.wordprocessingml.document) - detected by file extension
-Extracted (UTC) : 2026-01-02T03:04:05Z
+Extracted (UTC) : <timestamp>
 Status          : PRODUCED  - the standard output layout was written.
 
 All paths below are relative to the scratch folder shown above.

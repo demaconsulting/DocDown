@@ -119,3 +119,4 @@ sections:
                 tests:
                   - PowerPointComExtractor_GetSelfTestCases_ReturnsAvailabilityAndRenderCases
                   - PowerPointComExtractor_RenderSelfTest_UnavailableBackend_SkipsWithReason
+                  - DocDownTool_Validate_ComRenderCases_ExecuteAndPassWhereOfficeIsInstalled

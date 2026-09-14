@@ -25,7 +25,7 @@ it writes through the sink. The unit reads only the shared `WordDocumentModel`,
 
 - **`static ValueTask EmitAsync(IExtractionSink sink, ExtractionOptions options, WordDocumentModel model,
   CancellationToken cancellationToken)`** — writes images first so the content renderer can place
-  the sink-allocated links, writes either a single flow or per-part content, reports
+  the sink-allocated links, writes the document as one continuous flow, reports
   `DocumentInfo`, reports the content inventory, reports document metadata when present, and
   reports any extraction notes implied by the model. Preconditions: every argument non-null.
   Postcondition: every artifact was routed through the sink; no filesystem path was written
@@ -36,24 +36,18 @@ it writes through the sink. The unit reads only the shared `WordDocumentModel`,
   and description source from the image reference. Pure.
 - **`WriteImagesAsync()`** (private) — returns immediately when embedded images are suppressed.
   Otherwise it walks the model's image references in document order, adds each through the sink,
-  records the returned path by source reference, and reports one note when
-  `ImageOutputMode.ForcePng` was requested but the images were written in their source encoding.
-- **`WriteContentAsync()`** (private) — honors `ContentSplitMode.Single` and `ContentSplitMode.Auto`
-  by writing one `content.md`. Under `ContentSplitMode.PerPart` it calls `BuildParts()` and writes
-  one `parts/*.md` file per top-level section, falling back to a single flow when the body has no
-  `Heading 1` boundary.
-- **`BuildParts()`** (private) — walks the body once collecting `Heading 1` positions. Leading
-  matter together with `## Document Control` becomes the first part when present, each later
-  section is titled from its heading text, and comments and footnotes are appended to the final
-  part so they remain discoverable in split output.
+  and records the returned path by source reference. Images are written in whatever format the
+  document stored them in; nothing is re-encoded, so there is nothing to report here.
+- **`WriteContentAsync()`** (private) — writes the whole document as one `content.md`. A Word
+  document is one continuous flow, so splitting it at headings would invent a structure the
+  document does not assert.
 - **`ReportContentFeatures()`** (private) — reports the content inventory from the model: text
   blocks, headings, tables, list items, inline images, comments, distinct comment authors, and
   footnotes. Text blocks, comments, distinct comment authors, and footnotes are marked looked-for
   so zero remains explicit.
 - **`ReportExtractionNotes()`** (private) — emits only the incomplete-step notes the current design
   allows: charts whose chart parts were not read, merged or nested table structure flattened for
-  markdown, and force-PNG requests that could not be completed because the package does not
-  re-encode images.
+  markdown.
 - **`CountTextualBlocks()`** and **`EnumerateTables()`** (private) — the small pure helpers used to
   derive looked-for inventory counts and flattened-table totals from the model.
 
@@ -67,8 +61,7 @@ becomes a zero-count inventory entry. The unit performs no filesystem I/O of its
 ### Dependencies
 
 - **DocDown.Core** — `IExtractionSink`, `ExtractionOptions`, `DocumentInfo`, `ContentFeature`,
-  `ImageHint`, `ImageTransform`, `ContentPart`, `ContentPartKind`, `ImageOutputMode`,
-  `ContentSplitMode`, and `ExtractionNote`.
+  `ImageHint`, `ImageTransform`, `ContentPart`, `ContentPartKind`, and `ExtractionNote`.
 - **`WordDocumentModel`, `WordBlock`, `WordImageRef`, `WordTableModel`, and
   `WordDocumentControlSection`** — the model and its supporting records.
 - **`WordMarkdownWriter` and `WordTableWriter`** — the rendering helpers used for content and

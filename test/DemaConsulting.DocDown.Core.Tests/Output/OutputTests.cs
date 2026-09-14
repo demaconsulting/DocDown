@@ -63,7 +63,7 @@ public class OutputTests
     ///     Proves the manifest parses and declares the new schema version.
     /// </summary>
     [Fact]
-    public async Task Output_ManifestContent_Written_ParsesWithSchemaVersionTwoPointZero()
+    public async Task Output_ManifestContent_Written_ParsesWithSchemaVersionThreePointZero()
     {
         // Arrange: a scratch folder and a simple text write
         using var temp = new TempScratch();
@@ -75,7 +75,7 @@ public class OutputTests
         var root = document.RootElement;
 
         // Assert: the manifest uses the reduced schema and omits the removed artifacts block
-        Assert.Equal("2.0", root.GetProperty("schemaVersion").GetString());
+        Assert.Equal("3.0", root.GetProperty("schemaVersion").GetString());
         Assert.True(root.TryGetProperty("status", out _));
         Assert.True(root.TryGetProperty("notes", out _));
         Assert.False(root.TryGetProperty("artifacts", out _));
@@ -271,13 +271,13 @@ public class OutputTests
         string scratchPath,
         Func<IExtractionSink, ValueTask> write)
     {
-        var options = new ExtractionOptions { TimestampUtc = FixedTimestamp };
+        var options = new ExtractionOptions();
         var folder = ScratchFolder.Prepare(scratchPath, options.ScratchFolder);
         var sink = new ExtractionSink(folder, options);
 
         // Let the scenario write through the sink, then finalize the standard artifacts
         await write(sink);
-        var content = await ContentWriter.WriteAsync(sink, options.ContentSplit, "Document", Ct);
+        var content = await ContentWriter.WriteAsync(sink, "Document", Ct);
         var report = BuildReport(temp, options);
         await ManifestWriter.WriteAsync(folder, sink, report, content, Ct);
         await MetadataWriter.WriteAsync(folder, sink, Ct);
@@ -299,7 +299,6 @@ public class OutputTests
         return new ExtractionReport(
             ExtractionOutcome.Produced,
             source,
-            "0000",
             detection,
             descriptor,
             environment,

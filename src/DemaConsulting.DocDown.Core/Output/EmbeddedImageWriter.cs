@@ -18,7 +18,7 @@ namespace DocDown.Core;
 ///     </para>
 ///     <para>
 ///         What this unit deliberately does not do is decide how to report the result: the vector
-///         readability caveat, the size-skip gap, and the unhonored force-PNG note carry
+///         readability caveat and the size-skip gap carry
 ///         backend-owned diagnostic codes and prose, so each backend inspects the returned accounting
 ///         and reports its own. This keeps the honesty policy uniform while leaving each backend its
 ///         own voice. Callers invoke this only when embedded-image extraction is enabled; suppression
@@ -34,13 +34,13 @@ public static class EmbeddedImageWriter
     ///     Writes the resolved images through the sink, honoring the caller's size limits.
     /// </summary>
     /// <param name="sink">The sink every kept image is written through. Must not be null.</param>
-    /// <param name="options">The effective options governing the size limits and output mode. Must not be null.</param>
+    /// <param name="options">The effective options governing the size limits. Must not be null.</param>
     /// <param name="images">The resolved images in document order, already deduplicated by package part. Must not be null.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
-    /// <returns>The accounting of what was found, written, skipped for size, written as a vector metafile, and left unconverted under a PNG request.</returns>
+    /// <returns>The accounting of what was found, written, skipped for size, and written as a vector metafile.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="sink"/>, <paramref name="options"/>, or <paramref name="images"/> is <see langword="null"/>.</exception>
     /// <remarks>
-    ///     Deduplicates by SHA-256 so <see cref="EmbeddedImageWriteResult.Found"/> counts each
+    ///     Deduplicates by content so <see cref="EmbeddedImageWriteResult.Found"/> counts each
     ///     distinct image once and a reused part never inflates the denominator, then applies the
     ///     dimension limit (for a raster image whose header can be read) and the byte limit before
     ///     writing. Side effect: writes images and reads from the sink.
@@ -60,7 +60,6 @@ public static class EmbeddedImageWriter
         var found = 0;
         var sizeSkipped = 0;
         var vectorWritten = 0;
-        var forcePngUnhonored = 0;
 
         // Merge the page associations of byte-identical images up front: two distinct package parts
         // that store the same bytes become one written file, so its referrer set is the union of both
@@ -143,19 +142,10 @@ public static class EmbeddedImageWriter
                 pathsBySourceRef[sourceRef] = path;
             }
 
-            // Account for each distinct written file once: a vector metafile carries a readability
-            // caveat, and a non-PNG file written under a PNG request could not be honored
-            if (writtenPaths.Add(path))
+            // Account for each distinct written file once: a vector metafile carries a readability caveat
+            if (writtenPaths.Add(path) && IsVectorMetafile(image.MediaType))
             {
-                if (IsVectorMetafile(image.MediaType))
-                {
-                    vectorWritten++;
-                }
-
-                if (options.ImageOutput == ImageOutputMode.ForcePng && !IsPng(image.MediaType))
-                {
-                    forcePngUnhonored++;
-                }
+                vectorWritten++;
             }
         }
 
@@ -166,8 +156,7 @@ public static class EmbeddedImageWriter
             PathsBySourceRef = pathsBySourceRef,
             SizeSkippedCount = sizeSkipped,
             SizeSkippedItems = sizeSkippedItems,
-            VectorWrittenCount = vectorWritten,
-            ForcePngUnhonoredCount = forcePngUnhonored
+            VectorWrittenCount = vectorWritten
         };
     }
 
@@ -240,15 +229,6 @@ public static class EmbeddedImageWriter
     }
 
     /// <summary>
-    ///     Reports whether an image media type names PNG.
-    /// </summary>
-    /// <param name="mediaType">The image media type.</param>
-    /// <returns><see langword="true"/> for <c>image/png</c>; otherwise <see langword="false"/>.</returns>
-    /// <remarks>Used to decide whether a force-PNG request was already satisfied by the stored bytes. Pure.</remarks>
-    private static bool IsPng(string mediaType) =>
-        mediaType.Equals("image/png", StringComparison.OrdinalIgnoreCase);
-
-    /// <summary>
     ///     Appends a reference to a bounded list, ignoring further items once the cap is reached.
     /// </summary>
     /// <param name="items">The list to append to.</param>
@@ -265,12 +245,12 @@ public static class EmbeddedImageWriter
 
 /// <summary>
 ///     The accounting of one embedded-image write pass: what was found, written, skipped for size,
-///     written as a vector metafile, and left unconverted under a PNG request.
+///     and written as a vector metafile.
 /// </summary>
 /// <remarks>
 ///     A backend turns this into its own gaps and diagnostics: it reports the found count, and — when
 ///     the corresponding count is non-zero — the vector readability caveat, the size-skip gap, and
-///     the unhonored force-PNG note. Immutable once constructed and thread-safe.
+///     Immutable once constructed and thread-safe.
 /// </remarks>
 public sealed class EmbeddedImageWriteResult
 {
@@ -291,7 +271,4 @@ public sealed class EmbeddedImageWriteResult
 
     /// <summary>Gets the number of distinct written files that are EMF or WMF vector metafiles.</summary>
     public required int VectorWrittenCount { get; init; }
-
-    /// <summary>Gets the number of distinct written files not in PNG form under a force-PNG request.</summary>
-    public required int ForcePngUnhonoredCount { get; init; }
 }

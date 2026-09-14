@@ -25,7 +25,7 @@ drift from the first.
 | --------- | --------- | ------ | ----------- |
 | `ExcelWorkbookModel` | Inbound, from the reader | .NET record | The pivot between reading and emission |
 | `IExtractionSink` | Outbound, from the emitter to Core | .NET interface | The only output channel |
-| `ExtractionOptions` | Inbound, from `IExtractionContext` | .NET record | Split mode, page request, image policy |
+| `ExtractionOptions` | Inbound, from `IExtractionContext` | .NET record | Page request and image size limits |
 
 ### Design
 
@@ -55,7 +55,7 @@ states how many plotted points were omitted.
 **The reporting rule.** The subsystem reports what DocDown extracted and where. Content inventory counts
 say what kinds of content were looked for and how many were found, including zero when the backend
 explicitly looked. A short plain note is reserved for an attempted step DocDown could not complete,
-such as an unreadable chart part or an image write the caller's limits or `ForcePng` request prevented.
+such as an unreadable chart part or an image write the caller's size limits prevented.
 A note never characterizes the workbook itself.
 
 **The unit split.** Two units divide the work along the boundaries their responsibilities draw:

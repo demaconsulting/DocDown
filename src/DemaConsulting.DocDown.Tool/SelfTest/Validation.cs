@@ -1,13 +1,7 @@
 using System.Runtime.InteropServices;
 using DemaConsulting.TestResults.IO;
 using DocDown.Core;
-using DocDown.Excel;
-using DocDown.Pdf;
-using DocDown.Pdf.Rendering;
-using DocDown.PowerPoint;
 using DocDown.Tool.Cli;
-using DocDown.Visio;
-using DocDown.Word;
 using TestResultsModel = DemaConsulting.TestResults;
 
 namespace DocDown.Tool.SelfTest;
@@ -21,11 +15,11 @@ namespace DocDown.Tool.SelfTest;
 ///     <para>
 ///         The tool's own checks run the CLI in-process with <c>--silent --log &lt;temp&gt;</c> and
 ///         assert on the captured log, exactly the mechanism the reference DEMA tool uses. The
-///         engine self-test union comes from <see cref="DocDownEngine.GetSelfTestCases"/>, which
-///         returns Core's cases followed by each registered backend's cases; the managed PDF
-///         backend contributes a parse round trip that runs and a page-rendering case that is
-///         skipped, and the rendering backend contributes a render round trip that runs where its
-///         native stack is available and is recorded as not-executed where it is not.
+///         engine self-test union comes from <see cref="DocDownEngine.GetSelfTestCases"/> on the
+///         engine the caller supplies, which returns Core's cases followed by each registered
+///         backend's cases. This unit knows nothing about which backends those are: <c>Program</c>
+///         owns registration, so the self-tests always exercise the same engine extraction uses, and
+///         the unit can be driven over a smaller engine without Office or a native stack.
 ///     </para>
 ///     <para>
 ///         A skipped case is emitted as
@@ -38,18 +32,22 @@ namespace DocDown.Tool.SelfTest;
 internal static class Validation
 {
     /// <summary>
-    ///     Runs self-validation and, when requested, writes the results file.
+    ///     Runs self-validation over the supplied engine and, when requested, writes the results file.
     /// </summary>
     /// <param name="context">The context carrying output routing and the requested results file.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is null.</exception>
+    /// <param name="engine">The engine whose registered backends contribute the self-test union.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> or <paramref name="engine"/> is null.</exception>
     /// <remarks>
-    ///     Each failed check and each unsupported results-file extension calls
+    ///     The engine is supplied rather than built here so the tool has exactly one place that
+    ///     decides which backends are registered — <c>Program.BuildEngine</c> — instead of two that
+    ///     must be kept in step. Each failed check and each unsupported results-file extension calls
     ///     <c>context.WriteError</c>, which drives the exit code to 1. A skipped case is not a
     ///     failure and does not affect the exit code.
     /// </remarks>
-    public static void Run(Context context)
+    public static void Run(Context context, DocDownEngine engine)
     {
         ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(engine);
 
         PrintValidationHeader(context);
 
@@ -63,7 +61,7 @@ internal static class Validation
         RunCliTest(context, testResults, "DocDownTool_Help", ["--help"], ContainsUsage);
 
         // The union of self-test cases every registered backend contributes
-        RunEngineSelfTests(context, testResults);
+        RunEngineSelfTests(context, testResults, engine);
 
         // Totals
         var total = testResults.Results.Count;
@@ -178,15 +176,15 @@ internal static class Validation
     /// </summary>
     /// <param name="context">The context for output.</param>
     /// <param name="testResults">The results collection to append to.</param>
+    /// <param name="engine">The engine whose registered backends contribute the cases.</param>
     /// <remarks>
-    ///     The engine is built exactly as the tool builds it for extraction —
-    ///     <c>new DocDownBuilder().AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().Build()</c> — so the self-tests
-    ///     exercise the same registration the tool actually uses. Each case runs in its own work folder.
+    ///     The caller supplies the engine, so the tool registers its backends in exactly one place
+    ///     and the self-tests necessarily exercise the same registration extraction uses. Each case
+    ///     runs in its own work folder.
     /// </remarks>
-    private static void RunEngineSelfTests(Context context, TestResultsModel.TestResults testResults)
+    private static void RunEngineSelfTests(
+        Context context, TestResultsModel.TestResults testResults, DocDownEngine engine)
     {
-        var engine = new DocDownBuilder().AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().Build();
-
         using var work = new TemporaryDirectory();
         foreach (var testCase in engine.GetSelfTestCases())
         {

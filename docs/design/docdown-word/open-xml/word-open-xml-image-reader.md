@@ -45,7 +45,7 @@ relationship id that does not resolve to an image part is a valid case and yield
 drawing. Other faults such as a corrupt or truncated part propagate to Core, which renders them as
 unreadable output.
 
-Deduplication is Core's job, keyed by SHA-256, so the same logo referenced many times is stored
+Deduplication is Core's job, keyed by image content, so the same logo referenced many times is stored
 once and every link resolves to it. This unit intentionally yields duplicate references when the
 document contains them.
 

@@ -37,7 +37,17 @@ not-executed, and surface the rendering backend's own self-test without reportin
 - **Inputs**: a PDF generated at test time; no committed binary fixtures and no network access
 - **Mocking**: none; the tests drive the real tool, the real engine, and the real PDF backend
 - **Isolation**: each test owns its temporary folder and its captured log, and cleans them on
-  dispose
+  dispose. The scenarios that assert on `--validate` output are the exception: they read one of two
+  shared runs, since each assertion is about a run's output rather than about launching one.
+- **Office automation**: these are the suite's only `--validate` runs through the real command
+  line, and therefore the only place Microsoft Visio and Microsoft PowerPoint are actually driven.
+  On a machine where those applications are installed the COM render cases must genuinely execute
+  and pass — a skip there would mean the suite had stopped testing the COM boundary. Unit-level
+  assertions about `--validate` use a managed engine instead and start no application.
+- **Concurrency**: the two runs share a class fixture, so xUnit already runs them one at a time; a
+  session-scoped harness gate covers the three target-framework processes, which the framework
+  cannot reach. The queue is two runs per assembly, so a run waits seconds rather than minutes. The
+  gate is the suite's, not the tool's: a user runs `--validate` once and contends with nothing.
 
 ## Acceptance Criteria
 

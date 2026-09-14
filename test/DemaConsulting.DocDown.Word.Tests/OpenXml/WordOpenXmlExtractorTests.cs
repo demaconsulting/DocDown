@@ -14,9 +14,6 @@ namespace DemaConsulting.DocDown.Word.Tests.OpenXml;
 /// </summary>
 public class WordOpenXmlExtractorTests
 {
-    /// <summary>A fixed timestamp for reproducible output.</summary>
-    private static readonly DateTimeOffset FixedTimestamp = new(2026, 1, 2, 3, 4, 5, TimeSpan.Zero);
-
     /// <summary>Gets the ambient test cancellation token.</summary>
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -37,22 +34,6 @@ public class WordOpenXmlExtractorTests
         Assert.True(availability.IsAvailable);
         Assert.False(availability.ProvidesRenderedPages);
         Assert.Null(availability.UnavailableReason);
-    }
-
-    /// <summary>
-    ///     Proves a force-PNG request that cannot be honored is explained by a note rather than hidden.
-    /// </summary>
-    [Fact]
-    public async Task WordOpenXmlExtractor_Extract_ForcePng_ReportsUnhonoredModeNote()
-    {
-        using var temp = new TempScratch();
-        var scratch = await ExtractAsync(temp, "images.docx", DocxFixtures.DocumentWithImage(),
-            options => options.ImageOutput = ImageOutputMode.ForcePng);
-
-        Assert.Equal(ExtractionOutcome.Produced, scratch.Result.Outcome);
-        Assert.Contains(scratch.Result.Notes, note => note.Message.Contains("PNG output was requested", StringComparison.Ordinal));
-        Assert.Contains(scratch.Result.Notes, note => note.Message.Contains("source encoding", StringComparison.Ordinal));
-        ContractAssert.LayoutPresent(scratch.Folder);
     }
 
     /// <summary>
@@ -128,22 +109,6 @@ public class WordOpenXmlExtractorTests
     }
 
     /// <summary>
-    ///     Proves per-part mode splits the document at every top-level heading.
-    /// </summary>
-    [Fact]
-    public async Task WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1()
-    {
-        using var temp = new TempScratch();
-        var scratch = await ExtractAsync(temp, "twoparts.docx", DocxFixtures.DocumentWithTwoSections(),
-            options => options.ContentSplit = ContentSplitMode.PerPart);
-
-        var partsDir = Path.Combine(scratch.Folder, "parts");
-        Assert.True(Directory.Exists(partsDir), "a parts/ folder should exist for per-part mode");
-        Assert.True(Directory.GetFiles(partsDir).Length >= 2, "each Heading 1 should become a part");
-        ContractAssert.LayoutPresent(scratch.Folder);
-    }
-
-    /// <summary>
     ///     Proves a header logo identical to a body image reuses one deduplicated image path.
     /// </summary>
     [Fact]
@@ -176,24 +141,20 @@ public class WordOpenXmlExtractorTests
     }
 
     /// <summary>
-    ///     Proves that under <c>--split per-part</c> an image-bearing document's inline image links
-    ///     resolve on disk from their own <c>parts/*.md</c> files, end to end through the engine.
+    ///     Proves an image-bearing document's inline image links resolve on disk from the root
+    ///     <c>content.md</c>, end to end through the engine.
     /// </summary>
     /// <remarks>
-    ///     Word splits at each Heading 1 under per-part, routing the image into a <c>parts/</c> file
-    ///     where the root-relative <c>images/…</c> link would dangle without the Core write-path
-    ///     rewrite. Resolving every link against its containing file pins that the single Core fix also
-    ///     covers Word — the class of check that would have caught the defect.
+    ///     A Word document is one continuous flow, so its image links stay root-relative and must
+    ///     resolve from the scratch root exactly as written.
     /// </remarks>
     [Fact]
-    public async Task WordOpenXmlExtractor_Extract_PerPartImageLinks_ResolveOnDisk()
+    public async Task WordOpenXmlExtractor_Extract_ImageLinks_ResolveOnDisk()
     {
         using var temp = new TempScratch();
-        var scratch = await ExtractAsync(temp, "images.docx", DocxFixtures.DocumentWithImage(),
-            options => options.ContentSplit = ContentSplitMode.PerPart);
+        var scratch = await ExtractAsync(temp, "images.docx", DocxFixtures.DocumentWithImage());
 
-        // The image lands in a parts/ file; every inline link must resolve from its own directory
-        Assert.True(Directory.Exists(Path.Combine(scratch.Folder, "parts")), "per-part mode should create parts/");
+        // Every inline link must resolve from the directory of the file that carries it
         var resolved = MarkdownImageLinks.AssertAllImageLinksResolveOnDisk(scratch.Folder);
         Assert.True(resolved >= 1);
         ContractAssert.LayoutPresent(scratch.Folder);
@@ -214,7 +175,7 @@ public class WordOpenXmlExtractorTests
         var input = Path.Combine(temp.Path, name);
         await File.WriteAllBytesAsync(input, bytes, Ct);
         var scratch = Path.Combine(temp.Path, "out-" + Path.GetFileNameWithoutExtension(name));
-        var options = new ExtractionOptions { TimestampUtc = FixedTimestamp };
+        var options = new ExtractionOptions();
         configure?.Invoke(options);
         var result = await engine.ExtractAsync(DocumentSource.FromFile(input), scratch, options, Ct);
         return (scratch, result);

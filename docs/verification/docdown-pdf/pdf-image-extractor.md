@@ -86,15 +86,15 @@ the encoding, count, and consequence. Evidence for
 Proves byte and dimension limits each produce a size-oriented note rather than a decode-failure
 note. Evidence for `DocDownPdf-PdfImageExtractor-HonorsSizeLimits`.
 
-#### A PNG request that cannot be honored is explained, and one that can be honored is not
+#### An image stored as a complete file is written in its own encoding with nothing to report
 
-**Tests**: `PdfImageExtractor_Extract_ForcePngWithJpeg_ReportsUnhonoredModeNote`,
-`PdfImageExtractor_Extract_ForcePngWithJpxImage_ReportsUnhonoredModeNoteNamingJpx`,
-`PdfImageExtractor_Extract_ForcePngWithFlateImage_ReportsNoUnhonoredNote`
+**Tests**: `PdfImageExtractor_Extract_JpegImage_WritesSourceEncodingWithoutNote`,
+`PdfImageExtractor_Extract_Jpeg2000Image_WritesSourceEncodingWithoutNote`
 
-Proves the note names the encodings that prevented PNG output and that no note is emitted when the
-requested PNG output mode was genuinely honored. Evidence for
-`DocDownPdf-PdfImageExtractor-NotesUnhonoredForcePng`.
+Prove a JPEG and a JPEG 2000 codestream are each delivered in the encoding the document stored them
+in, with no note, because nothing was attempted that could not complete. Evidence for
+`DocDownPdf-PdfImageExtractor-JpegPassthrough` and
+`DocDownPdf-PdfImageExtractor-WritesJpeg2000Passthrough`.
 
 #### Disabling embedded images attempts nothing
 

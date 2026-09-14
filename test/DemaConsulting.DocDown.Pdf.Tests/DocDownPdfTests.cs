@@ -34,9 +34,6 @@ namespace DemaConsulting.DocDown.Pdf.Tests;
 /// </remarks>
 public class DocDownPdfTests
 {
-    /// <summary>A fixed timestamp used to make output byte-reproducible across runs.</summary>
-    private static readonly DateTimeOffset FixedTimestamp = new(2024, 1, 2, 3, 4, 5, TimeSpan.Zero);
-
     /// <summary>Gets the ambient test cancellation token so async calls stay responsive to cancellation.</summary>
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -233,42 +230,36 @@ public class DocDownPdfTests
     }
 
     /// <summary>
-    ///     Proves a PNG-output request that cannot be honored is explained rather than hidden.
+    ///     Proves an embedded JPEG is written in the encoding the document stored it in.
     /// </summary>
     /// <remarks>
-    ///     Core's naming rule already guarantees the file on disk is not mislabeled — the extension
-    ///     follows the bytes written. What this scenario adds is the explanation: a caller who asked
-    ///     for PNG and received JPEG is told which images were affected and why, so the unhonored
-    ///     option is visible rather than silently absorbed.
+    ///     Core's naming rule guarantees the file on disk is not mislabeled — the extension follows
+    ///     the bytes written. DocDown does not re-encode images, so the extracted file is the
+    ///     document's own JPEG and there is nothing to explain.
     /// </remarks>
     [Fact]
-    public async Task DocDownPdf_Extract_ForcePngWithJpegImage_ExplainsUnhonoredMode()
+    public async Task DocDownPdf_Extract_JpegImage_WritesDocumentsOwnEncoding()
     {
-        // Arrange: a JPEG-bearing document extracted with PNG output demanded
+        // Arrange: a JPEG-bearing document
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "jpeg.pdf", PdfFixtures.WithEmbeddedJpeg());
         var scratch = Path.Combine(temp.Path, "out");
         var options = FixedOptions();
-        options.ImageOutput = ImageOutputMode.ForcePng;
 
-        // Act: extract with an output mode that cannot be honored
+        // Act: extract with the default image policy
         var result = await engine.ExtractAsync(input, scratch, options, Ct);
 
-        // Assert: the file on disk still describes its own bytes truthfully
+        // Assert: the file on disk describes its own bytes truthfully
         var written = Assert.Single(Directory.GetFiles(Path.Combine(scratch, "images")));
         Assert.EndsWith(".jpg", written, StringComparison.Ordinal);
         using var manifest = await ReadManifestAsync(scratch);
         var entry = Assert.Single(manifest.RootElement.GetProperty("images").EnumerateArray().ToList());
         Assert.Equal("image/jpeg", entry.GetProperty("mediaType").GetString());
 
-        // Assert: and the run explains, rather than hides, that PNG could not be produced
+        // Assert: nothing was attempted that could not complete, so there is no note
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
-        var note = Assert.Single(result.Notes).Message;
-        Assert.Contains("PNG output was requested", note, StringComparison.Ordinal);
-        Assert.Contains("DCTDecode: 1", note, StringComparison.Ordinal);
-        var summary = Normalize(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
-        Assert.Contains("PNG output was requested", summary, StringComparison.Ordinal);
+        Assert.Empty(result.Notes);
         ContractAssert.LayoutPresent(scratch);
     }
 
@@ -500,7 +491,8 @@ public class DocDownPdfTests
     }
 
     /// <summary>
-    ///     Proves two runs over the same document at a fixed timestamp produce byte-identical artifacts.
+    ///     Proves two runs over the same document produce artifacts that differ in nothing but the
+    ///     extraction timestamp.
     /// </summary>
     [Fact]
     public async Task DocDownPdf_Extract_SameDocumentTwice_ProducesByteIdenticalArtifacts()
@@ -511,18 +503,27 @@ public class DocDownPdfTests
         var input = WriteFixture(temp, "mixed.pdf", PdfFixtures.WithJpeg2000Image());
         var scratch = Path.Combine(temp.Path, "out");
 
-        // Act: run twice with the same fixed timestamp, snapshotting the first run's artifacts
+        // Act: run twice, snapshotting the first run's artifacts
         await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
         var snapshot = Path.Combine(temp.Path, "snapshot");
         CopyTree(scratch, snapshot);
         await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
-        // Assert: every artifact, including the gap text and the extracted images, is byte-identical
+        // Assert: every artifact, including the note text and the extracted images, is unchanged
+        // apart from the wall-clock stamp the two runs necessarily differ in
         var expected = Directory.GetFiles(snapshot, "*", SearchOption.AllDirectories);
         Assert.NotEmpty(expected);
         foreach (var file in expected)
         {
-            ContractAssert.FileEquals(file, Path.Combine(scratch, Path.GetRelativePath(snapshot, file)));
+            var actual = Path.Combine(scratch, Path.GetRelativePath(snapshot, file));
+            if (Path.GetExtension(file) is ".txt" or ".json" or ".md")
+            {
+                ContractAssert.FileEqualsIgnoringTimestamp(file, actual);
+            }
+            else
+            {
+                ContractAssert.FileEquals(file, actual);
+            }
         }
     }
 
@@ -790,7 +791,7 @@ public class DocDownPdfTests
     /// </summary>
     /// <returns>An options instance with a fixed timestamp.</returns>
     /// <remarks>Injecting the timestamp is what makes the determinism scenario a real comparison.</remarks>
-    private static ExtractionOptions FixedOptions() => new() { TimestampUtc = FixedTimestamp };
+    private static ExtractionOptions FixedOptions() => new();
 
     /// <summary>
     ///     Materializes a generated fixture as a file on disk.

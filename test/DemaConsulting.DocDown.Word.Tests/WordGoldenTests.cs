@@ -28,12 +28,10 @@ namespace DemaConsulting.DocDown.Word.Tests;
 /// </remarks>
 public class WordGoldenTests
 {
-    /// <summary>A fixed timestamp so the rendered header is reproducible across runs.</summary>
-    private static readonly DateTimeOffset FixedTimestamp = new(2026, 1, 2, 3, 4, 5, TimeSpan.Zero);
-
     /// <summary>The line prefixes whose values are machine-specific and are normalized away.</summary>
     private static readonly (string Prefix, string Placeholder)[] VariableLines =
     [
+        ("Extracted (UTC) : ", "Extracted (UTC) : <timestamp>"),
         ("Scratch folder  : ", "Scratch folder  : <scratch-folder>"),
         ("Source document : ", "Source document : <source-document>"),
         ("  Operating system   : ", "  Operating system   : <operating-system>"),
@@ -86,7 +84,7 @@ public class WordGoldenTests
         var input = Path.Combine(temp.Path, fixtureName);
         await File.WriteAllBytesAsync(input, bytes, Ct);
         var scratch = Path.Combine(temp.Path, "out");
-        var options = new ExtractionOptions { TimestampUtc = FixedTimestamp };
+        var options = new ExtractionOptions();
 
         await engine.ExtractAsync(DocumentSource.FromFile(input), scratch, options, Ct);
 

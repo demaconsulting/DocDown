@@ -530,38 +530,21 @@ public class ExcelContentEmitterTests
 
     /// <summary>
     ///     Proves an Excel workbook's inline image links resolve on disk from their <c>parts/*.md</c>
-    ///     files under the default Auto layout — the exact default-mode defect this fix targets.
+    ///     files — the exact defect this fix targets.
     /// </summary>
     /// <remarks>
-    ///     Excel always writes each sheet through <c>AddContentPartAsync</c>, so even the default Auto
-    ///     mode routes every sheet into <c>parts/</c>. This drives the real <see cref="ExtractionSink"/>
+    ///     Excel always writes each sheet through <c>AddContentPartAsync</c>, so every sheet is
+    ///     routed into <c>parts/</c>. This drives the real <see cref="ExtractionSink"/>
     ///     + <see cref="ContentWriter"/> over a temp folder and resolves each link against its own
     ///     file, catching the dangling <c>parts/images/…</c> that string assertions missed.
     /// </remarks>
     [Fact]
-    public async Task ExcelContentEmitter_Emit_AutoImageLinks_ResolveOnDisk()
+    public async Task ExcelContentEmitter_Emit_ImageLinks_ResolveOnDisk()
     {
-        // Act: emit an image-bearing workbook and finalize in the default Auto layout (parts/)
-        var resolved = await EmitAndResolveLinksAsync(ContentSplitMode.Auto);
+        // Act: emit an image-bearing workbook and finalize into parts/
+        var resolved = await EmitAndResolveLinksAsync();
 
         // Assert: at least one image link was checked and all resolved on disk
-        Assert.True(resolved >= 1);
-    }
-
-    /// <summary>
-    ///     Proves the same inline image links resolve on disk under <c>--split per-part</c>.
-    /// </summary>
-    /// <remarks>
-    ///     PerPart also routes each sheet into <c>parts/</c>; this pins that both split modes yield
-    ///     on-disk-resolvable links from the single Core write-path fix.
-    /// </remarks>
-    [Fact]
-    public async Task ExcelContentEmitter_Emit_PerPartImageLinks_ResolveOnDisk()
-    {
-        // Act: emit and finalize as explicit per-part files
-        var resolved = await EmitAndResolveLinksAsync(ContentSplitMode.PerPart);
-
-        // Assert: every image link resolved from its own part file
         Assert.True(resolved >= 1);
     }
 
@@ -569,16 +552,15 @@ public class ExcelContentEmitterTests
     ///     Emits an image-bearing workbook through a real sink and content writer, then asserts every
     ///     inline image link resolves on disk.
     /// </summary>
-    /// <param name="split">The content split mode to emit and finalize under.</param>
     /// <returns>The number of local resource links that were checked and resolved.</returns>
     /// <remarks>
     ///     Uses a real <see cref="ExtractionSink"/> over a temporary scratch folder so the image bytes
     ///     and sheet part files reach disk and link resolution is genuine rather than a string check.
     /// </remarks>
-    private static async Task<int> EmitAndResolveLinksAsync(ContentSplitMode split)
+    private static async Task<int> EmitAndResolveLinksAsync()
     {
         using var temp = new TempScratch();
-        var options = new ExtractionOptions { IncludeEmbeddedImages = true, ContentSplit = split };
+        var options = new ExtractionOptions { IncludeEmbeddedImages = true };
         var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, options);
         var image = new EmbeddedImage([1, 2, 3, 4], "image/png",
@@ -588,7 +570,7 @@ public class ExcelContentEmitterTests
         var model = new ExcelWorkbookModel([sheet], [image]);
 
         await ExcelContentEmitter.EmitAsync(sink, options, model, Ct);
-        await ContentWriter.WriteAsync(sink, split, "Workbook", Ct);
+        await ContentWriter.WriteAsync(sink, "Workbook", Ct);
 
         return MarkdownImageLinks.AssertAllImageLinksResolveOnDisk(folder.AbsolutePath);
     }

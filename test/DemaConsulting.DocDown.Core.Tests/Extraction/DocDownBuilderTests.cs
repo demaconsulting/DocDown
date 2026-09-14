@@ -68,7 +68,6 @@ public class DocDownBuilderTests
             {
                 options.RenderPages = true;
                 options.IncludeEmbeddedImages = false;
-                options.TimestampUtc = DateTimeOffset.UnixEpoch;
             })
             .Build();
         var input = temp.CreateFile("document.txt", "hello world");

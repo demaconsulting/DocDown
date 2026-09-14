@@ -17,7 +17,7 @@ Its key fields are:
 
 - **`_folder`** — the `ScratchFolder` containment gate.
 - **`_options`** — the cloned effective `ExtractionOptions`.
-- **`_images`** and **`_imageByDigest`** — image inventory and SHA-256 deduplication index.
+- **`_images`** and **`_imageByDigest`** — image inventory and content-keyed deduplication index.
 - **`_pages`** and **`_pageIndex`** — rendered pages keyed by document page number.
 - **`_parts`** — buffered content parts.
 - **`_content`** — buffered single-flow markdown.
@@ -29,7 +29,7 @@ Its key fields are:
 
 #### Key Methods
 
-- **`AddImageAsync`** — buffers image bytes, deduplicates by SHA-256, allocates a safe
+- **`AddImageAsync`** — buffers image bytes, deduplicates by content key, allocates a safe
   ordinal-prefixed path, and writes the bytes through `ScratchFolder`. When images are disabled it
   returns `string.Empty` and writes nothing.
 - **`AddPageAsync`** — writes `pages/pageNNNN.png`, where `NNNN` is the 1-based source page number.
@@ -55,7 +55,7 @@ never be empty.
 - **`ExtractionOptions`**, **`ImageHint`**, **`ContentPart`**, **`ContentFeature`**,
   **`DocumentInfo`**, **`DocumentMetadata`**, **`ExtractionNote`**, and **`EnvironmentFact`** —
   supporting types.
-- `System.Security.Cryptography` — SHA-256 deduplication.
+- `System.Security.Cryptography` — the SHA-256 content key used only for deduplication; no digest is published.
 
 #### Callers
 

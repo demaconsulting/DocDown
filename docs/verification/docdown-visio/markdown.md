@@ -12,8 +12,8 @@ Every emission decision is driven from a hand-built `VisioDocumentModel` with no
 so each mapping decision is proved in isolation: the page name heading, shape-text list, directed
 `source -> target` edge list, omission and counting of bare-callout shapes and edges between
 unidentified shapes, multi-line shape text kept inside its list item, inline image links that
-resolve on disk under both single-flow and per-part split modes, looked-for content inventory,
-force-PNG note reporting, empty-drawing zero inventory, and the labeling convention in content. The
+resolve on disk, looked-for content inventory,
+empty-drawing zero inventory, and the labeling convention in content. The
 shape labeler is asserted directly for every rendered label form.
 
 The endpoint-label provenance the shape labeler carries exceeds the original Visio intent, which
@@ -34,7 +34,7 @@ Per IEC 62304 §5.6.2, a Markdown subsystem test run passes when the emitter wri
 name, shape text, and directed topology; omits and counts bare-callout shapes and edges between
 unidentified shapes; keeps multi-line shape text intact inside its item; links images only when a
 path was returned; reports looked-for counts for pages, labeled shapes, and connections; records a
-plain note for an unhonored force-PNG request; writes empty content plus zero-count inventory for an
+writes empty content plus zero-count inventory for an
 empty drawing; and states the labeling convention in content only when needed. The shape labeler
 must render authored text verbatim, a master type parenthesized with the shape id, and a bare shape
 id where neither exists, refusing connective masters. Any silent omission, truncated text, dangling

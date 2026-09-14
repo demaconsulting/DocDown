@@ -4,14 +4,13 @@ namespace DocDown.Core;
 ///     The root data-transfer object for <c>manifest.json</c>: the machine-readable twin of the
 ///     human-readable summary.
 /// </summary>
-/// <param name="SchemaVersion">The manifest schema version (for example <c>2.0</c>).</param>
+/// <param name="SchemaVersion">The manifest schema version (for example <c>3.0</c>).</param>
 /// <param name="Tool">Identifies the tool and package that produced the manifest.</param>
 /// <param name="ScratchFolder">The absolute scratch folder the extraction wrote to.</param>
 /// <param name="ExtractedAtUtc">The extraction timestamp in ISO-8601 UTC form.</param>
 /// <param name="Status">The overall status as a camelCase string (<c>produced</c> or <c>unreadable</c>).</param>
 /// <param name="Source">Provenance for the source document.</param>
 /// <param name="Extractor">The selected extractor, or <see langword="null"/> when none was selected.</param>
-/// <param name="Environment">The environment the extraction ran in.</param>
 /// <param name="Document">Document-level metadata.</param>
 /// <param name="ContentFeatures">
 ///     The counted structural features of the extracted content (headings, tables, comments, and
@@ -25,7 +24,6 @@ namespace DocDown.Core;
 ///     Plain-language notes for any step DocDown attempted but could not complete. Empty when
 ///     nothing was left incomplete.
 /// </param>
-/// <param name="RequestedOptions">The options the extraction was requested with.</param>
 /// <param name="Failure">The structured failure, or <see langword="null"/> when the extraction produced output.</param>
 /// <remarks>
 ///     <para>
@@ -49,14 +47,12 @@ public sealed record ExtractionManifest(
     string Status,
     ManifestSource Source,
     ManifestExtractor? Extractor,
-    ManifestEnvironment Environment,
     ManifestDocument Document,
     IReadOnlyList<ManifestContentFeature> ContentFeatures,
     IReadOnlyList<ManifestImage> Images,
     IReadOnlyList<ManifestPage> Pages,
     IReadOnlyList<ManifestPart> Parts,
     IReadOnlyList<string> Notes,
-    ManifestOptions RequestedOptions,
     ManifestFailure? Failure);
 
 /// <summary>
@@ -76,19 +72,16 @@ public sealed record ManifestTool(string Name, string Package);
 /// <param name="Path">The source file path, or <see langword="null"/> for a stream source.</param>
 /// <param name="FileName">The source file name.</param>
 /// <param name="SizeBytes">The source size in bytes, or <see langword="null"/> when unknown.</param>
-/// <param name="Sha256">The SHA-256 of the source bytes, or <see langword="null"/> when not computed.</param>
 /// <param name="Format">The detected format identifier (for example <c>pdf</c>).</param>
 /// <param name="MediaType">The detected media type (for example <c>application/pdf</c>).</param>
 /// <param name="DetectionBasis">The detection basis as a camelCase string (for example <c>contentSignature</c>).</param>
 /// <remarks>
-///     Captures enough to identify and re-locate the input, and to verify integrity via the
-///     hash. Immutable and thread-safe.
+///     Captures enough to identify and re-locate the input. Immutable and thread-safe.
 /// </remarks>
 public sealed record ManifestSource(
     string? Path,
     string FileName,
     long? SizeBytes,
-    string? Sha256,
     string Format,
     string MediaType,
     string DetectionBasis);
@@ -109,38 +102,6 @@ public sealed record ManifestExtractor(
     string DisplayName,
     string? Package,
     int Priority);
-
-/// <summary>
-///     The environment description as recorded in a manifest.
-/// </summary>
-/// <param name="OperatingSystem">The operating system description.</param>
-/// <param name="ProcessArchitecture">The process architecture.</param>
-/// <param name="RuntimeVersion">The runtime/framework description.</param>
-/// <param name="RuntimeIdentifier">The runtime identifier (RID).</param>
-/// <param name="Facts">The contributed environment facts in emission order.</param>
-/// <remarks>
-///     Makes an incomplete result reproducible by recording the platform context that governed
-///     capability availability. Immutable and thread-safe.
-/// </remarks>
-public sealed record ManifestEnvironment(
-    string OperatingSystem,
-    string ProcessArchitecture,
-    string RuntimeVersion,
-    string RuntimeIdentifier,
-    IReadOnlyList<ManifestEnvironmentFact> Facts);
-
-/// <summary>
-///     A single environment fact as recorded in a manifest.
-/// </summary>
-/// <param name="Source">The contributing component that reported the fact.</param>
-/// <param name="Key">The fact key.</param>
-/// <param name="Value">The fact value or description.</param>
-/// <param name="Available">The tri-state availability flag, or <see langword="null"/> when not applicable.</param>
-/// <remarks>
-///     Explains why a capability was or was not available in this environment, attributed to the
-///     component that reported it. Immutable and thread-safe.
-/// </remarks>
-public sealed record ManifestEnvironmentFact(string Source, string Key, string Value, bool? Available);
 
 /// <summary>
 ///     Document-level metadata as recorded in a manifest.
@@ -176,7 +137,6 @@ public sealed record ManifestContentFeature(string Label, int Count);
 /// <param name="WidthPx">The image width in pixels, or <see langword="null"/> when unknown.</param>
 /// <param name="HeightPx">The image height in pixels, or <see langword="null"/> when unknown.</param>
 /// <param name="SizeBytes">The image size in bytes.</param>
-/// <param name="Sha256">The SHA-256 of the image bytes.</param>
 /// <param name="SourcePage">
 ///     The first (lowest) 1-based referrer, or <see langword="null"/> when none; a convenience alias
 ///     for the first entry of <paramref name="SourcePages"/>, kept for consumers reading only the scalar.
@@ -221,7 +181,6 @@ public sealed record ManifestImage(
     int? WidthPx,
     int? HeightPx,
     long SizeBytes,
-    string Sha256,
     int? SourcePage,
     IReadOnlyList<int> SourcePages,
     bool ReferencedByTemplate,
@@ -237,12 +196,10 @@ public sealed record ManifestImage(
 /// <param name="Path">The relative path to the rendered page image.</param>
 /// <param name="PageNumber">The 1-based document page number.</param>
 /// <param name="SizeBytes">The page image size in bytes.</param>
-/// <param name="Sha256">The SHA-256 of the page image bytes.</param>
 /// <remarks>
-///     Maps each rendered page file back to its source page number and records its integrity
-///     hash. Immutable and thread-safe.
+///     Maps each rendered page file back to its source page number. Immutable and thread-safe.
 /// </remarks>
-public sealed record ManifestPage(string Path, int PageNumber, long SizeBytes, string Sha256);
+public sealed record ManifestPage(string Path, int PageNumber, long SizeBytes);
 
 /// <summary>
 ///     A split content part as recorded in a manifest.
@@ -257,33 +214,6 @@ public sealed record ManifestPage(string Path, int PageNumber, long SizeBytes, s
 ///     navigated in order. Immutable and thread-safe.
 /// </remarks>
 public sealed record ManifestPart(string Path, string Kind, int Ordinal, string? Title, int? CharacterCount);
-
-/// <summary>
-///     The requested options as recorded in a manifest.
-/// </summary>
-/// <param name="RenderPages">Whether page rendering was requested.</param>
-/// <param name="Pages">The requested page range as a string (for example <c>1-12</c>), or <see langword="null"/> for all pages.</param>
-/// <param name="IncludeEmbeddedImages">Whether embedded-image extraction was requested.</param>
-/// <param name="ImageOutput">The image output mode as a camelCase string (for example <c>preserve</c>).</param>
-/// <param name="MaxImageDimensionPx">The maximum image dimension in pixels, or <see langword="null"/> for no limit.</param>
-/// <param name="MaxImageBytes">The maximum image size in bytes, or <see langword="null"/> for no limit.</param>
-/// <param name="PageRenderDpi">The page render DPI.</param>
-/// <param name="ContentSplit">The content split mode as a camelCase string (for example <c>auto</c>).</param>
-/// <param name="ScratchFolder">The scratch-folder mode as a camelCase string (for example <c>cleanIfDocDownFolder</c>).</param>
-/// <remarks>
-///     Records exactly what was asked for so the manifest is self-describing and a run can be
-///     reproduced. Immutable and thread-safe.
-/// </remarks>
-public sealed record ManifestOptions(
-    bool RenderPages,
-    string? Pages,
-    bool IncludeEmbeddedImages,
-    string ImageOutput,
-    int? MaxImageDimensionPx,
-    long? MaxImageBytes,
-    int PageRenderDpi,
-    string ContentSplit,
-    string ScratchFolder);
 
 /// <summary>
 ///     A plain-language failure as recorded in a manifest.

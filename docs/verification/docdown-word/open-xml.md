@@ -39,8 +39,7 @@ simulation of one.
 Per IEC 62304 §5.6.2, an OpenXml subsystem test run passes when the extractor reports its managed
 availability, supports `.docx`, returns `Produced` for readable modern documents, reports zero text
 blocks for an empty document rather than a separate note, writes a vector image unchanged, writes a
-force-PNG request as source-encoded images together with a short note, writes a merged-cell
-document together with a table-flattening note, produces split content on `PerPart`, and exposes
+merged-cell document together with a table-flattening note, and exposes
 two honest self-test cases; when the reader maps styled paragraphs, lists, and tables into
 structured blocks, builds a Document Control section from header content, omits page-number-only
 footer content from that section, deduplicates identical headers, renders tracked changes in the
@@ -58,8 +57,8 @@ chapters.
 
 **Test**: `WordOpenXmlExtractor_Descriptor_HasPriority10AndManagedAvailability`
 
-Proves the descriptor directly. The extraction-time behavior — force-PNG note, empty-document
-inventory, split output, vector passthrough, table-flattening note, and self-tests — is given in
+Proves the descriptor directly. The extraction-time behavior — empty-document inventory, the
+content flow, vector passthrough, the table-flattening note, and the self-tests — is given in
 the *WordOpenXmlExtractor Verification Design*. Evidence for `DocDownWord-OpenXml-Extraction`.
 
 #### The reader turns a document into the backend-neutral model

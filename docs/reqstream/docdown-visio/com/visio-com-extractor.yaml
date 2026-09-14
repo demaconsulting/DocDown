@@ -121,3 +121,4 @@ sections:
                 tests:
                   - VisioComExtractor_GetSelfTestCases_ReturnsAvailabilityAndRenderCases
                   - VisioComExtractor_RenderSelfTest_UnavailableBackend_SkipsWithReason
+                  - DocDownTool_Validate_ComRenderCases_ExecuteAndPassWhereOfficeIsInstalled

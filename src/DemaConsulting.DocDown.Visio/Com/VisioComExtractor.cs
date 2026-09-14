@@ -50,14 +50,6 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
     /// <remarks>Releasing the last reference asks the host to unwind, which is not instantaneous; a few seconds separates an ordinary teardown from an orphaned process.</remarks>
     private const int ProcessExitGraceMilliseconds = 10000;
 
-    /// <summary>The name of the machine-wide gate that keeps two Visio render self-tests from running at once.</summary>
-    /// <remarks>Session-scoped because every process that could collide — a tool run, a test host — runs in the caller's own logon session.</remarks>
-    private const string RenderSelfTestGateName = @"Local\DocDown.Visio.Com.RenderSelfTest";
-
-    /// <summary>How long the render self-test waits for the gate before reporting that the machine was busy.</summary>
-    /// <remarks>Matched to the adapter's own render timeout, so a waiting case outlives one complete render by another.</remarks>
-    private static readonly TimeSpan RenderSelfTestGateWait = TimeSpan.FromMinutes(5);
-
     /// <summary>The Visio 2012 main XML namespace every part of the self-test drawing uses.</summary>
     private static readonly XNamespace VisioNamespace = "http://schemas.microsoft.com/office/visio/2012/main";
 
@@ -326,7 +318,7 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
         try
         {
             File.WriteAllBytes(path, BuildSelfTestDrawing());
-            return RenderExclusively(path, started);
+            return RenderAndInspect(path, started);
         }
 #pragma warning disable CA1031 // A self-test reports every fault as data rather than throwing at its caller
         catch (Exception exception)
@@ -341,51 +333,6 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
             // The case owns this drawing, so it removes it on every path rather than leaving it for
             // the work folder's own cleanup
             TryDelete(path);
-        }
-    }
-
-    /// <summary>Renders the self-test drawing with no other render self-test running on this machine.</summary>
-    /// <param name="path">The absolute path of the synthetic drawing to render.</param>
-    /// <param name="started">When the case started, so the result carries a true duration.</param>
-    /// <returns>The case result.</returns>
-    /// <remarks>
-    ///     Microsoft Visio automation shares one host per session, so two self-tests running at once
-    ///     would tear each other's session down and each would see the other's process. A
-    ///     machine-wide gate makes the case answer for its own render only. This is concurrency, not
-    ///     process management: the adapter's own watchdog still bounds the render and still
-    ///     terminates a hung host. Waiting is bounded, and a case that cannot get the gate says so
-    ///     rather than reporting a false failure.
-    /// </remarks>
-    [SupportedOSPlatform("windows")]
-    private static SelfTestResult RenderExclusively(string path, DateTimeOffset started)
-    {
-        using var gate = new Mutex(initiallyOwned: false, RenderSelfTestGateName);
-
-        bool held;
-        try
-        {
-            held = gate.WaitOne(RenderSelfTestGateWait);
-        }
-        catch (AbandonedMutexException)
-        {
-            // A previous holder exited without releasing; the gate is ours and the machine is free
-            held = true;
-        }
-
-        if (!held)
-        {
-            return SelfTestResult.Skipped(
-                "Another DocDown render self-test was still using Microsoft Visio on this machine, "
-                + "so this page render was not attempted.");
-        }
-
-        try
-        {
-            return RenderAndInspect(path, started);
-        }
-        finally
-        {
-            gate.ReleaseMutex();
         }
     }
 

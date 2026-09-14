@@ -21,7 +21,17 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 # [PROJECT-SPECIFIC] Add additional build steps here.
 
 Write-Host "Running unit tests..."
-dotnet test --configuration Release --report-trx
+# [PROJECT-SPECIFIC] --max-parallel-test-modules 1 makes the test platform run one test module at a
+# time. A module is one assembly built for one target framework, so this serializes both axes at
+# once: the test projects no longer overlap each other, and a project's net8.0/net9.0/net10.0 runs
+# no longer overlap themselves. Those runs are separate processes, so no in-assembly setting can
+# reach them; test/xunit.runner.json covers the in-assembly axis by disabling collection
+# parallelism and pinning the runner to a single thread.
+# Why: the tool's self-validation drives Microsoft Visio and PowerPoint through COM automation,
+# which is single-instance, so two renders at once tear each other's session down. Serializing the
+# suite costs wall-clock time and is the accepted trade: the alternative was making a user-facing
+# diagnostic tolerate contention that only this harness ever created.
+dotnet test --configuration Release --report-trx --max-parallel-test-modules 1
 $testExitCode = $LASTEXITCODE
 
 # [PROJECT-SPECIFIC] Preserve a failing run's TRX for diagnosis before exiting. The test TRX are

@@ -48,7 +48,7 @@ internal static class WordContentEmitter
         var imagePaths = await WriteImagesAsync(sink, options, model, cancellationToken)
             .ConfigureAwait(false);
 
-        var partCount = await WriteContentAsync(sink, options, model, imagePaths, cancellationToken)
+        var partCount = await WriteContentAsync(sink, model, imagePaths, cancellationToken)
             .ConfigureAwait(false);
 
         sink.ReportDocumentInfo(new DocumentInfo(model.Title, model.Author, model.ProducerPageCount, partCount));
@@ -205,136 +205,31 @@ internal static class WordContentEmitter
             writtenPaths.Add(path);
         }
 
-        if (options.ImageOutput == ImageOutputMode.ForcePng && writtenPaths.Count > 0)
-        {
-            ReportForcePngNote(sink, writtenPaths.Count);
-        }
-
         return paths;
     }
 
     /// <summary>
-    ///     Writes the document content, honoring the per-part split mode.
+    ///     Writes the document content as one continuous flow.
     /// </summary>
     /// <param name="sink">The sink to write content through.</param>
-    /// <param name="options">The effective options, consulted for the split mode.</param>
     /// <param name="model">The model to render.</param>
     /// <param name="imagePaths">The image path map.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
-    /// <returns>The number of parts written, or <see langword="null"/> for a single flow.</returns>
+    /// <returns>Always <see langword="null"/>, meaning a single flow rather than a part count.</returns>
     /// <remarks>
-    ///     <see cref="ContentSplitMode.Auto"/> and <see cref="ContentSplitMode.Single"/> produce a
-    ///     single flow because a Word document is one continuous flow; <see cref="ContentSplitMode.PerPart"/>
-    ///     splits at every <c>Heading 1</c>. Core does not apply the mode for the extractor, so it is
-    ///     inspected here. Side effect: writes content on the sink.
+    ///     A Word document is one continuous flow, so it is written as one <c>content.md</c> rather
+    ///     than split into <c>parts/</c>: splitting at headings would invent a structure the
+    ///     document does not assert, and a reader following the flow would meet arbitrary breaks.
+    ///     Side effect: writes content on the sink.
     /// </remarks>
     private static async ValueTask<int?> WriteContentAsync(
-        IExtractionSink sink, ExtractionOptions options, WordDocumentModel model,
+        IExtractionSink sink, WordDocumentModel model,
         IReadOnlyDictionary<string, string> imagePaths, CancellationToken cancellationToken)
     {
-        var parts = options.ContentSplit == ContentSplitMode.PerPart
-            ? BuildParts(model, imagePaths)
-            : null;
-
-        // Fall back to a single flow when a per-part request has no Heading 1 boundary to split on,
-        // so the whole document is never lost to an empty parts list
-        if (parts is not { Count: > 0 })
-        {
-            var flow = WordMarkdownWriter.Write(model, imagePaths);
-            await sink.WriteContentAsync(flow, cancellationToken).ConfigureAwait(false);
-            return null;
-        }
-
-        var ordinal = 1;
-        foreach (var (title, markdown) in parts)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Section, ordinal, title), markdown, cancellationToken)
-                .ConfigureAwait(false);
-            ordinal++;
-        }
-
-        return parts.Count;
-    }
-
-    /// <summary>
-    ///     Splits a model's body into per-part sections at every <c>Heading 1</c> boundary.
-    /// </summary>
-    /// <param name="model">The model to split.</param>
-    /// <param name="imagePaths">The image path map.</param>
-    /// <returns>The parts as title-and-markdown pairs, empty when the body has no <c>Heading 1</c>.</returns>
-    /// <remarks>
-    ///     Leading matter before the first <c>Heading 1</c> becomes part one, titled from the
-    ///     document title or "Front matter", and carries the document-control section. Comments and
-    ///     footnotes are appended to the final part so they are never lost to the split. Pure.
-    /// </remarks>
-    private static List<(string Title, string Markdown)> BuildParts(
-        WordDocumentModel model, IReadOnlyDictionary<string, string> imagePaths)
-    {
-        var body = model.Body;
-        var boundaries = new List<int>();
-        for (var index = 0; index < body.Count; index++)
-        {
-            if (body[index].Kind == WordBlockKind.Heading && body[index].HeadingLevel <= 1)
-            {
-                boundaries.Add(index);
-            }
-        }
-
-        if (boundaries.Count == 0)
-        {
-            return [];
-        }
-
-        var parts = new List<(string Title, string Markdown)>();
-
-        // Leading matter (and the document-control section) become the first part when present
-        var frontEnd = boundaries[0];
-        if (frontEnd > 0 || model.DocumentControl.Count > 0)
-        {
-            var front = new System.Text.StringBuilder();
-            front.Append(WordMarkdownWriter.WriteBlocks(model.DocumentControlAsBody(), imagePaths));
-            front.Append(WordMarkdownWriter.WriteBlocks(body.Take(frontEnd).ToList(), imagePaths));
-            parts.Add((model.Title ?? "Front matter", front.ToString()));
-        }
-
-        for (var boundary = 0; boundary < boundaries.Count; boundary++)
-        {
-            var start = boundaries[boundary];
-            var end = boundary + 1 < boundaries.Count ? boundaries[boundary + 1] : body.Count;
-            var segment = body.Skip(start).Take(end - start).ToList();
-            var title = MarkdownToText(segment[0].Inlines) is { Length: > 0 } heading ? heading : "Section";
-            parts.Add((title, WordMarkdownWriter.WriteBlocks(segment, imagePaths)));
-        }
-
-        AppendTrailingSections(model, parts);
-        return parts;
-    }
-
-    /// <summary>
-    ///     Appends the comments and footnotes to the final part so a split never loses them.
-    /// </summary>
-    /// <param name="model">The model whose comments and footnotes are appended.</param>
-    /// <param name="parts">The parts built so far.</param>
-    /// <remarks>Side effect: rewrites the last part's markdown. Pure otherwise.</remarks>
-    private static void AppendTrailingSections(
-        WordDocumentModel model, List<(string Title, string Markdown)> parts)
-    {
-        if (model.Comments.Count == 0 && model.Footnotes.Count == 0)
-        {
-            return;
-        }
-
-        var trailing = WordMarkdownWriter.WriteBlocks([], new Dictionary<string, string>());
-        var commentsAndFootnotes = WordMarkdownWriter.Write(
-            model with { Body = [], DocumentControl = [] }, new Dictionary<string, string>());
-        if (commentsAndFootnotes.Length == 0)
-        {
-            return;
-        }
-
-        var last = parts[^1];
-        parts[^1] = (last.Title, last.Markdown + trailing + commentsAndFootnotes);
+        cancellationToken.ThrowIfCancellationRequested();
+        var flow = WordMarkdownWriter.Write(model, imagePaths);
+        await sink.WriteContentAsync(flow, cancellationToken).ConfigureAwait(false);
+        return null;
     }
 
     /// <summary>
@@ -433,23 +328,6 @@ internal static class WordContentEmitter
     }
 
     /// <summary>
-    ///     Reports that PNG output could not be honored, explaining that source bytes were written instead.
-    /// </summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <param name="written">The number of distinct embedded image files written in their source encoding.</param>
-    /// <remarks>
-    ///     Core's naming rule already guarantees the file extension follows the bytes actually
-    ///     written. This note therefore records only the incomplete re-encoding step itself. Side
-    ///     effect: records on the sink.
-    /// </remarks>
-    private static void ReportForcePngNote(IExtractionSink sink, int written)
-    {
-        var writtenText = written.ToString(CultureInfo.InvariantCulture);
-        sink.ReportNote(new ExtractionNote(
-            $"PNG output was requested, but {writtenText} embedded image files were written in their source encoding because this package does not re-encode images."));
-    }
-
-    /// <summary>
     ///     Counts the textual blocks the emitted markdown carries.
     /// </summary>
     /// <param name="blocks">The rendered block sequence to count.</param>
@@ -491,57 +369,5 @@ internal static class WordContentEmitter
             }
         }
     }
-
-    /// <summary>
-    ///     Extracts the plain text of a heading's inline runs for a part title.
-    /// </summary>
-    /// <param name="inlines">The heading inlines, or <see langword="null"/>.</param>
-    /// <returns>The concatenated, trimmed text.</returns>
-    /// <remarks>Pure.</remarks>
-    private static string MarkdownToText(IReadOnlyList<WordInline>? inlines)
-    {
-        if (inlines is null)
-        {
-            return string.Empty;
-        }
-
-        return string.Concat(inlines.Select(inline => inline.Text)).Trim();
-    }
 }
 
-/// <summary>
-///     Convenience projections over a <see cref="WordDocumentModel"/> used when splitting content.
-/// </summary>
-/// <remarks>Pure and thread-safe.</remarks>
-internal static class WordDocumentModelExtensions
-{
-    /// <summary>
-    ///     Renders the document-control subsections as a flat block sequence for the front-matter part.
-    /// </summary>
-    /// <param name="model">The model whose document control is projected.</param>
-    /// <returns>A block sequence carrying each subsection as a level-three heading and its blocks.</returns>
-    /// <remarks>
-    ///     Used only by the per-part splitter, which renders the front-matter part from a plain block
-    ///     list rather than the whole-model writer. Pure.
-    /// </remarks>
-    public static IReadOnlyList<WordBlock> DocumentControlAsBody(this WordDocumentModel model)
-    {
-        ArgumentNullException.ThrowIfNull(model);
-        if (model.DocumentControl.Count == 0)
-        {
-            return [];
-        }
-
-        var blocks = new List<WordBlock>
-        {
-            new(WordBlockKind.Heading, [new WordInline("Document Control")], HeadingLevel: 2)
-        };
-        foreach (var section in model.DocumentControl)
-        {
-            blocks.Add(new WordBlock(WordBlockKind.Heading, [new WordInline(section.Label)], HeadingLevel: 3));
-            blocks.AddRange(section.Blocks);
-        }
-
-        return blocks;
-    }
-}

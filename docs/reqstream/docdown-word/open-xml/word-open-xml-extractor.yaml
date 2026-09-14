@@ -17,8 +17,14 @@
 #
 # SUPERSEDED REQUIREMENT: DocDownWord-OpenXml-WordOpenXmlExtractor-ExplainsUnhonoredForcePng
 # required force-PNG requests to be reported as counted gaps. It is superseded (not satisfied) by
-# DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote because the retained behavior is a
-# short extraction note.
+# DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote, which is itself now superseded with
+# no replacement because the caller-facing PNG request was removed under the simplicity principle.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-OpenXml-WordOpenXmlExtractor-SplitsPerPart
+# required per-part splitting at each top-level heading when per-part output was requested. It is
+# superseded (not satisfied) with no replacement because the caller-facing split choice was removed
+# under the simplicity principle; a Word document is one continuous flow and is written as one
+# content.md.
 #
 # SUPERSEDED REQUIREMENT: DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsEmptyDocumentGap
 # required an empty document to be reported as a gap. It is superseded (not satisfied) by
@@ -52,17 +58,6 @@ sections:
                   the chosen reader for `.docx` without implying work it does not perform.
                 tests:
                   - WordOpenXmlExtractor_Descriptor_HasPriority10AndManagedAvailability
-
-              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-SplitsPerPart
-                title: >-
-                  WordOpenXmlExtractor shall split the content into per-part files at each top-level
-                  heading when per-part output is requested.
-                justification: |
-                  Core writes a single flow unless the extractor adds parts, so honoring a per-part
-                  request means this backend must inspect the option and split the content itself at
-                  every Heading 1.
-                tests:
-                  - WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1
 
               - id: DocDownWord-OpenXml-WordOpenXmlExtractor-WritesVectorImageAsIs
                 title: >-

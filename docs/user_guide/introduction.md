@@ -149,9 +149,12 @@ When DocDown produces an extraction, it writes the same five artifacts under the
   extracted, and Could not read. When an unreadable result is written to the layout, `summary.txt`
   also includes a Failure section. The Could not read section contains the recorded notes or the
   sentence `Nothing was left incomplete.`
-- **`manifest.json`** — the machine-readable twin of `summary.txt`. Its schema version is `2.0`.
+- **`manifest.json`** — the machine-readable twin of `summary.txt`. Its schema version is `3.0`.
   It carries a `notes` string array and preserves the content inventory, image provenance, and
-  metadata-facing details. The top-level contract is smaller and focused on the extraction record.
+  metadata-facing details. It describes the document that was extracted and nothing else: there is
+  no `environment` block, no `requestedOptions` echo of the caller's own arguments, and no
+  SHA-256 digests. `summary.txt` keeps its Environment section, which is where a reader looks to
+  see which backend ran and what was available when a page image is missing.
 - **`metadata.json`** — what the document asserts about itself, with per-field provenance and blank
   values omitted.
 - **`content.md`** — the extracted textual content as markdown, linking to extracted images.
@@ -606,8 +609,8 @@ application is installed on Windows.
 
 `DemaConsulting.DocDown.PowerPoint` extracts:
 
-- **Every slide's text, in presentation order** — the deck stays navigable, and with
-  `--split part` each slide becomes its own content part.
+- **Every slide's text, in presentation order** — each slide becomes its own section, under its
+  own heading, in a single `content.md`.
 - **Each slide's title** — read from the slide itself rather than inferred from surrounding text.
 - **Speaker notes** — recovered from the file, not from a rendering. The number of slides carrying
   notes is always explicit, so a deck that genuinely carries none still reports `0 sets of speaker
@@ -802,11 +805,9 @@ The tool provides the standard DEMA command-line vocabulary plus DocDown's extra
 | `--pages` / `--no-pages` | Request or disable rendered page images |
 | `--page-range <a-b>` | Restrict extraction to a page range |
 | `--dpi <#>` | Page render DPI (range 36-1200) |
-| `--images <preserve\|png>` | Embedded image output mode |
 | `--no-images` | Do not extract embedded images |
-| `--max-image-dim <#>` | Downscale images exceeding this pixel dimension |
+| `--max-image-dim <#>` | Skip images exceeding this pixel dimension |
 | `--max-image-bytes <#>` | Skip images exceeding this byte size |
-| `--split <auto\|single\|part>` | `content.md` splitting strategy |
 | `--overwrite <clean\|overwrite>` | Scratch folder policy (`clean` is the default) |
 | `--list-backends` | List registered backends with formats and availability |
 | `--validate` | Run self-validation |

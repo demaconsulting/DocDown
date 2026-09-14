@@ -18,7 +18,7 @@ The parsed choices are exposed as `private init` properties:
 - The DEMA vocabulary — `Version`, `Help`, `Silent`, `Validate`, `ResultsFile`, and `HeadingDepth`
   (default 1) — plus `ListBackends` for the auxiliary command.
 - The extraction flags — `Input`, `Scratch`, `RenderPages`, `IncludeEmbeddedImages` (default true),
-  `Pages`, `Dpi`, `ImageOutput`, `MaxImageDimensionPx`, `MaxImageBytes`, `ContentSplit`, and
+  `Pages`, `Dpi`, `MaxImageDimensionPx`, `MaxImageBytes`, and
   `ScratchMode`. The optional ones are nullable so an unset flag can be told apart from a flag set
   to its default.
 - `ExitCode` returns 1 when any error has been reported, and 0 otherwise.
@@ -40,7 +40,7 @@ The log writer is a private `StreamWriter?` opened by `Create` when `--log` is g
   error unless `Silent`, and always to the log when one is open.
 - **`ArgumentParser.ParseArgument`** (nested, private) — a `switch` over the argument, with
   `GetRequiredStringArgument`, `GetRequiredIntArgument(min, max)`, and `GetRequiredLongArgument(min,
-  max)` helpers, and token parsers for the page range, image mode, split mode, and scratch policy,
+  max)` helpers, and token parsers for the page range and the scratch policy,
   each throwing an argument fault on a malformed value. The default case rejects an unsupported
   argument.
 
@@ -54,7 +54,7 @@ non-zero exit. `Dispose` closes the log writer.
 #### Dependencies
 
 - **DocDown.Core** — `ExtractionOptions` and the option value types the flags map onto: `PageRange`,
-  `ImageOutputMode`, `ContentSplitMode`, and `ScratchFolderMode`.
+  and `ScratchFolderMode`.
 
 #### Callers
 

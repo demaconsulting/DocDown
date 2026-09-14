@@ -24,11 +24,23 @@
 # vector image written unchanged needs no extra note.
 #
 # SUPERSEDED REQUIREMENT: DocDownWord-ImageOutput
-# required force-PNG requests to be reported as counted gaps. It is superseded (not satisfied) by
-# DocDownWord-ImageOutputNote because an uncompleted re-encoding step is now expressed as a short
-# extraction note.
+# required force-PNG requests to be reported as counted gaps. It was superseded by
+# DocDownWord-ImageOutputNote, which is itself now superseded (see directly below), so the chain
+# ends with no replacement.
 #
-# SUPERSEDED REQUIREMENT: DocDownWord-DeclaredCapabilities
+# SUPERSEDED REQUIREMENT: DocDownWord-ImageOutputNote
+# required a requested PNG image output that could not be produced to be reported as a short
+# extraction note. It is superseded (not satisfied) with no replacement because the caller-facing
+# PNG request was removed under the simplicity principle: the request never re-encoded anything, so
+# with it gone there is no uncompleted step left to report. Images are written in whatever format
+# the document stored them in.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-ContentSplitting
+# required per-part splitting at each top-level heading when per-part output was requested. It is
+# superseded (not satisfied) with no replacement because the caller-facing split choice was removed
+# under the simplicity principle; a Word document is one continuous flow and is written as one
+# content.md, which is what the Auto behavior always produced.
+## SUPERSEDED REQUIREMENT: DocDownWord-DeclaredCapabilities
 # required a capability declaration for the managed backend. It is superseded (not satisfied) by
 # DocDownWord-ManagedAvailability because the backend now reports availability through
 # ExtractorAvailability rather than through a capability contract.
@@ -210,20 +222,6 @@ sections:
         tests:
           - WordOpenXmlExtractor_Extract_VectorImage_WritesAsIs
 
-      - id: DocDownWord-ImageOutputNote
-        title: >-
-          The system shall report a requested PNG image output it could not produce as a short
-          extraction note.
-        tags: [system]
-        justification: |
-          This package ships no imaging stack, so a force-PNG request cannot be completed by
-          re-encoding the source bytes. Writing the source bytes and stating the uncompleted
-          re-encoding step is more truthful than mislabeling the output or remaining silent.
-        children:
-          - DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote
-        tests:
-          - WordOpenXmlExtractor_Extract_ForcePng_ReportsUnhonoredModeNote
-
       - id: DocDownWord-ManagedAvailability
         title: >-
           The system shall report its managed `.docx` extractor available and shall report that page
@@ -252,21 +250,6 @@ sections:
           - DocDownWord-Markdown-WordContentEmitter-ReportsContentInventory
         tests:
           - WordOpenXmlExtractor_Extract_EmptyDocument_ProducesZeroCountTextInventory
-
-      - id: DocDownWord-ContentSplitting
-        title: >-
-          The system shall split the content into per-part files at each top-level heading when
-          per-part output is requested.
-        tags: [system]
-        justification: |
-          A caller asking for per-part output wants the document broken where its own structure
-          breaks it. Splitting at every Heading 1, with the leading matter and Document Control
-          forming the first part, honors that request instead of returning a single flow the caller
-          then has to re-segment.
-        children:
-          - DocDownWord-OpenXml-WordOpenXmlExtractor-SplitsPerPart
-        tests:
-          - WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1
 
       - id: DocDownWord-ProtectedDocument
         title: >-

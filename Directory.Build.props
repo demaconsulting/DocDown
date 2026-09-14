@@ -1,0 +1,24 @@
+<Project>
+
+  <!--
+    Repository-wide build settings.
+
+    The test suite drives Microsoft PowerPoint and Microsoft Visio over COM to render
+    slides and pages. Those applications are single-instance, so two test processes
+    cannot render at the same time. `dotnet test` runs a multi-target project's target
+    frameworks in parallel unless told otherwise, which put three processes in
+    contention and made the COM render self-tests fail intermittently while they
+    queued rather than while they rendered.
+
+    TestTfmsInParallel is the SDK's own control for this; see
+    Microsoft.TestPlatform.CrossTargeting.targets, which resolves it as
+    ValueOrDefault(TestTfmsInParallel, BuildInParallel). Combined with
+    maxParallelThreads=1 in each test project's xunit.runner.json, exactly one test
+    runs at a time across the whole suite. That is slower, and deliberately so: the
+    contention was never in the product, only in how the suite exercised it.
+  -->
+  <PropertyGroup>
+    <TestTfmsInParallel>false</TestTfmsInParallel>
+  </PropertyGroup>
+
+</Project>

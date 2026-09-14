@@ -26,10 +26,10 @@ buffered into the final on-disk layout; a mock sink would not evidence that the 
 #### Acceptance Criteria
 
 Per IEC 62304 §5.5.2, a `ContentWriter` unit test run passes when a single buffered flow is written to
-`content.md` verbatim; when a multi-part document produces an index plus per-part files; when the caller's
-split mode selects a concatenated document or a part index; when backend page markers are preserved in a
-single flow; and when an empty flow still writes the content file but reports it absent. Any altered
-content, wrong layout for the split mode, lost page marker, or misreported presence is a failure.
+`content.md` verbatim; when a multi-part document produces an index plus per-part files; when backend
+page markers are preserved in a single flow; and when an empty flow still writes the content file but
+reports it absent. Any altered content, wrong layout for the document, lost page marker, or misreported
+presence is a failure.
 
 #### Test Scenarios
 
@@ -42,19 +42,12 @@ with no part files. Evidence for `DocDownCore-Output-ContentWriter-SingleFlowDoc
 
 ##### Multiple parts produce an index and part files
 
-**Test**: `ContentWriter_WriteAsync_MultipleParts_ProducesIndexAndPartFiles`
+**Tests**: `ContentWriter_WriteAsync_MultipleParts_ProducesIndexAndPartFiles`,
+`ContentWriter_WriteAsync_SinglePart_ProducesIndexWithPartFile`
 
-Proves a split document produces a navigable index linking to each ordered part file. Evidence for
+Proves a document whose backend offered parts produces a navigable index linking to each ordered part
+file, whether it offered one part or several. Evidence for
 `DocDownCore-Output-ContentWriter-PartIndex`.
-
-##### The split mode is honored
-
-**Tests**: `ContentWriter_WriteAsync_SingleMode_ConcatenatesPartsWithoutPartsFolder`,
-`ContentWriter_WriteAsync_PerPartMode_ProducesIndexWithPartFiles`
-
-Proves the caller's split mode is honored: single mode concatenates the parts into one document with no
-parts folder, while per-part mode produces an index with per-part files. Evidence for
-`DocDownCore-Output-ContentWriter-SplitModeHonored`.
 
 ##### Page markers are preserved
 

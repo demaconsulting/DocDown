@@ -24,8 +24,13 @@ namespace DocDown.Core;
 public static class ManifestWriter
 {
     /// <summary>The manifest schema version this writer emits.</summary>
-    /// <remarks>Constant so the version is stated once; consumers pin it.</remarks>
-    private const string SchemaVersion = "2.0";
+    /// <remarks>
+    ///     Constant so the version is stated once; consumers pin it. Raised to <c>3.0</c> when the
+    ///     integrity digests, the environment block, and the requested-options echo were removed,
+    ///     because a consumer pinned to <c>2.0</c> would otherwise meet a manifest missing fields
+    ///     that schema promised.
+    /// </remarks>
+    private const string SchemaVersion = "3.0";
 
     /// <summary>The fixed relative name of the manifest file.</summary>
     /// <remarks>Part of the invariant output contract; never varies.</remarks>
@@ -87,25 +92,22 @@ public static class ManifestWriter
         OutcomeString(report.Outcome),
         BuildSource(report),
         BuildExtractor(report.SelectedExtractor, report),
-        BuildEnvironment(report.Environment),
         BuildDocument(sink.DocumentInfo),
         BuildContentFeatures(sink.ContentFeatures),
         BuildImages(sink.Images),
         BuildPages(sink.Pages),
         BuildParts(sink.Parts),
         BuildNotes(sink.Notes),
-        BuildOptions(report.Options),
         BuildFailure(report.Failure));
 
     /// <summary>Builds the manifest source block from the report.</summary>
     /// <param name="report">The engine-side facts.</param>
     /// <returns>The manifest source DTO.</returns>
-    /// <remarks>Records enough to identify and integrity-check the input. Pure.</remarks>
+    /// <remarks>Records enough to identify and re-locate the input. Pure.</remarks>
     private static ManifestSource BuildSource(ExtractionReport report) => new(
         report.Source.Path,
         report.Source.FileName,
         report.Source.SizeBytes,
-        report.SourceSha256,
         report.DetectedFormat.Format.Id,
         report.DetectedFormat.Format.MediaType,
         BasisString(report.DetectedFormat.Basis));
@@ -124,24 +126,6 @@ public static class ManifestWriter
         }
 
         return new ManifestExtractor(selected.Id, selected.DisplayName, report.ExtractorPackage, selected.Priority);
-    }
-
-    /// <summary>Builds the manifest environment block from the environment description.</summary>
-    /// <param name="environment">The environment description.</param>
-    /// <returns>The manifest environment DTO.</returns>
-    /// <remarks>Facts are copied in order and never re-sorted, preserving provenance. Pure.</remarks>
-    private static ManifestEnvironment BuildEnvironment(ExtractionEnvironment environment)
-    {
-        // Copy facts in emission order so environment provenance reads chronologically
-        var facts = new List<ManifestEnvironmentFact>(environment.Facts.Count);
-        foreach (var fact in environment.Facts)
-        {
-            facts.Add(new ManifestEnvironmentFact(fact.Source, fact.Key, fact.Value, fact.Available));
-        }
-
-        return new ManifestEnvironment(
-            environment.OperatingSystem, environment.ProcessArchitecture,
-            environment.RuntimeVersion, environment.RuntimeIdentifier, facts);
     }
 
     /// <summary>Builds the manifest document block from reported document info.</summary>
@@ -181,7 +165,7 @@ public static class ManifestWriter
         {
             list.Add(new ManifestImage(
                 image.Path, image.MediaType, image.WidthPx, image.HeightPx,
-                image.SizeBytes, image.Sha256, image.SourcePage, image.SourcePages,
+                image.SizeBytes, image.SourcePage, image.SourcePages,
                 image.ReferencedByTemplate, image.SourceRef,
                 TransformString(image.Transform), image.References,
                 image.Description, image.DescriptionSource));
@@ -193,14 +177,14 @@ public static class ManifestWriter
     /// <summary>Builds the manifest page list from the recorded pages.</summary>
     /// <param name="pages">The recorded pages.</param>
     /// <returns>The manifest page DTOs in insertion order.</returns>
-    /// <remarks>Maps each page back to its document page number and integrity hash. Pure.</remarks>
+    /// <remarks>Maps each page back to its document page number. Pure.</remarks>
     private static IReadOnlyList<ManifestPage> BuildPages(IReadOnlyList<RecordedPage> pages)
     {
         // Preserve insertion order; page numbers are the stable identity
         var list = new List<ManifestPage>(pages.Count);
         foreach (var page in pages)
         {
-            list.Add(new ManifestPage(page.Path, page.PageNumber, page.SizeBytes, page.Sha256));
+            list.Add(new ManifestPage(page.Path, page.PageNumber, page.SizeBytes));
         }
 
         return list;
@@ -237,21 +221,6 @@ public static class ManifestWriter
         return list;
     }
 
-    /// <summary>Builds the manifest requested-options block from the effective options.</summary>
-    /// <param name="options">The effective options.</param>
-    /// <returns>The manifest options DTO.</returns>
-    /// <remarks>Records exactly what was asked for so the run is reproducible. Pure.</remarks>
-    private static ManifestOptions BuildOptions(ExtractionOptions options) => new(
-        options.RenderPages,
-        FormatPageRange(options.Pages),
-        options.IncludeEmbeddedImages,
-        ImageOutputString(options.ImageOutput),
-        options.MaxImageDimensionPx,
-        options.MaxImageBytes,
-        options.PageRenderDpi,
-        SplitString(options.ContentSplit),
-        ScratchModeString(options.ScratchFolder));
-
     /// <summary>Builds the manifest failure block, or <see langword="null"/> when the extraction produced output.</summary>
     /// <param name="failure">The structured failure, or <see langword="null"/>.</param>
     /// <returns>The manifest failure DTO, or <see langword="null"/>.</returns>
@@ -265,14 +234,6 @@ public static class ManifestWriter
     /// <remarks>Uses the invariant culture so the value is stable across locales. Pure.</remarks>
     private static string FormatTimestamp(DateTimeOffset timestamp) =>
         timestamp.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
-
-    /// <summary>Formats an optional page range as <c>first-last</c>.</summary>
-    /// <param name="range">The page range, or <see langword="null"/> for all pages.</param>
-    /// <returns>The formatted range, or <see langword="null"/> when no range was set.</returns>
-    /// <remarks>A null range means the whole document, recorded as an explicit null. Pure.</remarks>
-    private static string? FormatPageRange(PageRange? range) => range is { } value
-        ? $"{value.First.ToString(CultureInfo.InvariantCulture)}-{value.Last.ToString(CultureInfo.InvariantCulture)}"
-        : null;
 
     /// <summary>Projects an extraction outcome to its camelCase string.</summary>
     /// <param name="outcome">The outcome.</param>
@@ -297,17 +258,6 @@ public static class ManifestWriter
         _ => throw new ArgumentOutOfRangeException(nameof(basis), basis, "Unmapped detection basis.")
     };
 
-    /// <summary>Projects an image output mode to its camelCase string.</summary>
-    /// <param name="mode">The image output mode.</param>
-    /// <returns>The camelCase name.</returns>
-    /// <remarks>Switch-based so an unmapped value is caught. Pure.</remarks>
-    private static string ImageOutputString(ImageOutputMode mode) => mode switch
-    {
-        ImageOutputMode.Preserve => "preserve",
-        ImageOutputMode.ForcePng => "forcePng",
-        _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unmapped image output mode.")
-    };
-
     /// <summary>Projects an image transform to its camelCase string.</summary>
     /// <param name="transform">The image transform reported for a written image.</param>
     /// <returns>The camelCase name.</returns>
@@ -318,29 +268,6 @@ public static class ManifestWriter
         ImageTransform.DecodedToPng => "decodedToPng",
         _ => throw new ArgumentOutOfRangeException(nameof(transform), transform, "Unmapped image transform.")
     };
-
-    /// <summary>Projects a content split mode to its camelCase string.</summary>
-    /// <param name="mode">The content split mode.</param>
-    /// <returns>The camelCase name.</returns>
-    /// <remarks>Switch-based so an unmapped value is caught. Pure.</remarks>
-    private static string SplitString(ContentSplitMode mode) => mode switch
-    {
-        ContentSplitMode.Auto => "auto",
-        ContentSplitMode.Single => "single",
-        ContentSplitMode.PerPart => "perPart",
-        _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unmapped content split mode.")
-    };
-
-    /// <summary>Projects a scratch-folder mode to its camelCase string.</summary>
-    /// <param name="mode">The scratch-folder mode.</param>
-    /// <returns>The camelCase name.</returns>
-    /// <remarks>Switch-based so an unmapped value is caught. Pure.</remarks>
-    private static string ScratchModeString(ScratchFolderMode mode) => mode switch
-    {
-        ScratchFolderMode.CleanIfDocDownFolder => "cleanIfDocDownFolder",
-        ScratchFolderMode.Overwrite => "overwrite",
-        _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unmapped scratch-folder mode.")
-    };
 }
 
 /// <summary>
@@ -349,7 +276,6 @@ public static class ManifestWriter
 /// </summary>
 /// <param name="Outcome">The overall extraction outcome.</param>
 /// <param name="Source">The document source (path, file name, size).</param>
-/// <param name="SourceSha256">The SHA-256 of the source bytes, or <see langword="null"/> when not computed.</param>
 /// <param name="DetectedFormat">The detected format and its evidence.</param>
 /// <param name="SelectedExtractor">The selected extractor descriptor, or <see langword="null"/> when none was selected.</param>
 /// <param name="Environment">The environment description, whose facts are already fully assembled by the engine.</param>
@@ -366,7 +292,6 @@ public static class ManifestWriter
 public sealed record ExtractionReport(
     ExtractionOutcome Outcome,
     DocumentSource Source,
-    string? SourceSha256,
     FormatDetection DetectedFormat,
     ExtractorDescriptor? SelectedExtractor,
     ExtractionEnvironment Environment,

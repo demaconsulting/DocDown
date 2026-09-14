@@ -62,7 +62,7 @@ internal static class PowerPointContentEmitter
             : null;
         var imagePaths = imageResult?.PathsBySourceRef ?? EmptyImagePaths;
 
-        var partCount = await WriteContentAsync(sink, options, model, imagePaths, cancellationToken).ConfigureAwait(false);
+        var partCount = await WriteContentAsync(sink, model, imagePaths, cancellationToken).ConfigureAwait(false);
         sink.ReportDocumentInfo(new DocumentInfo(
             Title: model.Slides[0].Title, Author: null, PageCount: model.Slides.Count, PartCount: partCount));
 
@@ -80,7 +80,7 @@ internal static class PowerPointContentEmitter
         var notesCount = model.Slides.Count(slide => slide.Notes is not null);
 
         // Report the plain-language notes for the images written above
-        ReportImages(sink, options, imageResult);
+        ReportImages(sink, imageResult);
 
         ReportContentFeatures(sink, model, notesCount, imagePaths);
     }
@@ -125,17 +125,16 @@ internal static class PowerPointContentEmitter
     ///     Reports the plain-language notes for the deck's embedded images written earlier.
     /// </summary>
     /// <param name="sink">The sink to report through.</param>
-    /// <param name="options">The effective options, consulted for suppression and force-PNG.</param>
     /// <param name="result">The image write accounting from the earlier write, or <see langword="null"/> when images were suppressed.</param>
     /// <remarks>
     ///     When images are suppressed nothing was written and Core records the suppression itself, so
     ///     this reports nothing. A deck that embeds no images reports nothing here, so a well-formed
-    ///     image-free deck stays a clean success. An image beyond a caller limit and a force-PNG
-    ///     request this backend cannot honor are both attempts that could not complete and are stated
-    ///     as plain-language notes. Vector metafiles written unchanged are not called out: the bytes
-    ///     were produced exactly as stored. Side effect: records reports on the sink.
+    ///     image-free deck stays a clean success. An image beyond a caller limit is an attempt that
+    ///     could not complete and is stated as a plain-language note. Vector metafiles written
+    ///     unchanged are not called out: the bytes were produced exactly as stored. Side effect:
+    ///     records reports on the sink.
     /// </remarks>
-    private static void ReportImages(IExtractionSink sink, ExtractionOptions options, EmbeddedImageWriteResult? result)
+    private static void ReportImages(IExtractionSink sink, EmbeddedImageWriteResult? result)
     {
         // A caller who disabled embedded images asked for none to be attempted; Core records that
         // deliberate absence itself, so this unit reports nothing here
@@ -153,11 +152,6 @@ internal static class PowerPointContentEmitter
         if (result.SizeSkippedCount > 0)
         {
             ReportSizeSkipNote(sink, result);
-        }
-
-        if (options.ImageOutput == ImageOutputMode.ForcePng && result.ForcePngUnhonoredCount > 0)
-        {
-            ReportForcePngNote(sink, result);
         }
     }
 
@@ -181,55 +175,22 @@ internal static class PowerPointContentEmitter
     }
 
     /// <summary>
-    ///     Reports that a force-PNG request could not be honored and the source-encoded bytes were written instead.
-    /// </summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <param name="result">The image write accounting carrying the unhonored force-PNG count.</param>
-    /// <remarks>
-    ///     The attempted conversion is an extraction fact rather than a judgment, so this backend
-    ///     records a plain note and keeps the successfully written source-encoded image files.
-    ///     Side effect: records a note on the sink.
-    /// </remarks>
-    private static void ReportForcePngNote(IExtractionSink sink, EmbeddedImageWriteResult result)
-    {
-        var countText = result.ForcePngUnhonoredCount.ToString(CultureInfo.InvariantCulture);
-        var noun = result.ForcePngUnhonoredCount == 1 ? "embedded image" : "embedded images";
-        var verb = result.ForcePngUnhonoredCount == 1 ? "was" : "were";
-        sink.ReportNote(new ExtractionNote(
-            $"PNG output was requested, but this backend could not convert {countText} {noun}; "
-            + $"source-encoded files {verb} written instead."));
-    }
-
-    /// <summary>
-    ///     Writes the deck content, either as one flow or as per-slide parts, honoring the split mode.
+    ///     Writes the deck content as one continuous flow, one section per slide.
     /// </summary>
     /// <param name="sink">The sink to write content through.</param>
-    /// <param name="options">The effective options carrying the split mode.</param>
     /// <param name="model">The deck model.</param>
     /// <param name="imagePaths">The map from an image part reference to its written relative path.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
-    /// <returns>The number of parts written, or <see langword="null"/> for a single flow.</returns>
+    /// <returns>Always <see langword="null"/>, meaning a single flow rather than a part count.</returns>
     /// <remarks>
-    ///     A single flow keeps a small deck in one readable file; per-part emits each slide under
-    ///     <c>parts/</c> for a large deck. Side effect: writes content on the sink.
+    ///     A deck reads as one narrative, and every slide carries its own heading in the flow, so a
+    ///     reader can find a slide in <c>content.md</c> without opening a separate file per slide.
+    ///     Side effect: writes content on the sink.
     /// </remarks>
     private static async ValueTask<int?> WriteContentAsync(
-        IExtractionSink sink, ExtractionOptions options, PowerPointDeckModel model,
+        IExtractionSink sink, PowerPointDeckModel model,
         IReadOnlyDictionary<string, string> imagePaths, CancellationToken cancellationToken)
     {
-        if (options.ContentSplit == ContentSplitMode.PerPart)
-        {
-            foreach (var slide in model.Slides)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                await sink.AddContentPartAsync(
-                    new ContentPart(ContentPartKind.Slide, slide.Ordinal, TitleFor(slide)),
-                    RenderSlide(slide, imagePaths), cancellationToken).ConfigureAwait(false);
-            }
-
-            return model.Slides.Count;
-        }
-
         var builder = new StringBuilder();
         foreach (var slide in model.Slides)
         {

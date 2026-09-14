@@ -134,16 +134,13 @@ sections:
                   - PowerPointContentEmitter_Emit_Deck_ReportsContentFeaturesIncludingSpeakerNotes
                   - PowerPointContentEmitter_Emit_NoImages_ReportsZeroInlineImagesWithoutNote
 
-              - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-SplitsLargeDecks
+              - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesSingleFlow
                 title: >-
-                  PowerPointContentEmitter shall write the deck as one content flow or as one part per
-                  slide, honoring the content-split mode.
+                  PowerPointContentEmitter shall write the deck as one content flow whose inline
+                  image links resolve on disk.
                 justification: |
-                  A single flow keeps a small deck in one readable file, while a large deck reads
-                  better as one part per slide under a parts folder; honoring the caller's split mode
-                  lets the same emission path serve both without a second implementation, and the
-                  inline image links resolve on disk under either mode.
+                  A deck reads as one narrative and every slide carries its own heading in the flow,
+                  so a reader finds a slide in content.md without opening a file per slide; the
+                  links the flow carries must resolve from the scratch root where it is written.
                 tests:
-                  - PowerPointContentEmitter_Emit_PerPart_WritesSlideParts
-                  - PowerPointContentEmitter_Emit_PerPartImageLinks_ResolveOnDisk
-                  - PowerPointContentEmitter_Emit_AutoImageLinks_ResolveOnDisk
+                  - PowerPointContentEmitter_Emit_ImageLinks_ResolveOnDisk

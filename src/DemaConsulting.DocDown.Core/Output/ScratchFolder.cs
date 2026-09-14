@@ -88,7 +88,7 @@ public sealed class ScratchFolder
     ///     Pinned deliberately: a folder written by a future, unrecognized schema is not provably
     ///     ours to delete, so it is refused rather than cleaned.
     /// </remarks>
-    private const string SupportedManifestSchema = "2.0";
+    private const string SupportedManifestSchema = "3.0";
 
     /// <summary>
     ///     The set of reserved device-name stems, compared case-insensitively.

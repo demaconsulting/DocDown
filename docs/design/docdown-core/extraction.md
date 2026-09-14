@@ -77,13 +77,13 @@ The subsystem defines the following supporting types inline rather than as separ
 - **`ExtractorDescriptor`** — immutable snapshot of extractor identity, supported formats,
   priority, and page-rendering applicability.
 - **`ExtractorCandidate`** — descriptor paired with current availability.
-- **`ExtractionOptions`** — render-pages, page-range, image, split, scratch-mode, and timestamp
+- **`ExtractionOptions`** — render-pages, page-range, image-limit, and scratch-mode
   options; cloned before use.
 - **`ExtractionOutcome`** — `Produced` or `Unreadable`.
 - **`ExtractionFailure`** — prose `Summary` and `Explanation` for an unreadable result.
 - **`ExtractionResult`** — returned outcome, paths, detected format, selected extractor, failure,
   environment, and notes.
 - **`ScratchFolderMode`** — `CleanIfDocDownFolder` or `Overwrite`.
-- **`ContentSplitMode`**, **`ImageOutputMode`**, **`PageRange`**, **`DocumentSource`**,
+- **`PageRange`**, **`DocumentSource`**,
   **`DocumentInfo`**, **`ISelfValidating`**, **`SelfTestCase`**, **`SelfTestContext`**,
   **`SelfTestResult`**, and **`SelfTestStatus`**.

@@ -4,7 +4,7 @@ DocDown Extraction Summary
 Scratch folder  : <scratch-folder>
 Source document : <source-document>
 Detected format : pdf (application/pdf) - detected by file extension
-Extracted (UTC) : 2026-01-02T03:04:05Z
+Extracted (UTC) : <timestamp>
 Status          : UNREADABLE  - no output could be produced; see "Failure"
 
 All paths below are relative to the scratch folder shown above.

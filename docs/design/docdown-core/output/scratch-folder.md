@@ -16,7 +16,7 @@ convenience wrapper.
 - **`MaxComponentLength`** (`40`) — maximum length of one slugged component.
 - **`MaxTotalPathLength`** (`240`) — maximum length of any allocated absolute path.
 - **`ReservedNames`** — case-insensitive reserved device-name stems.
-- **`SupportedManifestSchema`** (`"2.0"`) — manifest schema version accepted by the reuse guard.
+- **`SupportedManifestSchema`** (`"3.0"`) — manifest schema version accepted by the reuse guard.
 
 `ScratchFolderException` carries the machine-readable refusal reason.
 
@@ -40,7 +40,7 @@ convenience wrapper.
 file is deleted it requires all of the following:
 
 1. `manifest.json` exists, is reasonably small, deserializes through `DocDownJsonContext`, and names
-   DocDown with schema version `2.0`.
+   DocDown with schema version `3.0`.
 2. The manifest's recorded `scratchFolder` names this same folder.
 3. Every file currently present is accounted for by `ArtifactInventory` from that manifest.
 4. Every accounted path resolves inside the folder through `SafePathCombine`.

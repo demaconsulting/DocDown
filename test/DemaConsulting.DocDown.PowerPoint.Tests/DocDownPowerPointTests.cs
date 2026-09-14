@@ -17,9 +17,6 @@ namespace DemaConsulting.DocDown.PowerPoint.Tests;
 /// </remarks>
 public class DocDownPowerPointTests
 {
-    /// <summary>A fixed timestamp for reproducible output.</summary>
-    private static readonly DateTimeOffset FixedTimestamp = new(2026, 1, 2, 3, 4, 5, TimeSpan.Zero);
-
     /// <summary>Gets the ambient test cancellation token.</summary>
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -138,7 +135,7 @@ public class DocDownPowerPointTests
         Assert.Contains("Nothing was left incomplete.", summary, StringComparison.Ordinal);
 
         using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
-        Assert.Equal("2.0", manifest.RootElement.GetProperty("schemaVersion").GetString());
+        Assert.Equal("3.0", manifest.RootElement.GetProperty("schemaVersion").GetString());
         Assert.Equal("produced", manifest.RootElement.GetProperty("status").GetString());
         Assert.Equal(0, manifest.RootElement.GetProperty("notes").GetArrayLength());
         var feature = manifest.RootElement
@@ -193,7 +190,7 @@ public class DocDownPowerPointTests
     }
 
     /// <summary>Creates options carrying the fixed timestamp for reproducible output.</summary>
-    private static ExtractionOptions FixedOptions() => new() { TimestampUtc = FixedTimestamp };
+    private static ExtractionOptions FixedOptions() => new();
 
     /// <summary>Writes a fixture to disk.</summary>
     private static string WriteFixture(TempScratch temp, string name, byte[] bytes)

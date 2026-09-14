@@ -33,7 +33,7 @@ sections:
                   backend's own cases — rather than a fixed list that could drift from the real
                   configuration.
                 tests:
-                  - Validation_Run_DefaultEngine_RunsCoreAndPdfSelfTestUnion
+                  - Validation_Run_RegisteredBackends_RunsCoreAndBackendSelfTestUnion
 
               - id: DocDownTool-Validation-WritesResults
                 title: >-

@@ -18,14 +18,15 @@ namespace DocDown.Core;
 ///         the library.
 ///     </para>
 ///     <para>
-///         Images are deduplicated by the SHA-256 of their written bytes: a repeat writes nothing,
-///         increments the existing image's reference count, and returns the existing path. When
+///         Images are deduplicated by the content key of their written bytes: a repeat writes
+///         nothing, increments the existing image's reference count, and returns the existing
+///         path. When
 ///         <see cref="ExtractionOptions.IncludeEmbeddedImages"/> is <see langword="false"/>, images
 ///         are suppressed — nothing is written and <see cref="string.Empty"/> is returned so a
 ///         well-behaved extractor emits no link (the engine records the single note that images were
-///         disabled). Content parts are buffered rather than written immediately because
-///         <see cref="ContentSplitMode.Single"/> concatenates them into <c>content.md</c> instead of
-///         emitting separate files; <see cref="ContentWriter"/> makes the final layout decision.
+///         disabled). Content parts are buffered rather than written immediately because the final
+///         layout — one flow or an index over <c>parts/</c> — is not known until every part has
+///         been offered; <see cref="ContentWriter"/> makes that decision.
 ///     </para>
 ///     <para>
 ///         This class performs filesystem I/O (writing image and page files) and mutates internal
@@ -48,7 +49,7 @@ public sealed class ExtractionSink : IExtractionSink
     /// <remarks>A list (not a set) so enumeration order is deterministic and matches the manifest.</remarks>
     private readonly List<RecordedImage> _images = [];
 
-    /// <summary>Maps an image content digest to its recorded entry for SHA-256 deduplication.</summary>
+    /// <summary>Maps an image content key to its recorded entry for content deduplication.</summary>
     /// <remarks>Lets a repeated image resolve to the existing path in one lookup without a rescan.</remarks>
     private readonly Dictionary<string, RecordedImage> _imageByDigest = new(StringComparer.Ordinal);
 
@@ -142,13 +143,13 @@ public sealed class ExtractionSink : IExtractionSink
             return string.Empty;
         }
 
-        // Buffer the bytes so we can hash for deduplication and know the exact written size
+        // Buffer the bytes so we can key deduplication on content and know the exact written size
         var bytes = await ReadAllBytesAsync(content, cancellationToken).ConfigureAwait(false);
-        var digest = ComputeSha256(bytes);
+        var contentKey = ComputeContentKey(bytes);
 
         // A byte-identical image is stored once; a repeat just bumps the reference count and merges
         // its page associations into the surviving record so no referrer is lost to deduplication
-        if (_imageByDigest.TryGetValue(digest, out var existing))
+        if (_imageByDigest.TryGetValue(contentKey, out var existing))
         {
             existing.References++;
             MergeReferrers(existing, hint);
@@ -173,7 +174,6 @@ public sealed class ExtractionSink : IExtractionSink
             WidthPx = hint.WidthPx,
             HeightPx = hint.HeightPx,
             SizeBytes = bytes.LongLength,
-            Sha256 = digest,
             SourcePage = hint.SourcePage ?? (hint.SourcePages is { Count: > 0 } pages ? pages[0] : null),
             SourceRef = hint.SourceRef,
             Transform = hint.Transform ?? ImageTransform.Passthrough,
@@ -184,7 +184,7 @@ public sealed class ExtractionSink : IExtractionSink
             References = 1
         };
         _images.Add(record);
-        _imageByDigest[digest] = record;
+        _imageByDigest[contentKey] = record;
         return relativePath;
     }
 
@@ -242,14 +242,13 @@ public sealed class ExtractionSink : IExtractionSink
 
         // Name the page file from the document page number so the file-to-page mapping is unambiguous
         var bytes = await ReadAllBytesAsync(pngContent, cancellationToken).ConfigureAwait(false);
-        var digest = ComputeSha256(bytes);
         var relativePath = $"pages/page{pageNumber.ToString("D4", CultureInfo.InvariantCulture)}.png";
 
         // Materialize the bytes through the scratch-folder gate
         await WriteBytesAsync(relativePath, bytes, cancellationToken).ConfigureAwait(false);
 
         // Record the page, replacing any prior render of the same page so the manifest lists it once
-        var record = new RecordedPage { Path = relativePath, PageNumber = pageNumber, SizeBytes = bytes.LongLength, Sha256 = digest };
+        var record = new RecordedPage { Path = relativePath, PageNumber = pageNumber, SizeBytes = bytes.LongLength };
         if (_pageIndex.TryGetValue(pageNumber, out var index))
         {
             _pages[index] = record;
@@ -549,18 +548,21 @@ public sealed class ExtractionSink : IExtractionSink
     }
 
     /// <summary>
-    ///     Computes the lowercase hexadecimal SHA-256 of the given bytes.
+    ///     Computes the content key used to recognize byte-identical images.
     /// </summary>
-    /// <param name="bytes">The bytes to hash.</param>
-    /// <returns>The 64-character lowercase hex digest.</returns>
+    /// <param name="bytes">The written bytes to key.</param>
+    /// <returns>A 64-character lowercase hexadecimal key that is equal exactly when the bytes are.</returns>
     /// <remarks>
-    ///     Lowercase hex is used consistently across images, pages, and the source hash so the
-    ///     manifest and any consumer re-hashing the files compare digests byte-for-byte. Pure and
+    ///     Deduplication is the only reason this key exists: a logo reused across fifty slides must
+    ///     become one file with a reference count of fifty, and comparing a short fixed-length key is
+    ///     how the sink recognizes the repeat in one dictionary lookup instead of comparing the bytes
+    ///     of every stored image. SHA-256 is used because a collision would silently drop a genuinely
+    ///     different image, and the key is never published — no output artifact records it. Pure and
     ///     side-effect free.
     /// </remarks>
-    private static string ComputeSha256(byte[] bytes)
+    private static string ComputeContentKey(byte[] bytes)
     {
-        // A stable lowercase hex digest lets dedup and verification compare hashes directly
+        // A stable lowercase hex key lets deduplication compare content in a single lookup
         var hash = SHA256.HashData(bytes);
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
@@ -664,12 +666,8 @@ internal sealed class RecordedImage
     public int? HeightPx { get; init; }
 
     /// <summary>Gets the size of the written bytes in bytes.</summary>
-    /// <remarks>Measured from the buffered bytes so it matches the file exactly for verification.</remarks>
+    /// <remarks>Measured from the buffered bytes so it matches the file exactly.</remarks>
     public long SizeBytes { get; init; }
-
-    /// <summary>Gets the lowercase hexadecimal SHA-256 digest of the written bytes.</summary>
-    /// <remarks>The deduplication key and the integrity hash recorded in the manifest.</remarks>
-    public required string Sha256 { get; init; }
 
     /// <summary>Gets or sets the 1-based source page, or <see langword="null"/> when not applicable.</summary>
     /// <remarks>
@@ -749,12 +747,8 @@ internal sealed class RecordedPage
     public int PageNumber { get; init; }
 
     /// <summary>Gets the size of the written page image in bytes.</summary>
-    /// <remarks>Measured from the buffered bytes so it matches the file for verification.</remarks>
+    /// <remarks>Measured from the buffered bytes so it matches the file.</remarks>
     public long SizeBytes { get; init; }
-
-    /// <summary>Gets the lowercase hexadecimal SHA-256 digest of the page bytes.</summary>
-    /// <remarks>The integrity hash a consumer can recompute from the file on disk.</remarks>
-    public required string Sha256 { get; init; }
 }
 
 /// <summary>

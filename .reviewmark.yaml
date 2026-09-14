@@ -148,8 +148,6 @@ reviews:
       - "src/DemaConsulting.DocDown.Core/Extraction/ExtractionFailure.cs"             # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Extraction/ExtractionOptions.cs"             # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Extraction/ScratchFolderMode.cs"             # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/ContentSplitMode.cs"              # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/ImageOutputMode.cs"               # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Extraction/PageRange.cs"                     # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Extraction/DocumentSource.cs"                # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Extraction/DocumentInfo.cs"                  # supporting type (D8)
@@ -614,6 +612,7 @@ reviews:
       - "docs/verification/docdown-tool.md"                                 # system verification
       - "test/DemaConsulting.DocDown.Tool.Tests/DocDownToolTests.cs"        # integration tests
       - "test/DemaConsulting.DocDown.Tool.Tests/CliHarness.cs"              # shared test harness
+      - "test/DemaConsulting.DocDown.Tool.Tests/ValidationRuns.cs"           # shared validation-run fixture
       - "test/DemaConsulting.DocDown.Tool.Tests/TestData/ToolPdfFixtures.cs"  # generated test fixtures
 
   # DocDownTool-Design Review (one per system)

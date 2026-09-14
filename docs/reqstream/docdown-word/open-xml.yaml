@@ -20,7 +20,6 @@ sections:
               invocation, split handling, and self-validation.
             children:
               - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsManagedAvailability
-              - DocDownWord-OpenXml-WordOpenXmlExtractor-SplitsPerPart
               - DocDownWord-OpenXml-WordOpenXmlExtractor-WritesVectorImageAsIs
               - DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests
             tests:

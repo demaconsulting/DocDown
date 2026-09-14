@@ -22,7 +22,7 @@ a deck's content reads identically whether or not it was rendered.
 | --------- | --------- | ------ | ----------- |
 | `PowerPointDeckModel` | Inbound, from the reader | .NET record | The pivot between reading and reporting |
 | `IExtractionSink` | Outbound, from the emitter to Core | .NET interface | The only output channel |
-| `ExtractionOptions` | Inbound, from `IExtractionContext` | .NET record | Split, images, DPI, output mode |
+| `ExtractionOptions` | Inbound, from `IExtractionContext` | .NET record | Image suppression, image size limits, DPI |
 
 ### Design
 
@@ -46,8 +46,8 @@ read every notes slide and there are none" from "notes are not something DocDown
 **The image reporting rule.** Embedded images that are written are counted as inline images. Vector
 metafiles such as EMF and WMF are written as found, with no PowerPoint-specific note, because the
 extraction completed exactly what the deck supplied. When an attempted image step cannot be completed
-— for example, an image exceeded a caller size limit or a `ForcePng` request could not be honored —
-the emitter records a short plain note describing that attempted step.
+— for example, an image exceeded a caller size limit — the emitter records a short plain note
+describing that attempted step.
 
 **The unit split.** The subsystem has one unit, `PowerPointContentEmitter`, which owns the sink walk,
 the per-slide markdown layout, the content inventory, and the note policy for PowerPoint-specific image

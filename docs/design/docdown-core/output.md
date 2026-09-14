@@ -54,14 +54,14 @@ manifest written for that same folder accounts for, using `ArtifactInventory`, a
 anything about that proof fails. `Overwrite` is the explicit mode for unconditional replacement.
 
 `ExtractionSink` routes all binary writes through `ScratchFolder`, deduplicates identical images by
-SHA-256, allocates page and part paths in Core, and records the extractor's document info,
+content key, allocates page and part paths in Core, and records the extractor's document info,
 self-reported metadata, content features, notes, and environment facts.
 
-`ContentWriter` decides the shape of `content.md`: single flow, concatenated parts, or an index over
-part files. `MetadataWriter` always writes `metadata.json`, omitting blank metadata fields while
-preserving authored values and their provenance. `ManifestWriter` emits schema version `2.0`, which
-records the tool, scratch folder, source, selected extractor, environment, document metadata,
-content features, image/page/part inventories, notes, requested options, and any unreadable failure.
+`ContentWriter` decides the shape of `content.md`: a single flow, or an index over part files.
+`MetadataWriter` always writes `metadata.json`, omitting blank metadata fields while
+preserving authored values and their provenance. `ManifestWriter` emits schema version `3.0`, which
+records the tool, scratch folder, source, selected extractor, document metadata,
+content features, image/page/part inventories, notes, and any unreadable failure.
 `SummaryWriter` emits the fixed plain-text sections: title and gist, header, optional failure,
 backend, environment, document metadata, layout, what was extracted, and the `Could not read` notes
 block.

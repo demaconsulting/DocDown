@@ -206,9 +206,10 @@ out/
   Counts are explicit, including a plain `0` for features the backend genuinely looked for, such
   as PowerPoint speaker notes in a deck that has none.
 - **`manifest.json`** — the machine-readable twin of `summary.txt`. Its schema version is now
-  `2.0`; it carries a `notes` string array and preserves per-image provenance, content inventory,
-  and metadata-facing details. The top-level contract is smaller and focused on the produced
-  extraction record.
+  `3.0`; it carries a `notes` string array and preserves per-image provenance, content inventory,
+  and metadata-facing details. It describes the document that was extracted and nothing else: there
+  is no `environment` block (`summary.txt` still reports which backend ran and what was
+  available), no `requestedOptions` echo of the caller's own arguments, and no SHA-256 digests.
 - **`metadata.json`** — what the document asserts about itself, with per-field provenance and blank
   values omitted.
 - **`content.md`** — the extracted textual content as markdown, linking to extracted images.
@@ -319,8 +320,8 @@ Common options:
 
 - `--input <file>` / `--scratch <dir>` — the document to extract and the folder to write into
 - `--pages` / `--no-pages` — request rendered pages or disable them
-- `--page-range <a-b>`, `--dpi <#>`, `--images <preserve|png>`, `--no-images`,
-  `--max-image-dim <#>`, `--max-image-bytes <#>`, `--split <auto|single|part>` — extraction tuning
+- `--page-range <a-b>`, `--dpi <#>`, `--no-images`, `--max-image-dim <#>`,
+  `--max-image-bytes <#>` — extraction tuning
 - `--overwrite <clean|overwrite>` — scratch folder policy (`clean` is the default)
 - `--list-backends` — list registered backends as `<id> - <name>`, then `formats: ...` and
   `status: available|unavailable (reason)`

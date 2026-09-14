@@ -98,7 +98,7 @@ internal static class PdfImageExtractor
     private static readonly FilterClassification UnlistedFilter = new(RawBytesMeaning.CompressedSamples, null);
 
     /// <summary>The PDF filter name whose stored stream is already a complete JPEG file.</summary>
-    /// <remarks>Named once so the passthrough decision and the <c>ForcePng</c> explanation agree.</remarks>
+    /// <remarks>Named once so the passthrough decision and the filter tally agree.</remarks>
     private const string DctDecodeFilter = "DCTDecode";
 
     /// <summary>The PDF filter name whose stored stream is a JPEG 2000 codestream.</summary>
@@ -133,7 +133,7 @@ internal static class PdfImageExtractor
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when any argument is <see langword="null"/>.</exception>
     /// <remarks>
-    ///     Reports any decode-failure, size-skip, or unhonored-<c>ForcePng</c> notes before
+    ///     Reports any decode-failure or size-skip notes before
     ///     returning, so the extraction record explains every image this backend did not write as
     ///     requested. Side effect: writes images and records notes on the sink.
     /// </remarks>
@@ -170,7 +170,7 @@ internal static class PdfImageExtractor
             }
         }
 
-        ReportAccountingNotes(sink, options, accounting);
+        ReportAccountingNotes(sink, accounting);
         return new PdfImageResult(written, accounting.Found, written.Count);
     }
 
@@ -181,7 +181,7 @@ internal static class PdfImageExtractor
     /// <param name="image">The image to write.</param>
     /// <param name="accounting">The running accounting to record a skip or failure into.</param>
     /// <param name="sink">The sink to write through.</param>
-    /// <param name="options">The effective options governing the size limits and output mode.</param>
+    /// <param name="options">The effective options governing the size limits.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>The written image, or <see langword="null"/> when nothing was written.</returns>
     /// <remarks>
@@ -238,12 +238,6 @@ internal static class PdfImageExtractor
         if (string.IsNullOrEmpty(path))
         {
             return null;
-        }
-
-        // Record an image written in its source encoding under a PNG request so the mode can be explained
-        if (options.ImageOutput == ImageOutputMode.ForcePng && encoded.Value.Transform != ImageTransform.DecodedToPng)
-        {
-            accounting.RecordUnhonoredForcePng(filter, reference);
         }
 
         return new PdfExtractedImage(page.Number, path, reference);
@@ -349,19 +343,16 @@ internal static class PdfImageExtractor
         string.Format(CultureInfo.InvariantCulture, "page {0} image {1}", pageNumber, ordinal);
 
     /// <summary>
-    ///     Reports the decode-failure, size-skip, and unhonored-<c>ForcePng</c> notes.
+    ///     Reports the decode-failure and size-skip notes.
     /// </summary>
     /// <param name="sink">The sink to report through.</param>
-    /// <param name="options">The effective options, consulted for the requested output mode.</param>
     /// <param name="accounting">The completed accounting for the run.</param>
     /// <remarks>
-    ///     Each condition gets its own note so a reader can tell a decode failure from a size skip
-    ///     from an unhonored option; collapsing them into one would blur the difference between
-    ///     "could not decode" and "did not write because of the chosen limits". Side effect: records
-    ///     notes on the sink.
+    ///     Each condition gets its own note so a reader can tell a decode failure from a size skip;
+    ///     collapsing them into one would blur the difference between "could not decode" and "did
+    ///     not write because of the chosen limits". Side effect: records notes on the sink.
     /// </remarks>
-    private static void ReportAccountingNotes(
-        IExtractionSink sink, ExtractionOptions options, ImageAccounting accounting)
+    private static void ReportAccountingNotes(IExtractionSink sink, ImageAccounting accounting)
     {
         if (accounting.UndecodableCount > 0)
         {
@@ -373,10 +364,6 @@ internal static class PdfImageExtractor
             ReportSizeSkipNote(sink, accounting);
         }
 
-        if (options.ImageOutput == ImageOutputMode.ForcePng && accounting.UnhonoredForcePngCount > 0)
-        {
-            ReportUnhonoredForcePngNote(sink, accounting);
-        }
     }
 
     /// <summary>
@@ -417,32 +404,6 @@ internal static class PdfImageExtractor
         sink.ReportNote(new ExtractionNote(
             $"{counted} embedded images exceeded the caller's image size or dimension limit and were "
             + $"not written{affectedItems}."));
-    }
-
-    /// <summary>
-    ///     Reports a note explaining why PNG output could not be honored for some images.
-    /// </summary>
-    /// <param name="sink">The sink to report through.</param>
-    /// <param name="accounting">The completed accounting supplying the count and references.</param>
-    /// <remarks>
-    ///     Core's naming rule already guarantees the file on disk is not mislabeled: the extension
-    ///     follows the bytes actually written, never the requested format. What is missing without
-    ///     this note is the <em>explanation</em> — a caller who asked for PNG and received source
-    ///     encodings would otherwise have to infer why. The encodings are named from what was
-    ///     actually written rather than assumed to be JPEG, because a JPEG 2000 passthrough defeats
-    ///     the request in exactly the same way and naming the wrong encoding would be its own small
-    ///     dishonesty. Side effect: records a note on the sink.
-    /// </remarks>
-    private static void ReportUnhonoredForcePngNote(IExtractionSink sink, ImageAccounting accounting)
-    {
-        var counted = Counted(accounting.UnhonoredForcePngCount, accounting.Found);
-        var encodings = accounting.DescribeUnhonoredForcePngEncodings();
-        var affectedItems = DescribeAffectedItems(accounting.UnhonoredForcePngItems, accounting.UnhonoredForcePngCount);
-
-        sink.ReportNote(new ExtractionNote(
-            $"PNG output was requested, but {counted} embedded images use encodings this extractor "
-            + $"does not decode ({encodings}); those images were written in their source encoding "
-            + $"instead{affectedItems}."));
     }
 
     /// <summary>
@@ -505,12 +466,6 @@ internal static class PdfImageExtractor
         /// <summary>The references of images skipped for size, in document order and bounded in length.</summary>
         private readonly List<string> _sizeSkippedItems = [];
 
-        /// <summary>Counts of images that defeated a PNG request, by PDF filter name.</summary>
-        private readonly SortedDictionary<string, int> _unhonoredForcePngByEncoding = new(StringComparer.Ordinal);
-
-        /// <summary>The references of images written in a non-PNG encoding under a PNG request.</summary>
-        private readonly List<string> _unhonoredForcePngItems = [];
-
         /// <summary>Gets or sets the number of images found, counting every image on every selected page.</summary>
         /// <remarks>The ledger denominator; incremented before any decision is taken about an image.</remarks>
         public int Found { get; set; }
@@ -525,17 +480,11 @@ internal static class PdfImageExtractor
         /// <summary>Gets the number of images skipped because of a caller size limit.</summary>
         public int SizeSkippedCount { get; private set; }
 
-        /// <summary>Gets the number of images written in their source encoding despite a PNG request.</summary>
-        public int UnhonoredForcePngCount { get; private set; }
-
         /// <summary>Gets the bounded, ordered references of the undecodable images.</summary>
         public IReadOnlyList<string> UndecodableItems => _undecodableItems;
 
         /// <summary>Gets the bounded, ordered references of the size-skipped images.</summary>
         public IReadOnlyList<string> SizeSkippedItems => _sizeSkippedItems;
-
-        /// <summary>Gets the bounded, ordered references of the images that defeated the PNG request.</summary>
-        public IReadOnlyList<string> UnhonoredForcePngItems => _unhonoredForcePngItems;
 
         /// <summary>
         ///     Records an image this extractor cannot decode, grouped by its encoding.
@@ -562,22 +511,6 @@ internal static class PdfImageExtractor
         }
 
         /// <summary>
-        ///     Records an image written in its source encoding despite a PNG request.
-        /// </summary>
-        /// <param name="encoding">The PDF filter name the image was written in.</param>
-        /// <param name="reference">The image's stable reference.</param>
-        /// <remarks>
-        ///     Drives the explanation that keeps <c>ForcePng</c> from failing silently; the encoding is
-        ///     carried so the explanation names what actually defeated the request.
-        /// </remarks>
-        public void RecordUnhonoredForcePng(string encoding, string reference)
-        {
-            UnhonoredForcePngCount++;
-            _unhonoredForcePngByEncoding[encoding] = _unhonoredForcePngByEncoding.GetValueOrDefault(encoding) + 1;
-            Append(_unhonoredForcePngItems, reference);
-        }
-
-        /// <summary>
         ///     Renders the undecodable encodings and their counts as deterministic text.
         /// </summary>
         /// <returns>A phrase such as <c>JBIG2Decode: 1; JPXDecode: 2</c>.</returns>
@@ -586,13 +519,6 @@ internal static class PdfImageExtractor
         ///     text regardless of the order the images happened to be visited. Pure.
         /// </remarks>
         public string DescribeUndecodableEncodings() => Describe(_undecodableByEncoding);
-
-        /// <summary>
-        ///     Renders the encodings that defeated a PNG request and their counts as deterministic text.
-        /// </summary>
-        /// <returns>A phrase such as <c>DCTDecode: 1</c>.</returns>
-        /// <remarks>Sorted for the same byte-determinism reason as the undecodable list. Pure.</remarks>
-        public string DescribeUnhonoredForcePngEncodings() => Describe(_unhonoredForcePngByEncoding);
 
         /// <summary>
         ///     Renders an encoding tally as deterministic text.

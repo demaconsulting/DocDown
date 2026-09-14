@@ -189,9 +189,8 @@ sections:
         tags: [system]
         justification: |
           The reporting contract distinguishes facts about extracted content from facts about attempted
-          steps that did not finish. An unreadable chart part, images skipped by caller-supplied size
-          limits, and embedded images written in their source encoding when PNG output was requested are
-          all incomplete steps and therefore deserve a short note. An empty worksheet, an empty
+          steps that did not finish. An unreadable chart part and images skipped by caller-supplied
+          size limits are both incomplete steps and therefore deserve a short note. An empty worksheet, an empty
           workbook, a chart with no cached data, a bounded chart table, or a vector image written
           successfully are facts about the content and are reported in content or inventory instead.
         children:

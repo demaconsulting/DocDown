@@ -25,8 +25,9 @@ Per IEC 62304 §5.5.2, a `Context` unit test run passes when a written line reac
 when not silent and always reaches the log; when a log line is flushed immediately; when an error sets
 the exit code even under silence and no error leaves it zero; when the supported extraction flags
 project onto the options; when `--overwrite` maps `clean` and `overwrite` to the supported scratch
-modes and rejects the removed tokens; and when an unknown argument, a malformed page range, an
-unknown image mode, and an out-of-range heading depth are each rejected with an argument fault.
+modes and rejects the removed tokens; and when an unknown argument, a malformed page range, the
+removed `--images` and `--split` options, and an out-of-range heading depth are each rejected with
+an argument fault.
 
 ### Test Scenarios
 
@@ -70,18 +71,21 @@ modes, and rejects the removed tokens during parsing. Evidence for
 
 #### An unknown argument is rejected
 
-**Test**: `Context_Create_UnknownArgument_ThrowsArgumentException`
+**Tests**: `Context_Create_UnknownArgument_ThrowsArgumentException`,
+`Context_Create_RemovedImagesOption_ThrowsArgumentException`,
+`Context_Create_RemovedSplitOption_ThrowsArgumentException`
 
-Proves an unrecognized argument raises an argument fault. Evidence for
+Prove an unrecognized argument raises an argument fault, including the removed `--images` and
+`--split` options, which must be rejected rather than silently ignored. Evidence for
 `DocDownTool-Context-UnknownArgument`.
 
 #### A malformed option value is rejected
 
 **Tests**: `Context_Create_MalformedPageRange_ThrowsArgumentException`,
-`Context_Create_UnknownImageMode_ThrowsArgumentException`
+`Context_Create_RemovedScratchPolicyToken_ThrowsArgumentException`
 
-Prove a page range that is not two numbers and an unknown image mode are each rejected with an
-argument fault at parse time. Evidence for `DocDownTool-Context-OptionValidation`.
+Prove a page range that is not two numbers and an unrecognized scratch-policy token are each
+rejected with an argument fault at parse time. Evidence for `DocDownTool-Context-OptionValidation`.
 
 #### An out-of-range heading depth is rejected
 

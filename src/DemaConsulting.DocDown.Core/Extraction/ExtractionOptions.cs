@@ -22,10 +22,10 @@ public sealed class ExtractionOptions
     ///     Creates an options instance carrying the documented defaults.
     /// </summary>
     /// <remarks>
-    ///     The defaults are the safe, complete extraction: embedded images are included, image
-    ///     encoding is preserved, page rendering is off, and no page range limits the run. Set only
-    ///     the properties you want to change. Each extraction takes a private copy via
-    ///     <see cref="Clone"/>, so one instance may be configured and reused.
+    ///     The defaults are the safe, complete extraction: embedded images are included, page
+    ///     rendering is off, and no page range limits the run. Set only the properties you want to
+    ///     change. Each extraction takes a private copy via <see cref="Clone"/>, so one instance may
+    ///     be configured and reused.
     /// </remarks>
     public ExtractionOptions()
     {
@@ -61,16 +61,6 @@ public sealed class ExtractionOptions
     ///     absent image folder is never ambiguous.
     /// </remarks>
     public bool IncludeEmbeddedImages { get; set; } = true;
-
-    /// <summary>
-    ///     Gets or sets the on-disk encoding policy for extracted images.
-    ///     Defaults to <see cref="ImageOutputMode.Preserve"/>.
-    /// </summary>
-    /// <remarks>
-    ///     Preserving the original encoding avoids an unnecessary re-encode; forcing PNG trades
-    ///     that for a single predictable output format.
-    /// </remarks>
-    public ImageOutputMode ImageOutput { get; set; } = ImageOutputMode.Preserve;
 
     /// <summary>
     ///     Gets or sets an optional maximum image dimension in pixels, or <see langword="null"/>
@@ -112,27 +102,6 @@ public sealed class ExtractionOptions
     public ScratchFolderMode ScratchFolder { get; set; } = ScratchFolderMode.CleanIfDocDownFolder;
 
     /// <summary>
-    ///     Gets or sets whether and how content is split into parts. Defaults to
-    ///     <see cref="ContentSplitMode.Auto"/>.
-    /// </summary>
-    /// <remarks>
-    ///     Controls the shape of <c>content.md</c> and the presence of the <c>parts/</c> folder;
-    ///     <see cref="ContentSplitMode.Auto"/> lets Core choose based on document structure.
-    /// </remarks>
-    public ContentSplitMode ContentSplit { get; set; } = ContentSplitMode.Auto;
-
-    /// <summary>
-    ///     Gets or sets a fixed timestamp to stamp into output, or <see langword="null"/> to use
-    ///     the current wall-clock time.
-    /// </summary>
-    /// <remarks>
-    ///     Provided so callers can produce byte-identical output across runs: with a fixed
-    ///     timestamp the summary and manifest are reproducible, whereas the system clock makes
-    ///     them differ only in the timestamp line.
-    /// </remarks>
-    public DateTimeOffset? TimestampUtc { get; set; }
-
-    /// <summary>
     ///     Creates a shallow member-wise copy of these options.
     /// </summary>
     /// <returns>A new <see cref="ExtractionOptions"/> instance with the same values.</returns>
@@ -146,12 +115,9 @@ public sealed class ExtractionOptions
         RenderPages = RenderPages,
         Pages = Pages,
         IncludeEmbeddedImages = IncludeEmbeddedImages,
-        ImageOutput = ImageOutput,
         MaxImageDimensionPx = MaxImageDimensionPx,
         MaxImageBytes = MaxImageBytes,
         PageRenderDpi = PageRenderDpi,
-        ScratchFolder = ScratchFolder,
-        ContentSplit = ContentSplit,
-        TimestampUtc = TimestampUtc
+        ScratchFolder = ScratchFolder
     };
 }

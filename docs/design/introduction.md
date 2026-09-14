@@ -114,7 +114,7 @@ items, specifically:
     - **WordContentEmitter (Unit)** — The model-to-sink emission path
   - **OpenXml (Subsystem)** — The managed backend that reads a `.docx` through the Open XML SDK
     - **WordOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
-      including split modes and page-rendering absence
+      including page-rendering absence
     - **WordOpenXmlReader (Unit)** — Turns the Open XML DOM into the backend-neutral model
     - **WordOpenXmlImageReader (Unit)** — Yields each embedded image's bytes with passthrough
       provenance
@@ -349,8 +349,6 @@ src/DemaConsulting.DocDown.Core/
 │   ├── ExtractionFailure.cs        — Value type: a displayable failure summary and explanation
 │   ├── ExtractionOptions.cs        — Options: mutable request configuration with a Clone method
 │   ├── ScratchFolderMode.cs        — Enum: clean a DocDown folder safely or overwrite contents
-│   ├── ContentSplitMode.cs         — Enum: the content-split policy
-│   ├── ImageOutputMode.cs          — Enum: the image-output policy
 │   ├── PageRange.cs                — Value type: an inclusive page range
 │   ├── DocumentSource.cs           — Source: a file- or stream-backed document input
 │   ├── DocumentInfo.cs             — Value type: extractor-reported document metadata

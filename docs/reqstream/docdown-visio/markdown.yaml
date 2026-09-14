@@ -39,9 +39,7 @@ sections:
               - DocDownVisio-Markdown-VisioContentEmitter-OmitsEdgesBetweenUnnamedShapes
               - DocDownVisio-Markdown-VisioContentEmitter-LinksImages
               - DocDownVisio-Markdown-VisioContentEmitter-ReportsLookedForInventory
-              - DocDownVisio-Markdown-VisioContentEmitter-ReportsForcePngNote
               - DocDownVisio-Markdown-VisioContentEmitter-ReportsEmptyDrawingInInventory
-              - DocDownVisio-Markdown-VisioContentEmitter-SplitsLargeDrawings
             tests:
               - VisioContentEmitter_Emit_RendersDirectedTopologyWithShapeText
 

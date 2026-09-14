@@ -18,9 +18,6 @@ namespace DemaConsulting.DocDown.Visio.Tests;
 /// </remarks>
 public class DocDownVisioTests
 {
-    /// <summary>A fixed timestamp for reproducible output.</summary>
-    private static readonly DateTimeOffset FixedTimestamp = new(2026, 1, 2, 3, 4, 5, TimeSpan.Zero);
-
     /// <summary>Gets the ambient test cancellation token.</summary>
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -176,7 +173,7 @@ public class DocDownVisioTests
     }
 
     /// <summary>Creates options carrying the fixed timestamp for reproducible output.</summary>
-    private static ExtractionOptions FixedOptions() => new() { TimestampUtc = FixedTimestamp };
+    private static ExtractionOptions FixedOptions() => new();
 
     /// <summary>Writes a fixture to disk.</summary>
     private static string WriteFixture(TempScratch temp, string name, byte[] bytes)

@@ -103,24 +103,6 @@ package DocDownCore {
         comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
     }
 
-    part def ContentSplitMode {
-        doc /* How extracted content is split across output files: Auto, Single, or PerPart. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/ContentSplitMode.cs */
-        comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/extraction.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
-    }
-
-    part def ImageOutputMode {
-        doc /* How extracted images are encoded on output: Preserve or ForcePng. */
-
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/ImageOutputMode.cs */
-        comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/extraction.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
-    }
-
     part def PageRange {
         doc /* An inclusive first-last page range with containment and count helpers. */
 

@@ -10,7 +10,7 @@ table writer that expresses `w:tbl` structure as a GitHub-flavored-markdown tabl
 that writes content, images, content inventory, metadata, and extraction notes through the sink.
 Every mapping decision that differentiates a Word extraction from a PDF extraction — genuine
 tables, the `## Document Control` section, image passthrough with honest provenance, comments,
-footnotes, and split-at-`Heading 1` behavior — lives here and is testable from a hand-built model
+and footnotes — lives here and is testable from a hand-built model
 with no document and no Open XML SDK.
 
 The subsystem exists because reading a document and rendering what was read are separate concerns.
@@ -24,7 +24,7 @@ that could drift from the first.
 | --------- | --------- | ------ | ----------- |
 | `WordDocumentModel` | Inbound, from the reader | .NET record | The pivot between reading and rendering |
 | `IExtractionSink` | Outbound, from the emitter to Core | .NET interface | The only output channel |
-| `ExtractionOptions` | Inbound | .NET | Split and image options |
+| `ExtractionOptions` | Inbound | .NET | Image suppression and size limits |
 
 ### Design
 
@@ -63,9 +63,8 @@ is an EMU display size rather than a pixel count.
 **The content inventory and notes.** `WordContentEmitter` reports the content inventory from the
 model rather than by scanning the rendered markdown again. It counts text blocks, headings, tables, list
 items, inline images, comments, distinct comment authors, and footnotes, and marks genuinely
-looked-for categories so zero remains explicit. It emits only three short extraction notes: charts
-whose chart parts were not read, merged or nested table structure flattened for markdown, and
-force-PNG requests that could not be completed because the package does not re-encode images.
+looked-for categories so zero remains explicit. It emits only two short extraction notes: charts
+whose chart parts were not read, and merged or nested table structure flattened for markdown.
 
 **The unit split.** Three units divide the work along the boundaries their responsibilities draw:
 `WordMarkdownWriter` owns rendering, `WordTableWriter` owns the table rules and the

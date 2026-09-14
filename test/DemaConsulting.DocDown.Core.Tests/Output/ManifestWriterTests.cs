@@ -19,18 +19,18 @@ public class ManifestWriterTests
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>
-    ///     Proves the manifest declares schema version 2.0.
+    ///     Proves the manifest declares schema version 3.0.
     /// </summary>
     [Fact]
-    public async Task ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionTwoPointZero()
+    public async Task ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionThreePointZero()
     {
         // Arrange / Act: a produced text run serialized to a manifest
         using var temp = new TempScratch();
         var folder = await RunProducedAsync(temp, WriteText);
         using var document = await ParseManifestAsync(folder);
 
-        // Assert: the reduced manifest shape pins the 2.0 schema
-        Assert.Equal("2.0", document.RootElement.GetProperty("schemaVersion").GetString());
+        // Assert: the reduced manifest shape pins the 3.0 schema
+        Assert.Equal("3.0", document.RootElement.GetProperty("schemaVersion").GetString());
     }
 
     /// <summary>
@@ -104,44 +104,72 @@ public class ManifestWriterTests
     }
 
     /// <summary>
-    ///     Proves the requested-options block contains only the surviving fields.
+    ///     Proves the caller's options are not echoed back into the manifest.
     /// </summary>
     [Fact]
-    public async Task ManifestWriter_WriteAsync_RequestedOptions_ContainsReducedFieldSet()
+    public async Task ManifestWriter_WriteAsync_ProducedRun_OmitsRequestedOptions()
     {
-        // Arrange: a produced run with distinctive requested options
+        // Arrange: a produced run with distinctive, non-default requested options
         using var temp = new TempScratch();
         var options = new ExtractionOptions
         {
-            TimestampUtc = FixedTimestamp,
             RenderPages = true,
             Pages = new PageRange(2, 4),
             IncludeEmbeddedImages = false,
-            ImageOutput = ImageOutputMode.ForcePng,
             MaxImageDimensionPx = 600,
             MaxImageBytes = 1024,
             PageRenderDpi = 300,
-            ContentSplit = ContentSplitMode.PerPart,
             ScratchFolder = ScratchFolderMode.Overwrite
         };
         var folder = await RunProducedAsync(temp, WriteText, options);
 
         // Act: parse the manifest
         using var document = await ParseManifestAsync(folder);
-        var requested = document.RootElement.GetProperty("requestedOptions");
 
-        // Assert: the surviving fields are present and the removed fields stay absent
-        Assert.True(requested.GetProperty("renderPages").GetBoolean());
-        Assert.Equal("2-4", requested.GetProperty("pages").GetString());
-        Assert.False(requested.GetProperty("includeEmbeddedImages").GetBoolean());
-        Assert.Equal("forcePng", requested.GetProperty("imageOutput").GetString());
-        Assert.Equal(600, requested.GetProperty("maxImageDimensionPx").GetInt32());
-        Assert.Equal(1024, requested.GetProperty("maxImageBytes").GetInt64());
-        Assert.Equal(300, requested.GetProperty("pageRenderDpi").GetInt32());
-        Assert.Equal("perPart", requested.GetProperty("contentSplit").GetString());
-        Assert.Equal("overwrite", requested.GetProperty("scratchFolder").GetString());
-        Assert.False(requested.TryGetProperty("preferredExtractorId", out _));
-        Assert.False(requested.TryGetProperty("requireCapabilities", out _));
+        // Assert: the manifest describes the document, not the request that produced it
+        Assert.False(document.RootElement.TryGetProperty("requestedOptions", out _));
+    }
+
+    /// <summary>
+    ///     Proves the manifest records no environment block, which describes the machine rather than
+    ///     the document.
+    /// </summary>
+    [Fact]
+    public async Task ManifestWriter_WriteAsync_ProducedRun_OmitsEnvironment()
+    {
+        // Arrange / Act: a clean produced run serialized to a manifest
+        using var temp = new TempScratch();
+        var folder = await RunProducedAsync(temp, WriteText);
+        using var document = await ParseManifestAsync(folder);
+
+        // Assert: the environment block is absent; summary.txt remains its home
+        Assert.False(document.RootElement.TryGetProperty("environment", out _));
+    }
+
+    /// <summary>
+    ///     Proves no integrity digest is recorded for the source, an image, or a rendered page.
+    /// </summary>
+    [Fact]
+    public async Task ManifestWriter_WriteAsync_ProducedRun_OmitsDigests()
+    {
+        // Arrange / Act: a produced run carrying an image and a rendered page
+        using var temp = new TempScratch();
+        var folder = await RunProducedAsync(temp, async sink =>
+        {
+            await sink.WriteContentAsync("# Document\n\nWith an image and a page.\n", CancellationToken.None);
+            using var image = new MemoryStream([1, 2, 3, 4], writable: false);
+            await sink.AddImageAsync(image, new ImageHint("figure", "image/png"), CancellationToken.None);
+            using var page = new MemoryStream([5, 6, 7, 8], writable: false);
+            await sink.AddPageAsync(1, page, CancellationToken.None);
+        });
+        using var document = await ParseManifestAsync(folder);
+
+        // Assert: no digest survives anywhere in the manifest
+        Assert.False(document.RootElement.GetProperty("source").TryGetProperty("sha256", out _));
+        var image = Assert.Single(document.RootElement.GetProperty("images").EnumerateArray().ToList());
+        Assert.False(image.TryGetProperty("sha256", out _));
+        var page = Assert.Single(document.RootElement.GetProperty("pages").EnumerateArray().ToList());
+        Assert.False(page.TryGetProperty("sha256", out _));
     }
 
     /// <summary>
@@ -162,6 +190,8 @@ public class ManifestWriterTests
         Assert.False(root.TryGetProperty("artifacts", out _));
         Assert.False(root.TryGetProperty("gaps", out _));
         Assert.False(root.TryGetProperty("diagnostics", out _));
+        Assert.False(root.TryGetProperty("environment", out _));
+        Assert.False(root.TryGetProperty("requestedOptions", out _));
     }
 
     /// <summary>
@@ -197,7 +227,7 @@ public class ManifestWriterTests
         var sink = new ExtractionSink(folder, options);
         await WriteText(sink);
         var report = BuildReport(temp, options, ExtractionOutcome.Produced, SuccessExtractor(), null);
-        var content = await ContentWriter.WriteAsync(sink, options.ContentSplit, "Document", Ct);
+        var content = await ContentWriter.WriteAsync(sink, "Document", Ct);
 
         // Act: serialize twice into the same folder, snapshotting the first output
         await ManifestWriter.WriteAsync(folder, sink, report, content, Ct);
@@ -278,7 +308,7 @@ public class ManifestWriterTests
         var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), effective.ScratchFolder);
         var sink = new ExtractionSink(folder, effective);
         await write(sink);
-        var content = await ContentWriter.WriteAsync(sink, effective.ContentSplit, "Document", Ct);
+        var content = await ContentWriter.WriteAsync(sink, "Document", Ct);
         var report = BuildReport(temp, effective, ExtractionOutcome.Produced, SuccessExtractor(), null);
         await ManifestWriter.WriteAsync(folder, sink, report, content, Ct);
         return folder;
@@ -314,7 +344,6 @@ public class ManifestWriterTests
         return new ExtractionReport(
             outcome,
             source,
-            "0000",
             detection,
             selected,
             environment,
@@ -334,8 +363,8 @@ public class ManifestWriterTests
     /// <summary>
     ///     Creates the fixed options used across the manifest scenarios.
     /// </summary>
-    /// <returns>Options stamped with the fixed timestamp.</returns>
-    private static ExtractionOptions Options() => new() { TimestampUtc = FixedTimestamp };
+    /// <returns>The default options.</returns>
+    private static ExtractionOptions Options() => new();
 
     /// <summary>
     ///     Writes a small text document through the sink.

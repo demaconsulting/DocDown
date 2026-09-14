@@ -56,7 +56,7 @@ project.
   report unavailable and the self-test case would skip
 - **Filesystem**: a per-test `TempScratch` folder holds both the generated input and the output
 - **Inputs**: PDFs generated at test time; no committed binary fixtures and no network access
-- **Determinism**: a fixed `TimestampUtc` is injected so repeated runs are byte-comparable
+- **Determinism**: the run-varying timestamp line is normalized so repeated runs are byte-comparable
 - **Isolation**: each test owns its temporary folder and cleans it on dispose
 
 ## Acceptance Criteria

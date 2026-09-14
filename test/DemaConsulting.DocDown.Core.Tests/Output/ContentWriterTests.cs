@@ -5,15 +5,15 @@ namespace DemaConsulting.DocDown.Core.Tests.Output;
 
 /// <summary>
 ///     Unit tests for <see cref="ContentWriter"/>, proving the single-flow document layout, the
-///     multi-part index layout, that the split mode is honored, that extractor page markers are
-///     passed through untouched, and that an empty flow is honestly reported as absent.
+///     multi-part index layout, that extractor page markers are passed through untouched, and that
+///     an empty flow is honestly reported as absent.
 /// </summary>
 /// <remarks>
 ///     These tests drive a real <see cref="ExtractionSink"/> (the writer's documented source of
 ///     buffered content and parts) over a prepared <see cref="ScratchFolder"/>, then finalize with
 ///     <see cref="ContentWriter.WriteAsync"/> and reconcile against disk. Each is named for the unit
-///     requirement it evidences: single-flow document, part index, split-mode honoring, page
-///     markers, and absence explanation.
+///     requirement it evidences: single-flow document, part index, page markers, and absence
+///     explanation.
 /// </remarks>
 public class ContentWriterTests
 {
@@ -33,7 +33,7 @@ public class ContentWriterTests
         await sink.WriteContentAsync(markdown, Ct);
 
         // Act: finalize the content document
-        var result = await ContentWriter.WriteAsync(sink, ContentSplitMode.Auto, "Title", Ct);
+        var result = await ContentWriter.WriteAsync(sink, "Title", Ct);
 
         // Assert: content.md carries the buffered text verbatim, is present, and no part files were written
         Assert.Equal("content.md", result.ContentPath);
@@ -54,8 +54,8 @@ public class ContentWriterTests
         await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Sheet, 1, "Budget"), "# Budget\n", Ct);
         await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Sheet, 2, "Forecast"), "# Forecast\n", Ct);
 
-        // Act: finalize in the auto split mode, which indexes multi-part content
-        var result = await ContentWriter.WriteAsync(sink, ContentSplitMode.Auto, "Workbook", Ct);
+        // Act: finalize; multi-part content is indexed
+        var result = await ContentWriter.WriteAsync(sink, "Workbook", Ct);
         var index = await ReadContentAsync(sink);
 
         // Assert: the index heads the document, counts the parts, links each, and the part files exist on disk
@@ -68,41 +68,18 @@ public class ContentWriterTests
     }
 
     /// <summary>
-    ///     Proves Single mode concatenates parts into one document with no parts folder (SplitModeHonored).
+    ///     Proves a single part still produces the index layout with a separate part file.
     /// </summary>
     [Fact]
-    public async Task ContentWriter_WriteAsync_SingleMode_ConcatenatesPartsWithoutPartsFolder()
-    {
-        // Arrange: a sink holding two content parts
-        using var temp = new TempScratch();
-        var sink = NewSink(temp);
-        await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Section, 1, "Intro"), "Intro body.\n", Ct);
-        await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Section, 2, "Detail"), "Detail body.\n", Ct);
-
-        // Act: finalize in Single mode, which concatenates parts under headings
-        var result = await ContentWriter.WriteAsync(sink, ContentSplitMode.Single, "Report", Ct);
-        var content = await ReadContentAsync(sink);
-
-        // Assert: the parts became sections of one document and no parts/ folder was created
-        Assert.Empty(result.PartPaths);
-        Assert.Contains("## Intro", content, StringComparison.Ordinal);
-        Assert.Contains("Detail body.", content, StringComparison.Ordinal);
-        Assert.False(Directory.Exists(Path.Combine(sink.Folder.AbsolutePath, "parts")));
-    }
-
-    /// <summary>
-    ///     Proves PerPart mode always produces the index layout with separate part files (SplitModeHonored).
-    /// </summary>
-    [Fact]
-    public async Task ContentWriter_WriteAsync_PerPartMode_ProducesIndexWithPartFiles()
+    public async Task ContentWriter_WriteAsync_SinglePart_ProducesIndexWithPartFile()
     {
         // Arrange: a sink holding a single content part
         using var temp = new TempScratch();
         var sink = NewSink(temp);
         await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Slide, 1, "Opening"), "Opening body.\n", Ct);
 
-        // Act: finalize in PerPart mode, which always indexes
-        var result = await ContentWriter.WriteAsync(sink, ContentSplitMode.PerPart, "Deck", Ct);
+        // Act: finalize; any offered part is indexed
+        var result = await ContentWriter.WriteAsync(sink, "Deck", Ct);
 
         // Assert: a part file was written under parts/ and linked from the index
         Assert.Single(result.PartPaths);
@@ -122,7 +99,7 @@ public class ContentWriterTests
         await sink.WriteContentAsync(markdown, Ct);
 
         // Act: finalize the single-flow document
-        await ContentWriter.WriteAsync(sink, ContentSplitMode.Auto, null, Ct);
+        await ContentWriter.WriteAsync(sink, null, Ct);
         var content = await ReadContentAsync(sink);
 
         // Assert: both page markers survive verbatim because the writer invents nothing
@@ -141,7 +118,7 @@ public class ContentWriterTests
         var sink = NewSink(temp);
 
         // Act: finalize with nothing to write
-        var result = await ContentWriter.WriteAsync(sink, ContentSplitMode.Auto, null, Ct);
+        var result = await ContentWriter.WriteAsync(sink, null, Ct);
 
         // Assert: content.md exists but is honestly reported absent so an explaining gap is forced
         Assert.True(File.Exists(Path.Combine(sink.Folder.AbsolutePath, "content.md")));
@@ -156,12 +133,12 @@ public class ContentWriterTests
     {
         // Act + Assert: the buffered content source is mandatory
         await Assert.ThrowsAsync<ArgumentNullException>(
-            async () => await ContentWriter.WriteAsync(null!, ContentSplitMode.Auto, "Title", Ct));
+            async () => await ContentWriter.WriteAsync(null!, "Title", Ct));
     }
 
     /// <summary>
     ///     Proves an image link an extractor emits root-relative resolves on disk from a part file
-    ///     under <c>parts/</c> in the index layout (Auto) — the root-cause defect regression.
+    ///     under <c>parts/</c> in the index layout — the root-cause defect regression.
     /// </summary>
     /// <remarks>
     ///     Exercises the real sink write path end to end: a real image is added (allocating
@@ -170,7 +147,7 @@ public class ContentWriterTests
     ///     A string assertion cannot catch the dangling <c>parts/images/…</c> resolution this pins.
     /// </remarks>
     [Fact]
-    public async Task ContentWriter_WriteAsync_PartImageLink_ResolvesOnDiskInAutoLayout()
+    public async Task ContentWriter_WriteAsync_PartImageLink_ResolvesOnDiskInIndexLayout()
     {
         // Arrange: a real image and a part that links it with the sink-allocated root-relative path
         using var temp = new TempScratch();
@@ -180,40 +157,14 @@ public class ContentWriterTests
         await sink.AddContentPartAsync(
             new ContentPart(ContentPartKind.Sheet, 1, "Charts"), $"# Charts\n\n![Chart]({imagePath})\n", Ct);
 
-        // Act: finalize in Auto, which indexes the part under parts/
-        var result = await ContentWriter.WriteAsync(sink, ContentSplitMode.Auto, "Workbook", Ct);
+        // Act: finalize; the part is indexed under parts/
+        var result = await ContentWriter.WriteAsync(sink, "Workbook", Ct);
 
         // Assert: a part file was written and its image link resolves on disk from its own directory
         Assert.Single(result.PartPaths);
         var resolved = MarkdownImageLinks.AssertAllImageLinksResolveOnDisk(sink.Folder.AbsolutePath);
         Assert.True(resolved >= 1);
         Assert.Contains("![Chart](../images/", await ReadPartAsync(sink, result.PartPaths[0]), StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Proves the same root-relative image link resolves on disk under the PerPart layout.
-    /// </summary>
-    /// <remarks>
-    ///     PerPart always indexes, so this pins that every backend routing content into <c>parts/</c>
-    ///     under <c>--split per-part</c> gets on-disk-resolvable links from the single Core fix.
-    /// </remarks>
-    [Fact]
-    public async Task ContentWriter_WriteAsync_PartImageLink_ResolvesOnDiskInPerPartLayout()
-    {
-        // Arrange: a real image and a slide part linking it root-relative
-        using var temp = new TempScratch();
-        var sink = NewSink(temp);
-        var imagePath = await AddImageAsync(sink, "figure");
-        await sink.AddContentPartAsync(
-            new ContentPart(ContentPartKind.Slide, 1, "Opening"), $"![Figure]({imagePath})\n", Ct);
-
-        // Act: finalize in PerPart, which always indexes into parts/
-        var result = await ContentWriter.WriteAsync(sink, ContentSplitMode.PerPart, "Deck", Ct);
-
-        // Assert: the part image link resolves against its own directory
-        Assert.Single(result.PartPaths);
-        var resolved = MarkdownImageLinks.AssertAllImageLinksResolveOnDisk(sink.Folder.AbsolutePath);
-        Assert.True(resolved >= 1);
     }
 
     /// <summary>
@@ -234,7 +185,7 @@ public class ContentWriterTests
         await sink.WriteContentAsync($"# Doc\n\n![Logo]({imagePath})\n", Ct);
 
         // Act: finalize as a single flow (no parts)
-        var result = await ContentWriter.WriteAsync(sink, ContentSplitMode.Auto, "Doc", Ct);
+        var result = await ContentWriter.WriteAsync(sink, "Doc", Ct);
         var content = await ReadContentAsync(sink);
 
         // Assert: content.md kept the root-relative link verbatim and it resolves from the root

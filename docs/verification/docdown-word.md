@@ -29,8 +29,8 @@ result with a plain explanation rather than an exception surfacing to the caller
 Most of the reporting behavior under test now falls into one of two buckets. The content inventory
 states what reached the output, including deliberate zero counts for categories the extractor
 looked for. Short extraction notes are reserved for attempted steps the extractor could not
-complete, such as chart-part reading, flattened merged or nested table structure, or a force-PNG
-request. The suite therefore covers both clean extractions and honest incomplete-step reporting.
+complete, such as chart-part reading or flattened merged or nested table structure. The suite
+therefore covers both clean extractions and honest incomplete-step reporting.
 
 ### Fixtures are generated, never committed
 
@@ -55,7 +55,7 @@ regeneration is refused in CI.
   short byte sequence for the legacy `.doc` unreadable scenario; no committed binary fixtures and
   no network access
 - **Mocking**: none — every system test drives the real engine and the real Open XML backend
-- **Determinism**: a fixed `TimestampUtc` is injected so repeated runs are byte-comparable
+- **Determinism**: the run-varying timestamp line is normalized so repeated runs are byte-comparable
 - **Isolation**: each test owns its temporary folder and cleans it on dispose
 
 ## Acceptance Criteria

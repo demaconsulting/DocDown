@@ -46,7 +46,7 @@ pages, labeled shapes, and connections, including zero, so an empty drawing is p
 inventory fact rather than an extraction shortfall. When DocDown attempted an additional step and
 could not complete it, the suite proves a short note is recorded instead: one note when a render was
 requested without an available renderer, one note when a single page could not be rendered through
-COM, and one note when a force-PNG request for embedded images had to preserve the source encoding.
+and COM.
 No Visio-specific legacy reporting terms remain.
 
 ### Fixtures are generated, never committed
@@ -88,7 +88,7 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
   for any page it could not render while continuing with the remaining pages.
 - A render requested without an available renderer records a plain note while the managed content
   still reaches the output.
-- Embedded images are written and linked, and a force-PNG request that could not be completed is
+- Embedded images are written and linked in the encoding the drawing stored them in, which is
   recorded as a plain note while the source bytes are preserved.
 - The legacy binary `.vsd` format is refused with an unreadable result whose explanation states that
   the format is unsupported, never by an exception escaping to the caller and never by an

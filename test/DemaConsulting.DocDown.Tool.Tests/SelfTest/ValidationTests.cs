@@ -15,21 +15,21 @@ public class ValidationTests
     [Fact]
     public void Validation_Run_Header_HonorsDepthAndReportsEnvironment()
     {
-        var (exit, log) = CliHarness.Run("--validate", "--depth", "2");
+        var (exit, log) = CliHarness.RunSelfValidation(CliHarness.BuildManagedEngine(), "--depth", "2");
 
-        Assert.Equal(0, exit);
+        Assert.True(exit == 0, log);
         Assert.Contains("## DEMA Consulting DocDown Tool", log, StringComparison.Ordinal);
         Assert.Contains(Environment.MachineName, log, StringComparison.Ordinal);
         Assert.Contains("UTC", log, StringComparison.Ordinal);
     }
 
-    /// <summary>Proves the run executes Core's cases and the PDF backend's cases as one union.</summary>
+    /// <summary>Proves the run executes Core's cases and every registered backend's cases as one union.</summary>
     [Fact]
-    public void Validation_Run_DefaultEngine_RunsCoreAndPdfSelfTestUnion()
+    public void Validation_Run_RegisteredBackends_RunsCoreAndBackendSelfTestUnion()
     {
-        var (exit, log) = CliHarness.Run("--validate");
+        var (exit, log) = CliHarness.RunSelfValidation(CliHarness.BuildManagedEngine());
 
-        Assert.Equal(0, exit);
+        Assert.True(exit == 0, log);
         Assert.Contains("core.layout-invariance", log, StringComparison.Ordinal);
         Assert.Contains("core.manifest-schema", log, StringComparison.Ordinal);
         Assert.DoesNotContain("core.gap-accuracy", log, StringComparison.Ordinal);
@@ -49,11 +49,11 @@ public class ValidationTests
         using var temp = new TempScratch();
         var trx = Path.Combine(temp.Path, "results.trx");
 
-        // Act: run a self-validation that writes the TRX results file
-        var (exit, log) = CliHarness.Run("--validate", "--results", trx);
+        // Act: run a self-validation over the managed engine that writes the TRX results file
+        var (exit, log) = CliHarness.RunSelfValidation(CliHarness.BuildManagedEngine(), "--results", trx);
 
         // Assert: reported, exists, parses as well-formed XML, and carries the named self-test cases
-        Assert.Equal(0, exit);
+        Assert.True(exit == 0, log);
         Assert.Contains("Results written to", log, StringComparison.Ordinal);
         Assert.True(File.Exists(trx));
 
@@ -95,11 +95,11 @@ public class ValidationTests
         using var temp = new TempScratch();
         var xml = Path.Combine(temp.Path, "results.xml");
 
-        // Act: run a self-validation that writes the JUnit results file
-        var (exit, log) = CliHarness.Run("--validate", "--results", xml);
+        // Act: run a self-validation over the managed engine that writes the JUnit results file
+        var (exit, log) = CliHarness.RunSelfValidation(CliHarness.BuildManagedEngine(), "--results", xml);
 
         // Assert: reported, exists, parses as well-formed XML, and carries the named self-test cases
-        Assert.Equal(0, exit);
+        Assert.True(exit == 0, log);
         Assert.Contains("Results written to", log, StringComparison.Ordinal);
         Assert.True(File.Exists(xml));
 
@@ -136,7 +136,7 @@ public class ValidationTests
         using var temp = new TempScratch();
         var json = Path.Combine(temp.Path, "results.json");
 
-        var (exit, log) = CliHarness.Run("--validate", "--results", json);
+        var (exit, log) = CliHarness.RunSelfValidation(CliHarness.BuildManagedEngine(), "--results", json);
 
         Assert.Equal(1, exit);
         Assert.Contains("Unsupported results file format", log, StringComparison.Ordinal);
@@ -146,9 +146,9 @@ public class ValidationTests
     [Fact]
     public void Validation_Run_AllPass_ExitCodeZero()
     {
-        var (exit, log) = CliHarness.Run("--validate");
+        var (exit, log) = CliHarness.RunSelfValidation(CliHarness.BuildManagedEngine());
 
-        Assert.Equal(0, exit);
+        Assert.True(exit == 0, log);
         Assert.DoesNotContain("[FAIL]", log, StringComparison.Ordinal);
     }
 }

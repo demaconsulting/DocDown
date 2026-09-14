@@ -24,15 +24,13 @@ item.
   images first, writes page content as one flow or one part per page, writes document info and any
   captured metadata, and records a plain note when a requested PNG output could not be honored for
   embedded images.
-- **`WriteContentAsync`** (private) — writes the drawing as one content flow or, in per-part mode,
-  one part per page under `parts/`.
+- **`WriteContentAsync`** (private) — writes the drawing as one content flow, each page under its
+  own heading.
 - **`RenderPage`** (private) — renders one page: its name as a heading, informative shape text as a
   list, meaningful directed edges as a `source -> target` list, the labeling convention when needed,
   omitted-callout and omitted-edge counts, and inline images whose paths were returned by the sink.
 - **`ReportContentFeatures`** (private) — reports looked-for counts for pages, labeled shapes, and
   connections, counting only the edges that reach the output.
-- **`ReportImages`** / **`ReportForcePngNote`** (private) — emit the plain note for an unhonored
-  force-PNG request. A drawing that embeds no content images reports nothing here.
 - **`AsListItem`** / **`Informative`** / **`IndexShapes`** (private) — preserve multi-line text,
   decide whether a shape text is informative, and build a page-local shape map for endpoint
   resolution.

@@ -83,11 +83,14 @@ installation. Evidence for `DocDownVisio-Com-VisioComExtractor-ProbesHonestly`.
 #### Both release-time COM cases are contributed, and the render case skips where Visio is absent
 
 **Tests**: `VisioComExtractor_GetSelfTestCases_ReturnsAvailabilityAndRenderCases`,
-`VisioComExtractor_RenderSelfTest_UnavailableBackend_SkipsWithReason`
+`VisioComExtractor_RenderSelfTest_UnavailableBackend_SkipsWithReason`,
+`DocDownTool_Validate_ComRenderCases_ExecuteAndPassWhereOfficeIsInstalled`
 
 Prove the backend contributes exactly `visio.com.available` and `visio.com.render` under its own
-category, and that the render case reports a reasoned skip — never a failure and never a launched
-application — where the backend probes unavailable, which is every machine without Microsoft Visio.
+category; that the render case reports a reasoned skip — never a failure and never a launched
+application — where the backend probes unavailable, which is every machine without Microsoft Visio;
+and that on a machine where Visio *is* installed the case is not merely tolerated but actually
+executes and passes under the shipped tool's `--validate`.
 Evidence for `DocDownVisio-Com-VisioComExtractor-ContributesComSelfTests`.
 
 The passing side of `visio.com.render` is release-time evidence, not CI evidence: on a machine with

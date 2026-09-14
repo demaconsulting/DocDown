@@ -42,6 +42,6 @@ flushing.
 ## Dependencies
 
 - **DocDown.Core** — `ExtractionOptions` and the option value types (`PageRange`,
-  `ImageOutputMode`, `ContentSplitMode`, and `ScratchFolderMode`) the flags map onto.
+  and `ScratchFolderMode`) the flags map onto.
 
 There are no other dependencies; the subsystem performs no extraction and constructs no engine.

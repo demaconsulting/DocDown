@@ -386,14 +386,16 @@ public static class SummaryWriter
             AppendEnvironmentFactGroups(builder, shown);
         }
 
-        // Account for what moved to the manifest so the omission is visible rather than silent
+        // Account for the backends this section does not list, so the omission is visible rather
+        // than silent. The pointer is to --list-backends, not the manifest: the manifest records
+        // only the backend that actually ran.
         if (elided > 0)
         {
             builder.Append("  ").Append(elided.ToString(CultureInfo.InvariantCulture))
                 .Append(elided == 1
                     ? " other registered backend was available but did not run"
                     : " other registered backends were available but did not run")
-                .Append("; see manifest.json.\n");
+                .Append("; run 'docdown --list-backends' to see them.\n");
         }
 
         builder.Append('\n');
@@ -638,8 +640,8 @@ public static class SummaryWriter
     ///         One line per image is the wrong default for a file whose purpose is to be pasted into
     ///         a context window: a fifty-slide deck spent forty-eight lines on dimensions and page
     ///         numbers that the manifest already records in full, with <c>sourcePage</c>,
-    ///         <c>sourcePages</c>, <c>referencedByTemplate</c>, <c>sourceRef</c>, <c>sha256</c>,
-    ///         <c>transform</c>, and dimensions per image. What a summary reader needs is the shape
+    ///         <c>sourcePages</c>, <c>referencedByTemplate</c>, <c>sourceRef</c>, <c>transform</c>,
+    ///         and dimensions per image. What a summary reader needs is the shape
     ///         of the set — how many, how big, and where they came from — plus where to find the
     ///         rest.
     ///     </para>

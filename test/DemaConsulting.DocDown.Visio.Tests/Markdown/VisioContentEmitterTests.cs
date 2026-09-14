@@ -62,27 +62,6 @@ public class VisioContentEmitterTests
     }
 
     /// <summary>
-    ///     Proves per-page parts are written under the per-part split mode, titled by page name.
-    /// </summary>
-    [Fact]
-    public async Task VisioContentEmitter_Emit_PerPart_WritesPageParts()
-    {
-        var model = new VisioDocumentModel(
-        [
-            new VisioPageModel("One", [new VisioShapeModel("1", "A")], []),
-            new VisioPageModel("Two", [new VisioShapeModel("1", "B")], [])
-        ]);
-        var sink = new RecordingSink();
-        var options = new ExtractionOptions { IncludeEmbeddedImages = false, ContentSplit = ContentSplitMode.PerPart };
-
-        await VisioContentEmitter.EmitAsync(sink, options, model, Ct);
-
-        Assert.Equal(2, sink.Parts.Count);
-        Assert.All(sink.Parts, part => Assert.Equal(ContentPartKind.Page, part.Part.Kind));
-        Assert.Equal("One", sink.Parts[0].Part.Title);
-    }
-
-    /// <summary>
     ///     Proves a default extraction of a drawing that embeds no content images records no notes
     ///     and reports the looked-for content inventory, including zero connections.
     /// </summary>
@@ -121,26 +100,23 @@ public class VisioContentEmitterTests
     }
 
     /// <summary>
-    ///     Proves a force-PNG request that a vector metafile cannot honor is recorded as a plain note
-    ///     while the source-encoded bytes are still written through the sink.
+    ///     Proves a vector metafile is written through the sink in the encoding the drawing stored
+    ///     it in, with nothing reported.
     /// </summary>
     [Fact]
-    public async Task VisioContentEmitter_Emit_ForcePngVectorImage_ReportsNote()
+    public async Task VisioContentEmitter_Emit_VectorImage_WritesSourceEncodingWithoutNote()
     {
         var model = new VisioDocumentModel(
             [new VisioPageModel("P", [new VisioShapeModel("1", "A")], [])],
             [new EmbeddedImage([1, 2, 3], "image/x-emf", "schematic", "/visio/media/image1.emf")]);
         var sink = new RecordingSink();
-        var options = new ExtractionOptions { ImageOutput = ImageOutputMode.ForcePng };
 
-        await VisioContentEmitter.EmitAsync(sink, options, model, Ct);
+        await VisioContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
         var image = Assert.Single(sink.Images);
         Assert.Equal("image/x-emf", image.Hint.MediaType);
         Assert.Equal(ImageTransform.Passthrough, image.Hint.Transform);
-        Assert.Contains(
-            sink.Notes,
-            note => note.Message.Contains("PNG output was requested", StringComparison.Ordinal));
+        Assert.Empty(sink.Notes);
     }
 
     /// <summary>
@@ -255,37 +231,17 @@ public class VisioContentEmitterTests
     }
 
     /// <summary>
-    ///     Proves that under <c>--split per-part</c> a Visio page's inline image link resolves on disk
-    ///     from its own <c>parts/*.md</c> file, exercising the real sink and content writer.
+    ///     Proves the single-flow <c>content.md</c> image link resolves on disk from the scratch root.
     /// </summary>
     /// <remarks>
-    ///     PerPart routes each page into <c>parts/</c>, where the root-relative <c>images/…</c> link
-    ///     would dangle without the write-path rewrite. Drives the real <see cref="ExtractionSink"/> +
-    ///     <see cref="ContentWriter"/> over a temp folder and resolves each link against its file.
+    ///     A drawing single-flows into the root <c>content.md</c>, so its link must stay
+    ///     root-relative and resolve unchanged.
     /// </remarks>
     [Fact]
-    public async Task VisioContentEmitter_Emit_PerPartImageLinks_ResolveOnDisk()
+    public async Task VisioContentEmitter_Emit_ImageLinks_ResolveOnDisk()
     {
-        // Act: emit an image-bearing drawing and finalize as per-part files
-        var resolved = await EmitAndResolveLinksAsync(ContentSplitMode.PerPart);
-
-        // Assert: at least one image link was checked and all resolved on disk
-        Assert.True(resolved >= 1);
-    }
-
-    /// <summary>
-    ///     Proves that under the default Auto layout the single-flow <c>content.md</c> image link
-    ///     resolves on disk from the scratch root.
-    /// </summary>
-    /// <remarks>
-    ///     Auto single-flows the drawing into the root <c>content.md</c>, so its link must stay
-    ///     root-relative and resolve unchanged; guards that the fix does not disturb the root layout.
-    /// </remarks>
-    [Fact]
-    public async Task VisioContentEmitter_Emit_AutoImageLinks_ResolveOnDisk()
-    {
-        // Act: emit through the real sink and finalize in the default Auto layout
-        var resolved = await EmitAndResolveLinksAsync(ContentSplitMode.Auto);
+        // Act: emit through the real sink and finalize the content document
+        var resolved = await EmitAndResolveLinksAsync();
 
         // Assert: the root content.md image link resolved on disk
         Assert.True(resolved >= 1);
@@ -295,16 +251,15 @@ public class VisioContentEmitterTests
     ///     Emits an image-bearing drawing through a real sink and content writer, then asserts every
     ///     inline image link resolves on disk.
     /// </summary>
-    /// <param name="split">The content split mode to emit and finalize under.</param>
     /// <returns>The number of local resource links that were checked and resolved.</returns>
     /// <remarks>
     ///     Uses a real <see cref="ExtractionSink"/> over a temporary scratch folder so the image bytes
     ///     and page part files reach disk and link resolution is genuine rather than a string check.
     /// </remarks>
-    private static async Task<int> EmitAndResolveLinksAsync(ContentSplitMode split)
+    private static async Task<int> EmitAndResolveLinksAsync()
     {
         using var temp = new TempScratch();
-        var options = new ExtractionOptions { IncludeEmbeddedImages = true, ContentSplit = split };
+        var options = new ExtractionOptions { IncludeEmbeddedImages = true };
         var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, options);
         var image = new EmbeddedImage([1, 2, 3, 4], "image/png",
@@ -314,7 +269,7 @@ public class VisioContentEmitterTests
         var model = new VisioDocumentModel([page], [image]);
 
         await VisioContentEmitter.EmitAsync(sink, options, model, Ct);
-        await ContentWriter.WriteAsync(sink, split, "Drawing", Ct);
+        await ContentWriter.WriteAsync(sink, "Drawing", Ct);
 
         return MarkdownImageLinks.AssertAllImageLinksResolveOnDisk(folder.AbsolutePath);
     }

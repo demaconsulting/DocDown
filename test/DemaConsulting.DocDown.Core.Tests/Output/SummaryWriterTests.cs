@@ -164,7 +164,7 @@ public class SummaryWriterTests
         var sink = new ExtractionSink(folder, Options());
         await WriteText(sink);
         var report = BuildReport(temp, Options(), ExtractionOutcome.Produced, SuccessExtractor(), null, DefaultEnvironment());
-        var content = await ContentWriter.WriteAsync(sink, Options().ContentSplit, "Document", Ct);
+        var content = await ContentWriter.WriteAsync(sink, "Document", Ct);
 
         // Act: render twice into the same folder, snapshotting the first render
         await SummaryWriter.WriteAsync(folder, sink, report, content, Ct);
@@ -291,7 +291,6 @@ public class SummaryWriterTests
         var report = new ExtractionReport(
             ExtractionOutcome.Produced,
             DocumentSource.FromFile(temp.CreateFile("source.bin", "hello")),
-            "0000",
             new FormatDetection(DocumentFormat.Unknown, DetectionBasis.Extension, 0.1),
             SuccessExtractor(),
             DefaultEnvironment(),
@@ -299,7 +298,7 @@ public class SummaryWriterTests
             FixedTimestamp,
             null,
             "DemaConsulting.DocDown.TestSupport");
-        var content = await ContentWriter.WriteAsync(sink, Options().ContentSplit, "Document", Ct);
+        var content = await ContentWriter.WriteAsync(sink, "Document", Ct);
 
         // Act: render the summary
         await SummaryWriter.WriteAsync(folder, sink, report, content, Ct);
@@ -364,7 +363,7 @@ public class SummaryWriterTests
         // Assert: the backend fact and the unavailability remain, while the available candidates are counted
         Assert.Contains("libtxt 4.2 present", summary, StringComparison.Ordinal);
         Assert.Contains("no native library", summary, StringComparison.Ordinal);
-        Assert.Contains("2 other registered backends were available but did not run; see manifest.json.", summary, StringComparison.Ordinal);
+        Assert.Contains("2 other registered backends were available but did not run; run 'docdown --list-backends' to see them.", summary, StringComparison.Ordinal);
         Assert.DoesNotContain("backend.unused-one", summary, StringComparison.Ordinal);
     }
 
@@ -415,7 +414,7 @@ public class SummaryWriterTests
         var report = BuildReport(temp, Options(), outcome, selected, failure, environment ?? DefaultEnvironment());
         var content = outcome == ExtractionOutcome.Unreadable
             ? null
-            : await ContentWriter.WriteAsync(sink, Options().ContentSplit, "Document", Ct);
+            : await ContentWriter.WriteAsync(sink, "Document", Ct);
         await SummaryWriter.WriteAsync(folder, sink, report, content, Ct);
         return await File.ReadAllTextAsync(Path.Combine(folder.AbsolutePath, "summary.txt"), Ct);
     }
@@ -443,7 +442,6 @@ public class SummaryWriterTests
         return new ExtractionReport(
             outcome,
             source,
-            "0000",
             detection,
             selected,
             environment,
@@ -471,7 +469,7 @@ public class SummaryWriterTests
     ///     Creates the fixed options used across the summary scenarios.
     /// </summary>
     /// <returns>Options stamped with the fixed timestamp.</returns>
-    private static ExtractionOptions Options() => new() { TimestampUtc = FixedTimestamp };
+    private static ExtractionOptions Options() => new();
 
     /// <summary>
     ///     Writes a small text document through the sink.

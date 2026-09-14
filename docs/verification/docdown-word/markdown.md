@@ -61,11 +61,11 @@ escaping, empty-table behavior, and merged-and-nested flatten count are given in
 #### The emitter writes content and inventory through one path
 
 **Tests**: `WordContentEmitter_Emit_BodyWithComments_ReportsOutlineAndSucceeds`,
-`WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1`
+`WordOpenXmlExtractor_Extract_ImageLinks_ResolveOnDisk`
 
 Prove the emitter, driven by a hand-built model, writes content and reports the inventory features
-that make headings and comments discoverable, and that a real extraction writes split `parts/*.md`
-output when requested. Evidence for `DocDownWord-Markdown-ModelEmission`.
+that make headings and comments discoverable, and that a real extraction writes a single
+`content.md` whose image links resolve on disk. Evidence for `DocDownWord-Markdown-ModelEmission`.
 
 #### Embedded charts are surfaced as a short note
 

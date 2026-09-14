@@ -7,7 +7,7 @@ page image.
 Scratch folder  : <scratch-folder>
 Source document : <source-document>
 Detected format : pdf (application/pdf) - detected by file extension
-Extracted (UTC) : 2026-01-02T03:04:05Z
+Extracted (UTC) : <timestamp>
 Status          : PRODUCED  - the standard output layout was written.
 
 All paths below are relative to the scratch folder shown above.
@@ -26,7 +26,7 @@ Environment
     pdf.pageRendering : not provided by this extractor (NOT available)
   DocDown.Pdf.Rendering:
     pages.renderer : PDFtoImage (PDFium/SkiaSharp, native) (available)
-  1 other registered backend was available but did not run; see manifest.json.
+  1 other registered backend was available but did not run; run 'docdown --list-backends' to see them.
 
 Document metadata
 -----------------

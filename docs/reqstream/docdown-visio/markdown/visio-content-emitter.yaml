@@ -4,8 +4,22 @@
 # SUPERSEDED REQUIREMENT:
 # DocDownVisio-Markdown-VisioContentEmitter-ReportsVectorImageCaveat required extra commentary for
 # EMF and WMF files. Vector images are now written as embedded images without extra commentary
-# unless a caller-requested PNG conversion step could not be completed. That attempted conversion is
-# now covered by DocDownVisio-Markdown-VisioContentEmitter-ReportsForcePngNote.
+# and no PNG conversion is attempted at all. Its former replacement,
+# DocDownVisio-Markdown-VisioContentEmitter-ReportsForcePngNote, is itself now superseded (see
+# below), so the retained behavior is simply that the document's own bytes are written unchanged,
+# covered by DocDownVisio-Markdown-VisioContentEmitter-LinksImages.
+#
+# SUPERSEDED REQUIREMENT:
+# DocDownVisio-Markdown-VisioContentEmitter-ReportsForcePngNote required a plain note when a
+# requested PNG output could not be produced. It is superseded (not satisfied) with no replacement
+# because the caller-facing PNG request was removed under the simplicity principle: the request
+# never converted anything, so with it gone there is no attempted step left to report.
+#
+# SUPERSEDED REQUIREMENT:
+# DocDownVisio-Markdown-VisioContentEmitter-SplitsLargeDrawings required the emitter to honor a
+# caller-chosen content-split mode. It is superseded (not satisfied) with no replacement because
+# the caller-facing choice was removed under the simplicity principle; a drawing is written as one
+# content flow with a heading per page, which is what the Auto behavior always produced.
 #
 # SUPERSEDED REQUIREMENT:
 # DocDownVisio-Markdown-VisioContentEmitter-ReportsEmptyDrawingGap required a counted gap when a
@@ -112,8 +126,8 @@ sections:
                   suppressed or deduplicated-away image never leaves a link pointing at nothing.
                 tests:
                   - VisioContentEmitter_Emit_WithRasterImages_WritesThroughSink
-                  - VisioContentEmitter_Emit_AutoImageLinks_ResolveOnDisk
-                  - VisioContentEmitter_Emit_PerPartImageLinks_ResolveOnDisk
+                  - VisioContentEmitter_Emit_ImageLinks_ResolveOnDisk
+                  - VisioContentEmitter_Emit_VectorImage_WritesSourceEncodingWithoutNote
 
               - id: DocDownVisio-Markdown-VisioContentEmitter-ReportsLookedForInventory
                 title: >-
@@ -129,18 +143,6 @@ sections:
                   - VisioContentEmitter_Emit_NoImages_LeavesNotesEmptyAndReportsInventory
                   - VisioContentEmitter_Emit_NoConnections_ReportsZeroConnectionInventory
 
-              - id: DocDownVisio-Markdown-VisioContentEmitter-ReportsForcePngNote
-                title: >-
-                  VisioContentEmitter shall record a plain note when PNG output was requested for
-                  embedded images but source-encoded bytes had to be written instead.
-                justification: |
-                  When a caller asks for PNG output, DocDown attempted an additional transformation
-                  step. If this backend cannot complete that step because it does not re-encode
-                  images, the shortfall must be stated plainly while the source bytes are still
-                  preserved and linked.
-                tests:
-                  - VisioContentEmitter_Emit_ForcePngVectorImage_ReportsNote
-
               - id: DocDownVisio-Markdown-VisioContentEmitter-ReportsEmptyDrawingInInventory
                 title: >-
                   VisioContentEmitter shall write empty content and report zero-count looked-for
@@ -152,18 +154,6 @@ sections:
                   none, without dressing the absence up as a shortfall.
                 tests:
                   - VisioContentEmitter_Emit_EmptyDrawing_WritesEmptyContentAndZeroCountInventory
-
-              - id: DocDownVisio-Markdown-VisioContentEmitter-SplitsLargeDrawings
-                title: >-
-                  VisioContentEmitter shall write the drawing as one content flow or as one part per
-                  page, honoring the content-split mode.
-                justification: |
-                  A single flow keeps a small drawing in one readable file, while a large drawing
-                  reads better as one part per page under a `parts/` folder; honoring the caller's
-                  split mode lets the same emission path serve both without a second implementation,
-                  and the inline image links resolve on disk under either mode.
-                tests:
-                  - VisioContentEmitter_Emit_PerPart_WritesPageParts
 
               - id: DocDownVisio-Markdown-VisioContentEmitter-StatesConventionInContent
                 title: >-

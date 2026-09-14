@@ -1,0 +1,24 @@
+<Project>
+
+  <!--
+    Shared test settings for every project under test/.
+
+    The single xunit.runner.json beside this file is linked into each test project's output so the
+    same parallelization policy applies to all of them rather than to whichever project someone
+    remembered. It disables collection parallelism and pins the runner to one thread, so exactly one
+    test executes at a time within an assembly.
+
+    Why: the tool's self-validation drives Microsoft Visio and Microsoft PowerPoint through COM
+    automation, which is single-instance. Two tests rendering at once tear each other's session down.
+    Serializing the suite is slower, and is the accepted cost of a trustworthy one: the product is
+    not asked to tolerate contention that only the harness ever created.
+
+    The target frameworks of a multi-target test project are a separate axis that no in-assembly
+    setting can reach, because they run as separate processes. See the dotnet test invocation in
+    build.ps1.
+  -->
+  <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)xunit.runner.json" Link="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -3,6 +3,13 @@
 #
 # ContentWriter finalizes the Markdown content: a single flow with preserved page
 # markers, or an index over split parts.
+#
+# SUPERSEDED REQUIREMENT: DocDownCore-Output-ContentWriter-SplitModeHonored
+# required the writer to honor a caller-chosen split mode. It is superseded (not satisfied) with no
+# replacement because the caller-facing choice was removed under the simplicity principle: the
+# layout now follows the document — a single flow when the backend offered no parts, an index over
+# parts/ when it did — and DocDownCore-Output-ContentWriter-SingleFlowDocument and
+# DocDownCore-Output-ContentWriter-PartIndex together cover both layouts.
 
 sections:
   - title: DocDownCore Requirements
@@ -25,14 +32,7 @@ sections:
                   Part-based content still needs a single predictable entry point for readers.
                 tests:
                   - ContentWriter_WriteAsync_MultipleParts_ProducesIndexAndPartFiles
-
-              - id: DocDownCore-Output-ContentWriter-SplitModeHonored
-                title: ContentWriter shall honor the caller's split mode for multi-part content.
-                justification: |
-                  Different consumers want either one concatenated document or separate part files.
-                tests:
-                  - ContentWriter_WriteAsync_SingleMode_ConcatenatesPartsWithoutPartsFolder
-                  - ContentWriter_WriteAsync_PerPartMode_ProducesIndexWithPartFiles
+                  - ContentWriter_WriteAsync_SinglePart_ProducesIndexWithPartFile
 
               - id: DocDownCore-Output-ContentWriter-PageMarkers
                 title: ContentWriter shall preserve backend-supplied page markers in single-flow output.

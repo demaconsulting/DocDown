@@ -36,7 +36,7 @@ full detail is given in the respective unit verification documents.
 
 #### The validation driver runs the self-test union and writes results
 
-**Tests**: `Validation_Run_DefaultEngine_RunsCoreAndPdfSelfTestUnion`,
+**Tests**: `Validation_Run_RegisteredBackends_RunsCoreAndBackendSelfTestUnion`,
 `Validation_Run_ResultsTrx_WritesFile`
 
 Prove the driver runs the current Core cases together with the backend cases and writes the requested

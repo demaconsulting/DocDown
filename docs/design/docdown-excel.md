@@ -96,8 +96,8 @@ The package's build output contains no `runtimes/` folder and no native `.dll`, 
   verbatim guarantee cannot be weakened by a rendering choice.
 - **Inventory and note discipline.** The emitter reports what it found through content inventory counts,
   including zeros for features it explicitly looked for. It records a short note only when DocDown
-  attempted a chart or image step and could not complete it, such as an unreadable chart part, images
-  skipped by caller-supplied size limits, or an unhonored `ForcePng` request. A chart with no cached
+  attempted a chart or image step and could not complete it, such as an unreadable chart part or images
+  skipped by caller-supplied size limits. A chart with no cached
   data, a bounded chart table, an empty worksheet, and a vector image written in its source encoding are
   stated in content instead of being characterized as incomplete work.
 - **Failure containment.** The reader throws `ExcelExtractionException` for the workbook faults it can
@@ -145,9 +145,9 @@ extraction a faithful data container rather than a flattened dump:
   it.
 - **Images.** Embedded images are written through the sink and linked inline under the worksheet that
   shows them, recording which worksheet each belongs to. When caller-supplied size limits prevent a
-  write, or when `ForcePng` cannot be honored because the backend does not re-encode images, the emitter
-  records a short note stating what happened. Vector images written successfully are emitted silently in
-  their source encoding.
+  write, the emitter records a short note stating what happened. Images are written in whatever format
+  the document stored them in, so a vector image written successfully is emitted silently in its source
+  encoding.
 - **Page rendering.** A page-rendering request is answered with silence and an environment fact naming
   the non-applicability, because a workbook has no page grid to render.
 

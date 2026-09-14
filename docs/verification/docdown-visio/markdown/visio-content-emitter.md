@@ -9,8 +9,8 @@ emission path from the drawing model to the output contract.
 `DemaConsulting.DocDown.Visio.Tests`, driving every emission decision from a hand-built
 `VisioDocumentModel` with no drawing behind it and capturing the output through a recording sink.
 This proves each mapping decision in isolation: the directed topology with shape text, the
-shape-id fallback, per-part splitting, inline image links resolving on disk under both split modes,
-looked-for content inventory, the force-PNG note, empty-drawing zero inventory, bare-callout
+shape-id fallback, inline image links resolving on disk,
+looked-for content inventory, empty-drawing zero inventory, bare-callout
 omission and count, edge-between-unnamed-shapes omission and count, multi-line shape text preserved
 inside its item, and the labeling convention in content.
 
@@ -28,7 +28,7 @@ Per IEC 62304 §5.5.2, a `VisioContentEmitter` unit test run passes when the emi
 page's name, shape text, and directed topology; omits and counts bare-callout shapes and edges
 between unidentified shapes; keeps multi-line shape text intact inside its item; links images only
 when a path was returned; reports looked-for counts for pages, labeled shapes, and connections;
-records a plain note for an unhonored force-PNG request; writes empty content plus zero-count
+writes empty content plus zero-count
 inventory for an empty drawing; writes the drawing as one flow or one part per page; and states the
 convention in the content only when a label is not authored text. Any silent omission, truncated
 text, dangling link, or missing note is a failure.
@@ -71,12 +71,12 @@ least one meaningful endpoint is kept. Evidence for
 #### Inline image links resolve on disk
 
 **Tests**: `VisioContentEmitter_Emit_WithRasterImages_WritesThroughSink`,
-`VisioContentEmitter_Emit_AutoImageLinks_ResolveOnDisk`,
-`VisioContentEmitter_Emit_PerPartImageLinks_ResolveOnDisk`
+`VisioContentEmitter_Emit_ImageLinks_ResolveOnDisk`,
+`VisioContentEmitter_Emit_VectorImage_WritesSourceEncodingWithoutNote`
 
-Prove a drawing's images are written through the sink and linked from the page that shows them, with
-links resolving on disk under both split modes and only when a path was returned. Evidence for
-`DocDownVisio-Markdown-VisioContentEmitter-LinksImages`.
+Prove a drawing's images are written through the sink in the encoding the drawing stored them in and
+linked from the page that shows them, with links resolving on disk and only when a path was returned.
+Evidence for `DocDownVisio-Markdown-VisioContentEmitter-LinksImages`.
 
 #### Looked-for content inventory is reported
 
@@ -87,27 +87,12 @@ Prove the emitter reports looked-for counts for pages, labeled shapes, and conne
 zero connection count when a drawing has no connections. Evidence for
 `DocDownVisio-Markdown-VisioContentEmitter-ReportsLookedForInventory`.
 
-#### A force-PNG request that could not be completed is recorded as a note
-
-**Test**: `VisioContentEmitter_Emit_ForcePngVectorImage_ReportsNote`
-
-Proves that when PNG output was requested but the emitter preserved source-encoded bytes, it records
-a plain note explaining that the conversion step could not be completed. Evidence for
-`DocDownVisio-Markdown-VisioContentEmitter-ReportsForcePngNote`.
-
 #### An empty drawing writes empty content and zero-count inventory
 
 **Test**: `VisioContentEmitter_Emit_EmptyDrawing_WritesEmptyContentAndZeroCountInventory`
 
 Proves a drawing with no pages writes empty content and reports zero-count looked-for inventory.
 Evidence for `DocDownVisio-Markdown-VisioContentEmitter-ReportsEmptyDrawingInInventory`.
-
-#### The drawing splits into per-page parts
-
-**Test**: `VisioContentEmitter_Emit_PerPart_WritesPageParts`
-
-Proves the drawing is written as one part per page under the per-part split mode. Evidence for
-`DocDownVisio-Markdown-VisioContentEmitter-SplitsLargeDrawings`.
 
 #### The convention is stated in the content only when needed
 

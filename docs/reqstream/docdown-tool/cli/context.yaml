@@ -76,19 +76,21 @@ sections:
                   offending token so the user can correct it.
                 tests:
                   - Context_Create_UnknownArgument_ThrowsArgumentException
+                  - Context_Create_RemovedImagesOption_ThrowsArgumentException
+                  - Context_Create_RemovedSplitOption_ThrowsArgumentException
 
               - id: DocDownTool-Context-OptionValidation
                 title: >-
                   Context shall reject a malformed value for an option that takes one, with an argument
                   fault.
                 justification: |
-                  An option value the tool cannot interpret — a page range that is not two numbers, an
-                  image mode that is not a known token — is a user error that must surface at parse
-                  time rather than be misinterpreted later. Rejecting it by name keeps the failure
-                  local to the mistake.
+                  An option value the tool cannot interpret — a page range that is not two numbers,
+                  a scratch policy that is not a known token — is a user error that must surface at
+                  parse time rather than be misinterpreted later. Rejecting it by name keeps the
+                  failure local to the mistake.
                 tests:
                   - Context_Create_MalformedPageRange_ThrowsArgumentException
-                  - Context_Create_UnknownImageMode_ThrowsArgumentException
+                  - Context_Create_RemovedScratchPolicyToken_ThrowsArgumentException
 
               - id: DocDownTool-Context-Depth
                 title: Context shall reject a heading depth outside the supported range with an argument fault.

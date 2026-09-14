@@ -13,6 +13,9 @@ public class SummaryWriterGoldenTests
     /// <summary>A fixed timestamp so the rendered header is byte-reproducible across runs.</summary>
     private static readonly DateTimeOffset FixedTimestamp = new(2026, 1, 2, 3, 4, 5, TimeSpan.Zero);
 
+    /// <summary>The placeholder substituted for the extraction timestamp during normalization.</summary>
+    private const string TimestampPlaceholder = "Extracted (UTC) : <timestamp>";
+
     /// <summary>The placeholder substituted for the absolute scratch-folder path during normalization.</summary>
     private const string ScratchPlaceholder = "Scratch folder  : <scratch-folder>";
 
@@ -31,7 +34,7 @@ public class SummaryWriterGoldenTests
     {
         // Arrange: a produced run with content and two rendered pages
         using var temp = new TempScratch();
-        var options = new ExtractionOptions { TimestampUtc = FixedTimestamp, RenderPages = true };
+        var options = new ExtractionOptions { RenderPages = true };
         var environment = PdfEnvironment(includeRenderer: true);
 
         // Act: render the summary
@@ -65,7 +68,7 @@ public class SummaryWriterGoldenTests
     {
         // Arrange: a produced run with two embedded images
         using var temp = new TempScratch();
-        var options = new ExtractionOptions { TimestampUtc = FixedTimestamp };
+        var options = new ExtractionOptions();
         var environment = PdfEnvironment(includeRenderer: false);
 
         // Act: render the summary
@@ -105,7 +108,7 @@ public class SummaryWriterGoldenTests
     {
         // Arrange: a produced run where page rendering was requested but unavailable
         using var temp = new TempScratch();
-        var options = new ExtractionOptions { TimestampUtc = FixedTimestamp, RenderPages = true };
+        var options = new ExtractionOptions { RenderPages = true };
         var environment = PdfEnvironment(includeRenderer: false);
 
         // Act: render the summary
@@ -137,7 +140,7 @@ public class SummaryWriterGoldenTests
     {
         // Arrange: a detected docx document with no registered Word backend
         using var temp = new TempScratch();
-        var options = new ExtractionOptions { TimestampUtc = FixedTimestamp };
+        var options = new ExtractionOptions();
         var detection = new FormatDetection(DocumentFormat.Docx, DetectionBasis.Extension, 0.9);
         _ = ExtractorSelector.Select(detection, options, Array.Empty<ExtractorCandidate>(), out var failure);
 
@@ -189,7 +192,6 @@ public class SummaryWriterGoldenTests
         var report = new ExtractionReport(
             outcome,
             source,
-            "0000",
             detection,
             selected,
             environment,
@@ -200,7 +202,7 @@ public class SummaryWriterGoldenTests
 
         var content = outcome == ExtractionOutcome.Unreadable
             ? null
-            : await ContentWriter.WriteAsync(sink, options.ContentSplit, "Document", Ct);
+            : await ContentWriter.WriteAsync(sink, "Document", Ct);
         await SummaryWriter.WriteAsync(folder, sink, report, content, Ct);
         return await File.ReadAllTextAsync(Path.Combine(folder.AbsolutePath, "summary.txt"), Ct);
     }
@@ -243,7 +245,11 @@ public class SummaryWriterGoldenTests
         var builder = new StringBuilder(summary.Length);
         foreach (var line in summary.Split('\n'))
         {
-            if (line.StartsWith("Scratch folder  : ", StringComparison.Ordinal))
+            if (line.StartsWith("Extracted (UTC) : ", StringComparison.Ordinal))
+            {
+                builder.Append(TimestampPlaceholder).Append('\n');
+            }
+            else if (line.StartsWith("Scratch folder  : ", StringComparison.Ordinal))
             {
                 builder.Append(ScratchPlaceholder).Append('\n');
             }

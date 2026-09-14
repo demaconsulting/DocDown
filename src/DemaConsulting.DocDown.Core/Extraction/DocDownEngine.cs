@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -164,7 +163,7 @@ public sealed class DocDownEngine
 
         // Step 2 (C5/D5): take a private snapshot of the options before touching anything else
         var effective = options?.Clone() ?? _defaults.Clone();
-        var timestamp = effective.TimestampUtc ?? DateTimeOffset.UtcNow;
+        var timestamp = DateTimeOffset.UtcNow;
 
         // Step 3: resolve the scratch folder; a refusal is the one failure with no writable layout
         ScratchFolder folder;
@@ -270,7 +269,7 @@ public sealed class DocDownEngine
         var sink = new ExtractionSink(folder, options);
         var candidates = _registry.GetCandidates();
 
-        // Step 4: read the source fully so it can be hashed and sniffed from a seekable buffer
+        // Step 4: read the source fully so it can be sniffed from a seekable buffer
         byte[] bytes;
         try
         {
@@ -284,13 +283,12 @@ public sealed class DocDownEngine
         catch (Exception exception) when (IsIoFault(exception))
         {
             var failure = MakeSimpleFailure($"The source document '{source.FileName}' could not be read.", UnknownDetection());
-            var inputs = new PipelineInputs(source, null, UnknownDetection(), options, timestamp, candidates);
+            var inputs = new PipelineInputs(source, UnknownDetection(), options, timestamp, candidates);
             return await WriteFailureAsync(folder, sink, inputs, null, failure, cancellationToken).ConfigureAwait(false);
         }
 
-        var sha = ComputeSha(bytes);
         var detection = Sniff(bytes, source.FileName);
-        var baseInputs = new PipelineInputs(source, sha, detection, options, timestamp, candidates);
+        var baseInputs = new PipelineInputs(source, detection, options, timestamp, candidates);
 
         // Step 5: an unrecognized format cannot be routed to any backend
         if (detection.Format.IsUnknown)
@@ -362,11 +360,11 @@ public sealed class DocDownEngine
 
         // Step 9: finalize content, then serialize the manifest and summary
         var content = await ContentWriter.WriteAsync(
-            sink, inputs.Options.ContentSplit, sink.DocumentInfo?.Title, cancellationToken).ConfigureAwait(false);
+            sink, sink.DocumentInfo?.Title, cancellationToken).ConfigureAwait(false);
 
         var environment = BuildEnvironment(FinalFacts(sink, inputs.Candidates, selected.Id));
         var report = new ExtractionReport(
-            ExtractionOutcome.Produced, inputs.Source, inputs.Sha, inputs.Detection, selected,
+            ExtractionOutcome.Produced, inputs.Source, inputs.Detection, selected,
             environment, inputs.Options, inputs.Timestamp, null);
         return await ProduceResultAsync(folder, sink, report, content, cancellationToken).ConfigureAwait(false);
     }
@@ -392,7 +390,7 @@ public sealed class DocDownEngine
     {
         var environment = BuildEnvironment(FinalFacts(sink, inputs.Candidates, selected?.Id));
         var report = new ExtractionReport(
-            ExtractionOutcome.Unreadable, inputs.Source, inputs.Sha, inputs.Detection, selected,
+            ExtractionOutcome.Unreadable, inputs.Source, inputs.Detection, selected,
             environment, inputs.Options, inputs.Timestamp, failure);
         return await ProduceResultAsync(folder, sink, report, null, cancellationToken).ConfigureAwait(false);
     }
@@ -763,7 +761,7 @@ public sealed class DocDownEngine
         using var document = JsonDocument.Parse(File.ReadAllText(result.ManifestPath));
         var root = document.RootElement;
 
-        if (!root.TryGetProperty("schemaVersion", out var schema) || schema.GetString() != "2.0")
+        if (!root.TryGetProperty("schemaVersion", out var schema) || schema.GetString() != "3.0")
         {
             return (false, "manifest schemaVersion is missing or unsupported");
         }
@@ -822,15 +820,6 @@ public sealed class DocDownEngine
         await raw.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
         return buffer.ToArray();
     }
-
-    /// <summary>
-    ///     Computes the lowercase hexadecimal SHA-256 of the source bytes.
-    /// </summary>
-    /// <param name="bytes">The bytes to hash.</param>
-    /// <returns>The lowercase hex digest.</returns>
-    /// <remarks>Records the source integrity hash in the manifest so a consumer can confirm provenance. Pure.</remarks>
-    private static string ComputeSha(byte[] bytes) =>
-        Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
 
     /// <summary>
     ///     Sniffs the format of the buffered source bytes.
@@ -940,7 +929,6 @@ public sealed class DocDownEngine
     ///     The immutable bundle of per-run inputs shared by the pipeline's finalization helpers.
     /// </summary>
     /// <param name="Source">The source document.</param>
-    /// <param name="Sha">The source SHA-256, or <see langword="null"/> when it could not be computed.</param>
     /// <param name="Detection">The detected format.</param>
     /// <param name="Options">The already-cloned effective options.</param>
     /// <param name="Timestamp">The resolved extraction timestamp.</param>
@@ -951,7 +939,7 @@ public sealed class DocDownEngine
     ///     thread-safe.
     /// </remarks>
     private sealed record PipelineInputs(
-        DocumentSource Source, string? Sha, FormatDetection Detection,
+        DocumentSource Source, FormatDetection Detection,
         ExtractionOptions Options, DateTimeOffset Timestamp, IReadOnlyList<ExtractorCandidate> Candidates);
 
     /// <summary>

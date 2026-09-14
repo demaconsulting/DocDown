@@ -92,4 +92,49 @@ public static class ContractAssert
                 $"files differ: '{pathA}' ({bytesA.Length} bytes) is not byte-identical to '{pathB}' ({bytesB.Length} bytes).");
         }
     }
+
+    /// <summary>
+    ///     Asserts two text artifacts are identical once the extraction timestamp is normalized away.
+    /// </summary>
+    /// <param name="pathA">The path of the first file. Must not be null or empty.</param>
+    /// <param name="pathB">The path of the second file. Must not be null or empty.</param>
+    /// <exception cref="ArgumentException">Thrown when either path is null or empty.</exception>
+    /// <exception cref="ContractAssertionException">Thrown when the files differ anywhere but the timestamp.</exception>
+    /// <remarks>
+    ///     Two runs of the same document are expected to differ in exactly one place: the wall-clock
+    ///     time each was stamped with. Replacing that one value lets a determinism test prove the
+    ///     real claim — that nothing else varies between runs — without the library having to accept
+    ///     an injectable clock on its public surface. Read-only filesystem I/O.
+    /// </remarks>
+    public static void FileEqualsIgnoringTimestamp(string pathA, string pathB)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(pathA);
+        ArgumentException.ThrowIfNullOrEmpty(pathB);
+
+        var textA = NormalizeTimestamps(File.ReadAllText(pathA));
+        var textB = NormalizeTimestamps(File.ReadAllText(pathB));
+
+        if (!string.Equals(textA, textB, StringComparison.Ordinal))
+        {
+            throw new ContractAssertionException(
+                $"files differ beyond their extraction timestamp: '{pathA}' is not identical to '{pathB}'.");
+        }
+    }
+
+    /// <summary>
+    ///     Replaces every ISO-8601 UTC extraction timestamp in an artifact with a fixed placeholder.
+    /// </summary>
+    /// <param name="text">The artifact text to normalize.</param>
+    /// <returns>The text with each <c>yyyy-MM-ddTHH:mm:ssZ</c> value replaced.</returns>
+    /// <remarks>
+    ///     Both <c>summary.txt</c> and <c>manifest.json</c> stamp the time in the same ISO-8601 UTC
+    ///     form, so one pattern covers both artifacts. Pure.
+    /// </remarks>
+    private static string NormalizeTimestamps(string text) =>
+        System.Text.RegularExpressions.Regex.Replace(
+            text,
+            @"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z",
+            "<timestamp>",
+            System.Text.RegularExpressions.RegexOptions.None,
+            TimeSpan.FromSeconds(5));
 }

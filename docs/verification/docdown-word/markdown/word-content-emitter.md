@@ -10,8 +10,7 @@ model-to-sink emission path.
 hand-built `WordDocumentModel` instances through a `RecordingSink`, with no document behind them,
 so content-inventory, metadata, and chart-note decisions can be proven in isolation. Integration
 tests in `OpenXml/WordOpenXmlExtractorTests.cs` then drive a real extraction and assert what
-reaches the sink for split output, force-PNG notes, merged-cell notes, and empty-document
-inventory.
+reaches the sink for the content flow, merged-cell notes, and empty-document inventory.
 
 The two levels answer different questions and neither alone is sufficient. A hand-built-model unit
 test proves the emitter internally consistent but not that the extractor routes through it; an
@@ -33,11 +32,11 @@ path.
 ### Acceptance Criteria
 
 Per IEC 62304 §5.5.2, a `WordContentEmitter` unit test run passes when the emitted content reaches
-the sink in single-flow or split form as requested; when the content inventory reports looked-for
+the sink as one continuous flow; when the content inventory reports looked-for
 counts, including zero text blocks for an empty document and distinct comment-author counts for
 reviewed drafts; when document metadata is handed to the sink exactly once when present and not at
 all when absent; and when incomplete steps are surfaced only as short notes for charts, flattened
-merged or nested table structure, and force-PNG requests.
+and merged or nested table structure.
 
 ### Test Scenarios
 
@@ -45,11 +44,11 @@ merged or nested table structure, and force-PNG requests.
 
 **Tests**: `WordContentEmitter_Emit_BodyWithComments_ReportsOutlineAndSucceeds`,
 `WordOpenXmlExtractor_Extract_EmptyDocument_ProducesZeroCountTextInventory`,
-`WordOpenXmlExtractor_Extract_PerPart_SplitsAtHeading1`
+`WordOpenXmlExtractor_Extract_ImageLinks_ResolveOnDisk`
 
 Prove the emitter writes content from the model, reports headings, comments, and distinct comment
-authors in the inventory, reports zero text blocks for an empty document, and writes per-part
-content when requested through the real backend. Evidence for
+authors in the inventory, reports zero text blocks for an empty document, and writes a content flow
+whose image links resolve on disk through the real backend. Evidence for
 `DocDownWord-Markdown-WordContentEmitter-EmitsModelContent` and
 `DocDownWord-Markdown-WordContentEmitter-ReportsContentInventory`.
 
@@ -66,14 +65,6 @@ read. Evidence for `DocDownWord-Markdown-WordContentEmitter-ReportsChartNote`.
 
 Proves a real extraction reports a note when merged or nested table structure had to be flattened
 for markdown. Evidence for `DocDownWord-Markdown-WordContentEmitter-ReportsFlattenedTableNote`.
-
-#### A force-PNG request that cannot be honored is surfaced as a short note
-
-**Test**: `WordOpenXmlExtractor_Extract_ForcePng_ReportsUnhonoredModeNote`
-
-Proves a real extraction reports a note when PNG output was requested but the embedded image files
-were written in their source encoding. Evidence for
-`DocDownWord-Markdown-WordContentEmitter-ReportsForcePngNote`.
 
 #### Metadata is handed to the sink once when present
 

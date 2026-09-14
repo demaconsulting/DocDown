@@ -14,8 +14,8 @@ models is synthetic.
 
 The note-only rule is exercised directly by the unreadable-chart scenario. The image scenarios prove the
 same emission path writes images, preserves zero counts when no images are present, and keeps a
-successfully written vector image silent; image-size and `ForcePng` note branches share that same
-reporting rule but have no dedicated Excel-specific test.
+successfully written vector image silent; the image-size note branch shares that same reporting rule
+but has no dedicated Excel-specific test.
 
 ### Test Environment
 
@@ -123,8 +123,7 @@ Proves a worksheet's drawing-shape text is written under the sheet. Evidence for
 
 Proves an image a worksheet references is linked inline using the sink-returned path;
 `ExcelContentEmitter_Emit_WithRasterImages_WritesThroughSink`,
-`ExcelContentEmitter_Emit_AutoImageLinks_ResolveOnDisk`, and
-`ExcelContentEmitter_Emit_PerPartImageLinks_ResolveOnDisk` cover the sink write and the on-disk link
+and `ExcelContentEmitter_Emit_ImageLinks_ResolveOnDisk` cover the sink write and the on-disk link
 resolution. Evidence for `DocDownExcel-Markdown-ExcelContentEmitter-LinksImages`.
 
 #### Zero-count inventory is preserved when the backend looked and found none

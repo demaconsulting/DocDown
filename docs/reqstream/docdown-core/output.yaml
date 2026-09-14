@@ -74,7 +74,7 @@ sections:
               - DocDownCore-Output-ManifestWriter-ReducedSchema
               - DocDownCore-Output-ManifestWriter-NotesSerialized
             tests:
-              - Output_ManifestContent_Written_ParsesWithSchemaVersionTwoPointZero
+              - Output_ManifestContent_Written_ParsesWithSchemaVersionThreePointZero
 
           - id: DocDownCore-Output-DocumentMetadata
             title: >-
@@ -114,14 +114,14 @@ sections:
               - SummaryWriter_WriteAsync_LookedForZeroFeature_OutlinesTheZero
 
           - id: DocDownCore-Output-ContentDocument
-            title: The subsystem shall write extracted text as Markdown and split it when requested.
+            title: The subsystem shall write extracted text as Markdown, split into parts when the document has them.
             justification: |
-              Consumers need one predictable content artifact. The subsystem must therefore write
-              Markdown and honor the split mode for part-based content.
+              Consumers need one predictable content artifact, and a naturally sectioned document
+              (a multi-sheet workbook, for example) must be readable one section at a time rather
+              than as a single enormous file.
             children:
               - DocDownCore-Output-ContentWriter-SingleFlowDocument
               - DocDownCore-Output-ContentWriter-PartIndex
-              - DocDownCore-Output-ContentWriter-SplitModeHonored
               - DocDownCore-Output-ContentWriter-PageMarkers
               - DocDownCore-Output-ContentWriter-AbsenceExplained
               - DocDownCore-Output-ExtractionSink-AllocatesPartPaths

@@ -24,8 +24,7 @@ prose from being reinterpreted as headings, emphasis, links, list markers, or ta
   title heading and before the body, synthesizing `# {Title}` when the body has no leading heading
   but the metadata names a title. Appends `## Comments` and `## Footnotes` last. Pure.
 - **`static string WriteBlocks(IReadOnlyList<WordBlock>, IReadOnlyDictionary<string, string>)`** —
-  renders a block sequence, used for the body, each per-part section, and each document-control
-  subsection. Pure.
+  renders a block sequence, used for the body and for each document-control subsection. Pure.
 - **`internal static string RenderInlines(IReadOnlyList<WordInline>?)`** — renders inline runs,
   escaping literal text and applying the minimal preserved formatting: bold as `**…**`, italic as
   `*…*`, and hyperlinks as `[text](href)`. A `Raw` inline is emitted verbatim so footnote markers
@@ -56,5 +55,5 @@ the writer received.
 ### Callers
 
 `WordContentEmitter.WriteContentAsync()` uses `Write()` for single-flow mode and `WriteBlocks()`
-for each split part; `WordOpenXmlReader.BuildDocumentControl()` uses `WriteBlocks()` internally to
+for the body; `WordOpenXmlReader.BuildDocumentControl()` uses `WriteBlocks()` internally to
 compute the deduplication key for identical rendered header or footer content across sections.

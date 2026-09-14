@@ -50,11 +50,6 @@ state.
   process the render started has exited within a short grace period. It skips with a reason naming
   Microsoft PowerPoint off Windows or where the probe reports unavailable, and reports every fault as
   a failure message rather than an exception. It deletes its deck on every path.
-- **`RenderExclusively`** (private) — holds a machine-wide gate across the render, because PowerPoint
-  automation is single-instance: two self-tests running at once would share one host, so one
-  session's quit would tear the application out from under the other and each would see the other's
-  process. Waiting is bounded, and a case that cannot get the gate skips with that reason. The
-  adapter's own watchdog still bounds the render itself.
 - **`BuildSelfTestDeck`** and its element builders (private) — synthesize the render case's deck:
   theme, slide master, blank layout, one widescreen slide carrying an invented title line, and the
   slide size. The deck is built rather than committed so the case ships no document of its own, and

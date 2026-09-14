@@ -25,16 +25,13 @@ suppressed.
   Otherwise it writes embedded images first, writes the per-slide content, reports document info and
   captured metadata, reports plain notes for attempted image steps that could not be completed, and
   reports the content inventory. Preconditions: all arguments non-null.
-- **`WriteContentAsync`** (private) — writes the deck as one content flow or, in per-part mode, one
-  part per slide under `parts/`, each slide carrying its title heading, body text, and speaker notes,
-  with inline image links resolved from the sink's written-path map.
+- **`WriteContentAsync`** (private) — writes the deck as one content flow, each slide carrying its
+  title heading, body text, and speaker notes, with inline image links resolved from the sink's
+  written-path map.
 - **`ReportImages`** (private) — reports nothing when images were deliberately suppressed or when the
-  deck embeds no images; otherwise records plain notes for images that exceeded a caller size limit or
-  for a `ForcePng` request this backend could not honor.
+  deck embeds no images; otherwise records plain notes for images that exceeded a caller size limit.
 - **`ReportSizeSkipNote`** (private) — records a one-sentence note naming how many embedded images
   exceeded the caller-supplied size limit and were not written.
-- **`ReportForcePngNote`** (private) — records a one-sentence note that PNG output was requested but
-  the backend could not convert some embedded images, so source-encoded files were written instead.
 - **`ReportContentFeatures`** (private) — reports the outline counts (slides, slide titles, sets of
   speaker notes, inline images) from the model. The speaker-notes count is declared looked for, so it
   is stated even at zero.
@@ -56,7 +53,7 @@ upstream in the reader or Core.
 
 ### Dependencies
 
-- **DocDown.Core** — `IExtractionSink`, `ExtractionOptions`, `ContentSplitMode`, `ImageOutputMode`,
+- **DocDown.Core** — `IExtractionSink`, `ExtractionOptions`,
   `DocumentInfo`, `ContentFeature`, `EmbeddedImageWriter`, and `ExtractionNote`.
 - **PowerPointDeckModel** — the read model it renders. See *PowerPointOpenXmlReader Design*.
 

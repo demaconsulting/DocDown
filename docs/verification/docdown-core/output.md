@@ -34,9 +34,9 @@ and records image provenance per image.
 
 **Test**: `Output_SummaryContent_Written_ContainsMandatorySections`
 
-#### The manifest parses as schema version 2.0
+#### The manifest parses as schema version 3.0
 
-**Test**: `Output_ManifestContent_Written_ParsesWithSchemaVersionTwoPointZero`
+**Test**: `Output_ManifestContent_Written_ParsesWithSchemaVersionThreePointZero`
 
 #### Written text produces content.md
 

@@ -22,8 +22,8 @@ its explanatory note.
   CancellationToken)`** — the whole emission. It writes embedded images first so each worksheet can
   link its pictures inline, writes one `ContentPartKind.Sheet` part per worksheet followed by one
   `ContentPartKind.Chart` part per chart the worksheet shows, records a note for each unreadable chart,
-  reports document info and metadata, reports image-write notes for caller-supplied size-limit and
-  `ForcePng` misses, and reports the content inventory from the model. An empty workbook is conveyed by
+  reports document info and metadata, reports image-write notes for caller-supplied size-limit misses,
+  and reports the content inventory from the model. An empty workbook is conveyed by
   zero-count inventory entries; an empty worksheet says so in its own sheet part.
 - **`RenderSheet`** (private) — renders one worksheet: a heading, the merged-range note, the additive
   grid table when the region is dense and table-shaped, then the always-present address/value/formula
@@ -34,8 +34,7 @@ its explanatory note.
   `cached chart data points`) from the model and marks each count `LookedFor = true`, so a zero remains
   visible when the backend explicitly looked for that feature.
 - **`ReportImageNotes`** (private) — records plain-language notes when the image write attempted work the
-  backend could not finish: images skipped because they exceed caller-supplied size limits, or source
-  encodings written as-is because `ForcePng` could not be honored.
+  backend could not finish: images skipped because they exceed caller-supplied size limits.
 - **`BuildUnreadableChartNote`** (private) — builds the one-sentence note naming the chart and part URI
   when the chart part could not be read.
 

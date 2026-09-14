@@ -15,7 +15,7 @@ endpoints are named from what the drawing actually says about them.
 | Interface | Direction | Format | Constraints |
 | --------- | --------- | ------ | ----------- |
 | `IExtractionSink` | Outbound, to Core | .NET interface | The only output channel |
-| `ExtractionOptions` | Inbound, from the extractor | .NET options object | Split mode and image options |
+| `ExtractionOptions` | Inbound, from the extractor | .NET options object | Image size limits |
 | `VisioDocumentModel` | Inbound, from the reader | .NET record | The whole drawing to project |
 
 ### Design

@@ -12,7 +12,7 @@ The Markdown subsystem is verified through unit tests in
 The emitter is exercised from hand-built deck models through a recording sink, with no deck and no
 Open XML SDK behind them, because its contract is the mapping from the model to the output: the
 per-slide title, text, and notes; the inline image links and their suppression; the content
-inventory; the empty-deck behavior; the vector-image passthrough; and the single-flow-versus-per-part
+inventory; the empty-deck behavior; the vector-image passthrough; and the single content flow
 split. Building the model by hand is what lets each mapping decision be proved in isolation.
 
 ### Test Environment

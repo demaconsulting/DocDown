@@ -28,9 +28,6 @@ namespace DemaConsulting.DocDown.Pdf.Rendering.Tests;
 /// </remarks>
 public class DocDownPdfRenderingTests
 {
-    /// <summary>A fixed timestamp used to make output byte-reproducible across runs.</summary>
-    private static readonly DateTimeOffset FixedTimestamp = new(2024, 1, 2, 3, 4, 5, TimeSpan.Zero);
-
     /// <summary>Gets the ambient test cancellation token so async calls stay responsive to cancellation.</summary>
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -224,14 +221,14 @@ public class DocDownPdfRenderingTests
     /// </summary>
     /// <returns>An options instance with rendering enabled.</returns>
     /// <remarks>The fixed timestamp is what makes the determinism scenario a real comparison.</remarks>
-    private static ExtractionOptions RenderingOptions() => new() { TimestampUtc = FixedTimestamp, RenderPages = true };
+    private static ExtractionOptions RenderingOptions() => new() { RenderPages = true };
 
     /// <summary>
     ///     Creates options carrying the fixed timestamp for reproducible output, with rendering off.
     /// </summary>
     /// <returns>An options instance with a fixed timestamp.</returns>
     /// <remarks>Used by the base-backend selection scenario, which must not request rendered pages.</remarks>
-    private static ExtractionOptions FixedOptions() => new() { TimestampUtc = FixedTimestamp };
+    private static ExtractionOptions FixedOptions() => new();
 
     /// <summary>
     ///     Skips the calling test when the native PDF renderer is unavailable in this environment.
