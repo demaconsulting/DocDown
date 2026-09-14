@@ -103,95 +103,24 @@ items, specifically:
       the backend self-test union, and TRX/JUnit output
     - **SelfTestAdapter (Unit)** — Maps Core's dependency-free self-test records into the TestResults
       model
-- **DocDown.Word (System)** — Word text, real tables, embedded-image, document-control, and
-  document-metadata extraction; two subsystems (Markdown, OpenXml) and one direct unit
-  - **WordDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
-    Word backend
-  - **Markdown (Subsystem)** — The reader-neutral document model and its projection onto markdown
-    - **WordMarkdownWriter (Unit)** — Renders the model to a markdown flow: headings, lists, inline
-      formatting, images, comments, footnotes, and the Document Control section
-    - **WordTableWriter (Unit)** — Renders a table model as a GFM table, counting every flattened cell
-    - **WordContentEmitter (Unit)** — The model-to-sink emission path
-  - **OpenXml (Subsystem)** — The managed backend that reads a `.docx` through the Open XML SDK
-    - **WordOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
-      including page-rendering absence
-    - **WordOpenXmlReader (Unit)** — Turns the Open XML DOM into the backend-neutral model
-    - **WordOpenXmlImageReader (Unit)** — Yields each embedded image's bytes with passthrough
-      provenance
-- **DocDown.Excel (System)** — Workbook worksheet, cell-value (verbatim), formula, chart, drawing
-  annotation, embedded-image, and document-metadata extraction; deliberately never renders; two
-  subsystems (Markdown, OpenXml) and one direct unit
-  - **ExcelDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
-    Excel backend
-  - **Markdown (Subsystem)** — The projection of the workbook model onto markdown
-    - **ExcelContentEmitter (Unit)** — The model-to-sink emission path: one Sheet part per
-      worksheet and one Chart part per chart, the verbatim listing, the additive grid table,
-      inventory counts, and notes
-    - **ExcelChartWriter (Unit)** — Renders a chart's cached data series as a table of categories
-      against series values, bounded and stated
-  - **OpenXml (Subsystem)** — The managed backend that reads an `.xlsx` through the Open XML SDK
-    - **ExcelOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
-      including page-rendering non-applicability
-    - **ExcelOpenXmlReader (Unit)** — Turns the spreadsheet package into the backend-neutral model,
-      preserving values and formulas verbatim
-    - **ExcelOpenXmlImageReader (Unit)** — Yields each embedded image's bytes and records its
-      worksheet association
-    - **ExcelChartReader (Unit)** — Recovers each chart's cached data series from its chart part
-    - **ExcelDrawingTextReader (Unit)** — Recovers the text of the drawing shapes floating over a
-      worksheet
-- **DocDown.PowerPoint (System)** — Slide text, slide-title, speaker-notes, slide-order, embedded-image,
-  and document-metadata extraction, plus a rendered image of each slide when Microsoft PowerPoint is
-  available; three subsystems (Com, Markdown, OpenXml) and one direct unit
-  - **PowerPointDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
-    PowerPoint backends
-  - **Com (Subsystem)** — The rendering seam, active where Microsoft PowerPoint is installed
-    - **PowerPointComExtractor (Unit)** — The full-superset backend that delegates content to the managed
-      backend and adds a rendered image of each slide over late-bound COM
-    - **PowerPointComAvailability (Unit)** — The cheap, side-effect-free probe that reports whether
-      slide rendering is available here
-    - **PowerPointAutomation (Unit)** — The real COM automation adapter, the single untestable boundary
-      proven by release-time self-tests
-  - **Markdown (Subsystem)** — The projection of the deck model onto markdown
-    - **PowerPointContentEmitter (Unit)** — The model-to-sink emission path: per-slide title,
-      text, speaker notes, inline images, inventory counts, and notes
-  - **OpenXml (Subsystem)** — The guaranteed managed backend that reads a `.pptx` through the Open XML SDK
-    - **PowerPointOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
-      including the not-provided rendering fact
-    - **PowerPointOpenXmlReader (Unit)** — Turns the presentation package into the backend-neutral model,
-      preserving slide order, titles, body text, and speaker notes
-    - **PowerPointOpenXmlImageReader (Unit)** — Yields each embedded image's bytes and records its slide
-      association across slides, notes, layouts, and masters
-- **DocDown.Visio (System)** — Page-name, shape-text, and directed-connector-topology extraction, plus
-  embedded-image and document-metadata extraction and a rendered image of each page when Microsoft Visio
-  is available; three subsystems (Com, Markdown, OpenXml) and one direct unit
-  - **VisioDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
-    Visio backends
-  - **Com (Subsystem)** — The rendering seam, active where Microsoft Visio is installed
-    - **VisioComExtractor (Unit)** — The full-superset backend that delegates content to the managed
-      backend and adds a rendered image of each page over late-bound COM
-    - **VisioComAvailability (Unit)** — The cheap, side-effect-free probe that reports whether page
-      rendering is available here
-    - **VisioAutomation (Unit)** — The real COM automation adapter, the single untestable boundary
-      proven by release-time self-tests
-  - **Markdown (Subsystem)** — The projection of the drawing model onto markdown
-    - **VisioContentEmitter (Unit)** — The model-to-sink emission path: per-page name, shape
-      text, directed topology, inline images, inventory counts, and notes
-    - **VisioShapeLabeler (Unit)** — Decides how each topology endpoint is named from what the drawing
-      says about it — its own text, its master type, or only its shape id
-  - **OpenXml (Subsystem)** — The guaranteed managed backend that reads a `.vsdx`/`.vsdm` through
-    `System.IO.Packaging`
-    - **VisioOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
-      including the not-provided rendering fact
-    - **VisioPackageReader (Unit)** — Turns the Visio package into the backend-neutral model, resolving
-      page names, shape text, master classification, and the directed connector topology
-    - **VisioImageReader (Unit)** — Yields each embedded image's bytes and records its page association,
-      excluding the package thumbnail
+- **DocDown.Office (System)** — Word, Excel, PowerPoint, and Visio extraction; four format
+  subsystems and one shared subsystem
+  - **Word (Subsystem)** — Word text, real tables, embedded images, reviewer comments, footnotes,
+    document-control content, and document metadata, through the managed Open XML SDK
+  - **Excel (Subsystem)** — Worksheet cell values recorded verbatim, the formulas behind computed
+    cells, cached chart data, drawing annotations, embedded images, and workbook metadata
+  - **PowerPoint (Subsystem)** — Slide text, titles, speaker notes, slide order, embedded images,
+    and metadata through a managed backend; slide images through a COM automation backend
+  - **Visio (Subsystem)** — Page names, shape text, and directed-connector topology through a
+    managed Open Packaging backend; page images through a COM automation backend
+  - **Com (Subsystem)** — The COM availability probe and the composition helpers the PowerPoint and
+    Visio automation backends share
 
 The following OTS items are also covered:
 
 - **BuildMark** — build-notes documentation tool
 - **FileAssert** — document assertion tool
-- **Open XML SDK** — managed WordprocessingML reader/writer, a runtime dependency of DocDown.Word
+- **Open XML SDK** — managed Open XML reader/writer, a runtime dependency of DocDown.Office
   shipped to consumers rather than a build-time tool
 - **Pandoc** — Markdown-to-HTML conversion tool
 - **PdfPig** — managed PDF parser, a runtime dependency of DocDown.Pdf shipped to consumers rather
@@ -208,7 +137,7 @@ The following OTS items are also covered:
 - **SonarMark** — SonarCloud quality report tool
 - **SysML2Tools** — architecture model lint and diagram rendering tool
 - **System.IO.Packaging** — managed Open Packaging Conventions container reader that opens a `.docx`,
-  reaching DocDown.Word transitively through the Open XML SDK
+  reaching DocDown.Office transitively through the Open XML SDK
 - **TestResults** — test-results serialization library, the one runtime dependency of DocDown.Tool
 - **VersionMark** — tool-version documentation tool
 - **WeasyPrint** — HTML-to-PDF conversion tool
@@ -269,58 +198,24 @@ unverified, while a framework-dependent `dotnet tool install -g` stays portable 
 identifiers. It is the only package that references the DemaConsulting.TestResults OTS library, which
 keeps DocDown.Core free of runtime dependencies.
 
-DocDown.Word is the fifth system: the Word extraction backend, and the second family of formats after
-PDF. Unlike the flat PDF systems it has two subsystems - Markdown, which owns the reader-neutral
-document model and its projection onto markdown; and OpenXml, the fully managed backend that reads a
-`.docx` through the Open XML SDK - plus WordDocDownBuilderExtensions, the registration seam, as a
-direct unit. It
-depends on DocDown.Core for the contract and on the Open XML SDK (with its transitive
-System.IO.Packaging container reader) for document structure, and it is 100% managed and
-runtime-identifier agnostic: it ships no native asset, and it therefore reports availability without
-page rendering. The legacy binary `.doc` format is not supported by DocDown at all, so the package
-ships one backend and the engine has one candidate for a Word document.
+DocDown.Office is the fifth system: the Microsoft Office extraction backends, and the second family of
+formats after PDF. It is one package holding four format subsystems — Word, Excel, PowerPoint and
+Visio — plus Com, the helpers the COM backends share. Those four were four packages once. They share a
+dependency, a release cadence and an audience, and splitting them bought a consumer nothing but four
+references to keep in step, while producing duplication the compiler could not see: two
+byte-equivalent copies of the COM composition helpers, and two identical availability probes. The
+namespaces did not move, so `DocDown.Word` and its siblings still hold the same types.
 
-DocDown.Excel is the sixth system: the Excel extraction backend. Like DocDown.Word it has two
-subsystems - Markdown, which projects the workbook model onto markdown; and OpenXml, the fully managed
-backend that reads an `.xlsx` through the Open XML SDK - plus ExcelDocDownBuilderExtensions, the
-registration seam, as a direct unit. A workbook, in this product owner's domain, is a prose and data
-container, not a picture: it preserves cell values verbatim at full precision and full length, keeps
-the formulas behind computed cells alongside their values, cites every fact by sheet and cell address,
-surfaces each chart's cached data series as its own content part, and extracts drawing annotations and
-embedded images. It depends on DocDown.Core and on the Open XML SDK (with its transitive
-System.IO.Packaging container reader), and it is 100% managed and runtime-identifier agnostic. It
-deliberately never renders — a workbook has no page grid — so it reports page rendering as not
-applicable and answers a page request with silence rather than a note. The legacy binary `.xls`
-format is not supported by DocDown at all, so the package ships one backend.
-
-DocDown.PowerPoint is the seventh system: the PowerPoint extraction backend. Unlike the other extraction
-systems it has three subsystems — OpenXml, the guaranteed managed backend that reads a `.pptx` through the
-Open XML SDK; Markdown, which projects the deck model onto markdown; and Com, the rendering seam that
-drives Microsoft PowerPoint over late-bound COM where it is installed — plus
-PowerPointDocDownBuilderExtensions, the registration seam, as a direct unit. A slide is a visual
-composition, so the rendered appearance of each slide is captured when PowerPoint is available; but a deck
-also carries content that never appears in any render, so the text of every slide, the slide title, the
-speaker notes, and the slide order are always extracted from the file itself, independent of whether
-rendering is possible. It depends on DocDown.Core and on the Open XML SDK (with its transitive
-System.IO.Packaging container reader); its managed backend is 100% managed and runtime-identifier
-agnostic, and its COM backend is Windows-only, self-disabling where PowerPoint is absent, and carries no
-native asset. The legacy binary `.ppt` format is not supported by DocDown at all.
-
-DocDown.Visio is the eighth system: the Visio extraction backend. A Visio drawing is an engineering
-schematic whose meaning is carried by which shapes exist, what they are labeled, which page they belong
-to, and — above all — how they are connected, so like DocDown.PowerPoint it has three subsystems —
-OpenXml, the guaranteed managed backend that reads a `.vsdx`/`.vsdm` directly through
-System.IO.Packaging (because DocumentFormat.OpenXml has no Visio types); Markdown, which projects the
-drawing model onto markdown, resolving each connector into a readable directed topology; and Com, the
-rendering seam that drives Microsoft Visio over late-bound COM where it is installed — plus
-VisioDocDownBuilderExtensions, the registration seam, as a direct unit. The page names, shape text, and
-directed source-to-target topology are always extracted from the file itself with no Visio present, so the
-schematic's logical content is recoverable on any machine and in CI; the rendered appearance of each page,
-which the XML cannot recover, is added when an environment can supply it, and a page-rendering request
-made where Visio is absent is recorded as a note rather than silently omitted. It depends on
-DocDown.Core and on System.IO.Packaging; its managed backend is 100% managed and runtime-identifier
-agnostic, and its COM backend is Windows-only, self-disabling where Visio is absent, and carries no
-native asset. The legacy binary `.vsd` format is not supported by DocDown at all.
+Word and Excel are fully managed and read `.docx` and `.xlsx` on every platform with no native
+dependency. PowerPoint and Visio each ship two backends: a managed reader that extracts text,
+structure, images and metadata anywhere, and a COM automation backend that additionally renders slide
+or page images where Microsoft Office is installed. A COM backend probes its own availability cheaply
+and reports itself unavailable off Windows or where the application is not registered, so the managed
+backend serves the format instead and a rendering request made where the application is absent is
+recorded as a note rather than silently omitted. The package depends on DocDown.Core, the Open XML SDK
+and System.IO.Packaging; it ships no native asset, because the COM backends reach Office through
+late-bound IDispatch with no interop assembly. The legacy binary formats — `.doc`, `.xls`, `.ppt` and
+`.vsd` — are not supported by DocDown at all.
 
 ## Folder Layout
 
