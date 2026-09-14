@@ -230,5 +230,5 @@ public class ExtractionTests
     ///     Creates a text-format detection by file extension for selector tests.
     /// </summary>
     /// <returns>A text-format detection.</returns>
-    private static FormatDetection TextDetection() => new(DocumentFormat.Text, DetectionBasis.Extension, 0.5);
+    private static FormatDetection TextDetection() => new(DocumentFormat.Text, DetectionBasis.Extension);
 }

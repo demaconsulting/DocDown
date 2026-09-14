@@ -93,7 +93,6 @@ public class DetectionTests
 
         // Assert: the recorded basis is the trusted extension, at the documented confidence
         Assert.Equal(DetectionBasis.Extension, detection.Basis);
-        Assert.Equal(0.9, detection.Confidence);
     }
 
     /// <summary>
@@ -110,7 +109,6 @@ public class DetectionTests
 
         // Assert: the basis records that the bytes, not the name, identified the format
         Assert.Equal(DetectionBasis.ContentSignature, detection.Basis);
-        Assert.Equal(1.0, detection.Confidence);
     }
 
     /// <summary>
@@ -127,7 +125,6 @@ public class DetectionTests
 
         // Assert: the format is reported as unknown with zero confidence
         Assert.True(detection.Format.IsUnknown);
-        Assert.Equal(0.0, detection.Confidence);
     }
 
     /// <summary>

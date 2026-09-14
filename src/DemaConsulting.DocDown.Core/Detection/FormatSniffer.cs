@@ -123,13 +123,13 @@ public static class FormatSniffer
             // Fallback evidence: a PDF header is an unambiguous content signature
             if (StartsWith(buffer, read, PdfSignature))
             {
-                return new FormatDetection(DocumentFormat.Pdf, DetectionBasis.ContentSignature, 1.0);
+                return new FormatDetection(DocumentFormat.Pdf, DetectionBasis.ContentSignature);
             }
 
             // Slightly weaker but still content-based: a leading HTML doctype or root element
             if (LooksLikeHtml(buffer, read))
             {
-                return new FormatDetection(DocumentFormat.Html, DetectionBasis.ContentSignature, 0.9);
+                return new FormatDetection(DocumentFormat.Html, DetectionBasis.ContentSignature);
             }
 
             // Neither the name nor the leading bytes identified the format; say so honestly
@@ -174,12 +174,12 @@ public static class FormatSniffer
             {
                 if (string.Equals(extension, candidate, StringComparison.Ordinal))
                 {
-                    return new FormatDetection(format, DetectionBasis.Extension, 0.9);
+                    return new FormatDetection(format, DetectionBasis.Extension);
                 }
             }
         }
 
-        return new FormatDetection(DocumentFormat.Unknown, DetectionBasis.Extension, 0.0);
+        return new FormatDetection(DocumentFormat.Unknown, DetectionBasis.Extension);
     }
 
     /// <summary>
@@ -312,4 +312,75 @@ public static class FormatSniffer
         // No BOM: treat as UTF-8, which subsumes ASCII for the markers we test
         return (Encoding.UTF8, 0);
     }
+}
+
+/// <summary>
+///     The result of inspecting a document, pairing the identified <see cref="DocumentFormat"/>
+///     with the evidence behind that identification.
+/// </summary>
+/// <param name="Format">The identified document format.</param>
+/// <param name="Basis">The kind of evidence used to identify the format.</param>
+/// <remarks>
+///     The basis is reported rather than scored. DocDown says what it found and how it knows —
+///     a content signature or a file extension — and leaves the reader to weigh that. A numeric
+///     confidence stood here once; nothing ever read it, and inventing a score is the kind of
+///     judgement about content this product does not make.
+///     Instances are immutable and therefore thread-safe.
+/// </remarks>
+public sealed record FormatDetection(DocumentFormat Format, DetectionBasis Basis)
+{
+    /// <summary>
+    ///     Produces a one-line human-readable explanation of what was detected and how.
+    /// </summary>
+    /// <returns>
+    ///     A string such as <c>pdf (application/pdf) - detected by content signature</c>,
+    ///     combining the format display form with a phrase describing the detection basis.
+    /// </returns>
+    /// <remarks>
+    ///     Provided so summaries and logs can present the detection reasoning verbatim without
+    ///     each caller re-deriving the basis phrasing. Pure and side-effect free.
+    /// </remarks>
+    public string Describe() => $"{Format} - detected by {DescribeBasis(Basis)}";
+
+    /// <summary>
+    ///     Maps a <see cref="DetectionBasis"/> value to the human-readable phrase used in
+    ///     <see cref="Describe"/>.
+    /// </summary>
+    /// <param name="basis">The detection basis to describe.</param>
+    /// <returns>A short lowercase phrase describing the evidence behind the detection.</returns>
+    /// <remarks>
+    ///     Kept as a private helper so the phrase mapping lives in exactly one place; a
+    ///     <see langword="switch"/> expression is used so an unhandled enum value fails fast at
+    ///     the default arm rather than producing a silently wrong description.
+    /// </remarks>
+    private static string DescribeBasis(DetectionBasis basis) => basis switch
+    {
+        DetectionBasis.ContentSignature => "content signature",
+        DetectionBasis.Extension => "file extension",
+        _ => basis.ToString()
+    };
+}
+
+/// <summary>
+///     Describes how a document format was determined, so consumers can weigh how much to
+///     trust the detected format.
+/// </summary>
+/// <remarks>
+///     The basis is reported alongside every detection because different evidence carries
+///     different weight: the file-name extension is the primary signal, and a content signature
+///     is the fallback used when the name yields nothing. Recording the basis lets downstream
+///     code and human reviewers reason about how the format was determined without re-running
+///     the sniffer.
+/// </remarks>
+public enum DetectionBasis
+{
+    /// <summary>
+    ///     The format was identified from a magic-number or signature in the document bytes.
+    /// </summary>
+    ContentSignature,
+
+    /// <summary>
+    ///     The format was identified from the file name extension, the primary detection signal.
+    /// </summary>
+    Extension
 }

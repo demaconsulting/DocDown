@@ -295,7 +295,7 @@ public class OutputTests
         var descriptor = new ExtractorDescriptor("text", "Text (stub)", [DocumentFormat.Text], 0);
         var environment = new ExtractionEnvironment("test-os", "x64", "test-runtime", "test-rid", []);
         var source = DocumentSource.FromFile(temp.CreateFile("source.txt", "hello"));
-        var detection = new FormatDetection(DocumentFormat.Text, DetectionBasis.Extension, 0.5);
+        var detection = new FormatDetection(DocumentFormat.Text, DetectionBasis.Extension);
         return new ExtractionReport(
             ExtractionOutcome.Produced,
             source,

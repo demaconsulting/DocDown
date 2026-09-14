@@ -31,7 +31,7 @@ internal static class WordTestHarness
             extractor.Id, extractor.DisplayName, extractor.SupportedFormats.ToList(),
             extractor.Priority, extractor.PageRenderingApplicable);
         var environment = new ExtractionEnvironment("TestOS 1.0", "X64", "test-runtime 8.0", "test-rid", []);
-        var detection = new FormatDetection(format, DetectionBasis.Extension, 0.9);
+        var detection = new FormatDetection(format, DetectionBasis.Extension);
         var context = new HarnessContext(options, sink, detection, descriptor, environment, cancellationToken);
 
         var outcome = await extractor.ExtractAsync(source, context);

@@ -31,7 +31,6 @@ public class FormatSnifferTests
         // Assert: the fallback content signature identifies PDF at full confidence
         Assert.Equal(DocumentFormat.Pdf, detection.Format);
         Assert.Equal(DetectionBasis.ContentSignature, detection.Basis);
-        Assert.Equal(1.0, detection.Confidence);
     }
 
     /// <summary>
@@ -49,7 +48,6 @@ public class FormatSnifferTests
         // Assert: the fallback recognized the PDF header even though the name did not
         Assert.Equal(DocumentFormat.Pdf, detection.Format);
         Assert.Equal(DetectionBasis.ContentSignature, detection.Basis);
-        Assert.Equal(1.0, detection.Confidence);
     }
 
     /// <summary>
@@ -67,7 +65,6 @@ public class FormatSnifferTests
         // Assert: the html root element is recognized at the documented 0.9 confidence
         Assert.Equal(DocumentFormat.Html, detection.Format);
         Assert.Equal(DetectionBasis.ContentSignature, detection.Basis);
-        Assert.Equal(0.9, detection.Confidence);
     }
 
     /// <summary>
@@ -102,7 +99,6 @@ public class FormatSnifferTests
         // Assert: the extension identifies Visio at the documented 0.9 confidence
         Assert.Equal(DocumentFormat.Vsdx, detection.Format);
         Assert.Equal(DetectionBasis.Extension, detection.Basis);
-        Assert.Equal(0.9, detection.Confidence);
     }
 
     /// <summary>
@@ -125,7 +121,6 @@ public class FormatSnifferTests
         // Assert: the extension identifies the macro-enabled Visio drawing at the documented 0.9 confidence
         Assert.Equal(DocumentFormat.Vsdm, detection.Format);
         Assert.Equal(DetectionBasis.Extension, detection.Basis);
-        Assert.Equal(0.9, detection.Confidence);
     }
 
     /// <summary>
@@ -159,7 +154,6 @@ public class FormatSnifferTests
         Assert.Equal(expectedMediaType, detection.Format.MediaType);
         Assert.False(detection.Format.IsUnknown);
         Assert.Equal(DetectionBasis.Extension, detection.Basis);
-        Assert.Equal(0.9, detection.Confidence);
     }
 
     /// <summary>
@@ -194,7 +188,6 @@ public class FormatSnifferTests
         // Assert: the format is unknown, by extension basis, at zero confidence
         Assert.True(detection.Format.IsUnknown);
         Assert.Equal(DetectionBasis.Extension, detection.Basis);
-        Assert.Equal(0.0, detection.Confidence);
     }
 
     /// <summary>
@@ -228,7 +221,6 @@ public class FormatSnifferTests
         // Assert: the trusted extension basis carries exactly the 0.9 confidence contract
         Assert.Equal(DocumentFormat.Html, detection.Format);
         Assert.Equal(DetectionBasis.Extension, detection.Basis);
-        Assert.Equal(0.9, detection.Confidence);
     }
 
     /// <summary>

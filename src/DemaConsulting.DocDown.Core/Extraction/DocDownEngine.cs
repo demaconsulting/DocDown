@@ -920,10 +920,10 @@ public sealed class DocDownEngine
     /// <summary>
     ///     Creates the placeholder detection used when no real detection is available.
     /// </summary>
-    /// <returns>An unknown detection with zero confidence.</returns>
+    /// <returns>An unknown detection.</returns>
     /// <remarks>Used for scratch-refusal and unreadable-source failures, which fail before sniffing. Pure.</remarks>
     private static FormatDetection UnknownDetection() =>
-        new(DocumentFormat.Unknown, DetectionBasis.Extension, 0.0);
+        new(DocumentFormat.Unknown, DetectionBasis.Extension);
 
     /// <summary>
     ///     The immutable bundle of per-run inputs shared by the pipeline's finalization helpers.

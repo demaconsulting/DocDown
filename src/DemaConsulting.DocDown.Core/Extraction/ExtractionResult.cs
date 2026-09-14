@@ -133,3 +133,47 @@ public sealed class ExtractionResult
     /// </remarks>
     public IReadOnlyList<ExtractionNote> Notes { get; }
 }
+
+/// <summary>
+///     Whether an extraction produced the invariant output layout or could not read the document
+///     at all.
+/// </summary>
+/// <remarks>
+///     This is the single value a caller branches on, and it is a fact about whether output exists,
+///     not a grade of quality. A run that wrote the standard layout is <see cref="Produced"/> even
+///     when the inventory reports zero of something or a note records a step DocDown could not
+///     complete — those are ordinary, expected outcomes, not failures. Only a document that could
+///     not be read (or a scratch folder that was refused, so no layout could be written) is
+///     <see cref="Unreadable"/>; its prose failure explains why.
+/// </remarks>
+public enum ExtractionOutcome
+{
+    /// <summary>
+    ///     The invariant output layout was written. The content is best-effort; the inventory and any
+    ///     notes describe what was and was not extracted.
+    /// </summary>
+    Produced,
+
+    /// <summary>
+    ///     No output could be produced: the document could not be read, or the scratch folder was
+    ///     refused. See the structured failure for the reason.
+    /// </summary>
+    Unreadable
+}
+
+/// <summary>
+///     A plain-language description of why an extraction could not produce output.
+/// </summary>
+/// <param name="Summary">A one-line headline describing the failure.</param>
+/// <param name="Explanation">
+///     A multi-line explanation ready for direct display, including the detected format where
+///     relevant.
+/// </param>
+/// <remarks>
+///     Failures are returned as data rather than thrown so a caller always receives the full
+///     layout (where one could be written) alongside the prose; this is why the engine catches
+///     backend exceptions and converts them into this record. It carries prose only — no code,
+///     no category, and no remedy — because DocDown states what happened without grading the
+///     document or advising a fix. Instances are immutable and thread-safe.
+/// </remarks>
+public sealed record ExtractionFailure(string Summary, string Explanation);

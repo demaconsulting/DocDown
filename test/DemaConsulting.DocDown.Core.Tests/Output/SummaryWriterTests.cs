@@ -291,7 +291,7 @@ public class SummaryWriterTests
         var report = new ExtractionReport(
             ExtractionOutcome.Produced,
             DocumentSource.FromFile(temp.CreateFile("source.bin", "hello")),
-            new FormatDetection(DocumentFormat.Unknown, DetectionBasis.Extension, 0.1),
+            new FormatDetection(DocumentFormat.Unknown, DetectionBasis.Extension),
             SuccessExtractor(),
             DefaultEnvironment(),
             Options(),
@@ -438,7 +438,7 @@ public class SummaryWriterTests
         ExtractionEnvironment environment)
     {
         var source = DocumentSource.FromFile(temp.CreateFile("source.txt", "hello"));
-        var detection = new FormatDetection(DocumentFormat.Text, DetectionBasis.Extension, 0.5);
+        var detection = new FormatDetection(DocumentFormat.Text, DetectionBasis.Extension);
         return new ExtractionReport(
             outcome,
             source,

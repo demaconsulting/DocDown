@@ -117,3 +117,119 @@ public interface IDocumentExtractor
     /// </remarks>
     ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context);
 }
+
+/// <summary>
+///     The availability of a document extractor in the current environment, and whether it can
+///     render document pages to images here.
+/// </summary>
+/// <param name="IsAvailable">
+///     <see langword="true"/> when the extractor can run in this environment; otherwise
+///     <see langword="false"/>.
+/// </param>
+/// <param name="UnavailableReason">
+///     A human-readable reason the extractor is unavailable, or <see langword="null"/> when it
+///     is available.
+/// </param>
+/// <param name="ProvidesRenderedPages">
+///     <see langword="true"/> when the extractor can render document pages to raster images in this
+///     environment. This is the one environment-dependent fact selection needs: a managed backend
+///     that only extracts text reports <see langword="false"/>, while a renderer whose native stack
+///     loaded reports <see langword="true"/>.
+/// </param>
+/// <remarks>
+///     Page rendering is separated out because it is the only capability that varies with the
+///     environment and the only one selection reasons about: a backend may be able to render pages
+///     in principle yet be unable to on a given platform, and selection must know what is truly
+///     possible here. Instances are immutable and thread-safe.
+/// </remarks>
+public sealed record ExtractorAvailability(
+    bool IsAvailable, string? UnavailableReason, bool ProvidesRenderedPages)
+{
+    /// <summary>
+    ///     Creates an availability result for an extractor that can run here.
+    /// </summary>
+    /// <param name="providesRenderedPages">
+    ///     <see langword="true"/> when the extractor can render document pages to images in this
+    ///     environment; <see langword="false"/> (the default) when it cannot.
+    /// </param>
+    /// <returns>An available <see cref="ExtractorAvailability"/> with no unavailable reason.</returns>
+    /// <remarks>
+    ///     A named factory makes available results read clearly at call sites and guarantees the
+    ///     reason is <see langword="null"/> for the available case. Pure and thread-safe.
+    /// </remarks>
+    public static ExtractorAvailability Available(bool providesRenderedPages = false) =>
+        new(true, null, providesRenderedPages);
+
+    /// <summary>
+    ///     Creates an availability result for an extractor that cannot run here.
+    /// </summary>
+    /// <param name="reason">The human-readable reason the extractor is unavailable. Must not be null or empty.</param>
+    /// <returns>An unavailable <see cref="ExtractorAvailability"/> that renders no pages.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="reason"/> is null or empty.</exception>
+    /// <remarks>
+    ///     Requires a non-empty reason so an unavailable backend is never reported without an
+    ///     explanation the caller can surface. Page rendering is forced to <see langword="false"/>
+    ///     because nothing is usable when unavailable. Pure and thread-safe.
+    /// </remarks>
+    public static ExtractorAvailability Unavailable(string reason)
+    {
+        // Refuse an empty reason so an unavailable status always carries a displayable cause
+        ArgumentException.ThrowIfNullOrEmpty(reason);
+        return new ExtractorAvailability(false, reason, false);
+    }
+}
+
+/// <summary>
+///     An immutable description of a registered extractor's identity captured once at registration
+///     time.
+/// </summary>
+/// <param name="Id">The extractor's stable, unique identifier used for lookup.</param>
+/// <param name="DisplayName">A human-readable name for the extractor shown in summaries.</param>
+/// <param name="SupportedFormats">The document formats the extractor can process.</param>
+/// <param name="Priority">
+///     The extractor's ranking priority; higher values are preferred when the format and
+///     page-rendering preference leave more than one candidate.
+/// </param>
+/// <param name="PageRenderingApplicable">
+///     Whether rendering document pages to images is a meaningful request for the extractor's
+///     formats. <see langword="true"/> for a paginated format (the default), <see langword="false"/>
+///     for a non-paginated one such as a spreadsheet, so the engine can honor a page request against
+///     a non-paginated format with silence rather than a note about an absent renderer.
+/// </param>
+/// <remarks>
+///     A descriptor is a snapshot detached from the live <see cref="IDocumentExtractor"/>
+///     instance so selection and reporting can reason about an extractor without invoking it or
+///     depending on its lifetime. Instances are immutable and thread-safe; the
+///     <see cref="SupportedFormats"/> list is captured at construction and not copied defensively,
+///     so callers must pass a list they will not mutate.
+/// </remarks>
+public sealed record ExtractorDescriptor(
+    string Id, string DisplayName, IReadOnlyList<DocumentFormat> SupportedFormats,
+    int Priority, bool PageRenderingApplicable = true);
+
+/// <summary>
+///     Marks an extractor as contributing self-test cases that Core can enumerate and run to
+///     validate the backend in its deployed environment.
+/// </summary>
+/// <remarks>
+///     The seam exists so a backend can prove it actually works where it is installed — native
+///     dependencies and platform quirks make declared capabilities insufficient evidence on
+///     their own. Implementations should return cheap, self-contained cases; Core wraps the
+///     cases of an unavailable backend so they report as skipped without running.
+/// </remarks>
+public interface ISelfValidating
+{
+    /// <summary>
+    ///     Returns the self-test cases this extractor contributes.
+    /// </summary>
+    /// <returns>
+    ///     The self-test cases to run; an empty sequence when the extractor contributes none.
+    ///     Must never be <see langword="null"/>.
+    /// </returns>
+    /// <remarks>
+    ///     Enumerated by the engine when assembling the full self-test suite. Implementations
+    ///     should make this cheap and side-effect free; the actual work happens when a case's
+    ///     delegate is invoked, not when the cases are enumerated.
+    /// </remarks>
+    IEnumerable<SelfTestCase> GetSelfTestCases();
+}

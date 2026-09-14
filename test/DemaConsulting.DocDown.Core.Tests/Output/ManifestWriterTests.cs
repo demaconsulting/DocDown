@@ -340,7 +340,7 @@ public class ManifestWriterTests
     {
         var environment = new ExtractionEnvironment("TestOS", "X64", "test-runtime", "test-rid", []);
         var source = DocumentSource.FromFile(temp.CreateFile("source.txt", "hello"));
-        var detection = new FormatDetection(DocumentFormat.Text, DetectionBasis.Extension, 0.5);
+        var detection = new FormatDetection(DocumentFormat.Text, DetectionBasis.Extension);
         return new ExtractionReport(
             outcome,
             source,

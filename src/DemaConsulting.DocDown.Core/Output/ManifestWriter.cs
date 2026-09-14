@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace DocDown.Core;
 
@@ -254,7 +255,6 @@ public static class ManifestWriter
     {
         DetectionBasis.ContentSignature => "contentSignature",
         DetectionBasis.Extension => "extension",
-        DetectionBasis.CallerSpecified => "callerSpecified",
         _ => throw new ArgumentOutOfRangeException(nameof(basis), basis, "Unmapped detection basis.")
     };
 
@@ -299,3 +299,113 @@ public sealed record ExtractionReport(
     DateTimeOffset TimestampUtc,
     ExtractionFailure? Failure,
     string? ExtractorPackage = null);
+
+/// <summary>
+///     The source-generated <see cref="JsonSerializerContext"/> for the manifest DTO graph.
+/// </summary>
+/// <remarks>
+///     <para>
+///         Source-generated serialization metadata is used instead of runtime reflection so
+///         <c>manifest.json</c> can be produced in a trimmed, AOT-compiled, or single-file
+///         published application without losing type metadata. Registering only
+///         <see cref="ExtractionManifest"/> is sufficient because the generator walks the entire
+///         reachable graph of nested records from that root.
+///     </para>
+///     <para>
+///         The options mirror the manifest contract: camelCase property names, indented output
+///         for human readability, and no ignore condition so absent optional values serialize as
+///         explicit <c>null</c> rather than being dropped — which keeps the shape stable for
+///         consumers.
+///     </para>
+///     <para>
+///         Declared <see langword="internal"/> because only Core's <c>ManifestWriter</c> and
+///         <c>ScratchFolder</c> (same assembly) serialize and deserialize the manifest; the DTOs
+///         themselves are public for inspection, but the serialization context is an internal
+///         implementation detail. Generated contexts are thread-safe for concurrent use.
+///     </para>
+/// </remarks>
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    WriteIndented = true,
+    DefaultIgnoreCondition = JsonIgnoreCondition.Never)]
+[JsonSerializable(typeof(ExtractionManifest))]
+internal sealed partial class DocDownJsonContext : JsonSerializerContext;
+
+/// <summary>
+///     A description of the environment an extraction ran in, from runtime information plus
+///     contributed facts.
+/// </summary>
+/// <param name="OperatingSystem">The operating system description (from <c>RuntimeInformation.OSDescription</c>).</param>
+/// <param name="ProcessArchitecture">The process architecture (for example <c>x64</c> or <c>arm64</c>).</param>
+/// <param name="RuntimeVersion">The runtime/framework description (from <c>RuntimeInformation.FrameworkDescription</c>).</param>
+/// <param name="RuntimeIdentifier">The runtime identifier (RID) the process is running as.</param>
+/// <param name="Facts">
+///     The environment facts contributed by backends and unavailable candidates, in insertion
+///     order followed by availability-derived facts; never re-sorted.
+/// </param>
+/// <remarks>
+///     Recording the environment makes an incomplete result reproducible and explicable: whether a
+///     capability was available often depends on the OS, architecture, and RID, so capturing them
+///     lets a reader understand why the same document might extract differently elsewhere. The
+///     fact order is preserved deliberately so provenance reads chronologically. Instances are
+///     immutable and thread-safe.
+/// </remarks>
+public sealed record ExtractionEnvironment(string OperatingSystem, string ProcessArchitecture,
+    string RuntimeVersion, string RuntimeIdentifier, IReadOnlyList<EnvironmentFact> Facts);
+
+/// <summary>
+///     Where an environment fact came from, so the summary can tell what the run actually used
+///     from context about what it did not.
+/// </summary>
+/// <remarks>
+///     A summary that lists the availability of every registered backend when exactly one ran
+///     spends a reader's token budget on context. The distinction is carried in the data rather
+///     than inferred from a key prefix, so trimming the summary can never accidentally hide a fact
+///     a backend deliberately reported.
+/// </remarks>
+public enum EnvironmentFactOrigin
+{
+    /// <summary>
+    ///     The fact was contributed by the backend that ran, describing the environment it actually
+    ///     used. Always shown in the summary.
+    /// </summary>
+    Backend,
+
+    /// <summary>
+    ///     The fact was derived by Core from a registered candidate that did not run, recording
+    ///     whether it would have been available. Shown in the summary only when it reports an
+    ///     unavailability; otherwise summarized as a count with a pointer to <c>manifest.json</c>,
+    ///     which always carries every fact.
+    /// </summary>
+    CandidateAvailability
+}
+
+/// <summary>
+///     A single environment observation contributed to the extraction record.
+/// </summary>
+/// <param name="Source">
+///     The contributing component that reported the fact (for example <c>DocDown.Pdf</c> or
+///     <c>DocDown.Pdf.Rendering</c>). Required so the summary can group facts by their origin,
+///     which keeps a component's honest statement (such as a capability it does not offer) from
+///     reading as a whole-run failure in a multi-backend environment.
+/// </param>
+/// <param name="Key">A short, stable key identifying the fact (for example <c>pdf.pageRenderer</c>).</param>
+/// <param name="Value">A human-readable value or description for the fact.</param>
+/// <param name="Available">
+///     An optional tri-state availability flag: <see langword="true"/> present,
+///     <see langword="false"/> absent, or <see langword="null"/> when availability is not a
+///     meaningful dimension for this fact.
+/// </param>
+/// <param name="Origin">
+///     Whether the fact came from the backend that ran or from a registered candidate that did not.
+///     Defaults to <see cref="EnvironmentFactOrigin.Backend"/> so a backend reporting a fact never
+///     has to think about it and is never trimmed from the summary.
+/// </param>
+/// <remarks>
+///     Facts let backends and unavailable candidates record why a capability could or could not
+///     be provided in this environment (for example a missing native binary), which turns an
+///     opaque degradation into an explained one. Instances are immutable and thread-safe.
+/// </remarks>
+public sealed record EnvironmentFact(
+    string Source, string Key, string Value, bool? Available = null,
+    EnvironmentFactOrigin Origin = EnvironmentFactOrigin.Backend);

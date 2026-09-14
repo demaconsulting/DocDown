@@ -331,7 +331,7 @@ internal sealed class StubExtractionContext : IExtractionContext
         Options = options;
         Sink = sink;
         CancellationToken = cancellationToken;
-        DetectedFormat = new FormatDetection(DocumentFormat.Pdf, DetectionBasis.Extension, 0.9);
+        DetectedFormat = new FormatDetection(DocumentFormat.Pdf, DetectionBasis.Extension);
         SelectedExtractor = new ExtractorDescriptor("pdf", "PDF (PdfPig)", [DocumentFormat.Pdf], 0);
         Environment = new ExtractionEnvironment("TestOS", "X64", "test-runtime", "test-rid", []);
     }

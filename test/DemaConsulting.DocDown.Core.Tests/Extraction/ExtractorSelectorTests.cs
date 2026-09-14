@@ -44,7 +44,7 @@ public class ExtractorSelectorTests
     public void ExtractorSelector_Select_DocxWithoutMatchingCandidate_ReturnsPackageHint()
     {
         // Arrange: only a text candidate is registered while a Word document is detected
-        var detection = new FormatDetection(DocumentFormat.Docx, DetectionBasis.Extension, 0.9);
+        var detection = new FormatDetection(DocumentFormat.Docx, DetectionBasis.Extension);
         var candidates = new[] { Candidate("texter") };
 
         // Act: select for the unsupported docx format
@@ -67,7 +67,7 @@ public class ExtractorSelectorTests
     public void ExtractorSelector_Select_LegacyFormatWithoutMatchingCandidate_ReturnsLegacyBinaryWording()
     {
         // Arrange: only a text candidate is registered while a legacy Word document is detected
-        var detection = new FormatDetection(DocumentFormat.Doc, DetectionBasis.Extension, 0.9);
+        var detection = new FormatDetection(DocumentFormat.Doc, DetectionBasis.Extension);
         var candidates = new[] { Candidate("texter") };
 
         // Act: select for the legacy format
@@ -92,7 +92,7 @@ public class ExtractorSelectorTests
     {
         // Arrange: only a text candidate is registered while a custom format is detected
         var custom = DocumentFormat.Custom("dwg", "image/vnd.dwg");
-        var detection = new FormatDetection(custom, DetectionBasis.Extension, 0.9);
+        var detection = new FormatDetection(custom, DetectionBasis.Extension);
         var candidates = new[] { Candidate("texter") };
 
         // Act: select for the unmapped custom format
@@ -283,5 +283,5 @@ public class ExtractorSelectorTests
     ///     Creates a plain-text detection for selector tests.
     /// </summary>
     /// <returns>A text detection by file extension.</returns>
-    private static FormatDetection TextDetection() => new(DocumentFormat.Text, DetectionBasis.Extension, 0.5);
+    private static FormatDetection TextDetection() => new(DocumentFormat.Text, DetectionBasis.Extension);
 }

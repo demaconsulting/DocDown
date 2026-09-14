@@ -160,7 +160,6 @@ public static class MetadataWriter
     {
         MetadataProvenance.OpcCoreProperties => "opcCoreProperties",
         MetadataProvenance.PdfDocumentInformation => "pdfDocumentInformation",
-        MetadataProvenance.BackendHeuristic => "backendHeuristic",
         _ => throw new ArgumentOutOfRangeException(nameof(provenance), provenance, "Unknown metadata provenance.")
     };
 }

@@ -422,7 +422,7 @@ subsystem defines; the supporting types are documented inline within their subsy
 rather than as separate units:
 
 ```text
-src/DemaConsulting.DocDown.Word/
+src/DemaConsulting.DocDown.Office/Word/
 ├── WordDocDownBuilderExtensions.cs — Unit: the reflection-free AddWord registration seam
 ├── Markdown/
 │   ├── WordMarkdownWriter.cs        — Unit: renders the document model to a markdown flow
@@ -447,7 +447,7 @@ exception types the subsystem defines; the supporting types are documented inlin
 subsystem's design document rather than as separate units:
 
 ```text
-src/DemaConsulting.DocDown.Excel/
+src/DemaConsulting.DocDown.Office/Excel/
 ├── ExcelDocDownBuilderExtensions.cs — Unit: the reflection-free AddExcel registration seam
 ├── Markdown/
 │   ├── ExcelContentEmitter.cs        — Unit: emits sheet and chart parts, inventory, and notes
@@ -469,7 +469,7 @@ exception, and COM-plumbing types the subsystem defines; the supporting types ar
 within their subsystem's design document rather than as separate units:
 
 ```text
-src/DemaConsulting.DocDown.PowerPoint/
+src/DemaConsulting.DocDown.Office/PowerPoint/
 ├── PowerPointDocDownBuilderExtensions.cs — Unit: the reflection-free AddPowerPoint registration seam
 ├── Com/
 │   ├── PowerPointComExtractor.cs      — Unit: the full-superset backend that delegates content and renders slides
@@ -495,7 +495,7 @@ exception, and COM-plumbing types the subsystem defines; the supporting types ar
 within their subsystem's design document rather than as separate units:
 
 ```text
-src/DemaConsulting.DocDown.Visio/
+src/DemaConsulting.DocDown.Office/Visio/
 ├── VisioDocDownBuilderExtensions.cs  — Unit: the reflection-free AddVisio registration seam
 ├── Com/
 │   ├── VisioComExtractor.cs           — Unit: the full-superset backend that delegates content and renders pages

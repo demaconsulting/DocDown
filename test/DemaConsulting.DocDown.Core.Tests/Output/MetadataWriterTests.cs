@@ -57,8 +57,7 @@ public class MetadataWriterTests
         var metadata = new DocumentMetadata(
         [
             new DocumentMetadataField("creator", "Ada Lovelace", MetadataProvenance.OpcCoreProperties),
-            new DocumentMetadataField("producer", "PdfLib", MetadataProvenance.PdfDocumentInformation),
-            new DocumentMetadataField("title", "Derived", MetadataProvenance.BackendHeuristic)
+            new DocumentMetadataField("producer", "PdfLib", MetadataProvenance.PdfDocumentInformation)
         ], []);
 
         using var document = JsonDocument.Parse(MetadataWriter.Render(metadata));
@@ -67,7 +66,6 @@ public class MetadataWriterTests
         Assert.Equal("Ada Lovelace", doc.GetProperty("creator").GetProperty("value").GetString());
         Assert.Equal("opcCoreProperties", doc.GetProperty("creator").GetProperty("source").GetString());
         Assert.Equal("pdfDocumentInformation", doc.GetProperty("producer").GetProperty("source").GetString());
-        Assert.Equal("backendHeuristic", doc.GetProperty("title").GetProperty("source").GetString());
     }
 
     /// <summary>

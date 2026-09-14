@@ -15,7 +15,7 @@ needs-review:
   - "docs/user_guide/**/*.md"    # User guide documentation
   - "docs/sysml2/**/*.sysml"     # SysML2 architecture model
   - "test/DemaConsulting.DocDown.Core.Tests/golden/**/*.txt"  # Golden summary.txt outputs (reviewed artifact)
-  - "test/DemaConsulting.DocDown.Word.Tests/golden/**/*.txt"  # Golden summary.txt outputs (reviewed artifact)
+  - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/**/*.txt"  # Golden summary.txt outputs (reviewed artifact)
   - "!**/obj/**"                  # Exclude build output
   - "!**/bin/**"                  # Exclude build output
   - "!node_modules/**"           # Exclude npm dependencies
@@ -744,65 +744,69 @@ reviews:
       - "README.md"
       - "docs/user_guide/**/*.md"
     paths:
-      - "docs/reqstream/docdown-word.yaml"                                  # system requirements
+      - "docs/reqstream/docdown-office/word.yaml"                                  # system requirements
       - "docs/design/introduction.md"                                       # design introduction
-      - "docs/design/docdown-word.md"                                       # system design
+      - "docs/design/docdown-office/word.md"                                       # system design
       - "docs/verification/introduction.md"                                 # verification introduction
-      - "docs/verification/docdown-word.md"                                 # system verification
-      - "test/DemaConsulting.DocDown.Word.Tests/DocDownWordTests.cs"        # integration tests
-      - "test/DemaConsulting.DocDown.Word.Tests/WordGoldenTests.cs"         # golden output tests
-      - "test/DemaConsulting.DocDown.Word.Tests/TestData/DocxFixtures.cs"   # generated test fixtures
-      - "test/DemaConsulting.DocDown.Word.Tests/TestData/WordTestHarness.cs"  # shared test harness
-      - "src/DemaConsulting.DocDown.Word/NamespaceDoc.cs"                   # namespace documentation
-      - "test/DemaConsulting.DocDown.Word.Tests/golden/summary-word-openxml-simple.txt"  # golden output
-      - "test/DemaConsulting.DocDown.Word.Tests/golden/summary-word-openxml-tables-and-images.txt"  # golden output
-      - "test/DemaConsulting.DocDown.Word.Tests/golden/summary-word-openxml-merged-cells-gap.txt"  # golden output
-      - "test/DemaConsulting.DocDown.Word.Tests/golden/summary-word-openxml-document-control.txt"  # golden output
+      - "docs/verification/docdown-office/word.md"                                 # system verification
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/DocDownWordTests.cs"        # integration tests
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/WordGoldenTests.cs"         # golden output tests
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/TestData/DocxFixtures.cs"   # generated test fixtures
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/TestData/WordTestHarness.cs"  # shared test harness
+      - "src/DemaConsulting.DocDown.Office/Word/NamespaceDoc.cs"                   # namespace documentation
+      # golden outputs
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-simple.txt"
+      # golden outputs
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-tables-and-images.txt"
+      # golden outputs
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-merged-cells-gap.txt"
+      # golden outputs
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-document-control.txt"
 
   # DocDownWord-Design Review (one per system)
   - id: DocDownWord-Design
     title: Review that DocDown.Word Design is Consistent and Complete
     context:
-      - "docs/reqstream/docdown-word.yaml"
+      - "docs/reqstream/docdown-office/word.yaml"
     paths:
-      - "docs/reqstream/docdown-word/platform-requirements.yaml"            # platform requirements
+      - "docs/reqstream/docdown-office/word/platform-requirements.yaml"            # platform requirements
       - "docs/design/introduction.md"                                       # design introduction
-      - "docs/design/docdown-word.md"                                       # system design
-      - "docs/design/docdown-word/**/*.md"                                  # all system design documents
+      - "docs/design/docdown-office/word.md"                                       # system design
+      - "docs/design/docdown-office/word/**/*.md"                                  # all system design documents
       - "docs/design/ots.md"                                                # OTS overview
 
   # DocDownWord-Verification Review (one per system)
   - id: DocDownWord-Verification
     title: Review that DocDown.Word Verification is Consistent and Complete
     context:
-      - "docs/reqstream/docdown-word.yaml"
+      - "docs/reqstream/docdown-office/word.yaml"
     paths:
       - "docs/verification/introduction.md"                                 # verification introduction
-      - "docs/verification/docdown-word.md"                                 # system verification
-      - "docs/verification/docdown-word/**/*.md"                            # all verification documents
+      - "docs/verification/docdown-office/word.md"                                 # system verification
+      - "docs/verification/docdown-office/word/**/*.md"                            # all verification documents
       - "docs/verification/ots.md"                                          # OTS overview
 
   # DocDownWord-AllRequirements Review (one per system)
   - id: DocDownWord-AllRequirements
     title: Review that All DocDown.Word Requirements are Complete
     context:
-      - "docs/design/docdown-word.md"
-      - "docs/reqstream/docdown-word.yaml"
+      - "docs/design/docdown-office/word.md"
+      - "docs/reqstream/docdown-office/word.yaml"
     paths:
-      - "docs/reqstream/docdown-word/**/*.yaml"                             # platform/subsystem/unit requirements files
+      - "docs/reqstream/docdown-office/word/**/*.yaml"                      # platform/subsystem/unit requirements files
 
   # DocDownWord-WordDocDownBuilderExtensions Unit Review (direct unit, two context entries)
   - id: DocDownWord-WordDocDownBuilderExtensions
     title: Review that DocDown.Word WordDocDownBuilderExtensions Implementation is Correct
     context:
-      - "docs/design/docdown-word.md"
-      - "docs/reqstream/docdown-word.yaml"
+      - "docs/design/docdown-office/word.md"
+      - "docs/reqstream/docdown-office/word.yaml"
     paths:
-      - "docs/reqstream/docdown-word/word-doc-down-builder-extensions.yaml"  # unit requirements
-      - "docs/design/docdown-word/word-doc-down-builder-extensions.md"       # unit design
-      - "docs/verification/docdown-word/word-doc-down-builder-extensions.md"  # unit verification
-      - "src/DemaConsulting.DocDown.Word/WordDocDownBuilderExtensions.cs"    # unit source
-      - "test/DemaConsulting.DocDown.Word.Tests/WordDocDownBuilderExtensionsTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/word/word-doc-down-builder-extensions.yaml"  # unit requirements
+      - "docs/design/docdown-office/word/word-doc-down-builder-extensions.md"       # unit design
+      - "docs/verification/docdown-office/word/word-doc-down-builder-extensions.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/Word/WordDocDownBuilderExtensions.cs"    # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/WordDocDownBuilderExtensionsTests.cs"  # unit tests
 
   # DocDownWord-Markdown Subsystem Review (one per subsystem)
   # D8: the subsystem's inline supporting-type source files are reviewed here because they are
@@ -811,19 +815,19 @@ reviews:
   - id: DocDownWord-Markdown
     title: Review that DocDown.Word Markdown Satisfies Subsystem Requirements
     context:
-      - "docs/design/docdown-word.md"
-      - "docs/reqstream/docdown-word.yaml"
+      - "docs/design/docdown-office/word.md"
+      - "docs/reqstream/docdown-office/word.yaml"
     paths:
-      - "docs/reqstream/docdown-word/markdown.yaml"                         # subsystem requirements
-      - "docs/design/docdown-word/markdown.md"                             # subsystem design
-      - "docs/verification/docdown-word/markdown.md"                       # subsystem verification
-      - "src/DemaConsulting.DocDown.Word/Markdown/WordDocumentModel.cs"    # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Word/Markdown/WordBlock.cs"            # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Word/Markdown/WordBlockKind.cs"        # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Word/Markdown/WordInline.cs"           # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Word/Markdown/WordListInfo.cs"         # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Word/Markdown/WordTableModel.cs"       # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Word/Markdown/NamespaceDoc.cs"         # namespace documentation
+      - "docs/reqstream/docdown-office/word/markdown.yaml"                         # subsystem requirements
+      - "docs/design/docdown-office/word/markdown.md"                             # subsystem design
+      - "docs/verification/docdown-office/word/markdown.md"                       # subsystem verification
+      - "src/DemaConsulting.DocDown.Office/Word/Markdown/WordDocumentModel.cs"    # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Word/Markdown/WordBlock.cs"            # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Word/Markdown/WordBlockKind.cs"        # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Word/Markdown/WordInline.cs"           # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Word/Markdown/WordListInfo.cs"         # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Word/Markdown/WordTableModel.cs"       # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Word/Markdown/NamespaceDoc.cs"         # namespace documentation
 
   # DocDownWord-OpenXml Subsystem Review (one per subsystem)
   # D8: the subsystem's one inline supporting-type source file — the shared exception type Core
@@ -831,104 +835,104 @@ reviews:
   - id: DocDownWord-OpenXml
     title: Review that DocDown.Word OpenXml Satisfies Subsystem Requirements
     context:
-      - "docs/design/docdown-word.md"
-      - "docs/reqstream/docdown-word.yaml"
+      - "docs/design/docdown-office/word.md"
+      - "docs/reqstream/docdown-office/word.yaml"
     paths:
-      - "docs/reqstream/docdown-word/open-xml.yaml"                        # subsystem requirements
-      - "docs/design/docdown-word/open-xml.md"                            # subsystem design
-      - "docs/verification/docdown-word/open-xml.md"                      # subsystem verification
-      - "src/DemaConsulting.DocDown.Word/OpenXml/WordExtractionException.cs"  # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Word/OpenXml/NamespaceDoc.cs"          # namespace documentation
+      - "docs/reqstream/docdown-office/word/open-xml.yaml"                        # subsystem requirements
+      - "docs/design/docdown-office/word/open-xml.md"                            # subsystem design
+      - "docs/verification/docdown-office/word/open-xml.md"                      # subsystem verification
+      - "src/DemaConsulting.DocDown.Office/Word/OpenXml/WordExtractionException.cs"  # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Word/OpenXml/NamespaceDoc.cs"          # namespace documentation
 
   # DocDownWord-Markdown-WordMarkdownWriter Unit Review (unit under subsystem, four context entries)
   - id: DocDownWord-Markdown-WordMarkdownWriter
     title: Review that DocDown.Word Markdown WordMarkdownWriter Implementation is Correct
     context:
-      - "docs/design/docdown-word.md"
-      - "docs/reqstream/docdown-word.yaml"
-      - "docs/design/docdown-word/markdown.md"
-      - "docs/reqstream/docdown-word/markdown.yaml"
+      - "docs/design/docdown-office/word.md"
+      - "docs/reqstream/docdown-office/word.yaml"
+      - "docs/design/docdown-office/word/markdown.md"
+      - "docs/reqstream/docdown-office/word/markdown.yaml"
     paths:
-      - "docs/reqstream/docdown-word/markdown/word-markdown-writer.yaml"   # unit requirements
-      - "docs/design/docdown-word/markdown/word-markdown-writer.md"        # unit design
-      - "docs/verification/docdown-word/markdown/word-markdown-writer.md"  # unit verification
-      - "src/DemaConsulting.DocDown.Word/Markdown/WordMarkdownWriter.cs"   # unit source
-      - "test/DemaConsulting.DocDown.Word.Tests/Markdown/WordMarkdownWriterTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/word/markdown/word-markdown-writer.yaml"   # unit requirements
+      - "docs/design/docdown-office/word/markdown/word-markdown-writer.md"        # unit design
+      - "docs/verification/docdown-office/word/markdown/word-markdown-writer.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/Word/Markdown/WordMarkdownWriter.cs"   # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/Markdown/WordMarkdownWriterTests.cs"  # unit tests
 
   # DocDownWord-Markdown-WordTableWriter Unit Review (unit under subsystem, four context entries)
   - id: DocDownWord-Markdown-WordTableWriter
     title: Review that DocDown.Word Markdown WordTableWriter Implementation is Correct
     context:
-      - "docs/design/docdown-word.md"
-      - "docs/reqstream/docdown-word.yaml"
-      - "docs/design/docdown-word/markdown.md"
-      - "docs/reqstream/docdown-word/markdown.yaml"
+      - "docs/design/docdown-office/word.md"
+      - "docs/reqstream/docdown-office/word.yaml"
+      - "docs/design/docdown-office/word/markdown.md"
+      - "docs/reqstream/docdown-office/word/markdown.yaml"
     paths:
-      - "docs/reqstream/docdown-word/markdown/word-table-writer.yaml"      # unit requirements
-      - "docs/design/docdown-word/markdown/word-table-writer.md"           # unit design
-      - "docs/verification/docdown-word/markdown/word-table-writer.md"     # unit verification
-      - "src/DemaConsulting.DocDown.Word/Markdown/WordTableWriter.cs"      # unit source
-      - "test/DemaConsulting.DocDown.Word.Tests/Markdown/WordTableWriterTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/word/markdown/word-table-writer.yaml"      # unit requirements
+      - "docs/design/docdown-office/word/markdown/word-table-writer.md"           # unit design
+      - "docs/verification/docdown-office/word/markdown/word-table-writer.md"     # unit verification
+      - "src/DemaConsulting.DocDown.Office/Word/Markdown/WordTableWriter.cs"      # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/Markdown/WordTableWriterTests.cs"  # unit tests
 
   # DocDownWord-Markdown-WordContentEmitter Unit Review (unit under subsystem, four context entries)
   - id: DocDownWord-Markdown-WordContentEmitter
     title: Review that DocDown.Word Markdown WordContentEmitter Implementation is Correct
     context:
-      - "docs/design/docdown-word.md"
-      - "docs/reqstream/docdown-word.yaml"
-      - "docs/design/docdown-word/markdown.md"
-      - "docs/reqstream/docdown-word/markdown.yaml"
+      - "docs/design/docdown-office/word.md"
+      - "docs/reqstream/docdown-office/word.yaml"
+      - "docs/design/docdown-office/word/markdown.md"
+      - "docs/reqstream/docdown-office/word/markdown.yaml"
     paths:
-      - "docs/reqstream/docdown-word/markdown/word-content-emitter.yaml"   # unit requirements
-      - "docs/design/docdown-word/markdown/word-content-emitter.md"        # unit design
-      - "docs/verification/docdown-word/markdown/word-content-emitter.md"  # unit verification
-      - "src/DemaConsulting.DocDown.Word/Markdown/WordContentEmitter.cs"   # unit source
-      - "test/DemaConsulting.DocDown.Word.Tests/Markdown/WordContentEmitterTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/word/markdown/word-content-emitter.yaml"   # unit requirements
+      - "docs/design/docdown-office/word/markdown/word-content-emitter.md"        # unit design
+      - "docs/verification/docdown-office/word/markdown/word-content-emitter.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/Word/Markdown/WordContentEmitter.cs"   # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/Markdown/WordContentEmitterTests.cs"  # unit tests
 
   # DocDownWord-OpenXml-WordOpenXmlExtractor Unit Review (unit under subsystem, four context entries)
   - id: DocDownWord-OpenXml-WordOpenXmlExtractor
     title: Review that DocDown.Word OpenXml WordOpenXmlExtractor Implementation is Correct
     context:
-      - "docs/design/docdown-word.md"
-      - "docs/reqstream/docdown-word.yaml"
-      - "docs/design/docdown-word/open-xml.md"
-      - "docs/reqstream/docdown-word/open-xml.yaml"
+      - "docs/design/docdown-office/word.md"
+      - "docs/reqstream/docdown-office/word.yaml"
+      - "docs/design/docdown-office/word/open-xml.md"
+      - "docs/reqstream/docdown-office/word/open-xml.yaml"
     paths:
-      - "docs/reqstream/docdown-word/open-xml/word-open-xml-extractor.yaml"  # unit requirements
-      - "docs/design/docdown-word/open-xml/word-open-xml-extractor.md"       # unit design
-      - "docs/verification/docdown-word/open-xml/word-open-xml-extractor.md"  # unit verification
-      - "src/DemaConsulting.DocDown.Word/OpenXml/WordOpenXmlExtractor.cs"    # unit source
-      - "test/DemaConsulting.DocDown.Word.Tests/OpenXml/WordOpenXmlExtractorTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/word/open-xml/word-open-xml-extractor.yaml"  # unit requirements
+      - "docs/design/docdown-office/word/open-xml/word-open-xml-extractor.md"       # unit design
+      - "docs/verification/docdown-office/word/open-xml/word-open-xml-extractor.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/Word/OpenXml/WordOpenXmlExtractor.cs"    # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/OpenXml/WordOpenXmlExtractorTests.cs"  # unit tests
 
   # DocDownWord-OpenXml-WordOpenXmlReader Unit Review (unit under subsystem, four context entries)
   - id: DocDownWord-OpenXml-WordOpenXmlReader
     title: Review that DocDown.Word OpenXml WordOpenXmlReader Implementation is Correct
     context:
-      - "docs/design/docdown-word.md"
-      - "docs/reqstream/docdown-word.yaml"
-      - "docs/design/docdown-word/open-xml.md"
-      - "docs/reqstream/docdown-word/open-xml.yaml"
+      - "docs/design/docdown-office/word.md"
+      - "docs/reqstream/docdown-office/word.yaml"
+      - "docs/design/docdown-office/word/open-xml.md"
+      - "docs/reqstream/docdown-office/word/open-xml.yaml"
     paths:
-      - "docs/reqstream/docdown-word/open-xml/word-open-xml-reader.yaml"    # unit requirements
-      - "docs/design/docdown-word/open-xml/word-open-xml-reader.md"         # unit design
-      - "docs/verification/docdown-word/open-xml/word-open-xml-reader.md"   # unit verification
-      - "src/DemaConsulting.DocDown.Word/OpenXml/WordOpenXmlReader.cs"      # unit source
-      - "test/DemaConsulting.DocDown.Word.Tests/OpenXml/WordOpenXmlReaderTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/word/open-xml/word-open-xml-reader.yaml"    # unit requirements
+      - "docs/design/docdown-office/word/open-xml/word-open-xml-reader.md"         # unit design
+      - "docs/verification/docdown-office/word/open-xml/word-open-xml-reader.md"   # unit verification
+      - "src/DemaConsulting.DocDown.Office/Word/OpenXml/WordOpenXmlReader.cs"      # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/OpenXml/WordOpenXmlReaderTests.cs"  # unit tests
 
   # DocDownWord-OpenXml-WordOpenXmlImageReader Unit Review (unit under subsystem, four context entries)
   - id: DocDownWord-OpenXml-WordOpenXmlImageReader
     title: Review that DocDown.Word OpenXml WordOpenXmlImageReader Implementation is Correct
     context:
-      - "docs/design/docdown-word.md"
-      - "docs/reqstream/docdown-word.yaml"
-      - "docs/design/docdown-word/open-xml.md"
-      - "docs/reqstream/docdown-word/open-xml.yaml"
+      - "docs/design/docdown-office/word.md"
+      - "docs/reqstream/docdown-office/word.yaml"
+      - "docs/design/docdown-office/word/open-xml.md"
+      - "docs/reqstream/docdown-office/word/open-xml.yaml"
     paths:
-      - "docs/reqstream/docdown-word/open-xml/word-open-xml-image-reader.yaml"  # unit requirements
-      - "docs/design/docdown-word/open-xml/word-open-xml-image-reader.md"       # unit design
-      - "docs/verification/docdown-word/open-xml/word-open-xml-image-reader.md"  # unit verification
-      - "src/DemaConsulting.DocDown.Word/OpenXml/WordOpenXmlImageReader.cs"    # unit source
-      - "test/DemaConsulting.DocDown.Word.Tests/OpenXml/WordOpenXmlImageReaderTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/word/open-xml/word-open-xml-image-reader.yaml"  # unit requirements
+      - "docs/design/docdown-office/word/open-xml/word-open-xml-image-reader.md"       # unit design
+      - "docs/verification/docdown-office/word/open-xml/word-open-xml-image-reader.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/Word/OpenXml/WordOpenXmlImageReader.cs"    # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/OpenXml/WordOpenXmlImageReaderTests.cs"  # unit tests
 
   # === DocDownExcel review-sets ===
   # DocDownExcel is the Excel extraction system. Like DocDownWord it has more than one subsystem
@@ -950,59 +954,59 @@ reviews:
       - "README.md"
       - "docs/user_guide/**/*.md"
     paths:
-      - "docs/reqstream/docdown-excel.yaml"                                 # system requirements
+      - "docs/reqstream/docdown-office/excel.yaml"                                 # system requirements
       - "docs/design/introduction.md"                                       # design introduction
-      - "docs/design/docdown-excel.md"                                      # system design
+      - "docs/design/docdown-office/excel.md"                                      # system design
       - "docs/verification/introduction.md"                                 # verification introduction
-      - "docs/verification/docdown-excel.md"                                # system verification
-      - "test/DemaConsulting.DocDown.Excel.Tests/DocDownExcelTests.cs"      # integration tests
-      - "test/DemaConsulting.DocDown.Excel.Tests/TestData/XlsxFixtures.cs"  # generated test fixtures
-      - "src/DemaConsulting.DocDown.Excel/NamespaceDoc.cs"                  # namespace documentation
+      - "docs/verification/docdown-office/excel.md"                                # system verification
+      - "test/DemaConsulting.DocDown.Office.Tests/Excel/DocDownExcelTests.cs"      # integration tests
+      - "test/DemaConsulting.DocDown.Office.Tests/Excel/TestData/XlsxFixtures.cs"  # generated test fixtures
+      - "src/DemaConsulting.DocDown.Office/Excel/NamespaceDoc.cs"                  # namespace documentation
 
   # DocDownExcel-Design Review (one per system)
   - id: DocDownExcel-Design
     title: Review that DocDown.Excel Design is Consistent and Complete
     context:
-      - "docs/reqstream/docdown-excel.yaml"
+      - "docs/reqstream/docdown-office/excel.yaml"
     paths:
-      - "docs/reqstream/docdown-excel/platform-requirements.yaml"           # platform requirements
+      - "docs/reqstream/docdown-office/excel/platform-requirements.yaml"           # platform requirements
       - "docs/design/introduction.md"                                       # design introduction
-      - "docs/design/docdown-excel.md"                                      # system design
-      - "docs/design/docdown-excel/**/*.md"                                 # all system design documents
+      - "docs/design/docdown-office/excel.md"                                      # system design
+      - "docs/design/docdown-office/excel/**/*.md"                                 # all system design documents
       - "docs/design/ots.md"                                                # OTS overview
 
   # DocDownExcel-Verification Review (one per system)
   - id: DocDownExcel-Verification
     title: Review that DocDown.Excel Verification is Consistent and Complete
     context:
-      - "docs/reqstream/docdown-excel.yaml"
+      - "docs/reqstream/docdown-office/excel.yaml"
     paths:
       - "docs/verification/introduction.md"                                 # verification introduction
-      - "docs/verification/docdown-excel.md"                                # system verification
-      - "docs/verification/docdown-excel/**/*.md"                           # all verification documents
+      - "docs/verification/docdown-office/excel.md"                                # system verification
+      - "docs/verification/docdown-office/excel/**/*.md"                           # all verification documents
       - "docs/verification/ots.md"                                          # OTS overview
 
   # DocDownExcel-AllRequirements Review (one per system)
   - id: DocDownExcel-AllRequirements
     title: Review that All DocDown.Excel Requirements are Complete
     context:
-      - "docs/design/docdown-excel.md"
-      - "docs/reqstream/docdown-excel.yaml"
+      - "docs/design/docdown-office/excel.md"
+      - "docs/reqstream/docdown-office/excel.yaml"
     paths:
-      - "docs/reqstream/docdown-excel/**/*.yaml"                            # platform/subsystem/unit requirements files
+      - "docs/reqstream/docdown-office/excel/**/*.yaml"                     # platform/subsystem/unit requirements files
 
   # DocDownExcel-ExcelDocDownBuilderExtensions Unit Review (direct unit, two context entries)
   - id: DocDownExcel-ExcelDocDownBuilderExtensions
     title: Review that DocDown.Excel ExcelDocDownBuilderExtensions Implementation is Correct
     context:
-      - "docs/design/docdown-excel.md"
-      - "docs/reqstream/docdown-excel.yaml"
+      - "docs/design/docdown-office/excel.md"
+      - "docs/reqstream/docdown-office/excel.yaml"
     paths:
-      - "docs/reqstream/docdown-excel/excel-doc-down-builder-extensions.yaml"  # unit requirements
-      - "docs/design/docdown-excel/excel-doc-down-builder-extensions.md"       # unit design
-      - "docs/verification/docdown-excel/excel-doc-down-builder-extensions.md"  # unit verification
-      - "src/DemaConsulting.DocDown.Excel/ExcelDocDownBuilderExtensions.cs"    # unit source
-      - "test/DemaConsulting.DocDown.Excel.Tests/ExcelDocDownBuilderExtensionsTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/excel/excel-doc-down-builder-extensions.yaml"  # unit requirements
+      - "docs/design/docdown-office/excel/excel-doc-down-builder-extensions.md"       # unit design
+      - "docs/verification/docdown-office/excel/excel-doc-down-builder-extensions.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/Excel/ExcelDocDownBuilderExtensions.cs"    # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Excel/ExcelDocDownBuilderExtensionsTests.cs"  # unit tests
 
   # DocDownExcel-Markdown Subsystem Review (one per subsystem)
   # D8: the subsystem's inline supporting-type source file — the diagnostic-code type — is reviewed here
@@ -1011,13 +1015,13 @@ reviews:
   - id: DocDownExcel-Markdown
     title: Review that DocDown.Excel Markdown Satisfies Subsystem Requirements
     context:
-      - "docs/design/docdown-excel.md"
-      - "docs/reqstream/docdown-excel.yaml"
+      - "docs/design/docdown-office/excel.md"
+      - "docs/reqstream/docdown-office/excel.yaml"
     paths:
-      - "docs/reqstream/docdown-excel/markdown.yaml"                        # subsystem requirements
-      - "docs/design/docdown-excel/markdown.md"                            # subsystem design
-      - "docs/verification/docdown-excel/markdown.md"                      # subsystem verification
-      - "src/DemaConsulting.DocDown.Excel/Markdown/NamespaceDoc.cs"        # namespace documentation
+      - "docs/reqstream/docdown-office/excel/markdown.yaml"                        # subsystem requirements
+      - "docs/design/docdown-office/excel/markdown.md"                            # subsystem design
+      - "docs/verification/docdown-office/excel/markdown.md"                      # subsystem verification
+      - "src/DemaConsulting.DocDown.Office/Excel/Markdown/NamespaceDoc.cs"        # namespace documentation
 
   # DocDownExcel-OpenXml Subsystem Review (one per subsystem)
   # D8: the subsystem's inline supporting-type source files — the workbook/chart model records and the
@@ -1025,76 +1029,76 @@ reviews:
   - id: DocDownExcel-OpenXml
     title: Review that DocDown.Excel OpenXml Satisfies Subsystem Requirements
     context:
-      - "docs/design/docdown-excel.md"
-      - "docs/reqstream/docdown-excel.yaml"
+      - "docs/design/docdown-office/excel.md"
+      - "docs/reqstream/docdown-office/excel.yaml"
     paths:
-      - "docs/reqstream/docdown-excel/open-xml.yaml"                       # subsystem requirements
-      - "docs/design/docdown-excel/open-xml.md"                           # subsystem design
-      - "docs/verification/docdown-excel/open-xml.md"                     # subsystem verification
-      - "src/DemaConsulting.DocDown.Excel/OpenXml/ExcelDocumentModel.cs"  # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Excel/OpenXml/ExcelChartModel.cs"     # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Excel/OpenXml/ExcelExtractionException.cs"  # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Excel/OpenXml/NamespaceDoc.cs"        # namespace documentation
+      - "docs/reqstream/docdown-office/excel/open-xml.yaml"                       # subsystem requirements
+      - "docs/design/docdown-office/excel/open-xml.md"                           # subsystem design
+      - "docs/verification/docdown-office/excel/open-xml.md"                     # subsystem verification
+      - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelDocumentModel.cs"  # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelChartModel.cs"     # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelExtractionException.cs"  # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/NamespaceDoc.cs"        # namespace documentation
 
   # DocDownExcel-Markdown-ExcelContentEmitter Unit Review (unit under subsystem, four context entries)
   - id: DocDownExcel-Markdown-ExcelContentEmitter
     title: Review that DocDown.Excel Markdown ExcelContentEmitter Implementation is Correct
     context:
-      - "docs/design/docdown-excel.md"
-      - "docs/reqstream/docdown-excel.yaml"
-      - "docs/design/docdown-excel/markdown.md"
-      - "docs/reqstream/docdown-excel/markdown.yaml"
+      - "docs/design/docdown-office/excel.md"
+      - "docs/reqstream/docdown-office/excel.yaml"
+      - "docs/design/docdown-office/excel/markdown.md"
+      - "docs/reqstream/docdown-office/excel/markdown.yaml"
     paths:
-      - "docs/reqstream/docdown-excel/markdown/excel-content-emitter.yaml"   # unit requirements
-      - "docs/design/docdown-excel/markdown/excel-content-emitter.md"        # unit design
-      - "docs/verification/docdown-excel/markdown/excel-content-emitter.md"  # unit verification
-      - "src/DemaConsulting.DocDown.Excel/Markdown/ExcelContentEmitter.cs"   # unit source
-      - "test/DemaConsulting.DocDown.Excel.Tests/Markdown/ExcelContentEmitterTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/excel/markdown/excel-content-emitter.yaml"   # unit requirements
+      - "docs/design/docdown-office/excel/markdown/excel-content-emitter.md"        # unit design
+      - "docs/verification/docdown-office/excel/markdown/excel-content-emitter.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/Excel/Markdown/ExcelContentEmitter.cs"   # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Excel/Markdown/ExcelContentEmitterTests.cs"  # unit tests
 
   # DocDownExcel-Markdown-ExcelChartWriter Unit Review (unit under subsystem, four context entries)
   - id: DocDownExcel-Markdown-ExcelChartWriter
     title: Review that DocDown.Excel Markdown ExcelChartWriter Implementation is Correct
     context:
-      - "docs/design/docdown-excel.md"
-      - "docs/reqstream/docdown-excel.yaml"
-      - "docs/design/docdown-excel/markdown.md"
-      - "docs/reqstream/docdown-excel/markdown.yaml"
+      - "docs/design/docdown-office/excel.md"
+      - "docs/reqstream/docdown-office/excel.yaml"
+      - "docs/design/docdown-office/excel/markdown.md"
+      - "docs/reqstream/docdown-office/excel/markdown.yaml"
     paths:
-      - "docs/reqstream/docdown-excel/markdown/excel-chart-writer.yaml"      # unit requirements
-      - "docs/design/docdown-excel/markdown/excel-chart-writer.md"           # unit design
-      - "docs/verification/docdown-excel/markdown/excel-chart-writer.md"     # unit verification
-      - "src/DemaConsulting.DocDown.Excel/Markdown/ExcelChartWriter.cs"      # unit source
-      - "test/DemaConsulting.DocDown.Excel.Tests/Markdown/ExcelChartWriterTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/excel/markdown/excel-chart-writer.yaml"      # unit requirements
+      - "docs/design/docdown-office/excel/markdown/excel-chart-writer.md"           # unit design
+      - "docs/verification/docdown-office/excel/markdown/excel-chart-writer.md"     # unit verification
+      - "src/DemaConsulting.DocDown.Office/Excel/Markdown/ExcelChartWriter.cs"      # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Excel/Markdown/ExcelChartWriterTests.cs"  # unit tests
 
   # DocDownExcel-OpenXml-ExcelOpenXmlExtractor Unit Review (unit under subsystem, four context entries)
   - id: DocDownExcel-OpenXml-ExcelOpenXmlExtractor
     title: Review that DocDown.Excel OpenXml ExcelOpenXmlExtractor Implementation is Correct
     context:
-      - "docs/design/docdown-excel.md"
-      - "docs/reqstream/docdown-excel.yaml"
-      - "docs/design/docdown-excel/open-xml.md"
-      - "docs/reqstream/docdown-excel/open-xml.yaml"
+      - "docs/design/docdown-office/excel.md"
+      - "docs/reqstream/docdown-office/excel.yaml"
+      - "docs/design/docdown-office/excel/open-xml.md"
+      - "docs/reqstream/docdown-office/excel/open-xml.yaml"
     paths:
-      - "docs/reqstream/docdown-excel/open-xml/excel-open-xml-extractor.yaml"  # unit requirements
-      - "docs/design/docdown-excel/open-xml/excel-open-xml-extractor.md"       # unit design
-      - "docs/verification/docdown-excel/open-xml/excel-open-xml-extractor.md"  # unit verification
-      - "src/DemaConsulting.DocDown.Excel/OpenXml/ExcelOpenXmlExtractor.cs"    # unit source
-      - "test/DemaConsulting.DocDown.Excel.Tests/OpenXml/ExcelOpenXmlExtractorTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/excel/open-xml/excel-open-xml-extractor.yaml"  # unit requirements
+      - "docs/design/docdown-office/excel/open-xml/excel-open-xml-extractor.md"       # unit design
+      - "docs/verification/docdown-office/excel/open-xml/excel-open-xml-extractor.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelOpenXmlExtractor.cs"    # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Excel/OpenXml/ExcelOpenXmlExtractorTests.cs"  # unit tests
 
   # DocDownExcel-OpenXml-ExcelOpenXmlReader Unit Review (unit under subsystem, four context entries)
   - id: DocDownExcel-OpenXml-ExcelOpenXmlReader
     title: Review that DocDown.Excel OpenXml ExcelOpenXmlReader Implementation is Correct
     context:
-      - "docs/design/docdown-excel.md"
-      - "docs/reqstream/docdown-excel.yaml"
-      - "docs/design/docdown-excel/open-xml.md"
-      - "docs/reqstream/docdown-excel/open-xml.yaml"
+      - "docs/design/docdown-office/excel.md"
+      - "docs/reqstream/docdown-office/excel.yaml"
+      - "docs/design/docdown-office/excel/open-xml.md"
+      - "docs/reqstream/docdown-office/excel/open-xml.yaml"
     paths:
-      - "docs/reqstream/docdown-excel/open-xml/excel-open-xml-reader.yaml"    # unit requirements
-      - "docs/design/docdown-excel/open-xml/excel-open-xml-reader.md"         # unit design
-      - "docs/verification/docdown-excel/open-xml/excel-open-xml-reader.md"   # unit verification
-      - "src/DemaConsulting.DocDown.Excel/OpenXml/ExcelOpenXmlReader.cs"      # unit source
-      - "test/DemaConsulting.DocDown.Excel.Tests/OpenXml/ExcelOpenXmlReaderTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/excel/open-xml/excel-open-xml-reader.yaml"    # unit requirements
+      - "docs/design/docdown-office/excel/open-xml/excel-open-xml-reader.md"         # unit design
+      - "docs/verification/docdown-office/excel/open-xml/excel-open-xml-reader.md"   # unit verification
+      - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelOpenXmlReader.cs"      # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Excel/OpenXml/ExcelOpenXmlReaderTests.cs"  # unit tests
 
   # DocDownExcel-OpenXml-ExcelOpenXmlImageReader Unit Review (unit under subsystem, four context entries)
   # No dedicated test class: the image reader's contract is what reaches the model, proved through the
@@ -1102,30 +1106,30 @@ reviews:
   - id: DocDownExcel-OpenXml-ExcelOpenXmlImageReader
     title: Review that DocDown.Excel OpenXml ExcelOpenXmlImageReader Implementation is Correct
     context:
-      - "docs/design/docdown-excel.md"
-      - "docs/reqstream/docdown-excel.yaml"
-      - "docs/design/docdown-excel/open-xml.md"
-      - "docs/reqstream/docdown-excel/open-xml.yaml"
+      - "docs/design/docdown-office/excel.md"
+      - "docs/reqstream/docdown-office/excel.yaml"
+      - "docs/design/docdown-office/excel/open-xml.md"
+      - "docs/reqstream/docdown-office/excel/open-xml.yaml"
     paths:
-      - "docs/reqstream/docdown-excel/open-xml/excel-open-xml-image-reader.yaml"  # unit requirements
-      - "docs/design/docdown-excel/open-xml/excel-open-xml-image-reader.md"       # unit design
-      - "docs/verification/docdown-excel/open-xml/excel-open-xml-image-reader.md"  # unit verification
-      - "src/DemaConsulting.DocDown.Excel/OpenXml/ExcelOpenXmlImageReader.cs"    # unit source
+      - "docs/reqstream/docdown-office/excel/open-xml/excel-open-xml-image-reader.yaml"  # unit requirements
+      - "docs/design/docdown-office/excel/open-xml/excel-open-xml-image-reader.md"       # unit design
+      - "docs/verification/docdown-office/excel/open-xml/excel-open-xml-image-reader.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelOpenXmlImageReader.cs"    # unit source
 
   # DocDownExcel-OpenXml-ExcelChartReader Unit Review (unit under subsystem, four context entries)
   - id: DocDownExcel-OpenXml-ExcelChartReader
     title: Review that DocDown.Excel OpenXml ExcelChartReader Implementation is Correct
     context:
-      - "docs/design/docdown-excel.md"
-      - "docs/reqstream/docdown-excel.yaml"
-      - "docs/design/docdown-excel/open-xml.md"
-      - "docs/reqstream/docdown-excel/open-xml.yaml"
+      - "docs/design/docdown-office/excel.md"
+      - "docs/reqstream/docdown-office/excel.yaml"
+      - "docs/design/docdown-office/excel/open-xml.md"
+      - "docs/reqstream/docdown-office/excel/open-xml.yaml"
     paths:
-      - "docs/reqstream/docdown-excel/open-xml/excel-chart-reader.yaml"      # unit requirements
-      - "docs/design/docdown-excel/open-xml/excel-chart-reader.md"           # unit design
-      - "docs/verification/docdown-excel/open-xml/excel-chart-reader.md"     # unit verification
-      - "src/DemaConsulting.DocDown.Excel/OpenXml/ExcelChartReader.cs"       # unit source
-      - "test/DemaConsulting.DocDown.Excel.Tests/OpenXml/ExcelChartReaderTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/excel/open-xml/excel-chart-reader.yaml"      # unit requirements
+      - "docs/design/docdown-office/excel/open-xml/excel-chart-reader.md"           # unit design
+      - "docs/verification/docdown-office/excel/open-xml/excel-chart-reader.md"     # unit verification
+      - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelChartReader.cs"       # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Excel/OpenXml/ExcelChartReaderTests.cs"  # unit tests
 
   # DocDownExcel-OpenXml-ExcelDrawingTextReader Unit Review (unit under subsystem, four context entries)
   # No dedicated test class: the drawing-text reader's contract is the shape text that reaches the sheet,
@@ -1133,15 +1137,15 @@ reviews:
   - id: DocDownExcel-OpenXml-ExcelDrawingTextReader
     title: Review that DocDown.Excel OpenXml ExcelDrawingTextReader Implementation is Correct
     context:
-      - "docs/design/docdown-excel.md"
-      - "docs/reqstream/docdown-excel.yaml"
-      - "docs/design/docdown-excel/open-xml.md"
-      - "docs/reqstream/docdown-excel/open-xml.yaml"
+      - "docs/design/docdown-office/excel.md"
+      - "docs/reqstream/docdown-office/excel.yaml"
+      - "docs/design/docdown-office/excel/open-xml.md"
+      - "docs/reqstream/docdown-office/excel/open-xml.yaml"
     paths:
-      - "docs/reqstream/docdown-excel/open-xml/excel-drawing-text-reader.yaml"  # unit requirements
-      - "docs/design/docdown-excel/open-xml/excel-drawing-text-reader.md"       # unit design
-      - "docs/verification/docdown-excel/open-xml/excel-drawing-text-reader.md"  # unit verification
-      - "src/DemaConsulting.DocDown.Excel/OpenXml/ExcelDrawingTextReader.cs"    # unit source
+      - "docs/reqstream/docdown-office/excel/open-xml/excel-drawing-text-reader.yaml"  # unit requirements
+      - "docs/design/docdown-office/excel/open-xml/excel-drawing-text-reader.md"       # unit design
+      - "docs/verification/docdown-office/excel/open-xml/excel-drawing-text-reader.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelDrawingTextReader.cs"    # unit source
 
   # === DocDownPowerPoint review-sets ===
   # DocDownPowerPoint is the PowerPoint extraction system. Unlike DocDownWord and DocDownExcel it has three
@@ -1164,61 +1168,61 @@ reviews:
       - "README.md"
       - "docs/user_guide/**/*.md"
     paths:
-      - "docs/reqstream/docdown-powerpoint.yaml"                                       # system requirements
+      - "docs/reqstream/docdown-office/powerpoint.yaml"                                       # system requirements
       - "docs/design/introduction.md"                                                  # design introduction
-      - "docs/design/docdown-powerpoint.md"                                            # system design
+      - "docs/design/docdown-office/powerpoint.md"                                            # system design
       - "docs/verification/introduction.md"                                            # verification introduction
-      - "docs/verification/docdown-powerpoint.md"                                      # system verification
-      - "test/DemaConsulting.DocDown.PowerPoint.Tests/DocDownPowerPointTests.cs"       # integration tests
-      - "test/DemaConsulting.DocDown.PowerPoint.Tests/TestData/CapturingContext.cs"    # test support
-      - "test/DemaConsulting.DocDown.PowerPoint.Tests/TestData/PptxFixtures.cs"        # generated test fixtures
-      - "test/DemaConsulting.DocDown.PowerPoint.Tests/TestData/StubPowerPointAutomation.cs"  # rendering stub
-      - "src/DemaConsulting.DocDown.PowerPoint/NamespaceDoc.cs"                        # namespace documentation
+      - "docs/verification/docdown-office/powerpoint.md"                                      # system verification
+      - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/DocDownPowerPointTests.cs"       # integration tests
+      - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/TestData/CapturingContext.cs"    # test support
+      - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/TestData/PptxFixtures.cs"        # generated test fixtures
+      - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/TestData/StubPowerPointAutomation.cs"  # rendering stub
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/NamespaceDoc.cs"                        # namespace documentation
 
   # DocDownPowerPoint-Design Review (one per system)
   - id: DocDownPowerPoint-Design
     title: Review that DocDown.PowerPoint Design is Consistent and Complete
     context:
-      - "docs/reqstream/docdown-powerpoint.yaml"
+      - "docs/reqstream/docdown-office/powerpoint.yaml"
     paths:
-      - "docs/reqstream/docdown-powerpoint/platform-requirements.yaml"                 # platform requirements
+      - "docs/reqstream/docdown-office/powerpoint/platform-requirements.yaml"                 # platform requirements
       - "docs/design/introduction.md"                                                  # design introduction
-      - "docs/design/docdown-powerpoint.md"                                            # system design
-      - "docs/design/docdown-powerpoint/**/*.md"                                       # all system design documents
+      - "docs/design/docdown-office/powerpoint.md"                                            # system design
+      - "docs/design/docdown-office/powerpoint/**/*.md"                                    # all system design documents
       - "docs/design/ots.md"                                                           # OTS overview
 
   # DocDownPowerPoint-Verification Review (one per system)
   - id: DocDownPowerPoint-Verification
     title: Review that DocDown.PowerPoint Verification is Consistent and Complete
     context:
-      - "docs/reqstream/docdown-powerpoint.yaml"
+      - "docs/reqstream/docdown-office/powerpoint.yaml"
     paths:
       - "docs/verification/introduction.md"                                            # verification introduction
-      - "docs/verification/docdown-powerpoint.md"                                      # system verification
-      - "docs/verification/docdown-powerpoint/**/*.md"                                 # all verification documents
+      - "docs/verification/docdown-office/powerpoint.md"                                      # system verification
+      - "docs/verification/docdown-office/powerpoint/**/*.md"                               # all verification documents
       - "docs/verification/ots.md"                                                     # OTS overview
 
   # DocDownPowerPoint-AllRequirements Review (one per system)
   - id: DocDownPowerPoint-AllRequirements
     title: Review that All DocDown.PowerPoint Requirements are Complete
     context:
-      - "docs/design/docdown-powerpoint.md"
-      - "docs/reqstream/docdown-powerpoint.yaml"
+      - "docs/design/docdown-office/powerpoint.md"
+      - "docs/reqstream/docdown-office/powerpoint.yaml"
     paths:
-      - "docs/reqstream/docdown-powerpoint/**/*.yaml"  # platform/subsystem/unit requirements files
+      - "docs/reqstream/docdown-office/powerpoint/**/*.yaml"  # platform/subsystem/unit requirements files
 
   # DocDownPowerPoint-PowerPointDocDownBuilderExtensions Unit Review (direct unit, two context entries)
   - id: DocDownPowerPoint-PowerPointDocDownBuilderExtensions
     title: Review that DocDown.PowerPoint PowerPointDocDownBuilderExtensions Implementation is Correct
     context:
-      - "docs/design/docdown-powerpoint.md"
-      - "docs/reqstream/docdown-powerpoint.yaml"
+      - "docs/design/docdown-office/powerpoint.md"
+      - "docs/reqstream/docdown-office/powerpoint.yaml"
     paths:
-      - "docs/reqstream/docdown-powerpoint/powerpoint-doc-down-builder-extensions.yaml"   # unit requirements
-      - "docs/design/docdown-powerpoint/powerpoint-doc-down-builder-extensions.md"        # unit design
-      - "docs/verification/docdown-powerpoint/powerpoint-doc-down-builder-extensions.md"  # unit verification
-      - "src/DemaConsulting.DocDown.PowerPoint/PowerPointDocDownBuilderExtensions.cs"     # unit source
-      - "test/DemaConsulting.DocDown.PowerPoint.Tests/PowerPointDocDownBuilderExtensionsTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/powerpoint/powerpoint-doc-down-builder-extensions.yaml"   # unit requirements
+      - "docs/design/docdown-office/powerpoint/powerpoint-doc-down-builder-extensions.md"        # unit design
+      - "docs/verification/docdown-office/powerpoint/powerpoint-doc-down-builder-extensions.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/PowerPointDocDownBuilderExtensions.cs"     # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/PowerPointDocDownBuilderExtensionsTests.cs"  # unit tests
 
   # DocDownPowerPoint-Com Subsystem Review (one per subsystem)
   # D8: the subsystem's inline supporting-type source files — the automation seam interface, the composing
@@ -1227,17 +1231,17 @@ reviews:
   - id: DocDownPowerPoint-Com
     title: Review that DocDown.PowerPoint Com Satisfies Subsystem Requirements
     context:
-      - "docs/design/docdown-powerpoint.md"
-      - "docs/reqstream/docdown-powerpoint.yaml"
+      - "docs/design/docdown-office/powerpoint.md"
+      - "docs/reqstream/docdown-office/powerpoint.yaml"
     paths:
-      - "docs/reqstream/docdown-powerpoint/com.yaml"                                   # subsystem requirements
-      - "docs/design/docdown-powerpoint/com.md"                                        # subsystem design
-      - "docs/verification/docdown-powerpoint/com.md"                                  # subsystem verification
-      - "src/DemaConsulting.DocDown.PowerPoint/Com/IPowerPointAutomation.cs"           # supporting type (D8)
-      - "src/DemaConsulting.DocDown.PowerPoint/Com/ComposingDelegatedSink.cs"          # supporting type (D8)
-      - "src/DemaConsulting.DocDown.PowerPoint/Com/DelegatedExtractionContext.cs"      # supporting type (D8)
-      - "src/DemaConsulting.DocDown.PowerPoint/Com/PowerPointComDispatch.cs"           # supporting type (D8)
-      - "src/DemaConsulting.DocDown.PowerPoint/Com/NamespaceDoc.cs"                    # namespace documentation
+      - "docs/reqstream/docdown-office/powerpoint/com.yaml"                                   # subsystem requirements
+      - "docs/design/docdown-office/powerpoint/com.md"                                        # subsystem design
+      - "docs/verification/docdown-office/powerpoint/com.md"                                  # subsystem verification
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/IPowerPointAutomation.cs"           # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/ComposingDelegatedSink.cs"          # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/DelegatedExtractionContext.cs"      # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/PowerPointComDispatch.cs"           # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/NamespaceDoc.cs"                    # namespace documentation
 
   # DocDownPowerPoint-Markdown Subsystem Review (one per subsystem)
   # D8: the subsystem's inline supporting-type source file — the diagnostic-code type — and its pinning
@@ -1245,13 +1249,13 @@ reviews:
   - id: DocDownPowerPoint-Markdown
     title: Review that DocDown.PowerPoint Markdown Satisfies Subsystem Requirements
     context:
-      - "docs/design/docdown-powerpoint.md"
-      - "docs/reqstream/docdown-powerpoint.yaml"
+      - "docs/design/docdown-office/powerpoint.md"
+      - "docs/reqstream/docdown-office/powerpoint.yaml"
     paths:
-      - "docs/reqstream/docdown-powerpoint/markdown.yaml"                              # subsystem requirements
-      - "docs/design/docdown-powerpoint/markdown.md"                                   # subsystem design
-      - "docs/verification/docdown-powerpoint/markdown.md"                             # subsystem verification
-      - "src/DemaConsulting.DocDown.PowerPoint/Markdown/NamespaceDoc.cs"               # namespace documentation
+      - "docs/reqstream/docdown-office/powerpoint/markdown.yaml"                              # subsystem requirements
+      - "docs/design/docdown-office/powerpoint/markdown.md"                                   # subsystem design
+      - "docs/verification/docdown-office/powerpoint/markdown.md"                             # subsystem verification
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/Markdown/NamespaceDoc.cs"               # namespace documentation
 
   # DocDownPowerPoint-OpenXml Subsystem Review (one per subsystem)
   # D8: the subsystem's inline supporting-type source files — the deck model records and the shared
@@ -1259,45 +1263,45 @@ reviews:
   - id: DocDownPowerPoint-OpenXml
     title: Review that DocDown.PowerPoint OpenXml Satisfies Subsystem Requirements
     context:
-      - "docs/design/docdown-powerpoint.md"
-      - "docs/reqstream/docdown-powerpoint.yaml"
+      - "docs/design/docdown-office/powerpoint.md"
+      - "docs/reqstream/docdown-office/powerpoint.yaml"
     paths:
-      - "docs/reqstream/docdown-powerpoint/open-xml.yaml"                              # subsystem requirements
-      - "docs/design/docdown-powerpoint/open-xml.md"                                   # subsystem design
-      - "docs/verification/docdown-powerpoint/open-xml.md"                             # subsystem verification
-      - "src/DemaConsulting.DocDown.PowerPoint/OpenXml/PowerPointDocumentModel.cs"     # supporting type (D8)
-      - "src/DemaConsulting.DocDown.PowerPoint/OpenXml/PowerPointExtractionException.cs"  # supporting type (D8)
-      - "src/DemaConsulting.DocDown.PowerPoint/OpenXml/NamespaceDoc.cs"                # namespace documentation
+      - "docs/reqstream/docdown-office/powerpoint/open-xml.yaml"                              # subsystem requirements
+      - "docs/design/docdown-office/powerpoint/open-xml.md"                                   # subsystem design
+      - "docs/verification/docdown-office/powerpoint/open-xml.md"                             # subsystem verification
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/OpenXml/PowerPointDocumentModel.cs"     # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/OpenXml/PowerPointExtractionException.cs"  # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/OpenXml/NamespaceDoc.cs"                # namespace documentation
 
   # DocDownPowerPoint-Com-PowerPointComExtractor Unit Review (unit under subsystem, four context entries)
   - id: DocDownPowerPoint-Com-PowerPointComExtractor
     title: Review that DocDown.PowerPoint Com PowerPointComExtractor Implementation is Correct
     context:
-      - "docs/design/docdown-powerpoint.md"
-      - "docs/reqstream/docdown-powerpoint.yaml"
-      - "docs/design/docdown-powerpoint/com.md"
-      - "docs/reqstream/docdown-powerpoint/com.yaml"
+      - "docs/design/docdown-office/powerpoint.md"
+      - "docs/reqstream/docdown-office/powerpoint.yaml"
+      - "docs/design/docdown-office/powerpoint/com.md"
+      - "docs/reqstream/docdown-office/powerpoint/com.yaml"
     paths:
-      - "docs/reqstream/docdown-powerpoint/com/powerpoint-com-extractor.yaml"          # unit requirements
-      - "docs/design/docdown-powerpoint/com/powerpoint-com-extractor.md"               # unit design
-      - "docs/verification/docdown-powerpoint/com/powerpoint-com-extractor.md"         # unit verification
-      - "src/DemaConsulting.DocDown.PowerPoint/Com/PowerPointComExtractor.cs"          # unit source
-      - "test/DemaConsulting.DocDown.PowerPoint.Tests/Com/PowerPointComExtractorTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/powerpoint/com/powerpoint-com-extractor.yaml"          # unit requirements
+      - "docs/design/docdown-office/powerpoint/com/powerpoint-com-extractor.md"               # unit design
+      - "docs/verification/docdown-office/powerpoint/com/powerpoint-com-extractor.md"         # unit verification
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/PowerPointComExtractor.cs"          # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/Com/PowerPointComExtractorTests.cs"  # unit tests
 
   # DocDownPowerPoint-Com-PowerPointComAvailability Unit Review (unit under subsystem, four context entries)
   - id: DocDownPowerPoint-Com-PowerPointComAvailability
     title: Review that DocDown.PowerPoint Com PowerPointComAvailability Implementation is Correct
     context:
-      - "docs/design/docdown-powerpoint.md"
-      - "docs/reqstream/docdown-powerpoint.yaml"
-      - "docs/design/docdown-powerpoint/com.md"
-      - "docs/reqstream/docdown-powerpoint/com.yaml"
+      - "docs/design/docdown-office/powerpoint.md"
+      - "docs/reqstream/docdown-office/powerpoint.yaml"
+      - "docs/design/docdown-office/powerpoint/com.md"
+      - "docs/reqstream/docdown-office/powerpoint/com.yaml"
     paths:
-      - "docs/reqstream/docdown-powerpoint/com/powerpoint-com-availability.yaml"       # unit requirements
-      - "docs/design/docdown-powerpoint/com/powerpoint-com-availability.md"            # unit design
-      - "docs/verification/docdown-powerpoint/com/powerpoint-com-availability.md"      # unit verification
-      - "src/DemaConsulting.DocDown.PowerPoint/Com/PowerPointComAvailability.cs"       # unit source
-      - "test/DemaConsulting.DocDown.PowerPoint.Tests/Com/PowerPointComAvailabilityTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/powerpoint/com/powerpoint-com-availability.yaml"       # unit requirements
+      - "docs/design/docdown-office/powerpoint/com/powerpoint-com-availability.md"            # unit design
+      - "docs/verification/docdown-office/powerpoint/com/powerpoint-com-availability.md"      # unit verification
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/PowerPointComAvailability.cs"       # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/Com/PowerPointComAvailabilityTests.cs"  # unit tests
 
   # DocDownPowerPoint-Com-PowerPointAutomation Unit Review (unit under subsystem, four context entries)
   # No dedicated test class: the real COM adapter is the single untestable boundary, proven by release-time
@@ -1305,60 +1309,60 @@ reviews:
   - id: DocDownPowerPoint-Com-PowerPointAutomation
     title: Review that DocDown.PowerPoint Com PowerPointAutomation Implementation is Correct
     context:
-      - "docs/design/docdown-powerpoint.md"
-      - "docs/reqstream/docdown-powerpoint.yaml"
-      - "docs/design/docdown-powerpoint/com.md"
-      - "docs/reqstream/docdown-powerpoint/com.yaml"
+      - "docs/design/docdown-office/powerpoint.md"
+      - "docs/reqstream/docdown-office/powerpoint.yaml"
+      - "docs/design/docdown-office/powerpoint/com.md"
+      - "docs/reqstream/docdown-office/powerpoint/com.yaml"
     paths:
-      - "docs/reqstream/docdown-powerpoint/com/powerpoint-automation.yaml"             # unit requirements
-      - "docs/design/docdown-powerpoint/com/powerpoint-automation.md"                  # unit design
-      - "docs/verification/docdown-powerpoint/com/powerpoint-automation.md"            # unit verification
-      - "src/DemaConsulting.DocDown.PowerPoint/Com/PowerPointAutomation.cs"            # unit source
+      - "docs/reqstream/docdown-office/powerpoint/com/powerpoint-automation.yaml"             # unit requirements
+      - "docs/design/docdown-office/powerpoint/com/powerpoint-automation.md"                  # unit design
+      - "docs/verification/docdown-office/powerpoint/com/powerpoint-automation.md"            # unit verification
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/PowerPointAutomation.cs"            # unit source
 
   # DocDownPowerPoint-Markdown-PowerPointContentEmitter Unit Review (unit under subsystem, four context entries)
   - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter
     title: Review that DocDown.PowerPoint Markdown PowerPointContentEmitter Implementation is Correct
     context:
-      - "docs/design/docdown-powerpoint.md"
-      - "docs/reqstream/docdown-powerpoint.yaml"
-      - "docs/design/docdown-powerpoint/markdown.md"
-      - "docs/reqstream/docdown-powerpoint/markdown.yaml"
+      - "docs/design/docdown-office/powerpoint.md"
+      - "docs/reqstream/docdown-office/powerpoint.yaml"
+      - "docs/design/docdown-office/powerpoint/markdown.md"
+      - "docs/reqstream/docdown-office/powerpoint/markdown.yaml"
     paths:
-      - "docs/reqstream/docdown-powerpoint/markdown/powerpoint-content-emitter.yaml"   # unit requirements
-      - "docs/design/docdown-powerpoint/markdown/powerpoint-content-emitter.md"        # unit design
-      - "docs/verification/docdown-powerpoint/markdown/powerpoint-content-emitter.md"  # unit verification
-      - "src/DemaConsulting.DocDown.PowerPoint/Markdown/PowerPointContentEmitter.cs"   # unit source
-      - "test/DemaConsulting.DocDown.PowerPoint.Tests/Markdown/PowerPointContentEmitterTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/powerpoint/markdown/powerpoint-content-emitter.yaml"   # unit requirements
+      - "docs/design/docdown-office/powerpoint/markdown/powerpoint-content-emitter.md"        # unit design
+      - "docs/verification/docdown-office/powerpoint/markdown/powerpoint-content-emitter.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/Markdown/PowerPointContentEmitter.cs"   # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/Markdown/PowerPointContentEmitterTests.cs"  # unit tests
 
   # DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor Unit Review (unit under subsystem, four context entries)
   - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor
     title: Review that DocDown.PowerPoint OpenXml PowerPointOpenXmlExtractor Implementation is Correct
     context:
-      - "docs/design/docdown-powerpoint.md"
-      - "docs/reqstream/docdown-powerpoint.yaml"
-      - "docs/design/docdown-powerpoint/open-xml.md"
-      - "docs/reqstream/docdown-powerpoint/open-xml.yaml"
+      - "docs/design/docdown-office/powerpoint.md"
+      - "docs/reqstream/docdown-office/powerpoint.yaml"
+      - "docs/design/docdown-office/powerpoint/open-xml.md"
+      - "docs/reqstream/docdown-office/powerpoint/open-xml.yaml"
     paths:
-      - "docs/reqstream/docdown-powerpoint/open-xml/powerpoint-open-xml-extractor.yaml"   # unit requirements
-      - "docs/design/docdown-powerpoint/open-xml/powerpoint-open-xml-extractor.md"        # unit design
-      - "docs/verification/docdown-powerpoint/open-xml/powerpoint-open-xml-extractor.md"  # unit verification
-      - "src/DemaConsulting.DocDown.PowerPoint/OpenXml/PowerPointOpenXmlExtractor.cs"     # unit source
-      - "test/DemaConsulting.DocDown.PowerPoint.Tests/OpenXml/PowerPointOpenXmlExtractorTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/powerpoint/open-xml/powerpoint-open-xml-extractor.yaml"   # unit requirements
+      - "docs/design/docdown-office/powerpoint/open-xml/powerpoint-open-xml-extractor.md"        # unit design
+      - "docs/verification/docdown-office/powerpoint/open-xml/powerpoint-open-xml-extractor.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/OpenXml/PowerPointOpenXmlExtractor.cs"     # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/OpenXml/PowerPointOpenXmlExtractorTests.cs"  # unit tests
 
   # DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader Unit Review (unit under subsystem, four context entries)
   - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader
     title: Review that DocDown.PowerPoint OpenXml PowerPointOpenXmlReader Implementation is Correct
     context:
-      - "docs/design/docdown-powerpoint.md"
-      - "docs/reqstream/docdown-powerpoint.yaml"
-      - "docs/design/docdown-powerpoint/open-xml.md"
-      - "docs/reqstream/docdown-powerpoint/open-xml.yaml"
+      - "docs/design/docdown-office/powerpoint.md"
+      - "docs/reqstream/docdown-office/powerpoint.yaml"
+      - "docs/design/docdown-office/powerpoint/open-xml.md"
+      - "docs/reqstream/docdown-office/powerpoint/open-xml.yaml"
     paths:
-      - "docs/reqstream/docdown-powerpoint/open-xml/powerpoint-open-xml-reader.yaml"    # unit requirements
-      - "docs/design/docdown-powerpoint/open-xml/powerpoint-open-xml-reader.md"         # unit design
-      - "docs/verification/docdown-powerpoint/open-xml/powerpoint-open-xml-reader.md"   # unit verification
-      - "src/DemaConsulting.DocDown.PowerPoint/OpenXml/PowerPointOpenXmlReader.cs"      # unit source
-      - "test/DemaConsulting.DocDown.PowerPoint.Tests/OpenXml/PowerPointOpenXmlReaderTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/powerpoint/open-xml/powerpoint-open-xml-reader.yaml"    # unit requirements
+      - "docs/design/docdown-office/powerpoint/open-xml/powerpoint-open-xml-reader.md"         # unit design
+      - "docs/verification/docdown-office/powerpoint/open-xml/powerpoint-open-xml-reader.md"   # unit verification
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/OpenXml/PowerPointOpenXmlReader.cs"      # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/OpenXml/PowerPointOpenXmlReaderTests.cs"  # unit tests
 
   # DocDownPowerPoint-OpenXml-PowerPointOpenXmlImageReader Unit Review (unit under subsystem, four context entries)
   # No dedicated test class: the image reader's contract is what reaches the model, proved through the
@@ -1366,15 +1370,15 @@ reviews:
   - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlImageReader
     title: Review that DocDown.PowerPoint OpenXml PowerPointOpenXmlImageReader Implementation is Correct
     context:
-      - "docs/design/docdown-powerpoint.md"
-      - "docs/reqstream/docdown-powerpoint.yaml"
-      - "docs/design/docdown-powerpoint/open-xml.md"
-      - "docs/reqstream/docdown-powerpoint/open-xml.yaml"
+      - "docs/design/docdown-office/powerpoint.md"
+      - "docs/reqstream/docdown-office/powerpoint.yaml"
+      - "docs/design/docdown-office/powerpoint/open-xml.md"
+      - "docs/reqstream/docdown-office/powerpoint/open-xml.yaml"
     paths:
-      - "docs/reqstream/docdown-powerpoint/open-xml/powerpoint-open-xml-image-reader.yaml"   # unit requirements
-      - "docs/design/docdown-powerpoint/open-xml/powerpoint-open-xml-image-reader.md"        # unit design
-      - "docs/verification/docdown-powerpoint/open-xml/powerpoint-open-xml-image-reader.md"  # unit verification
-      - "src/DemaConsulting.DocDown.PowerPoint/OpenXml/PowerPointOpenXmlImageReader.cs"      # unit source
+      - "docs/reqstream/docdown-office/powerpoint/open-xml/powerpoint-open-xml-image-reader.yaml"   # unit requirements
+      - "docs/design/docdown-office/powerpoint/open-xml/powerpoint-open-xml-image-reader.md"        # unit design
+      - "docs/verification/docdown-office/powerpoint/open-xml/powerpoint-open-xml-image-reader.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/PowerPoint/OpenXml/PowerPointOpenXmlImageReader.cs"      # unit source
 
   # === DocDownVisio review-sets ===
   # DocDownVisio is the Visio extraction system. Like DocDownPowerPoint it has three subsystems (Com,
@@ -1397,61 +1401,61 @@ reviews:
       - "README.md"
       - "docs/user_guide/**/*.md"
     paths:
-      - "docs/reqstream/docdown-visio.yaml"                                       # system requirements
+      - "docs/reqstream/docdown-office/visio.yaml"                                       # system requirements
       - "docs/design/introduction.md"                                            # design introduction
-      - "docs/design/docdown-visio.md"                                           # system design
+      - "docs/design/docdown-office/visio.md"                                           # system design
       - "docs/verification/introduction.md"                                      # verification introduction
-      - "docs/verification/docdown-visio.md"                                     # system verification
-      - "test/DemaConsulting.DocDown.Visio.Tests/DocDownVisioTests.cs"           # integration tests
-      - "test/DemaConsulting.DocDown.Visio.Tests/TestData/CapturingContext.cs"   # test support
-      - "test/DemaConsulting.DocDown.Visio.Tests/TestData/VsdxFixtures.cs"       # generated test fixtures
-      - "test/DemaConsulting.DocDown.Visio.Tests/TestData/StubVisioAutomation.cs"  # rendering stub
-      - "src/DemaConsulting.DocDown.Visio/NamespaceDoc.cs"                       # namespace documentation
+      - "docs/verification/docdown-office/visio.md"                                     # system verification
+      - "test/DemaConsulting.DocDown.Office.Tests/Visio/DocDownVisioTests.cs"           # integration tests
+      - "test/DemaConsulting.DocDown.Office.Tests/Visio/TestData/CapturingContext.cs"   # test support
+      - "test/DemaConsulting.DocDown.Office.Tests/Visio/TestData/VsdxFixtures.cs"       # generated test fixtures
+      - "test/DemaConsulting.DocDown.Office.Tests/Visio/TestData/StubVisioAutomation.cs"  # rendering stub
+      - "src/DemaConsulting.DocDown.Office/Visio/NamespaceDoc.cs"                       # namespace documentation
 
   # DocDownVisio-Design Review (one per system)
   - id: DocDownVisio-Design
     title: Review that DocDown.Visio Design is Consistent and Complete
     context:
-      - "docs/reqstream/docdown-visio.yaml"
+      - "docs/reqstream/docdown-office/visio.yaml"
     paths:
-      - "docs/reqstream/docdown-visio/platform-requirements.yaml"                # platform requirements
+      - "docs/reqstream/docdown-office/visio/platform-requirements.yaml"                # platform requirements
       - "docs/design/introduction.md"                                           # design introduction
-      - "docs/design/docdown-visio.md"                                          # system design
-      - "docs/design/docdown-visio/**/*.md"                                     # all system design documents
+      - "docs/design/docdown-office/visio.md"                                          # system design
+      - "docs/design/docdown-office/visio/**/*.md"                                     # all system design documents
       - "docs/design/ots.md"                                                    # OTS overview
 
   # DocDownVisio-Verification Review (one per system)
   - id: DocDownVisio-Verification
     title: Review that DocDown.Visio Verification is Consistent and Complete
     context:
-      - "docs/reqstream/docdown-visio.yaml"
+      - "docs/reqstream/docdown-office/visio.yaml"
     paths:
       - "docs/verification/introduction.md"                                     # verification introduction
-      - "docs/verification/docdown-visio.md"                                    # system verification
-      - "docs/verification/docdown-visio/**/*.md"                               # all verification documents
+      - "docs/verification/docdown-office/visio.md"                                    # system verification
+      - "docs/verification/docdown-office/visio/**/*.md"                               # all verification documents
       - "docs/verification/ots.md"                                              # OTS overview
 
   # DocDownVisio-AllRequirements Review (one per system)
   - id: DocDownVisio-AllRequirements
     title: Review that All DocDown.Visio Requirements are Complete
     context:
-      - "docs/design/docdown-visio.md"
-      - "docs/reqstream/docdown-visio.yaml"
+      - "docs/design/docdown-office/visio.md"
+      - "docs/reqstream/docdown-office/visio.yaml"
     paths:
-      - "docs/reqstream/docdown-visio/**/*.yaml"  # platform/subsystem/unit requirements files
+      - "docs/reqstream/docdown-office/visio/**/*.yaml"  # platform/subsystem/unit requirements files
 
   # DocDownVisio-VisioDocDownBuilderExtensions Unit Review (direct unit, two context entries)
   - id: DocDownVisio-VisioDocDownBuilderExtensions
     title: Review that DocDown.Visio VisioDocDownBuilderExtensions Implementation is Correct
     context:
-      - "docs/design/docdown-visio.md"
-      - "docs/reqstream/docdown-visio.yaml"
+      - "docs/design/docdown-office/visio.md"
+      - "docs/reqstream/docdown-office/visio.yaml"
     paths:
-      - "docs/reqstream/docdown-visio/visio-doc-down-builder-extensions.yaml"   # unit requirements
-      - "docs/design/docdown-visio/visio-doc-down-builder-extensions.md"        # unit design
-      - "docs/verification/docdown-visio/visio-doc-down-builder-extensions.md"  # unit verification
-      - "src/DemaConsulting.DocDown.Visio/VisioDocDownBuilderExtensions.cs"     # unit source
-      - "test/DemaConsulting.DocDown.Visio.Tests/VisioDocDownBuilderExtensionsTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/visio/visio-doc-down-builder-extensions.yaml"   # unit requirements
+      - "docs/design/docdown-office/visio/visio-doc-down-builder-extensions.md"        # unit design
+      - "docs/verification/docdown-office/visio/visio-doc-down-builder-extensions.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/Visio/VisioDocDownBuilderExtensions.cs"     # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Visio/VisioDocDownBuilderExtensionsTests.cs"  # unit tests
 
   # DocDownVisio-Com Subsystem Review (one per subsystem)
   # D8: the subsystem's inline supporting-type source files — the automation seam interface, the composing
@@ -1460,17 +1464,17 @@ reviews:
   - id: DocDownVisio-Com
     title: Review that DocDown.Visio Com Satisfies Subsystem Requirements
     context:
-      - "docs/design/docdown-visio.md"
-      - "docs/reqstream/docdown-visio.yaml"
+      - "docs/design/docdown-office/visio.md"
+      - "docs/reqstream/docdown-office/visio.yaml"
     paths:
-      - "docs/reqstream/docdown-visio/com.yaml"                                 # subsystem requirements
-      - "docs/design/docdown-visio/com.md"                                      # subsystem design
-      - "docs/verification/docdown-visio/com.md"                                # subsystem verification
-      - "src/DemaConsulting.DocDown.Visio/Com/IVisioAutomation.cs"              # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Visio/Com/ComposingDelegatedSink.cs"        # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Visio/Com/DelegatedExtractionContext.cs"    # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Visio/Com/VisioComDispatch.cs"              # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Visio/Com/NamespaceDoc.cs"                  # namespace documentation
+      - "docs/reqstream/docdown-office/visio/com.yaml"                                 # subsystem requirements
+      - "docs/design/docdown-office/visio/com.md"                                      # subsystem design
+      - "docs/verification/docdown-office/visio/com.md"                                # subsystem verification
+      - "src/DemaConsulting.DocDown.Office/Visio/Com/IVisioAutomation.cs"              # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Visio/Com/ComposingDelegatedSink.cs"        # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Visio/Com/DelegatedExtractionContext.cs"    # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Visio/Com/VisioComDispatch.cs"              # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Visio/Com/NamespaceDoc.cs"                  # namespace documentation
 
   # DocDownVisio-Markdown Subsystem Review (one per subsystem)
   # D8: the subsystem's inline supporting-type source file — the diagnostic-code type — and its pinning
@@ -1478,13 +1482,13 @@ reviews:
   - id: DocDownVisio-Markdown
     title: Review that DocDown.Visio Markdown Satisfies Subsystem Requirements
     context:
-      - "docs/design/docdown-visio.md"
-      - "docs/reqstream/docdown-visio.yaml"
+      - "docs/design/docdown-office/visio.md"
+      - "docs/reqstream/docdown-office/visio.yaml"
     paths:
-      - "docs/reqstream/docdown-visio/markdown.yaml"                            # subsystem requirements
-      - "docs/design/docdown-visio/markdown.md"                                 # subsystem design
-      - "docs/verification/docdown-visio/markdown.md"                           # subsystem verification
-      - "src/DemaConsulting.DocDown.Visio/Markdown/NamespaceDoc.cs"             # namespace documentation
+      - "docs/reqstream/docdown-office/visio/markdown.yaml"                            # subsystem requirements
+      - "docs/design/docdown-office/visio/markdown.md"                                 # subsystem design
+      - "docs/verification/docdown-office/visio/markdown.md"                           # subsystem verification
+      - "src/DemaConsulting.DocDown.Office/Visio/Markdown/NamespaceDoc.cs"             # namespace documentation
 
   # DocDownVisio-OpenXml Subsystem Review (one per subsystem)
   # D8: the subsystem's inline supporting-type source files — the drawing model records, the shared
@@ -1493,46 +1497,46 @@ reviews:
   - id: DocDownVisio-OpenXml
     title: Review that DocDown.Visio OpenXml Satisfies Subsystem Requirements
     context:
-      - "docs/design/docdown-visio.md"
-      - "docs/reqstream/docdown-visio.yaml"
+      - "docs/design/docdown-office/visio.md"
+      - "docs/reqstream/docdown-office/visio.yaml"
     paths:
-      - "docs/reqstream/docdown-visio/open-xml.yaml"                            # subsystem requirements
-      - "docs/design/docdown-visio/open-xml.md"                                 # subsystem design
-      - "docs/verification/docdown-visio/open-xml.md"                           # subsystem verification
-      - "src/DemaConsulting.DocDown.Visio/OpenXml/VisioDocumentModel.cs"        # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Visio/OpenXml/VisioExtractionException.cs"  # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Visio/OpenXml/VisioPackageBuilder.cs"       # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Visio/OpenXml/NamespaceDoc.cs"              # namespace documentation
+      - "docs/reqstream/docdown-office/visio/open-xml.yaml"                            # subsystem requirements
+      - "docs/design/docdown-office/visio/open-xml.md"                                 # subsystem design
+      - "docs/verification/docdown-office/visio/open-xml.md"                           # subsystem verification
+      - "src/DemaConsulting.DocDown.Office/Visio/OpenXml/VisioDocumentModel.cs"        # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Visio/OpenXml/VisioExtractionException.cs"  # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Visio/OpenXml/VisioPackageBuilder.cs"       # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Visio/OpenXml/NamespaceDoc.cs"              # namespace documentation
 
   # DocDownVisio-Com-VisioComExtractor Unit Review (unit under subsystem, four context entries)
   - id: DocDownVisio-Com-VisioComExtractor
     title: Review that DocDown.Visio Com VisioComExtractor Implementation is Correct
     context:
-      - "docs/design/docdown-visio.md"
-      - "docs/reqstream/docdown-visio.yaml"
-      - "docs/design/docdown-visio/com.md"
-      - "docs/reqstream/docdown-visio/com.yaml"
+      - "docs/design/docdown-office/visio.md"
+      - "docs/reqstream/docdown-office/visio.yaml"
+      - "docs/design/docdown-office/visio/com.md"
+      - "docs/reqstream/docdown-office/visio/com.yaml"
     paths:
-      - "docs/reqstream/docdown-visio/com/visio-com-extractor.yaml"             # unit requirements
-      - "docs/design/docdown-visio/com/visio-com-extractor.md"                  # unit design
-      - "docs/verification/docdown-visio/com/visio-com-extractor.md"            # unit verification
-      - "src/DemaConsulting.DocDown.Visio/Com/VisioComExtractor.cs"             # unit source
-      - "test/DemaConsulting.DocDown.Visio.Tests/Com/VisioComExtractorTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/visio/com/visio-com-extractor.yaml"             # unit requirements
+      - "docs/design/docdown-office/visio/com/visio-com-extractor.md"                  # unit design
+      - "docs/verification/docdown-office/visio/com/visio-com-extractor.md"            # unit verification
+      - "src/DemaConsulting.DocDown.Office/Visio/Com/VisioComExtractor.cs"             # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Visio/Com/VisioComExtractorTests.cs"  # unit tests
 
   # DocDownVisio-Com-VisioComAvailability Unit Review (unit under subsystem, four context entries)
   - id: DocDownVisio-Com-VisioComAvailability
     title: Review that DocDown.Visio Com VisioComAvailability Implementation is Correct
     context:
-      - "docs/design/docdown-visio.md"
-      - "docs/reqstream/docdown-visio.yaml"
-      - "docs/design/docdown-visio/com.md"
-      - "docs/reqstream/docdown-visio/com.yaml"
+      - "docs/design/docdown-office/visio.md"
+      - "docs/reqstream/docdown-office/visio.yaml"
+      - "docs/design/docdown-office/visio/com.md"
+      - "docs/reqstream/docdown-office/visio/com.yaml"
     paths:
-      - "docs/reqstream/docdown-visio/com/visio-com-availability.yaml"          # unit requirements
-      - "docs/design/docdown-visio/com/visio-com-availability.md"               # unit design
-      - "docs/verification/docdown-visio/com/visio-com-availability.md"         # unit verification
-      - "src/DemaConsulting.DocDown.Visio/Com/VisioComAvailability.cs"          # unit source
-      - "test/DemaConsulting.DocDown.Visio.Tests/Com/VisioComAvailabilityTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/visio/com/visio-com-availability.yaml"          # unit requirements
+      - "docs/design/docdown-office/visio/com/visio-com-availability.md"               # unit design
+      - "docs/verification/docdown-office/visio/com/visio-com-availability.md"         # unit verification
+      - "src/DemaConsulting.DocDown.Office/Visio/Com/VisioComAvailability.cs"          # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Visio/Com/VisioComAvailabilityTests.cs"  # unit tests
 
   # DocDownVisio-Com-VisioAutomation Unit Review (unit under subsystem, four context entries)
   # No dedicated test class: the real COM adapter is the single untestable boundary, proven by release-time
@@ -1540,90 +1544,90 @@ reviews:
   - id: DocDownVisio-Com-VisioAutomation
     title: Review that DocDown.Visio Com VisioAutomation Implementation is Correct
     context:
-      - "docs/design/docdown-visio.md"
-      - "docs/reqstream/docdown-visio.yaml"
-      - "docs/design/docdown-visio/com.md"
-      - "docs/reqstream/docdown-visio/com.yaml"
+      - "docs/design/docdown-office/visio.md"
+      - "docs/reqstream/docdown-office/visio.yaml"
+      - "docs/design/docdown-office/visio/com.md"
+      - "docs/reqstream/docdown-office/visio/com.yaml"
     paths:
-      - "docs/reqstream/docdown-visio/com/visio-automation.yaml"                # unit requirements
-      - "docs/design/docdown-visio/com/visio-automation.md"                     # unit design
-      - "docs/verification/docdown-visio/com/visio-automation.md"               # unit verification
-      - "src/DemaConsulting.DocDown.Visio/Com/VisioAutomation.cs"               # unit source
+      - "docs/reqstream/docdown-office/visio/com/visio-automation.yaml"                # unit requirements
+      - "docs/design/docdown-office/visio/com/visio-automation.md"                     # unit design
+      - "docs/verification/docdown-office/visio/com/visio-automation.md"               # unit verification
+      - "src/DemaConsulting.DocDown.Office/Visio/Com/VisioAutomation.cs"               # unit source
 
   # DocDownVisio-Markdown-VisioContentEmitter Unit Review (unit under subsystem, four context entries)
   - id: DocDownVisio-Markdown-VisioContentEmitter
     title: Review that DocDown.Visio Markdown VisioContentEmitter Implementation is Correct
     context:
-      - "docs/design/docdown-visio.md"
-      - "docs/reqstream/docdown-visio.yaml"
-      - "docs/design/docdown-visio/markdown.md"
-      - "docs/reqstream/docdown-visio/markdown.yaml"
+      - "docs/design/docdown-office/visio.md"
+      - "docs/reqstream/docdown-office/visio.yaml"
+      - "docs/design/docdown-office/visio/markdown.md"
+      - "docs/reqstream/docdown-office/visio/markdown.yaml"
     paths:
-      - "docs/reqstream/docdown-visio/markdown/visio-content-emitter.yaml"      # unit requirements
-      - "docs/design/docdown-visio/markdown/visio-content-emitter.md"           # unit design
-      - "docs/verification/docdown-visio/markdown/visio-content-emitter.md"     # unit verification
-      - "src/DemaConsulting.DocDown.Visio/Markdown/VisioContentEmitter.cs"      # unit source
-      - "test/DemaConsulting.DocDown.Visio.Tests/Markdown/VisioContentEmitterTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/visio/markdown/visio-content-emitter.yaml"      # unit requirements
+      - "docs/design/docdown-office/visio/markdown/visio-content-emitter.md"           # unit design
+      - "docs/verification/docdown-office/visio/markdown/visio-content-emitter.md"     # unit verification
+      - "src/DemaConsulting.DocDown.Office/Visio/Markdown/VisioContentEmitter.cs"      # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Visio/Markdown/VisioContentEmitterTests.cs"  # unit tests
 
   # DocDownVisio-Markdown-VisioShapeLabeler Unit Review (unit under subsystem, four context entries)
   - id: DocDownVisio-Markdown-VisioShapeLabeler
     title: Review that DocDown.Visio Markdown VisioShapeLabeler Implementation is Correct
     context:
-      - "docs/design/docdown-visio.md"
-      - "docs/reqstream/docdown-visio.yaml"
-      - "docs/design/docdown-visio/markdown.md"
-      - "docs/reqstream/docdown-visio/markdown.yaml"
+      - "docs/design/docdown-office/visio.md"
+      - "docs/reqstream/docdown-office/visio.yaml"
+      - "docs/design/docdown-office/visio/markdown.md"
+      - "docs/reqstream/docdown-office/visio/markdown.yaml"
     paths:
-      - "docs/reqstream/docdown-visio/markdown/visio-shape-labeler.yaml"        # unit requirements
-      - "docs/design/docdown-visio/markdown/visio-shape-labeler.md"             # unit design
-      - "docs/verification/docdown-visio/markdown/visio-shape-labeler.md"       # unit verification
-      - "src/DemaConsulting.DocDown.Visio/Markdown/VisioShapeLabeler.cs"        # unit source
-      - "test/DemaConsulting.DocDown.Visio.Tests/Markdown/VisioShapeLabelerTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/visio/markdown/visio-shape-labeler.yaml"        # unit requirements
+      - "docs/design/docdown-office/visio/markdown/visio-shape-labeler.md"             # unit design
+      - "docs/verification/docdown-office/visio/markdown/visio-shape-labeler.md"       # unit verification
+      - "src/DemaConsulting.DocDown.Office/Visio/Markdown/VisioShapeLabeler.cs"        # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Visio/Markdown/VisioShapeLabelerTests.cs"  # unit tests
 
   # DocDownVisio-OpenXml-VisioOpenXmlExtractor Unit Review (unit under subsystem, four context entries)
   - id: DocDownVisio-OpenXml-VisioOpenXmlExtractor
     title: Review that DocDown.Visio OpenXml VisioOpenXmlExtractor Implementation is Correct
     context:
-      - "docs/design/docdown-visio.md"
-      - "docs/reqstream/docdown-visio.yaml"
-      - "docs/design/docdown-visio/open-xml.md"
-      - "docs/reqstream/docdown-visio/open-xml.yaml"
+      - "docs/design/docdown-office/visio.md"
+      - "docs/reqstream/docdown-office/visio.yaml"
+      - "docs/design/docdown-office/visio/open-xml.md"
+      - "docs/reqstream/docdown-office/visio/open-xml.yaml"
     paths:
-      - "docs/reqstream/docdown-visio/open-xml/visio-open-xml-extractor.yaml"   # unit requirements
-      - "docs/design/docdown-visio/open-xml/visio-open-xml-extractor.md"        # unit design
-      - "docs/verification/docdown-visio/open-xml/visio-open-xml-extractor.md"  # unit verification
-      - "src/DemaConsulting.DocDown.Visio/OpenXml/VisioOpenXmlExtractor.cs"     # unit source
-      - "test/DemaConsulting.DocDown.Visio.Tests/OpenXml/VisioOpenXmlExtractorTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/visio/open-xml/visio-open-xml-extractor.yaml"   # unit requirements
+      - "docs/design/docdown-office/visio/open-xml/visio-open-xml-extractor.md"        # unit design
+      - "docs/verification/docdown-office/visio/open-xml/visio-open-xml-extractor.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/Visio/OpenXml/VisioOpenXmlExtractor.cs"     # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Visio/OpenXml/VisioOpenXmlExtractorTests.cs"  # unit tests
 
   # DocDownVisio-OpenXml-VisioPackageReader Unit Review (unit under subsystem, four context entries)
   - id: DocDownVisio-OpenXml-VisioPackageReader
     title: Review that DocDown.Visio OpenXml VisioPackageReader Implementation is Correct
     context:
-      - "docs/design/docdown-visio.md"
-      - "docs/reqstream/docdown-visio.yaml"
-      - "docs/design/docdown-visio/open-xml.md"
-      - "docs/reqstream/docdown-visio/open-xml.yaml"
+      - "docs/design/docdown-office/visio.md"
+      - "docs/reqstream/docdown-office/visio.yaml"
+      - "docs/design/docdown-office/visio/open-xml.md"
+      - "docs/reqstream/docdown-office/visio/open-xml.yaml"
     paths:
-      - "docs/reqstream/docdown-visio/open-xml/visio-package-reader.yaml"       # unit requirements
-      - "docs/design/docdown-visio/open-xml/visio-package-reader.md"            # unit design
-      - "docs/verification/docdown-visio/open-xml/visio-package-reader.md"      # unit verification
-      - "src/DemaConsulting.DocDown.Visio/OpenXml/VisioPackageReader.cs"        # unit source
-      - "test/DemaConsulting.DocDown.Visio.Tests/OpenXml/VisioPackageReaderTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/visio/open-xml/visio-package-reader.yaml"       # unit requirements
+      - "docs/design/docdown-office/visio/open-xml/visio-package-reader.md"            # unit design
+      - "docs/verification/docdown-office/visio/open-xml/visio-package-reader.md"      # unit verification
+      - "src/DemaConsulting.DocDown.Office/Visio/OpenXml/VisioPackageReader.cs"        # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Visio/OpenXml/VisioPackageReaderTests.cs"  # unit tests
 
   # DocDownVisio-OpenXml-VisioImageReader Unit Review (unit under subsystem, four context entries)
   - id: DocDownVisio-OpenXml-VisioImageReader
     title: Review that DocDown.Visio OpenXml VisioImageReader Implementation is Correct
     context:
-      - "docs/design/docdown-visio.md"
-      - "docs/reqstream/docdown-visio.yaml"
-      - "docs/design/docdown-visio/open-xml.md"
-      - "docs/reqstream/docdown-visio/open-xml.yaml"
+      - "docs/design/docdown-office/visio.md"
+      - "docs/reqstream/docdown-office/visio.yaml"
+      - "docs/design/docdown-office/visio/open-xml.md"
+      - "docs/reqstream/docdown-office/visio/open-xml.yaml"
     paths:
-      - "docs/reqstream/docdown-visio/open-xml/visio-image-reader.yaml"         # unit requirements
-      - "docs/design/docdown-visio/open-xml/visio-image-reader.md"              # unit design
-      - "docs/verification/docdown-visio/open-xml/visio-image-reader.md"        # unit verification
-      - "src/DemaConsulting.DocDown.Visio/OpenXml/VisioImageReader.cs"          # unit source
-      - "test/DemaConsulting.DocDown.Visio.Tests/OpenXml/VisioImageReaderTests.cs"  # unit tests
+      - "docs/reqstream/docdown-office/visio/open-xml/visio-image-reader.yaml"         # unit requirements
+      - "docs/design/docdown-office/visio/open-xml/visio-image-reader.md"              # unit design
+      - "docs/verification/docdown-office/visio/open-xml/visio-image-reader.md"        # unit verification
+      - "src/DemaConsulting.DocDown.Office/Visio/OpenXml/VisioImageReader.cs"          # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Visio/OpenXml/VisioImageReaderTests.cs"  # unit tests
 
   # OTS-ApiMark Review (one per OTS item)
   - id: OTS-ApiMark

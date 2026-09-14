@@ -73,7 +73,7 @@ compilation.
 
 **Version pinning — reproducibility, not fragility.** The package reference is pinned to the
 exact version range `[3.5.1]` (see the comment in
-`src/DemaConsulting.DocDown.Word/DemaConsulting.DocDown.Word.csproj`). The pin's stated purpose
+`src/DemaConsulting.DocDown.Office/Word/DemaConsulting.DocDown.Word.csproj`). The pin's stated purpose
 is restore determinism and SBOM reproducibility: a floating reference would let a restore
 substitute a different patch, which would change the resolved dependency set recorded in the
 generated SBOM and break build reproducibility. This is **not** an API-fragility pin — the SDK

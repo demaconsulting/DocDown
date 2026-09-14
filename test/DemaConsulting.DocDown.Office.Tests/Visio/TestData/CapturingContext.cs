@@ -29,7 +29,7 @@ internal sealed class CapturingContext : IExtractionContext
     public IExtractionSink Sink { get; }
 
     /// <inheritdoc />
-    public FormatDetection DetectedFormat { get; } = new(CoreFormat.Vsdx, DetectionBasis.Extension, 0.9);
+    public FormatDetection DetectedFormat { get; } = new(CoreFormat.Vsdx, DetectionBasis.Extension);
 
     /// <inheritdoc />
     public ExtractorDescriptor SelectedExtractor { get; } = new(

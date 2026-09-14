@@ -194,3 +194,121 @@ public static class ImageTextSelector
         return builder.ToString().Trim();
     }
 }
+
+/// <summary>
+///     How confidently a selected piece of image text actually describes the picture, which governs
+///     where the text may honestly be used.
+/// </summary>
+/// <remarks>
+///     <para>
+///         The selection policy answers two different questions with one ranking: which candidate is
+///         best, and how far that best candidate may be trusted. Confidence captures the second. It
+///         is the mechanism that keeps a merely <em>contextual</em> hint (a nearby heading) or a
+///         bare <em>fallback</em> (a media file name) from masquerading as an authored description.
+///     </para>
+///     <para>
+///         Consumers gate on this: a filename slug may use any non-empty selection, but markdown
+///         alt text is emitted only for a <see cref="Descriptive"/> selection so a heading is never
+///         presented as if it described the image. The manifest records the selection and its source
+///         for descriptive and contextual tiers alike, so provenance is preserved honestly without
+///         inventing a description.
+///     </para>
+/// </remarks>
+public enum ImageTextConfidence
+{
+    /// <summary>Text authored to describe the picture (description, title, caption, or a meaningful object name).</summary>
+    /// <remarks>Safe to assert as the image's alt text because it was written about the image itself.</remarks>
+    Descriptive,
+
+    /// <summary>Text that locates the picture in the document but does not describe it (a nearby heading).</summary>
+    /// <remarks>Usable as a naming hint and recorded in the manifest with its source, but never asserted as alt text.</remarks>
+    Contextual,
+
+    /// <summary>A last-resort identifier with no descriptive value (the media part name).</summary>
+    /// <remarks>Keeps naming deterministic; carries no description, so it never becomes alt text or a manifest description.</remarks>
+    Fallback
+}
+
+/// <summary>
+///     Where a piece of candidate text describing an image came from, in decreasing order of how
+///     directly it describes the picture.
+/// </summary>
+/// <remarks>
+///     <para>
+///         A backend gathers whatever text a document offers about an image — an author's alt-text
+///         description, a caption, an embedded object name, a nearby heading — and the shared policy
+///         (<see cref="ImageTextSelector"/>) ranks the candidates by this source so the most
+///         directly descriptive one wins. The enumeration order <em>is</em> the preference order, so
+///         a lower member never loses to a higher one when both are present.
+///     </para>
+///     <para>
+///         Modeling the origin as a closed vocabulary keeps the choice auditable: the manifest can
+///         record not just the chosen text but exactly where it came from, so a reader can tell an
+///         authored description apart from a filename or a heading rather than trusting an opaque
+///         string. Each format backend maps its own structures onto these members; the ranking and
+///         the honesty rules live in one place regardless of format.
+///     </para>
+/// </remarks>
+public enum ImageTextSource
+{
+    /// <summary>The author's alt-text description (for example <c>wp:docPr/@descr</c> in Word).</summary>
+    /// <remarks>The most direct description a document can carry: text written specifically to describe the picture.</remarks>
+    Description,
+
+    /// <summary>The author's title for the drawing (for example <c>wp:docPr/@title</c> in Word).</summary>
+    /// <remarks>Authored specifically for the picture, though a title is typically terser than a description.</remarks>
+    Title,
+
+    /// <summary>The text of an adjacent caption (for example a <c>Caption</c>-styled paragraph in Word).</summary>
+    /// <remarks>Written to describe the figure, including any sequence numbering read structurally from the caption's fields.</remarks>
+    Caption,
+
+    /// <summary>An embedded object name (for example <c>pic:cNvPr/@name</c> in Word), often the original file name.</summary>
+    /// <remarks>Frequently a meaningful file name, but discarded when it is an auto-generated placeholder such as <c>Picture 1</c>.</remarks>
+    PictureName,
+
+    /// <summary>The nearest preceding heading in the document body.</summary>
+    /// <remarks>
+    ///     Context, not a description: a heading names the section the picture sits under, which is a
+    ///     useful naming hint but must never be asserted as the picture's alt text — a heading such
+    ///     as <c>References</c> would imply a description of the image that does not exist.
+    /// </remarks>
+    Heading,
+
+    /// <summary>The media part's own name within the package (the last resort).</summary>
+    /// <remarks>A stable fallback that carries no description; used only to keep file naming deterministic when nothing better exists.</remarks>
+    Uri
+}
+
+/// <summary>
+///     One candidate piece of text describing an image, paired with where it came from.
+/// </summary>
+/// <param name="Text">
+///     The candidate text, or <see langword="null"/> when the document offered nothing for this
+///     source. Empty or whitespace-only text is treated the same as <see langword="null"/> by the
+///     selector.
+/// </param>
+/// <param name="Source">The origin of the candidate, which determines its ranking and confidence.</param>
+/// <remarks>
+///     A backend produces one of these per source it can consult (an author description, a caption,
+///     an object name, a heading, the media name) and hands the set to
+///     <see cref="ImageTextSelector.Select"/>. Carrying the source alongside the text is what lets
+///     the policy rank candidates and lets the manifest record provenance rather than an anonymous
+///     string. Immutable and thread-safe.
+/// </remarks>
+public sealed record ImageTextCandidate(string? Text, ImageTextSource Source);
+
+/// <summary>
+///     The text a backend chose to describe an image, with its origin and how far it may be trusted.
+/// </summary>
+/// <param name="Text">The chosen, trimmed text. Never null or empty.</param>
+/// <param name="Source">The origin the chosen text came from.</param>
+/// <param name="Confidence">How confidently the text describes the image, which gates where it may be used.</param>
+/// <remarks>
+///     The result of <see cref="ImageTextSelector.Select"/>. A backend uses <see cref="Text"/> as a
+///     naming hint regardless of confidence, but asserts it as alt text only when
+///     <see cref="Confidence"/> is <see cref="ImageTextConfidence.Descriptive"/>; the manifest
+///     records <see cref="Text"/> and <see cref="Source"/> for descriptive and contextual tiers so
+///     provenance is preserved without inventing a description. Immutable and thread-safe.
+/// </remarks>
+public sealed record SelectedImageText(string Text, ImageTextSource Source, ImageTextConfidence Confidence);

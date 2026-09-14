@@ -41,7 +41,7 @@ public class SummaryWriterGoldenTests
         var summary = await RenderAsync(
             temp,
             options,
-            new FormatDetection(DocumentFormat.Pdf, DetectionBasis.Extension, 0.9),
+            new FormatDetection(DocumentFormat.Pdf, DetectionBasis.Extension),
             PdfExtractor(),
             ExtractionOutcome.Produced,
             null,
@@ -75,7 +75,7 @@ public class SummaryWriterGoldenTests
         var summary = await RenderAsync(
             temp,
             options,
-            new FormatDetection(DocumentFormat.Pdf, DetectionBasis.Extension, 0.9),
+            new FormatDetection(DocumentFormat.Pdf, DetectionBasis.Extension),
             PdfExtractor(),
             ExtractionOutcome.Produced,
             null,
@@ -115,7 +115,7 @@ public class SummaryWriterGoldenTests
         var summary = await RenderAsync(
             temp,
             options,
-            new FormatDetection(DocumentFormat.Pdf, DetectionBasis.Extension, 0.9),
+            new FormatDetection(DocumentFormat.Pdf, DetectionBasis.Extension),
             PdfExtractor(),
             ExtractionOutcome.Produced,
             null,
@@ -141,7 +141,7 @@ public class SummaryWriterGoldenTests
         // Arrange: a detected docx document with no registered Word backend
         using var temp = new TempScratch();
         var options = new ExtractionOptions();
-        var detection = new FormatDetection(DocumentFormat.Docx, DetectionBasis.Extension, 0.9);
+        var detection = new FormatDetection(DocumentFormat.Docx, DetectionBasis.Extension);
         _ = ExtractorSelector.Select(detection, options, Array.Empty<ExtractorCandidate>(), out var failure);
 
         // Act: render the unreadable summary
