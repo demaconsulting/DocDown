@@ -77,7 +77,7 @@
     <!-- ApiMark runs as an MSBuild task after Build; it contributes no runtime assets, so
          PrivateAssets="All" keeps it out of this package's dependency graph. The version is
          pinned exactly, as PdfPig and DocumentFormat.OpenXml are, for restore determinism. -->
-    <PackageReference Include="DemaConsulting.ApiMark.MSBuild" Version="[0.5.0-beta.5]" PrivateAssets="All" />
+    <PackageReference Include="DemaConsulting.ApiMark.MSBuild" Version="[0.5.0]" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Sbom.Targets" Version="4.1.5" PrivateAssets="All" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.400" PrivateAssets="All" />
   </ItemGroup>
