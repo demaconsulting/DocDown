@@ -432,16 +432,24 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
     }
 
     /// <summary>
-    ///     Proves the produced <c>.nupkg</c> ships no native debug symbols and no natives for
-    ///     runtime identifiers DocDown does not support.
+    ///     Proves the produced <c>.nupkg</c> ships no native debug symbols and carries natives for
+    ///     exactly the supported runtime identifiers.
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         Both exclusions are size controls with no functional signal, so nothing else in the
+    ///         Both controls are size controls with no functional signal, so nothing else in the
     ///         suite would notice their loss. They were added after the packaged tool was measured at
     ///         592 MB, of which roughly 460 MB was third-party native <c>.pdb</c> files duplicated
-    ///         across three target frameworks. A dependency update that reintroduces either would
-    ///         silently restore that bulk; this test makes it fail the build instead.
+    ///         across three target frameworks, and most of the remainder was natives for platforms
+    ///         DocDown does not support. A dependency update that reintroduces either would silently
+    ///         restore that bulk; this test makes it fail the build instead.
+    ///     </para>
+    ///     <para>
+    ///         The runtime-identifier check is an allow list, mirroring the project file: it asserts
+    ///         the set of shipped runtime identifiers is exactly the supported set, so a newly
+    ///         published platform cannot slip in unnoticed the way the original bulk did. Note that
+    ///         <c>osx</c> is not a fourth platform — SkiaSharp publishes macOS as one fat dylib that
+    ///         runtime-identifier fallback resolves for an Apple Silicon host.
     ///     </para>
     ///     <para>
     ///         Inspects the real package artifact rather than project metadata, for the same reason
@@ -471,21 +479,18 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         // Assert: no native debug symbols ride along with the native binaries.
         Assert.DoesNotContain(natives, name => name.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase));
 
-        // Assert: no natives for platforms DocDown neither supports nor tests. Kept in step with
-        // ExcludedToolRuntimeIdentifiers in DemaConsulting.DocDown.Tool.csproj.
-        string[] unsupported = ["linux-bionic", "loongarch64", "riscv64"];
-        foreach (var rid in unsupported)
-        {
-            Assert.DoesNotContain(natives, name => name.Contains(rid, StringComparison.OrdinalIgnoreCase));
-        }
+        // Assert: the shipped runtime identifiers are exactly the supported set. Kept in step with
+        // SupportedToolRuntimeIdentifiers in DemaConsulting.DocDown.Tool.csproj. Asserting the whole
+        // set — rather than probing for known-bad names — is what stops a newly published platform
+        // from being admitted silently.
+        var shipped = natives
+            .Select(name => name.Split("/runtimes/", StringSplitOptions.None)[1].Split('/')[0])
+            .Distinct()
+            .OrderBy(rid => rid, StringComparer.Ordinal)
+            .ToList();
 
-        // Assert: the platforms DocDown does claim are still carried, so the exclusion above cannot
-        // pass by having stripped everything.
-        string[] supported = ["win-x64", "linux-x64", "osx"];
-        foreach (var rid in supported)
-        {
-            Assert.Contains(natives, name => name.Contains($"/runtimes/{rid}", StringComparison.OrdinalIgnoreCase));
-        }
+        string[] supported = ["linux-x64", "osx", "osx-arm64", "win-x64"];
+        Assert.Equal(supported, shipped);
     }
 
     /// <summary>Writes fixture bytes to a file under the temporary folder and returns its path.</summary>

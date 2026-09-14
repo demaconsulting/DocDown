@@ -96,15 +96,19 @@ carries is a deliberate choice rather than whatever the dependency graph offers.
   native binary; `libSkiaSharp.pdb` alone is 82–88 MB per Windows RID. They describe third-party
   native code a DocDown stack trace never enters. The tool's own managed symbols still ship in the
   companion `.snupkg`.
-- **Supported platforms only.** SkiaSharp also ships natives for Android (`linux-bionic`),
-  LoongArch, and RISC-V. DocDown is a desktop and CI command-line tool, and no CI matrix leg
-  exercises those platforms, so they are excluded. Claimed platform support is therefore exactly
-  what is built and tested: Windows, Linux (glibc and musl), and macOS.
+- **Supported platforms only.** SkiaSharp and PDFium between them publish natives for around twenty
+  runtime identifiers. The package carries four entries: `win-x64`, `linux-x64`, and `osx-arm64` —
+  exactly the CI matrix legs — plus the bare `osx` runtime identifier, which is not a fourth
+  platform but the fat macOS dylib that SkiaSharp publishes and that runtime-identifier fallback
+  (`osx-arm64` → `osx` → `unix`) resolves on Apple Silicon. Without it macOS could parse a PDF but
+  not rasterize one. This is an allow list, not a deny list: a deny list readmits whatever platform
+  a dependency update happens to add, which is how the package grew unnoticed. Adding a platform
+  means adding its runtime identifier and a CI leg that exercises it.
 
-Together these took the package from 592 MB to 108 MB. Both exclusions are enforced against the
+Together these took the package from 592 MB to 32 MB. Both controls are enforced against the
 produced artifact by `DocDownTool_Package_Nupkg_ExcludesNativeSymbolsAndUnsupportedRuntimes`, which
-also asserts the supported platforms are still present, so a dependency update cannot quietly
-restore the bulk nor silently strip the tool of the natives it needs.
+asserts the shipped runtime identifiers are *exactly* the supported set, so a dependency update can
+neither quietly restore the bulk nor silently strip the tool of natives it needs.
 
 ## Risk Control Measures
 

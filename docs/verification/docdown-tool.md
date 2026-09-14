@@ -167,20 +167,26 @@ binaries transitively by design, under `tools/<tfm>/any/runtimes/<rid>/native/�
 resolved at run time — so the claim under test is RID-agnosticism (one package installs on every
 supported RID), not native-freedom. Evidence for `DocDownTool-Packaging`.
 
-### The produced package carries no native symbols and no unsupported runtimes
+### The produced package carries no native symbols and only supported runtimes
 
 **Test**: `DocDownTool_Package_Nupkg_ExcludesNativeSymbolsAndUnsupportedRuntimes`
 
 Packs the tool project and inspects the produced `.nupkg`, asserting that no entry under
-`runtimes/` is a `.pdb`, and that no entry names `linux-bionic`, `loongarch64`, or `riscv64`. Both
-categories are pure payload: native debug symbols describe third-party code a DocDown stack trace
-never enters, and the three excluded platforms support no DocDown scenario and are exercised by no
-CI matrix leg.
+`runtimes/` is a `.pdb`, and that the shipped runtime identifiers are *exactly* `linux-x64`, `osx`,
+`osx-arm64`, and `win-x64`. Both categories are pure payload: native debug symbols describe
+third-party code a DocDown stack trace never enters, and natives for unsupported platforms are
+exercised by no CI matrix leg.
+
+The runtime-identifier assertion compares the whole set rather than probing for known-bad names.
+That direction matters: probing for names admits any platform a future dependency update happens to
+publish, which is how the package reached 592 MB unnoticed, whereas an exact set fails on both an
+unexpected addition and an unexpected removal. It therefore also serves as the check that the tool
+has not been stripped of natives it genuinely needs. `osx` is present alongside `osx-arm64` because
+SkiaSharp publishes macOS as one fat dylib resolved through runtime-identifier fallback, not because
+macOS is claimed twice.
 
 The test is a size control, and size has no functional signal — nothing else in the suite would
-fail if either category returned, so a dependency update could silently restore the package's bulk.
-It therefore asserts against the packed artifact rather than the project file, for the same reason
-as the RID-agnosticism test above: the claim is about what ships. It also asserts that natives for
-`win-x64`, `linux-x64`, and `osx` are still present, so the exclusion cannot be satisfied by having
-stripped the tool of the binaries it genuinely needs, and asserts the native set is non-empty so
-the checks cannot pass vacuously. Evidence for `DocDownTool-PackagedFootprint`.
+fail if either category returned. It therefore asserts against the packed artifact rather than the
+project file, for the same reason as the RID-agnosticism test above: the claim is about what ships.
+It also asserts the native set is non-empty so the checks cannot pass vacuously. Evidence for
+`DocDownTool-PackagedFootprint`.

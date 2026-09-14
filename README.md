@@ -63,9 +63,10 @@ dotnet tool install -g DemaConsulting.DocDown.Tool          # global
 dotnet tool install --local DemaConsulting.DocDown.Tool     # local tool manifest
 ```
 
-The tool requires a **.NET 10 runtime** and supports Windows, Linux (glibc and musl), and macOS. The
-libraries have no such restriction — they target .NET 8, 9, and 10, so referencing them does not
-constrain your project to the tool's runtime.
+The tool requires a **.NET 10 runtime** and ships natives for **Windows x64, Linux x64, and macOS
+arm64** — the platforms it is built and tested on. The libraries have no such restriction: they
+target .NET 8, 9, and 10 and are platform-neutral apart from the optional PDF page renderer, so
+referencing them does not constrain your project to the tool's runtime or platform.
 
 Only `DemaConsulting.DocDown.Pdf.Rendering` carries native binaries (PDFium and SkiaSharp, via
 PDFtoImage). A framework-dependent reference works on every supported runtime identifier; a

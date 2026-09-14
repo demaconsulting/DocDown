@@ -197,15 +197,16 @@ sections:
           identifiers the tool does not support.
         tags: [system]
         justification: |
-          The tool carries a PDF rasterizer's native binaries for every supported runtime
-          identifier, so its package is unavoidably large and anything avoidable in it matters. Two
-          categories are avoidable. Native debug symbols describe third-party code a DocDown stack
-          trace never enters, and libSkiaSharp.pdb alone is 82-88 MB per Windows runtime
-          identifier. Natives for Android, LoongArch, and RISC-V support no DocDown scenario and
-          are exercised by no CI matrix leg, so they could never be loaded by any user the tool
-          claims to serve. Neither category has a functional signal, so no other test would notice
-          if a dependency update reintroduced it; without a check against the packed .nupkg the
-          package silently inflates. Asserting that the supported platforms remain present keeps
-          the check from being satisfied by stripping the tool of natives it genuinely needs.
+          The tool carries a PDF rasterizer's native binaries, so its package is unavoidably large
+          and anything avoidable in it matters. Two categories are avoidable. Native debug symbols
+          describe third-party code a DocDown stack trace never enters, and libSkiaSharp.pdb alone
+          is 82-88 MB per Windows runtime identifier. Natives for runtime identifiers outside the
+          supported set support no DocDown scenario and are exercised by no CI matrix leg, so they
+          could never be loaded by any user the tool claims to serve. Neither category has a
+          functional signal, so no other test would notice if a dependency update reintroduced it;
+          without a check against the packed .nupkg the package silently inflates. Asserting the
+          shipped set is exactly the supported set, rather than probing for known-bad names, is what
+          keeps a newly published platform from being admitted silently, and keeps the check from
+          being satisfied by stripping the tool of natives it genuinely needs.
         tests:
           - DocDownTool_Package_Nupkg_ExcludesNativeSymbolsAndUnsupportedRuntimes

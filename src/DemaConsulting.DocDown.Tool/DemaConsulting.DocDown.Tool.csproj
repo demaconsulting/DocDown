@@ -149,17 +149,28 @@
        and buys nothing. Managed symbols are unaffected: only native assets are removed, and
        IncludeSymbols above still publishes the tool's own PDBs in the companion .snupkg.
 
-       Runtimes: SkiaSharp ships natives for Android (linux-bionic), LoongArch, and RISC-V. DocDown
-       is a desktop and CI command-line tool; those platforms host no supported DocDown scenario and
-       are not exercised by any CI matrix leg, so their binaries were payload that could never be
-       loaded. Excluding them is a deliberate narrowing of claimed platform support to what is
-       actually built and tested: Windows, Linux (glibc and musl), and macOS.
+       Runtimes: SkiaSharp and PDFium between them ship natives for around twenty runtime
+       identifiers, including Android, LoongArch, RISC-V, musl, x86, and arm. DocDown supports the
+       three platforms it is built and tested on, so the package carries those and nothing else.
+       This is an allow list rather than a deny list on purpose: a deny list silently readmits
+       whatever platform a future dependency update happens to add, which is how the package grew
+       unnoticed in the first place.
+
+       The allowed set is win-x64, linux-x64, and osx-arm64 — exactly the CI matrix legs — plus the
+       bare 'osx' runtime identifier. That last entry is not a fourth platform: SkiaSharp publishes
+       macOS as a single fat dylib under runtimes/osx/native, which .NET's runtime-identifier
+       fallback (osx-arm64 -> osx -> unix) resolves for an Apple Silicon host. Dropping it would
+       leave macOS able to parse a PDF but not to rasterize one. PDFium, by contrast, does publish a
+       true osx-arm64 asset, so macOS draws from both entries.
+
+       Adding a platform means adding its runtime identifier here and a CI matrix leg that exercises
+       it; the two are meant to stay in step.
 
        Both exclusions are enforced against the produced artifact by
        DocDownTool_Package_Nupkg_ExcludesNativeSymbolsAndUnsupportedRuntimes, so a dependency update
        that reintroduces either fails the build rather than quietly inflating the package. -->
   <PropertyGroup>
-    <ExcludedToolRuntimeIdentifiers>linux-bionic;loongarch64;riscv64</ExcludedToolRuntimeIdentifiers>
+    <SupportedToolRuntimeIdentifiers>win-x64;linux-x64;osx-arm64;osx</SupportedToolRuntimeIdentifiers>
   </PropertyGroup>
 
   <Target Name="TrimToolPackageNativeAssets" AfterTargets="ComputeResolvedFilesToPublishList">
@@ -169,13 +180,18 @@
         Remove="@(ResolvedFileToPublish)"
         Condition="'%(ResolvedFileToPublish.Extension)' == '.pdb' And '%(ResolvedFileToPublish.AssetType)' == 'native'" />
 
-      <!-- Natives for runtime identifiers DocDown does not support -->
+      <!-- Natives for every runtime identifier outside the supported set. The path is normalized to
+           forward slashes first so the match does not depend on the build host's separator, and each
+           identifier is matched with its surrounding slashes so that, for example, 'osx' does not
+           also admit 'osx-x64'. -->
       <ResolvedFileToPublish
         Remove="@(ResolvedFileToPublish)"
-        Condition="'%(ResolvedFileToPublish.AssetType)' == 'native' And (
-                   $([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Contains('linux-bionic')) Or
-                   $([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Contains('loongarch64')) Or
-                   $([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Contains('riscv64')))" />
+        Condition="'%(ResolvedFileToPublish.AssetType)' == 'native' And
+                   $([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Replace('\','/').Contains('runtimes/')) And
+                   !$([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Replace('\','/').Contains('runtimes/win-x64/')) And
+                   !$([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Replace('\','/').Contains('runtimes/linux-x64/')) And
+                   !$([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Replace('\','/').Contains('runtimes/osx-arm64/')) And
+                   !$([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Replace('\','/').Contains('runtimes/osx/'))" />
     </ItemGroup>
   </Target>
 
