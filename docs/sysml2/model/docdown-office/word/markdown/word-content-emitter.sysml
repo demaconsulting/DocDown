@@ -1,4 +1,4 @@
-package DocDownWord {
+package DocDownOffice {
     part def WordContentEmitter {
         doc /* The model-to-sink emission path: writes the model's content (single-flow or per-part), images, the content inventory, and notes through the sink. */
 

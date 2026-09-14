@@ -159,4 +159,29 @@ package DocDownCore {
         comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
     }
+
+    part def ImageDimensions {
+        doc /* Reads pixel dimensions from PNG, JPEG, GIF and BMP headers without decoding the image. */
+
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ImageDimensions.cs */
+        comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
+        comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
+        comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
+    }
+    part def ImageLinkText {
+        doc /* Builds the markdown link text for an extracted image from the selected image text. */
+
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ImageLinkText.cs */
+        comment designRef /* Design: docs/design/docdown-core/output/image-text-selector.md (documented as a supporting type) */
+        comment verificationRef /* Verification: docs/verification/docdown-core/output/image-text-selector.md (documented as a supporting type) */
+        comment reqRef /* Requirements: docs/reqstream/docdown-core/output/image-text-selector.yaml (documented as a supporting type) */
+    }
+    part def PartResourceLinkRewriter {
+        doc /* Rewrites resource links in a content part so they resolve from the part file's own folder. */
+
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/PartResourceLinkRewriter.cs */
+        comment designRef /* Design: docs/design/docdown-core/output/content-writer.md (documented as a supporting type) */
+        comment verificationRef /* Verification: docs/verification/docdown-core/output/content-writer.md (documented as a supporting type) */
+        comment reqRef /* Requirements: docs/reqstream/docdown-core/output/content-writer.yaml (documented as a supporting type) */
+    }
 }

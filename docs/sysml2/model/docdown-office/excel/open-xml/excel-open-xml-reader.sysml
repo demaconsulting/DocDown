@@ -1,4 +1,4 @@
-package DocDownExcel {
+package DocDownOffice {
     part def ExcelOpenXmlReader {
         doc /* The one place that touches the Open XML spreadsheet object model: resolves shared strings, walks each worksheet in workbook order, keeps only cells that carry a value or a formula, never truncates a value, keeps a formula alongside its value and address, and delegates the drawing layer to the image, chart, and drawing-text readers. */
 

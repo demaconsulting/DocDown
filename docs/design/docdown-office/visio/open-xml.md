@@ -1,6 +1,6 @@
 ## OpenXml Subsystem
 
-![DocDown.Visio Structure](DocDownVisioView.svg)
+![DocDown.Visio Structure](VisioView.svg)
 
 ### Overview
 

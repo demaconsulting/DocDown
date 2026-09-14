@@ -1,4 +1,4 @@
-package DocDownWord {
+package DocDownOffice {
     part def WordOpenXmlReader {
         doc /* Turns the Open XML document into the backend-neutral model: maps headings, lists, tables, fields, comments, footnotes, and Document Control, renders tracked changes in the accepted view, detects the protected container, and surfaces the document metadata. */
 

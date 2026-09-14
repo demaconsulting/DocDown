@@ -1,5 +1,5 @@
-package DocDownPowerPoint {
-    part def Markdown {
+package DocDownOffice {
+    part def PowerPointMarkdown {
         doc /* The Markdown subsystem: the reader-neutral projection of the deck model onto the output contract — the content emitter that writes each slide's title, text, and speaker notes, the inline images, the content inventory, and notes. */
 
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/PowerPoint/Markdown/PowerPointContentEmitterTests.cs */

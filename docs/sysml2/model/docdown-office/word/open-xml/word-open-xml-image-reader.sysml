@@ -1,4 +1,4 @@
-package DocDownWord {
+package DocDownOffice {
     part def WordOpenXmlImageReader {
         doc /* Resolves a document's embedded image parts and yields each one's bytes with an honest hint: a passthrough transform, unstated pixel dimensions because the stored extent is a display size, and the part's own media type. */
 

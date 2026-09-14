@@ -1,5 +1,5 @@
-package DocDownExcel {
-    part def OpenXml {
+package DocDownOffice {
+    part def ExcelOpenXml {
         doc /* The OpenXml subsystem: the managed backend — the extractor the engine selects, the reader that turns the spreadsheet package into the backend-neutral model, the image reader that yields each embedded image's bytes and sheet association, the chart reader that recovers each chart's cached data, and the drawing-text reader that recovers each shape's annotation. */
 
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Excel/OpenXml/ExcelOpenXmlExtractorTests.cs */

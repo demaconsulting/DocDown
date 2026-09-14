@@ -1,4 +1,4 @@
-package DocDownExcel {
+package DocDownOffice {
     doc
     /*
      * DocDown.Excel is the Excel extraction package: a separately distributed backend that reads a
@@ -9,7 +9,7 @@ package DocDownExcel {
      * (ExcelDocDownBuilderExtensions).
      */
 
-    part def DocDownExcelSystem {
+    part def Excel {
         doc /* The DocDown.Excel system as a whole. */
 
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Excel/DocDownExcelTests.cs */
@@ -18,7 +18,7 @@ package DocDownExcel {
         comment reqRef /* Requirements: docs/reqstream/docdown-office/excel.yaml */
 
         part excelDocDownBuilderExtensions : ExcelDocDownBuilderExtensions;
-        part markdown : Markdown;
-        part openXml : OpenXml;
+        part markdown : ExcelMarkdown;
+        part openXml : ExcelOpenXml;
     }
 }

@@ -1,4 +1,4 @@
-package DocDownPowerPoint {
+package DocDownOffice {
     part def PowerPointComAvailability {
         doc /* Probes whether the PowerPoint COM automation backend can run: checks the operating system first and then, on Windows, whether the PowerPoint.Application ProgID is registered. Opens no deck, launches no application, and never throws; its unavailable reasons are declarative and instruct no installation. */
 

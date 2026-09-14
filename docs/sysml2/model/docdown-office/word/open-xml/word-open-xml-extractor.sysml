@@ -1,4 +1,4 @@
-package DocDownWord {
+package DocDownOffice {
     part def WordOpenXmlExtractor {
         doc /* The managed backend the engine selects and invokes: reads the document, emits content through the shared emitter as one continuous flow, and records the content inventory and the notes only it can explain. */
 

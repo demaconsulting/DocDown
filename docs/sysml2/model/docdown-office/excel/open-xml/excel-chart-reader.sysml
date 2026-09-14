@@ -1,4 +1,4 @@
-package DocDownExcel {
+package DocDownOffice {
     part def ExcelChartReader {
         doc /* Reads the charts a worksheet shows into the model, recovering each chart's cached data series — the numbers as last plotted — with a name-driven XDocument walk that covers every plot type, keeping the source reference alongside the cache and returning an unparsable or extended chart as a reason rather than throwing. */
 

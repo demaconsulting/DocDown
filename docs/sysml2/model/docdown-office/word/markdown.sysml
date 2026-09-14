@@ -1,5 +1,5 @@
-package DocDownWord {
-    part def Markdown {
+package DocDownOffice {
+    part def WordMarkdown {
         doc /* The Markdown subsystem: the backend-neutral document model and its projection onto markdown — the model renderer, the GFM table writer, and the shared content emitter that produces every output the model implies. */
 
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Word/Markdown/WordMarkdownWriterTests.cs */

@@ -1,4 +1,4 @@
-package DocDownWord {
+package DocDownOffice {
     part def WordTableWriter {
         doc /* Renders a table model as a GitHub-Flavored-Markdown table: header and delimiter rows, padded short rows, escaped cell content, skipped empty tables, and flattened merged and nested cells with a flatten count. */
 

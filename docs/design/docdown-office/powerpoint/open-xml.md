@@ -1,6 +1,6 @@
 ## OpenXml Subsystem
 
-![DocDown.PowerPoint Structure](DocDownPowerPointView.svg)
+![DocDown.PowerPoint Structure](PowerPointView.svg)
 
 ### Overview
 

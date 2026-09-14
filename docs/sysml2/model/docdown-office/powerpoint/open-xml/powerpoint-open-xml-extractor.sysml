@@ -1,4 +1,4 @@
-package DocDownPowerPoint {
+package DocDownOffice {
     part def PowerPointOpenXmlExtractor {
         doc /* The managed backend the engine selects and invokes for a .pptx content extraction: declares its priority, declares that this extractor does not provide rendering, probes unconditionally, buffers and opens the deck, reads it into the model, delegates emission to the shared emitter, and contributes the self-tests. */
 

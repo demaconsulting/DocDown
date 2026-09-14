@@ -1,6 +1,6 @@
 # DocDown.Excel System Design
 
-![DocDown.Excel Structure](DocDownExcelView.svg)
+![DocDown.Excel Structure](ExcelView.svg)
 
 `DocDown.Excel` is the Excel extraction system for the DocDown output contract. It reads a workbook's
 worksheet cell values, formulas, charts, drawing annotations, embedded images, and metadata, and writes

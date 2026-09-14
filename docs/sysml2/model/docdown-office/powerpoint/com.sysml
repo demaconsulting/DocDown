@@ -1,5 +1,5 @@
-package DocDownPowerPoint {
-    part def Com {
+package DocDownOffice {
+    part def PowerPointCom {
         doc /* The Com subsystem: the rendering seam, active where Microsoft PowerPoint is installed — the full-superset extractor that reuses the managed backend's content extraction and adds a rendered image of each slide over late-bound COM, the availability probe that keeps that environment-dependent backend honest, and the real automation adapter that is the single untestable COM boundary. */
 
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/PowerPoint/Com/PowerPointComExtractorTests.cs */

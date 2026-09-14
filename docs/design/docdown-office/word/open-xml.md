@@ -1,6 +1,6 @@
 ## OpenXml Subsystem
 
-![DocDown.Word Structure](DocDownWordView.svg)
+![DocDown.Word Structure](WordView.svg)
 
 ### Overview
 

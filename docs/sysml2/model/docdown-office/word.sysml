@@ -1,4 +1,4 @@
-package DocDownWord {
+package DocDownOffice {
     doc
     /*
      * DocDown.Word is the Word extraction package: a separately distributed backend that reads a
@@ -7,7 +7,7 @@ package DocDownWord {
      * unit (WordDocDownBuilderExtensions).
      */
 
-    part def DocDownWordSystem {
+    part def Word {
         doc /* The DocDown.Word system as a whole. */
 
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Word/DocDownWordTests.cs */
@@ -16,7 +16,7 @@ package DocDownWord {
         comment reqRef /* Requirements: docs/reqstream/docdown-office/word.yaml */
 
         part wordDocDownBuilderExtensions : WordDocDownBuilderExtensions;
-        part markdown : Markdown;
-        part openXml : OpenXml;
+        part markdown : WordMarkdown;
+        part openXml : WordOpenXml;
     }
 }

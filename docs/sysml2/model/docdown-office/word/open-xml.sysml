@@ -1,5 +1,5 @@
-package DocDownWord {
-    part def OpenXml {
+package DocDownOffice {
+    part def WordOpenXml {
         doc /* The OpenXml subsystem: the managed backend — the extractor the engine selects, the reader that turns the Open XML DOM into the backend-neutral model, and the image reader that yields each embedded image's bytes and provenance. */
 
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Word/OpenXml/WordOpenXmlExtractorTests.cs */

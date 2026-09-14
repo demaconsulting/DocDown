@@ -1,4 +1,4 @@
-package DocDownExcel {
+package DocDownOffice {
     part def ExcelOpenXmlExtractor {
         doc /* The managed backend the engine selects and invokes: declares its priority, declares page rendering not applicable to a non-paginated workbook, probes unconditionally, buffers and opens the workbook, reads it into the model, delegates emission to the shared emitter, and contributes the self-tests. */
 

@@ -1,6 +1,6 @@
 # DocDown.Word System Design
 
-![DocDown.Word Structure](DocDownWordView.svg)
+![DocDown.Word Structure](WordView.svg)
 
 `DocDown.Word` is the Word extraction system for the DocDown output contract. It reads a Word
 document's text, real tables, embedded images, reviewer comments, footnotes, document-control

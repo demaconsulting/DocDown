@@ -1,4 +1,4 @@
-package DocDownVisio {
+package DocDownOffice {
     part def VisioImageReader {
         doc /* Resolves the embedded images of a Visio drawing to their bytes and provenance, directly from the Open Packaging container: follows every internal image relationship to its media part, yields the bytes unchanged and deduplicated by package part, records every page that references an image, flags an image reached only through a master as template furniture rather than fabricating a page, and excludes the package thumbnail as document furniture. */
 

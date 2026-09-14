@@ -1,4 +1,4 @@
-package DocDownPowerPoint {
+package DocDownOffice {
     part def PowerPointDocDownBuilderExtensions {
         doc /* The reflection-free registration seam: AddPowerPoint registers both the managed Open XML backend and the COM automation backend on a DocDownBuilder. */
 

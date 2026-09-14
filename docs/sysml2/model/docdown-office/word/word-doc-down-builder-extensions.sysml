@@ -1,4 +1,4 @@
-package DocDownWord {
+package DocDownOffice {
     part def WordDocDownBuilderExtensions {
         doc /* The registration seam: explicit, reflection-free calls that add the Word backends to a DocDown builder. A direct unit of the DocDown.Word system. */
 

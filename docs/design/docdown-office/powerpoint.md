@@ -1,6 +1,6 @@
 # DocDown.PowerPoint System Design
 
-![DocDown.PowerPoint Structure](DocDownPowerPointView.svg)
+![DocDown.PowerPoint Structure](PowerPointView.svg)
 
 `DocDown.PowerPoint` is the PowerPoint extraction system for the DocDown output contract. It reads a
 modern `.pptx` deck's slide text, slide titles, speaker notes, slide order, embedded images, and deck

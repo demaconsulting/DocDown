@@ -1,4 +1,4 @@
-package DocDownPowerPoint {
+package DocDownOffice {
     doc
     /*
      * DocDown.PowerPoint is the PowerPoint extraction package: a separately distributed backend that
@@ -9,7 +9,7 @@ package DocDownPowerPoint {
      * three subsystems (Com, Markdown, OpenXml) and one direct unit (PowerPointDocDownBuilderExtensions).
      */
 
-    part def DocDownPowerPointSystem {
+    part def PowerPoint {
         doc /* The DocDown.PowerPoint system as a whole. */
 
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/PowerPoint/DocDownPowerPointTests.cs */
@@ -18,8 +18,8 @@ package DocDownPowerPoint {
         comment reqRef /* Requirements: docs/reqstream/docdown-office/powerpoint.yaml */
 
         part powerPointDocDownBuilderExtensions : PowerPointDocDownBuilderExtensions;
-        part com : Com;
-        part markdown : Markdown;
-        part openXml : OpenXml;
+        part com : PowerPointCom;
+        part markdown : PowerPointMarkdown;
+        part openXml : PowerPointOpenXml;
     }
 }

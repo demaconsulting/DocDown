@@ -1,6 +1,6 @@
 ## ExcelContentEmitter
 
-![DocDown.Excel Structure](DocDownExcelView.svg)
+![DocDown.Excel Structure](ExcelView.svg)
 
 ### Purpose
 

@@ -211,4 +211,13 @@ package DocDownCore {
         comment verificationRef /* Verification: docs/verification/docdown-core/extraction.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
     }
+
+    part def SelfTestProbe {
+        doc /* Reads a backend's embedded self-test probe document from its assembly manifest. */
+
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Extraction/SelfTestProbe.cs */
+        comment designRef /* Design: docs/design/docdown-core/extraction.md (documented as a supporting type) */
+        comment verificationRef /* Verification: docs/verification/docdown-core/extraction.md (documented as a supporting type) */
+        comment reqRef /* Requirements: docs/reqstream/docdown-core/extraction.yaml (documented as a supporting type) */
+    }
 }

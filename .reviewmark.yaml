@@ -144,6 +144,8 @@ reviews:
       - "test/DemaConsulting.DocDown.Core.Tests/Extraction/OpcMetadataMapperTests.cs"  # supporting-type tests
       - "src/DemaConsulting.DocDown.Core/Extraction/ExtractionResult.cs"              # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Extraction/SelfTestResult.cs"                # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Core/Extraction/SelfTestProbe.cs"                 # supporting type (D8)
+      - "test/DemaConsulting.DocDown.Core.Tests/Extraction/SelfTestProbeTests.cs"     # supporting-type tests
 
   # DocDownCore-Output Subsystem Review (one per subsystem)
   # D8: subsystem-documented supporting-type source files are reviewed here; unit source
@@ -307,6 +309,8 @@ reviews:
       - "test/DemaConsulting.DocDown.Core.Tests/Output/SummaryWriterGoldenTests.cs"  # golden output tests
       - "test/DemaConsulting.DocDown.Core.Tests/golden/summary-rendered-pages-no-images.txt"  # golden output
       - "test/DemaConsulting.DocDown.Core.Tests/golden/summary-embedded-images.txt"  # golden output
+      - "test/DemaConsulting.DocDown.Core.Tests/golden/summary-rendering-not-available-note.txt"
+      - "test/DemaConsulting.DocDown.Core.Tests/golden/summary-unreadable-docx-no-backend.txt"
 
   # DocDownCore-Output-ManifestWriter Review (one per unit)
   - id: DocDownCore-Output-ManifestWriter
@@ -703,6 +707,31 @@ reviews:
   # silently absorbed. The Markdown subsystem documents its supporting-type .cs files
   # inline, so those files are reviewed in the subsystem set (D8); OpenXml's only supporting-type
   # file is the shared exception type, because every other OpenXml source file is a unit.
+
+  # DocDownOffice-Architecture System Review (one per system)
+  - id: DocDownOffice-Architecture
+    title: Review that DocDown.Office Architecture Satisfies Requirements
+    context:
+      - "docs/design/introduction.md"
+    paths:
+      - "docs/design/docdown-office.md"                                                # system design
+      - "docs/sysml2/model/docdown-office.sysml"                                       # system model
+      - "src/DemaConsulting.DocDown.Office/OfficeDocDownBuilderExtensions.cs"          # direct unit: registration seam
+      - "test/DemaConsulting.DocDown.Office.Tests/OfficeDocDownBuilderExtensionsTests.cs"  # direct unit tests
+      - "test/DemaConsulting.DocDown.Office.Tests/OfficeProbeResourceTests.cs"         # the embedded probe documents
+
+  # DocDownOffice-Com Subsystem Review (one per subsystem)
+  # D8: subsystem-documented supporting-type source files are reviewed here.
+  - id: DocDownOffice-Com
+    title: Review that DocDown.Office Com Satisfies Subsystem Requirements
+    context:
+      - "docs/design/docdown-office.md"
+    paths:
+      - "docs/sysml2/model/docdown-office/com.sysml"                                   # subsystem model
+      - "src/DemaConsulting.DocDown.Office/Com/NamespaceDoc.cs"                        # namespace documentation
+      - "src/DemaConsulting.DocDown.Office/Com/OfficeComAvailability.cs"               # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Com/ComposingDelegatedSink.cs"              # supporting type (D8)
+      - "src/DemaConsulting.DocDown.Office/Com/DelegatedExtractionContext.cs"          # supporting type (D8)
 
   # DocDownWord-Architecture Review (one per system)
   - id: DocDownWord-Architecture
@@ -1457,6 +1486,7 @@ reviews:
       - "docs/design/docdown-office/visio/open-xml.md"                                 # subsystem design
       - "docs/verification/docdown-office/visio/open-xml.md"                           # subsystem verification
       - "src/DemaConsulting.DocDown.Office/Visio/OpenXml/NamespaceDoc.cs"              # namespace documentation
+      - "test/DemaConsulting.DocDown.Office.Tests/Visio/TestData/VisioPackageBuilder.cs"  # test harness
 
   # DocDownVisio-Com-VisioComExtractor Unit Review (unit under subsystem, four context entries)
   - id: DocDownVisio-Com-VisioComExtractor

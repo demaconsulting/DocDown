@@ -1,4 +1,4 @@
-package DocDownExcel {
+package DocDownOffice {
     part def ExcelContentEmitter {
         doc /* The single emission path: writes one Sheet content part per worksheet and one Chart part per chart, the verbatim listing and the additive grid table with its elision and merged-range notes, the shape annotations, the inline image links, the content inventory, and the notes the model implies. */
 

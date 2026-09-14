@@ -1,4 +1,4 @@
-package DocDownExcel {
+package DocDownOffice {
     part def ExcelChartWriter {
         doc /* Renders one chart's cached data as markdown: the labeling that makes the numbers mean something, then a table of categories against series values with a leading point-index column, sparse indices honored, pipes escaped, and the plotted points bounded with what was dropped stated. */
 

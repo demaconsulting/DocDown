@@ -1,4 +1,4 @@
-package DocDownExcel {
+package DocDownOffice {
     part def ExcelDrawingTextReader {
         doc /* Reads the text carried by the drawing shapes floating over a worksheet — callouts, labels, and annotations that live in the drawing layer and in no cell — in drawing order, flattening group membership and joining a shape's paragraphs into one readable annotation. */
 

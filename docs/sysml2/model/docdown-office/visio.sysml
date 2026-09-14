@@ -1,4 +1,4 @@
-package DocDownVisio {
+package DocDownOffice {
     doc
     /*
      * DocDown.Visio is the Visio extraction package: a separately distributed backend that reads a
@@ -11,7 +11,7 @@ package DocDownVisio {
      * (VisioDocDownBuilderExtensions).
      */
 
-    part def DocDownVisioSystem {
+    part def Visio {
         doc /* The DocDown.Visio system as a whole. */
 
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Visio/DocDownVisioTests.cs */
@@ -20,8 +20,8 @@ package DocDownVisio {
         comment reqRef /* Requirements: docs/reqstream/docdown-office/visio.yaml */
 
         part visioDocDownBuilderExtensions : VisioDocDownBuilderExtensions;
-        part com : Com;
-        part markdown : Markdown;
-        part openXml : OpenXml;
+        part com : VisioCom;
+        part markdown : VisioMarkdown;
+        part openXml : VisioOpenXml;
     }
 }

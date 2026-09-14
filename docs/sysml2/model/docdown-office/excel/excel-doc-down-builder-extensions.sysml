@@ -1,4 +1,4 @@
-package DocDownExcel {
+package DocDownOffice {
     part def ExcelDocDownBuilderExtensions {
         doc /* The registration seam: the one explicit, reflection-free call that adds the managed Open XML Excel backend to a DocDown builder. Free of any Open XML SDK type on its public surface. */
 

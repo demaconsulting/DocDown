@@ -1,5 +1,5 @@
-package DocDownExcel {
-    part def Markdown {
+package DocDownOffice {
+    part def ExcelMarkdown {
         doc /* The Markdown subsystem: the reader-neutral projection of the workbook model onto markdown — the content emitter that drives every output the model implies, and the chart writer that renders a chart's cached series as a table. */
 
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Excel/Markdown/ExcelContentEmitterTests.cs */

@@ -6,13 +6,10 @@
 package DocDownCore {
     view SoftwareStructureView {
         expose DocDownCore;
-        expose DocDownExcel;
+        expose DocDownOffice;
         expose DocDownPdf;
         expose DocDownPdfRendering;
-        expose DocDownPowerPoint;
         expose DocDownTool;
-        expose DocDownVisio;
-        expose DocDownWord;
     }
 
     view DocDownCoreView {
@@ -66,79 +63,72 @@ package DocDownTool {
     }
 }
 
-// DocDownWord is the Word extraction system. Like DocDownTool it has more than one
-// subsystem (Markdown, OpenXml) and one direct unit (WordDocDownBuilderExtensions),
-// so it carries a system view plus a view per subsystem.
-package DocDownWord {
-    view DocDownWordView {
-        expose DocDownWordSystem;
+// DocDownOffice is the Microsoft Office extraction system. It has five subsystems - the four
+// format subsystems and Com, which holds what the COM automation backends share - and one
+// direct unit (OfficeDocDownBuilderExtensions), so it carries a system view plus a view per
+// subsystem. The design documents embed the system view (DocDownOfficeView.svg).
+package DocDownOffice {
+    view DocDownOfficeView {
+        expose DocDownOfficeSystem;
     }
 
-    view MarkdownView {
-        expose Markdown;
+    view OfficeComView {
+        expose OfficeCom;
     }
 
-    view OpenXmlView {
-        expose OpenXml;
+    view WordView {
+        expose Word;
     }
-}
 
-// DocDownExcel is the Excel extraction system. Like DocDownWord it has more than one
-// subsystem (Markdown, OpenXml) and one direct unit (ExcelDocDownBuilderExtensions),
-// so it carries a system view plus a view per subsystem. The design documents embed the
-// system view (DocDownExcelView.svg).
-package DocDownExcel {
-    view DocDownExcelView {
-        expose DocDownExcelSystem;
+    view WordMarkdownView {
+        expose WordMarkdown;
+    }
+
+    view WordOpenXmlView {
+        expose WordOpenXml;
+    }
+
+    view ExcelView {
+        expose Excel;
     }
 
     view ExcelMarkdownView {
-        expose Markdown;
+        expose ExcelMarkdown;
     }
 
     view ExcelOpenXmlView {
-        expose OpenXml;
-    }
-}
-
-// DocDownPowerPoint is the PowerPoint extraction system. It has three subsystems (Com, Markdown,
-// OpenXml) and one direct unit (PowerPointDocDownBuilderExtensions), so it carries a system view plus a
-// view per subsystem. The design documents embed the system view (DocDownPowerPointView.svg).
-package DocDownPowerPoint {
-    view DocDownPowerPointView {
-        expose DocDownPowerPointSystem;
+        expose ExcelOpenXml;
     }
 
-    view PowerPointComView {
-        expose Com;
+    view PowerPointView {
+        expose PowerPoint;
     }
 
     view PowerPointMarkdownView {
-        expose Markdown;
+        expose PowerPointMarkdown;
     }
 
     view PowerPointOpenXmlView {
-        expose OpenXml;
-    }
-}
-
-// DocDownVisio is the Visio extraction system. Like DocDownPowerPoint it has three subsystems (Com,
-// Markdown, OpenXml) and one direct unit (VisioDocDownBuilderExtensions), so it carries a system view
-// plus a view per subsystem. The design documents embed the system view (DocDownVisioView.svg).
-package DocDownVisio {
-    view DocDownVisioView {
-        expose DocDownVisioSystem;
+        expose PowerPointOpenXml;
     }
 
-    view VisioComView {
-        expose Com;
+    view PowerPointComView {
+        expose PowerPointCom;
+    }
+
+    view VisioView {
+        expose Visio;
     }
 
     view VisioMarkdownView {
-        expose Markdown;
+        expose VisioMarkdown;
     }
 
     view VisioOpenXmlView {
-        expose OpenXml;
+        expose VisioOpenXml;
+    }
+
+    view VisioComView {
+        expose VisioCom;
     }
 }

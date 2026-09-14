@@ -1,6 +1,6 @@
 # DocDown.Visio System Design
 
-![DocDown.Visio Structure](DocDownVisioView.svg)
+![DocDown.Visio Structure](VisioView.svg)
 
 `DocDown.Visio` is the Visio extraction system for the DocDown output contract. It reads each page
 name, the text of the shapes that carry text, the directed connections between shapes, embedded
