@@ -23,5 +23,5 @@ sections:
             tags: [ots]
             tests:
               - PageRenderer_Render_SinglePage_ReturnsValidPng
-              - PageRenderer_ProbeAvailability_DeployedNativeStack_ReportsAvailableWithoutThrowing
+              - PageRenderer_ProbeAvailability_AnyEnvironment_ReflectsUsabilityWithoutThrowing
               - DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages
