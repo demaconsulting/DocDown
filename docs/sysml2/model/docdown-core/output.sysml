@@ -18,7 +18,7 @@ package DocDownCore {
     part def IExtractionSink {
         doc /* The write surface a backend uses to add images, pages, and content, and to report notes and the content inventory. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/IExtractionSink.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ExtractionSink.cs */
         comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
@@ -27,7 +27,7 @@ package DocDownCore {
     part def ImageHint {
         doc /* Extractor-supplied advisory image metadata; Core allocates the real name. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ImageHint.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/EmbeddedImageWriter.cs */
         comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
@@ -36,7 +36,7 @@ package DocDownCore {
     part def ImageTextSource {
         doc /* The origin of a candidate image text, in decreasing directness: Description, Title, Caption, PictureName, Heading, Uri. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ImageTextSource.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ImageTextSelector.cs */
         comment designRef /* Design: docs/design/docdown-core/output/image-text-selector.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output/image-text-selector.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output/image-text-selector.yaml (documented as a supporting type) */
@@ -45,7 +45,7 @@ package DocDownCore {
     part def ImageTextConfidence {
         doc /* How far a selected image text may be trusted: Descriptive, Contextual, or Fallback. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ImageTextConfidence.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ImageTextSelector.cs */
         comment designRef /* Design: docs/design/docdown-core/output/image-text-selector.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output/image-text-selector.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output/image-text-selector.yaml (documented as a supporting type) */
@@ -54,7 +54,7 @@ package DocDownCore {
     part def ImageTextCandidate {
         doc /* One candidate image text paired with the source it came from. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ImageTextCandidate.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ImageTextSelector.cs */
         comment designRef /* Design: docs/design/docdown-core/output/image-text-selector.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output/image-text-selector.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output/image-text-selector.yaml (documented as a supporting type) */
@@ -63,7 +63,7 @@ package DocDownCore {
     part def SelectedImageText {
         doc /* The chosen image text with its source and confidence, produced by ImageTextSelector. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/SelectedImageText.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ImageTextSelector.cs */
         comment designRef /* Design: docs/design/docdown-core/output/image-text-selector.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output/image-text-selector.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output/image-text-selector.yaml (documented as a supporting type) */
@@ -72,7 +72,7 @@ package DocDownCore {
     part def ContentPart {
         doc /* A content part supplied by an extractor: kind, an advisory ordinal, and an optional title. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ContentPart.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ContentWriter.cs */
         comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
@@ -81,7 +81,7 @@ package DocDownCore {
     part def ContentPartKind {
         doc /* The kind of a content part: Page, Sheet, Slide, Section, or Attachment. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ContentPartKind.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ContentWriter.cs */
         comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
@@ -90,7 +90,7 @@ package DocDownCore {
     part def ExtractionNote {
         doc /* A short plain-language note recorded when DocDown attempted a step and could not complete it; carries a message only, never a code, severity, remedy, or impact. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ExtractionNote.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ExtractionSink.cs */
         comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
@@ -109,7 +109,7 @@ package DocDownCore {
     part def ExtractionEnvironment {
         doc /* Provenance: operating system, architecture, runtime, identifier, and an ordered list of facts. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ExtractionEnvironment.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ManifestWriter.cs */
         comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
@@ -118,7 +118,7 @@ package DocDownCore {
     part def EnvironmentFact {
         doc /* One environment fact: a contributing-component source, a key, a value, and an optional availability flag. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/EnvironmentFact.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ManifestWriter.cs */
         comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
@@ -145,7 +145,7 @@ package DocDownCore {
     part def DocDownJsonContext {
         doc /* The source-generated serializer context for the manifest DTO graph, keeping serialization trim- and AOT-safe. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/DocDownJsonContext.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ManifestWriter.cs */
         comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
@@ -154,7 +154,7 @@ package DocDownCore {
     part def ScratchFolderException {
         doc /* A structured scratch-folder refusal carrying a machine reason; converted by the engine into a prose extraction failure. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ScratchFolderException.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ScratchFolder.cs */
         comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */

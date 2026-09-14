@@ -122,8 +122,6 @@ reviews:
       - "docs/verification/docdown-core/detection.md"                                 # subsystem verification
       - "test/DemaConsulting.DocDown.Core.Tests/Detection/DetectionTests.cs"          # subsystem tests
       - "src/DemaConsulting.DocDown.Core/Detection/DocumentFormat.cs"                 # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Detection/DetectionBasis.cs"                 # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Detection/FormatDetection.cs"                # supporting type (D8)
 
   # DocDownCore-Extraction Subsystem Review (one per subsystem)
   # D8: subsystem-documented supporting-type source files are reviewed here; unit source
@@ -139,27 +137,13 @@ reviews:
       - "docs/verification/docdown-core/extraction.md"                                # subsystem verification
       - "test/DemaConsulting.DocDown.Core.Tests/Extraction/ExtractionTests.cs"        # subsystem tests
       - "src/DemaConsulting.DocDown.Core/Extraction/IDocumentExtractor.cs"            # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/IExtractionContext.cs"            # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Extraction/ExtractionContext.cs"             # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractorAvailability.cs"         # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractorDescriptor.cs"           # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractorCandidate.cs"            # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractionOutcome.cs"             # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/ExtractionFailure.cs"             # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Extraction/ExtractionOptions.cs"             # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/ScratchFolderMode.cs"             # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/PageRange.cs"                     # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Extraction/DocumentSource.cs"                # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/DocumentInfo.cs"                  # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/DocumentMetadata.cs"              # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Extraction/OpcMetadataMapper.cs"             # supporting type (D8)
       - "test/DemaConsulting.DocDown.Core.Tests/Extraction/OpcMetadataMapperTests.cs"  # supporting-type tests
       - "src/DemaConsulting.DocDown.Core/Extraction/ExtractionResult.cs"              # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/ISelfValidating.cs"               # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/SelfTestCase.cs"                  # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/SelfTestContext.cs"               # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Extraction/SelfTestResult.cs"                # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Extraction/SelfTestStatus.cs"                # supporting type (D8)
 
   # DocDownCore-Output Subsystem Review (one per subsystem)
   # D8: subsystem-documented supporting-type source files are reviewed here; unit source
@@ -174,25 +158,10 @@ reviews:
       - "docs/design/docdown-core/output.md"                                          # subsystem design
       - "docs/verification/docdown-core/output.md"                                    # subsystem verification
       - "test/DemaConsulting.DocDown.Core.Tests/Output/OutputTests.cs"                # subsystem tests
-      - "src/DemaConsulting.DocDown.Core/Output/IExtractionSink.cs"                   # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/ImageHint.cs"                         # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/ImageTransform.cs"                    # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/ImageTextSource.cs"                   # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/ImageTextConfidence.cs"               # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/ImageTextCandidate.cs"                # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/SelectedImageText.cs"                 # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/ContentPart.cs"                       # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/ContentPartKind.cs"                   # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/ExtractionNote.cs"                    # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/ExtractionEnvironment.cs"             # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/EnvironmentFact.cs"                   # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Output/ExtractionManifest.cs"                # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/DocDownJsonContext.cs"                # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/ScratchFolderException.cs"            # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Output/ArtifactInventory.cs"                 # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Output/MetadataWriter.cs"                    # supporting type (D8)
       - "test/DemaConsulting.DocDown.Core.Tests/Output/MetadataWriterTests.cs"        # supporting-type tests
-      - "src/DemaConsulting.DocDown.Core/Output/EmbeddedImage.cs"                     # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Output/EmbeddedImageWriter.cs"               # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Output/ImageDimensions.cs"                   # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Output/ImageLinkText.cs"                     # supporting type (D8)
@@ -338,8 +307,6 @@ reviews:
       - "test/DemaConsulting.DocDown.Core.Tests/Output/SummaryWriterGoldenTests.cs"  # golden output tests
       - "test/DemaConsulting.DocDown.Core.Tests/golden/summary-rendered-pages-no-images.txt"  # golden output
       - "test/DemaConsulting.DocDown.Core.Tests/golden/summary-embedded-images.txt"  # golden output
-      - "test/DemaConsulting.DocDown.Core.Tests/golden/summary-degraded-gap.txt"  # golden output
-      - "test/DemaConsulting.DocDown.Core.Tests/golden/summary-rendering-not-registered-dd0301.txt"  # golden output
 
   # DocDownCore-Output-ManifestWriter Review (one per unit)
   - id: DocDownCore-Output-ManifestWriter
@@ -822,11 +789,6 @@ reviews:
       - "docs/design/docdown-office/word/markdown.md"                             # subsystem design
       - "docs/verification/docdown-office/word/markdown.md"                       # subsystem verification
       - "src/DemaConsulting.DocDown.Office/Word/Markdown/WordDocumentModel.cs"    # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/Word/Markdown/WordBlock.cs"            # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/Word/Markdown/WordBlockKind.cs"        # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/Word/Markdown/WordInline.cs"           # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/Word/Markdown/WordListInfo.cs"         # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/Word/Markdown/WordTableModel.cs"       # supporting type (D8)
       - "src/DemaConsulting.DocDown.Office/Word/Markdown/NamespaceDoc.cs"         # namespace documentation
 
   # DocDownWord-OpenXml Subsystem Review (one per subsystem)
@@ -841,7 +803,6 @@ reviews:
       - "docs/reqstream/docdown-office/word/open-xml.yaml"                        # subsystem requirements
       - "docs/design/docdown-office/word/open-xml.md"                            # subsystem design
       - "docs/verification/docdown-office/word/open-xml.md"                      # subsystem verification
-      - "src/DemaConsulting.DocDown.Office/Word/OpenXml/WordExtractionException.cs"  # supporting type (D8)
       - "src/DemaConsulting.DocDown.Office/Word/OpenXml/NamespaceDoc.cs"          # namespace documentation
 
   # DocDownWord-Markdown-WordMarkdownWriter Unit Review (unit under subsystem, four context entries)
@@ -1036,8 +997,6 @@ reviews:
       - "docs/design/docdown-office/excel/open-xml.md"                           # subsystem design
       - "docs/verification/docdown-office/excel/open-xml.md"                     # subsystem verification
       - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelDocumentModel.cs"  # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelChartModel.cs"     # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelExtractionException.cs"  # supporting type (D8)
       - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/NamespaceDoc.cs"        # namespace documentation
 
   # DocDownExcel-Markdown-ExcelContentEmitter Unit Review (unit under subsystem, four context entries)
@@ -1238,8 +1197,6 @@ reviews:
       - "docs/design/docdown-office/powerpoint/com.md"                                        # subsystem design
       - "docs/verification/docdown-office/powerpoint/com.md"                                  # subsystem verification
       - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/IPowerPointAutomation.cs"           # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/ComposingDelegatedSink.cs"          # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/DelegatedExtractionContext.cs"      # supporting type (D8)
       - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/PowerPointComDispatch.cs"           # supporting type (D8)
       - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/NamespaceDoc.cs"                    # namespace documentation
 
@@ -1269,8 +1226,6 @@ reviews:
       - "docs/reqstream/docdown-office/powerpoint/open-xml.yaml"                              # subsystem requirements
       - "docs/design/docdown-office/powerpoint/open-xml.md"                                   # subsystem design
       - "docs/verification/docdown-office/powerpoint/open-xml.md"                             # subsystem verification
-      - "src/DemaConsulting.DocDown.Office/PowerPoint/OpenXml/PowerPointDocumentModel.cs"     # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/PowerPoint/OpenXml/PowerPointExtractionException.cs"  # supporting type (D8)
       - "src/DemaConsulting.DocDown.Office/PowerPoint/OpenXml/NamespaceDoc.cs"                # namespace documentation
 
   # DocDownPowerPoint-Com-PowerPointComExtractor Unit Review (unit under subsystem, four context entries)
@@ -1471,8 +1426,6 @@ reviews:
       - "docs/design/docdown-office/visio/com.md"                                      # subsystem design
       - "docs/verification/docdown-office/visio/com.md"                                # subsystem verification
       - "src/DemaConsulting.DocDown.Office/Visio/Com/IVisioAutomation.cs"              # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/Visio/Com/ComposingDelegatedSink.cs"        # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/Visio/Com/DelegatedExtractionContext.cs"    # supporting type (D8)
       - "src/DemaConsulting.DocDown.Office/Visio/Com/VisioComDispatch.cs"              # supporting type (D8)
       - "src/DemaConsulting.DocDown.Office/Visio/Com/NamespaceDoc.cs"                  # namespace documentation
 
@@ -1503,9 +1456,6 @@ reviews:
       - "docs/reqstream/docdown-office/visio/open-xml.yaml"                            # subsystem requirements
       - "docs/design/docdown-office/visio/open-xml.md"                                 # subsystem design
       - "docs/verification/docdown-office/visio/open-xml.md"                           # subsystem verification
-      - "src/DemaConsulting.DocDown.Office/Visio/OpenXml/VisioDocumentModel.cs"        # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/Visio/OpenXml/VisioExtractionException.cs"  # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/Visio/OpenXml/VisioPackageBuilder.cs"       # supporting type (D8)
       - "src/DemaConsulting.DocDown.Office/Visio/OpenXml/NamespaceDoc.cs"              # namespace documentation
 
   # DocDownVisio-Com-VisioComExtractor Unit Review (unit under subsystem, four context entries)

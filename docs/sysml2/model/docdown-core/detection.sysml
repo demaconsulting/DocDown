@@ -22,7 +22,7 @@ package DocDownCore {
     part def DetectionBasis {
         doc /* Enumerates the kind of evidence behind a detection so consumers can weigh its reliability. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Detection/DetectionBasis.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Detection/FormatSniffer.cs */
         comment designRef /* Design: docs/design/docdown-core/detection.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/detection.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/detection.yaml (documented as a supporting type) */
@@ -31,7 +31,7 @@ package DocDownCore {
     part def FormatDetection {
         doc /* Pairs the identified format with its detection basis and a confidence score. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Detection/FormatDetection.cs */
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Detection/FormatSniffer.cs */
         comment designRef /* Design: docs/design/docdown-core/detection.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/detection.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/detection.yaml (documented as a supporting type) */
