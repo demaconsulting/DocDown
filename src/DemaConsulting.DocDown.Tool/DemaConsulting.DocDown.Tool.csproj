@@ -2,7 +2,17 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <!-- The tool targets a single framework, unlike the libraries, which multi-target so consumers
+         can reference them from any supported runtime. A PackAsTool package is executed, never
+         referenced, so a second and third framework adds no reachable surface: 'dotnet tool install'
+         picks one framework folder and RollForward=Major below carries the build onto later hosts.
+         Multi-targeting instead duplicated the entire native stack (PDFium and SkiaSharp for every
+         runtime identifier) once per framework, which is where the package's bulk came from.
+
+         net10.0 is chosen deliberately over the lowest supported framework: installing the tool
+         therefore requires a .NET 10 runtime. The libraries remain net8.0/net9.0/net10.0 so library
+         consumers are unaffected by this choice; it constrains only the command-line tool. -->
+    <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -129,5 +139,44 @@
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\Icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
+
+  <!-- Native debug symbols and unsupported runtime identifiers are excluded from the tool package.
+
+       Symbols: the PDFium and SkiaSharp runtime packages ship a .pdb alongside each
+       runtimes/<rid>/native binary, and libSkiaSharp.pdb alone is 82-88 MB per Windows runtime
+       identifier. Those symbols describe third-party native code that a DocDown stack trace never
+       enters, so shipping them to every user of 'dotnet tool install' costs hundreds of megabytes
+       and buys nothing. Managed symbols are unaffected: only native assets are removed, and
+       IncludeSymbols above still publishes the tool's own PDBs in the companion .snupkg.
+
+       Runtimes: SkiaSharp ships natives for Android (linux-bionic), LoongArch, and RISC-V. DocDown
+       is a desktop and CI command-line tool; those platforms host no supported DocDown scenario and
+       are not exercised by any CI matrix leg, so their binaries were payload that could never be
+       loaded. Excluding them is a deliberate narrowing of claimed platform support to what is
+       actually built and tested: Windows, Linux (glibc and musl), and macOS.
+
+       Both exclusions are enforced against the produced artifact by
+       DocDownTool_Package_Nupkg_ExcludesNativeSymbolsAndUnsupportedRuntimes, so a dependency update
+       that reintroduces either fails the build rather than quietly inflating the package. -->
+  <PropertyGroup>
+    <ExcludedToolRuntimeIdentifiers>linux-bionic;loongarch64;riscv64</ExcludedToolRuntimeIdentifiers>
+  </PropertyGroup>
+
+  <Target Name="TrimToolPackageNativeAssets" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <!-- Native debug symbols -->
+      <ResolvedFileToPublish
+        Remove="@(ResolvedFileToPublish)"
+        Condition="'%(ResolvedFileToPublish.Extension)' == '.pdb' And '%(ResolvedFileToPublish.AssetType)' == 'native'" />
+
+      <!-- Natives for runtime identifiers DocDown does not support -->
+      <ResolvedFileToPublish
+        Remove="@(ResolvedFileToPublish)"
+        Condition="'%(ResolvedFileToPublish.AssetType)' == 'native' And (
+                   $([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Contains('linux-bionic')) Or
+                   $([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Contains('loongarch64')) Or
+                   $([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Contains('riscv64')))" />
+    </ItemGroup>
+  </Target>
 
 </Project>

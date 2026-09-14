@@ -6,8 +6,9 @@ command-line tool.
 ## Verification Approach
 
 `DocDown.Tool` is verified through system-level integration tests in `DocDownToolTests.cs` and unit
-tests per unit, all in `DemaConsulting.DocDown.Tool.Tests`, running on xUnit v3 across net8.0,
-net9.0, and net10.0.
+tests per unit, all in `DemaConsulting.DocDown.Tool.Tests`, running on xUnit v3 against net10.0. The
+tool is packaged for that single framework, so the test project targets it alone; the
+multi-framework matrix continues to apply to every library, where it carries meaning for consumers.
 
 ### The tool is driven in-process against a captured log
 
@@ -31,7 +32,7 @@ not-executed, and surface the rendering backend's own self-test without reportin
 
 ## Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net10.0, the single framework the tool ships on
 - **Filesystem**: a per-test `TempScratch` folder holds the generated input document and the
   extraction output
 - **Inputs**: a PDF generated at test time; no committed binary fixtures and no network access
@@ -164,4 +165,22 @@ folder), and a `DotnetToolSettings.xml` declares `Command Name="docdown"`. The t
 **not** assert the absence of native assets: the tool carries the rendering package's PDFium/SkiaSharp
 binaries transitively by design, under `tools/<tfm>/any/runtimes/<rid>/native/…`, and they are
 resolved at run time — so the claim under test is RID-agnosticism (one package installs on every
-RID), not native-freedom. Evidence for `DocDownTool-Packaging`.
+supported RID), not native-freedom. Evidence for `DocDownTool-Packaging`.
+
+### The produced package carries no native symbols and no unsupported runtimes
+
+**Test**: `DocDownTool_Package_Nupkg_ExcludesNativeSymbolsAndUnsupportedRuntimes`
+
+Packs the tool project and inspects the produced `.nupkg`, asserting that no entry under
+`runtimes/` is a `.pdb`, and that no entry names `linux-bionic`, `loongarch64`, or `riscv64`. Both
+categories are pure payload: native debug symbols describe third-party code a DocDown stack trace
+never enters, and the three excluded platforms support no DocDown scenario and are exercised by no
+CI matrix leg.
+
+The test is a size control, and size has no functional signal — nothing else in the suite would
+fail if either category returned, so a dependency update could silently restore the package's bulk.
+It therefore asserts against the packed artifact rather than the project file, for the same reason
+as the RID-agnosticism test above: the claim is about what ships. It also asserts that natives for
+`win-x64`, `linux-x64`, and `osx` are still present, so the exclusion cannot be satisfied by having
+stripped the tool of the binaries it genuinely needs, and asserts the native set is non-empty so
+the checks cannot pass vacuously. Evidence for `DocDownTool-PackagedFootprint`.

@@ -68,7 +68,9 @@ in the user guide.
 ### Test Environment
 
 The evidence is produced by the standard `DocDown.Tool` test run: xUnit v3 under the .NET SDK,
-targeting net8.0, net9.0, and net10.0, across the CI operating-system matrix. Every results file is
+targeting net10.0, across the CI operating-system matrix. `TestResults` enters the dependency graph
+only through the tool, which is packaged for that single framework, so net10.0 is the full extent of
+this dependency's exercised surface rather than a narrowing of it. Every results file is
 written to a per-test temporary folder and re-parsed in the same test, so the evidence depends on no
 committed artifact and no network access.
 

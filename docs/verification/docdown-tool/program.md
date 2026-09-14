@@ -19,7 +19,7 @@ without a linked requirement.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net10.0, the single framework the tool ships on
 - **Inputs**: a PDF generated at test time; standard output and error captured with `StringWriter`
   for the `Main` paths
 - **Isolation**: each test owns its temporary folder and captured log

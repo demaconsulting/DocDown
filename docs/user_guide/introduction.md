@@ -320,6 +320,12 @@ dotnet tool install -g DemaConsulting.DocDown.Tool          # global
 dotnet tool install --local DemaConsulting.DocDown.Tool     # local tool manifest
 ```
 
+The tool requires a **.NET 10 runtime** and supports Windows, Linux (glibc and musl), and macOS. It
+is packaged for a single framework because a tool is executed rather than referenced, and carrying
+the PDF rasterizer's native binaries once per framework tripled the download for no reachable
+benefit. The libraries are unaffected: they target .NET 8, 9, and 10, so referencing them never
+constrains your project to the tool's runtime.
+
 ## API Documentation
 
 Detailed API documentation for all public types and members is distributed in the `api/` folder of

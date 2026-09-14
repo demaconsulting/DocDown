@@ -15,7 +15,7 @@ distinct from a failure.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net10.0, the single framework the tool ships on
 - **Filesystem**: a per-test `TempScratch` folder holds the requested results file; the validation
   driver creates and cleans its own temporary work folders
 - **Isolation**: each test owns its captured log and results file

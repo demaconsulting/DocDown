@@ -431,6 +431,63 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         Assert.Contains("Command Name=\"docdown\"", xml, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     Proves the produced <c>.nupkg</c> ships no native debug symbols and no natives for
+    ///     runtime identifiers DocDown does not support.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Both exclusions are size controls with no functional signal, so nothing else in the
+    ///         suite would notice their loss. They were added after the packaged tool was measured at
+    ///         592 MB, of which roughly 460 MB was third-party native <c>.pdb</c> files duplicated
+    ///         across three target frameworks. A dependency update that reintroduces either would
+    ///         silently restore that bulk; this test makes it fail the build instead.
+    ///     </para>
+    ///     <para>
+    ///         Inspects the real package artifact rather than project metadata, for the same reason
+    ///         as <see cref="DocDownTool_Package_Nupkg_IsRidAgnosticDotNetTool" />: the claim is about
+    ///         what ships, not about what the project file says.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void DocDownTool_Package_Nupkg_ExcludesNativeSymbolsAndUnsupportedRuntimes()
+    {
+        // Arrange: pack the tool project to a temporary folder and locate the produced .nupkg
+        using var temp = new TempScratch();
+        var root = CliHarness.FindRepositoryRoot();
+        var project = Path.Combine(root, "src", "DemaConsulting.DocDown.Tool", "DemaConsulting.DocDown.Tool.csproj");
+        var nupkg = NuGetPackHelper.PackAndLocateNupkg(project, "DemaConsulting.DocDown.Tool", temp.Path);
+
+        using var archive = ZipFile.OpenRead(nupkg);
+        var natives = archive.Entries
+            .Select(entry => entry.FullName.Replace('\\', '/'))
+            .Where(name => name.Contains("/runtimes/", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        // Assert: the native stack is present at all, so the assertions below are meaningful rather
+        // than vacuously true against an empty set.
+        Assert.NotEmpty(natives);
+
+        // Assert: no native debug symbols ride along with the native binaries.
+        Assert.DoesNotContain(natives, name => name.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase));
+
+        // Assert: no natives for platforms DocDown neither supports nor tests. Kept in step with
+        // ExcludedToolRuntimeIdentifiers in DemaConsulting.DocDown.Tool.csproj.
+        string[] unsupported = ["linux-bionic", "loongarch64", "riscv64"];
+        foreach (var rid in unsupported)
+        {
+            Assert.DoesNotContain(natives, name => name.Contains(rid, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Assert: the platforms DocDown does claim are still carried, so the exclusion above cannot
+        // pass by having stripped everything.
+        string[] supported = ["win-x64", "linux-x64", "osx"];
+        foreach (var rid in supported)
+        {
+            Assert.Contains(natives, name => name.Contains($"/runtimes/{rid}", StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
     /// <summary>Writes fixture bytes to a file under the temporary folder and returns its path.</summary>
     private static string WriteFixture(TempScratch temp, string name, byte[] bytes)
     {

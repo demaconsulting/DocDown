@@ -63,6 +63,10 @@ dotnet tool install -g DemaConsulting.DocDown.Tool          # global
 dotnet tool install --local DemaConsulting.DocDown.Tool     # local tool manifest
 ```
 
+The tool requires a **.NET 10 runtime** and supports Windows, Linux (glibc and musl), and macOS. The
+libraries have no such restriction — they target .NET 8, 9, and 10, so referencing them does not
+constrain your project to the tool's runtime.
+
 Only `DemaConsulting.DocDown.Pdf.Rendering` carries native binaries (PDFium and SkiaSharp, via
 PDFtoImage). A framework-dependent reference works on every supported runtime identifier; a
 self-contained single-file build of that package must be published per runtime identifier with
@@ -376,7 +380,8 @@ package you installed.
 - **Reflection-Free Registration**: Explicit backend registration, suitable for single-file
   publishing
 - **Multi-Platform Support**: Builds and runs on Windows, Linux, and macOS
-- **Multi-Runtime Support**: Targets .NET 8, 9, and 10
+- **Multi-Runtime Support**: The libraries target .NET 8, 9, and 10; the `docdown` tool ships for
+  .NET 10
 - **xUnit v3**: Modern unit testing with xUnit framework version 3
 - **Comprehensive CI/CD**: GitHub Actions workflows with quality checks and builds
 - **Linting Enforcement**: markdownlint, cspell, and yamllint enforced on every CI run

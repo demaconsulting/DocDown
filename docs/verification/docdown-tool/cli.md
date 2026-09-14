@@ -15,7 +15,7 @@ and output.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net10.0, the single framework the tool ships on
 - **Filesystem**: temporary log files, opened and read with a shared handle to observe immediate
   flushing; standard output captured with `StringWriter` for the silence scenario
 - **Isolation**: each test owns its arguments and any temporary log

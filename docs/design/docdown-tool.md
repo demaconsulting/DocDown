@@ -78,11 +78,33 @@ here, on the tool side of the boundary. Neither Core nor the extraction backends
 The tool therefore carries the rendering backend's native binaries transitively, but the packaged
 `.nupkg` stays **runtime-identifier-agnostic**: `PackAsTool` places every tool asset under the
 literal `any` platform folder (`tools/<tfm>/any/…`), with the native assets resolved from
-`tools/<tfm>/any/runtimes/<rid>/native/…` at run time, so a single package installs on every RID
-from one `dotnet tool install`. A self-contained single-file publish, by contrast, is RID-specific
-and needs `dotnet publish -r <rid>`. This RID-agnostic property is proven against the produced
-package artifact by `DocDownTool_Package_Nupkg_IsRidAgnosticDotNetTool`, not merely asserted from
-project metadata.
+`tools/<tfm>/any/runtimes/<rid>/native/…` at run time, so a single package installs on every
+supported RID from one `dotnet tool install`. A self-contained single-file publish, by contrast, is
+RID-specific and needs `dotnet publish -r <rid>`. This RID-agnostic property is proven against the
+produced package artifact by `DocDownTool_Package_Nupkg_IsRidAgnosticDotNetTool`, not merely
+asserted from project metadata.
+
+### Packaged footprint
+
+Carrying a native rasterizer for every runtime identifier makes the tool package large, so what it
+carries is a deliberate choice rather than whatever the dependency graph offers.
+
+- **One target framework.** A tool is executed, never referenced, so the package is built for
+  `net10.0` alone. Installing the tool therefore requires a .NET 10 runtime. The libraries keep
+  their `net8.0;net9.0;net10.0` matrix, so this constrains only the command line.
+- **No native debug symbols.** The PDFium and SkiaSharp runtime packages ship a `.pdb` beside each
+  native binary; `libSkiaSharp.pdb` alone is 82–88 MB per Windows RID. They describe third-party
+  native code a DocDown stack trace never enters. The tool's own managed symbols still ship in the
+  companion `.snupkg`.
+- **Supported platforms only.** SkiaSharp also ships natives for Android (`linux-bionic`),
+  LoongArch, and RISC-V. DocDown is a desktop and CI command-line tool, and no CI matrix leg
+  exercises those platforms, so they are excluded. Claimed platform support is therefore exactly
+  what is built and tested: Windows, Linux (glibc and musl), and macOS.
+
+Together these took the package from 592 MB to 108 MB. Both exclusions are enforced against the
+produced artifact by `DocDownTool_Package_Nupkg_ExcludesNativeSymbolsAndUnsupportedRuntimes`, which
+also asserts the supported platforms are still present, so a dependency update cannot quietly
+restore the bulk nor silently strip the tool of the natives it needs.
 
 ## Risk Control Measures
 
