@@ -337,3 +337,86 @@ tests:
             min: 1
           text:
             - contains: "Trace Matrix"
+
+  # --- PACKAGES ---
+  #
+  # These tests assert the shape of the NuGet packages a release publishes, against the
+  # real .nupkg the build just produced. They replace xUnit tests that shelled out to
+  # 'dotnet pack' from inside the test process: packing is a build activity, and running
+  # it inside the suite rebuilt the whole dependency graph per test, collided with other
+  # packs on shared intermediate paths, and needed a machine-wide lock to stay upright.
+  # The package the build already produced is both cheaper to inspect and the artifact
+  # that actually ships.
+
+  - name: DocDownTool_Package_IsRidAgnosticDotNetTool
+    description: "The tool package is a RID-agnostic .NET tool named docdown"
+    tags: [packages]
+    files:
+      - pattern: "src/DemaConsulting.DocDown.Tool/bin/Release/*.nupkg"
+        count: 1
+        zip:
+          files:
+            # Every tool asset sits under the literal 'any' platform folder, so one package
+            # installs on every supported runtime identifier and resolves its native assets
+            # at run time. A RID-specific tool would use tools/<tfm>/<rid>/ instead.
+            - pattern: "tools/net10.0/any/DemaConsulting.DocDown.Tool.dll"
+              min: 1
+              max: 1
+            # The tool is packaged for one framework: a tool is executed, not referenced.
+            - pattern: "tools/*/any/DemaConsulting.DocDown.Tool.dll"
+              min: 1
+              max: 1
+            - pattern: "tools/**/DotnetToolSettings.xml"
+              min: 1
+              text:
+                - contains: 'Command Name="docdown"'
+
+  - name: DocDownTool_Package_CarriesOnlySupportedNatives
+    description: "The tool package ships no native symbols and only supported runtime identifiers"
+    tags: [packages]
+    files:
+      - pattern: "src/DemaConsulting.DocDown.Tool/bin/Release/*.nupkg"
+        count: 1
+        zip:
+          files:
+            # No native debug symbols. These describe third-party native code a DocDown stack
+            # trace never enters, and libSkiaSharp.pdb alone is 82-88 MB per Windows runtime
+            # identifier - once the dominant cost of a 592 MB package.
+            - pattern: "**/runtimes/**/*.pdb"
+              max: 0
+            # Exactly six native binaries, one per supported runtime identifier below. The
+            # bound is what stops a newly published platform from being admitted silently:
+            # a deny list readmits whatever a dependency update adds next.
+            - pattern: "**/runtimes/**"
+              min: 6
+              max: 6
+            - pattern: "**/runtimes/win-x64/native/*"
+              min: 2
+            - pattern: "**/runtimes/linux-x64/native/*"
+              min: 2
+            # PDFium publishes a true osx-arm64 asset; SkiaSharp publishes macOS as one fat
+            # dylib under 'osx' that runtime-identifier fallback resolves on Apple Silicon.
+            # Both are required, or macOS parses a PDF but cannot rasterize one.
+            - pattern: "**/runtimes/osx-arm64/native/*"
+              min: 1
+            - pattern: "**/runtimes/osx/native/*"
+              min: 1
+
+  - name: DocDownPdf_Package_ContainsNoNativeAssets
+    description: "The PDF package is fully managed and runtime-identifier agnostic"
+    tags: [packages]
+    files:
+      - pattern: "src/DemaConsulting.DocDown.Pdf/bin/Release/*.nupkg"
+        count: 1
+        zip:
+          files:
+            # A consumer restoring this package gets a library deployable anywhere the runtime
+            # is. The separate rendering package exists to carry the native stack instead.
+            - pattern: "runtimes/**"
+              max: 0
+            - pattern: "**/*.so"
+              max: 0
+            - pattern: "**/*.dylib"
+              max: 0
+            - pattern: "lib/**/DemaConsulting.DocDown.Pdf.dll"
+              min: 1

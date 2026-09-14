@@ -156,34 +156,34 @@ trace. Evidence for `DocDownTool-ExpectedErrors`.
 
 ### The produced package is a RID-agnostic .NET tool named docdown
 
-**Test**: `DocDownTool_Package_Nupkg_IsRidAgnosticDotNetTool`
+**Test**: `DocDownTool_Package_IsRidAgnosticDotNetTool` (FileAssert, `packages` tag)
 
-Packs the tool project with `dotnet pack` and inspects the produced `.nupkg` itself, rather than the
-project's source metadata. Proves the package is **runtime-identifier-agnostic**: every
-`tools/<tfm>/…` asset places its RID segment at exactly the literal `any` (no RID-specific tool
-folder), and a `DotnetToolSettings.xml` declares `Command Name="docdown"`. The test deliberately does
-**not** assert the absence of native assets: the tool carries the rendering package's PDFium/SkiaSharp
-binaries transitively by design, under `tools/<tfm>/any/runtimes/<rid>/native/…`, and they are
-resolved at run time — so the claim under test is RID-agnosticism (one package installs on every
-supported RID), not native-freedom. Evidence for `DocDownTool-Packaging`.
+Inspects the `.nupkg` the build just produced, rather than the project's source metadata. Proves the
+package is **runtime-identifier-agnostic**: the tool's assets sit under the literal `any` platform
+folder (`tools/net10.0/any/…`, exactly one framework folder), and a `DotnetToolSettings.xml` declares
+`Command Name="docdown"`. The test deliberately does **not** assert the absence of native assets: the
+tool carries the rendering package's PDFium/SkiaSharp binaries transitively by design, under
+`tools/<tfm>/any/runtimes/<rid>/native/…`, and they are resolved at run time — so the claim under
+test is RID-agnosticism (one package installs on every supported RID), not native-freedom. Evidence
+for `DocDownTool-Packaging`.
 
 ### The produced package carries no native symbols and only supported runtimes
 
-**Test**: `DocDownTool_Package_Nupkg_ExcludesNativeSymbolsAndUnsupportedRuntimes`
+**Test**: `DocDownTool_Package_CarriesOnlySupportedNatives` (FileAssert, `packages` tag)
 
-Packs the tool project and inspects the produced `.nupkg`, asserting that no entry under
-`runtimes/` is a `.pdb`, and that the shipped runtime identifiers are *exactly* `linux-x64`, `osx`,
-`osx-arm64`, and `win-x64`. Both categories are pure payload: native debug symbols describe
+Inspects the produced `.nupkg`, asserting that no entry under `runtimes/` is a `.pdb`, that the
+archive carries exactly six native binaries, and that each of `win-x64`, `linux-x64`, `osx-arm64`,
+and `osx` is present. Both excluded categories are pure payload: native debug symbols describe
 third-party code a DocDown stack trace never enters, and natives for unsupported platforms are
 exercised by no CI matrix leg.
 
-The runtime-identifier assertion compares the whole set rather than probing for known-bad names.
-That direction matters: probing for names admits any platform a future dependency update happens to
-publish, which is how the package reached 592 MB unnoticed, whereas an exact set fails on both an
-unexpected addition and an unexpected removal. It therefore also serves as the check that the tool
-has not been stripped of natives it genuinely needs. `osx` is present alongside `osx-arm64` because
-SkiaSharp publishes macOS as one fat dylib resolved through runtime-identifier fallback, not because
-macOS is claimed twice.
+Bounding the native count at exactly six, rather than probing for known-bad names, is what makes the
+check an allow list. That direction matters: probing for names admits any platform a future
+dependency update happens to publish, which is how the package reached 592 MB unnoticed, whereas a
+fixed count fails on both an unexpected addition and an unexpected removal. It therefore also serves
+as the check that the tool has not been stripped of natives it genuinely needs. `osx` is present
+alongside `osx-arm64` because SkiaSharp publishes macOS as one fat dylib resolved through
+runtime-identifier fallback, not because macOS is claimed twice.
 
 The test is a size control, and size has no functional signal — nothing else in the suite would
 fail if either category returned. It therefore asserts against the packed artifact rather than the

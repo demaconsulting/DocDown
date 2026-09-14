@@ -218,6 +218,18 @@ jobs:
           --configuration Release
           --property:PackageVersion=${{ inputs.version }}
 
+      # Asserts the shape of the packages just produced: the tool is a RID-agnostic .NET
+      # tool carrying natives for exactly the supported platforms and no native debug
+      # symbols, and the PDF library package stays fully managed. These run here, against
+      # the real artifact, rather than inside the test suite - packing is a build activity,
+      # and doing it from a test rebuilt the whole dependency graph per test and collided
+      # with concurrent packs on shared intermediate paths.
+      - name: Assert Packages with FileAssert
+        run: >
+          dotnet fileassert
+          --results artifacts/fileassert-packages-${{ matrix.os }}.trx
+          packages
+
       # === UPLOAD ARTIFACTS ===
       # This section uploads all generated artifacts for use by downstream jobs.
       # Downstream projects: Add any additional artifact uploads here.
@@ -241,6 +253,12 @@ jobs:
             src/DemaConsulting.DocDown.Pdf.Rendering/bin/Release/*.snupkg
             src/DemaConsulting.DocDown.Word/bin/Release/*.nupkg
             src/DemaConsulting.DocDown.Word/bin/Release/*.snupkg
+            src/DemaConsulting.DocDown.Visio/bin/Release/*.nupkg
+            src/DemaConsulting.DocDown.Visio/bin/Release/*.snupkg
+            src/DemaConsulting.DocDown.PowerPoint/bin/Release/*.nupkg
+            src/DemaConsulting.DocDown.PowerPoint/bin/Release/*.snupkg
+            src/DemaConsulting.DocDown.Excel/bin/Release/*.nupkg
+            src/DemaConsulting.DocDown.Excel/bin/Release/*.snupkg
             src/DemaConsulting.DocDown.Tool/bin/Release/*.nupkg
             src/DemaConsulting.DocDown.Tool/bin/Release/*.snupkg
 
@@ -315,6 +333,143 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: artifacts-codeql
+          path: artifacts/
+
+  # Performs integration testing of the packaged docdown tool on each supported
+  # platform: installs the real .nupkg with 'dotnet tool install' and exercises it
+  # through its command line, the way a user would.
+  #
+  # This job tests what the unit suite structurally cannot. The suite runs against
+  # project references on the machine that built them, so it never observes the
+  # packaged tool resolving its own native binaries from the runtimes/ folder that
+  # shipped inside the package. The tool deliberately carries natives for only the
+  # platforms below, so a mistake in that trimming is invisible everywhere else and
+  # would surface first in a user's hands.
+  #
+  # Only .NET 10 is covered because the tool is packaged for net10.0 alone; the
+  # libraries keep their multi-framework matrix in the build job above.
+  integration-test:
+    name: Integration Test ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    needs: build
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+      # === INSTALL DEPENDENCIES ===
+      # This section installs all required dependencies and tools for integration testing.
+      # Downstream projects: Add any additional dependency installations here.
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            .versionmark.yaml
+            .config/dotnet-tools.json
+
+      - name: Download package
+        uses: actions/download-artifact@v8
+        with:
+          name: packages-${{ matrix.os }}
+          path: packages
+
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      - name: Restore Tools
+        run: >
+          dotnet tool restore
+
+      - name: Install tool from package
+        shell: bash
+        run: |
+          echo "Installing package version ${{ inputs.version }} from: packages/"
+          dotnet tool install --global \
+            --add-source packages \
+            --version ${{ inputs.version }} \
+            DemaConsulting.DocDown.Tool
+
+      # === CAPTURE TOOL VERSIONS ===
+      # This section captures the versions of all tools used in the integration tests.
+      # Downstream projects: Add any additional tools to capture here.
+
+      - name: Capture tool versions
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          echo "Capturing tool versions..."
+          OS_SHORT=$(echo "${{ matrix.os }}" | sed 's/-latest//')
+          JOB_ID="int-${OS_SHORT}"
+          dotnet versionmark --capture --job-id "${JOB_ID}" \
+            --output "artifacts/versionmark-${JOB_ID}.json" -- \
+            dotnet git versionmark
+          echo "✓ Tool versions captured"
+
+      # === RUN INTEGRATION TESTS ===
+      # This section runs the integration tests for the tool.
+      # Downstream projects: Add any additional integration test steps here.
+
+      - name: Test version display
+        shell: bash
+        run: |
+          echo "Testing docdown --version..."
+          docdown --version || { echo "✗ Version command failed"; exit 1; }
+          echo "✓ Version command succeeded"
+
+      - name: Test help display
+        shell: bash
+        run: |
+          echo "Testing docdown --help..."
+          docdown --help || { echo "✗ Help command failed"; exit 1; }
+          echo "✓ Help command succeeded"
+
+      - name: Run self-validation
+        shell: bash
+        run: |
+          echo "Running self-validation..."
+          docdown --validate \
+            --results artifacts/docdown-validate-${{ matrix.os }}.trx \
+            | tee validate.txt \
+            || { echo "✗ Self-validation failed"; exit 1; }
+          echo "✓ Self-validation succeeded"
+
+      - name: Verify page rendering used the packaged natives
+        shell: bash
+        run: |
+          # The decisive check, and the reason a zero exit code is not enough on its own.
+          # The rendering backend probes for its native stack and reports itself
+          # unavailable when it cannot load one, which turns a self-test into a SKIP
+          # rather than a failure. A package missing the natives for this platform would
+          # therefore install, run, exit zero, and quietly stop rendering. Requiring a
+          # PASS is what makes this job prove the trimmed runtimes/ folder is correct.
+          echo "Verifying pdf-rendering.renderRoundTrip actually ran..."
+          grep -q '^\[PASS\] pdf-rendering.renderRoundTrip' validate.txt || {
+            echo "✗ Page rendering did not pass on ${{ matrix.os }}."
+            echo "  A SKIP here means the packaged tool could not load PDFium/SkiaSharp,"
+            echo "  which usually means this platform's runtime identifier was trimmed"
+            echo "  out of the package. See SupportedToolRuntimeIdentifiers in"
+            echo "  src/DemaConsulting.DocDown.Tool/DemaConsulting.DocDown.Tool.csproj."
+            grep -E 'pdf-rendering|renderRoundTrip' validate.txt || true
+            exit 1
+          }
+          echo "✓ Page rendering passed using the packaged native binaries"
+
+      # === UPLOAD ARTIFACTS ===
+      # This section uploads all generated artifacts for use by downstream jobs.
+      # Downstream projects: Add any additional artifact uploads here.
+
+      - name: Upload validation artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: artifacts-integration-${{ matrix.os }}
           path: artifacts/
 
   # Builds the supporting documentation including user guides, requirements,

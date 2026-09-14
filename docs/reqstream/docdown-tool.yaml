@@ -189,7 +189,7 @@ sections:
           rather than against project metadata, is what makes the documented installation and
           invocation dependable on every platform.
         tests:
-          - DocDownTool_Package_Nupkg_IsRidAgnosticDotNetTool
+          - DocDownTool_Package_IsRidAgnosticDotNetTool
 
       - id: DocDownTool-PackagedFootprint
         title: >-
@@ -209,4 +209,4 @@ sections:
           keeps a newly published platform from being admitted silently, and keeps the check from
           being satisfied by stripping the tool of natives it genuinely needs.
         tests:
-          - DocDownTool_Package_Nupkg_ExcludesNativeSymbolsAndUnsupportedRuntimes
+          - DocDownTool_Package_CarriesOnlySupportedNatives

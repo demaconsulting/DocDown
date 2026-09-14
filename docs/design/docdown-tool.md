@@ -81,7 +81,7 @@ literal `any` platform folder (`tools/<tfm>/any/…`), with the native assets re
 `tools/<tfm>/any/runtimes/<rid>/native/…` at run time, so a single package installs on every
 supported RID from one `dotnet tool install`. A self-contained single-file publish, by contrast, is
 RID-specific and needs `dotnet publish -r <rid>`. This RID-agnostic property is proven against the
-produced package artifact by `DocDownTool_Package_Nupkg_IsRidAgnosticDotNetTool`, not merely
+produced package artifact by `DocDownTool_Package_IsRidAgnosticDotNetTool`, not merely
 asserted from project metadata.
 
 ### Packaged footprint
@@ -106,7 +106,7 @@ carries is a deliberate choice rather than whatever the dependency graph offers.
   means adding its runtime identifier and a CI leg that exercises it.
 
 Together these took the package from 592 MB to 32 MB. Both controls are enforced against the
-produced artifact by `DocDownTool_Package_Nupkg_ExcludesNativeSymbolsAndUnsupportedRuntimes`, which
+produced artifact by `DocDownTool_Package_CarriesOnlySupportedNatives`, which
 asserts the shipped runtime identifiers are *exactly* the supported set, so a dependency update can
 neither quietly restore the bulk nor silently strip the tool of natives it needs.
 

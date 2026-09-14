@@ -251,7 +251,7 @@ sections:
           - DocDown-OTS-PdfPig
         tests:
           - DocDownPdf_Package_BuildOutput_ContainsNoNativeAssets
-          - DocDownPdf_Package_Nupkg_ContainsNoNativeAssets
+          - DocDownPdf_Package_ContainsNoNativeAssets
 
       - id: DocDownPdf-ContainedDependency
         title: The system shall expose no third-party PDF-library type on its public API surface.

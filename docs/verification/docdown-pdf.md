@@ -205,11 +205,13 @@ Proves PdfPig types do not leak onto the public API surface. Evidence for
 
 ### The package ships no native assets
 
-**Tests**: `DocDownPdf_Package_BuildOutput_ContainsNoNativeAssets`,
-`DocDownPdf_Package_Nupkg_ContainsNoNativeAssets`
+**Tests**: `DocDownPdf_Package_BuildOutput_ContainsNoNativeAssets` (xUnit),
+`DocDownPdf_Package_ContainsNoNativeAssets` (FileAssert, `packages` tag)
 
-Proves both the build output and the packed artifact remain managed-only. Evidence for
-`DocDownPdf-ManagedOnly`.
+Proves both the build output and the packed artifact remain managed-only. The build-output check is
+a unit test because it reads the compiler's output, which the test run already produced; the package
+check runs against the `.nupkg` the build produced, because packing is a build activity rather than
+something a test should perform. Evidence for `DocDownPdf-ManagedOnly`.
 
 ### Self-validation cases are exposed and run
 

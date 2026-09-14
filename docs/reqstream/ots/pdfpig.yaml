@@ -21,7 +21,7 @@ sections:
             tags: [ots]
             tests:
               - DocDownPdf_Package_BuildOutput_ContainsNoNativeAssets
-              - DocDownPdf_Package_Nupkg_ContainsNoNativeAssets
+              - DocDownPdf_Package_ContainsNoNativeAssets
               - DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout
 
           - id: DocDown-OTS-PdfPig-TextExtraction
