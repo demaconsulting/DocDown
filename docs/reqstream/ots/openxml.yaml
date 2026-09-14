@@ -16,15 +16,12 @@ sections:
         requirements:
           - id: DocDown-OTS-OpenXml
             title: >-
-              The Open XML SDK shall read a WordprocessingML document's structure without requiring
-              native binaries.
+              The Open XML SDK shall read a WordprocessingML document's structure, exposing styled
+              paragraphs, tables, fields, headers, and footers.
             justification: |
-              DocDown.Word's central design promise is that it is deployable anywhere the .NET runtime
-              is, with no per-platform build and no native asset to locate at run time. That promise
-              rests entirely on the SDK being fully managed, and its ability to expose styled
-              paragraphs, real tables, fields, headers, and footers is what the whole structured
-              extraction is built on. Its evidence is named tests that read a generated document, not a
-              broad claim of coverage.
+              This is the use DocDown.Word makes of the SDK: it is the reader the package is built on,
+              and the structure it exposes is what the whole structured extraction is built from. Its
+              evidence is named tests that read a generated document, not a broad claim of coverage.
             tags: [ots]
             tests:
               - DocDownWord_Extract_GeneratedDocx_ProducesContractLayout

@@ -3,12 +3,11 @@ using System.IO.Packaging;
 using System.Text;
 using System.Xml.Linq;
 
-namespace DocDown.Visio.OpenXml;
+namespace DemaConsulting.DocDown.Visio.Tests.TestData;
 
 /// <summary>
-///     Synthesizes a minimal but well-formed Visio Open Packaging drawing in memory, so both the
-///     backend's self-test and the test suite can exercise the reader against a real package without
-///     committing any binary <c>.vsdx</c> to the repository.
+///     Synthesizes a minimal but well-formed Visio Open Packaging drawing in memory so the test suite
+///     can drive the reader through cases a single committed fixture cannot cover.
 /// </summary>
 /// <remarks>
 ///     The builder writes exactly the parts the reader reads — <c>visio/pages/pages.xml</c>, one

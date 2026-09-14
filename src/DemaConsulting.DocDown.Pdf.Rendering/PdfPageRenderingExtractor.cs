@@ -1,5 +1,6 @@
 using System.Globalization;
 using DocDown.Core;
+using DocDown.Extraction;
 using UglyToad.PdfPig;
 
 namespace DocDown.Pdf.Rendering;
@@ -37,6 +38,10 @@ namespace DocDown.Pdf.Rendering;
 /// </remarks>
 public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidating
 {
+    /// <summary>The embedded PDF the self-test reads.</summary>
+    /// <remarks>A real PDF exported from Microsoft Word, so the rasterizer is given a page a real producer wrote.</remarks>
+    private const string ProbeResourceName = "DemaConsulting.DocDown.Pdf.Rendering.Resources.probe.pdf";
+
     /// <summary>The per-page rasterization function this backend drives.</summary>
     /// <remarks>
     ///     Defaults to <see cref="PageRenderer.Render"/>. Held as a delegate so a test can substitute
@@ -304,7 +309,7 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
         var started = DateTimeOffset.UtcNow;
         try
         {
-            var bytes = BuildProbeDocument();
+            var bytes = SelfTestProbe.Load(typeof(PdfPageRenderingExtractor).Assembly, ProbeResourceName);
             var png = PageRenderer.Render(bytes, 0, 96);
             return IsValidPng(png)
                 ? SelfTestResult.Passed(DateTimeOffset.UtcNow - started)
@@ -320,23 +325,6 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
                 $"The page renderer could not complete a round trip in this environment: {exception.Message}",
                 DateTimeOffset.UtcNow - started);
         }
-    }
-
-    /// <summary>
-    ///     Builds the one-page document the render round-trip case rasterizes.
-    /// </summary>
-    /// <returns>The bytes of a minimal single-page PDF carrying a short line of text.</returns>
-    /// <remarks>
-    ///     Built rather than embedded so the case ships no binary payload and exercises the managed
-    ///     writer and the native renderer together. Pure apart from the allocation.
-    /// </remarks>
-    private static byte[] BuildProbeDocument()
-    {
-        using var builder = new UglyToad.PdfPig.Writer.PdfDocumentBuilder();
-        var font = builder.AddStandard14Font(UglyToad.PdfPig.Fonts.Standard14Fonts.Standard14Font.Helvetica);
-        var page = builder.AddPage(UglyToad.PdfPig.Content.PageSize.A4);
-        page.AddText("DocDown rendering self test", 12, new UglyToad.PdfPig.Core.PdfPoint(30, 600), font);
-        return builder.Build();
     }
 
     /// <summary>

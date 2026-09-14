@@ -1,4 +1,5 @@
 using DocDown.Core;
+using DocDown.Extraction;
 using DocDown.PowerPoint.Markdown;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
@@ -33,6 +34,10 @@ namespace DocDown.PowerPoint.OpenXml;
 /// </remarks>
 public sealed class PowerPointOpenXmlExtractor : IDocumentExtractor, ISelfValidating
 {
+    /// <summary>The embedded document the parse round-trip self-test reads.</summary>
+    /// <remarks>A real file authored in Microsoft PowerPoint, carrying two slides with titles and body text.</remarks>
+    private const string ProbeResourceName = "DemaConsulting.DocDown.PowerPoint.Resources.probe.pptx";
+
     /// <summary>
     ///     Creates a PowerPoint Open XML extractor ready to register with a <see cref="DocDownBuilder"/>.
     /// </summary>
@@ -138,14 +143,13 @@ public sealed class PowerPointOpenXmlExtractor : IDocumentExtractor, ISelfValida
 
         try
         {
-            using var stream = new MemoryStream();
-            BuildProbeDeck(stream);
-            stream.Position = 0;
+            using var stream = new MemoryStream(
+                SelfTestProbe.Load(typeof(PowerPointOpenXmlExtractor).Assembly, ProbeResourceName), writable: false);
             var model = PowerPointOpenXmlReader.Read(stream);
             return model.Slides.Count > 0
                 ? SelfTestResult.Passed(DateTimeOffset.UtcNow - started)
                 : SelfTestResult.Failed(
-                    "The Open XML reader read a deck it built itself but found no slides.",
+                    "The Open XML reader read the embedded PowerPoint deck but found no slides.",
                     DateTimeOffset.UtcNow - started);
         }
 #pragma warning disable CA1031 // A self-test reports every fault as data rather than throwing at its caller
@@ -158,59 +162,4 @@ public sealed class PowerPointOpenXmlExtractor : IDocumentExtractor, ISelfValida
         }
     }
 
-    /// <summary>
-    ///     Builds the one-slide deck the parse round-trip case reads back.
-    /// </summary>
-    /// <param name="stream">The stream to write the deck into.</param>
-    /// <remarks>Built rather than embedded so the case ships no binary payload. Side effect: writes to the stream.</remarks>
-    private static void BuildProbeDeck(Stream stream)
-    {
-        using var document = PresentationDocument.Create(stream, PresentationDocumentType.Presentation);
-        var presentationPart = document.AddPresentationPart();
-        presentationPart.Presentation = new P.Presentation();
-
-        var slidePart = presentationPart.AddNewPart<SlidePart>();
-
-        var placeholder = new P.ApplicationNonVisualDrawingProperties();
-        placeholder.AppendChild(new P.PlaceholderShape { Type = P.PlaceholderValues.Title });
-
-        var nonVisualShapeProperties = new P.NonVisualShapeProperties();
-        nonVisualShapeProperties.AppendChild(new P.NonVisualDrawingProperties { Id = 2U, Name = "Title" });
-        nonVisualShapeProperties.AppendChild(new P.NonVisualShapeDrawingProperties());
-        nonVisualShapeProperties.AppendChild(placeholder);
-
-        var run = new D.Run();
-        run.AppendChild(new D.Text("DocDown self test"));
-        var paragraph = new D.Paragraph();
-        paragraph.AppendChild(run);
-        var textBody = new P.TextBody();
-        textBody.AppendChild(new D.BodyProperties());
-        textBody.AppendChild(new D.ListStyle());
-        textBody.AppendChild(paragraph);
-
-        var shape = new P.Shape();
-        shape.AppendChild(nonVisualShapeProperties);
-        shape.AppendChild(new P.ShapeProperties());
-        shape.AppendChild(textBody);
-
-        var nonVisualGroupShapeProperties = new P.NonVisualGroupShapeProperties();
-        nonVisualGroupShapeProperties.AppendChild(new P.NonVisualDrawingProperties { Id = 1U, Name = string.Empty });
-        nonVisualGroupShapeProperties.AppendChild(new P.NonVisualGroupShapeDrawingProperties());
-        nonVisualGroupShapeProperties.AppendChild(new P.ApplicationNonVisualDrawingProperties());
-
-        var shapeTree = new P.ShapeTree();
-        shapeTree.AppendChild(nonVisualGroupShapeProperties);
-        shapeTree.AppendChild(new P.GroupShapeProperties());
-        shapeTree.AppendChild(shape);
-
-        var commonSlideData = new P.CommonSlideData();
-        commonSlideData.AppendChild(shapeTree);
-        var slide = new P.Slide();
-        slide.AppendChild(commonSlideData);
-        slidePart.Slide = slide;
-
-        var slideIdList = new P.SlideIdList();
-        slideIdList.AppendChild(new P.SlideId { Id = 256U, RelationshipId = presentationPart.GetIdOfPart(slidePart) });
-        presentationPart.Presentation.AppendChild(slideIdList);
-    }
 }

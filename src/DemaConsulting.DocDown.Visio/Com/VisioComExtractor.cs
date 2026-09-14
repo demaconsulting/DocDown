@@ -1,9 +1,7 @@
 using System.Globalization;
-using System.IO.Packaging;
 using System.Runtime.Versioning;
-using System.Text;
-using System.Xml.Linq;
 using DocDown.Core;
+using DocDown.Extraction;
 using DocDown.Visio.OpenXml;
 using CoreFormat = DocDown.Core.DocumentFormat;
 
@@ -50,12 +48,14 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
     /// <remarks>Releasing the last reference asks the host to unwind, which is not instantaneous; a few seconds separates an ordinary teardown from an orphaned process.</remarks>
     private const int ProcessExitGraceMilliseconds = 10000;
 
-    /// <summary>The Visio 2012 main XML namespace every part of the self-test drawing uses.</summary>
-    private static readonly XNamespace VisioNamespace = "http://schemas.microsoft.com/office/visio/2012/main";
-
-    /// <summary>The Open Packaging relationships namespace used for the <c>r:id</c> attribute.</summary>
-    private static readonly XNamespace RelationshipNamespace =
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+    /// <summary>The embedded Visio drawing the render self-test rasterizes.</summary>
+    /// <remarks>
+    ///     A real .vsdx authored in Microsoft Visio. Using what Visio itself wrote is what removed the
+    ///     synthesizer that used to stand here: Visio refuses to open a package lacking a window part
+    ///     and draws nothing for a shape with no geometry, so a hand-built package had to reproduce
+    ///     both faithfully or report a working environment as broken.
+    /// </remarks>
+    private const string ProbeResourceName = "DemaConsulting.DocDown.Visio.Resources.probe.vsdx";
 
     /// <summary>The factory that produces the Visio automation session, or <see langword="null"/> when a test declares no adapter.</summary>
     private readonly Func<IVisioAutomation>? _automationFactory;
@@ -317,7 +317,7 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
             context.WorkFolder, "docdown-visio-selftest-" + Guid.NewGuid().ToString("N") + ".vsdx");
         try
         {
-            File.WriteAllBytes(path, BuildSelfTestDrawing());
+            File.WriteAllBytes(path, SelfTestProbe.Load(typeof(VisioComExtractor).Assembly, ProbeResourceName));
             return RenderAndInspect(path, started);
         }
 #pragma warning disable CA1031 // A self-test reports every fault as data rather than throwing at its caller
@@ -449,168 +449,6 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
         var width = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19];
         var height = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23];
         return (width, height);
-    }
-
-    /// <summary>
-    ///     Builds the synthetic single-page drawing the render self-test rasterizes.
-    /// </summary>
-    /// <returns>The bytes of a one-page drawing carrying two invented labeled rectangles.</returns>
-    /// <remarks>
-    ///     Built rather than committed so the case ships no document of its own and no content from
-    ///     any real drawing can reach it. It deliberately writes more than
-    ///     <c>VisioPackageBuilder</c> does — the window part and real shape geometry — because that
-    ///     builder exists to feed the managed reader, whereas Microsoft Visio itself refuses to open
-    ///     a package without a window part and draws nothing for a shape with no geometry, and either
-    ///     would report the environment as broken when only the fixture was. Pure apart from its
-    ///     allocations.
-    /// </remarks>
-    private static byte[] BuildSelfTestDrawing()
-    {
-        using var stream = new MemoryStream();
-        using (var package = Package.Open(stream, FileMode.Create))
-        {
-            // The document part is the package's root: the window part and the pages collection both
-            // hang from it, and Visio reads the window part before it will open the drawing at all
-            var documentPart = package.CreatePart(
-                new Uri("/visio/document.xml", UriKind.Relative), "application/vnd.ms-visio.drawing.main+xml");
-            package.CreateRelationship(
-                documentPart.Uri, TargetMode.Internal,
-                "http://schemas.microsoft.com/visio/2010/relationships/document", "rId1");
-            WriteXml(documentPart, new XDocument(new XElement(
-                VisioNamespace + "VisioDocument",
-                new XAttribute(XNamespace.Xmlns + "r", RelationshipNamespace.NamespaceName))));
-
-            var windowPart = package.CreatePart(
-                new Uri("/visio/windows.xml", UriKind.Relative), "application/vnd.ms-visio.windows+xml");
-            WriteXml(windowPart, new XDocument(SelfTestWindows()));
-            documentPart.CreateRelationship(
-                windowPart.Uri, TargetMode.Internal,
-                "http://schemas.microsoft.com/visio/2010/relationships/windows", "rId2");
-
-            var pagesPart = package.CreatePart(
-                new Uri("/visio/pages/pages.xml", UriKind.Relative), "application/vnd.ms-visio.pages+xml");
-            documentPart.CreateRelationship(
-                pagesPart.Uri, TargetMode.Internal,
-                "http://schemas.microsoft.com/visio/2010/relationships/pages", "rId1");
-
-            var pagePart = package.CreatePart(
-                new Uri("/visio/pages/page1.xml", UriKind.Relative), "application/vnd.ms-visio.page+xml");
-            WriteXml(pagePart, new XDocument(SelfTestPageContents()));
-            var relationship = pagesPart.CreateRelationship(
-                pagePart.Uri, TargetMode.Internal,
-                "http://schemas.microsoft.com/visio/2010/relationships/page");
-
-            WriteXml(pagesPart, new XDocument(SelfTestPages(relationship.Id)));
-        }
-
-        return stream.ToArray();
-    }
-
-    /// <summary>Builds the window part declaring the drawing window Visio expects a package to describe.</summary>
-    /// <returns>The <c>Windows</c> element.</returns>
-    private static XElement SelfTestWindows() =>
-        new(VisioNamespace + "Windows",
-            new XAttribute(XNamespace.Xmlns + "r", RelationshipNamespace.NamespaceName),
-            new XElement(
-                VisioNamespace + "Window",
-                new XAttribute("ID", "0"),
-                new XAttribute("WindowType", "Drawing"),
-                new XAttribute("ContainerType", "Page"),
-                new XAttribute("Page", "0"),
-                new XAttribute("ViewScale", "-1")));
-
-    /// <summary>Builds the pages collection declaring the drawing's single letter-sized page.</summary>
-    /// <param name="relationshipId">The relationship id of the page-contents part.</param>
-    /// <returns>The <c>Pages</c> element.</returns>
-    private static XElement SelfTestPages(string relationshipId) =>
-        new(VisioNamespace + "Pages",
-            new XAttribute(XNamespace.Xmlns + "r", RelationshipNamespace.NamespaceName),
-            new XElement(
-                VisioNamespace + "Page",
-                new XAttribute("ID", "0"),
-                new XAttribute("NameU", "Self Test"),
-                new XAttribute("Name", "Self Test"),
-                new XElement(
-                    VisioNamespace + "PageSheet",
-                    SelfTestCell("PageWidth", "8.5"),
-                    SelfTestCell("PageHeight", "11")),
-                new XElement(VisioNamespace + "Rel", new XAttribute(RelationshipNamespace + "id", relationshipId))));
-
-    /// <summary>Builds the page contents: two invented labeled rectangles Visio can actually draw.</summary>
-    /// <returns>The <c>PageContents</c> element.</returns>
-    /// <remarks>The labels are invented for this case alone so no real drawing's wording can ever reach a rendered self-test image.</remarks>
-    private static XElement SelfTestPageContents() =>
-        new(VisioNamespace + "PageContents",
-            new XAttribute(XNamespace.Xmlns + "r", RelationshipNamespace.NamespaceName),
-            new XElement(
-                VisioNamespace + "Shapes",
-                SelfTestShape("1", 2.5, 8.0, "Synthetic Intake"),
-                SelfTestShape("2", 6.0, 4.0, "Synthetic Outlet")),
-            new XElement(VisioNamespace + "Connects"));
-
-    /// <summary>Builds one labeled rectangle at the given position on the self-test page.</summary>
-    /// <param name="id">The shape id, unique within the page.</param>
-    /// <param name="pinX">The horizontal center of the shape, in inches from the page's left edge.</param>
-    /// <param name="pinY">The vertical center of the shape, in inches from the page's bottom edge.</param>
-    /// <param name="text">The invented label the shape carries.</param>
-    /// <returns>The <c>Shape</c> element.</returns>
-    /// <remarks>A shape needs an explicit geometry section to be drawn at all, so each one carries the five vertices of a closed rectangle.</remarks>
-    private static XElement SelfTestShape(string id, double pinX, double pinY, string text) =>
-        new(VisioNamespace + "Shape",
-            new XAttribute("ID", id),
-            new XAttribute("NameU", "Self Test " + id),
-            new XAttribute("Type", "Shape"),
-            SelfTestCell("PinX", pinX.ToString(CultureInfo.InvariantCulture)),
-            SelfTestCell("PinY", pinY.ToString(CultureInfo.InvariantCulture)),
-            SelfTestCell("Width", "3"),
-            SelfTestCell("Height", "2"),
-            SelfTestCell("LocPinX", "1.5"),
-            SelfTestCell("LocPinY", "1"),
-            SelfTestRectangleGeometry(),
-            new XElement(VisioNamespace + "Text", text));
-
-    /// <summary>Builds the geometry section tracing a closed rectangle across a shape's full extent.</summary>
-    /// <returns>The <c>Section</c> element holding the rectangle's vertices.</returns>
-    private static XElement SelfTestRectangleGeometry()
-    {
-        var section = new XElement(
-            VisioNamespace + "Section", new XAttribute("N", "Geometry"), new XAttribute("IX", "0"));
-        (string Kind, string X, string Y)[] vertices =
-        [
-            ("MoveTo", "0", "0"), ("LineTo", "3", "0"), ("LineTo", "3", "2"),
-            ("LineTo", "0", "2"), ("LineTo", "0", "0")
-        ];
-
-        var index = 1;
-        foreach (var (kind, x, y) in vertices)
-        {
-            section.Add(new XElement(
-                VisioNamespace + "Row",
-                new XAttribute("T", kind),
-                new XAttribute("IX", index.ToString(CultureInfo.InvariantCulture)),
-                SelfTestCell("X", x),
-                SelfTestCell("Y", y)));
-            index++;
-        }
-
-        return section;
-    }
-
-    /// <summary>Builds one named cell carrying a literal value.</summary>
-    /// <param name="name">The cell name.</param>
-    /// <param name="value">The cell value.</param>
-    /// <returns>The <c>Cell</c> element.</returns>
-    private static XElement SelfTestCell(string name, string value) =>
-        new(VisioNamespace + "Cell", new XAttribute("N", name), new XAttribute("V", value));
-
-    /// <summary>Writes an XML document into a package part in UTF-8.</summary>
-    /// <param name="part">The part to write into.</param>
-    /// <param name="document">The document to write.</param>
-    private static void WriteXml(PackagePart part, XDocument document)
-    {
-        using var stream = part.GetStream(FileMode.Create, FileAccess.Write);
-        using var writer = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-        document.Save(writer);
     }
 
     /// <summary>

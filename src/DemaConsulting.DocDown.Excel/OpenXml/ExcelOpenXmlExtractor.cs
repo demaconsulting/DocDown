@@ -1,5 +1,6 @@
 using DocDown.Core;
 using DocDown.Excel.Markdown;
+using DocDown.Extraction;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
@@ -34,6 +35,10 @@ namespace DocDown.Excel.OpenXml;
 /// </remarks>
 public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
 {
+    /// <summary>The embedded document the parse round-trip self-test reads.</summary>
+    /// <remarks>A real file authored in Microsoft Excel, carrying a named sheet of labelled cells and numbers.</remarks>
+    private const string ProbeResourceName = "DemaConsulting.DocDown.Excel.Resources.probe.xlsx";
+
     /// <summary>
     ///     Creates an Excel Open XML extractor ready to register with a <see cref="DocDownBuilder"/>.
     /// </summary>
@@ -149,14 +154,13 @@ public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
 
         try
         {
-            using var stream = new MemoryStream();
-            BuildProbeWorkbook(stream);
-            stream.Position = 0;
+            using var stream = new MemoryStream(
+                SelfTestProbe.Load(typeof(ExcelOpenXmlExtractor).Assembly, ProbeResourceName), writable: false);
             var model = ExcelOpenXmlReader.Read(stream);
             return model.Sheets.Count > 0
                 ? SelfTestResult.Passed(DateTimeOffset.UtcNow - started)
                 : SelfTestResult.Failed(
-                    "The Open XML reader read a workbook it built itself but found no worksheets.",
+                    "The Open XML reader read the embedded Excel workbook but found no worksheets.",
                     DateTimeOffset.UtcNow - started);
         }
 #pragma warning disable CA1031 // A self-test reports every fault as data rather than throwing at its caller
@@ -169,32 +173,4 @@ public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
         }
     }
 
-    /// <summary>
-    ///     Builds the one-sheet workbook the parse round-trip case reads back.
-    /// </summary>
-    /// <param name="stream">The stream to write the workbook into.</param>
-    /// <remarks>Built rather than embedded so the case ships no binary payload. Side effect: writes to the stream.</remarks>
-    private static void BuildProbeWorkbook(Stream stream)
-    {
-        using var document = SpreadsheetDocument.Create(stream, SpreadsheetDocumentType.Workbook);
-        var workbookPart = document.AddWorkbookPart();
-        workbookPart.Workbook = new Workbook();
-
-        var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
-        var row = new Row();
-        row.AppendChild(new Cell { CellReference = "A1", DataType = CellValues.String, CellValue = new CellValue("DocDown self test") });
-        var sheetData = new SheetData();
-        sheetData.AppendChild(row);
-        var worksheet = new Worksheet();
-        worksheet.AppendChild(sheetData);
-        worksheetPart.Worksheet = worksheet;
-
-        var sheets = workbookPart.Workbook.AppendChild(new Sheets());
-        sheets.AppendChild(new Sheet
-        {
-            Id = workbookPart.GetIdOfPart(worksheetPart),
-            SheetId = 1U,
-            Name = "Probe"
-        });
-    }
 }

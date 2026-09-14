@@ -1,4 +1,5 @@
 using DocDown.Core;
+using DocDown.Extraction;
 using DocDown.Word.Markdown;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
@@ -34,6 +35,10 @@ namespace DocDown.Word.OpenXml;
 /// </remarks>
 public sealed class WordOpenXmlExtractor : IDocumentExtractor, ISelfValidating
 {
+    /// <summary>The embedded document the parse round-trip self-test reads.</summary>
+    /// <remarks>A real file authored in Microsoft Word, carrying headings, a paragraph, a bulleted list and a table.</remarks>
+    private const string ProbeResourceName = "DemaConsulting.DocDown.Word.Resources.probe.docx";
+
     /// <summary>
     ///     Creates a Word Open XML extractor ready to register with a <see cref="DocDownBuilder"/>.
     /// </summary>
@@ -143,14 +148,13 @@ public sealed class WordOpenXmlExtractor : IDocumentExtractor, ISelfValidating
 
         try
         {
-            using var stream = new MemoryStream();
-            BuildProbeDocument(stream);
-            stream.Position = 0;
+            using var stream = new MemoryStream(
+                SelfTestProbe.Load(typeof(WordOpenXmlExtractor).Assembly, ProbeResourceName), writable: false);
             var model = new WordOpenXmlReader().Read(stream);
             return model.Body.Count > 0
                 ? SelfTestResult.Passed(DateTimeOffset.UtcNow - started)
                 : SelfTestResult.Failed(
-                    "The Open XML reader read a document it built itself but found no content in its body.",
+                    "The Open XML reader read the embedded Word document but found no content in its body.",
                     DateTimeOffset.UtcNow - started);
         }
 #pragma warning disable CA1031 // A self-test reports every fault as data rather than throwing at its caller
@@ -163,27 +167,4 @@ public sealed class WordOpenXmlExtractor : IDocumentExtractor, ISelfValidating
         }
     }
 
-    /// <summary>
-    ///     Builds the one-paragraph document the parse round-trip case reads back.
-    /// </summary>
-    /// <param name="stream">The stream to write the document into.</param>
-    /// <remarks>
-    ///     Built rather than embedded so the case ships no binary payload and exercises the writer and
-    ///     the reader together. Side effect: writes to <paramref name="stream"/>.
-    /// </remarks>
-    private static void BuildProbeDocument(Stream stream)
-    {
-        using var document = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document);
-        var mainPart = document.AddMainDocumentPart();
-
-        var run = new W.Run();
-        run.AppendChild(new W.Text("DocDown self test"));
-        var paragraph = new W.Paragraph();
-        paragraph.AppendChild(run);
-        var body = new W.Body();
-        body.AppendChild(paragraph);
-        var root = new W.Document();
-        root.AppendChild(body);
-        mainPart.Document = root;
-    }
 }

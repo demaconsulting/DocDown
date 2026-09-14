@@ -15,13 +15,12 @@ sections:
           - id: DocDown-OTS-SystemIoPackaging
             title: >-
               System.IO.Packaging shall open a WordprocessingML package and expose its parts and
-              relationships without requiring native binaries.
+              relationships.
             justification: |
               A .docx is an OPC package — a Zip container of XML parts joined by relationships — and
               every structured read the SDK performs begins by opening that package and resolving a
-              relationship to a part. That the package reader is fully managed is what keeps the whole
-              read path deployable anywhere the runtime is. Its evidence is the named tests that open a
-              generated package and read its parts, not a broad coverage claim.
+              relationship to a part. Its evidence is the named tests that open a generated package and
+              read its parts, not a broad coverage claim.
             tags: [ots]
             tests:
               - DocDownWord_Extract_GeneratedDocx_ProducesContractLayout

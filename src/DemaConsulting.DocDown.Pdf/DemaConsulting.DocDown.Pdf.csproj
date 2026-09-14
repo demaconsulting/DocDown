@@ -111,5 +111,11 @@
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\Icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
+  <!-- The self-test probe document. It is a real Microsoft Word file, authored in that application and
+       scrubbed of author metadata, embedded so the backend's self-test reads what the application
+       actually emits rather than a document DocDown synthesized for itself to read. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\probe.pdf" />
+  </ItemGroup>
 
 </Project>

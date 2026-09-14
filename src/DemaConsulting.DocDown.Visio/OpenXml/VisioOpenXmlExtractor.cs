@@ -1,4 +1,5 @@
 using DocDown.Core;
+using DocDown.Extraction;
 using DocDown.Visio.Markdown;
 using CoreFormat = DocDown.Core.DocumentFormat;
 
@@ -31,6 +32,12 @@ namespace DocDown.Visio.OpenXml;
 /// </remarks>
 public sealed class VisioOpenXmlExtractor : IDocumentExtractor, ISelfValidating
 {
+    /// <summary>The embedded Visio drawing the parse round-trip self-test reads.</summary>
+    /// <remarks>
+    ///     A real .vsdx authored in Microsoft Visio: one page holding two labeled shapes joined by a
+    ///     glued dynamic connector, so reading it exercises shape text and topology together.
+    /// </remarks>
+    private const string ProbeResourceName = "DemaConsulting.DocDown.Visio.Resources.probe.vsdx";
     /// <summary>
     ///     Creates a Visio Open Packaging extractor ready to register with a <see cref="DocDownBuilder"/>.
     /// </summary>
@@ -135,20 +142,14 @@ public sealed class VisioOpenXmlExtractor : IDocumentExtractor, ISelfValidating
 
         try
         {
-            var bytes = VisioPackageBuilder.Build(
-            [
-                new VisioBuildPage(
-                    "Page-1",
-                    [new VisioBuildShape("1", "Inlet Tank"), new VisioBuildShape("2", "Transfer Pump")],
-                    [("1", "2")])
-            ]);
+            var bytes = SelfTestProbe.Load(typeof(VisioOpenXmlExtractor).Assembly, ProbeResourceName);
             using var stream = new MemoryStream(bytes, writable: false);
             var model = VisioPackageReader.Read(stream);
             var page = model.Pages.Count == 1 ? model.Pages[0] : null;
             return page is { Connections.Count: 1 }
                 ? SelfTestResult.Passed(DateTimeOffset.UtcNow - started)
                 : SelfTestResult.Failed(
-                    "The Open Packaging reader read a drawing it built itself but did not resolve its single connection.",
+                    "The Open Packaging reader read the embedded Visio drawing but did not resolve its single connection.",
                     DateTimeOffset.UtcNow - started);
         }
 #pragma warning disable CA1031 // A self-test reports every fault as data rather than throwing at its caller

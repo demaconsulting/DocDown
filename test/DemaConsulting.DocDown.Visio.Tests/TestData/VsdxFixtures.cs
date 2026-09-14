@@ -1,11 +1,9 @@
-using DocDown.Visio.OpenXml;
 
 namespace DemaConsulting.DocDown.Visio.Tests.TestData;
 
 /// <summary>
-///     Builds every drawing the test suite needs, at test time, by reusing the package's own
-///     <see cref="VisioPackageBuilder"/> so the reader is always exercised against a package built by
-///     the very code that the self-test relies on.
+///     Builds every drawing the test suite needs, at test time, using <see cref="VisioPackageBuilder"/>, so the reader can be driven through
+///     shapes, masters, multiple pages and malformed parts that one committed fixture cannot cover.
 /// </summary>
 /// <remarks>
 ///     No binary <c>.vsdx</c> is committed to this repository. Each fixture is synthesized here when

@@ -1,5 +1,6 @@
 using System.Globalization;
 using DocDown.Core;
+using DocDown.Extraction;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 
@@ -37,6 +38,10 @@ namespace DocDown.Pdf;
 /// </remarks>
 public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
 {
+    /// <summary>The embedded PDF the self-test reads.</summary>
+    /// <remarks>A real PDF exported from Microsoft Word, carrying headings, a paragraph, a bulleted list and a table.</remarks>
+    private const string ProbeResourceName = "DemaConsulting.DocDown.Pdf.Resources.probe.pdf";
+
     /// <summary>
     ///     Creates a PDF extractor ready to register with a <see cref="DocDownBuilder"/>.
     /// </summary>
@@ -243,7 +248,7 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
 
         try
         {
-            var bytes = BuildProbeDocument();
+            var bytes = SelfTestProbe.Load(typeof(PdfDocumentExtractor).Assembly, ProbeResourceName);
             using var document = PdfDocument.Open(bytes, new ParsingOptions { UseLenientParsing = true });
             var page = document.GetPage(1);
             return page.Letters.Count > 0
@@ -260,23 +265,6 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
                 $"The PDF parser could not complete a round trip in this environment: {exception.Message}",
                 DateTimeOffset.UtcNow - started);
         }
-    }
-
-    /// <summary>
-    ///     Builds the one-page document the parse round-trip case reads back.
-    /// </summary>
-    /// <returns>The bytes of a minimal single-page PDF carrying a short line of text.</returns>
-    /// <remarks>
-    ///     Built rather than embedded so the case ships no binary payload and exercises the writer and
-    ///     the reader together. Pure apart from the allocation.
-    /// </remarks>
-    private static byte[] BuildProbeDocument()
-    {
-        using var builder = new UglyToad.PdfPig.Writer.PdfDocumentBuilder();
-        var font = builder.AddStandard14Font(UglyToad.PdfPig.Fonts.Standard14Fonts.Standard14Font.Helvetica);
-        var page = builder.AddPage(PageSize.A4);
-        page.AddText("DocDown self test", 12, new UglyToad.PdfPig.Core.PdfPoint(30, 600), font);
-        return builder.Build();
     }
 
     /// <summary>

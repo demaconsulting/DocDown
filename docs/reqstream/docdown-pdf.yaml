@@ -240,13 +240,17 @@ sections:
           - DocDownPdf_Extract_ImagesDisabled_SuppressesImagesWithNote
 
       - id: DocDownPdf-ManagedOnly
-        title: The system shall ship no native assets and no runtime-identifier-specific dependencies.
+        title: >-
+          The DocDown.Pdf package shall ship no native assets and no runtime-identifier-specific
+          dependencies.
         tags: [system]
         justification: |
-          A package carrying native assets must be built, tested, and shipped per platform, and fails
-          at run time on any platform it was not built for. Staying fully managed makes the package
-          deployable anywhere the runtime is, which is the property that lets extraction run
-          identically in a container, on a developer machine, and in CI.
+          This is scoped to the DocDown.Pdf package, not to DocDown as a whole: the product does ship
+          native binaries, because rasterizing a page requires PDFium and SkiaSharp. Separating the two
+          is the point. A consumer who only needs text, images, and metadata from a PDF takes this
+          package and no native asset; a consumer who needs rendered pages takes DocDown.Pdf.Rendering
+          and accepts the native stack that comes with it. Keeping the parser free of natives is what
+          makes that choice available, and it is why the two packages are separate.
         children:
           - DocDown-OTS-PdfPig
         tests:
