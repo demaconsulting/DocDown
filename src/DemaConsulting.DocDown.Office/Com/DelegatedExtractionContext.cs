@@ -1,6 +1,6 @@
 using DocDown.Core;
 
-namespace DocDown.PowerPoint.Com;
+namespace DocDown.Office.Com;
 
 /// <summary>
 ///     A private <see cref="IExtractionContext"/> that reuses an outer context but substitutes a
@@ -28,14 +28,18 @@ internal sealed class DelegatedExtractionContext : IExtractionContext
     ///     Initializes a new instance of the <see cref="DelegatedExtractionContext"/> class.
     /// </summary>
     /// <param name="inner">The outer context to reuse. Must not be null.</param>
+    /// <param name="pageRenderingFactKey">
+    ///     The environment-fact key the delegated managed backend uses for its rendering-capability
+    ///     statement, for example <c>visio.pageRendering</c>. Must not be null or empty.
+    /// </param>
     /// <param name="options">The already-cloned options for the delegated extraction. Must not be null.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="inner"/> or <paramref name="options"/> is null.</exception>
-    public DelegatedExtractionContext(IExtractionContext inner, ExtractionOptions options)
+    public DelegatedExtractionContext(IExtractionContext inner, ExtractionOptions options, string pageRenderingFactKey)
     {
         ArgumentNullException.ThrowIfNull(inner);
         ArgumentNullException.ThrowIfNull(options);
         _inner = inner;
-        _sink = new ComposingDelegatedSink(inner.Sink);
+        _sink = new ComposingDelegatedSink(inner.Sink, pageRenderingFactKey);
         Options = options;
     }
 

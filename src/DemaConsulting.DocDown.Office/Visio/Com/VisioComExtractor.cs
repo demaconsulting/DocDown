@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Runtime.Versioning;
 using DocDown.Core;
 using DocDown.Extraction;
+using DocDown.Office.Com;
 using DocDown.Visio.OpenXml;
 using CoreFormat = DocDown.Core.DocumentFormat;
 
@@ -123,7 +124,7 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
 
         // Delegate the managed aspects to the Open Packaging backend with rendering suppressed, so it
         // writes page names, shape text, and the directed topology but does not attempt page rendering
-        var delegatedContext = new DelegatedExtractionContext(context, options.Clone());
+        var delegatedContext = new DelegatedExtractionContext(context, options.Clone(), "visio.pageRendering");
         delegatedContext.Options.RenderPages = false;
         using var delegatedStream = new MemoryStream(bytes, writable: false);
         var delegatedSource = DocumentSource.FromStream(delegatedStream, source.FileName);

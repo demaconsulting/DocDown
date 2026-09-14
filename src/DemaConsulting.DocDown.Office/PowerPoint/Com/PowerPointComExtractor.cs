@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Runtime.Versioning;
 using DocDown.Core;
 using DocDown.Extraction;
+using DocDown.Office.Com;
 using DocDown.PowerPoint.OpenXml;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
@@ -132,7 +133,7 @@ public sealed class PowerPointComExtractor : IDocumentExtractor, ISelfValidating
 
         // Delegate the managed aspects to the Open XML backend with rendering suppressed, so it writes
         // slide text, titles, speaker notes, and inventory without any contradictory rendering fact
-        var delegatedContext = new DelegatedExtractionContext(context, options.Clone());
+        var delegatedContext = new DelegatedExtractionContext(context, options.Clone(), "powerpoint.pageRendering");
         delegatedContext.Options.RenderPages = false;
         using var delegatedStream = new MemoryStream(bytes, writable: false);
         var delegatedSource = DocumentSource.FromStream(delegatedStream, source.FileName);
