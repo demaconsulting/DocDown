@@ -6,7 +6,7 @@ extraction package.
 ## Verification Approach
 
 `DocDown.Visio` is verified through system-level integration tests in `DocDownVisioTests.cs` and
-unit tests per unit, all in `DemaConsulting.DocDown.Visio.Tests`, running on xUnit v3 across
+unit tests per unit, all in `DemaConsulting.DocDown.Office.Tests`, running on xUnit v3 across
 net8.0, net9.0, and net10.0.
 
 ### Every extraction test reconciles against the filesystem
@@ -49,7 +49,7 @@ requested without an available renderer, one note when a single page could not b
 and COM.
 No Visio-specific legacy reporting terms remain.
 
-### Fixtures are generated, never committed
+### Test fixtures are generated; the self-test probe is committed
 
 Every drawing the suite uses is built at test time by the in-memory Visio package synthesizer in
 `TestData/VsdxFixtures.cs`, and the rendering path is driven by `TestData/StubVisioAutomation.cs`.

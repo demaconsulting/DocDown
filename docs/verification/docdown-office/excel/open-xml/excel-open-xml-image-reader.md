@@ -8,7 +8,7 @@ a workbook's embedded images to their bytes and sheet association.
 `ExcelOpenXmlImageReader` carries no dedicated test class; its observable contract is what reaches the
 model, so it is verified **through the reader that drives it** in `OpenXml/ExcelOpenXmlReaderTests.cs`,
 with the extraction-level effect additionally exercised in `DocDownExcelTests.cs` and the inline-link
-effect in `Markdown/ExcelContentEmitterTests.cs`, all in `DemaConsulting.DocDown.Excel.Tests`. The
+effect in `Markdown/ExcelContentEmitterTests.cs`, all in `DemaConsulting.DocDown.Office.Tests`. The
 workbooks are real generated fixtures from `TestData/XlsxFixtures.cs` whose images are synthetic.
 
 ### Test Environment

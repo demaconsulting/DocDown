@@ -6,7 +6,7 @@ a Visio package into the backend-neutral model.
 ### Verification Approach
 
 `VisioPackageReader` is verified through unit tests in `OpenXml/VisioPackageReaderTests.cs` in
-`DemaConsulting.DocDown.Visio.Tests`, reading drawings built at test time by `VisioPackageBuilder` and
+`DemaConsulting.DocDown.Office.Tests`, reading drawings built at test time by `VisioPackageBuilder` and
 asserting the resulting model. The tests cover page names, shape text, the directed topology and its
 direction, page order, page-scoped edge resolution, master-name classification, symbol-font recovery, and
 the empty page.

@@ -24,7 +24,7 @@ to produce image-backed output without an extraction note. Plain notes are reser
 steps that could not complete, such as an undecodable image or a forced PNG output mode that the
 extractor could not honor.
 
-### Fixtures are generated, never committed
+### Test fixtures are generated; the self-test probe is committed
 
 Every PDF the suite uses is built at test time, either through PdfPig's document writer or by
 assembling bytes in code for adverse cases such as encrypted, malformed, JPEG 2000, and JBIG2

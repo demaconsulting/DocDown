@@ -6,7 +6,7 @@ SDK-to-model translation for a `.pptx`.
 ### Verification Approach
 
 `PowerPointOpenXmlReader` is verified through unit tests in `OpenXml/PowerPointOpenXmlReaderTests.cs`
-in `DemaConsulting.DocDown.PowerPoint.Tests`, exercised against decks synthesized at test time by
+in `DemaConsulting.DocDown.Office.Tests`, exercised against decks synthesized at test time by
 `TestData/PptxFixtures.cs`. Each test reads a generated deck from memory and asserts one facet of the
 translation: slide order and ordinals, titles, body text, speaker notes, null notes for a notes-less
 deck, and the embedded image with its slide association.

@@ -36,6 +36,8 @@ input-files:
   - docs/verification/docdown-tool/self-test.md
   - docs/verification/docdown-tool/self-test/validation.md
   - docs/verification/docdown-tool/self-test/self-test-adapter.md
+  - docs/verification/docdown-office.md
+  - docs/verification/docdown-office/com.md
   - docs/verification/docdown-office/word.md
   - docs/verification/docdown-office/word/word-doc-down-builder-extensions.md
   - docs/verification/docdown-office/word/markdown.md

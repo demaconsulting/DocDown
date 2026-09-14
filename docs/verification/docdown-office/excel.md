@@ -6,7 +6,7 @@ package.
 ## Verification Approach
 
 `DocDown.Excel` is verified through system-level integration tests in `DocDownExcelTests.cs` and unit
-tests per unit, all in `DemaConsulting.DocDown.Excel.Tests`, running on xUnit v3 across net8.0,
+tests per unit, all in `DemaConsulting.DocDown.Office.Tests`, running on xUnit v3 across net8.0,
 net9.0, and net10.0.
 
 ### Every extraction test reconciles against the filesystem
@@ -38,7 +38,7 @@ A workbook has no page grid. A scenario proves that requesting rendered pages le
 `Produced`, writes no page images, and records no note. The extractor surface and environment facts
 carry the non-applicability; the content emission path remains silent.
 
-### Fixtures are generated, never committed
+### Test fixtures are generated; the self-test probe is committed
 
 Every workbook the suite uses is built at test time by the Open XML SDK writer in
 `TestData/XlsxFixtures.cs`. The legacy `.xls` scenario writes a placeholder byte sequence whose

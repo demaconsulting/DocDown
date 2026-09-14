@@ -6,7 +6,7 @@ registration seam.
 ### Verification Approach
 
 `VisioDocDownBuilderExtensions` is verified through unit tests in `VisioDocDownBuilderExtensionsTests.cs`
-in `DemaConsulting.DocDown.Visio.Tests`. The tests build a real `DocDownBuilder`, call `AddVisio`, and
+in `DemaConsulting.DocDown.Office.Tests`. The tests build a real `DocDownBuilder`, call `AddVisio`, and
 assert the resulting registration: both backends present, the managed backend at the higher priority, the
 same builder returned, and a null builder rejected at the call site.
 

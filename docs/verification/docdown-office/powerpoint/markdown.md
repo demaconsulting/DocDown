@@ -7,7 +7,7 @@ projection of a deck model onto the output contract.
 
 The Markdown subsystem is verified through unit tests in
 `Markdown/PowerPointContentEmitterTests.cs` and complementary system-level scenarios in
-`DocDownPowerPointTests.cs`, all in `DemaConsulting.DocDown.PowerPoint.Tests`.
+`DocDownPowerPointTests.cs`, all in `DemaConsulting.DocDown.Office.Tests`.
 
 The emitter is exercised from hand-built deck models through a recording sink, with no deck and no
 Open XML SDK behind them, because its contract is the mapping from the model to the output: the

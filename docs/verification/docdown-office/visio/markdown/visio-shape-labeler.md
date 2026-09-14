@@ -6,7 +6,7 @@ decision.
 ### Verification Approach
 
 `VisioShapeLabeler` is verified through unit tests in `Markdown/VisioShapeLabelerTests.cs` in
-`DemaConsulting.DocDown.Visio.Tests`. The labeler is pure, so each test hands it a shape id and a shape map
+`DemaConsulting.DocDown.Office.Tests`. The labeler is pure, so each test hands it a shape id and a shape map
 and asserts the rendered label and its recorded provenance directly, covering every precedence branch and
 the published convention.
 

@@ -6,7 +6,7 @@ PowerPoint extraction package.
 ## Verification Approach
 
 `DocDown.PowerPoint` is verified through system-level integration tests in `DocDownPowerPointTests.cs`,
-unit tests per unit in `DemaConsulting.DocDown.PowerPoint.Tests`, and release-time self-tests for the
+unit tests per unit in `DemaConsulting.DocDown.Office.Tests`, and release-time self-tests for the
 real COM automation boundary.
 
 ### Every extraction test reconciles against the filesystem
@@ -49,7 +49,7 @@ render. The availability probe is proved to report unavailable off Windows with 
 that never instructs an installation, so a machine without PowerPoint produces an honest selection
 outcome rather than a broken render.
 
-### Fixtures are generated, never committed
+### Test fixtures are generated; the self-test probe is committed
 
 Every deck the suite uses is built at test time by the Open XML SDK writer in `TestData/PptxFixtures.cs`,
 and the rendering path is driven by `TestData/StubPowerPointAutomation.cs`. The legacy `.ppt`

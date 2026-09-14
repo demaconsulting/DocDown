@@ -6,7 +6,7 @@ composing extractor, the availability probe, and the real automation adapter.
 ### Verification Approach
 
 The Com subsystem is verified through unit tests in `Com/VisioComExtractorTests.cs` and
-`Com/VisioComAvailabilityTests.cs` in `DemaConsulting.DocDown.Visio.Tests`.
+`Com/VisioComAvailabilityTests.cs` in `DemaConsulting.DocDown.Office.Tests`.
 
 Everything the COM backend does apart from talking to Microsoft Visio is exercised cross-platform by
 injecting a stub `IVisioAutomation`: delegation to the managed backend that writes page names, shape

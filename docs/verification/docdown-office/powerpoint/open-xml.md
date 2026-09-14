@@ -8,7 +8,7 @@ into the model, and the image reader that resolves the deck's embedded images.
 
 The OpenXml subsystem is verified through unit tests in
 `OpenXml/PowerPointOpenXmlExtractorTests.cs` and `OpenXml/PowerPointOpenXmlReaderTests.cs`, plus the
-system-level scenarios in `DocDownPowerPointTests.cs`, all in `DemaConsulting.DocDown.PowerPoint.Tests`.
+system-level scenarios in `DocDownPowerPointTests.cs`, all in `DemaConsulting.DocDown.Office.Tests`.
 
 The reader is exercised against real generated decks from `TestData/PptxFixtures.cs`, not a
 simulation, because its contract is the faithful translation of a genuine `.pptx` into the model: the

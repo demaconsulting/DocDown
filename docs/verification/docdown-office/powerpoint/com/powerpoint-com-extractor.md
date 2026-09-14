@@ -6,7 +6,7 @@ rendering backend.
 ### Verification Approach
 
 `PowerPointComExtractor` is verified through unit tests in `Com/PowerPointComExtractorTests.cs` in
-`DemaConsulting.DocDown.PowerPoint.Tests`, exercising the whole extraction path through an injected
+`DemaConsulting.DocDown.Office.Tests`, exercising the whole extraction path through an injected
 stub `IPowerPointAutomation` with no Microsoft Office present. The stub lets CI prove the delegation
 to the managed backend, the rendering of every slide, the per-slide fault isolation, the
 render-resolution pass-through, the rendering-fact reconciliation, and the probe behavior —

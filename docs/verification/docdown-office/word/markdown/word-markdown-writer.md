@@ -6,7 +6,7 @@ renders the backend-neutral document model to a single markdown flow.
 ### Verification Approach
 
 `WordMarkdownWriter` is verified through unit tests in `Markdown/WordMarkdownWriterTests.cs` in
-`DemaConsulting.DocDown.Word.Tests`, with method names beginning with `WordMarkdownWriter_`.
+`DemaConsulting.DocDown.Office.Tests`, with method names beginning with `WordMarkdownWriter_`.
 
 The unit is driven against **hand-built `WordDocumentModel` instances with no document behind
 them**, because the writer's contract is the projection from a model onto markdown; a document read

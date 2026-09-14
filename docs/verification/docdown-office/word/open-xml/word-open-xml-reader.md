@@ -6,7 +6,7 @@ turns an Open XML document into the backend-neutral model.
 ### Verification Approach
 
 `WordOpenXmlReader` is verified through unit tests in `OpenXml/WordOpenXmlReaderTests.cs` in
-`DemaConsulting.DocDown.Word.Tests`, with method names beginning with `WordOpenXmlReader_`.
+`DemaConsulting.DocDown.Office.Tests`, with method names beginning with `WordOpenXmlReader_`.
 
 The unit is driven directly, outside the engine, by opening a fixture stream and calling `Read()`
 against a fresh reader instance. This is the level at which the reader's contract lives: the

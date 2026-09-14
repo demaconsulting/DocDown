@@ -1,0 +1,43 @@
+---
+# Software System Requirements for DocDownOffice
+#
+# DocDown.Office is the Microsoft Office extraction package. It reads Word documents, Excel
+# workbooks, PowerPoint presentations, and Visio drawings into the DocDown output contract. These
+# requirements state what the system as a whole must do; the per-format behavior decomposes into the
+# Word, Excel, PowerPoint, and Visio subsystems, and the behavior the COM automation backends share
+# decomposes into the Com subsystem.
+
+sections:
+  - title: DocDownOffice Requirements
+    requirements:
+      - id: DocDownOffice-Registration
+        title: >-
+          The system shall register every Office backend it ships through one explicit call, without
+          reflection or assembly scanning.
+        tags: [system]
+        justification: |
+          A host's active backend set should be exactly what its code says it is, so that publishing
+          as a single file cannot silently drop a backend and an auditor can read the registration
+          rather than infer it. One call covers the common case - this host reads Microsoft Office
+          documents - and the per-format calls remain for a host that reads only one format and
+          should not carry six backends to do it.
+        children:
+          - DocDownOffice-Com-Availability
+        tests:
+          - AddOffice_OnBuilder_RegistersEveryOfficeBackend
+          - AddOffice_ReturnsSameBuilderForChaining
+          - AddExcel_Alone_RegistersOnlyTheExcelBackend
+
+      - id: DocDownOffice-SelfTestProbes
+        title: >-
+          The system shall carry, for each format it reads, a probe document authored in the
+          application that produces that format.
+        tags: [system]
+        justification: |
+          A self-test exists to answer whether this deployment can read what the real application
+          emits. A backend that synthesized its own document could only ever prove that a library
+          agreed with itself, and would keep reporting success while failing on every genuine
+          document. Carrying the probe inside the package also means the check does not depend on
+          the file system, the working directory, or anything the host happens to have installed.
+        tests:
+          - Probe_EmbeddedResource_LoadsAsAnOpenPackage

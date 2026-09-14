@@ -7,7 +7,7 @@ managed backend the engine selects and invokes for a `.pptx`.
 
 `PowerPointOpenXmlExtractor` is verified through unit tests in
 `OpenXml/PowerPointOpenXmlExtractorTests.cs` and the system-level scenario in
-`DocDownPowerPointTests.cs`, in `DemaConsulting.DocDown.PowerPoint.Tests`. The selection surface and
+`DocDownPowerPointTests.cs`, in `DemaConsulting.DocDown.Office.Tests`. The selection surface and
 the probe are asserted directly against the constructed extractor; the self-test cases are enumerated
 and run; and the orchestration is proved through a real end-to-end extraction that selects the backend
 and produces the contract layout.

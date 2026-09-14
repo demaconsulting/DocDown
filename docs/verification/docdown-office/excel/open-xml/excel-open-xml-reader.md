@@ -6,7 +6,7 @@ translation.
 ### Verification Approach
 
 `ExcelOpenXmlReader` is verified through unit tests in `OpenXml/ExcelOpenXmlReaderTests.cs` in
-`DemaConsulting.DocDown.Excel.Tests`, exercised against **real generated workbooks** from
+`DemaConsulting.DocDown.Office.Tests`, exercised against **real generated workbooks** from
 `TestData/XlsxFixtures.cs`. The SDK is not mocked, because the reader's contract is the faithful
 translation of a genuine `.xlsx` into the model: the verbatim cell values, the formulas alongside their
 values, the sheet identity and ordering, the embedded images and their sheet association, and the dropping

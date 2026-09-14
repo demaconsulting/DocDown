@@ -6,7 +6,7 @@ extraction package.
 ## Verification Approach
 
 `DocDown.Word` is verified through system-level integration tests in `DocDownWordTests.cs` and
-`WordGoldenTests.cs`, and through subsystem and unit tests in `DemaConsulting.DocDown.Word.Tests`,
+`WordGoldenTests.cs`, and through subsystem and unit tests in `DemaConsulting.DocDown.Office.Tests`,
 running on xUnit v3 across net8.0, net9.0, and net10.0.
 
 ### Every extraction test proves the expected layout is written
@@ -32,12 +32,15 @@ looked for. Short extraction notes are reserved for attempted steps the extracto
 complete, such as chart-part reading or flattened merged or nested table structure. The suite
 therefore covers both clean extractions and honest incomplete-step reporting.
 
-### Fixtures are generated, never committed
+### Test fixtures are generated; the self-test probe is committed
 
 Every document the suite uses is built at test time by the Open XML SDK writer in
 `TestData/DocxFixtures.cs`, orchestrated through `TestData/WordTestHarness.cs`. The legacy `.doc`
 scenario writes a placeholder byte sequence whose extension drives format detection, because the
-selection path never opens the file. No binary `.docx` or `.doc` fixture is committed.
+selection path never opens the file. No fixture is committed.
+The one committed binary is the backend's self-test probe: a real document authored in the
+application that produces the format, embedded in the package so the self-test reads what that
+application emits.
 
 ### Golden summaries pin representative outputs
 

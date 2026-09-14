@@ -41,7 +41,7 @@ injecting a rasterization function that throws. The scenario proves the run stil
 does not throw to the caller — the factual reporting the output contract requires of the one step
 this package attempted and could not complete.
 
-### Fixtures are generated, never committed
+### Test fixtures are generated; the self-test probe is committed
 
 Every PDF the suite uses is built at test time by the parser's own document writer, so the repository
 stays text-only and no question arises about the provenance or licensing of a sample document. The PNG

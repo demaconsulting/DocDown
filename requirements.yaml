@@ -43,6 +43,8 @@ includes:
   - docs/reqstream/docdown-tool/self-test.yaml
   - docs/reqstream/docdown-tool/self-test/validation.yaml
   - docs/reqstream/docdown-tool/self-test/self-test-adapter.yaml
+  - docs/reqstream/docdown-office.yaml
+  - docs/reqstream/docdown-office/com.yaml
   - docs/reqstream/docdown-office/word.yaml
   - docs/reqstream/docdown-office/word/platform-requirements.yaml
   - docs/reqstream/docdown-office/word/word-doc-down-builder-extensions.yaml

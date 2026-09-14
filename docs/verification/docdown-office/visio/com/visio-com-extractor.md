@@ -6,7 +6,7 @@ rendering backend.
 ### Verification Approach
 
 `VisioComExtractor` is verified through unit tests in `Com/VisioComExtractorTests.cs` in
-`DemaConsulting.DocDown.Visio.Tests`, exercising the whole extraction path through an injected stub
+`DemaConsulting.DocDown.Office.Tests`, exercising the whole extraction path through an injected stub
 `IVisioAutomation` with no Microsoft Office present. The stub lets CI prove the delegation to the
 managed backend, rendering of every page, per-page note reporting, render-resolution pass-through,
 rendering-fact reconciliation, and probe behavior. The real adapter it constructs by default is

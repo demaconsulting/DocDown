@@ -6,7 +6,7 @@ resolver.
 ### Verification Approach
 
 `VisioImageReader` is verified through unit tests in `OpenXml/VisioImageReaderTests.cs` in
-`DemaConsulting.DocDown.Visio.Tests`, reading packages built at test time with page, master, and thumbnail
+`DemaConsulting.DocDown.Office.Tests`, reading packages built at test time with page, master, and thumbnail
 image relationships and asserting the resolved images and their provenance. The image reader's contract —
 what reaches the model and how each image is associated — is proved directly here and reinforced by the
 emitter and integration tests that write and link the images.

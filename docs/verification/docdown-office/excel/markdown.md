@@ -8,7 +8,7 @@ and the chart writer that renders a chart's cached series as a table.
 
 The Markdown subsystem is verified through unit tests exercising its two units — `ExcelContentEmitter`
 and `ExcelChartWriter` — in `Markdown/ExcelContentEmitterTests.cs` and `Markdown/ExcelChartWriterTests.cs`,
-plus system-level scenarios in `DocDownExcelTests.cs`, all in `DemaConsulting.DocDown.Excel.Tests`.
+plus system-level scenarios in `DocDownExcelTests.cs`, all in `DemaConsulting.DocDown.Office.Tests`.
 
 Both units are tested against **hand-built models with no workbook behind them**, because the
 subsystem's contract is the projection from a model onto markdown; a workbook read is the reader's job,

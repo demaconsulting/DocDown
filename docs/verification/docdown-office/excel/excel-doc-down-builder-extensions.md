@@ -6,7 +6,7 @@ registration seam that adds the Excel backend to a `DocDownBuilder`.
 ### Verification Approach
 
 `ExcelDocDownBuilderExtensions` is verified through unit tests in `ExcelDocDownBuilderExtensionsTests.cs`
-in `DemaConsulting.DocDown.Excel.Tests`, with method names beginning with `AddExcel_`.
+in `DemaConsulting.DocDown.Office.Tests`, with method names beginning with `AddExcel_`.
 
 The unit is exercised directly: a builder is constructed, `AddExcel` is called, and the resulting
 registration is inspected. The tests prove exactly one backend is added and it is the managed Open XML

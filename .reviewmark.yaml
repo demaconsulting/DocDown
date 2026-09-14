@@ -716,6 +716,8 @@ reviews:
       - "docs/design/introduction.md"
     paths:
       - "docs/design/docdown-office.md"                                                # system design
+      - "docs/reqstream/docdown-office.yaml"                                           # system requirements
+      - "docs/verification/docdown-office.md"                                          # system verification
       - "docs/sysml2/model/docdown-office.sysml"                                       # system model
       - "src/DemaConsulting.DocDown.Office/OfficeDocDownBuilderExtensions.cs"          # direct unit: registration seam
       - "test/DemaConsulting.DocDown.Office.Tests/OfficeDocDownBuilderExtensionsTests.cs"  # direct unit tests
@@ -729,6 +731,9 @@ reviews:
       - "docs/design/docdown-office.md"
     paths:
       - "docs/sysml2/model/docdown-office/com.sysml"                                   # subsystem model
+      - "docs/reqstream/docdown-office/com.yaml"                                       # subsystem requirements
+      - "docs/design/docdown-office/com.md"                                            # subsystem design
+      - "docs/verification/docdown-office/com.md"                                      # subsystem verification
       - "src/DemaConsulting.DocDown.Office/Com/NamespaceDoc.cs"                        # namespace documentation
       - "src/DemaConsulting.DocDown.Office/Com/OfficeComAvailability.cs"               # supporting type (D8)
       - "src/DemaConsulting.DocDown.Office/Com/ComposingDelegatedSink.cs"              # supporting type (D8)
