@@ -167,6 +167,7 @@ reviews:
       - "src/DemaConsulting.DocDown.Core/Output/EmbeddedImageWriter.cs"               # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Output/ImageDimensions.cs"                   # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Output/ImageLinkText.cs"                     # supporting type (D8)
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/ImageLinkTextTests.cs"          # supporting-type tests
       - "src/DemaConsulting.DocDown.Core/Output/PartResourceLinkRewriter.cs"          # supporting type (D8)
       - "test/DemaConsulting.DocDown.Core.Tests/Output/EmbeddedImageWriterTests.cs"        # supporting-type tests
       - "test/DemaConsulting.DocDown.Core.Tests/Output/ImageDimensionsTests.cs"           # supporting-type tests
