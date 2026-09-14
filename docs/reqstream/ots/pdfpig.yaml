@@ -12,16 +12,15 @@ sections:
       - title: PdfPig Requirements
         requirements:
           - id: DocDown-OTS-PdfPig
-            title: PdfPig shall parse PDF documents without requiring native binaries.
+            title: PdfPig shall parse PDF documents.
             justification: |
-              DocDown.Pdf's central design promise is that it is deployable anywhere the .NET runtime
-              is, with no per-platform build and no native asset to locate at run time. That promise
-              rests entirely on the parser being fully managed, so it is the first property to state
-              and the one every other requirement here assumes.
+              This is the use DocDown.Pdf makes of PdfPig: it is the parser the package is built on,
+              and every capability below is a facet of it. The package's managed-only deployment
+              promise is stated where it belongs, as DocDownPdf-ManagedOnly, which is a requirement
+              on this repository rather than a demand on a third party; that requirement names this
+              one as its child because staying managed depends on the parser being managed.
             tags: [ots]
             tests:
-              - DocDownPdf_Package_BuildOutput_ContainsNoNativeAssets
-              - DocDownPdf_Package_ContainsNoNativeAssets
               - DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout
 
           - id: DocDown-OTS-PdfPig-TextExtraction

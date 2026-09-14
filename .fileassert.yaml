@@ -352,7 +352,7 @@ tests:
     description: "The tool package is a RID-agnostic .NET tool named docdown"
     tags: [packages]
     files:
-      - pattern: "src/DemaConsulting.DocDown.Tool/bin/Release/*.nupkg"
+      - pattern: "packages/DemaConsulting.DocDown.Tool.*.nupkg"
         count: 1
         zip:
           files:
@@ -375,7 +375,7 @@ tests:
     description: "The tool package ships no native symbols and only supported runtime identifiers"
     tags: [packages]
     files:
-      - pattern: "src/DemaConsulting.DocDown.Tool/bin/Release/*.nupkg"
+      - pattern: "packages/DemaConsulting.DocDown.Tool.*.nupkg"
         count: 1
         zip:
           files:
@@ -403,20 +403,24 @@ tests:
               min: 1
 
   - name: DocDownPdf_Package_ContainsNoNativeAssets
-    description: "The PDF package is fully managed and runtime-identifier agnostic"
+    description: "The PDF packages are fully managed and runtime-identifier agnostic"
     tags: [packages]
     files:
-      - pattern: "src/DemaConsulting.DocDown.Pdf/bin/Release/*.nupkg"
-        count: 1
+      # Matches both DocDown.Pdf and DocDown.Pdf.Rendering. Neither ships a native asset:
+      # the rendering package declares its dependency on PDFtoImage and SkiaSharp, and
+      # those packages carry the binaries. Asserting across both is therefore stronger
+      # than naming the parser alone, and catches a native ever being vendored directly.
+      - pattern: "packages/DemaConsulting.DocDown.Pdf*.nupkg"
+        min: 2
         zip:
           files:
-            # A consumer restoring this package gets a library deployable anywhere the runtime
-            # is. The separate rendering package exists to carry the native stack instead.
+            # A consumer restoring these packages gets libraries deployable anywhere the
+            # runtime is, with the native stack resolved from its own packages instead.
             - pattern: "runtimes/**"
               max: 0
             - pattern: "**/*.so"
               max: 0
             - pattern: "**/*.dylib"
               max: 0
-            - pattern: "lib/**/DemaConsulting.DocDown.Pdf.dll"
+            - pattern: "lib/**/*.dll"
               min: 1

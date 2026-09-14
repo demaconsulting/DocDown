@@ -210,17 +210,24 @@ jobs:
           end
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
+      # Packages are written to a single flat folder rather than each project's
+      # bin/Release. actions/upload-artifact roots its archive at the common ancestor of
+      # the paths it matches, so per-project output would preserve
+      # 'src/<project>/bin/Release/' inside the artifact and the downloaded folder would
+      # not be a usable local NuGet feed: 'dotnet tool install --add-source packages'
+      # finds no package at that path, which is how the integration tests first failed.
       - name: Create Library Package
         run: >
           dotnet pack
           --no-build
           --no-restore
           --configuration Release
+          --output packages
           --property:PackageVersion=${{ inputs.version }}
 
       # Asserts the shape of the packages just produced: the tool is a RID-agnostic .NET
       # tool carrying natives for exactly the supported platforms and no native debug
-      # symbols, and the PDF library package stays fully managed. These run here, against
+      # symbols, and the PDF library packages stay fully managed. These run here, against
       # the real artifact, rather than inside the test suite - packing is a build activity,
       # and doing it from a test rebuilt the whole dependency graph per test and collided
       # with concurrent packs on shared intermediate paths.
@@ -240,27 +247,13 @@ jobs:
           name: artifacts-build-${{ matrix.os }}
           path: artifacts/
 
+      # Packages are staged flat by the pack step above, so the artifact is a usable
+      # local NuGet feed the integration tests can install from directly.
       - name: Upload packages
         uses: actions/upload-artifact@v7
         with:
           name: packages-${{ matrix.os }}
-          path: |
-            src/DemaConsulting.DocDown.Core/bin/Release/*.nupkg
-            src/DemaConsulting.DocDown.Core/bin/Release/*.snupkg
-            src/DemaConsulting.DocDown.Pdf/bin/Release/*.nupkg
-            src/DemaConsulting.DocDown.Pdf/bin/Release/*.snupkg
-            src/DemaConsulting.DocDown.Pdf.Rendering/bin/Release/*.nupkg
-            src/DemaConsulting.DocDown.Pdf.Rendering/bin/Release/*.snupkg
-            src/DemaConsulting.DocDown.Word/bin/Release/*.nupkg
-            src/DemaConsulting.DocDown.Word/bin/Release/*.snupkg
-            src/DemaConsulting.DocDown.Visio/bin/Release/*.nupkg
-            src/DemaConsulting.DocDown.Visio/bin/Release/*.snupkg
-            src/DemaConsulting.DocDown.PowerPoint/bin/Release/*.nupkg
-            src/DemaConsulting.DocDown.PowerPoint/bin/Release/*.snupkg
-            src/DemaConsulting.DocDown.Excel/bin/Release/*.nupkg
-            src/DemaConsulting.DocDown.Excel/bin/Release/*.snupkg
-            src/DemaConsulting.DocDown.Tool/bin/Release/*.nupkg
-            src/DemaConsulting.DocDown.Tool/bin/Release/*.snupkg
+          path: packages/
 
   # Runs CodeQL security and quality analysis, gathering results to include
   # in the code quality report.
@@ -477,7 +470,12 @@ jobs:
   build-docs:
     name: Build Documents
     runs-on: windows-latest
-    needs: [build, codeql]
+    # Integration tests are included so the documents are built from the full evidence
+    # set: the job downloads every 'artifacts-*' upload, and the integration run's
+    # validation TRX is what proves the packaged tool works on each platform. Without
+    # this dependency the documents can be compiled before that evidence exists, and
+    # ReqStream would be enforcing traceability against an incomplete set of results.
+    needs: [build, codeql, integration-test]
     permissions:
       contents: read
 

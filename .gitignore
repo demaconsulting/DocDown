@@ -75,6 +75,7 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
+packages/
 
 # Node.js
 node_modules/
