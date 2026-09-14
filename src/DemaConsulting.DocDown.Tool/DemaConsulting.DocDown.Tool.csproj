@@ -123,16 +123,20 @@
          RID-specific and needs 'dotnet publish -r <rid>'. PublishTrimmed/AOT stay off because this
          stack's trim/AOT compatibility is unverified. -->
     <ProjectReference Include="..\DemaConsulting.DocDown.Pdf.Rendering\DemaConsulting.DocDown.Pdf.Rendering.csproj" />
+    <!-- The Word, Excel, PowerPoint, and Visio backends. All are managed and runtime-identifier
+         agnostic: the PowerPoint and Visio COM backends reach Microsoft Office through late-bound
+         IDispatch with no interop assembly, so none adds a native asset. -->
+    <ProjectReference Include="..\DemaConsulting.DocDown.Office\DemaConsulting.DocDown.Office.csproj" />
     <!-- The Word backend package. It is 100% managed and runtime-identifier agnostic, so it adds no
          native asset and does not affect the tool's publish story. -->
-    <ProjectReference Include="..\DemaConsulting.DocDown.Word\DemaConsulting.DocDown.Word.csproj" />
+    
     <!-- The Visio, PowerPoint, and Excel backend packages. Each is 100% managed and
          runtime-identifier agnostic (the Visio and PowerPoint COM backends reach Microsoft Office
          through late-bound IDispatch with no interop assembly), so none adds a native asset or
          affects the tool's publish story. -->
-    <ProjectReference Include="..\DemaConsulting.DocDown.Visio\DemaConsulting.DocDown.Visio.csproj" />
-    <ProjectReference Include="..\DemaConsulting.DocDown.PowerPoint\DemaConsulting.DocDown.PowerPoint.csproj" />
-    <ProjectReference Include="..\DemaConsulting.DocDown.Excel\DemaConsulting.DocDown.Excel.csproj" />
+    
+    
+    
   </ItemGroup>
 
   <ItemGroup>

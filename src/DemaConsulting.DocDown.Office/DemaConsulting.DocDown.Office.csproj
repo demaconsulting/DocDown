@@ -1,0 +1,120 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- NuGet Package Configuration -->
+    <PackageId>DemaConsulting.DocDown.Office</PackageId>
+    <Version>0.0.0</Version>
+    <Authors>DEMA Consulting</Authors>
+    <Company>DEMA Consulting</Company>
+    <Description>Word, Excel, PowerPoint, and Visio extraction for DEMA Consulting DocDown</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/demaconsulting/DocDown</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/demaconsulting/DocDown</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>Icon.png</PackageIcon>
+    <PackageTags>docdown;office;word;excel;powerpoint;visio;openxml;dotnet-library</PackageTags>
+    <Copyright>Copyright DEMA Consulting</Copyright>
+    <Title>DocDown.Office</Title>
+    <Product>DemaConsulting.DocDown.Office</Product>
+
+    <!-- Symbol Package Configuration -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <!-- Code Quality Configuration -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+
+    <!-- API Documentation Configuration -->
+    <!-- ApiMark writes the gradual-disclosure Markdown API reference into the project's api/
+         folder after every build, and ApiMarkPackDocs places that folder inside the produced
+         NuGet package so consumers (and AI agents) get the API reference with the package. The
+         api/ folder is build output: it is git-ignored and excluded from markdownlint and cspell. -->
+    <ApiMarkPackDocs>true</ApiMarkPackDocs>
+
+    <!-- SBOM Configuration -->
+    <GenerateSBOM>true</GenerateSBOM>
+    <SBOMPackageName>$(PackageId)</SBOMPackageName>
+    <SBOMPackageVersion>$(Version)</SBOMPackageVersion>
+    <SBOMPackageSupplier>Organization: $(Company)</SBOMPackageSupplier>
+  </PropertyGroup>
+
+  <!-- Runtime Dependencies -->
+  <ItemGroup>
+    <!-- The managed Open XML SDK the Word, Excel, and PowerPoint readers are built on. The version is
+         pinned to an exact range for restore determinism and SBOM reproducibility: a floating
+         reference would let a restore substitute a different patch, changing the resolved dependency
+         set recorded in the generated SBOM. This is not an API-fragility pin — the SDK follows
+         semantic versioning. -->
+    <PackageReference Include="DocumentFormat.OpenXml" Version="[3.5.1]" />
+
+    <!-- The Visio reader opens a .vsdx as an OPC package directly rather than through the Open XML
+         SDK, because Visio's parts are not WordprocessingML, SpreadsheetML, or PresentationML and the
+         SDK models none of them. Pinned exactly for the same reproducibility reason; the version
+         differs by framework because the package tracks the runtime it ships with. -->
+    <PackageReference Include="System.IO.Packaging" Version="[10.0.2]" Condition="'$(TargetFramework)' == 'net10.0'" />
+    <PackageReference Include="System.IO.Packaging" Version="[8.0.1]" Condition="'$(TargetFramework)' != 'net10.0'" />
+  </ItemGroup>
+
+  <!-- Build Tool Dependencies -->
+  <ItemGroup>
+    <!-- ApiMark runs as an MSBuild task after Build; it contributes no runtime assets, so
+         PrivateAssets="All" keeps it out of this package's dependency graph. -->
+    <PackageReference Include="DemaConsulting.ApiMark.MSBuild" Version="[0.5.0]" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Sbom.Targets" Version="4.1.5" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.400" PrivateAssets="All" />
+  </ItemGroup>
+
+  <!-- Code Analysis Dependencies -->
+  <ItemGroup>
+    <!-- Analyzer packages use child-element form to configure both PrivateAssets and IncludeAssets:
+         - PrivateAssets="all" prevents these build-time analyzers from becoming transitive dependencies
+           in packages that consume this library.
+         - IncludeAssets lists all asset types (including 'analyzers' and 'buildtransitive') to ensure
+           Roslyn analyzers and MSBuild targets are fully activated during the build. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.400">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.33.0.1635">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DemaConsulting.DocDown.Office.Tests" />
+  </ItemGroup>
+
+  <!-- Project References -->
+  <ItemGroup>
+    <ProjectReference Include="..\DemaConsulting.DocDown.Core\DemaConsulting.DocDown.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\Icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <!-- The self-test probe documents. Each is a real file authored in the application whose format it
+       exercises and scrubbed of author metadata, embedded so a backend's self-test reads what the
+       application actually emits rather than a document DocDown synthesized for itself to read. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\probe.docx" />
+    <EmbeddedResource Include="Resources\probe.xlsx" />
+    <EmbeddedResource Include="Resources\probe.pptx" />
+    <EmbeddedResource Include="Resources\probe.vsdx" />
+  </ItemGroup>
+
+</Project>

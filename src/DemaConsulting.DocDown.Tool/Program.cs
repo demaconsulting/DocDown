@@ -1,13 +1,10 @@
 using System.Reflection;
 using DocDown.Core;
-using DocDown.Excel;
+using DocDown.Office;
 using DocDown.Pdf;
 using DocDown.Pdf.Rendering;
-using DocDown.PowerPoint;
 using DocDown.Tool.Cli;
 using DocDown.Tool.SelfTest;
-using DocDown.Visio;
-using DocDown.Word;
 
 namespace DocDown.Tool;
 
@@ -24,7 +21,7 @@ namespace DocDown.Tool;
 ///     </para>
 ///     <para>
 ///         Extractors are registered explicitly through
-///         <c>new DocDownBuilder().AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().Build()</c>, with no reflection
+///         <c>new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().Build()</c>, with no reflection
 ///         or assembly scanning, which is what keeps single-file publishing viable. The optional
 ///         rendering backend carries a native stack (PDFium/SkiaSharp), so a self-contained
 ///         single-file publish is runtime-identifier specific; trimming and AOT are left off
@@ -234,5 +231,5 @@ internal static class Program
     ///     or PowerPoint) is available, degrading through the engine's own path otherwise.
     /// </remarks>
     private static DocDownEngine BuildEngine() =>
-        new DocDownBuilder().AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().Build();
+        new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().Build();
 }
