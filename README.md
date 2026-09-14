@@ -134,8 +134,10 @@ Extraction produced the output layout.
 echo $?   # 0
 ```
 
-The last line of output is always the absolute path to `summary.txt`, so `docdown ... | tail -1`
-gives you the file to feed to an agent. The notes line appears only when notes were recorded. Exit
+Unless `--silent` is given, the last line of output is the absolute path to `summary.txt`, so
+`docdown ... | tail -1` gives you the file to feed to an agent. `--silent` suppresses all console
+output, so use it only when the scratch folder path is already known to the caller. The notes line
+appears only when notes were recorded. Exit
 codes are the whole contract:
 
 | Exit code | Meaning |

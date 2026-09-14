@@ -117,8 +117,10 @@ Extraction produced the output layout.
 echo $?   # 0
 ```
 
-The last line is always the absolute path to `summary.txt`, and the notes line appears only when
-notes were recorded. Exit codes are `0` when the output layout was written, whether or not notes
+Unless `--silent` is given, the last line is the absolute path to `summary.txt`, and the notes line
+appears only when notes were recorded. `--silent` suppresses all console output, including that
+path, so a caller using it must already know where the scratch folder is. Exit codes are `0` when
+the output layout was written, whether or not notes
 were recorded, and `1` when the document was unreadable, the scratch folder was refused, or an
 argument was bad. On exit `1` the failure explanation is printed on standard error in place of the
 summary path:
