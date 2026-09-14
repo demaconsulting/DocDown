@@ -64,7 +64,7 @@
          SDK models none of them. Pinned exactly for the same reproducibility reason; the version
          differs by framework because the package tracks the runtime it ships with. -->
     <PackageReference Include="System.IO.Packaging" Version="[10.0.2]" Condition="'$(TargetFramework)' == 'net10.0'" />
-    <PackageReference Include="System.IO.Packaging" Version="[8.0.1]" Condition="'$(TargetFramework)' != 'net10.0'" />
+    <PackageReference Include="System.IO.Packaging" Version="[10.0.12]" Condition="'$(TargetFramework)' != 'net10.0'" />
   </ItemGroup>
 
   <!-- Build Tool Dependencies -->
@@ -73,7 +73,7 @@
          PrivateAssets="All" keeps it out of this package's dependency graph. -->
     <PackageReference Include="DemaConsulting.ApiMark.MSBuild" Version="[0.5.0]" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Sbom.Targets" Version="4.1.5" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.400" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.401" PrivateAssets="All" />
   </ItemGroup>
 
   <!-- Code Analysis Dependencies -->
@@ -83,11 +83,11 @@
            in packages that consume this library.
          - IncludeAssets lists all asset types (including 'analyzers' and 'buildtransitive') to ensure
            Roslyn analyzers and MSBuild targets are fully activated during the build. -->
-    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.400">
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.401">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.33.0.1635">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.34.0.3385">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
