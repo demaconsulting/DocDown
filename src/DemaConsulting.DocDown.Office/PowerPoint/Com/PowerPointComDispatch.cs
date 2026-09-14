@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -21,6 +22,7 @@ namespace DocDown.PowerPoint.Com;
 ///     release-time self-test cases. Windows-only.
 /// </remarks>
 [SupportedOSPlatform("windows")]
+[ExcludeFromCodeCoverage(Justification = "Interop seam: every statement runs inside Microsoft PowerPoint over COM, which no CI runner has. The Code Coverage Policy reserves this attribute for these seams so reported coverage stays an honest measure of what the suite verifies; it is exercised functionally by the COM render self-test where Microsoft PowerPoint is installed.")]
 internal static class PowerPointComDispatch
 {
     /// <summary>The name (without extension) of the PowerPoint host process this adapter owns and may terminate.</summary>

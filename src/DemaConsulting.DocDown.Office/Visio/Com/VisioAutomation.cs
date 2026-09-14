@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.Versioning;
 
@@ -33,6 +34,7 @@ namespace DocDown.Visio.Com;
 ///     </para>
 /// </remarks>
 [SupportedOSPlatform("windows")]
+[ExcludeFromCodeCoverage(Justification = "Interop seam: every statement runs inside Microsoft Visio over COM, which no CI runner has. The Code Coverage Policy reserves this attribute for these seams so reported coverage stays an honest measure of what the suite verifies; it is exercised functionally by the COM render self-test where Microsoft Visio is installed.")]
 internal sealed class VisioAutomation : IVisioAutomation
 {
     /// <summary>The maximum time a single open-and-render session may take before it is treated as a hang.</summary>
