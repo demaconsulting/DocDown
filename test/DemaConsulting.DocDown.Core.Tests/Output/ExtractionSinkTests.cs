@@ -171,12 +171,12 @@ public class ExtractionSinkTests
         var sink = NewSink(temp, new ExtractionOptions());
 
         // Act: add two parts whose advisory ordinals conflict
-        var first = await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Section, 99, "One"), "a", Ct);
-        var second = await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Section, 99, "Two"), "b", Ct);
+        var first = await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Sheet, 99, "One"), "a", Ct);
+        var second = await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Sheet, 99, "Two"), "b", Ct);
 
         // Assert: Core assigns its own dense ordinals
-        Assert.Equal("parts/0001-section-one.md", first);
-        Assert.Equal("parts/0002-section-two.md", second);
+        Assert.Equal("parts/0001-sheet-one.md", first);
+        Assert.Equal("parts/0002-sheet-two.md", second);
     }
 
     /// <summary>

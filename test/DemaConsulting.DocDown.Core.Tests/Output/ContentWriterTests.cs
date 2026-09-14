@@ -76,7 +76,7 @@ public class ContentWriterTests
         // Arrange: a sink holding a single content part
         using var temp = new TempScratch();
         var sink = NewSink(temp);
-        await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Slide, 1, "Opening"), "Opening body.\n", Ct);
+        await sink.AddContentPartAsync(new ContentPart(ContentPartKind.Sheet, 1, "Opening"), "Opening body.\n", Ct);
 
         // Act: finalize; any offered part is indexed
         var result = await ContentWriter.WriteAsync(sink, "Deck", Ct);
