@@ -14,7 +14,7 @@ Two properties belong to the system rather than to any one format, and are verif
 ### Registration is asserted as an exact set
 
 `AddOffice()` stands in for four separate calls, so it is only safe if it registers what those four
-registered. The test asserts the **whole set** of extractor identifiers, not that particular ones are
+calls register. The test asserts the **whole set** of extractor identifiers, not that particular ones are
 present. That direction matters: an exact set fails when a backend is silently dropped from the chain
 as readily as when one is silently added, and a merge of four packages into one is exactly the change
 that could drop one unnoticed.

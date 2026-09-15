@@ -11,7 +11,7 @@ namespace DemaConsulting.DocDown.Core.Tests.Detection;
 /// <remarks>
 ///     These tests bind only to <see cref="FormatSniffer"/>, which has no collaborators. Each is
 ///     named for the unit requirement it evidences: extension-primary identification,
-///     content-signature fallback, unknown-format reporting, basis-and-confidence reporting, and
+///     content-signature fallback, unknown-format reporting, basis reporting, and
 ///     stream-position restoration.
 /// </remarks>
 public class FormatSnifferTests
@@ -28,7 +28,7 @@ public class FormatSnifferTests
         // Act: sniff with no file name
         var detection = FormatSniffer.Detect(stream, null);
 
-        // Assert: the fallback content signature identifies PDF at full confidence
+        // Assert: the fallback content signature identifies PDF by content-signature basis
         Assert.Equal(DocumentFormat.Pdf, detection.Format);
         Assert.Equal(DetectionBasis.ContentSignature, detection.Basis);
     }
@@ -62,7 +62,7 @@ public class FormatSnifferTests
         // Act: sniff with an unrecognized .bin name so only the content fallback applies
         var detection = FormatSniffer.Detect(stream, "page.bin");
 
-        // Assert: the html root element is recognized at the documented 0.9 confidence
+        // Assert: the html root element is recognized by content-signature basis
         Assert.Equal(DocumentFormat.Html, detection.Format);
         Assert.Equal(DetectionBasis.ContentSignature, detection.Basis);
     }
@@ -96,7 +96,7 @@ public class FormatSnifferTests
         // Act: sniff using the primary extension signal
         var detection = FormatSniffer.Detect(stream, "diagram.vsdx");
 
-        // Assert: the extension identifies Visio at the documented 0.9 confidence
+        // Assert: the extension identifies Visio by the extension basis
         Assert.Equal(DocumentFormat.Vsdx, detection.Format);
         Assert.Equal(DetectionBasis.Extension, detection.Basis);
     }
@@ -118,14 +118,14 @@ public class FormatSnifferTests
         // Act: sniff using the primary extension signal
         var detection = FormatSniffer.Detect(stream, "diagram.vsdm");
 
-        // Assert: the extension identifies the macro-enabled Visio drawing at the documented 0.9 confidence
+        // Assert: the extension identifies the macro-enabled Visio drawing by the extension basis
         Assert.Equal(DocumentFormat.Vsdm, detection.Format);
         Assert.Equal(DetectionBasis.Extension, detection.Basis);
     }
 
     /// <summary>
     ///     Proves each legacy binary Office extension is identified from its name, with the correct
-    ///     format id and media type at the extension-primary basis and confidence (ExtensionPrimary).
+    ///     format id and media type at the extension-primary basis (ExtensionPrimary).
     /// </summary>
     /// <param name="fileName">The document file name carrying a mixed-case legacy extension.</param>
     /// <param name="expectedId">The stable lowercase format id the extension must resolve to.</param>
@@ -174,7 +174,7 @@ public class FormatSnifferTests
     }
 
     /// <summary>
-    ///     Proves unrecognized content with no file name is reported as unknown with zero confidence (UnknownFormat).
+    ///     Proves unrecognized content with no file name is reported as unknown (UnknownFormat).
     /// </summary>
     [Fact]
     public void FormatSniffer_Detect_UnrecognizedContentNoFileName_ReportsUnknown()
@@ -185,7 +185,7 @@ public class FormatSnifferTests
         // Act: sniff content that matches nothing
         var detection = FormatSniffer.Detect(stream, null);
 
-        // Assert: the format is unknown, by extension basis, at zero confidence
+        // Assert: the format is unknown, by extension basis
         Assert.True(detection.Format.IsUnknown);
         Assert.Equal(DetectionBasis.Extension, detection.Basis);
     }
