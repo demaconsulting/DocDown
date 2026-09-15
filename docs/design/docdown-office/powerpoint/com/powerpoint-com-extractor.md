@@ -45,7 +45,8 @@ state.
   `powerpoint.com.available` passes where PowerPoint is registered on Windows and skips cleanly
   elsewhere. `powerpoint.com.render` walks through the door the availability case only knocks on: it
   writes the embedded probe deck into the self-test work folder, renders it through the real
-  `PowerPointAutomation` at 96 DPI, and passes only when exactly one slide came back carrying
+  `PowerPointAutomation` at 96 DPI, and passes only when every slide of the two-slide probe deck came
+  back carrying
   non-empty PNG bytes with the PNG signature and plausible pixel dimensions, and the PowerPoint
   process the render started has exited within a short grace period. It skips with a reason naming
   Microsoft PowerPoint off Windows or where the probe reports unavailable, and reports every fault as
