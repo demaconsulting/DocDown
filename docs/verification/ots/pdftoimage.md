@@ -40,8 +40,9 @@ committed binary and no network access.
 `PdfPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs`,
 `DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages`
 
-The first calls PDFtoImage's `Conversion.ToImage` directly and proves it returns a bitmap that encodes
-to a valid PNG. The second proves the same call path inside a real extraction writes a page PNG. The
+The first calls PDFtoImage's `Conversion.SavePng` directly through `PageRenderer` and proves it
+writes a valid PNG for a single page. The second proves the same call path inside a real extraction writes a page PNG. The
 third proves it end to end through the engine, producing a valid PNG of plausible dimensions for the
 requested DPI. Together they are direct evidence that PDFtoImage rasterizes a page at a requested DPI
-through its managed API. Evidence for `DocDown-OTS-PDFtoImage`.
+and encodes it through its managed API, without DocDown naming any type from the native stack
+beneath it. Evidence for `DocDown-OTS-PDFtoImage`.

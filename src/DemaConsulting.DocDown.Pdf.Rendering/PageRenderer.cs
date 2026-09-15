@@ -116,6 +116,31 @@ internal static class PageRenderer
     }
 
     /// <summary>
+    ///     Reads the number of pages in a PDF.
+    /// </summary>
+    /// <param name="pdf">The full bytes of the source PDF.</param>
+    /// <returns>The page count reported by the rasterizer.</returns>
+    /// <remarks>
+    ///     Kept here rather than in the caller so this type stays the package's single native-interop
+    ///     seam: the count comes from the same component that will rasterize the pages, and it runs
+    ///     under <see cref="RenderGate"/> like every other native call, because the rasterizer is not
+    ///     thread-safe. Any native or memory fault surfaces here as a thrown exception; the caller
+    ///     isolates it and reports a note rather than failing the extraction.
+    /// </remarks>
+    public static int GetPageCount(byte[] pdf)
+    {
+        ArgumentNullException.ThrowIfNull(pdf);
+
+        // Serialize: the native stack is not thread-safe, so exactly one call runs at a time process-wide
+        lock (RenderGate)
+        {
+#pragma warning disable CA1416 // PDFtoImage supports every platform DocDown targets (Windows, Linux, macOS)
+            return Conversion.GetPageCount(pdf);
+#pragma warning restore CA1416
+        }
+    }
+
+    /// <summary>
     ///     Performs the native rasterization and PNG encode for one page.
     /// </summary>
     /// <param name="pdf">The full bytes of the source PDF.</param>

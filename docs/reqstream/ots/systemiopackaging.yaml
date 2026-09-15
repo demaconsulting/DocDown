@@ -2,10 +2,10 @@
 # System.IO.Packaging OTS Software Requirements
 #
 # Requirements for System.IO.Packaging, the Open Packaging Conventions (OPC) container
-# implementation the Open XML SDK sits on: it is the Zip-based package reader that opens a
-# .docx and exposes its parts and relationships. It reaches DocDown.Word transitively through
-# the SDK and, like the SDK, is a fully managed runtime library whose evidence comes from the
-# extraction tests that open a document.
+# implementation. DocDown.Office references it directly and calls it directly: VisioPackageReader
+# opens a .vsdx with Package.Open and resolves its parts and relationships without the Open XML SDK,
+# which does not handle Visio drawings. The SDK also sits on it for the Word, Excel and PowerPoint
+# formats, but that use is transitive; the evidence below is the direct use.
 
 sections:
   - title: OTS Software Requirements
@@ -14,14 +14,16 @@ sections:
         requirements:
           - id: DocDown-OTS-SystemIoPackaging
             title: >-
-              System.IO.Packaging shall open a WordprocessingML package and expose its parts and
+              System.IO.Packaging shall open an OPC package and expose its parts and
               relationships.
             justification: |
-              A .docx is an OPC package — a Zip container of XML parts joined by relationships — and
-              every structured read the SDK performs begins by opening that package and resolving a
-              relationship to a part. Its evidence is the named tests that open a generated package and
-              read its parts, not a broad coverage claim.
+              A .vsdx is an OPC package — a Zip container of XML parts joined by relationships — and
+              the Visio backend reads one by opening that package and resolving a relationship to
+              each part it needs, calling System.IO.Packaging directly because the Open XML SDK does
+              not read Visio drawings. Its evidence is the named tests that open a package and read
+              its parts and relationships, not a broad coverage claim.
             tags: [ots]
             tests:
+              - VisioPackageReader_Read_WashSystem_SurfacesPageName
+              - VisioPackageReader_Read_TwoPages_ReturnsPagesInOrder
               - DocDownWord_Extract_GeneratedDocx_ProducesContractLayout
-              - WordOpenXmlReader_Read_HeadingsListsAndTables_ProducesStructuredBlocks
