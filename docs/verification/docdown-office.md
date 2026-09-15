@@ -19,9 +19,10 @@ present. That direction matters: an exact set fails when a backend is silently d
 as readily as when one is silently added, and a merge of four packages into one is exactly the change
 that could drop one unnoticed.
 
-The surviving per-format calls are verified too. `AddExcel()` alone must register one backend, not
-six — that granularity is the stated reason those methods were kept, and an untested reason is a weak
-one.
+One of the surviving per-format calls is verified directly. `AddExcel()` alone must register one
+backend, not six — that granularity is the stated reason those methods were kept, and an untested
+reason is a weak one. `AddWord()`, `AddPowerPoint()`, and `AddVisio()` follow the identical shape and
+are not separately asserted here.
 
 ### The probe documents are asserted against the shipped assembly
 
@@ -49,7 +50,8 @@ inside it. What is inside it is answered by the self-tests that extract it.
 - `AddOffice()` returns the same builder, so registration chains.
 - A null builder is rejected rather than silently ignored.
 - `AddExcel()` alone registers exactly one backend.
-- All four probe documents load from the shipped assembly and are Open XML packages.
+- All four probe documents load from the shipped assembly, are non-empty, and begin with the Zip
+  local file header.
 
 ## Test Scenarios
 
@@ -57,9 +59,10 @@ inside it. What is inside it is answered by the self-tests that extract it.
 
 **Test**: `AddOffice_OnBuilder_RegistersEveryOfficeBackend`
 
-Builds an engine through `AddOffice()` and asserts the ordered set of extractor identifiers is
+Builds an engine through `AddOffice()` and asserts the set of extractor identifiers is
 exactly `excel-openxml`, `powerpoint-com`, `powerpoint-openxml`, `visio-com`, `visio-openxml`, and
-`word-openxml`. Evidence for `DocDownOffice-Registration`.
+`word-openxml`. The identifiers are sorted before comparison, so this fixes membership, not
+registration order. Evidence for `DocDownOffice-Registration`.
 
 ### Registration chains and rejects a null builder
 

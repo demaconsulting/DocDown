@@ -21,8 +21,6 @@ sections:
               registry, never throws, and answers with a declarative reason the reader can act on -
               or rather, one the reader cannot act on, which is why the reasons state a fact about
               the environment instead of instructing an installation.
-            children:
-              - DocDownOffice-Com-DelegatedComposition
             tests:
               - PowerPointComAvailability_Probe_NeverThrowsAndNeverInstructsInstallation
               - PowerPointComAvailability_Probe_OffWindows_IsUnavailable

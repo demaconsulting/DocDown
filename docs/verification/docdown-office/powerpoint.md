@@ -59,8 +59,8 @@ committed.
 The one committed binary is the backend's self-test probe: a real document authored in the
 application that produces the format, embedded in the package so the self-test reads what that
 application emits.
-The suite's own fixtures stay generated. No .pptx or
-`.ppt` is committed, so the repository stays text-only and every slide title, body line, speaker note,
+The suite's own fixtures stay generated. No `.pptx` or
+`.ppt` beyond that probe is committed, so every slide title, body line, speaker note,
 image name, and rendered payload in the fixtures is synthetic.
 
 ## Test Environment

@@ -118,7 +118,8 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
     /// <inheritdoc />
     /// <remarks>
     ///     The cases describe this backend's own behavior in the environment it is installed in: that
-    ///     it can parse a document it builds itself, and that page rendering is genuinely unavailable
+    ///     it can parse the document embedded here as a probe, and that page rendering is genuinely
+    ///     unavailable
     ///     rather than merely untested. The rendering case reports as skipped with a reason, because
     ///     a capability this package does not claim must not be reported as a failure.
     /// </remarks>

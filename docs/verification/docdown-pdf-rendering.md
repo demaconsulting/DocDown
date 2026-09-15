@@ -43,8 +43,10 @@ this package attempted and could not complete.
 
 ### Test fixtures are generated; the self-test probe is committed
 
-Every PDF the suite uses is built at test time by the parser's own document writer, so the repository
-stays text-only and no question arises about the provenance or licensing of a sample document. The PNG
+Every PDF the suite's tests use is built at test time by the parser's own document writer; the one
+exception is `Resources/probe.pdf`, the self-test probe this package embeds and ships so
+`docdown --validate` can rasterize a real document. No sample document of unknown provenance is
+committed. The PNG
 inspector reads only the signature and header, so no image-decoding dependency is added to the test
 project.
 

@@ -47,8 +47,8 @@ backend supports the format. No fixture is committed.
 The one committed binary is the backend's self-test probe: a real document authored in the
 application that produces the format, embedded in the package so the self-test reads what that
 application emits.
-The suite's own fixtures stay generated, so the repository stays
-text-only and no question arises about the provenance or licensing of a sample workbook. Every value,
+The suite's own fixtures stay generated, so no sample workbook of unknown provenance or licensing is
+committed. Every value,
 sheet name, chart series, and annotation in the fixtures is synthetic.
 
 ## Test Environment

@@ -30,7 +30,8 @@ environment there, so one instance can be registered once and reused across conc
   seek, reads the model with `VisioPackageReader.Read`, delegates to `VisioContentEmitter.EmitAsync`,
   and returns `Produced` on normal completion.
 - **`GetSelfTestCases()` / `RunParseRoundTrip`** — contribute a `visio.openxml.parseRoundTrip`
-  self-test that builds a drawing with a directed edge and proves the connection resolves, and a
+  self-test that reads the embedded probe drawing — two labeled shapes joined by a glued connector —
+  and proves the connection resolves, and a
   `visio.pageRendering` case that reports skipped with a reason because rendering belongs to the COM
   backend.
 - **`ReadSourceAsync`** (private) — buffers the source fully so the reader has a seekable stream.

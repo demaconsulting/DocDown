@@ -13,9 +13,9 @@ prove the orchestration produces the full output contract.
 ### Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
-- **Inputs**: the descriptor and probe directly; a drawing built at test time by
-  `VisioPackageBuilder` (test project) for the self-test round-trip; the system integration drawings for
-  orchestration
+- **Inputs**: the descriptor and probe directly; the embedded probe drawing for the self-test
+  round-trip; drawings built at test time by `VisioPackageBuilder` (test project) for the integration
+  scenarios; the system integration drawings for orchestration
 - **Mocking**: none; the extractor runs against a real package and a recording context
 - **Isolation**: each test owns its inputs
 

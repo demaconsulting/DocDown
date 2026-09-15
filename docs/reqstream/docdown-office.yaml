@@ -21,12 +21,28 @@ sections:
           rather than infer it. One call covers the common case - this host reads Microsoft Office
           documents - and the per-format calls remain for a host that reads only one format and
           should not carry six backends to do it.
-        children:
-          - DocDownOffice-Com-Availability
         tests:
           - AddOffice_OnBuilder_RegistersEveryOfficeBackend
           - AddOffice_ReturnsSameBuilderForChaining
           - AddExcel_Alone_RegistersOnlyTheExcelBackend
+
+      - id: DocDownOffice-ComAutomation
+        title: >-
+          The system shall report whether its COM automation backends can run in the current
+          environment, and shall keep a delegated run's output consistent with what it produced.
+        tags: [system]
+        justification: |
+          Two of the six backends this package ships drive a Microsoft Office application over COM,
+          and neither can run where that application is absent - which is every CI runner and most
+          Linux and macOS hosts. The system must therefore answer whether such a backend is usable
+          before it is selected, and must do so without launching the application. Where a COM
+          backend does run, it delegates content extraction to its managed counterpart and adds
+          rendering on top, so the composed report must not carry the delegate's statement that no
+          rendering was performed. Both behaviors are shared by the COM backends and decompose into
+          the Com subsystem.
+        children:
+          - DocDownOffice-Com-Availability
+          - DocDownOffice-Com-DelegatedComposition
 
       - id: DocDownOffice-SelfTestProbes
         title: >-

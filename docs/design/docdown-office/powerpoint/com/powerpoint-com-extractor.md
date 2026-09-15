@@ -44,7 +44,7 @@ state.
 - **`GetSelfTestCases`** / **`RunAvailable`** / **`RunRender`** — contribute two release-time cases.
   `powerpoint.com.available` passes where PowerPoint is registered on Windows and skips cleanly
   elsewhere. `powerpoint.com.render` walks through the door the availability case only knocks on: it
-  builds a synthetic single-slide deck in the self-test work folder, renders it through the real
+  writes the embedded probe deck into the self-test work folder, renders it through the real
   `PowerPointAutomation` at 96 DPI, and passes only when exactly one slide came back carrying
   non-empty PNG bytes with the PNG signature and plausible pixel dimensions, and the PowerPoint
   process the render started has exited within a short grace period. It skips with a reason naming

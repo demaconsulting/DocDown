@@ -110,7 +110,8 @@ public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     /// <inheritdoc />
     /// <remarks>
     ///     The cases describe this backend's own behavior in its deployed environment: that it can
-    ///     read a workbook it builds itself, and that page rendering is genuinely not offered rather
+    ///     read the workbook authored in Microsoft Excel and embedded here, and that page rendering
+    ///     is genuinely not offered rather
     ///     than merely untested. The rendering case reports as skipped with a reason, because a
     ///     capability this package does not claim must not be reported as a failure.
     /// </remarks>

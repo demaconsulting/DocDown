@@ -101,7 +101,8 @@ public sealed class WordOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     /// <inheritdoc />
     /// <remarks>
     ///     The cases describe this backend's own behavior in its deployed environment: that it can
-    ///     read a document it builds itself, and that page rendering is outside this backend's scope
+    ///     read the document authored in Microsoft Word and embedded here, and that page rendering
+    ///     is outside this backend's scope
     ///     rather than merely untested. The rendering case reports as skipped with a reason because
     ///     this package does not attempt page rendering.
     /// </remarks>

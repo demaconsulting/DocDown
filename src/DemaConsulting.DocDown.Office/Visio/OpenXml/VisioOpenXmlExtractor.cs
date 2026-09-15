@@ -98,8 +98,9 @@ public sealed class VisioOpenXmlExtractor : IDocumentExtractor, ISelfValidating
 
     /// <inheritdoc />
     /// <remarks>
-    ///     The cases describe this backend's own behavior: that it can read a drawing it builds itself
-    ///     — including its topology — and that page rendering is genuinely not provided rather than
+    ///     The cases describe this backend's own behavior: that it can read the drawing authored in
+    ///     Microsoft Visio and embedded here — including its topology — and that page rendering is
+    ///     genuinely not provided rather than
     ///     merely untested. The rendering case reports as skipped with a reason.
     /// </remarks>
     public IEnumerable<SelfTestCase> GetSelfTestCases() =>
@@ -130,9 +131,9 @@ public sealed class VisioOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     /// <param name="context">The self-test context supplying cancellation.</param>
     /// <returns>The result of the case.</returns>
     /// <remarks>
-    ///     Reads the embedded drawing authored in Microsoft Visio - two labeled shapes joined by a glued
-    ///     it back, and confirms the connection resolved — proving the topology path is genuinely
-    ///     functional in this deployment rather than merely present.
+    ///     Reads the embedded drawing authored in Microsoft Visio — two labeled shapes joined by a
+    ///     glued connector — parses it back, and confirms the connection resolved — proving the
+    ///     topology path is genuinely functional in this deployment rather than merely present.
     /// </remarks>
     private static SelfTestResult RunParseRoundTrip(SelfTestContext context)
     {

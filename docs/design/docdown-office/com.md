@@ -1,6 +1,8 @@
-# DocDown.Office Com Subsystem Design
+## Com Subsystem
 
 ![DocDown.Office Com Structure](OfficeComView.svg)
+
+### Overview
 
 The Com subsystem holds what the PowerPoint and Visio COM automation backends share. It exists
 because those two backends do the same three things in the same way, and did them in two copies until
@@ -8,7 +10,12 @@ the duplication was removed: they probe whether their application can be reached
 content extraction to their managed counterpart, and they reconcile that delegate's output with the
 rendering they then perform.
 
-## Architecture
+### Interfaces
+
+Every type here is internal. The subsystem's consumers are the two COM extractors in their own
+format subsystems; nothing outside `DemaConsulting.DocDown.Office` can reach these types.
+
+### Design
 
 Three types, none of which touches a COM interface itself.
 
@@ -25,7 +32,7 @@ through `Visio.InvisibleApp` and PowerPoint through `PowerPoint.Application`, th
 differ, and each needs a different value converter. Collapsing them would produce one type with four
 knobs, which trades one kind of complexity for a worse one.
 
-## Why the delegate's honesty needs composing
+#### Why the delegate's honesty needs composing
 
 A managed backend, asked to extract on its own terms, states plainly that it does not render pages.
 That statement is true of the managed backend and false of the run the reader is looking at, because
@@ -37,12 +44,7 @@ by the caller rather than hard-coded, because each managed backend names its own
 backend reports `powerpoint.pageRendering` and the Visio backend `visio.pageRendering`. That single
 string was the only difference between what were once two copies of this class.
 
-## External Interfaces
-
-Every type here is internal. The subsystem's consumers are the two COM extractors in their own
-format subsystems.
-
-## Risk Control Measures
+#### Risk control measures
 
 - **The probe never launches an application.** The engine probes every registered backend before
   selecting one, so a probe that started Microsoft Office would do so on every extraction, including
@@ -55,7 +57,7 @@ format subsystems.
 - **Suppression is narrow.** One key, and only when unavailable. A broader filter could hide a fact
   the reader needs.
 
-## Design Constraints
+#### Design constraints
 
 - The subsystem adds no native asset and no interop assembly. COM is reached through late-bound
   `IDispatch`, so the package stays runtime-identifier agnostic even though these backends only

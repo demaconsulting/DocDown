@@ -218,7 +218,7 @@ public class FormatSnifferTests
         // Act: sniff using the primary extension signal
         var detection = FormatSniffer.Detect(stream, "index.htm");
 
-        // Assert: the trusted extension basis carries exactly the 0.9 confidence contract
+        // Assert: the trusted extension signal is reported as the extension basis
         Assert.Equal(DocumentFormat.Html, detection.Format);
         Assert.Equal(DetectionBasis.Extension, detection.Basis);
     }

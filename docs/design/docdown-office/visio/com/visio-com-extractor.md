@@ -41,8 +41,8 @@ state.
   the Windows-only type so it is never constructed off Windows.
 - **`GetSelfTestCases()` / `RunAvailable` / `RunRender`** — contribute two release-time cases.
   `visio.com.available` passes where Visio is registered on Windows and skips cleanly elsewhere.
-  `visio.com.render` walks through the door the availability case only knocks on: it builds a
-  synthetic single-page drawing in the self-test work folder, renders it through the real
+  `visio.com.render` walks through the door the availability case only knocks on: it writes the
+  embedded probe drawing into the self-test work folder, renders it through the real
   `VisioAutomation` at 96 DPI, and passes only when exactly one page came back carrying non-empty
   PNG bytes with the PNG signature and plausible pixel dimensions, and the Visio process the render
   started has exited within a short grace period. It skips with a reason naming Microsoft Visio off
