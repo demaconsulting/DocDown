@@ -6,7 +6,7 @@ extractor, the availability probe, and the real automation adapter.
 ### Verification Approach
 
 The Com subsystem is verified through unit tests in `Com/PowerPointComExtractorTests.cs` and
-`Com/PowerPointComAvailabilityTests.cs` in `DemaConsulting.DocDown.PowerPoint.Tests`.
+`Com/PowerPointComAvailabilityTests.cs` in `DemaConsulting.DocDown.Office.Tests`.
 
 Everything the COM backend does apart from talking to Microsoft PowerPoint is exercised cross-platform
 by injecting a stub `IPowerPointAutomation` (`TestData/StubPowerPointAutomation.cs`): the delegation

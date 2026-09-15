@@ -55,4 +55,4 @@ rejected with `ArgumentNullException`.
 ### Callers
 
 `ExcelOpenXmlExtractor.ExtractAsync` calls `Read` over the buffered workbook bytes. The self-test round
-trip also reads a workbook it built itself. Nothing else calls it directly.
+trip also reads the embedded workbook. Nothing else calls it directly.

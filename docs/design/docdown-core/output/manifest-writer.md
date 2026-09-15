@@ -49,11 +49,11 @@ plain strings in emission order.
   ContentWriteResult? content, CancellationToken cancellationToken)`** — builds the DTO graph and
   writes the serialized JSON.
 - **`BuildManifest`** — maps the report and sink state to the immutable DTO graph.
-- **`BuildSource`**, **`BuildExtractor`**, **`BuildEnvironment`**, **`BuildDocument`**,
-  **`BuildContentFeatures`**, **`BuildImages`**, **`BuildPages`**, **`BuildParts`**,
-  **`BuildNotes`**, **`BuildOptions`**, and **`BuildFailure`** — focused mapping helpers.
-- **`OutcomeString`**, **`BasisString`**, **`TransformString`**,
-  and **`ScratchModeString`** — projection helpers for stable schema strings.
+- **`BuildSource`**, **`BuildExtractor`**, **`BuildDocument`**, **`BuildContentFeatures`**,
+  **`BuildImages`**, **`BuildPages`**, **`BuildParts`**, **`BuildNotes`**, and **`BuildFailure`**
+  — focused mapping helpers.
+- **`FormatTimestamp`**, **`OutcomeString`**, **`BasisString`**, and **`TransformString`** —
+  projection helpers for stable schema strings.
 
 #### Error Handling
 
@@ -71,4 +71,4 @@ a consumer as undocumented output.
 
 #### Callers
 
-`DocDownEngine` calls `ManifestWriter` after `MetadataWriter` and before `SummaryWriter`.
+`DocDownEngine` calls `ManifestWriter` after `ContentWriter` and before `MetadataWriter`.

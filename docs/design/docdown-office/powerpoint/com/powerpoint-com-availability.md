@@ -20,9 +20,9 @@ environment — the operating system and, on Windows, the registry through a Pro
   not on Windows; on Windows, returns `Available(providesRenderedPages: true)` when the
   `PowerPoint.Application` ProgID resolves and `Unavailable(reason)` otherwise. Cheap, side-effect
   free, and never throws.
-- **`IsPowerPointRegistered`** (private, Windows-only) — resolves `PowerPoint.Application` through
-  `Type.GetTypeFromProgID` with `throwOnError: false`; a registry lookup only, never an activation.
-  Any fault is treated as "not registered" so the probe honors its no-throw obligation.
+The probe itself lives in the shared `OfficeComAvailability`, which PowerPoint and Visio use in
+common: the two probes differed only in the application name and the ProgID, so those are arguments
+rather than two copies of the logic. This type names PowerPoint's own entry point and supplies them.
 
 ### Error Handling
 

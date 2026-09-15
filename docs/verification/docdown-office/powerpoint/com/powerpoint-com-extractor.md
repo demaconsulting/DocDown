@@ -6,7 +6,7 @@ rendering backend.
 ### Verification Approach
 
 `PowerPointComExtractor` is verified through unit tests in `Com/PowerPointComExtractorTests.cs` in
-`DemaConsulting.DocDown.PowerPoint.Tests`, exercising the whole extraction path through an injected
+`DemaConsulting.DocDown.Office.Tests`, exercising the whole extraction path through an injected
 stub `IPowerPointAutomation` with no Microsoft Office present. The stub lets CI prove the delegation
 to the managed backend, the rendering of every slide, the per-slide fault isolation, the
 render-resolution pass-through, the rendering-fact reconciliation, and the probe behavior —
@@ -98,7 +98,8 @@ Microsoft PowerPoint. Evidence for
 `DocDownPowerPoint-Com-PowerPointComExtractor-ContributesComSelfTests`.
 
 The passing side of `powerpoint.com.render` is release-time evidence, not CI evidence: on a machine
-with Microsoft PowerPoint installed, `docdown --validate` builds a synthetic single-slide deck,
+with Microsoft PowerPoint installed, `docdown --validate` writes the embedded probe deck into its
+work folder,
 renders it through the real adapter, and reports `[PASS] powerpoint.com.render`. That run is the only
 place the COM boundary — activation, read-only open, point-to-pixel conversion, PNG export, and
 forced session teardown — is exercised end to end, and it is recorded in the release validation

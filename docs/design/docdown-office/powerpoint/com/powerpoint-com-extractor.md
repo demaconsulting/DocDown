@@ -44,17 +44,17 @@ state.
 - **`GetSelfTestCases`** / **`RunAvailable`** / **`RunRender`** — contribute two release-time cases.
   `powerpoint.com.available` passes where PowerPoint is registered on Windows and skips cleanly
   elsewhere. `powerpoint.com.render` walks through the door the availability case only knocks on: it
-  builds a synthetic single-slide deck in the self-test work folder, renders it through the real
-  `PowerPointAutomation` at 96 DPI, and passes only when exactly one slide came back carrying
+  writes the embedded probe deck into the self-test work folder, renders it through the real
+  `PowerPointAutomation` at 96 DPI, and passes only when every slide of the two-slide probe deck came
+  back carrying
   non-empty PNG bytes with the PNG signature and plausible pixel dimensions, and the PowerPoint
   process the render started has exited within a short grace period. It skips with a reason naming
   Microsoft PowerPoint off Windows or where the probe reports unavailable, and reports every fault as
   a failure message rather than an exception. It deletes its deck on every path.
-- **`BuildSelfTestDeck`** and its element builders (private) — synthesize the render case's deck:
-  theme, slide master, blank layout, one widescreen slide carrying an invented title line, and the
-  slide size. The deck is built rather than committed so the case ships no document of its own, and
-  it is deliberately complete because PowerPoint refuses to open a deck missing any of that
-  furniture.
+- **`ProbeResourceName`** (private const) — names the embedded deck the render case rasterizes: a
+  real `.pptx` authored in Microsoft PowerPoint, read through `SelfTestProbe.Load`. The synthesizer
+  that once stood here built a theme, color scheme, font scheme, format scheme, slide master and
+  layout, because PowerPoint refuses to open a deck without them.
 - **`DescribeRenderShortfall`** / **`DescribeProcessShortfall`** / **`IsPng`** / `ReadPngDimensions`
   (private) — judge what the render returned and whether the owned host was released, as plain
   descriptions the case turns into a failure message.

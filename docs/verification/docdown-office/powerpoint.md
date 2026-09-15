@@ -6,7 +6,7 @@ PowerPoint extraction package.
 ## Verification Approach
 
 `DocDown.PowerPoint` is verified through system-level integration tests in `DocDownPowerPointTests.cs`,
-unit tests per unit in `DemaConsulting.DocDown.PowerPoint.Tests`, and release-time self-tests for the
+unit tests per unit in `DemaConsulting.DocDown.Office.Tests`, and release-time self-tests for the
 real COM automation boundary.
 
 ### Every extraction test reconciles against the filesystem
@@ -49,13 +49,17 @@ render. The availability probe is proved to report unavailable off Windows with 
 that never instructs an installation, so a machine without PowerPoint produces an honest selection
 outcome rather than a broken render.
 
-### Fixtures are generated, never committed
+### Test fixtures are generated; the self-test probe is committed
 
 Every deck the suite uses is built at test time by the Open XML SDK writer in `TestData/PptxFixtures.cs`,
 and the rendering path is driven by `TestData/StubPowerPointAutomation.cs`. The legacy `.ppt`
 scenario writes a placeholder byte sequence whose extension drives format detection, because the
-selection path never opens the file: no registered backend supports the format. No binary `.pptx` or
-`.ppt` is committed, so the repository stays text-only and every slide title, body line, speaker note,
+selection path never opens the file: no registered backend supports the format. No fixture is
+committed.
+The one committed binary is the backend's self-test probe: a real deck authored in Microsoft
+PowerPoint, embedded in the package so the self-test reads what that application emits.
+The suite's own fixtures stay generated. No `.pptx` or
+`.ppt` beyond that probe is committed, so every slide title, body line, speaker note,
 image name, and rendered payload in the fixtures is synthetic.
 
 ## Test Environment

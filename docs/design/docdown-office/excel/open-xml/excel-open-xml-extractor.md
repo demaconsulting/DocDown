@@ -40,16 +40,17 @@ extraction.
   Preconditions: both arguments non-null. Buffering is what makes a stream source and a file source
   behave identically and gives the package reader the seekable stream it needs.
 - **`IEnumerable<SelfTestCase> GetSelfTestCases()`** — returns two cases:
-  - `excel.openxml.parseRoundTrip`, which builds a one-sheet workbook in memory with
-    `SpreadsheetDocument.Create`, reads it back, and passes when the model carries at least one
-    worksheet. Building rather than embedding a fixture keeps the case free of a shipped binary
-    payload.
+  - `excel.openxml.parseRoundTrip`, which reads the embedded workbook authored in Microsoft Excel
+    and passes when the model carries at least one
+    worksheet. Embedding a probe Excel itself authored is what makes the case prove this deployment
+    can read what the real application emits, rather than that a library agrees with itself.
   - `excel.pageRendering`, which reports a reasoned skip because a workbook is non-paginated and page
     rendering does not apply.
 - **`ReadSourceAsync`** (private) — copies the source into memory, because a stream-backed
   `DocumentSource` is not guaranteed seekable and the SDK's package reader must seek.
-- **`RunParseRoundTrip`** / **`BuildProbeWorkbook`** (private) — the round-trip case body and the
-  one-sheet workbook it reads back; the case catches every exception and reports it as a failed result
+- **`RunParseRoundTrip`** (private) — the round-trip case body. It reads the embedded workbook named
+  by `ProbeResourceName`, a real `.xlsx` authored in Microsoft Excel; the case catches every exception
+  and reports it as a failed result
   rather than throwing.
 
 ### Error Handling
@@ -65,8 +66,8 @@ exception to this rule: a case reports every fault as data rather than throwing.
 - **DocDown.Core** — `IDocumentExtractor`, `ISelfValidating`, `IExtractionSink`, `IExtractionContext`,
   `DocumentSource`, `ExtractionOptions`, `ExtractorAvailability`, `ExtractionOutcome`, `SelfTestCase`,
   `SelfTestResult`, `DocumentFormat` (as `CoreFormat`), `EnvironmentFact`.
-- **DocumentFormat.OpenXml** (OTS) — `SpreadsheetDocument.Create` used only by the self-test probe
-  workbook.
+- **DocumentFormat.OpenXml** (OTS) — the managed reader this backend is built on.
+- **`SelfTestProbe`** (Core) — loads the embedded probe workbook the self-test reads.
 - **ExcelOpenXmlReader** — the SDK-to-model translation.
 - **ExcelContentEmitter** — the shared model-to-sink emission.
 

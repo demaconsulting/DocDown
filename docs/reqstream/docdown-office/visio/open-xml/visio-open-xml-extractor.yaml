@@ -74,7 +74,8 @@ sections:
                   round-trip and the managed backend's non-rendering role.
                 justification: |
                   Operators need to confirm the managed backend works where it is deployed. A
-                  round-trip case that builds a drawing with a directed edge and reads it back proves
+                  round-trip case that reads back the embedded probe drawing — two labeled shapes
+                  joined by a glued connector — proves
                   the topology path is genuinely functional, and the page-rendering case reports a
                   skip with a reason so the managed backend's role is described honestly rather than
                   implied by absence.

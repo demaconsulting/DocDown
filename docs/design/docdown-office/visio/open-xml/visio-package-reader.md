@@ -52,6 +52,6 @@ than throwing.
 
 ### Callers
 
-`VisioOpenXmlExtractor.ExtractAsync` calls `Read()` on the buffered drawing stream, and both the
-extractor's self-test and the test fixtures build packages with `VisioPackageBuilder` for it to read
-back.
+`VisioOpenXmlExtractor.ExtractAsync` calls `Read()` on the buffered drawing stream, the
+extractor's self-test reads the embedded probe drawing, and the test fixtures build packages
+with `VisioPackageBuilder` in the test project for it to read back.

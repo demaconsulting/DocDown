@@ -8,7 +8,7 @@ and the image, chart, and drawing-text readers that resolve the drawing layer.
 
 The OpenXml subsystem is verified through unit tests in `OpenXml/ExcelOpenXmlExtractorTests.cs`,
 `OpenXml/ExcelOpenXmlReaderTests.cs`, and `OpenXml/ExcelChartReaderTests.cs`, plus the system-level
-scenarios in `DocDownExcelTests.cs`, all in `DemaConsulting.DocDown.Excel.Tests`.
+scenarios in `DocDownExcelTests.cs`, all in `DemaConsulting.DocDown.Office.Tests`.
 
 The reader units are exercised against **real generated workbooks** from `TestData/XlsxFixtures.cs`,
 not a simulation, because their contract is the faithful translation of a genuine `.xlsx` into the

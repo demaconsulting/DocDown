@@ -68,16 +68,3 @@ The second proves the image reader retrieves the part's own media type (`image/p
 directly from the SDK, and that a byte-identity comparison against the fixture's source PNG
 holds — which is what makes the passthrough claim depend on the SDK's exposure of the raw stored
 bytes rather than on any label. Evidence for `DocDown-OTS-OpenXml-Images`.
-
-#### Document creation for fixtures
-
-**Tests**: `WordOpenXmlReader_Read_HeaderWithRevisionAndClassification_ProducesDocumentControlSection`,
-`WordOpenXmlExtractor_SelfValidation_ReportsCases`
-
-Every fixture the suite uses is built at test time by the SDK's writer, so a scenario that reads a
-document is also a scenario that trusts the writer to have produced one that can be read back.
-The first proves the writer produced a header carrying a revision and a classification the reader
-then recovers into the model's Document Control collection. The second is a round-trip case
-contributed by the extractor's own self-validation: it builds a document and reads its content in a
-single pass, so a defect in either half is caught here. Evidence for
-`DocDown-OTS-OpenXml-DocumentCreation`.

@@ -90,7 +90,7 @@ sections:
               distinctly from the managed backend's cases.
             justification: |
               An operator needs to confirm the native stack genuinely rasterizes where it is installed.
-              A distinctly named case that renders a document the backend builds itself provides that
+              A distinctly named case that renders the embedded document provides that
               confirmation without colliding with the managed backend's own case names.
             tests:
               - PdfPageRenderingExtractor_GetSelfTestCases_AnyEnvironment_ReportsHonestRenderCaseStatus

@@ -1,0 +1,44 @@
+---
+# Software Subsystem Requirements for DocDownOffice Com
+#
+# The Com subsystem holds what the PowerPoint and Visio COM automation backends share: the
+# availability probe that decides whether an automation backend can run at all, and the two types
+# that keep a delegated managed run's output honest when the COM backend adds rendering to it.
+
+sections:
+  - title: DocDownOffice Requirements
+    sections:
+      - title: Com Requirements
+        requirements:
+          - id: DocDownOffice-Com-Availability
+            title: >-
+              The subsystem shall report whether an Office application's COM automation can run in
+              this environment without launching that application.
+            justification: |
+              The engine probes every registered backend before it selects one, so a probe that
+              launched Microsoft Office would start an application on a machine that may not even be
+              able to run it, on every extraction. A probe reads the operating system and the
+              registry, never throws, and answers with a declarative reason the reader can act on -
+              or rather, one the reader cannot act on, which is why the reasons state a fact about
+              the environment instead of instructing an installation.
+            tests:
+              - PowerPointComAvailability_Probe_NeverThrowsAndNeverInstructsInstallation
+              - PowerPointComAvailability_Probe_OffWindows_IsUnavailable
+              - VisioComAvailability_Probe_NeverInstructsInstallation
+              - VisioComAvailability_Probe_OffWindows_IsUnavailable
+
+          - id: DocDownOffice-Com-DelegatedComposition
+            title: >-
+              The subsystem shall suppress a delegated managed backend's statement that it does not
+              render pages, when the COM backend has rendered them.
+            justification: |
+              A COM backend does not re-implement content extraction: it delegates to its managed
+              counterpart and adds rendered images. The managed backend, run on its own terms, states
+              honestly that it provides no page rendering - and that statement would contradict the
+              images sitting beside it in the same output. Suppressing exactly that one fact, and
+              only when the COM run rendered, keeps the report internally consistent without hiding
+              anything the reader needs. The fact key is supplied by the caller because each managed
+              backend names its own.
+            tests:
+              - PowerPointComExtractor_Extract_ViaStub_SuppressesContradictoryPageRenderingFact
+              - VisioComExtractor_Extract_ViaStub_SuppressesContradictoryPageRenderingFact

@@ -23,7 +23,7 @@ refuses an empty reason.
 ### Key Methods
 
 - **`Render(byte[] pdf, int pageIndexZeroBased, int dpi)`** — runs the PDFtoImage rasterization and
-  SkiaSharp PNG encode under a process-wide lock, returning the PNG bytes. Rejects a null document up
+  PNG encode under a process-wide lock, returning the PNG bytes. Rejects a null document up
   front. Any native or memory fault surfaces as a thrown exception the caller isolates per page.
 - **`ProbeAvailability()`** — loads the PDFium native once through the PDFtoImage assembly's own
   native-resolution path (honoring the package graph's `runtimes/<rid>/native` asset), caches the
@@ -40,9 +40,9 @@ PDFtoImage is supported on every platform DocDown targets.
 
 ### Dependencies
 
-- **PDFtoImage** (OTS) — `Conversion.ToImage` and `RenderOptions` for the raster, and `SkiaSharp`'s
-  `SKBitmap.Encode` for the PNG. See *PDFtoImage*, *PDFium*, and *SkiaSharp* under the OTS
-  integration design.
+- **PDFtoImage** (OTS) — `Conversion.SavePng` and `RenderOptions`, which rasterize the page and write
+  its PNG bytes in one call. No type from the transitive native stack is named here. See *PDFtoImage*
+  under the OTS integration design.
 
 ### Callers
 

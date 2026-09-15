@@ -106,11 +106,11 @@ sections:
               - id: DocDownPowerPoint-Com-PowerPointComExtractor-ContributesComSelfTests
                 title: >-
                   PowerPointComExtractor shall contribute a release-time availability case and a
-                  release-time case that renders a slide it builds itself through the real COM
+                  release-time case that renders the slides of the embedded deck through the real COM
                   adapter, each skipping with a stated reason where Microsoft PowerPoint is absent.
                 justification: |
                   The COM adapter cannot be exercised in CI, so the only evidence that it genuinely
-                  rasterizes in a deployed environment is a case that builds a synthetic single-slide
+                  rasterizes in a deployed environment is a case that reads the embedded two-slide
                   deck and renders it through the shipping adapter, asserting a real PNG of plausible
                   size came back and that the PowerPoint process the render started is gone
                   afterwards. Because rendering is environment-dependent, an environment without

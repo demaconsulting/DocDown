@@ -6,7 +6,7 @@ side-effect-free rendering-availability probe.
 ### Verification Approach
 
 `PowerPointComAvailability` is verified through unit tests in `Com/PowerPointComAvailabilityTests.cs` in
-`DemaConsulting.DocDown.PowerPoint.Tests`. The probe is asserted directly, including its off-Windows path,
+`DemaConsulting.DocDown.Office.Tests`. The probe is asserted directly, including its off-Windows path,
 which CI reaches wherever it runs on Linux and macOS. The tests confirm it never throws, never instructs an
 installation, and reports unavailable off Windows with a declarative reason.
 

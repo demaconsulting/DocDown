@@ -10,7 +10,7 @@ The OpenXml subsystem is verified through unit tests in `OpenXml/VisioOpenXmlExt
 system-level integration tests that drive the managed extractor end to end.
 
 The extractor's selection identity, always-available probe, and self-test contribution are asserted
-directly. The package reader is proved against drawings built at test time by `VisioPackageBuilder`:
+directly. The package reader is proved against drawings built at test time by `VisioPackageBuilder` (test project):
 it surfaces each page's name, extracts each shape's text, resolves each connector into a directed
 edge in the direction its records name regardless of record order, preserves page order, scopes each
 page's edges to that page's own shapes, classifies a text-less shape by its master name, recovers a
@@ -25,7 +25,7 @@ because the behavior is genuinely tested.
 ### Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
-- **Inputs**: Visio Open Packaging drawings synthesized in memory by `VisioPackageBuilder` —
+- **Inputs**: Visio Open Packaging drawings synthesized in memory by `VisioPackageBuilder` (test project) —
   including master-typed schematics, parallel connectors, reused shape ids, symbol-font runs, and
   page/master/thumbnail image relationships — with no committed binary fixtures
 - **Mocking**: none; the reader and image reader are pure over the package

@@ -297,15 +297,15 @@ public sealed class PowerPointComExtractor : IDocumentExtractor, ISelfValidating
             : SelfTestResult.Skipped(probe.UnavailableReason ?? "Microsoft PowerPoint is not available.");
     }
 
-    /// <summary>Runs the end-to-end render self-test: builds a deck and rasterizes it through the real COM adapter.</summary>
+    /// <summary>Runs the end-to-end render self-test: writes the embedded probe deck out and rasterizes it through the real COM adapter.</summary>
     /// <param name="context">The self-test context supplying the work folder and cancellation.</param>
     /// <returns>The case result: passed when a genuine slide image came back, skipped where PowerPoint is absent, failed otherwise.</returns>
     /// <remarks>
     ///     The availability case proves only that PowerPoint can be activated; this case walks
     ///     through the door, which is the only way the COM boundary — activation, read-only open,
     ///     point-to-pixel conversion, PNG export, and session teardown — is exercised anywhere. It
-    ///     builds its own synthetic single-slide deck rather than shipping a fixture, so the case
-    ///     carries no document content of its own, and drives
+    ///     writes the embedded probe deck into the work folder rather than synthesizing one, so the
+    ///     case renders a deck PowerPoint itself authored, and drives
     ///     <see cref="PowerPointAutomation"/> unchanged so the render is bounded by the adapter's
     ///     existing watchdog and leaves no orphaned PowerPoint process. A machine without PowerPoint
     ///     reports a reasoned skip, never a failure, and every fault is reported as data rather than
@@ -357,7 +357,7 @@ public sealed class PowerPointComExtractor : IDocumentExtractor, ISelfValidating
     }
 
     /// <summary>Renders the self-test deck through the real adapter and judges what came back.</summary>
-    /// <param name="path">The absolute path of the synthetic deck to render.</param>
+    /// <param name="path">The absolute path of the probe deck to render.</param>
     /// <param name="started">When the case started, so the result carries a true duration.</param>
     /// <returns>The case result.</returns>
     /// <remarks>

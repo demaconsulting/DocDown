@@ -7,7 +7,7 @@ transform hint.
 ### Verification Approach
 
 `WordOpenXmlImageReader` is verified through unit tests in
-`OpenXml/WordOpenXmlImageReaderTests.cs` in `DemaConsulting.DocDown.Word.Tests`, with method names
+`OpenXml/WordOpenXmlImageReaderTests.cs` in `DemaConsulting.DocDown.Office.Tests`, with method names
 beginning with `WordOpenXmlImageReader_`.
 
 The unit is driven directly against an opened `WordprocessingDocument`, because its contract is the

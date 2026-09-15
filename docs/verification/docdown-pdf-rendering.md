@@ -41,10 +41,12 @@ injecting a rasterization function that throws. The scenario proves the run stil
 does not throw to the caller — the factual reporting the output contract requires of the one step
 this package attempted and could not complete.
 
-### Fixtures are generated, never committed
+### Test fixtures are generated; the self-test probe is committed
 
-Every PDF the suite uses is built at test time by the parser's own document writer, so the repository
-stays text-only and no question arises about the provenance or licensing of a sample document. The PNG
+Every PDF the suite's tests use is built at test time by the parser's own document writer; the one
+exception is `Resources/probe.pdf`, the self-test probe this package embeds and ships so
+`docdown --validate` can rasterize a real document. No sample document of unknown provenance is
+committed. The PNG
 inspector reads only the signature and header, so no image-decoding dependency is added to the test
 project.
 
@@ -55,7 +57,8 @@ project.
   scenarios exercise the real rasterizer; where a host lacked the native stack the backend would
   report unavailable and the self-test case would skip
 - **Filesystem**: a per-test `TempScratch` folder holds both the generated input and the output
-- **Inputs**: PDFs generated at test time; no committed binary fixtures and no network access
+- **Inputs**: PDFs generated at test time, plus the embedded `Resources/probe.pdf` the self-test
+  reads; no committed binary test fixtures and no network access
 - **Determinism**: the run-varying timestamp line is normalized so repeated runs are byte-comparable
 - **Isolation**: each test owns its temporary folder and cleans it on dispose
 
@@ -79,8 +82,9 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 ## Test Scenarios
 
 Each scenario corresponds to one system requirement and names the real test method that evidences it.
-The three OTS items (PDFtoImage, PDFium, SkiaSharp) are verified by transitive evidence from these
-same scenarios; the exact tests are named in each OTS verification document.
+The PDFtoImage OTS item is verified by transitive evidence from these
+same scenarios; the exact tests are named in its OTS verification document. The native rasterizer and
+2D backend beneath it are not separately listed OTS items, because no DocDown type names either.
 
 ### A generated PDF renders to a valid PNG page
 

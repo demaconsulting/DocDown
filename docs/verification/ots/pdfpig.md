@@ -111,14 +111,3 @@ not implement and for a document with no cross-reference table, rather than retu
 be scraped from them. A parser that returned partial content would make honest reporting impossible,
 because this package would report a successful extraction of content the document does not contain.
 Evidence for `DocDown-OTS-PdfPig-ProtectedDocuments`.
-
-#### Document creation for fixtures
-
-**Tests**: `DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout`,
-`DocDownPdf_Extract_DctImage_RoundTripsByteIdenticalAsPassthrough`,
-`PdfDocumentExtractor_GetSelfTestCases_DeployedBackend_ReturnsParseAndRenderingCases`
-
-Every one of these depends on the parser's writer having produced a document the parser can then read
-back — the third most directly, since the self-test case builds a document and reads its glyphs in a
-single round trip. The second additionally proves the writer embeds a JPEG verbatim, which is what
-makes the byte-identity assertion meaningful. Evidence for `DocDown-OTS-PdfPig-DocumentCreation`.

@@ -248,8 +248,9 @@ sections:
         tags: [system]
         justification: |
           An operator needs to confirm the backends actually work where they are deployed, not merely
-          that they are present. The managed backend contributes a round-trip case that builds a
-          drawing with a directed edge, reads it back, and confirms the connection resolved — proving
+          that they are present. The managed backend contributes a round-trip case that reads back the
+          embedded probe drawing — two labeled shapes joined by a glued connector — and confirms the
+          connection resolved — proving
           the topology path is genuinely functional — plus an honest skip for the page-rendering case
           that belongs to the COM backend.
         children:

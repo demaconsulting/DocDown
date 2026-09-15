@@ -15,13 +15,17 @@ confined to a separate, opt-in package rather than being part of `DocDown.Pdf`.
 
 ### Features Used
 
-- `PDFtoImage.Conversion.ToImage(byte[], Index page, string? password, RenderOptions)` to rasterize a
-  single page to a `SkiaSharp.SKBitmap`
+- `PDFtoImage.Conversion.SavePng(Stream, byte[], Index page, string? password, RenderOptions)` to
+  rasterize a single page and write it to the stream as PNG in one call
 - `PDFtoImage.RenderOptions(Dpi: …)` to set the render resolution
-- `SkiaSharp.SKBitmap.Encode(Stream, SKEncodedImageFormat.Png, quality)` to encode the raster to PNG
+- `PDFtoImage.Conversion.GetPageCount(byte[], string? password)` to read the page count that drives
+  page selection, so the count comes from the component that will rasterize the pages
 - native-library resolution through the PDFtoImage assembly for the cheap availability probe
 
-No other PDFtoImage surface is used. Multi-page and async conversion helpers are not used; this
+No other PDFtoImage surface is used, and no type from either transitive native component is named
+anywhere in DocDown. `SavePng` is used in preference to `ToImage` plus a `SkiaSharp.SKBitmap.Encode`
+call precisely so that the SkiaSharp API stays an implementation detail of PDFtoImage rather than
+becoming a direct dependency of this package. Multi-page and async conversion helpers are not used; this
 package renders one page at a time so its own per-page fault isolation and page-range logic stay in
 one place.
 
@@ -42,8 +46,9 @@ substitute an incompatible API or a different native ABI.
 calls into it are serialized behind a lock, so only one document can be rasterized at a time.
 `PageRenderer` mirrors this with a process-wide lock of its own.
 
-**Containment as a risk control.** PDFtoImage, PDFium, and SkiaSharp types appear in exactly one
-source file — `PageRenderer.cs` — and in no public signature of the package. A reflection test over
+**Containment as a risk control.** PDFtoImage types appear in exactly one
+source file — `PageRenderer.cs` — and in no public signature of the package, and no DocDown source
+names a PDFium or SkiaSharp type at all. A reflection test over
 the package's exported types fails the build if any reaches the public surface, so the native stack
 stays confined and replaceable.
 

@@ -27,10 +27,8 @@ component*, and the two packages fail every independence test that would make th
   `DocumentFormat.OpenXml.Framework 3.5.1`; the two do not float relative to each other.
 - Neither ships a native asset; both are `runtimes/`-free managed assemblies.
 
-Compare with `PdfPig` (its own item), `PDFium` (its own item), and `SkiaSharp` (its own item)
-under the OTS integration design: each of those is independently sourced under a different
-maintainer or with a different license, and each of PDFium and SkiaSharp carries its own set of
-per-RID native asset packages. Treating each as its own OTS item reflected genuine independence.
+Compare with `PdfPig` (its own item) under the OTS integration design: it is independently sourced
+under a different maintainer. Treating it as its own OTS item reflects genuine independence.
 Treating OpenXml plus its Framework companion as one item reflects the equally genuine fact that
 they are one component with an implementation seam, not two components.
 

@@ -75,7 +75,8 @@ sections:
                   page-rendering case because this package does not attempt page rendering.
                 justification: |
                   An operator needs to confirm the backend works where it is deployed. A round-trip
-                  case that builds and reads a document proves the SDK is genuinely functional, and a
+                  case that reads back the embedded probe document proves the SDK is genuinely functional
+                  against what Word itself emits, and a
                   skipped page-rendering case states that omitted scope honestly.
                 tests:
                   - WordOpenXmlExtractor_SelfValidation_ReportsCases

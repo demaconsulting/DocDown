@@ -118,7 +118,8 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
     /// <inheritdoc />
     /// <remarks>
     ///     The cases describe this backend's own behavior in the environment it is installed in: that
-    ///     it can parse a document it builds itself, and that page rendering is genuinely unavailable
+    ///     it can parse the document embedded here as a probe, and that page rendering is genuinely
+    ///     unavailable
     ///     rather than merely untested. The rendering case reports as skipped with a reason, because
     ///     a capability this package does not claim must not be reported as a failure.
     /// </remarks>
@@ -236,7 +237,7 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
     /// <param name="context">The self-test context supplying cancellation.</param>
     /// <returns>The result of the case.</returns>
     /// <remarks>
-    ///     Builds a one-page PDF in memory and reads its glyphs back, which proves the parser is
+    ///     Reads the glyphs of the embedded PDF exported from Microsoft Word, which proves the parser is
     ///     genuinely functional in this deployment rather than merely present. Uses no filesystem
     ///     location of its own because the whole round trip fits in memory.
     /// </remarks>
@@ -253,7 +254,7 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
             return page.Letters.Count > 0
                 ? SelfTestResult.Passed(DateTimeOffset.UtcNow - started)
                 : SelfTestResult.Failed(
-                    "The PDF parser read a document it built itself but found no glyphs on its only page.",
+                    "The PDF parser read the embedded document but found no glyphs on its first page.",
                     DateTimeOffset.UtcNow - started);
         }
 #pragma warning disable CA1031 // A self-test reports every fault as data rather than throwing at its caller

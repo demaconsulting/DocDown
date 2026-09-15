@@ -1,6 +1,5 @@
 using System.Globalization;
 using DocDown.Core;
-using UglyToad.PdfPig;
 
 namespace DocDown.Pdf.Rendering;
 
@@ -51,12 +50,23 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     private readonly Func<byte[], int, int, byte[]> _render;
 
     /// <summary>
+    ///     The page-count function this backend reads its page selection from.
+    /// </summary>
+    /// <remarks>
+    ///     Defaults to <see cref="PageRenderer.GetPageCount"/>, so counting goes through the same
+    ///     native-interop seam and the same lock as rendering. Held as a delegate for the same
+    ///     reason as <see cref="_render"/>: a test can substitute a function that faults, which is
+    ///     the only reliable way to exercise the count-failure path.
+    /// </remarks>
+    private readonly Func<byte[], int> _pageCount;
+
+    /// <summary>
     ///     Initializes a new instance of the <see cref="PdfPageRenderingExtractor"/> class that
     ///     rasterizes through the real PDFium-backed <see cref="PageRenderer"/>.
     /// </summary>
     /// <remarks>The production constructor; the parameterless shape is what the registration seam calls.</remarks>
     public PdfPageRenderingExtractor()
-        : this(PageRenderer.Render)
+        : this(PageRenderer.Render, PageRenderer.GetPageCount)
     {
     }
 
@@ -74,9 +84,34 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     ///     recorded notes; production always flows through the parameterless constructor.
     /// </remarks>
     internal PdfPageRenderingExtractor(Func<byte[], int, int, byte[]> render)
+        : this(render, PageRenderer.GetPageCount)
+    {
+    }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="PdfPageRenderingExtractor"/> class with a
+    ///     supplied rasterization function and page-count function.
+    /// </summary>
+    /// <param name="render">
+    ///     The function that renders one page (source bytes, zero-based page index, DPI) to PNG
+    ///     bytes. Must not be null.
+    /// </param>
+    /// <param name="pageCount">
+    ///     The function that reports how many pages the source document has. Must not be null.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown when <paramref name="render"/> or <paramref name="pageCount"/> is <see langword="null"/>.
+    /// </exception>
+    /// <remarks>
+    ///     Internal so tests can inject a faulting counter to prove a count failure becomes a
+    ///     recorded note rather than an unreadable extraction.
+    /// </remarks>
+    internal PdfPageRenderingExtractor(Func<byte[], int, int, byte[]> render, Func<byte[], int> pageCount)
     {
         ArgumentNullException.ThrowIfNull(render);
+        ArgumentNullException.ThrowIfNull(pageCount);
         _render = render;
+        _pageCount = pageCount;
     }
 
     /// <inheritdoc />
@@ -151,7 +186,7 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     /// <inheritdoc />
     /// <remarks>
     ///     Contributes one case that proves the native stack genuinely rasterizes in this
-    ///     deployment: it builds a one-page PDF and renders it to a PNG. Where the native binary is
+    ///     deployment: it renders a page of the embedded PDF to a PNG. Where the native binary is
     ///     absent the case reports a reasoned skip rather than a failure, because an unavailable
     ///     renderer must not be recorded as a broken one. The engine also wraps this backend's cases
     ///     to skip when <see cref="ProbeAvailability"/> reports it unavailable, so the skip is honest
@@ -198,7 +233,27 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     private async ValueTask RenderPagesAsync(
         byte[] bytes, IExtractionSink sink, ExtractionOptions options, CancellationToken cancellationToken)
     {
-        var pageNumbers = SelectPageNumbers(bytes, options.Pages);
+        IReadOnlyList<int> pageNumbers;
+        try
+        {
+            pageNumbers = SelectPageNumbers(bytes, options.Pages);
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancellation is a caller decision, not a count fault; let it propagate
+            throw;
+        }
+#pragma warning disable CA1031 // A count fault costs the pages, not the extraction: the delegated content is already written
+        catch (Exception)
+#pragma warning restore CA1031
+        {
+            // The managed delegate already read this document, so its text, images and metadata
+            // stand. Only the rendered pages are lost, and that is reported as a plain note rather
+            // than collapsing an otherwise good extraction into an unreadable one.
+            sink.ReportNote(new ExtractionNote("Pages could not be counted, so no page images were rendered."));
+            return;
+        }
+
         foreach (var pageNumber in pageNumbers)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -246,16 +301,19 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     /// <param name="range">The requested inclusive page range, or <see langword="null"/> for the whole document.</param>
     /// <returns>The selected page numbers in document order; empty when the document has no pages.</returns>
     /// <remarks>
-    ///     Opens the document with the same managed parser the delegated backend uses, so the pages
-    ///     rendered here are exactly the pages the base backend extracted text and images from.
+    ///     Reads the page count through <see cref="PageRenderer"/> — the package's single
+    ///     native-interop seam, and the same component that will rasterize the pages — so the
+    ///     selection cannot disagree with what the renderer can actually reach, and the call runs
+    ///     under the same process-wide lock as every other native call. Counting with a second
+    ///     parser would both parse the document twice and risk a mismatch between the two.
     ///     Pages outside the document are silently absent from the selection rather than an error,
     ///     matching the managed backend's page-range behavior. Read-only over the buffered bytes.
     /// </remarks>
-    private static IReadOnlyList<int> SelectPageNumbers(byte[] bytes, PageRange? range)
+    private IReadOnlyList<int> SelectPageNumbers(byte[] bytes, PageRange? range)
     {
-        using var document = PdfDocument.Open(bytes, new ParsingOptions { UseLenientParsing = true });
-        var numbers = new List<int>(document.NumberOfPages);
-        for (var number = 1; number <= document.NumberOfPages; number++)
+        var pageCount = _pageCount(bytes);
+        var numbers = new List<int>(pageCount);
+        for (var number = 1; number <= pageCount; number++)
         {
             if (range is { } selected && !selected.Contains(number))
             {
@@ -290,7 +348,7 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     /// <param name="context">The self-test context supplying cancellation.</param>
     /// <returns>The result of the case.</returns>
     /// <remarks>
-    ///     Builds a one-page PDF in memory and rasterizes it, which proves the native stack is
+    ///     Rasterizes a page of the embedded PDF, which proves the native stack is
     ///     genuinely functional here rather than merely loadable. Reports a reasoned skip when the
     ///     native binary is unavailable, and reports every fault as data rather than throwing.
     /// </remarks>
@@ -313,7 +371,7 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
             return IsValidPng(png)
                 ? SelfTestResult.Passed(DateTimeOffset.UtcNow - started)
                 : SelfTestResult.Failed(
-                    "The page renderer produced output that is not a valid PNG for a document it built itself.",
+                    "The page renderer produced output that is not a valid PNG for the embedded document.",
                     DateTimeOffset.UtcNow - started);
         }
 #pragma warning disable CA1031 // A self-test reports every fault as data rather than throwing at its caller

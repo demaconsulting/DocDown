@@ -32,13 +32,13 @@ concurrent extractions targeting different scratch folders.
   - *Pipeline*:
     1. clone the effective options;
     2. prepare the scratch folder;
-    3. read and hash the source bytes;
+    3. read the source bytes;
     4. detect the format;
     5. enumerate candidates;
     6. select one extractor;
     7. invoke the backend with only `DocumentSource` and `IExtractionContext`;
     8. add any Core-derived notes;
-    9. write `content.md`, `metadata.json`, `manifest.json`, and `summary.txt` in that order;
+    9. write `content.md`, `manifest.json`, `metadata.json`, and `summary.txt` in that order;
     10. return the immutable `ExtractionResult`.
 - **`GetBackends()`** — returns each registered `ExtractorCandidate` using cached availability.
 - **`RefreshAvailability()`** — clears cached availability.

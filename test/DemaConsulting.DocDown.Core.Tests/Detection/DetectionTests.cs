@@ -91,7 +91,7 @@ public class DetectionTests
         // Act: sniff the format
         var detection = FormatSniffer.Detect(stream, "document.pdf");
 
-        // Assert: the recorded basis is the trusted extension, at the documented confidence
+        // Assert: the recorded basis is the trusted extension
         Assert.Equal(DetectionBasis.Extension, detection.Basis);
     }
 
@@ -123,7 +123,7 @@ public class DetectionTests
         // Act: sniff the unrecognized content
         var detection = FormatSniffer.Detect(stream, "mystery.dat");
 
-        // Assert: the format is reported as unknown with zero confidence
+        // Assert: the format is reported as unknown
         Assert.True(detection.Format.IsUnknown);
     }
 

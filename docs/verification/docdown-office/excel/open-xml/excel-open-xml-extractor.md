@@ -6,7 +6,7 @@ backend the engine selects and invokes for an `.xlsx`.
 ### Verification Approach
 
 `ExcelOpenXmlExtractor` is verified through unit tests in `OpenXml/ExcelOpenXmlExtractorTests.cs` and
-the system-level scenario in `DocDownExcelTests.cs`, in `DemaConsulting.DocDown.Excel.Tests`. The
+the system-level scenario in `DocDownExcelTests.cs`, in `DemaConsulting.DocDown.Office.Tests`. The
 extractor surface and the probe are asserted directly against the constructed extractor; the self-test
 cases are enumerated and run; and the orchestration is proved through a real end-to-end extraction that
 selects the backend and produces the contract layout.

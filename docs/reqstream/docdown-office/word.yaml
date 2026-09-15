@@ -333,6 +333,5 @@ sections:
           available on demand.
         children:
           - DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests
-          - DocDown-OTS-OpenXml-DocumentCreation
         tests:
           - WordOpenXmlExtractor_SelfValidation_ReportsCases

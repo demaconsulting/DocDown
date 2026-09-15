@@ -110,7 +110,8 @@ public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     /// <inheritdoc />
     /// <remarks>
     ///     The cases describe this backend's own behavior in its deployed environment: that it can
-    ///     read a workbook it builds itself, and that page rendering is genuinely not offered rather
+    ///     read the workbook authored in Microsoft Excel and embedded here, and that page rendering
+    ///     is genuinely not offered rather
     ///     than merely untested. The rendering case reports as skipped with a reason, because a
     ///     capability this package does not claim must not be reported as a failure.
     /// </remarks>
@@ -142,7 +143,7 @@ public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     /// <param name="context">The self-test context supplying cancellation.</param>
     /// <returns>The result of the case.</returns>
     /// <remarks>
-    ///     Builds a one-sheet workbook in memory and reads it back, which proves the SDK is genuinely
+    ///     Reads the embedded workbook authored in Microsoft Excel, which proves the SDK is genuinely
     ///     functional in this deployment rather than merely present. Uses no filesystem location of
     ///     its own because the whole round trip fits in memory.
     /// </remarks>

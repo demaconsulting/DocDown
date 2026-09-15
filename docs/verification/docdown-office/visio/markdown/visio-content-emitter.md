@@ -6,7 +6,7 @@ emission path from the drawing model to the output contract.
 ### Verification Approach
 
 `VisioContentEmitter` is verified through unit tests in `Markdown/VisioContentEmitterTests.cs` in
-`DemaConsulting.DocDown.Visio.Tests`, driving every emission decision from a hand-built
+`DemaConsulting.DocDown.Office.Tests`, driving every emission decision from a hand-built
 `VisioDocumentModel` with no drawing behind it and capturing the output through a recording sink.
 This proves each mapping decision in isolation: the directed topology with shape text, the
 shape-id fallback, inline image links resolving on disk,

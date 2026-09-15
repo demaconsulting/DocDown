@@ -6,7 +6,7 @@ rendering-availability probe.
 ### Verification Approach
 
 `VisioComAvailability` is verified through unit tests in `Com/VisioComAvailabilityTests.cs` in
-`DemaConsulting.DocDown.Visio.Tests`. The probe is asserted directly, including its off-Windows path, which
+`DemaConsulting.DocDown.Office.Tests`. The probe is asserted directly, including its off-Windows path, which
 CI reaches wherever it runs on Linux and macOS, and the property that no reason it returns instructs an
 installation.
 

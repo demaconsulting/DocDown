@@ -6,7 +6,7 @@ single emission path from the deck model to the output contract.
 ### Verification Approach
 
 `PowerPointContentEmitter` is verified through unit tests in
-`Markdown/PowerPointContentEmitterTests.cs` in `DemaConsulting.DocDown.PowerPoint.Tests`, driven from
+`Markdown/PowerPointContentEmitterTests.cs` in `DemaConsulting.DocDown.Office.Tests`, driven from
 hand-built deck models through a recording sink. Building the model by hand is what lets each mapping
 decision be proved in isolation: the per-slide title, text, and notes; the inline image links and
 their suppression; the speaker-notes inventory; the vector-image passthrough; the empty-deck

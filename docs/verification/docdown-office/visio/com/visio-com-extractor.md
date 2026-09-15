@@ -6,7 +6,7 @@ rendering backend.
 ### Verification Approach
 
 `VisioComExtractor` is verified through unit tests in `Com/VisioComExtractorTests.cs` in
-`DemaConsulting.DocDown.Visio.Tests`, exercising the whole extraction path through an injected stub
+`DemaConsulting.DocDown.Office.Tests`, exercising the whole extraction path through an injected stub
 `IVisioAutomation` with no Microsoft Office present. The stub lets CI prove the delegation to the
 managed backend, rendering of every page, per-page note reporting, render-resolution pass-through,
 rendering-fact reconciliation, and probe behavior. The real adapter it constructs by default is
@@ -94,7 +94,8 @@ executes and passes under the shipped tool's `--validate`.
 Evidence for `DocDownVisio-Com-VisioComExtractor-ContributesComSelfTests`.
 
 The passing side of `visio.com.render` is release-time evidence, not CI evidence: on a machine with
-Microsoft Visio installed, `docdown --validate` builds a synthetic single-page drawing, renders it
+Microsoft Visio installed, `docdown --validate` writes the embedded probe drawing into its work
+folder, renders it
 through the real adapter, and reports `[PASS] visio.com.render`. That run is the only place the COM
 boundary — activation, read-only open, export resolution, PNG export, and forced session teardown —
 is exercised end to end, and it is recorded in the release validation results rather than in a CI

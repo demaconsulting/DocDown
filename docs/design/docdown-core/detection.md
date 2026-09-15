@@ -43,14 +43,14 @@ and passes the resulting `FormatDetection` to `ExtractorSelector`.
 ### Design
 
 `FormatSniffer` first performs a case-insensitive extension lookup against a fixed table. A match
-returns immediately with basis `Extension` and confidence `0.9`.
+returns immediately with basis `Extension`.
 
 Only when the name yields nothing does the sniffer read up to 512 leading bytes once and test, in
 order, the `%PDF-` signature and a BOM- and whitespace-tolerant HTML doctype or root element. A
-match returns basis `ContentSignature`; otherwise the result is `Unknown` with confidence `0.0`.
+match returns basis `ContentSignature`; otherwise the result is `Unknown`.
 
 The supporting value types remain unchanged:
 
 - **`DocumentFormat`** — the stable format vocabulary shared across systems.
-- **`DetectionBasis`** — `Extension`, `ContentSignature`, or `CallerSpecified`.
-- **`FormatDetection`** — the identified format, its basis, and confidence.
+- **`DetectionBasis`** — `Extension` or `ContentSignature`.
+- **`FormatDetection`** — the identified format and the basis it was identified by.

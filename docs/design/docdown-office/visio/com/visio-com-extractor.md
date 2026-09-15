@@ -41,18 +41,17 @@ state.
   the Windows-only type so it is never constructed off Windows.
 - **`GetSelfTestCases()` / `RunAvailable` / `RunRender`** — contribute two release-time cases.
   `visio.com.available` passes where Visio is registered on Windows and skips cleanly elsewhere.
-  `visio.com.render` walks through the door the availability case only knocks on: it builds a
-  synthetic single-page drawing in the self-test work folder, renders it through the real
+  `visio.com.render` walks through the door the availability case only knocks on: it writes the
+  embedded probe drawing into the self-test work folder, renders it through the real
   `VisioAutomation` at 96 DPI, and passes only when exactly one page came back carrying non-empty
   PNG bytes with the PNG signature and plausible pixel dimensions, and the Visio process the render
   started has exited within a short grace period. It skips with a reason naming Microsoft Visio off
   Windows or where the probe reports unavailable, and reports every fault as a failure message rather
   than an exception. It deletes its drawing on every path.
-- **`BuildSelfTestDrawing`** and its element builders (private) — synthesize the render case's
-  drawing: the document part, the window part, a letter-sized page, and two invented labeled
-  rectangles with explicit geometry. It writes more than `VisioPackageBuilder` does because that
-  builder feeds the managed reader, whereas Visio itself refuses a package with no window part and
-  draws nothing for a shape with no geometry.
+- **`ProbeResourceName`** (private const) — names the embedded drawing the render case rasterizes: a
+  real `.vsdx` authored in Microsoft Visio, read through `SelfTestProbe.Load`. The synthesizer that
+  once stood here had to write a window part and real shape geometry, because Visio refuses to open a
+  package without the first and draws nothing for a shape without the second.
 - **`DescribeRenderShortfall`** / **`DescribeProcessShortfall`** / **`IsPng`** / `ReadPngDimensions`
   (private) — judge what the render returned and whether the owned host was released, as plain
   descriptions the case turns into a failure message.

@@ -120,6 +120,39 @@ public class PdfPageRenderingExtractorTests
     }
 
     /// <summary>
+    ///     Proves a page-count fault costs only the rendered pages, not the whole extraction.
+    /// </summary>
+    [Fact]
+    public async Task PdfPageRenderingExtractor_ExtractAsync_PageCountFaults_ReportsNoteAndKeepsDelegatedContent()
+    {
+        // Arrange: a rendering backend whose page-count function throws before any page is reached
+        SkipWhenRendererUnavailable();
+        using var temp = new TempScratch();
+        var engine = new DocDownBuilder()
+            .AddExtractor(() => new PdfPageRenderingExtractor(
+                PageRenderer.Render,
+                _ => throw new InvalidOperationException("simulated count fault")))
+            .Build();
+        var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
+        var scratch = Path.Combine(temp.Path, "out");
+
+        // Act: the count runs before the per-page loop, so its fault must still be isolated
+        var result = await engine.ExtractAsync(input, scratch, RenderOptions(), Ct);
+
+        // Assert: the delegated managed content stands and only the pages are reported lost
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Null(result.Failure);
+        Assert.Contains(
+            result.Notes,
+            note => string.Equals(
+                "Pages could not be counted, so no page images were rendered.",
+                note.Message,
+                StringComparison.Ordinal));
+        Assert.Empty(result.PagePaths);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
     ///     Proves the extractor contributes a render round-trip self-test whose status reflects the
     ///     native stack honestly.
     /// </summary>

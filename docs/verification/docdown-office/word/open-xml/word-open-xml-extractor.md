@@ -6,7 +6,7 @@ managed backend the engine selects and invokes for a `.docx`.
 ### Verification Approach
 
 `WordOpenXmlExtractor` is verified through integration tests in `OpenXml/WordOpenXmlExtractorTests.cs`
-in `DemaConsulting.DocDown.Word.Tests`, with method names beginning with `WordOpenXmlExtractor_`.
+in `DemaConsulting.DocDown.Office.Tests`, with method names beginning with `WordOpenXmlExtractor_`.
 
 The unit is driven through the engine end to end, not against a stand-in context, because its
 observable contract is what a host sees: the descriptor, the environment facts, the produced

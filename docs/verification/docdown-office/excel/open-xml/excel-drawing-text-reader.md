@@ -8,7 +8,7 @@ the text of the drawing shapes floating over a worksheet.
 `ExcelDrawingTextReader` carries no dedicated test class; its observable contract is the shape text that
 reaches the model and then the sheet, so it is verified **through the emitter scenario** that renders that
 text, `ExcelContentEmitter_Emit_ShapeText_WritesUnderTheSheet` in
-`Markdown/ExcelContentEmitterTests.cs`, in `DemaConsulting.DocDown.Excel.Tests`. The shape text in the
+`Markdown/ExcelContentEmitterTests.cs`, in `DemaConsulting.DocDown.Office.Tests`. The shape text in the
 model is synthetic.
 
 ### Test Environment

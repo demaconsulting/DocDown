@@ -40,7 +40,8 @@ The instance is immutable after construction. All run-specific facts live in loc
   `ExtractionOutcome.Produced`. Preconditions: both arguments non-null. Postcondition: every output
   artifact is routed through the sink.
 - **`IEnumerable<SelfTestCase> GetSelfTestCases()`** - returns two cheap-to-enumerate cases: a
-  parse round trip that builds and rereads a one-page PDF in memory, and a page-rendering case that
+  parse round trip that reads the embedded probe document and rereads it in memory, and a
+  page-rendering case that
   reports a skipped result with an explanation.
 - **`ReadSourceAsync`** (private) - buffers the source into memory so stream-backed and file-backed
   sources behave the same way to the parser.

@@ -40,15 +40,3 @@ sections:
             tests:
               - DocDownWord_Extract_DocxWithImages_WritesImagesAndLinksThem
               - WordOpenXmlImageReader_Read_Png_YieldsPassthroughWithNullDimensions
-
-          - id: DocDown-OTS-OpenXml-DocumentCreation
-            title: The Open XML SDK shall build WordprocessingML documents suitable for use as test fixtures.
-            justification: |
-              Generating every fixture at test time is what keeps this repository text-only and free of
-              any question about the provenance or licensing of a checked-in sample document. That
-              approach depends on the SDK's writer, so the writer is a required feature rather than a
-              convenience, exercised by the tests that build and then read a document.
-            tags: [ots]
-            tests:
-              - WordOpenXmlReader_Read_HeaderWithRevisionAndClassification_ProducesDocumentControlSection
-              - WordOpenXmlExtractor_SelfValidation_ReportsCases

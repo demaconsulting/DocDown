@@ -6,7 +6,7 @@ chart's cached data as markdown.
 ### Verification Approach
 
 `ExcelChartWriter` is verified through unit tests in `Markdown/ExcelChartWriterTests.cs` in
-`DemaConsulting.DocDown.Excel.Tests`. The writer is a pure function, so it is exercised from
+`DemaConsulting.DocDown.Office.Tests`. The writer is a pure function, so it is exercised from
 **hand-built `ExcelChartModel` instances** and its markdown is asserted directly. Every series name,
 category, and value in the models is synthetic.
 

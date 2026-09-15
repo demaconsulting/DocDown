@@ -279,15 +279,15 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
             : SelfTestResult.Skipped(probe.UnavailableReason ?? "Microsoft Visio is not available.");
     }
 
-    /// <summary>Runs the end-to-end render self-test: builds a drawing and rasterizes it through the real COM adapter.</summary>
+    /// <summary>Runs the end-to-end render self-test: writes the embedded probe drawing out and rasterizes it through the real COM adapter.</summary>
     /// <param name="context">The self-test context supplying the work folder and cancellation.</param>
     /// <returns>The case result: passed when a genuine page image came back, skipped where Visio is absent, failed otherwise.</returns>
     /// <remarks>
     ///     The availability case proves only that Visio can be activated; this case walks through the
     ///     door, which is the only way the COM boundary — activation, read-only open, export
-    ///     resolution, PNG export, and session teardown — is exercised anywhere. It builds its own
-    ///     synthetic single-page drawing rather than shipping a fixture, so the case carries no
-    ///     document content of its own, and drives <see cref="VisioAutomation"/> unchanged so the
+    ///     resolution, PNG export, and session teardown — is exercised anywhere. It writes the
+    ///     embedded probe drawing into the work folder rather than synthesizing one, so the case
+    ///     renders a drawing Visio itself authored, and drives <see cref="VisioAutomation"/> unchanged so the
     ///     render is bounded by the adapter's existing watchdog and leaves no orphaned Visio process.
     ///     A machine without Visio reports a reasoned skip, never a failure, and every fault is
     ///     reported as data rather than thrown at the caller. Side effect: writes and deletes one
@@ -337,7 +337,7 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
     }
 
     /// <summary>Renders the self-test drawing through the real adapter and judges what came back.</summary>
-    /// <param name="path">The absolute path of the synthetic drawing to render.</param>
+    /// <param name="path">The absolute path of the probe drawing to render.</param>
     /// <param name="started">When the case started, so the result carries a true duration.</param>
     /// <returns>The case result.</returns>
     /// <remarks>

@@ -99,7 +99,8 @@ public sealed class PowerPointOpenXmlExtractor : IDocumentExtractor, ISelfValida
     /// <inheritdoc />
     /// <remarks>
     ///     The cases describe this backend's own behavior in its deployed environment: that it can
-    ///     read a deck it builds itself, and that slide rendering is genuinely not provided rather
+    ///     read the deck authored in Microsoft PowerPoint and embedded here, and that slide
+    ///     rendering is genuinely not provided rather
     ///     than merely untested. The rendering case reports as skipped with a reason, because a
     ///     behavior this package's managed backend does not provide must not be reported as a
     ///     failure.
@@ -132,7 +133,7 @@ public sealed class PowerPointOpenXmlExtractor : IDocumentExtractor, ISelfValida
     /// <param name="context">The self-test context supplying cancellation.</param>
     /// <returns>The result of the case.</returns>
     /// <remarks>
-    ///     Builds a one-slide deck in memory and reads it back, which proves the SDK is genuinely
+    ///     Reads the embedded deck authored in Microsoft PowerPoint, which proves the SDK is genuinely
     ///     functional in this deployment rather than merely present.
     /// </remarks>
     private static SelfTestResult RunParseRoundTrip(SelfTestContext context)

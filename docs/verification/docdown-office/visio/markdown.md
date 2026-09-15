@@ -6,7 +6,7 @@ projection: the content emitter and the shape labeler.
 ### Verification Approach
 
 The Markdown subsystem is verified through unit tests in `Markdown/VisioContentEmitterTests.cs` and
-`Markdown/VisioShapeLabelerTests.cs` in `DemaConsulting.DocDown.Visio.Tests`.
+`Markdown/VisioShapeLabelerTests.cs` in `DemaConsulting.DocDown.Office.Tests`.
 
 Every emission decision is driven from a hand-built `VisioDocumentModel` with no drawing behind it,
 so each mapping decision is proved in isolation: the page name heading, shape-text list, directed

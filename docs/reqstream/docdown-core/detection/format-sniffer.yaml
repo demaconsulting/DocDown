@@ -52,14 +52,14 @@ sections:
                   - FormatSniffer_Detect_UnrecognizedContentNoFileName_ReportsUnknown
                   - FormatSniffer_Detect_EmptyStreamUnknownExtension_ReportsUnknown
 
-              - id: DocDownCore-Detection-FormatSniffer-BasisAndConfidence
-                title: FormatSniffer shall report the detection basis and a confidence for each result.
+              - id: DocDownCore-Detection-FormatSniffer-Basis
+                title: FormatSniffer shall report the basis on which it identified each format.
                 justification: |
                   The manifest must record how the format was determined, not merely what it was.
                   Reporting the basis distinguishes a trusted extension match from a content-signature
                   fallback so callers, and later readers of manifest.json, can see the evidence.
                 tests:
-                  - FormatSniffer_Detect_ExtensionMatch_ReportsExtensionBasisAndHighConfidence
+                  - FormatSniffer_Detect_ExtensionMatch_ReportsExtensionBasis
 
               - id: DocDownCore-Detection-FormatSniffer-StreamPositionRestored
                 title: FormatSniffer shall restore the source stream position after inspecting it.

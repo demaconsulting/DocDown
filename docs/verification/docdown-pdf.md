@@ -24,11 +24,13 @@ to produce image-backed output without an extraction note. Plain notes are reser
 steps that could not complete, such as an undecodable image or a forced PNG output mode that the
 extractor could not honor.
 
-### Fixtures are generated, never committed
+### Test fixtures are generated; the self-test probe is committed
 
-Every PDF the suite uses is built at test time, either through PdfPig's document writer or by
+Every PDF the suite's tests use is built at test time, either through PdfPig's document writer or by
 assembling bytes in code for adverse cases such as encrypted, malformed, JPEG 2000, and JBIG2
-fixtures. No binary PDF is committed to the repository.
+fixtures. No test fixture is committed.
+The one committed binary is the backend's self-test probe: a real PDF exported from Microsoft Word,
+embedded in the package so the self-test parses a document PdfPig did not write.
 
 ### Text assertions are property-based, not golden
 

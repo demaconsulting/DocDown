@@ -76,16 +76,3 @@ sections:
             tests:
               - PdfDocumentExtractor_ExtractAsync_EncryptedDocument_PropagatesParserFaultForCore
               - PdfDocumentExtractor_ExtractAsync_MalformedDocument_PropagatesParserFaultForCore
-
-          - id: DocDown-OTS-PdfPig-DocumentCreation
-            title: PdfPig shall build PDF documents suitable for use as test fixtures.
-            justification: |
-              Generating every fixture at test time is what keeps this repository text-only and free
-              of any question about the provenance or licensing of a checked-in sample document. That
-              approach depends on the parser's writer, so the writer is a required feature rather than
-              a convenience.
-            tags: [ots]
-            tests:
-              - DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout
-              - DocDownPdf_Extract_DctImage_RoundTripsByteIdenticalAsPassthrough
-              - PdfDocumentExtractor_GetSelfTestCases_DeployedBackend_ReturnsParseAndRenderingCases

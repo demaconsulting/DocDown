@@ -6,7 +6,7 @@ chart's cached data series from its chart part.
 ### Verification Approach
 
 `ExcelChartReader` is verified through unit tests in `OpenXml/ExcelChartReaderTests.cs` in
-`DemaConsulting.DocDown.Excel.Tests`, exercised against **real generated chart parts** so the name-driven
+`DemaConsulting.DocDown.Office.Tests`, exercised against **real generated chart parts** so the name-driven
 `XDocument` walk is proved against genuine chart XML rather than a simulation. Every series name, category,
 and value in the fixtures is synthetic.
 

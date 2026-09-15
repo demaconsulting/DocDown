@@ -1,21 +1,21 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using PDFtoImage;
-using SkiaSharp;
 
 namespace DocDown.Pdf.Rendering;
 
 /// <summary>
 ///     The single native-interop seam of this package: it rasterizes one PDF page to a PNG through
-///     PDFtoImage (PDFium for the raster, SkiaSharp for the PNG encode) and answers a cheap,
+///     PDFtoImage, whose native stack does the raster and the PNG encode, and answers a cheap,
 ///     non-throwing question about whether the native stack can load at all in this environment.
 /// </summary>
 /// <remarks>
 ///     <para>
 ///         This is the only type in DocDown that touches a native binary, and it is deliberately
-///         thin: every PDFtoImage/PDFium/SkiaSharp call lives here so the rest of the package — and
+///         thin: every PDFtoImage call lives here so the rest of the package — and
 ///         the rest of DocDown — stays fully managed and can be reasoned about without the native
-///         stack in view.
+///         stack in view. DocDown calls no native package directly; PDFium and SkiaSharp arrive
+///         transitively underneath PDFtoImage and no DocDown type names either of them.
 ///     </para>
 ///     <para>
 ///         <strong>PDFium is not thread-safe.</strong> PDFtoImage documents that it serializes every
@@ -116,6 +116,31 @@ internal static class PageRenderer
     }
 
     /// <summary>
+    ///     Reads the number of pages in a PDF.
+    /// </summary>
+    /// <param name="pdf">The full bytes of the source PDF.</param>
+    /// <returns>The page count reported by the rasterizer.</returns>
+    /// <remarks>
+    ///     Kept here rather than in the caller so this type stays the package's single native-interop
+    ///     seam: the count comes from the same component that will rasterize the pages, and it runs
+    ///     under <see cref="RenderGate"/> like every other native call, because the rasterizer is not
+    ///     thread-safe. Any native or memory fault surfaces here as a thrown exception; the caller
+    ///     isolates it and reports a note rather than failing the extraction.
+    /// </remarks>
+    public static int GetPageCount(byte[] pdf)
+    {
+        ArgumentNullException.ThrowIfNull(pdf);
+
+        // Serialize: the native stack is not thread-safe, so exactly one call runs at a time process-wide
+        lock (RenderGate)
+        {
+#pragma warning disable CA1416 // PDFtoImage supports every platform DocDown targets (Windows, Linux, macOS)
+            return Conversion.GetPageCount(pdf);
+#pragma warning restore CA1416
+        }
+    }
+
+    /// <summary>
     ///     Performs the native rasterization and PNG encode for one page.
     /// </summary>
     /// <param name="pdf">The full bytes of the source PDF.</param>
@@ -132,9 +157,8 @@ internal static class PageRenderer
     {
 #pragma warning disable CA1416 // PDFtoImage supports every platform DocDown targets (Windows, Linux, macOS)
         var options = new RenderOptions(Dpi: dpi);
-        using var bitmap = Conversion.ToImage(pdf, page: pageIndexZeroBased, options: options);
         using var buffer = new MemoryStream();
-        bitmap.Encode(buffer, SKEncodedImageFormat.Png, 100);
+        Conversion.SavePng(buffer, pdf, page: pageIndexZeroBased, options: options);
         return buffer.ToArray();
 #pragma warning restore CA1416
     }

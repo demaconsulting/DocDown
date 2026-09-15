@@ -10,7 +10,7 @@ provenance.
 The OpenXml subsystem is verified through tests exercising its three units — `WordOpenXmlExtractor`,
 `WordOpenXmlReader`, and `WordOpenXmlImageReader` — in `OpenXml/WordOpenXmlExtractorTests.cs`,
 `OpenXml/WordOpenXmlReaderTests.cs`, and `OpenXml/WordOpenXmlImageReaderTests.cs`, all in
-`DemaConsulting.DocDown.Word.Tests`.
+`DemaConsulting.DocDown.Office.Tests`.
 
 The extractor is driven through the engine end to end against generated documents, because its
 observable contract is what the engine and a host observe: descriptor data, environment facts,

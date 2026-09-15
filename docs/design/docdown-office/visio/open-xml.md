@@ -47,5 +47,7 @@ images as template furniture, and excludes the package thumbnail.
   emitter consumes.
 - **`VisioExtractionException`** — the exception type this package raises for unreadable Visio
   package conditions.
-- **`VisioPackageBuilder`** — the in-memory package synthesizer used by self-tests and fixtures.
+- **`SelfTestProbe`** (Core) — loads the embedded drawing the self-test reads. The package
+  synthesizer that once sat here now lives in the test project, because writing Visio packages is
+  work for a test harness rather than for a library whose job is reading them.
 - **`NamespaceDoc`** — the namespace documentation type for `OpenXml`.

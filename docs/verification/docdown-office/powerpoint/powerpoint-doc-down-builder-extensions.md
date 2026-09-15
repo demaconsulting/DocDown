@@ -6,7 +6,7 @@ reflection-free registration seam for the PowerPoint backends.
 ### Verification Approach
 
 `PowerPointDocDownBuilderExtensions` is verified through unit tests in
-`PowerPointDocDownBuilderExtensionsTests.cs` in `DemaConsulting.DocDown.PowerPoint.Tests`. The tests build a
+`PowerPointDocDownBuilderExtensionsTests.cs` in `DemaConsulting.DocDown.Office.Tests`. The tests build a
 real `DocDownBuilder`, call `AddPowerPoint`, and assert the resulting registration: that both backends are
 present, that the managed backend outranks the COM backend, that the call returns the same builder, and that
 a null builder is rejected at the call site.

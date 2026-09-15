@@ -101,7 +101,8 @@ public sealed class WordOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     /// <inheritdoc />
     /// <remarks>
     ///     The cases describe this backend's own behavior in its deployed environment: that it can
-    ///     read a document it builds itself, and that page rendering is outside this backend's scope
+    ///     read the document authored in Microsoft Word and embedded here, and that page rendering
+    ///     is outside this backend's scope
     ///     rather than merely untested. The rendering case reports as skipped with a reason because
     ///     this package does not attempt page rendering.
     /// </remarks>
@@ -136,7 +137,7 @@ public sealed class WordOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     /// <param name="context">The self-test context supplying cancellation.</param>
     /// <returns>The result of the case.</returns>
     /// <remarks>
-    ///     Builds a one-paragraph document in memory and reads it back, which proves the SDK is
+    ///     Reads the embedded document authored in Microsoft Word, which proves the SDK is
     ///     genuinely functional in this deployment rather than merely present. Uses no filesystem
     ///     location of its own because the whole round trip fits in memory.
     /// </remarks>

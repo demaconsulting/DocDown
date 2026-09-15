@@ -108,11 +108,11 @@ sections:
               - id: DocDownVisio-Com-VisioComExtractor-ContributesComSelfTests
                 title: >-
                   VisioComExtractor shall contribute a release-time availability case and a
-                  release-time case that renders a page it builds itself through the real COM
+                  release-time case that renders a page of the embedded drawing through the real COM
                   adapter, each skipping with a stated reason where Microsoft Visio is absent.
                 justification: |
                   The COM adapter cannot be exercised in CI, so the only evidence that it genuinely
-                  rasterizes in a deployed environment is a case that builds a synthetic single-page
+                  rasterizes in a deployed environment is a case that reads the embedded single-page
                   drawing and renders it through the shipping adapter, asserting a real PNG of
                   plausible size came back and that the Visio process the render started is gone
                   afterwards. Because rendering is environment-dependent, an environment without

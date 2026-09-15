@@ -6,7 +6,7 @@ emission path.
 ### Verification Approach
 
 `ExcelContentEmitter` is verified through unit tests in `Markdown/ExcelContentEmitterTests.cs` in
-`DemaConsulting.DocDown.Excel.Tests`, driven from **hand-built models with no workbook behind them**
+`DemaConsulting.DocDown.Office.Tests`, driven from **hand-built models with no workbook behind them**
 through a recording sink. This is deliberate: the emitter's contract is the mapping from a model onto
 the parts, counts, and notes that reach the sink, and a hand-built model exercises each decision
 without a workbook obscuring which one was responsible. Every value, sheet name, and series in the

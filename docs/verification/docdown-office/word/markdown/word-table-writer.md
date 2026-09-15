@@ -6,7 +6,7 @@ renders a table model as a GitHub-Flavored-Markdown table and counts every cell 
 ### Verification Approach
 
 `WordTableWriter` is verified through unit tests in `Markdown/WordTableWriterTests.cs` in
-`DemaConsulting.DocDown.Word.Tests`, with method names beginning with `WordTableWriter_`.
+`DemaConsulting.DocDown.Office.Tests`, with method names beginning with `WordTableWriter_`.
 
 The unit is driven against hand-built `WordTableModel` instances with no document behind them,
 because the writer's contract is the projection from a grid onto GFM. Each scenario supplies the

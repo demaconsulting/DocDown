@@ -36,8 +36,8 @@ extraction.
   both arguments non-null. Postcondition: every artifact was routed through the context's sink.
   Normal completion returns `ExtractionOutcome.Produced`.
 - **`IEnumerable<SelfTestCase> GetSelfTestCases()`** — returns two cases:
-  - `word.openxml.parseRoundTrip`, which builds a one-paragraph document in memory with
-    `WordprocessingDocument.Create()`, reads it back, and passes when the body carries content.
+  - `word.openxml.parseRoundTrip`, which reads the embedded document authored in Microsoft Word
+    and passes when the body carries content.
   - `word.pageRendering`, which reports a reasoned skip because this package does not attempt page
     rendering.
 - **`ReadSourceAsync()`** (private) — copies the source into memory. Buffering is essential because
@@ -46,7 +46,8 @@ extraction.
 - **`RunParseRoundTrip()`** (private) — the self-test case body. It catches every exception and
   converts it into `SelfTestResult.Failed`, because a self-test reports faults as data rather than
   throwing at its caller.
-- **`BuildProbeDocument()`** (private) — writes the round-trip document into a stream.
+- **`ProbeResourceName`** (private const) — names the embedded document the round-trip case reads: a
+  real `.docx` authored in Microsoft Word, loaded through `SelfTestProbe.Load`.
 
 ### Error Handling
 
@@ -63,7 +64,7 @@ self-test reports every fault as a result rather than throwing.
 - **DocDown.Core** — `IDocumentExtractor`, `ISelfValidating`, `IExtractionContext`,
   `DocumentSource`, `ExtractionOptions`, `ExtractorAvailability`, `ExtractionOutcome`,
   `SelfTestCase`, `SelfTestResult`, `EnvironmentFact`, and `DocumentFormat`.
-- **DocumentFormat.OpenXml** (OTS) — `WordprocessingDocument.Create()` used only by the in-memory
+- **DocumentFormat.OpenXml** (OTS) — the managed reader this backend is built on, used by the
   self-test probe.
 - **`WordOpenXmlReader`** — the SDK-to-model translation.
 - **`WordContentEmitter`** — the shared model-to-sink emission path.

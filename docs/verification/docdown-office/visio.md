@@ -6,7 +6,7 @@ extraction package.
 ## Verification Approach
 
 `DocDown.Visio` is verified through system-level integration tests in `DocDownVisioTests.cs` and
-unit tests per unit, all in `DemaConsulting.DocDown.Visio.Tests`, running on xUnit v3 across
+unit tests per unit, all in `DemaConsulting.DocDown.Office.Tests`, running on xUnit v3 across
 net8.0, net9.0, and net10.0.
 
 ### Every extraction test reconciles against the filesystem
@@ -49,13 +49,16 @@ requested without an available renderer, one note when a single page could not b
 and COM.
 No Visio-specific legacy reporting terms remain.
 
-### Fixtures are generated, never committed
+### Test fixtures are generated; the self-test probe is committed
 
-Every drawing the suite uses is built at test time by the in-memory Visio package synthesizer in
+Every drawing the suite's tests use is built at test time by the in-memory Visio package builder in
 `TestData/VsdxFixtures.cs`, and the rendering path is driven by `TestData/StubVisioAutomation.cs`.
 The legacy `.vsd` scenario writes a placeholder byte sequence whose extension drives format
 detection, because the selection path never opens the file: no registered backend supports the
-format. No binary `.vsdx` or `.vsd` is committed, so the repository stays text-only and every page
+format. No test fixture is committed.
+The one committed binary is the backend's self-test probe: a real drawing authored in Microsoft
+Visio, embedded in the package so the self-test reads what that application emits.
+The suite's own fixtures stay generated, so every page
 name, shape name, master name, image payload, and rendered payload in the fixtures is synthetic.
 
 ## Test Environment
@@ -63,7 +66,7 @@ name, shape name, master name, image payload, and rendered payload in the fixtur
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
 - **Filesystem**: a per-test `TempScratch` folder holds both the generated input drawing and the
   extraction output
-- **Inputs**: Visio Open Packaging drawings generated at test time by `VisioPackageBuilder`, plus a
+- **Inputs**: Visio Open Packaging drawings generated at test time by `VisioPackageBuilder` (test project), plus a
   short byte sequence for the legacy `.vsd` refusal scenario; no committed binary fixtures and no
   network access
 - **Mocking**: none for the managed integration scenarios — every test drives the real engine and

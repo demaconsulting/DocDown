@@ -43,7 +43,7 @@ public class VisioOpenXmlExtractorTests
     }
 
     /// <summary>
-    ///     Proves the parse round-trip self-test — which builds a drawing with a directed edge and
+    ///     Proves the parse round-trip self-test — which reads back the embedded probe drawing and
     ///     confirms the connection resolves — passes, and the rendering case is skipped.
     /// </summary>
     [Fact]

@@ -80,7 +80,8 @@ sections:
                   page-rendering case for the non-paginated workbook surface.
                 justification: |
                   An operator needs to confirm the backend works where it is deployed. A round-trip case
-                  that builds and reads a workbook proves the SDK is genuinely functional, and a skipped
+                  that reads back the embedded probe workbook proves the SDK is genuinely functional against
+                  what Excel itself emits, and a skipped
                   page-rendering case keeps a non-applicable request from being reported as a pass or a
                   failure.
                 tests:

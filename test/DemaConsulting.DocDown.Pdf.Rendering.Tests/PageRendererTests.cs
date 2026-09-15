@@ -9,8 +9,8 @@ namespace DemaConsulting.DocDown.Pdf.Rendering.Tests;
 ///     throwing, and that concurrent renders all succeed behind the process-wide lock.
 /// </summary>
 /// <remarks>
-///     These tests exercise the real PDFium raster and SkiaSharp PNG encode, so they are the
-///     transitive verification evidence for the PDFium and SkiaSharp OTS items. Scenarios that need
+///     These tests exercise the real native raster and PNG encode through PDFtoImage, so they are
+///     the transitive verification evidence for the PDFtoImage OTS item. Scenarios that need
 ///     the native stack skip when it is unavailable, because absence of the native deployment is an
 ///     environmental fact rather than a defect in the managed seam.
 /// </remarks>

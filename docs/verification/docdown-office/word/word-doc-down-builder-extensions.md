@@ -6,7 +6,7 @@ registration seam that adds the Word backend to a builder.
 ### Verification Approach
 
 `WordDocDownBuilderExtensions` is verified through unit tests in
-`WordDocDownBuilderExtensionsTests.cs` in `DemaConsulting.DocDown.Word.Tests`, exercising the one
+`WordDocDownBuilderExtensionsTests.cs` in `DemaConsulting.DocDown.Office.Tests`, exercising the one
 extension method the package offers: `AddWord`.
 
 Nothing is mocked: a real builder is used and a real engine is built from it, because the observable

@@ -5,7 +5,7 @@
 #### Purpose
 
 `FormatSniffer` identifies a document's format from its file-name extension, using the leading
-content bytes only as a fallback, and reports the evidence and confidence behind the identification.
+content bytes only as a fallback, and reports the evidence behind the identification.
 Its single responsibility is format *detection* — it neither reads document content for extraction
 nor writes any output, and it never opens, unpacks, or parses the document.
 
@@ -22,7 +22,7 @@ nothing for an instance to carry.
   table; the primary detection signal.
 - **`PdfSignature`** (`static byte[]`) — The `%PDF-` ASCII signature.
 
-The extension table maps `.pdf`, `.docx`/`.doc`, `.xlsx`/`.xls`, `.pptx`/`.ppt`, `.vsdx`/`.vsd`,
+The extension table maps `.pdf`, `.docx`/`.doc`, `.xlsx`/`.xls`, `.pptx`/`.ppt`, `.vsdx`/`.vsdm`/`.vsd`,
 `.html`/`.htm`, and `.txt`/`.text`/`.log` to their formats — the `.doc`, `.xls`, `.ppt`, and `.vsd`
 entries are the legacy binary Office formats, detectable but not extractable. Recognizing an
 extension here does not imply an extractor is registered for it — that is `ExtractorSelector`'s
@@ -36,11 +36,10 @@ concern, and it reports the absence honestly by name.
     is non-destructive.
   - *Algorithm*, in order: (1) guard null, non-readable, and non-seekable input; (2) look up the
     invariant-lowercase extension of `fileName` in `ExtensionMap` — a match returns immediately as
-    matched format / `Extension` / `0.9`, without reading a single byte; (3) otherwise record the
+    matched format / `Extension`, without reading a single byte; (3) otherwise record the
     entry position and read up to `SignatureBytes` leading bytes; (4) `%PDF-` → `Pdf` /
-    `ContentSignature` / `1.0`; (5) a BOM-and-whitespace-tolerant `<!DOCTYPE html` or `<html`
-    (case-insensitive) → `Html` / `ContentSignature` / `0.9`; (6) otherwise `Unknown` / `Extension` /
-    `0.0`.
+    `ContentSignature`; (5) a BOM-and-whitespace-tolerant `<!DOCTYPE html` or `<html`
+    (case-insensitive) → `Html` / `ContentSignature`; (6) otherwise `Unknown` / `Extension`.
 
 The extension short-circuit at step 2 is both the trust decision and an optimization: the common case
 performs no I/O at all.
