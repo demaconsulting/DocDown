@@ -46,8 +46,9 @@ substitute an incompatible API or a different native ABI.
 calls into it are serialized behind a lock, so only one document can be rasterized at a time.
 `PageRenderer` mirrors this with a process-wide lock of its own.
 
-**Containment as a risk control.** PDFtoImage, PDFium, and SkiaSharp types appear in exactly one
-source file — `PageRenderer.cs` — and in no public signature of the package. A reflection test over
+**Containment as a risk control.** PDFtoImage types appear in exactly one
+source file — `PageRenderer.cs` — and in no public signature of the package, and no DocDown source
+names a PDFium or SkiaSharp type at all. A reflection test over
 the package's exported types fails the build if any reaches the public surface, so the native stack
 stays confined and replaceable.
 

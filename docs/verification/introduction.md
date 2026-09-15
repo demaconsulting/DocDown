@@ -162,15 +162,12 @@ The following OTS items are also covered:
 - **Pandoc** — Markdown-to-HTML conversion tool
 - **PdfPig** — managed PDF parser, verified by transitive evidence from the DocDown.Pdf test suites
   rather than from a pipeline stage
-- **PDFium** — native page rasterizer, verified by transitive evidence from the DocDown.Pdf.Rendering
-  render and probe tests
 - **PDFtoImage** — managed page-rasterization API, verified by transitive evidence from the
-  DocDown.Pdf.Rendering render tests
+  DocDown.Pdf.Rendering render tests; its native rasterizer and 2D backend (PDFium and SkiaSharp)
+  arrive transitively and are not separately listed, because no DocDown type names either
 - **ReqStream** — requirements traceability tool
 - **ReviewMark** — file review enforcement tool
 - **SarifMark** — SARIF report conversion tool
-- **SkiaSharp** — PNG encoder, verified by transitive evidence from the DocDown.Pdf.Rendering render
-  and determinism tests
 - **SonarMark** — SonarCloud quality report tool
 - **SysML2Tools** — architecture model lint and diagram rendering tool
 - **System.IO.Packaging** — managed OPC container reader, verified by transitive evidence from the

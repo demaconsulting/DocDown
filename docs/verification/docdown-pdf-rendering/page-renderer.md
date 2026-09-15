@@ -9,8 +9,8 @@ native-interop seam.
 `DemaConsulting.DocDown.Pdf.Rendering.Tests`, with method names beginning with `PageRenderer_` (and
 the companion `NativeProbeResult_` tests over its result value type).
 
-These tests exercise the real PDFium raster and SkiaSharp PNG encode, so they are also the transitive
-verification evidence for the PDFium and SkiaSharp OTS items. The serialization lock is verified
+These tests exercise the real native raster and PNG encode through PDFtoImage, so they are also the
+transitive verification evidence for the PDFtoImage OTS item. The serialization lock is verified
 observably: several renders driven in parallel must all succeed, which they cannot do reliably if the
 lock is absent. The unavailable-with-reason behavior is verified on the result value type, because a
 missing native binary cannot be produced on a host where the stack is deployed.

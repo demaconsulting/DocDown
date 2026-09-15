@@ -82,8 +82,9 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 ## Test Scenarios
 
 Each scenario corresponds to one system requirement and names the real test method that evidences it.
-The three OTS items (PDFtoImage, PDFium, SkiaSharp) are verified by transitive evidence from these
-same scenarios; the exact tests are named in each OTS verification document.
+The PDFtoImage OTS item is verified by transitive evidence from these
+same scenarios; the exact tests are named in its OTS verification document. The native rasterizer and
+2D backend beneath it are not separately listed OTS items, because no DocDown type names either.
 
 ### A generated PDF renders to a valid PNG page
 
