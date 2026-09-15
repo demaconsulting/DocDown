@@ -66,8 +66,8 @@ exception to this rule: a case reports every fault as data rather than throwing.
 - **DocDown.Core** — `IDocumentExtractor`, `ISelfValidating`, `IExtractionSink`, `IExtractionContext`,
   `DocumentSource`, `ExtractionOptions`, `ExtractorAvailability`, `ExtractionOutcome`, `SelfTestCase`,
   `SelfTestResult`, `DocumentFormat` (as `CoreFormat`), `EnvironmentFact`.
-- **DocumentFormat.OpenXml** (OTS) — the managed reader this backend is built on
-  workbook.
+- **DocumentFormat.OpenXml** (OTS) — the managed reader this backend is built on.
+- **`SelfTestProbe`** (Core) — loads the embedded probe workbook the self-test reads.
 - **ExcelOpenXmlReader** — the SDK-to-model translation.
 - **ExcelContentEmitter** — the shared model-to-sink emission.
 

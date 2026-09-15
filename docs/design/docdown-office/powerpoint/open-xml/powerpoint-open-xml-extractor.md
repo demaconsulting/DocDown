@@ -66,8 +66,8 @@ rule: a case reports every fault as a failed result rather than throwing.
 - **DocDown.Core** — `IDocumentExtractor`, `ISelfValidating`, `IExtractionSink`,
   `IExtractionContext`, `DocumentSource`, `ExtractionOptions`, `ExtractorAvailability`,
   `ExtractionOutcome`, `SelfTestCase`, `SelfTestResult`, `DocumentFormat`, and `EnvironmentFact`.
-- **DocumentFormat.OpenXml** (OTS) — the managed reader this backend is built on
-  deck.
+- **DocumentFormat.OpenXml** (OTS) — the managed reader this backend is built on.
+- **`SelfTestProbe`** (Core) — loads the embedded probe deck the self-test reads.
 - **PowerPointOpenXmlReader** — the SDK-to-model translation.
 - **PowerPointContentEmitter** — the shared model-to-sink emission.
 
