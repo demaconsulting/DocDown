@@ -44,9 +44,8 @@ Every workbook the suite uses is built at test time by the Open XML SDK writer i
 `TestData/XlsxFixtures.cs`. The legacy `.xls` scenario writes a placeholder byte sequence whose
 extension drives format detection, because the selection path never opens the file: no registered
 backend supports the format. No fixture is committed.
-The one committed binary is the backend's self-test probe: a real document authored in the
-application that produces the format, embedded in the package so the self-test reads what that
-application emits.
+The one committed binary is the backend's self-test probe: a real workbook authored in Microsoft
+Excel, embedded in the package so the self-test reads what that application emits.
 The suite's own fixtures stay generated, so no sample workbook of unknown provenance or licensing is
 committed. Every value,
 sheet name, chart series, and annotation in the fixtures is synthetic.

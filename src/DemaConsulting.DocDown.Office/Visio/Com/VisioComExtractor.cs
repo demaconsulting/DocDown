@@ -337,7 +337,7 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
     }
 
     /// <summary>Renders the self-test drawing through the real adapter and judges what came back.</summary>
-    /// <param name="path">The absolute path of the synthetic drawing to render.</param>
+    /// <param name="path">The absolute path of the probe drawing to render.</param>
     /// <param name="started">When the case started, so the result carries a true duration.</param>
     /// <returns>The case result.</returns>
     /// <remarks>

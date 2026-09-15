@@ -26,12 +26,11 @@ extractor could not honor.
 
 ### Test fixtures are generated; the self-test probe is committed
 
-Every PDF the suite uses is built at test time, either through PdfPig's document writer or by
+Every PDF the suite's tests use is built at test time, either through PdfPig's document writer or by
 assembling bytes in code for adverse cases such as encrypted, malformed, JPEG 2000, and JBIG2
-fixtures. No fixture is committed.
-The one committed binary is the backend's self-test probe: a real document authored in the
-application that produces the format, embedded in the package so the self-test reads what that
-application emits.
+fixtures. No test fixture is committed.
+The one committed binary is the backend's self-test probe: a real PDF embedded in the package, so
+the self-test reads a genuine document rather than one DocDown wrote for itself to read.
 
 ### Text assertions are property-based, not golden
 

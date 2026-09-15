@@ -51,14 +51,13 @@ No Visio-specific legacy reporting terms remain.
 
 ### Test fixtures are generated; the self-test probe is committed
 
-Every drawing the suite uses is built at test time by the in-memory Visio package synthesizer in
+Every drawing the suite's tests use is built at test time by the in-memory Visio package builder in
 `TestData/VsdxFixtures.cs`, and the rendering path is driven by `TestData/StubVisioAutomation.cs`.
 The legacy `.vsd` scenario writes a placeholder byte sequence whose extension drives format
 detection, because the selection path never opens the file: no registered backend supports the
-format. No fixture is committed.
-The one committed binary is the backend's self-test probe: a real document authored in the
-application that produces the format, embedded in the package so the self-test reads what that
-application emits.
+format. No test fixture is committed.
+The one committed binary is the backend's self-test probe: a real drawing authored in Microsoft
+Visio, embedded in the package so the self-test reads what that application emits.
 The suite's own fixtures stay generated, so every page
 name, shape name, master name, image payload, and rendered payload in the fixtures is synthetic.
 

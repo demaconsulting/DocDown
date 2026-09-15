@@ -119,6 +119,6 @@ Evidence for `DocDown-OTS-PdfPig-ProtectedDocuments`.
 `PdfDocumentExtractor_GetSelfTestCases_DeployedBackend_ReturnsParseAndRenderingCases`
 
 Every one of these depends on the parser's writer having produced a document the parser can then read
-back — the third most directly, since the self-test case builds a document and reads its glyphs in a
-single round trip. The second additionally proves the writer embeds a JPEG verbatim, which is what
+back — the third most directly, since the self-test case reads the embedded probe document and
+checks its glyphs. The second additionally proves the writer embeds a JPEG verbatim, which is what
 makes the byte-identity assertion meaningful. Evidence for `DocDown-OTS-PdfPig-DocumentCreation`.

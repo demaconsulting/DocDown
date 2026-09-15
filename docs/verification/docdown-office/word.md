@@ -34,13 +34,12 @@ therefore covers both clean extractions and honest incomplete-step reporting.
 
 ### Test fixtures are generated; the self-test probe is committed
 
-Every document the suite uses is built at test time by the Open XML SDK writer in
+Every document the suite's tests use is built at test time by the Open XML SDK writer in
 `TestData/DocxFixtures.cs`, orchestrated through `TestData/WordTestHarness.cs`. The legacy `.doc`
 scenario writes a placeholder byte sequence whose extension drives format detection, because the
-selection path never opens the file. No fixture is committed.
-The one committed binary is the backend's self-test probe: a real document authored in the
-application that produces the format, embedded in the package so the self-test reads what that
-application emits.
+selection path never opens the file. No test fixture is committed.
+The one committed binary is the backend's self-test probe: a real document authored in Microsoft
+Word, embedded in the package so the self-test reads what that application emits.
 
 ### Golden summaries pin representative outputs
 

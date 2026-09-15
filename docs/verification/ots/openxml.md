@@ -78,6 +78,6 @@ Every fixture the suite uses is built at test time by the SDK's writer, so a sce
 document is also a scenario that trusts the writer to have produced one that can be read back.
 The first proves the writer produced a header carrying a revision and a classification the reader
 then recovers into the model's Document Control collection. The second is a round-trip case
-contributed by the extractor's own self-validation: it builds a document and reads its content in a
-single pass, so a defect in either half is caught here. Evidence for
+contributed by the extractor's own self-validation: it reads back the embedded probe document the
+SDK's writer produced, so a defect in either half is caught here. Evidence for
 `DocDown-OTS-OpenXml-DocumentCreation`.

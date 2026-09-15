@@ -357,7 +357,7 @@ public sealed class PowerPointComExtractor : IDocumentExtractor, ISelfValidating
     }
 
     /// <summary>Renders the self-test deck through the real adapter and judges what came back.</summary>
-    /// <param name="path">The absolute path of the synthetic deck to render.</param>
+    /// <param name="path">The absolute path of the probe deck to render.</param>
     /// <param name="started">When the case started, so the result carries a true duration.</param>
     /// <returns>The case result.</returns>
     /// <remarks>

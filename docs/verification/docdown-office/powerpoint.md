@@ -56,9 +56,8 @@ and the rendering path is driven by `TestData/StubPowerPointAutomation.cs`. The 
 scenario writes a placeholder byte sequence whose extension drives format detection, because the
 selection path never opens the file: no registered backend supports the format. No fixture is
 committed.
-The one committed binary is the backend's self-test probe: a real document authored in the
-application that produces the format, embedded in the package so the self-test reads what that
-application emits.
+The one committed binary is the backend's self-test probe: a real deck authored in Microsoft
+PowerPoint, embedded in the package so the self-test reads what that application emits.
 The suite's own fixtures stay generated. No `.pptx` or
 `.ppt` beyond that probe is committed, so every slide title, body line, speaker note,
 image name, and rendered payload in the fixtures is synthetic.
