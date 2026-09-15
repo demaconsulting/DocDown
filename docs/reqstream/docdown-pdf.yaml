@@ -329,6 +329,5 @@ sections:
           page-rendering case, make that confirmation available on demand.
         children:
           - DocDownPdf-PdfDocumentExtractor-ContributesSelfTests
-          - DocDown-OTS-PdfPig-DocumentCreation
         tests:
           - DocDownPdf_SelfValidation_RegisteredEngine_ReportsPdfCases
