@@ -18,8 +18,8 @@ confined to a separate, opt-in package rather than being part of `DocDown.Pdf`.
 - `PDFtoImage.Conversion.SavePng(Stream, byte[], Index page, string? password, RenderOptions)` to
   rasterize a single page and write it to the stream as PNG in one call
 - `PDFtoImage.RenderOptions(Dpi: …)` to set the render resolution
-- `PDFtoImage.GetPageCount(byte[], string? password)` to read the page count that drives page
-  selection, so the count comes from the component that will rasterize the pages
+- `PDFtoImage.Conversion.GetPageCount(byte[], string? password)` to read the page count that drives
+  page selection, so the count comes from the component that will rasterize the pages
 - native-library resolution through the PDFtoImage assembly for the cheap availability probe
 
 No other PDFtoImage surface is used, and no type from either transitive native component is named
