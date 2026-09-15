@@ -136,7 +136,7 @@ public sealed class WordOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     /// <param name="context">The self-test context supplying cancellation.</param>
     /// <returns>The result of the case.</returns>
     /// <remarks>
-    ///     Builds a one-paragraph document in memory and reads it back, which proves the SDK is
+    ///     Reads the embedded document authored in Microsoft Word, which proves the SDK is
     ///     genuinely functional in this deployment rather than merely present. Uses no filesystem
     ///     location of its own because the whole round trip fits in memory.
     /// </remarks>

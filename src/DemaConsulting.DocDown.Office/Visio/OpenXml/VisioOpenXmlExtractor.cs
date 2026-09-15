@@ -130,7 +130,7 @@ public sealed class VisioOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     /// <param name="context">The self-test context supplying cancellation.</param>
     /// <returns>The result of the case.</returns>
     /// <remarks>
-    ///     Builds a one-page drawing with two labeled shapes and a directed edge between them, reads
+    ///     Reads the embedded drawing authored in Microsoft Visio - two labeled shapes joined by a glued
     ///     it back, and confirms the connection resolved — proving the topology path is genuinely
     ///     functional in this deployment rather than merely present.
     /// </remarks>

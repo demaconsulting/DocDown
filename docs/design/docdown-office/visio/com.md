@@ -45,9 +45,9 @@ or reporting policy of its own.
 
 - **`IVisioAutomation`** and **`VisioRenderedPage`** — the rendering seam and its one-result-per-page
   contract.
-- **`ComposingDelegatedSink`** — an `IExtractionSink` wrapper that suppresses the delegated managed
-  backend's `visio.pageRendering` fact when the COM backend is supplying rendered pages.
-- **`DelegatedExtractionContext`** — a private `IExtractionContext` that reuses the outer context
-  while forcing rendering off for the delegated managed extraction.
-- **`VisioComDispatch`** — the low-level IDispatch plumbing.
+- **`ComposingDelegatedSink`** and **`DelegatedExtractionContext`** — not owned by this
+  subsystem. They live in the shared `DocDown.Office.Com` namespace, because Visio and PowerPoint
+  needed byte-equivalent copies of both. The sink suppresses the delegated managed backend's
+  `visio.pageRendering` unavailable fact so it does not contradict the rendering this run performed; the fact
+  key is a constructor argument, which was the only real difference between the two former copies.
 - **`NamespaceDoc`** — the namespace documentation type for `Com`.

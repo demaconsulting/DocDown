@@ -35,7 +35,7 @@ of a worksheet's drawing layer — the image reader (`ExcelOpenXmlImageReader`),
 SDK is a managed assembly shipped inside this package.
 
 **The self-test set.** Two cases are exposed: an `excel.openxml.parseRoundTrip` case that builds a
-one-sheet workbook in memory with `SpreadsheetDocument.Create`, reads it back with the reader, and
+embedded workbook authored in Microsoft Excel, reads it with the reader, and
 passes when the workbook carries at least one worksheet; and an `excel.pageRendering` case that reports
 a reasoned skip because a workbook is non-paginated and page rendering does not apply.
 

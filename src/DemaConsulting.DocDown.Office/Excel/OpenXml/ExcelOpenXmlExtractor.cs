@@ -142,7 +142,7 @@ public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     /// <param name="context">The self-test context supplying cancellation.</param>
     /// <returns>The result of the case.</returns>
     /// <remarks>
-    ///     Builds a one-sheet workbook in memory and reads it back, which proves the SDK is genuinely
+    ///     Reads the embedded workbook authored in Microsoft Excel, which proves the SDK is genuinely
     ///     functional in this deployment rather than merely present. Uses no filesystem location of
     ///     its own because the whole round trip fits in memory.
     /// </remarks>

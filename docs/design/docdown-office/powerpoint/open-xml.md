@@ -37,7 +37,7 @@ pages. During extraction it reports `powerpoint.backend = Open XML SDK (managed)
 `powerpoint.pageRendering = not provided by this extractor`.
 
 **The self-test set.** Two cases are exposed: a `powerpoint.openxml.parseRoundTrip` case that builds a
-one-slide deck in memory with `PresentationDocument.Create`, reads it back with the reader, and passes
+embedded deck authored in Microsoft PowerPoint, reads it with the reader, and passes
 when the deck carries at least one slide; and a `powerpoint.pageRendering` case that reports a reasoned
 skip because the managed backend does not render slide images.
 

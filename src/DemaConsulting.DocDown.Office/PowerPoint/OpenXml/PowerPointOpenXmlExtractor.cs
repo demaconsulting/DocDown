@@ -132,7 +132,7 @@ public sealed class PowerPointOpenXmlExtractor : IDocumentExtractor, ISelfValida
     /// <param name="context">The self-test context supplying cancellation.</param>
     /// <returns>The result of the case.</returns>
     /// <remarks>
-    ///     Builds a one-slide deck in memory and reads it back, which proves the SDK is genuinely
+    ///     Reads the embedded deck authored in Microsoft PowerPoint, which proves the SDK is genuinely
     ///     functional in this deployment rather than merely present.
     /// </remarks>
     private static SelfTestResult RunParseRoundTrip(SelfTestContext context)

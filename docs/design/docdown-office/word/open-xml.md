@@ -41,7 +41,7 @@ read-only `MemoryStream`, builds a fresh `WordOpenXmlReader`, and hands the resu
 `WordContentEmitter`. Normal completion returns `ExtractionOutcome.Produced`.
 
 **The self-test set.** Two cases are exposed: `word.openxml.parseRoundTrip`, which builds a
-one-paragraph document in memory with `WordprocessingDocument.Create()`, reads it back, and passes
+embedded document authored in Microsoft Word, reads it with the reader, and passes
 when the body contains content; and `word.pageRendering`, which reports a skip with a reason
 because this package does not attempt page rendering.
 

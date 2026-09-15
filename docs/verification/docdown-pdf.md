@@ -28,7 +28,10 @@ extractor could not honor.
 
 Every PDF the suite uses is built at test time, either through PdfPig's document writer or by
 assembling bytes in code for adverse cases such as encrypted, malformed, JPEG 2000, and JBIG2
-fixtures. No binary PDF is committed to the repository.
+fixtures. No fixture is committed.
+The one committed binary is the backend's self-test probe: a real document authored in the
+application that produces the format, embedded in the package so the self-test reads what that
+application emits.
 
 ### Text assertions are property-based, not golden
 

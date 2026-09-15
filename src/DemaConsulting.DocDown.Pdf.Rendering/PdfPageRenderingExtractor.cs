@@ -151,7 +151,7 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     /// <inheritdoc />
     /// <remarks>
     ///     Contributes one case that proves the native stack genuinely rasterizes in this
-    ///     deployment: it builds a one-page PDF and renders it to a PNG. Where the native binary is
+    ///     deployment: it renders a page of the embedded PDF to a PNG. Where the native binary is
     ///     absent the case reports a reasoned skip rather than a failure, because an unavailable
     ///     renderer must not be recorded as a broken one. The engine also wraps this backend's cases
     ///     to skip when <see cref="ProbeAvailability"/> reports it unavailable, so the skip is honest
@@ -290,7 +290,7 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     /// <param name="context">The self-test context supplying cancellation.</param>
     /// <returns>The result of the case.</returns>
     /// <remarks>
-    ///     Builds a one-page PDF in memory and rasterizes it, which proves the native stack is
+    ///     Rasterizes a page of the embedded PDF, which proves the native stack is
     ///     genuinely functional here rather than merely loadable. Reports a reasoned skip when the
     ///     native binary is unavailable, and reports every fault as data rather than throwing.
     /// </remarks>
@@ -313,7 +313,7 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
             return IsValidPng(png)
                 ? SelfTestResult.Passed(DateTimeOffset.UtcNow - started)
                 : SelfTestResult.Failed(
-                    "The page renderer produced output that is not a valid PNG for a document it built itself.",
+                    "The page renderer produced output that is not a valid PNG for the embedded document.",
                     DateTimeOffset.UtcNow - started);
         }
 #pragma warning disable CA1031 // A self-test reports every fault as data rather than throwing at its caller

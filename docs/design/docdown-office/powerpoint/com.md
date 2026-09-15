@@ -58,11 +58,9 @@ here and reviewed in the subsystem review-set rather than as units of their own:
 - **`IPowerPointAutomation`** — the narrow seam through which the backend reaches PowerPoint, plus the
   `PowerPointRenderedSlide` record that carries one slide's number and either its PNG bytes or its
   failure reason.
-- **`ComposingDelegatedSink`** — an `IExtractionSink` wrapper that forwards every call to the real
-  sink except the managed backend's `powerpoint.pageRendering : NOT available` fact, which a
-  successful COM run makes false. It forwards plain notes unchanged.
-- **`DelegatedExtractionContext`** — a private `IExtractionContext` that reuses the outer context but
-  substitutes render-suppressed options and the composing sink so the managed backend can run against
-  the same format, environment, and cancellation token.
-- **`PowerPointComDispatch`** — the low-level IDispatch plumbing: single-instance activation, the
+- **`ComposingDelegatedSink`** and **`DelegatedExtractionContext`** — not owned by this
+  subsystem. They live in the shared `DocDown.Office.Com` namespace, because Visio and PowerPoint
+  needed byte-equivalent copies of both. The sink suppresses the delegated managed backend's
+  `powerpoint.pageRendering` unavailable fact so it does not contradict the rendering this run performed; the fact
+  key is a constructor argument, which was the only real difference between the two former copies.
   watchdog, property and method invocation, wrapper release, and forced process termination.

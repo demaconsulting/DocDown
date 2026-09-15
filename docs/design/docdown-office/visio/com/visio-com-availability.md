@@ -19,8 +19,9 @@ it consults is the operating system and, on Windows, the registry.
 - **`ExtractorAvailability Probe()`** — returns `Unavailable(...)` off Windows, naming the operating
   system; on Windows, returns `Available(providesRenderedPages: true)` when the `Visio.Application`
   ProgID resolves, and otherwise `Unavailable(...)` stating that Microsoft Visio is not registered.
-- **`bool IsVisioRegistered()`** (private, Windows-only) — reports whether the `Visio.Application`
-  ProgID resolves through a registry lookup that does not activate Visio.
+The probe itself lives in the shared `OfficeComAvailability`, which Visio and PowerPoint use in
+common: the two probes differed only in the application name and the ProgID, so those are arguments
+rather than two copies of the logic. This type names Visio's own entry point and supplies them.
 
 ### Error Handling
 

@@ -39,16 +39,17 @@ extraction.
   `PowerPointContentEmitter.EmitAsync`, and returns `Produced` when extraction completes.
   Preconditions: both arguments non-null.
 - **`IEnumerable<SelfTestCase> GetSelfTestCases()`** — returns two cases:
-  - `powerpoint.openxml.parseRoundTrip`, which builds a one-slide deck in memory with
-    `PresentationDocument.Create`, reads it back, and passes when the model carries at least one
+  - `powerpoint.openxml.parseRoundTrip`, which reads the embedded deck authored in Microsoft PowerPoint
+    and passes when the model carries at least one
     slide. Building rather than embedding a fixture keeps the case free of a shipped binary payload.
   - `powerpoint.pageRendering`, which reports a reasoned skip because the managed backend does not
     render slide images. A behavior this backend does not provide must not be reported as a pass or a
     failure.
 - **`ReadSourceAsync`** (private) — copies the source into memory, because a stream-backed
   `DocumentSource` is not guaranteed seekable and the SDK's package reader must seek.
-- **`RunParseRoundTrip`** / **`BuildProbeDeck`** (private) — the round-trip case body and the one-slide
-  deck it reads back; the case catches every exception and reports it as a failed result rather than
+- **`RunParseRoundTrip`** (private) — the round-trip case body. It reads the embedded deck named by
+  `ProbeResourceName`, a real `.pptx` authored in Microsoft PowerPoint; the case catches every
+  exception and reports it as a failed result rather than
   throwing.
 
 ### Error Handling
@@ -64,7 +65,7 @@ rule: a case reports every fault as a failed result rather than throwing.
 - **DocDown.Core** — `IDocumentExtractor`, `ISelfValidating`, `IExtractionSink`,
   `IExtractionContext`, `DocumentSource`, `ExtractionOptions`, `ExtractorAvailability`,
   `ExtractionOutcome`, `SelfTestCase`, `SelfTestResult`, `DocumentFormat`, and `EnvironmentFact`.
-- **DocumentFormat.OpenXml** (OTS) — `PresentationDocument.Create` used only by the self-test probe
+- **DocumentFormat.OpenXml** (OTS) — the managed reader this backend is built on
   deck.
 - **PowerPointOpenXmlReader** — the SDK-to-model translation.
 - **PowerPointContentEmitter** — the shared model-to-sink emission.
