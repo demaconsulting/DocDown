@@ -88,4 +88,3 @@ sections:
             tests:
               - DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout
               - DocDownPdf_Extract_DctImage_RoundTripsByteIdenticalAsPassthrough
-              - PdfDocumentExtractor_GetSelfTestCases_DeployedBackend_ReturnsParseAndRenderingCases

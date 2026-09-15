@@ -57,7 +57,8 @@ project.
   scenarios exercise the real rasterizer; where a host lacked the native stack the backend would
   report unavailable and the self-test case would skip
 - **Filesystem**: a per-test `TempScratch` folder holds both the generated input and the output
-- **Inputs**: PDFs generated at test time; no committed binary fixtures and no network access
+- **Inputs**: PDFs generated at test time, plus the embedded `Resources/probe.pdf` the self-test
+  reads; no committed binary test fixtures and no network access
 - **Determinism**: the run-varying timestamp line is normalized so repeated runs are byte-comparable
 - **Isolation**: each test owns its temporary folder and cleans it on dispose
 

@@ -51,4 +51,3 @@ sections:
             tags: [ots]
             tests:
               - WordOpenXmlReader_Read_HeaderWithRevisionAndClassification_ProducesDocumentControlSection
-              - WordOpenXmlExtractor_SelfValidation_ReportsCases

@@ -115,10 +115,13 @@ Evidence for `DocDown-OTS-PdfPig-ProtectedDocuments`.
 #### Document creation for fixtures
 
 **Tests**: `DocDownPdf_Extract_SimpleTextPdf_ProducesContractLayout`,
-`DocDownPdf_Extract_DctImage_RoundTripsByteIdenticalAsPassthrough`,
-`PdfDocumentExtractor_GetSelfTestCases_DeployedBackend_ReturnsParseAndRenderingCases`
+`DocDownPdf_Extract_DctImage_RoundTripsByteIdenticalAsPassthrough`
 
-Every one of these depends on the parser's writer having produced a document the parser can then read
-back — the third most directly, since the self-test case reads the embedded probe document and
-checks its glyphs. The second additionally proves the writer embeds a JPEG verbatim, which is what
+Both depend on the parser's writer having produced a document the parser can then read
+back. The second additionally proves the writer embeds a JPEG verbatim, which is what
 makes the byte-identity assertion meaningful. Evidence for `DocDown-OTS-PdfPig-DocumentCreation`.
+
+The extractor's self-validation case is deliberately *not* cited here. Its input is the embedded
+probe, a PDF exported from Microsoft Word, so it exercises the parser's reader against a document
+PdfPig did not write — which is the point of the probe, and the reason it is evidence for parsing
+rather than for document creation.
