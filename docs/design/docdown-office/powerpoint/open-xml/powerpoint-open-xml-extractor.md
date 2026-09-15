@@ -41,7 +41,8 @@ extraction.
 - **`IEnumerable<SelfTestCase> GetSelfTestCases()`** — returns two cases:
   - `powerpoint.openxml.parseRoundTrip`, which reads the embedded deck authored in Microsoft PowerPoint
     and passes when the model carries at least one
-    slide. Building rather than embedding a fixture keeps the case free of a shipped binary payload.
+    slide. Embedding a probe PowerPoint itself authored is what makes the case prove this deployment
+    can read what the real application emits, rather than that a library agrees with itself.
   - `powerpoint.pageRendering`, which reports a reasoned skip because the managed backend does not
     render slide images. A behavior this backend does not provide must not be reported as a pass or a
     failure.

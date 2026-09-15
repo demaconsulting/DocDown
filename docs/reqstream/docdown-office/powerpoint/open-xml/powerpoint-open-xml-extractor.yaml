@@ -78,7 +78,8 @@ sections:
                   skip for slide rendering.
                 justification: |
                   An operator needs to confirm the backend works where it is deployed. A round-trip
-                  case that builds and reads a deck proves the SDK is genuinely functional, and a
+                  case that reads back the embedded probe deck proves the SDK is genuinely functional
+                  against what PowerPoint itself emits, and a
                   skipped page-rendering case keeps a behavior the managed backend does not provide
                   from being reported as a pass or a failure.
                 tests:

@@ -40,8 +40,8 @@ extractor can run.
 read-only `MemoryStream`, builds a fresh `WordOpenXmlReader`, and hands the resulting model to
 `WordContentEmitter`. Normal completion returns `ExtractionOutcome.Produced`.
 
-**The self-test set.** Two cases are exposed: `word.openxml.parseRoundTrip`, which builds a
-embedded document authored in Microsoft Word, reads it with the reader, and passes
+**The self-test set.** Two cases are exposed: `word.openxml.parseRoundTrip`, which reads the
+embedded document authored in Microsoft Word with the reader, and passes
 when the body contains content; and `word.pageRendering`, which reports a skip with a reason
 because this package does not attempt page rendering.
 

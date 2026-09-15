@@ -42,8 +42,8 @@ extraction.
 - **`IEnumerable<SelfTestCase> GetSelfTestCases()`** — returns two cases:
   - `excel.openxml.parseRoundTrip`, which reads the embedded workbook authored in Microsoft Excel
     and passes when the model carries at least one
-    worksheet. Building rather than embedding a fixture keeps the case free of a shipped binary
-    payload.
+    worksheet. Embedding a probe Excel itself authored is what makes the case prove this deployment
+    can read what the real application emits, rather than that a library agrees with itself.
   - `excel.pageRendering`, which reports a reasoned skip because a workbook is non-paginated and page
     rendering does not apply.
 - **`ReadSourceAsync`** (private) — copies the source into memory, because a stream-backed

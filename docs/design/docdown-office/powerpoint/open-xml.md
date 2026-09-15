@@ -36,8 +36,8 @@ remains applicable to rendering requests at the descriptor level, but `ProbeAvai
 pages. During extraction it reports `powerpoint.backend = Open XML SDK (managed)` and
 `powerpoint.pageRendering = not provided by this extractor`.
 
-**The self-test set.** Two cases are exposed: a `powerpoint.openxml.parseRoundTrip` case that builds a
-embedded deck authored in Microsoft PowerPoint, reads it with the reader, and passes
+**The self-test set.** Two cases are exposed: a `powerpoint.openxml.parseRoundTrip` case that reads
+the embedded deck authored in Microsoft PowerPoint with the reader, and passes
 when the deck carries at least one slide; and a `powerpoint.pageRendering` case that reports a reasoned
 skip because the managed backend does not render slide images.
 
