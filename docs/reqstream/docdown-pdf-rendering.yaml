@@ -78,8 +78,6 @@ sections:
           - DocDownPdfRendering-PageRenderer-RendersPageToPng
           - DocDownPdfRendering-PageRenderer-RejectsNullDocument
           - DocDown-OTS-PDFtoImage
-          - DocDown-OTS-PDFium
-          - DocDown-OTS-SkiaSharp
         tests:
           - DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages
           - PdfPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs

@@ -27,7 +27,8 @@ rasterization — rather than several. Three units divide the work.
   extraction reports `Unreadable`.
 - **PageRenderer** is the single native-interop seam. It rasterizes one page to a PNG behind a
   process-wide lock, and answers a cheap, non-throwing question about whether the native stack can
-  load. It is the only place a PDFtoImage, PDFium, or SkiaSharp type appears.
+  load. It is the only place a PDFtoImage type appears; no DocDown type names PDFium or SkiaSharp
+  at all, so the native components stay an implementation detail of PDFtoImage.
 - **PdfRenderingDocDownBuilderExtensions** is the one visible edge from a host to this package: the
   single `AddPdfRendering` call that registers the backend. It carries no native-rasterizer type on
   its surface, so a host can reference it without those types entering its own compilation.
@@ -100,14 +101,19 @@ machine-enforced by a reflection test over the package's exported types.
 - **DocDown.Core** — the extraction contract, the sink, the options, and the output layout.
 - **DocDown.Pdf** — the managed text/embedded-image/metadata extractor this package delegates to.
   This is a project reference, not a native dependency; it adds no native asset.
-- **PDFtoImage** (OTS) — the managed rasterization API, wrapping PDFium (native renderer) and
-  SkiaSharp (native 2D/PNG-encode backend). Confined to `PageRenderer` and absent from the public
-  API. See *PDFtoImage*, *PDFium*, and *SkiaSharp* under the OTS integration design.
+- **PDFtoImage** (OTS) — the managed rasterization API, which carries a native rasterizer and 2D
+  backend (PDFium and SkiaSharp) transitively. No DocDown type names either of those; the PNG bytes
+  come back from `Conversion.SavePng`. Confined to `PageRenderer` and absent from the public
+  API. See *PDFtoImage* under the OTS integration design.
+- **PdfPig** — reached only through the `DocDown.Pdf` project reference, for the delegated managed
+  extraction. No type in this package names it; the page count comes from PDFtoImage, the same
+  component that rasterizes the pages.
 
 ## Risk Control Measures
 
-- **Native containment.** PDFtoImage, PDFium, and SkiaSharp types appear in exactly one file
-  (`PageRenderer.cs`) and in no public signature. A reflection test fails the build if any reaches
+- **Native containment.** PDFtoImage types appear in exactly one file
+  (`PageRenderer.cs`) and in no public signature, and no DocDown type names PDFium or SkiaSharp at
+  all. A reflection test fails the build if any reaches
   the exported surface, so the native stack stays confined and replaceable.
 - **Portability of the other packages.** `DocDown.Core`, `DocDown.Pdf`, and `DocDown.Tool` remain
   free of native assets and runtime-identifier-specific dependencies. That `DocDown.Pdf` ships no

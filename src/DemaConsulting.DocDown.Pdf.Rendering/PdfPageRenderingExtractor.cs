@@ -1,6 +1,6 @@
 using System.Globalization;
 using DocDown.Core;
-using UglyToad.PdfPig;
+using PDFtoImage;
 
 namespace DocDown.Pdf.Rendering;
 
@@ -246,16 +246,19 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     /// <param name="range">The requested inclusive page range, or <see langword="null"/> for the whole document.</param>
     /// <returns>The selected page numbers in document order; empty when the document has no pages.</returns>
     /// <remarks>
-    ///     Opens the document with the same managed parser the delegated backend uses, so the pages
-    ///     rendered here are exactly the pages the base backend extracted text and images from.
+    ///     Reads the page count through PDFtoImage — the same component that will rasterize them —
+    ///     so the selection cannot disagree with what the renderer can actually reach. Counting with
+    ///     a second parser would both parse the document twice and risk a mismatch between the two.
     ///     Pages outside the document are silently absent from the selection rather than an error,
     ///     matching the managed backend's page-range behavior. Read-only over the buffered bytes.
     /// </remarks>
     private static IReadOnlyList<int> SelectPageNumbers(byte[] bytes, PageRange? range)
     {
-        using var document = PdfDocument.Open(bytes, new ParsingOptions { UseLenientParsing = true });
-        var numbers = new List<int>(document.NumberOfPages);
-        for (var number = 1; number <= document.NumberOfPages; number++)
+#pragma warning disable CA1416 // PDFtoImage supports every platform DocDown targets (Windows, Linux, macOS)
+        var pageCount = Conversion.GetPageCount(bytes);
+#pragma warning restore CA1416
+        var numbers = new List<int>(pageCount);
+        for (var number = 1; number <= pageCount; number++)
         {
             if (range is { } selected && !selected.Contains(number))
             {

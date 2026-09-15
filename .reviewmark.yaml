@@ -1671,14 +1671,6 @@ reviews:
       - "docs/design/ots/pdfpig.md"                                       # OTS integration design
       - "docs/verification/ots/pdfpig.md"                                 # OTS verification
 
-  # OTS-PDFium Review (one per OTS item)
-  - id: OTS-PDFium
-    title: Review that PDFium Provides Required Functionality
-    paths:
-      - "docs/reqstream/ots/pdfium.yaml"                                   # OTS requirements
-      - "docs/design/ots/pdfium.md"                                       # OTS integration design
-      - "docs/verification/ots/pdfium.md"                                 # OTS verification
-
   # OTS-PDFtoImage Review (one per OTS item)
   - id: OTS-PDFtoImage
     title: Review that PDFtoImage Provides Required Functionality
@@ -1710,14 +1702,6 @@ reviews:
       - "docs/reqstream/ots/sarifmark.yaml"                                # OTS requirements
       - "docs/design/ots/sarifmark.md"                                     # OTS integration design
       - "docs/verification/ots/sarifmark.md"                              # OTS verification
-
-  # OTS-SkiaSharp Review (one per OTS item)
-  - id: OTS-SkiaSharp
-    title: Review that SkiaSharp Provides Required Functionality
-    paths:
-      - "docs/reqstream/ots/skiasharp.yaml"                                # OTS requirements
-      - "docs/design/ots/skiasharp.md"                                     # OTS integration design
-      - "docs/verification/ots/skiasharp.md"                              # OTS verification
 
   # OTS-SonarMark Review (one per OTS item)
   - id: OTS-SonarMark

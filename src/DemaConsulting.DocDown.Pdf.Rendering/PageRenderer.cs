@@ -1,21 +1,21 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using PDFtoImage;
-using SkiaSharp;
 
 namespace DocDown.Pdf.Rendering;
 
 /// <summary>
 ///     The single native-interop seam of this package: it rasterizes one PDF page to a PNG through
-///     PDFtoImage (PDFium for the raster, SkiaSharp for the PNG encode) and answers a cheap,
+///     PDFtoImage, whose native stack does the raster and the PNG encode, and answers a cheap,
 ///     non-throwing question about whether the native stack can load at all in this environment.
 /// </summary>
 /// <remarks>
 ///     <para>
 ///         This is the only type in DocDown that touches a native binary, and it is deliberately
-///         thin: every PDFtoImage/PDFium/SkiaSharp call lives here so the rest of the package — and
+///         thin: every PDFtoImage call lives here so the rest of the package — and
 ///         the rest of DocDown — stays fully managed and can be reasoned about without the native
-///         stack in view.
+///         stack in view. DocDown calls no native package directly; PDFium and SkiaSharp arrive
+///         transitively underneath PDFtoImage and no DocDown type names either of them.
 ///     </para>
 ///     <para>
 ///         <strong>PDFium is not thread-safe.</strong> PDFtoImage documents that it serializes every
@@ -132,9 +132,8 @@ internal static class PageRenderer
     {
 #pragma warning disable CA1416 // PDFtoImage supports every platform DocDown targets (Windows, Linux, macOS)
         var options = new RenderOptions(Dpi: dpi);
-        using var bitmap = Conversion.ToImage(pdf, page: pageIndexZeroBased, options: options);
         using var buffer = new MemoryStream();
-        bitmap.Encode(buffer, SKEncodedImageFormat.Png, 100);
+        Conversion.SavePng(buffer, pdf, page: pageIndexZeroBased, options: options);
         return buffer.ToArray();
 #pragma warning restore CA1416
     }

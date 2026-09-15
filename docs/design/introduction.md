@@ -127,19 +127,17 @@ The following OTS items are also covered:
 - **Pandoc** — Markdown-to-HTML conversion tool
 - **PdfPig** — managed PDF parser, a runtime dependency of DocDown.Pdf shipped to consumers rather
   than a build-time tool
-- **PDFium** — native PDF page rasterizer, a runtime dependency delivered transitively through
-  PDFtoImage to the optional DocDown.Pdf.Rendering package; the only native binary DocDown depends on
-- **PDFtoImage** — managed page-rasterization API, the runtime dependency of DocDown.Pdf.Rendering
-  that wraps PDFium and SkiaSharp
+- **PDFtoImage** — managed page-rasterization API, the runtime dependency of DocDown.Pdf.Rendering;
+  it delivers a native rasterizer and 2D backend (PDFium and SkiaSharp) transitively, and those are
+  the only native binaries DocDown ships. No DocDown type names either of them, so neither is a
+  listed OTS item
 - **ReqStream** — requirements traceability tool
 - **ReviewMark** — file review enforcement tool
 - **SarifMark** — SARIF report conversion tool
-- **SkiaSharp** — 2D graphics library that encodes rasterized pages to PNG, a runtime dependency
-  delivered transitively through PDFtoImage
 - **SonarMark** — SonarCloud quality report tool
 - **SysML2Tools** — architecture model lint and diagram rendering tool
-- **System.IO.Packaging** — managed Open Packaging Conventions container reader that opens a `.docx`,
-  reaching DocDown.Office transitively through the Open XML SDK
+- **System.IO.Packaging** — managed Open Packaging Conventions container reader, referenced and
+  called directly by DocDown.Office to open an Office document's container
 - **TestResults** — test-results serialization library, the one runtime dependency of DocDown.Tool
 - **VersionMark** — tool-version documentation tool
 - **WeasyPrint** — HTML-to-PDF conversion tool
