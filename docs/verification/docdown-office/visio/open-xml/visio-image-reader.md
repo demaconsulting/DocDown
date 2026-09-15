@@ -15,7 +15,7 @@ emitter and integration tests that write and link the images.
 
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
 - **Inputs**: Visio Open Packaging drawings synthesized in memory with a page image plus a thumbnail, and a
-  master image, built by `VisioPackageBuilder`
+  master image, built by `VisioPackageBuilder` (test project)
 - **Mocking**: none; the image reader is pure over the package
 - **Isolation**: each test builds its own package
 

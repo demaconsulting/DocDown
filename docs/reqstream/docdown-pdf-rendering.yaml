@@ -218,7 +218,7 @@ sections:
         tags: [system]
         justification: |
           Declared availability is not proof for a native stack; only a real render is. A contributed
-          case that rasterizes a document the backend builds itself lets an operator confirm rendering
+          case that rasterizes the embedded document lets an operator confirm rendering
           works where it is installed, and reports a reasoned skip where the native stack is absent.
         children:
           - DocDownPdfRendering-PdfPageRenderingExtractor-ContributesSelfTests

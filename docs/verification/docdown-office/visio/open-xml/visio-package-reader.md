@@ -6,7 +6,7 @@ a Visio package into the backend-neutral model.
 ### Verification Approach
 
 `VisioPackageReader` is verified through unit tests in `OpenXml/VisioPackageReaderTests.cs` in
-`DemaConsulting.DocDown.Office.Tests`, reading drawings built at test time by `VisioPackageBuilder` and
+`DemaConsulting.DocDown.Office.Tests`, reading drawings built at test time by `VisioPackageBuilder` (test project) and
 asserting the resulting model. The tests cover page names, shape text, the directed topology and its
 direction, page order, page-scoped edge resolution, master-name classification, symbol-font recovery, and
 the empty page.
@@ -19,7 +19,7 @@ the developer report.)*
 ### Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
-- **Inputs**: Visio Open Packaging drawings synthesized in memory by `VisioPackageBuilder` — master-typed
+- **Inputs**: Visio Open Packaging drawings synthesized in memory by `VisioPackageBuilder` (test project) — master-typed
   schematics, parallel connectors, reversed connector records, reused shape ids, symbol-font runs, and
   drawings with or without a masters part
 - **Mocking**: none; the reader is pure over the package

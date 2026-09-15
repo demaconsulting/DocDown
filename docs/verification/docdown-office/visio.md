@@ -67,7 +67,7 @@ name, shape name, master name, image payload, and rendered payload in the fixtur
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
 - **Filesystem**: a per-test `TempScratch` folder holds both the generated input drawing and the
   extraction output
-- **Inputs**: Visio Open Packaging drawings generated at test time by `VisioPackageBuilder`, plus a
+- **Inputs**: Visio Open Packaging drawings generated at test time by `VisioPackageBuilder` (test project), plus a
   short byte sequence for the legacy `.vsd` refusal scenario; no committed binary fixtures and no
   network access
 - **Mocking**: none for the managed integration scenarios — every test drives the real engine and

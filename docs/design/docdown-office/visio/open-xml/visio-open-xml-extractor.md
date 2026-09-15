@@ -48,7 +48,7 @@ throwing at its caller.
   `DocumentSource`, `EnvironmentFact`, and outcome and self-test types.
 - **VisioPackageReader** — reads the drawing into the model.
 - **VisioContentEmitter** — emits the model through the sink.
-- **VisioPackageBuilder** — builds the self-test drawing in memory.
+- **`SelfTestProbe`** (Core) — loads the embedded drawing the self-test reads.
 - **System.IO.Packaging** (transitively, through the reader) — the OPC container reader.
 
 ### Callers
