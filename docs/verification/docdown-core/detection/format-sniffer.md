@@ -2,7 +2,7 @@
 
 This document describes the unit-level verification strategy for `FormatSniffer`, which identifies a
 document's format from its file-name extension, uses the leading content bytes only as a fallback, and
-reports the evidence and confidence behind the identification.
+reports the evidence behind the identification.
 
 #### Verification Approach
 
@@ -32,7 +32,7 @@ would fail.
 Per IEC 62304 §5.5.2, a `FormatSniffer` unit test run passes when a recognized extension identifies the
 format and outranks a contradicting content signature; when a file with no extension or an unrecognized
 one falls back to a leading-byte signature; when unrecognizable input reports `Unknown`; when every
-result carries the correct basis and confidence; when the stream position is restored after the
+result carries the correct basis; when the stream position is restored after the
 fallback path reads bytes and is untouched when the extension short-circuits; and when null or
 non-seekable input is rejected with the documented exceptions. Any wrong classification, moved stream
 position, or missing guard is a failure.
@@ -69,13 +69,13 @@ the sniffer recovers the format from a five-byte `%PDF-` header or an HTML root 
 Proves the sniffer reports `Unknown` when neither the extension nor the content is recognized,
 including for an empty stream. Evidence for `DocDownCore-Detection-FormatSniffer-UnknownFormat`.
 
-##### The basis and confidence are reported
+##### The basis is reported
 
-**Test**: `FormatSniffer_Detect_ExtensionMatch_ReportsExtensionBasisAndHighConfidence`
+**Test**: `FormatSniffer_Detect_ExtensionMatch_ReportsExtensionBasis`
 
-Proves an extension match reports the `Extension` basis and the documented `0.9` confidence, so the
+Proves an extension match reports the `Extension` basis, so the
 record of *how* the format was determined reaches `manifest.json` intact. Evidence for
-`DocDownCore-Detection-FormatSniffer-BasisAndConfidence`.
+`DocDownCore-Detection-FormatSniffer-Basis`.
 
 ##### The stream position is preserved
 

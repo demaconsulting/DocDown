@@ -113,8 +113,8 @@ A single extraction follows this fixed sequence:
    metadata, content features, notes, and environment facts through `IExtractionSink`.
 8. **Add Core-derived notes** — the engine records notes for caller-disabled image extraction, for a
    requested paginated render with no renderer, or for a renderer that produced no pages.
-9. **Write artifacts** — `ContentWriter` finalizes `content.md` and any `parts/`; `MetadataWriter`
-   writes `metadata.json`; `ManifestWriter` writes `manifest.json`; `SummaryWriter` writes
+9. **Write artifacts** — `ContentWriter` finalizes `content.md` and any `parts/`; `ManifestWriter`
+   writes `manifest.json`; `MetadataWriter` writes `metadata.json`; `SummaryWriter` writes
    `summary.txt`.
 10. **Return result** — `ExtractionResult` mirrors the paths, outcome, selected extractor, failure,
     environment, and notes returned to the caller.

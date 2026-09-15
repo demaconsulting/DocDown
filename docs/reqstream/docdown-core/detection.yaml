@@ -34,7 +34,7 @@ sections:
               Reporting whether the result came from the extension or from a content signature
               preserves that evidence for later readers.
             children:
-              - DocDownCore-Detection-FormatSniffer-BasisAndConfidence
+              - DocDownCore-Detection-FormatSniffer-Basis
             tests:
               - Detection_DetectionBasisReported_PdfExtension_ReportsExtensionBasis
               - Detection_DetectionBasisReported_PdfSignature_ReportsContentSignatureBasis

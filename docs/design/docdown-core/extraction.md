@@ -62,8 +62,8 @@ If step 1 or step 2 produces an empty set, selection returns prose failure namin
 format. For well-known modern formats the prose names the DocDown package that provides the
 extractor; for legacy binary Office formats it states plainly that no DocDown package supports them.
 
-`DocDownEngine` clones options before any other work, prepares the scratch folder, reads and hashes
-source bytes, detects the format, selects an extractor, invokes the backend through
+`DocDownEngine` clones options before any other work, prepares the scratch folder, reads the source
+bytes, detects the format, selects an extractor, invokes the backend through
 `IExtractionContext`, adds any Core-derived notes, writes the output artifacts, and returns the
 immutable `ExtractionResult`.
 

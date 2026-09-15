@@ -158,8 +158,8 @@ public static class FormatSniffer
     /// </returns>
     /// <remarks>
     ///     Extensions are matched case-insensitively via an invariant-lowercase comparison so
-    ///     <c>.PDF</c> and <c>.pdf</c> are equivalent. An extension is weaker evidence than
-    ///     <c>1.0</c>: the name is trusted, but only the decoder can prove the bytes agree with it.
+    ///     <c>.PDF</c> and <c>.pdf</c> are equivalent. An extension is weaker evidence than a content
+    ///     signature: the name is trusted, but only the decoder can prove the bytes agree with it.
     ///     Pure and side-effect free.
     /// </remarks>
     private static FormatDetection DetectByExtension(string? fileName)

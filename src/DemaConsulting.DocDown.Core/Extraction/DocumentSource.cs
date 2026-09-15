@@ -295,7 +295,6 @@ public enum MetadataProvenance
     OpcCoreProperties,
 
     /// <summary>The value came from a PDF's document information dictionary via PdfPig.</summary>
-    /// <summary>The value came from a PDF's document information dictionary via PdfPig.</summary>
     PdfDocumentInformation
 }
 

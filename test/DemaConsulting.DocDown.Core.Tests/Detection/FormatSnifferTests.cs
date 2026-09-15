@@ -207,10 +207,10 @@ public class FormatSnifferTests
     }
 
     /// <summary>
-    ///     Proves the reported basis and confidence match the extension-primary contract (BasisAndConfidence).
+    ///     Proves the reported basis matches the extension-primary contract.
     /// </summary>
     [Fact]
-    public void FormatSniffer_Detect_ExtensionMatch_ReportsExtensionBasisAndHighConfidence()
+    public void FormatSniffer_Detect_ExtensionMatch_ReportsExtensionBasis()
     {
         // Arrange: a document identified only by its .htm extension
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes("not markup, just prose"));

@@ -211,7 +211,7 @@ public sealed record ContentWriteResult(
 /// <summary>
 ///     Describes a logical content part an extractor is adding, such as a sheet or slide.
 /// </summary>
-/// <param name="Kind">The kind of part (page, sheet, slide, section, or attachment).</param>
+/// <param name="Kind">The kind of part: a worksheet, or a chart drawn on one.</param>
 /// <param name="Ordinal">
 ///     The extractor's advisory ordinal for the part. This is a hint only — Core assigns the
 ///     real, gap-free ordinal in call order.

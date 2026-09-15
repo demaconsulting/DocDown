@@ -313,7 +313,7 @@ public sealed class DocDownEngine
     /// </summary>
     /// <param name="folder">The prepared scratch folder.</param>
     /// <param name="sink">The sink the backend writes through.</param>
-    /// <param name="inputs">The gathered pipeline inputs (source, hash, detection, options, timestamp, candidates).</param>
+    /// <param name="inputs">The gathered pipeline inputs (source, detection, options, timestamp, candidates).</param>
     /// <param name="selected">The selected extractor descriptor that will run.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>The extraction result for this run.</returns>
@@ -809,12 +809,12 @@ public sealed class DocDownEngine
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>The source bytes.</returns>
     /// <remarks>
-    ///     Buffering the whole source lets Core both hash it and sniff it from a seekable stream without
+    ///     Buffering the whole source lets Core sniff it from a seekable stream without
     ///     assuming the source stream itself is seekable. Performs I/O.
     /// </remarks>
     private static async ValueTask<byte[]> ReadAllBytesAsync(DocumentSource source, CancellationToken cancellationToken)
     {
-        // Copy into a memory buffer so the same bytes serve hashing and format sniffing
+        // Copy into a memory buffer so format sniffing can seek over the same bytes
         using var raw = source.OpenRead();
         using var buffer = new MemoryStream();
         await raw.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);

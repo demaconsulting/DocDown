@@ -22,7 +22,7 @@ nothing for an instance to carry.
   table; the primary detection signal.
 - **`PdfSignature`** (`static byte[]`) — The `%PDF-` ASCII signature.
 
-The extension table maps `.pdf`, `.docx`/`.doc`, `.xlsx`/`.xls`, `.pptx`/`.ppt`, `.vsdx`/`.vsd`,
+The extension table maps `.pdf`, `.docx`/`.doc`, `.xlsx`/`.xls`, `.pptx`/`.ppt`, `.vsdx`/`.vsdm`/`.vsd`,
 `.html`/`.htm`, and `.txt`/`.text`/`.log` to their formats — the `.doc`, `.xls`, `.ppt`, and `.vsd`
 entries are the legacy binary Office formats, detectable but not extractable. Recognizing an
 extension here does not imply an extractor is registered for it — that is `ExtractorSelector`'s
