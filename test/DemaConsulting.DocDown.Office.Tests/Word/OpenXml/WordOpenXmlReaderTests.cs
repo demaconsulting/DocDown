@@ -78,6 +78,33 @@ public class WordOpenXmlReaderTests
     }
 
     /// <summary>
+    ///     Proves a header row marked <c>w:tblHeader w:val="true"</c> — the spelling Word itself
+    ///     writes, and the wider ST_OnOff spelling the Open XML SDK's typed accessor rejects — is
+    ///     still recognized as a header row.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_HeaderRowValTrue_RecognizedAsHeaderRow()
+    {
+        var model = Read(DocxFixtures.DocumentWithTrueSpelledHeaderRow());
+
+        var table = Assert.Single(model.Body, block => block.Kind == WordBlockKind.Table).Table!;
+        Assert.True(table.FirstRowIsHeader);
+    }
+
+    /// <summary>
+    ///     Proves a header row marked with a value outside the six ST_OnOff spellings is treated
+    ///     as <see langword="false"/> rather than silently misreported as a header row.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_HeaderRowValMalformed_NotRecognizedAsHeaderRow()
+    {
+        var model = Read(DocxFixtures.DocumentWithMalformedHeaderRowValue());
+
+        var table = Assert.Single(model.Body, block => block.Kind == WordBlockKind.Table).Table!;
+        Assert.False(table.FirstRowIsHeader);
+    }
+
+    /// <summary>
     ///     Proves a password-protected document is detected and rejected with a clear exception.
     /// </summary>
     [Fact]

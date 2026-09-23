@@ -1249,8 +1249,31 @@ internal sealed class WordOpenXmlReader
     private static bool IsHeaderRow(W.TableRow row)
     {
         var header = row.TableRowProperties?.GetFirstChild<W.TableHeader>();
-        return header is not null && (header.Val is null || header.Val.Value == W.OnOffOnlyValues.On);
+        return header is not null && IsOnOffValueTrue(header.Val);
     }
+
+    /// <summary>
+    ///     Reports whether an on/off attribute value is "on", tolerating the full ST_OnOff value
+    ///     set (<c>on</c>, <c>off</c>, <c>true</c>, <c>false</c>, <c>1</c>, <c>0</c>).
+    /// </summary>
+    /// <param name="value">The raw simple-type value, or <see langword="null"/>.</param>
+    /// <returns>
+    ///     <see langword="true"/> when absent or explicitly set to an "on" spelling
+    ///     (<c>on</c>, <c>true</c>, or <c>1</c>); <see langword="false"/> for an explicit "off"
+    ///     spelling and for any other, unrecognized value.
+    /// </returns>
+    /// <remarks>
+    ///     Reads <see cref="OpenXmlSimpleType.InnerText"/> rather than a strongly typed
+    ///     <c>Value</c> accessor: the Open XML SDK types <see cref="W.TableHeader"/>'s <c>Val</c> as
+    ///     <c>EnumValue&lt;OnOffOnlyValues&gt;</c>, which recognizes only the "on"/"off" spellings
+    ///     and throws <see cref="FormatException"/> on the "true"/"false"/"1"/"0" spellings that
+    ///     Word itself writes and the OOXML ST_OnOff schema permits. Matches the "on" spellings
+    ///     explicitly, rather than excluding only the "off" spellings, so a value outside the six
+    ///     ST_OnOff spellings — a malformed document — is treated as <see langword="false"/> rather
+    ///     than silently misreported as an enabled header row. Pure.
+    /// </remarks>
+    private static bool IsOnOffValueTrue(OpenXmlSimpleType? value) =>
+        value is null || value.InnerText is "true" or "1" or "on";
 
     /// <summary>
     ///     Reports whether a cell is a vertical-merge continuation.
