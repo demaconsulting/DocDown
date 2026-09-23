@@ -446,6 +446,42 @@ public static class DocxFixtures
     }
 
     /// <summary>
+    ///     Builds a document containing a table whose header row carries a <c>w:tblHeader
+    ///     w:val="true"</c> attribute, the literal spelling Word itself writes, rather than the
+    ///     stricter "on"/"off" the Open XML SDK's typed accessor expects.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>
+    ///     Regression fixture: the OOXML ST_OnOff schema permits "true"/"false"/"1"/"0" alongside
+    ///     "on"/"off", but <see cref="W.TableHeader"/>'s <c>Val</c> is typed as
+    ///     <c>EnumValue&lt;OnOffOnlyValues&gt;</c>, which only recognizes "on"/"off" and throws
+    ///     <see cref="FormatException"/> on the wider spelling if read through its strongly typed
+    ///     <c>Value</c> accessor.
+    /// </remarks>
+    public static byte[] DocumentWithTrueSpelledHeaderRow() => BuildDocx((document, mainPart) =>
+    {
+        var body = new W.Body();
+        body.AppendChild(StyledParagraph("True-Spelled Header", "Heading1"));
+
+        var table = new W.Table();
+        var header = Compose(new W.TableRow(), Compose(new W.TableRowProperties(), new W.TableHeader()));
+        header.GetFirstChild<W.TableRowProperties>()!.GetFirstChild<W.TableHeader>()!.Val =
+            new EnumValue<W.OnOffOnlyValues> { InnerText = "true" };
+        header.AppendChild(Cell("Component"));
+        header.AppendChild(Cell("Status"));
+        table.AppendChild(header);
+
+        var row = new W.TableRow();
+        row.AppendChild(Cell("Alpha"));
+        row.AppendChild(Cell("Ready"));
+        table.AppendChild(row);
+
+        body.AppendChild(table);
+        SetBody(mainPart, body);
+        SetProperties(document, "True-Spelled Header", "DocDown Test Suite");
+    });
+
+    /// <summary>
     ///     Builds a table cell holding a single paragraph of text.
     /// </summary>
     /// <param name="text">The cell text.</param>

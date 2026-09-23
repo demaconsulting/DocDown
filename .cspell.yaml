@@ -122,6 +122,7 @@ words:
   # Increment 6 (DocDown.Word): Open XML field-instruction keywords used for structural furniture
   # detection, the backend identifier token, and descriptive vocabulary introduced by the mapping.
   - openxml
+  - OOXML
   - inlines
   - passthroughs
   - unextractable
