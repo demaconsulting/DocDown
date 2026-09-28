@@ -71,8 +71,8 @@
   <ItemGroup>
     <!-- ApiMark runs as an MSBuild task after Build; it contributes no runtime assets, so
          PrivateAssets="All" keeps it out of this package's dependency graph. -->
-    <PackageReference Include="DemaConsulting.ApiMark.MSBuild" Version="[0.5.0]" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.Sbom.Targets" Version="4.1.12" PrivateAssets="All" />
+    <PackageReference Include="DemaConsulting.ApiMark.MSBuild" Version="[0.5.1]" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Sbom.Targets" Version="4.1.13" PrivateAssets="All" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.401" PrivateAssets="All" />
   </ItemGroup>
 
@@ -87,7 +87,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.34.0.3385">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.35.0.4138">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
