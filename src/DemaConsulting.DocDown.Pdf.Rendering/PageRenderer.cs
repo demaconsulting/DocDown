@@ -18,15 +18,17 @@ namespace DocDown.Pdf.Rendering;
 ///         <strong>No process-wide lock guards these calls.</strong> Unlike the PDFium-backed
 ///         renderer this package previously used, CanvasNet.Pdf is a fully-managed library with no
 ///         shared mutable per-call state: each call opens and disposes its own
-///         <see cref="PdfDocument"/> instance, and CanvasNet.Pdf does not document its
-///         thread-safety either way. This mirrors the repo's established pattern for a
+///         <see cref="PdfDocument"/> instance. This mirrors the repo's established pattern for a
 ///         fully-managed backend (see
 ///         <c>DocDown.Pdf</c>'s <c>PdfDocumentExtractor.ProbeAvailability</c>, which is likewise
-///         unconditional and lock-free). The one residual, undocumented risk is
-///         <c>SystemFontCatalog</c>'s lazy one-time font-catalog build racing on first concurrent
-///         use; the concurrent-render test in this package's test suite stands as a regression guard
-///         against it, and this is recorded as an accepted design risk in
-///         docs/design/docdown-pdf-rendering.md rather than silently assumed away.
+///         unconditional and lock-free). The one shared mutable state in the dependency graph —
+///         <c>SystemFontCatalog</c>'s lazily-built system-font directory scan and its bundled-fallback
+///         font cache — is confirmed safe for concurrent use by design: the directory scan is a
+///         <see cref="System.Lazy{T}"/> in <see cref="System.Threading.LazyThreadSafetyMode.ExecutionAndPublication"/>
+///         mode (concurrent callers block on the single build and share its published result), and
+///         the bundled-fallback cache is a dictionary guarded by a dedicated lock around both lookup
+///         and population. The concurrent-render test in this package's test suite is the regression
+///         guard for this behavior.
 ///     </para>
 /// </remarks>
 internal static class PageRenderer

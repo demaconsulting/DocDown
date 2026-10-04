@@ -165,6 +165,8 @@ sections:
           A caller working with a large document needs a bounded slice, and rasterization is the most
           expensive step. Rendering pages outside the requested range would waste the most time and
           contradict the request.
+        children:
+          - DocDownPdfRendering-PageRenderer-GetsPageCount
         tests:
           - DocDownPdfRendering_Render_PageRange_RestrictsRenderedPages
 

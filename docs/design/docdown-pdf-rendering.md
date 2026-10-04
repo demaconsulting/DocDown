@@ -127,12 +127,13 @@ machine-enforced by a reflection test over the package's exported types.
   because the backend is only selected and only opens a document when rendering is requested.
 - **Independent per-call document instances.** `PageRenderer` opens and disposes its own
   `PdfDocument` per call rather than sharing mutable state across calls, so concurrent renders do not
-  corrupt each other's state. CanvasNet.Pdf's thread-safety is not documented either way; this
-  isolation is the mitigation, and the concurrent-render test in this package's test suite is the
-  regression guard for it. The one known shared mutable state in the dependency graph is CanvasNet's
-  lazily-initialized system font catalog, which is accepted as a residual risk: a race there could
-  only affect font substitution during concurrent first-use renders, never data integrity, and no
-  text is ever rendered from an untrusted source through this path.
+  corrupt each other's state. The one shared mutable state in the dependency graph — CanvasNet's
+  lazily-built system font catalog and its bundled-fallback font cache — is confirmed safe for
+  concurrent use by design, not merely assumed: the catalog build is a one-time `Lazy<T>` in
+  execution-and-publication mode, so concurrent callers block on a single build and share its
+  published result, and the fallback cache is a dictionary guarded by a dedicated lock around both
+  lookup and population. The concurrent-render test in this package's test suite is the regression
+  guard for this behavior.
 
 ## Data Flow
 

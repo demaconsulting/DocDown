@@ -21,10 +21,11 @@
 # call to be serialized process-wide behind a lock, because PDFium was not thread-safe. It is
 # superseded (not satisfied) by DocDownPdfRendering-PageRenderer-ConcurrentCallsDoNotInterfere
 # because this unit now opens an independent `PdfDocument` per call with no field or static
-# mutable state, so concurrent calls do not share anything a lock would need to protect;
-# CanvasNet's own thread-safety is not documented either way, and the accepted residual risk
-# (CanvasNet's lazy-initialized system font catalog) is recorded in the system design document
-# rather than mitigated by a lock here.
+# mutable state, so concurrent calls do not share anything a lock would need to protect; the one
+# shared mutable state in the dependency graph (CanvasNet's lazily-built system font catalog) is
+# confirmed safe for concurrent use by design — a one-time build behind a blocking `Lazy<T>` plus
+# a dedicated lock around its bundled-fallback cache — and is recorded in the system design
+# document.
 
 sections:
   - title: DocDownPdfRendering Requirements
