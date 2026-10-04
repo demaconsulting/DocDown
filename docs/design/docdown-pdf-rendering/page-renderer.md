@@ -4,47 +4,42 @@
 
 ### Purpose
 
-`PageRenderer` is the single native-interop seam of this package. Its responsibility is to rasterize
-one PDF page to a PNG through PDFtoImage — PDFium for the raster, SkiaSharp for the encode — and to
-answer, cheaply and without throwing, whether the native stack can load at all in this environment.
+`PageRenderer` is the single rasterization seam of this package. Its responsibility is to rasterize
+one PDF page to a PNG through `DemaConsulting.CanvasNet.Pdf` — a fully-managed PDF rendering stack —
+and `DemaConsulting.CanvasNet`'s `PngCodec` for the PNG encode.
 
-Confining every native call to this one unit is what keeps the rest of the package, and the rest of
-DocDown, fully managed and reasoned about without the native stack in view.
+Confining every CanvasNet.Pdf/CanvasNet call to this one unit is what keeps the rest of the package,
+and the rest of DocDown, free of a dependency on either package's types.
 
 ### Data Model
 
-`PageRenderer` is an `internal static class`: PDFium's state is a property of the process-global
-native renderer, not of any instance, so instance state would be misleading. It holds two static
-locks — one that serializes rasterization and one that guards the one-time availability probe — plus
-the cached probe result. Its companion `NativeProbeResult` is an internal immutable record carrying
-`IsAvailable` and a reason, with a shared `Available` value and an `Unavailable(reason)` factory that
-refuses an empty reason.
+`PageRenderer` is an `internal static class` with no instance or shared mutable state: each call
+opens its own `PdfDocument`, renders into its own `Surface`, and disposes both before returning.
 
 ### Key Methods
 
-- **`Render(byte[] pdf, int pageIndexZeroBased, int dpi)`** — runs the PDFtoImage rasterization and
-  PNG encode under a process-wide lock, returning the PNG bytes. Rejects a null document up
-  front. Any native or memory fault surfaces as a thrown exception the caller isolates per page.
-- **`ProbeAvailability()`** — loads the PDFium native once through the PDFtoImage assembly's own
-  native-resolution path (honoring the package graph's `runtimes/<rid>/native` asset), caches the
-  outcome, and returns `NativeProbeResult.Available` or `NativeProbeResult.Unavailable(reason)`.
-  Never throws and never rasterizes.
+- **`Render(byte[] pdf, int pageIndexZeroBased, int dpi)`** — opens a `PdfDocument` over the
+  supplied bytes, renders the requested page at the requested DPI through CanvasNet.Pdf's
+  `Render(pageIndex, dpi)` overload (which computes pixel width/height from the page's point size
+  using the standard `pixels = points * dpi / 72` conversion), and encodes the resulting `Surface`
+  to PNG bytes with `PngCodec.Save`. Rejects a null document up front. Any fault during open,
+  render, or encode surfaces as a thrown exception the caller isolates per page.
+- **`GetPageCount(byte[] pdf)`** — opens a `PdfDocument` over the supplied bytes and returns its
+  `PageCount`. Rejects a null document up front.
 
 ### Error Handling
 
-The availability probe catches every load fault and converts it into an unavailable result naming the
-runtime identifier, so it can never throw. `Render` deliberately does not catch: it lets a native or
-memory fault propagate so the extractor can isolate it per page and turn it into a plain note. The
-`CA1416` platform-support warning on the PDFtoImage call is suppressed with justification because
-PDFtoImage is supported on every platform DocDown targets.
+`Render` and `GetPageCount` deliberately do not catch: they let any fault from opening, rendering, or
+encoding propagate so the extractor can isolate it per page and turn it into a plain note.
 
 ### Dependencies
 
-- **PDFtoImage** (OTS) — `Conversion.SavePng` and `RenderOptions`, which rasterize the page and write
-  its PNG bytes in one call. No type from the transitive native stack is named here. See *PDFtoImage*
-  under the OTS integration design.
+- **CanvasNet.Pdf** (OTS) — `PdfDocument.Open`, `GetPageInfo`, and `Render`, which rasterize the page
+  into a `Surface`. See *CanvasNet.Pdf* under the OTS integration design.
+- **CanvasNet** (OTS) — `PngCodec.Save`, which encodes the rendered `Surface` to PNG bytes. See
+  *CanvasNet* under the OTS integration design.
 
 ### Callers
 
-`PdfPageRenderingExtractor`, per page during an extraction and once during its availability probe and
-self-test. Nothing outside this package calls it.
+`PdfPageRenderingExtractor`, per page during an extraction, during its page-count lookup, and once
+during its self-test. Nothing outside this package calls it.

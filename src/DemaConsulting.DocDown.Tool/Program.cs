@@ -22,10 +22,9 @@ namespace DocDown.Tool;
 ///     <para>
 ///         Extractors are registered explicitly through
 ///         <c>new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().Build()</c>, with no reflection
-///         or assembly scanning, which is what keeps single-file publishing viable. The optional
-///         rendering backend carries a native stack (PDFium/SkiaSharp), so a self-contained
-///         single-file publish is runtime-identifier specific; trimming and AOT are left off
-///         because that stack's compatibility with them is unverified.
+///         or assembly scanning, which is what keeps single-file publishing viable. Every backend,
+///         including the optional rendering backend, is fully managed and runtime-identifier
+///         agnostic; trimming and AOT are still left off as unverified for this dependency graph.
 ///     </para>
 /// </remarks>
 internal static class Program

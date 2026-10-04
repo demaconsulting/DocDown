@@ -1671,13 +1671,21 @@ reviews:
       - "docs/design/ots/pdfpig.md"                                       # OTS integration design
       - "docs/verification/ots/pdfpig.md"                                 # OTS verification
 
-  # OTS-PDFtoImage Review (one per OTS item)
-  - id: OTS-PDFtoImage
-    title: Review that PDFtoImage Provides Required Functionality
+  # OTS-CanvasNetPdf Review (one per OTS item)
+  - id: OTS-CanvasNetPdf
+    title: Review that CanvasNet.Pdf Provides Required Functionality
     paths:
-      - "docs/reqstream/ots/pdftoimage.yaml"                               # OTS requirements
-      - "docs/design/ots/pdftoimage.md"                                   # OTS integration design
-      - "docs/verification/ots/pdftoimage.md"                             # OTS verification
+      - "docs/reqstream/ots/canvasnetpdf.yaml"                             # OTS requirements
+      - "docs/design/ots/canvasnetpdf.md"                                  # OTS integration design
+      - "docs/verification/ots/canvasnetpdf.md"                           # OTS verification
+
+  # OTS-CanvasNet Review (one per OTS item)
+  - id: OTS-CanvasNet
+    title: Review that CanvasNet Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/canvasnet.yaml"                                # OTS requirements
+      - "docs/design/ots/canvasnet.md"                                     # OTS integration design
+      - "docs/verification/ots/canvasnet.md"                              # OTS verification
 
   # OTS-ReqStream Review (one per OTS item)
   - id: OTS-ReqStream

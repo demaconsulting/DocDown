@@ -6,8 +6,6 @@
          can reference them from any supported runtime. A PackAsTool package is executed, never
          referenced, so a second and third framework adds no reachable surface: 'dotnet tool install'
          picks one framework folder and RollForward=Major below carries the build onto later hosts.
-         Multi-targeting instead duplicated the entire native stack (PDFium and SkiaSharp for every
-         runtime identifier) once per framework, which is where the package's bulk came from.
 
          net10.0 is chosen deliberately over the lowest supported framework: installing the tool
          therefore requires a .NET 10 runtime. The libraries remain net8.0/net9.0/net10.0 so library
@@ -116,12 +114,9 @@
   <ItemGroup>
     <ProjectReference Include="..\DemaConsulting.DocDown.Core\DemaConsulting.DocDown.Core.csproj" />
     <ProjectReference Include="..\DemaConsulting.DocDown.Pdf\DemaConsulting.DocDown.Pdf.csproj" />
-    <!-- The optional page-rendering backend. It is the only reference that carries a native stack
-         (PDFium/SkiaSharp) into the tool. Adding it keeps 'dotnet tool install -g' working on every
-         runtime identifier from one package (the framework-dependent tool resolves the correct
-         runtimes/<rid>/native asset at run time), but a self-contained single-file publish becomes
-         RID-specific and needs 'dotnet publish -r <rid>'. PublishTrimmed/AOT stay off because this
-         stack's trim/AOT compatibility is unverified. -->
+    <!-- The optional page-rendering backend. It depends on the fully-managed
+         DemaConsulting.CanvasNet.Pdf/DemaConsulting.CanvasNet packages, so it adds no native asset
+         and does not affect the tool's publish story. -->
     <ProjectReference Include="..\DemaConsulting.DocDown.Pdf.Rendering\DemaConsulting.DocDown.Pdf.Rendering.csproj" />
     <!-- The Word, Excel, PowerPoint, and Visio backends. All are managed and runtime-identifier
          agnostic: the PowerPoint and Visio COM backends reach Microsoft Office through late-bound
@@ -143,60 +138,5 @@
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\Icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
-
-  <!-- Native debug symbols and unsupported runtime identifiers are excluded from the tool package.
-
-       Symbols: the PDFium and SkiaSharp runtime packages ship a .pdb alongside each
-       runtimes/<rid>/native binary, and libSkiaSharp.pdb alone is 82-88 MB per Windows runtime
-       identifier. Those symbols describe third-party native code that a DocDown stack trace never
-       enters, so shipping them to every user of 'dotnet tool install' costs hundreds of megabytes
-       and buys nothing. Managed symbols are unaffected: only native assets are removed, and
-       IncludeSymbols above still publishes the tool's own PDBs in the companion .snupkg.
-
-       Runtimes: SkiaSharp and PDFium between them ship natives for around twenty runtime
-       identifiers, including Android, LoongArch, RISC-V, musl, x86, and arm. DocDown supports the
-       three platforms it is built and tested on, so the package carries those and nothing else.
-       This is an allow list rather than a deny list on purpose: a deny list silently readmits
-       whatever platform a future dependency update happens to add, which is how the package grew
-       unnoticed in the first place.
-
-       The allowed set is win-x64, linux-x64, and osx-arm64 — exactly the CI matrix legs — plus the
-       bare 'osx' runtime identifier. That last entry is not a fourth platform: SkiaSharp publishes
-       macOS as a single fat dylib under runtimes/osx/native, which .NET's runtime-identifier
-       fallback (osx-arm64 -> osx -> unix) resolves for an Apple Silicon host. Dropping it would
-       leave macOS able to parse a PDF but not to rasterize one. PDFium, by contrast, does publish a
-       true osx-arm64 asset, so macOS draws from both entries.
-
-       Adding a platform means adding its runtime identifier here and a CI matrix leg that exercises
-       it; the two are meant to stay in step.
-
-       Both exclusions are enforced against the produced artifact by
-       DocDownTool_Package_Nupkg_ExcludesNativeSymbolsAndUnsupportedRuntimes, so a dependency update
-       that reintroduces either fails the build rather than quietly inflating the package. -->
-  <PropertyGroup>
-    <SupportedToolRuntimeIdentifiers>win-x64;linux-x64;osx-arm64;osx</SupportedToolRuntimeIdentifiers>
-  </PropertyGroup>
-
-  <Target Name="TrimToolPackageNativeAssets" AfterTargets="ComputeResolvedFilesToPublishList">
-    <ItemGroup>
-      <!-- Native debug symbols -->
-      <ResolvedFileToPublish
-        Remove="@(ResolvedFileToPublish)"
-        Condition="'%(ResolvedFileToPublish.Extension)' == '.pdb' And '%(ResolvedFileToPublish.AssetType)' == 'native'" />
-
-      <!-- Natives for every runtime identifier outside the supported set. The path is normalized to
-           forward slashes first so the match does not depend on the build host's separator, and each
-           identifier is matched with its surrounding slashes so that, for example, 'osx' does not
-           also admit 'osx-x64'. -->
-      <ResolvedFileToPublish
-        Remove="@(ResolvedFileToPublish)"
-        Condition="'%(ResolvedFileToPublish.AssetType)' == 'native' And
-                   $([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Replace('\','/').Contains('runtimes/')) And
-                   !$([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Replace('\','/').Contains('runtimes/win-x64/')) And
-                   !$([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Replace('\','/').Contains('runtimes/linux-x64/')) And
-                   !$([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Replace('\','/').Contains('runtimes/osx-arm64/')) And
-                   !$([MSBuild]::ValueOrDefault('%(ResolvedFileToPublish.RelativePath)', '').Replace('\','/').Contains('runtimes/osx/'))" />
-    </ItemGroup>
-  </Target>
 
 </Project>

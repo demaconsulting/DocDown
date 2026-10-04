@@ -128,7 +128,7 @@ sections:
         tests:
           - DocDownTool_Validate_ResultsTrx_ProducesWellFormedTrx
           - DocDownTool_Validate_ResultsXml_ProducesWellFormedJUnit
-          - DocDownTool_Validate_RenderingSelfTestCase_IsRecordedAndNotFailed
+          - DocDownTool_Validate_RenderingSelfTestCase_IsRecordedAndPasses
 
       - id: DocDownTool-SelfValidationSkipDistinct
         title: >-
@@ -184,29 +184,22 @@ sections:
         justification: |
           The intended distribution is a global or local .NET tool a user installs and runs as
           docdown. The produced package must stay runtime-identifier-agnostic: every tool asset is
-          placed under the literal any platform folder so a single package installs on any RID and
-          resolves the correct native asset at run time. Proving this against the packed .nupkg,
-          rather than against project metadata, is what makes the documented installation and
-          invocation dependable on every platform.
+          placed under the literal any platform folder so a single package installs on any RID.
+          Proving this against the packed .nupkg, rather than against project metadata, is what
+          makes the documented installation and invocation dependable on every platform.
         tests:
           - DocDownTool_Package_IsRidAgnosticDotNetTool
 
       - id: DocDownTool-PackagedFootprint
         title: >-
-          The tool package shall carry no native debug symbols and no native binaries for runtime
-          identifiers the tool does not support.
+          The tool package shall carry no native assets.
         tags: [system]
         justification: |
-          The tool carries a PDF rasterizer's native binaries, so its package is unavoidably large
-          and anything avoidable in it matters. Two categories are avoidable. Native debug symbols
-          describe third-party code a DocDown stack trace never enters, and libSkiaSharp.pdb alone
-          is 82-88 MB per Windows runtime identifier. Natives for runtime identifiers outside the
-          supported set support no DocDown scenario and are exercised by no CI matrix leg, so they
-          could never be loaded by any user the tool claims to serve. Neither category has a
-          functional signal, so no other test would notice if a dependency update reintroduced it;
-          without a check against the packed .nupkg the package silently inflates. Asserting the
-          shipped set is exactly the supported set, rather than probing for known-bad names, is what
-          keeps a newly published platform from being admitted silently, and keeps the check from
-          being satisfied by stripping the tool of natives it genuinely needs.
+          Every backend reachable from the tool, including the PDF page-rendering backend's
+          CanvasNet.Pdf/CanvasNet dependency, is fully managed and runtime-identifier agnostic, so
+          the packaged tool should carry nothing under runtimes/ at all. This has no functional
+          signal on its own, so no other test would notice if a future dependency reintroduced a
+          native asset; without a check against the packed .nupkg the package would silently regain
+          the bulk and platform coupling a native dependency brings.
         tests:
-          - DocDownTool_Package_CarriesOnlySupportedNatives
+          - DocDownTool_Package_CarriesNoNativeAssets

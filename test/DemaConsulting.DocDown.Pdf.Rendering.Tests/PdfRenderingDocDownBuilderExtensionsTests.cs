@@ -7,13 +7,14 @@ namespace DemaConsulting.DocDown.Pdf.Rendering.Tests;
 /// <summary>
 ///     Unit tests for <see cref="PdfRenderingDocDownBuilderExtensions"/>: that it registers the
 ///     rendering extractor, returns the builder for chaining, rejects a null builder, and exposes no
-///     native rasterizer type on its public surface.
+///     CanvasNet rasterizer type on its public surface.
 /// </summary>
 /// <remarks>
-///     The registration seam is the one visible edge from a host to this assembly and, transitively,
-///     to the native stack. These tests hold that edge to the same standard as the managed PDF
-///     package's seam: explicit, chainable, null-rejecting, and free of any PDFtoImage, PDFium, or
-///     SkiaSharp type on the surface a host compiles against.
+///     The registration seam is the one visible edge from a host to this assembly and,
+///     transitively, to the rasterization stack. These tests hold that edge to the same standard as
+///     the managed PDF package's seam: explicit, chainable, null-rejecting, and free of any
+///     DemaConsulting.CanvasNet/DemaConsulting.CanvasNet.Pdf type on the surface a host compiles
+///     against.
 /// </remarks>
 public class PdfRenderingDocDownBuilderExtensionsTests
 {
@@ -58,18 +59,19 @@ public class PdfRenderingDocDownBuilderExtensionsTests
     }
 
     /// <summary>
-    ///     Proves no PDFtoImage, PDFium, or SkiaSharp type appears on this package's public surface.
+    ///     Proves no DemaConsulting.CanvasNet or DemaConsulting.CanvasNet.Pdf type appears on this
+    ///     package's public surface.
     /// </summary>
     /// <remarks>
     ///     Scans the public members of both public types for any signature type whose assembly is
-    ///     the native rasterization stack. A leak there would drag the native library's types into a
-    ///     host's compilation, which the separate-package design exists to prevent.
+    ///     the rasterization stack. A leak there would drag the rasterizer's types into a host's
+    ///     compilation, which the separate-package design exists to prevent.
     /// </remarks>
     [Fact]
-    public void PublicApi_AllPublicMembers_ExposeNoNativeRendererTypes()
+    public void PublicApi_AllPublicMembers_ExposeNoCanvasNetTypes()
     {
         // Arrange: the forbidden assembly names on the public surface
-        var forbidden = new[] { "PDFtoImage", "SkiaSharp" };
+        var forbidden = new[] { "DemaConsulting.CanvasNet" };
         var publicTypes = typeof(PdfRenderingDocDownBuilderExtensions).Assembly
             .GetExportedTypes();
 
@@ -90,8 +92,8 @@ public class PdfRenderingDocDownBuilderExtensionsTests
             }
         }
 
-        // Assert: the public surface mentions no native rasterizer type at all
-        Assert.True(leaks.Count == 0, "Native rasterizer types reached the public API surface:\n  " + string.Join("\n  ", leaks));
+        // Assert: the public surface mentions no rasterizer type at all
+        Assert.True(leaks.Count == 0, "CanvasNet rasterizer types reached the public API surface:\n  " + string.Join("\n  ", leaks));
     }
 
     /// <summary>

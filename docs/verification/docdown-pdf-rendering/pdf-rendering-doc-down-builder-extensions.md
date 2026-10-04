@@ -10,10 +10,10 @@ builder.
 `PdfRenderingDocDownBuilderExtensionsTests.cs` in `DemaConsulting.DocDown.Pdf.Rendering.Tests`.
 
 Nothing is mocked: a real builder is used and a real engine is built from it, because the observable
-behavior under test is exactly what a host observes. The no-native-type property is verified
+behavior under test is exactly what a host observes. The no-CanvasNet-type property is verified
 **structurally** by reflecting over every exported type's public members and failing if any signature
-type belongs to the PDFtoImage or SkiaSharp assembly — a leak hidden inside a collection is caught as
-readily as a bare parameter.
+type belongs to the CanvasNet.Pdf or CanvasNet assembly — a leak hidden inside a collection is caught
+as readily as a bare parameter.
 
 ### Test Environment
 
@@ -27,7 +27,7 @@ readily as a bare parameter.
 
 Per IEC 62304 §5.5.2, a `PdfRenderingDocDownBuilderExtensions` unit test run passes when the call
 registers exactly one rendering extractor; when it returns the same builder instance; when a missing
-builder is rejected at the call; and when no PDFtoImage, PDFium, or SkiaSharp type appears on any
+builder is rejected at the call; and when no CanvasNet.Pdf or CanvasNet type appears on any
 public member of the package's exported types.
 
 ### Test Scenarios
@@ -55,10 +55,11 @@ for `DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-ReturnsBuilderForC
 Proves the failure happens where the mistake was made. Evidence for
 `DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-RejectsNullBuilder`.
 
-#### No native rasterizer type reaches the public surface
+#### No CanvasNet type reaches the public surface
 
-**Test**: `PublicApi_AllPublicMembers_ExposeNoNativeRendererTypes`
+**Test**: `PublicApi_AllPublicMembers_ExposeNoCanvasNetTypes`
 
-Proves, by reflection over every exported type's members, that no PDFtoImage or SkiaSharp type appears
-on the public surface, so a host can reference the seam without those types entering its compilation.
-Evidence for `DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-NoNativeTypeOnSurface`.
+Proves, by reflection over every exported type's members, that no CanvasNet.Pdf or CanvasNet type
+appears on the public surface, so a host can reference the seam without those types entering its
+compilation. Evidence for
+`DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-NoCanvasNetTypeOnSurface`.

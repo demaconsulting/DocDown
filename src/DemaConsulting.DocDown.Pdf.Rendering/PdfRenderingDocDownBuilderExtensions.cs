@@ -10,12 +10,11 @@ namespace DocDown.Pdf.Rendering;
 ///         DocDown registers backends explicitly rather than by reflection or assembly scanning, so
 ///         a host's dependency graph is exactly what its code says it is. This class is that explicit
 ///         seam for the rendering package — one call, one visible edge from the host to this
-///         assembly and, transitively, to the native rasterization stack it carries. A host that does
-///         not call <see cref="AddPdfRendering"/> never loads a native binary.
+///         assembly and, transitively, to the rasterization stack it carries.
 ///     </para>
 ///     <para>
-///         Deliberately free of any PDFtoImage, PDFium, or SkiaSharp type, so a host can reference
-///         the registration surface without the native rasterizer's types entering its compilation.
+///         Deliberately free of any CanvasNet.Pdf or CanvasNet type, so a host can reference
+///         the registration surface without those types entering its compilation.
 ///         All members are static and thread-safe; the builder they mutate is not.
 ///     </para>
 /// </remarks>
@@ -46,7 +45,7 @@ public static class PdfRenderingDocDownBuilderExtensions
     ///
     ///     var engine = new DocDownBuilder()
     ///         .AddPdf()          // .pdf  - text, embedded images, metadata
-    ///         .AddPdfRendering() // .pdf  - page images (adds native binaries)
+    ///         .AddPdfRendering() // .pdf  - page images (fully managed)
     ///         .Build();
     ///
     ///     var result = await engine.ExtractAsync(

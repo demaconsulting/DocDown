@@ -9,7 +9,7 @@ namespace DemaConsulting.DocDown.Pdf.Rendering.Tests;
 /// <summary>
 ///     System-level integration tests for the DocDown.Pdf.Rendering system, driven end to end
 ///     through <see cref="DocDownEngine"/> against PDFs generated at test time and rasterized by the
-///     real PDFium-backed renderer.
+///     real CanvasNet.Pdf-backed renderer.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -21,9 +21,9 @@ namespace DemaConsulting.DocDown.Pdf.Rendering.Tests;
 ///     <para>
 ///         Selection is exercised both ways: with page rendering requested the rendering backend
 ///         must win, and with it not requested the lighter managed backend must win on the
-///         identifier tie-break so no native code is touched. Rendering-required scenarios skip when
-///         the native stack is unavailable in this environment, because absence of the native stack
-///         is an environmental fact, not a product failure.
+///         identifier tie-break so rendering is skipped only when it is not requested. Rendering is
+///         always available, since CanvasNet.Pdf is a fully-managed library with no native stack
+///         that could be absent.
 ///     </para>
 /// </remarks>
 public class DocDownPdfRenderingTests
@@ -38,7 +38,6 @@ public class DocDownPdfRenderingTests
     public async Task DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages()
     {
         // Arrange: an engine with both PDF backends and a generated single-page document
-        SkipWhenRendererUnavailable();
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
@@ -76,7 +75,6 @@ public class DocDownPdfRenderingTests
     public async Task DocDownPdfRendering_Render_Deterministic_ProducesByteIdenticalPages()
     {
         // Arrange: one document rendered twice into separate scratch folders
-        SkipWhenRendererUnavailable();
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
@@ -104,7 +102,6 @@ public class DocDownPdfRenderingTests
     public async Task DocDownPdfRendering_Select_PagesRequested_RenderingBackendWins()
     {
         // Arrange
-        SkipWhenRendererUnavailable();
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
@@ -151,7 +148,6 @@ public class DocDownPdfRenderingTests
     public async Task DocDownPdfRendering_Render_PageRange_RestrictsRenderedPages()
     {
         // Arrange: a five-page document with a page range limiting rendering to pages 2 through 3
-        SkipWhenRendererUnavailable();
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "multi.pdf", RenderingFixtures.MultiPage(5));
@@ -178,7 +174,6 @@ public class DocDownPdfRenderingTests
     public async Task DocDownPdfRendering_Render_HigherDpi_ProducesLargerPage()
     {
         // Arrange: the same document rendered at two different DPIs
-        SkipWhenRendererUnavailable();
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
@@ -229,22 +224,6 @@ public class DocDownPdfRenderingTests
     /// <returns>An options instance with a fixed timestamp.</returns>
     /// <remarks>Used by the base-backend selection scenario, which must not request rendered pages.</remarks>
     private static ExtractionOptions FixedOptions() => new();
-
-    /// <summary>
-    ///     Skips the calling test when the native PDF renderer is unavailable in this environment.
-    /// </summary>
-    /// <remarks>
-    ///     Rendering scenarios verify genuine raster output, so they are meaningful only where the
-    ///     PDFium-backed stack can load. An unavailable renderer is an environment fact, not a
-    ///     product failure.
-    /// </remarks>
-    private static void SkipWhenRendererUnavailable()
-    {
-        var probe = PageRenderer.ProbeAvailability();
-        Assert.SkipWhen(
-            !probe.IsAvailable,
-            $"PDF page rendering is unavailable in this environment: {probe.Reason}.");
-    }
 
     /// <summary>
     ///     Materializes a generated fixture as a file on disk.

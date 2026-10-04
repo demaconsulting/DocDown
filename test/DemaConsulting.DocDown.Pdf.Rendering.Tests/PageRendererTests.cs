@@ -4,15 +4,15 @@ using DocDown.Pdf.Rendering;
 namespace DemaConsulting.DocDown.Pdf.Rendering.Tests;
 
 /// <summary>
-///     Unit tests for <see cref="PageRenderer"/>, the native-interop seam: that it rasterizes a page
-///     to a valid PNG, that its availability probe reports the native stack honestly without
-///     throwing, and that concurrent renders all succeed behind the process-wide lock.
+///     Unit tests for <see cref="PageRenderer"/>, the package's rasterization seam: that it
+///     rasterizes a page to a valid PNG, that the page count matches the source document, and
+///     that concurrent renders all succeed with no process-wide lock.
 /// </summary>
 /// <remarks>
-///     These tests exercise the real native raster and PNG encode through PDFtoImage, so they are
-///     the transitive verification evidence for the PDFtoImage OTS item. Scenarios that need
-///     the native stack skip when it is unavailable, because absence of the native deployment is an
-///     environmental fact rather than a defect in the managed seam.
+///     These tests exercise the real rasterization and PNG encode through CanvasNet.Pdf/CanvasNet,
+///     so they are the transitive verification evidence for the CanvasNet.Pdf and CanvasNet OTS
+///     items. Rendering is always available in every environment, since CanvasNet.Pdf is a
+///     fully-managed library with no native stack that could be absent.
 /// </remarks>
 public class PageRendererTests
 {
@@ -23,7 +23,6 @@ public class PageRendererTests
     public void PageRenderer_Render_SinglePage_ReturnsValidPng()
     {
         // Arrange: a generated one-page document
-        SkipWhenRendererUnavailable();
         var pdf = RenderingFixtures.SimpleText();
 
         // Act: rasterize page 0 at 96 DPI
@@ -37,39 +36,18 @@ public class PageRendererTests
     }
 
     /// <summary>
-    ///     Proves the availability probe reports the native stack honestly, without throwing.
-    /// </summary>
-    [Fact]
-    public void PageRenderer_ProbeAvailability_AnyEnvironment_ReflectsUsabilityWithoutThrowing()
-    {
-        // Act: the probe must not throw
-        var probe = PageRenderer.ProbeAvailability();
-
-        // Assert: available results carry no reason, unavailable results carry one
-        if (probe.IsAvailable)
-        {
-            Assert.Null(probe.Reason);
-        }
-        else
-        {
-            Assert.False(string.IsNullOrWhiteSpace(probe.Reason));
-        }
-    }
-
-    /// <summary>
-    ///     Proves concurrent renders all succeed, exercising the process-wide serialization lock.
+    ///     Proves concurrent renders all succeed with no process-wide lock.
     /// </summary>
     /// <remarks>
-    ///     PDFium is not thread-safe; <see cref="PageRenderer"/> serializes every call behind a
-    ///     single lock. Driving several renders in parallel and asserting each returns a valid PNG is
-    ///     the observable proof that the lock keeps concurrent callers from corrupting shared native
-    ///     state.
+    ///     CanvasNet.Pdf is a fully-managed library with no shared mutable per-call state: each call
+    ///     opens and disposes its own document instance. Driving several renders in parallel and
+    ///     asserting each returns a valid PNG is the observable evidence that independent calls do
+    ///     not interfere with one another.
     /// </remarks>
     [Fact]
     public void PageRenderer_Render_ConcurrentCalls_AllProduceValidPng()
     {
         // Arrange: one document rendered from several threads at once
-        SkipWhenRendererUnavailable();
         var pdf = RenderingFixtures.SimpleText();
 
         // Act: render in parallel
@@ -91,41 +69,28 @@ public class PageRendererTests
     }
 
     /// <summary>
-    ///     Proves an unavailable probe result carries the reason it was constructed with.
+    ///     Proves the page-count reader rejects a null document.
     /// </summary>
     [Fact]
-    public void NativeProbeResult_Unavailable_CarriesReason()
-    {
-        // Act
-        var result = NativeProbeResult.Unavailable("the native binary could not be loaded");
-
-        // Assert
-        Assert.False(result.IsAvailable);
-        Assert.Equal("the native binary could not be loaded", result.Reason);
-    }
-
-    /// <summary>
-    ///     Proves an unavailable probe result refuses an empty reason, so a shortfall is never silent.
-    /// </summary>
-    [Fact]
-    public void NativeProbeResult_Unavailable_EmptyReason_Throws()
+    public void PageRenderer_GetPageCount_NullPdf_Throws()
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => NativeProbeResult.Unavailable(string.Empty));
+        Assert.Throws<ArgumentNullException>(() => PageRenderer.GetPageCount(null!));
     }
 
     /// <summary>
-    ///     Skips the calling test when the native PDF renderer is unavailable in this environment.
+    ///     Proves the page count matches the number of pages in the source document.
     /// </summary>
-    /// <remarks>
-    ///     These scenarios prove real rasterization behavior, which is meaningful only when the
-    ///     PDFium-backed deployment can load.
-    /// </remarks>
-    private static void SkipWhenRendererUnavailable()
+    [Fact]
+    public void PageRenderer_GetPageCount_MultiPageDocument_ReturnsPageCount()
     {
-        var probe = PageRenderer.ProbeAvailability();
-        Assert.SkipWhen(
-            !probe.IsAvailable,
-            $"PDF page rendering is unavailable in this environment: {probe.Reason}.");
+        // Arrange: a generated five-page document
+        var pdf = RenderingFixtures.MultiPage(5);
+
+        // Act
+        var count = PageRenderer.GetPageCount(pdf);
+
+        // Assert
+        Assert.Equal(5, count);
     }
 }

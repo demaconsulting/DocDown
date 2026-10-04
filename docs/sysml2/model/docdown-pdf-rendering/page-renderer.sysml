@@ -1,6 +1,6 @@
 package DocDownPdfRendering {
     part def PageRenderer {
-        doc /* The single native-interop seam: rasterizes one page to PNG behind a process-wide lock, probes native availability. */
+        doc /* Rasterizes one page to PNG through CanvasNet.Pdf, a fully-managed PDF rasterizer; reports the page count. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Pdf.Rendering/PageRenderer.cs */
         comment testRef /* Test: test/DemaConsulting.DocDown.Pdf.Rendering.Tests/PageRendererTests.cs */

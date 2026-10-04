@@ -73,8 +73,9 @@
   <ItemGroup>
     <!-- PdfPig arrives transitively through the DocDown.Pdf reference; the fixtures use its
          PdfDocumentBuilder to synthesize every test document at run time, so no binary PDF is ever
-         committed to the repository. The Rendering reference brings the PDFtoImage/PDFium native
-         stack into the test host, which is what lets the end-to-end render tests produce a real PNG. -->
+         committed to the repository. The Rendering reference brings the fully-managed
+         DemaConsulting.CanvasNet.Pdf/DemaConsulting.CanvasNet rasterization stack into the test
+         host, which is what lets the end-to-end render tests produce a real PNG. -->
     <ProjectReference Include="..\..\src\DemaConsulting.DocDown.Pdf.Rendering\DemaConsulting.DocDown.Pdf.Rendering.csproj" />
     <ProjectReference Include="..\..\src\DemaConsulting.DocDown.Pdf\DemaConsulting.DocDown.Pdf.csproj" />
     <ProjectReference Include="..\..\src\DemaConsulting.DocDown.Core\DemaConsulting.DocDown.Core.csproj" />

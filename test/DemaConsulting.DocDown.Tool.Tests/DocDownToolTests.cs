@@ -214,19 +214,19 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
 
     /// <summary>
     ///     Proves the rendering backend's self-test case surfaces under <c>--validate</c> and is
-    ///     recorded as passed where the native stack is available or not-executed where it is not —
-    ///     never as a failure, and always under a name distinct from the base backend's case.
+    ///     always recorded as passed, under a name distinct from the base backend's case, since
+    ///     CanvasNet.Pdf is always available.
     /// </summary>
     [Fact]
-    public void DocDownTool_Validate_RenderingSelfTestCase_IsRecordedAndNotFailed()
+    public void DocDownTool_Validate_RenderingSelfTestCase_IsRecordedAndPasses()
     {
         // Arrange / Act: the class's shared self-validation that wrote a TRX results file
         var trx = _runs.Trx.ResultsPath;
 
-        // Assert: the distinctly named rendering case is present and did not fail
+        // Assert: the distinctly named rendering case is present and passed
         var parsed = TrxSerializer.Deserialize(File.ReadAllText(trx));
         var render = Assert.Single(parsed.Results, r => r.Name == "pdf-rendering.renderRoundTrip");
-        Assert.NotEqual(TestOutcome.Failed, render.Outcome);
+        Assert.Equal(TestOutcome.Passed, render.Outcome);
     }
 
     /// <summary>
@@ -299,7 +299,7 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         var (exit, log) = CliHarness.Run("--list-backends");
         var lines = log.Split('\n').Select(static line => line.TrimEnd('\r')).ToList();
         var pdfIndex = lines.FindIndex(static line => line == "  pdf - PDF (PdfPig)");
-        var renderingIndex = lines.FindIndex(static line => line == "  pdf-rendering - PDF pages (PDFtoImage/PDFium)");
+        var renderingIndex = lines.FindIndex(static line => line == "  pdf-rendering - PDF pages (CanvasNet.Pdf)");
 
         // Assert
         Assert.True(exit == 0, log);
@@ -310,10 +310,7 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         Assert.Equal("    status: available", lines[pdfIndex + 2]);
         Assert.True(renderingIndex >= 0);
         Assert.Equal("    formats: pdf", lines[renderingIndex + 1]);
-        var renderingStatus = lines[renderingIndex + 2];
-        Assert.True(
-            renderingStatus == "    status: available"
-            || renderingStatus.StartsWith("    status: unavailable (", StringComparison.Ordinal));
+        Assert.Equal("    status: available", lines[renderingIndex + 2]);
     }
 
     /// <summary>

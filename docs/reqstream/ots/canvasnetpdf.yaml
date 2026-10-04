@@ -1,0 +1,27 @@
+---
+# CanvasNet.Pdf OTS Software Requirements
+#
+# Requirements for the CanvasNet.Pdf managed PDF rasterization API that DocDown.Pdf.Rendering is
+# built on. Like PdfPig, CanvasNet.Pdf is a runtime library shipped to consumers rather than a
+# build-time tool, so its evidence comes from the rendering tests that exercise it
+# transitively - the exact tests are named here rather than claimed broadly.
+
+sections:
+  - title: OTS Software Requirements
+    sections:
+      - title: CanvasNet.Pdf Requirements
+        requirements:
+          - id: DocDown-OTS-CanvasNetPdf
+            title: >-
+              CanvasNet.Pdf shall rasterize a PDF page to an in-memory surface at a requested DPI
+              through a fully managed API.
+            justification: |
+              DocDown.Pdf.Rendering's rendered-pages capability is delivered entirely through
+              CanvasNet.Pdf's managed `PdfDocument.Open`/`GetPageInfo`/`Render` surface, with no
+              native asset anywhere in its dependency graph. The capability is only as truthful as
+              CanvasNet.Pdf's ability to turn a page and a DPI into pixel data.
+            tags: [ots]
+            tests:
+              - PageRenderer_Render_SinglePage_ReturnsValidPng
+              - PdfPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs
+              - DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages

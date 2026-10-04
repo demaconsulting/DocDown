@@ -38,7 +38,7 @@ Core directly — you reference it yourself only when you are writing a backend 
 
 | Format | Package (all prefixed `DemaConsulting.`) | Optional extra | Platform note |
 | --- | --- | --- | --- |
-| PDF `.pdf` | `DocDown.Pdf` | `DocDown.Pdf.Rendering` for page images | Managed; the add-on has native binaries |
+| PDF `.pdf` | `DocDown.Pdf` | `DocDown.Pdf.Rendering` for page images | Fully managed; every platform |
 | Word `.docx` | `DocDown.Office` | — | Managed; every platform |
 | Excel `.xlsx` | `DocDown.Office` | — | Managed; a workbook is not paginated |
 | PowerPoint `.pptx` | `DocDown.Office` | — | Slide images need Windows and PowerPoint |
@@ -65,15 +65,11 @@ dotnet tool install -g DemaConsulting.DocDown.Tool          # global
 dotnet tool install --local DemaConsulting.DocDown.Tool     # local tool manifest
 ```
 
-The tool requires a **.NET 10 runtime** and ships natives for **Windows x64, Linux x64, and macOS
-arm64** — the platforms it is built and tested on. The libraries have no such restriction: they
-target .NET 8, 9, and 10 and are platform-neutral apart from the optional PDF page renderer, so
-referencing them does not constrain your project to the tool's runtime or platform.
-
-Only `DemaConsulting.DocDown.Pdf.Rendering` carries native binaries (PDFium and SkiaSharp, via
-PDFtoImage). A framework-dependent reference works on every supported runtime identifier; a
-self-contained single-file build of that package must be published per runtime identifier with
-`dotnet publish -r <rid>`.
+The tool requires a **.NET 10 runtime**. Every backend it carries, including PDF page rendering, is
+fully managed and runtime-identifier agnostic, so the same package installs and runs on every
+supported platform. The libraries have no platform restriction either: they target .NET 8, 9, and
+10 and are platform-neutral, including the optional PDF page renderer, so referencing them does not
+constrain your project to the tool's runtime.
 
 ## Quick Start
 
@@ -275,7 +271,7 @@ using DocDown.Word;
 
 var engine = new DocDownBuilder()
     .AddPdf()          // .pdf  - text, embedded images, metadata
-    .AddPdfRendering() // .pdf  - page images (adds native binaries)
+    .AddPdfRendering() // .pdf  - page images (fully managed)
     .AddWord()         // .docx - text, tables, images; no page images
     .AddExcel()        // .xlsx - cells, formulas, charts; workbooks are never rendered
     .AddPowerPoint()   // .pptx - slide text and notes; slide images need PowerPoint

@@ -6,7 +6,8 @@ namespace DocDown.Pdf.Rendering;
 /// <summary>
 ///     The PDF page-rendering backend: a full superset extractor that produces text, embedded
 ///     images, and document metadata by delegating to the managed PDF backend, then rasterizes the
-///     requested pages to PNG images through PDFium.
+///     requested pages to PNG images through the fully-managed DemaConsulting.CanvasNet.Pdf
+///     rasterizer.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -18,20 +19,18 @@ namespace DocDown.Pdf.Rendering;
 ///         begins.
 ///     </para>
 ///     <para>
-///         <see cref="ProbeAvailability"/> is the only place this backend reports whether page
-///         rendering is possible in the current environment. When
-///         <see cref="PageRenderer.ProbeAvailability"/> succeeds, the backend reports itself
-///         available and states that it provides rendered pages here; when the probe fails, the
-///         backend reports itself unavailable with the probe's reason so selection can choose
-///         another extractor before any document is opened.
+///         <see cref="ProbeAvailability"/> is unconditional: page rendering through CanvasNet.Pdf is
+///         a fully-managed capability with no native stack to probe for, so this backend always
+///         reports itself available and states that it provides rendered pages here. This mirrors
+///         <c>DocDown.Pdf</c>'s own <c>PdfDocumentExtractor.ProbeAvailability</c>, which is likewise
+///         unconditional for the same reason.
 ///     </para>
 ///     <para>
 ///         Rendering can still fail for an individual page after extraction has started. Each page
 ///         that cannot be rasterized is reported as a plain <see cref="ExtractionNote"/> naming the
 ///         page, the remaining pages continue rendering, and normal completion still returns
 ///         <see cref="ExtractionOutcome.Produced"/>. Instances hold no per-extraction state and are
-///         safe to register once and reuse; concurrent renders are serialized by
-///         <see cref="PageRenderer"/>.
+///         safe to register once and reuse.
 ///     </para>
 /// </remarks>
 public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidating
@@ -44,8 +43,8 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     /// <remarks>
     ///     Defaults to <see cref="PageRenderer.Render"/>. Held as a delegate so a test can substitute
     ///     a function that faults on a chosen page, which is the only reliable way to exercise the
-    ///     per-page fault-isolation path without depending on the native renderer failing on cue.
-    ///     The delegate carries no PDFtoImage type, so it does not widen this backend's surface.
+    ///     per-page fault-isolation path without depending on the rasterizer failing on cue. The
+    ///     delegate carries no CanvasNet type, so it does not widen this backend's surface.
     /// </remarks>
     private readonly Func<byte[], int, int, byte[]> _render;
 
@@ -54,15 +53,15 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     /// </summary>
     /// <remarks>
     ///     Defaults to <see cref="PageRenderer.GetPageCount"/>, so counting goes through the same
-    ///     native-interop seam and the same lock as rendering. Held as a delegate for the same
-    ///     reason as <see cref="_render"/>: a test can substitute a function that faults, which is
-    ///     the only reliable way to exercise the count-failure path.
+    ///     rasterization seam as rendering. Held as a delegate for the same reason as
+    ///     <see cref="_render"/>: a test can substitute a function that faults, which is the only
+    ///     reliable way to exercise the count-failure path.
     /// </remarks>
     private readonly Func<byte[], int> _pageCount;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="PdfPageRenderingExtractor"/> class that
-    ///     rasterizes through the real PDFium-backed <see cref="PageRenderer"/>.
+    ///     rasterizes through the real CanvasNet.Pdf-backed <see cref="PageRenderer"/>.
     /// </summary>
     /// <remarks>The production constructor; the parameterless shape is what the registration seam calls.</remarks>
     public PdfPageRenderingExtractor()
@@ -118,7 +117,7 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     public string Id => "pdf-rendering";
 
     /// <inheritdoc />
-    public string DisplayName => "PDF pages (PDFtoImage/PDFium)";
+    public string DisplayName => "PDF pages (CanvasNet.Pdf)";
 
     /// <inheritdoc />
     public IReadOnlyCollection<DocumentFormat> SupportedFormats => [DocumentFormat.Pdf];
@@ -128,20 +127,11 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
 
     /// <inheritdoc />
     /// <remarks>
-    ///     Cheap and non-throwing: it asks <see cref="PageRenderer"/> whether the PDFium native can
-    ///     load for the current runtime identifier (a one-time, cached, side-effect-light check) and
-    ///     never rasterizes. When the native stack is present the backend reports that rendered pages
-    ///     are available here; when it is absent the backend reports unavailable with a reason so
-    ///     selection can choose another extractor before any extraction starts.
+    ///     Unconditional: page rendering through CanvasNet.Pdf is a fully-managed capability with no
+    ///     native stack whose availability could vary by environment, so this backend always reports
+    ///     itself available and states that rendered pages are provided here.
     /// </remarks>
-    public ExtractorAvailability ProbeAvailability()
-    {
-        var probe = PageRenderer.ProbeAvailability();
-        return probe.IsAvailable
-            ? ExtractorAvailability.Available(providesRenderedPages: true)
-            : ExtractorAvailability.Unavailable(
-                $"PDF page rendering is unavailable: {probe.Reason}.");
-    }
+    public ExtractorAvailability ProbeAvailability() => ExtractorAvailability.Available(providesRenderedPages: true);
 
     /// <inheritdoc />
     public async ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context)
@@ -154,7 +144,7 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
         var cancellationToken = context.CancellationToken;
 
         // Buffer the source once: the managed backend reads it for text/images/metadata and the
-        // native renderer reads it again for rasterization, and a stream source is not re-readable
+        // rasterizer reads it again for rasterization, and a stream source is not re-readable
         var bytes = await ReadSourceAsync(source, cancellationToken).ConfigureAwait(false);
 
         // Delegate the managed aspects to the base backend, with rendering suppressed so it writes
@@ -175,7 +165,7 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
         // Record the authoritative rendering fact under a distinct key, complementing (not
         // contradicting) the base backend's own pdf.pageRendering fact
         sink.ReportEnvironmentFact(new EnvironmentFact(
-            "DocDown.Pdf.Rendering", "pages.renderer", "PDFtoImage (PDFium/SkiaSharp, native)", Available: true));
+            "DocDown.Pdf.Rendering", "pages.renderer", "CanvasNet.Pdf (managed)", Available: true));
 
         // Rasterize the requested pages; per-page faults become notes rather than exceptions that
         // abort the extraction
@@ -185,12 +175,9 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
 
     /// <inheritdoc />
     /// <remarks>
-    ///     Contributes one case that proves the native stack genuinely rasterizes in this
-    ///     deployment: it renders a page of the embedded PDF to a PNG. Where the native binary is
-    ///     absent the case reports a reasoned skip rather than a failure, because an unavailable
-    ///     renderer must not be recorded as a broken one. The engine also wraps this backend's cases
-    ///     to skip when <see cref="ProbeAvailability"/> reports it unavailable, so the skip is honest
-    ///     whether observed here or upstream.
+    ///     Contributes one case that proves the rasterizer genuinely functions in this deployment:
+    ///     it renders a page of the embedded PDF to a PNG. Rendering is always available, so this
+    ///     case reports a pass or a fault as data; there is no unavailable-stack skip path to report.
     /// </remarks>
     public IEnumerable<SelfTestCase> GetSelfTestCases() =>
     [
@@ -204,7 +191,7 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>The document bytes.</returns>
     /// <remarks>
-    ///     Both consumers of the document — the managed backend and the native renderer — need to
+    ///     Both consumers of the document — the managed backend and the rasterizer — need to
     ///     read it from the start, and a stream-backed source is read-once and possibly non-seekable.
     ///     Buffering once makes both reads identical rather than making a stream source fail late.
     ///     Read-only I/O.
@@ -273,14 +260,6 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
                 ReportPageFailure(sink, pageNumber);
                 continue;
             }
-            catch (Exception exception) when (exception is DllNotFoundException
-                or BadImageFormatException or System.Runtime.InteropServices.SEHException)
-            {
-                // A native-level fault raised mid-run by the rasterizer is still isolated to the
-                // page that triggered it so the remaining pages can continue
-                ReportPageFailure(sink, pageNumber);
-                continue;
-            }
 #pragma warning disable CA1031 // Per-page fault isolation: any render fault becomes a note, never an exception to the caller
             catch (Exception)
 #pragma warning restore CA1031
@@ -302,10 +281,9 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     /// <returns>The selected page numbers in document order; empty when the document has no pages.</returns>
     /// <remarks>
     ///     Reads the page count through <see cref="PageRenderer"/> — the package's single
-    ///     native-interop seam, and the same component that will rasterize the pages — so the
-    ///     selection cannot disagree with what the renderer can actually reach, and the call runs
-    ///     under the same process-wide lock as every other native call. Counting with a second
-    ///     parser would both parse the document twice and risk a mismatch between the two.
+    ///     rasterization seam, and the same component that will rasterize the pages — so the
+    ///     selection cannot disagree with what the renderer can actually reach. Counting with a
+    ///     second parser would both parse the document twice and risk a mismatch between the two.
     ///     Pages outside the document are silently absent from the selection rather than an error,
     ///     matching the managed backend's page-range behavior. Read-only over the buffered bytes.
     /// </remarks>
@@ -348,20 +326,13 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     /// <param name="context">The self-test context supplying cancellation.</param>
     /// <returns>The result of the case.</returns>
     /// <remarks>
-    ///     Rasterizes a page of the embedded PDF, which proves the native stack is
-    ///     genuinely functional here rather than merely loadable. Reports a reasoned skip when the
-    ///     native binary is unavailable, and reports every fault as data rather than throwing.
+    ///     Rasterizes a page of the embedded PDF, which proves the rasterizer is genuinely
+    ///     functional here, not merely referenceable. Rendering is always available, so this case
+    ///     always runs; it reports every fault as data rather than throwing.
     /// </remarks>
     private static SelfTestResult RunRenderRoundTrip(SelfTestContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
-
-        var probe = PageRenderer.ProbeAvailability();
-        if (!probe.IsAvailable)
-        {
-            return SelfTestResult.Skipped(
-                $"PDF page rendering is unavailable in this environment: {probe.Reason}.");
-        }
 
         var started = DateTimeOffset.UtcNow;
         try

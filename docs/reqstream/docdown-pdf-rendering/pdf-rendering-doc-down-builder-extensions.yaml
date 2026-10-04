@@ -3,7 +3,7 @@
 #
 # PdfRenderingDocDownBuilderExtensions is the one visible edge from a host to this package:
 # the explicit, reflection-free call that adds the rendering backend to a DocDown builder,
-# carrying no native rasterizer type on its public surface.
+# carrying no CanvasNet type on its public surface.
 
 sections:
   - title: DocDownPdfRendering Requirements
@@ -48,13 +48,13 @@ sections:
             tests:
               - AddPdfRendering_NullBuilder_Throws
 
-          - id: DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-NoNativeTypeOnSurface
+          - id: DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-NoCanvasNetTypeOnSurface
             title: >-
               PdfRenderingDocDownBuilderExtensions and the package's public types shall expose no
-              PDFtoImage, PDFium, or SkiaSharp type on their public API surface.
+              CanvasNet.Pdf or CanvasNet type on their public API surface.
             justification: |
-              Keeping the native rasterizer's types off the public surface lets a host reference the
-              registration seam without dragging the native library's types into its own compilation,
+              Keeping the rasterizer's types off the public surface lets a host reference the
+              registration seam without dragging CanvasNet's types into its own compilation,
               which is the whole reason this is a separate, opt-in package.
             tests:
-              - PublicApi_AllPublicMembers_ExposeNoNativeRendererTypes
+              - PublicApi_AllPublicMembers_ExposeNoCanvasNetTypes
