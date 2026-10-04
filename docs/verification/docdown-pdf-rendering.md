@@ -25,21 +25,21 @@ scenarios, the page-range and DPI scenarios, and the forced page-failure unit sc
 core artifact or silently missing `pages/` output becomes a test failure rather than a review
 finding.
 
-### Selection is exercised both ways, with availability deciding whether rendering can win
+### Selection is exercised both ways
 
-Because the engine selects one backend, two scenarios assert the selection outcome directly: with page
-rendering requested the rendering backend must win when its availability probe reports rendered-page
-support, and without it requested the lighter managed backend must win so no native code is touched.
-Availability itself is verified in companion unit scenarios that assert the extractor reports
-rendered-page support only when the native stack is usable and otherwise reports an unavailable reason.
+Because the engine selects one backend, two scenarios assert the selection outcome directly: with
+page rendering requested the rendering backend must win, since it is always available; without it
+requested the lighter managed backend must win so rasterization is never touched. Unconditional
+availability itself is verified in a companion unit scenario that asserts the extractor always
+reports rendered-page support.
 
-### Native failure honesty is proven through an injected fault
+### A per-page rasterization fault is proven to become a note, not an exception
 
-A genuine PDFium fault cannot be produced on cue, so the per-page fault-isolation path is exercised by
-injecting a rasterization function that throws. The scenario proves the run still completes as
-`Produced`, records the one-sentence note `Page 1 could not be rasterized.`, produces no page, and
-does not throw to the caller — the factual reporting the output contract requires of the one step
-this package attempted and could not complete.
+A real CanvasNet.Pdf fault cannot be produced reliably on cue, so the per-page fault-isolation path is
+exercised by injecting a rasterization function that throws. The scenario proves the run still
+completes as `Produced`, records the one-sentence note `Page 1 could not be rasterized.`, produces no
+page, and does not throw to the caller — the factual reporting the output contract requires of the
+one step this package attempted and could not complete.
 
 ### Test fixtures are generated; the self-test probe is committed
 
@@ -53,9 +53,9 @@ project.
 ## Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
-- **Native stack**: the test host ships the PDFtoImage/PDFium/SkiaSharp native assets, so the render
-  scenarios exercise the real rasterizer; where a host lacked the native stack the backend would
-  report unavailable and the self-test case would skip
+- **Rasterizer**: CanvasNet.Pdf and CanvasNet are fully managed and carry no runtime-identifier-
+  specific asset, so the render scenarios exercise the real rasterizer on every operating system and
+  framework in the CI matrix with no conditional skip path
 - **Filesystem**: a per-test `TempScratch` folder holds both the generated input and the output
 - **Inputs**: PDFs generated at test time, plus the embedded `Resources/probe.pdf` the self-test
   reads; no committed binary test fixtures and no network access
@@ -72,9 +72,8 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 - Every extraction scenario ends with `ContractAssert.LayoutPresent`.
 - No successful render scenario emits notes; a forced per-page fault emits the plain note
   `Page N could not be rasterized.` and still returns `Produced`.
-- The rendering backend is selected when and only when page rendering is requested and available.
-- The availability probe is cheap, non-throwing, and reports rendered-page support only when the
-  native stack is usable in the current environment.
+- The rendering backend is selected whenever page rendering is requested, and never when it is not.
+- The availability probe is cheap, non-throwing, and unconditionally reports rendered-page support.
 - Each of the six platform requirements is satisfied by a source-filtered result from the matching
   operating system or runtime; a result from another platform does not count.
 - Two renders of the same document with a fixed timestamp produce byte-identical page images.
@@ -82,9 +81,8 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 ## Test Scenarios
 
 Each scenario corresponds to one system requirement and names the real test method that evidences it.
-The PDFtoImage OTS item is verified by transitive evidence from these
-same scenarios; the exact tests are named in its OTS verification document. The native rasterizer and
-2D backend beneath it are not separately listed OTS items, because no DocDown type names either.
+The CanvasNet.Pdf and CanvasNet OTS items are verified by transitive evidence from these same
+scenarios; the exact tests are named in their OTS verification documents.
 
 ### A generated PDF renders to a valid PNG page
 
@@ -115,7 +113,7 @@ produced, and that a clean render completes without notes. Evidence for
 **Test**: `DocDownPdfRendering_Select_PagesNotRequested_BaseBackendWins`
 
 Proves that with rendering not requested the lighter managed backend wins on the identifier tie-break
-and produces no pages, so a plain extraction touches no native code. Evidence for
+and produces no pages, so a plain extraction touches no rasterization code. Evidence for
 `DocDownPdfRendering-BaseSelectedWhenNotRequested`.
 
 ### A requested page range restricts which pages render
@@ -132,19 +130,13 @@ Proves only the in-range pages are rasterized, named by their document page numb
 Proves the requested DPI controls the raster: a higher-DPI render is strictly larger in both
 dimensions than a lower-DPI render of the same document. Evidence for `DocDownPdfRendering-HonorsDpi`.
 
-### Availability reporting is cheap, honest, and selection-relevant
+### Availability reporting is unconditional, cheap, and honest
 
-**Tests**:
-`PdfPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReflectsNativeStackWithoutThrowing`,
-`PageRenderer_ProbeAvailability_AnyEnvironment_ReflectsUsabilityWithoutThrowing`,
-`NativeProbeResult_Unavailable_CarriesReason`
+**Test**: `PdfPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReportsUnconditionallyAvailable`
 
-The first test proves the extractor reports rendered-page support only when the native stack is usable
-and otherwise reports an unavailable reason; the second proves the native seam itself answers
-cheaply and without throwing; the third proves the unavailable result carries a displayable reason.
-Evidence for `DocDownPdfRendering-ReportsRenderedPagesAvailability`,
-`DocDownPdfRendering-ProbeCheapAndSafe`, and
-`DocDownPdfRendering-ProbeReportsUnavailableWithReason`.
+Proves the extractor always reports rendered-page support, cheaply and without throwing, since
+CanvasNet.Pdf is fully managed and carries no runtime-identifier-specific asset. Evidence for
+`DocDownPdfRendering-ReportsRenderedPagesAvailability` and `DocDownPdfRendering-ProbeCheapAndSafe`.
 
 ### The managed aspects are delivered by delegation
 
@@ -162,28 +154,29 @@ Proves a faulting rasterization records the plain note `Page 1 could not be rast
 page, still returns `Produced`, and does not throw to the caller. Evidence for
 `DocDownPdfRendering-PerPageFailureReportedAsNote`.
 
-### Native calls are serialized
+### Concurrent renders do not interfere
 
 **Test**: `PageRenderer_Render_ConcurrentCalls_AllProduceValidPng`
 
-Proves several renders driven in parallel all produce valid PNGs, which is the observable proof that
-the process-wide lock keeps concurrent callers from corrupting PDFium's shared native state. Evidence
-for `DocDownPdfRendering-NativeCallsSerialized`.
+Proves several renders driven in parallel all produce valid PNGs — the observable proof that opening
+an independent document per call, with no shared mutable state in this package, lets concurrent
+callers succeed without corrupting one another's output. Evidence for
+`DocDownPdfRendering-ConcurrentRendersDoNotInterfere`.
 
-### The registration seam is explicit, chainable, and native-type-free
+### The registration seam is explicit, chainable, and CanvasNet-type-free
 
 **Tests**: `AddPdfRendering_OnBuilder_RegistersRenderingExtractor`,
 `AddPdfRendering_OnBuilder_ReturnsSameBuilderForChaining`, `AddPdfRendering_NullBuilder_Throws`,
-`PublicApi_AllPublicMembers_ExposeNoNativeRendererTypes`
+`PublicApi_AllPublicMembers_ExposeNoCanvasNetTypes`
 
 Prove the seam registers exactly the rendering extractor, returns the builder for chaining, rejects a
-null builder at the call site, and exposes no PDFtoImage, PDFium, or SkiaSharp type on the public
+null builder at the call site, and exposes no CanvasNet.Pdf or CanvasNet type on the public
 surface. Evidence for `DocDownPdfRendering-Registration`.
 
-### The self-test proves the native stack genuinely rasterizes
+### The self-test proves rendering genuinely rasterizes, unconditionally
 
-**Test**: `PdfPageRenderingExtractor_GetSelfTestCases_AnyEnvironment_ReportsHonestRenderCaseStatus`
+**Test**: `PdfPageRenderingExtractor_GetSelfTestCases_AnyEnvironment_PassesRenderCase`
 
 Proves the backend contributes a distinctly named render round-trip case that rasterizes a document it
-builds itself and reports pass or skip honestly for the current environment. Evidence for
-`DocDownPdfRendering-SelfValidation`.
+builds itself and passes in every environment, since CanvasNet.Pdf carries no environment-dependent
+failure mode. Evidence for `DocDownPdfRendering-SelfValidation`.

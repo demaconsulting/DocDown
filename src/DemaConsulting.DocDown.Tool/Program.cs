@@ -22,10 +22,9 @@ namespace DocDown.Tool;
 ///     <para>
 ///         Extractors are registered explicitly through
 ///         <c>new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().Build()</c>, with no reflection
-///         or assembly scanning, which is what keeps single-file publishing viable. The optional
-///         rendering backend carries a native stack (PDFium/SkiaSharp), so a self-contained
-///         single-file publish is runtime-identifier specific; trimming and AOT are left off
-///         because that stack's compatibility with them is unverified.
+///         or assembly scanning, which is what keeps single-file publishing viable. Every backend,
+///         including the optional rendering backend, is fully managed and runtime-identifier
+///         agnostic; trimming and AOT are still left off as unverified for this dependency graph.
 ///     </para>
 /// </remarks>
 internal static class Program
@@ -225,10 +224,10 @@ internal static class Program
     /// <returns>A configured engine.</returns>
     /// <remarks>
     ///     Registration is explicit and reflection-free, which keeps single-file publish viable. The
-    ///     managed PDF, Word, Visio, PowerPoint, and Excel backends serve every extraction; the
-    ///     optional PDF rendering backend and the Visio and PowerPoint COM backends are chosen only
-    ///     when page rendering is requested and their environment (a native stack, or Microsoft Visio
-    ///     or PowerPoint) is available, degrading through the engine's own path otherwise.
+    ///     managed PDF, PDF rendering, Word, Visio, PowerPoint, and Excel backends serve every
+    ///     extraction; the optional Visio and PowerPoint COM backends are chosen only when page
+    ///     rendering is requested and their environment (Microsoft Visio or PowerPoint) is available,
+    ///     degrading through the engine's own path otherwise.
     /// </remarks>
     private static DocDownEngine BuildEngine() =>
         new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().Build();

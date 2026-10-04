@@ -1,9 +1,31 @@
 ---
 # Software Unit Requirements for PageRenderer
 #
-# PageRenderer is the single native-interop seam: it rasterizes one page to a PNG behind a
-# process-wide lock (PDFium is not thread-safe) and answers a cheap, non-throwing question
-# about whether the native stack can load for the current runtime identifier.
+# PageRenderer is the single rasterization seam: it opens a CanvasNet.Pdf document per call,
+# rasterizes one page to a PNG, and reads the page count, with no instance or shared mutable
+# state between calls.
+#
+# SUPERSEDED REQUIREMENT:
+# DocDownPdfRendering-PageRenderer-ProbeCheapAndNonThrowing required a cheap, non-throwing
+# question about whether the native stack can load for the current runtime identifier. It is
+# superseded (removed, not replaced) because CanvasNet.Pdf is fully managed and carries no
+# runtime-identifier-specific asset, so there is nothing for this unit to probe.
+#
+# SUPERSEDED REQUIREMENT:
+# DocDownPdfRendering-PageRenderer-ReportsUnavailableWithReason required a non-empty reason on
+# an unavailable probe result. It is superseded (removed, not replaced) for the same reason:
+# there is no unavailable outcome to carry a reason.
+#
+# SUPERSEDED REQUIREMENT:
+# DocDownPdfRendering-PageRenderer-SerializesNativeCalls required every native rasterization
+# call to be serialized process-wide behind a lock, because PDFium was not thread-safe. It is
+# superseded (not satisfied) by DocDownPdfRendering-PageRenderer-ConcurrentCallsDoNotInterfere
+# because this unit now opens an independent `PdfDocument` per call with no field or static
+# mutable state, so concurrent calls do not share anything a lock would need to protect; the one
+# shared mutable state in the dependency graph (CanvasNet's lazily-built system font catalog) is
+# confirmed safe for concurrent use by design — a one-time build behind a blocking `Lazy<T>` plus
+# a dedicated lock around its bundled-fallback cache — and is recorded in the system design
+# document.
 
 sections:
   - title: DocDownPdfRendering Requirements
@@ -13,40 +35,27 @@ sections:
           - id: DocDownPdfRendering-PageRenderer-RendersPageToPng
             title: PageRenderer shall rasterize one page of a PDF to valid PNG bytes at a requested DPI.
             justification: |
-              This unit is the only place the native rasterizer is called, so the promise that a page
-              becomes a real, decodable PNG at the requested resolution lives here. Everything upstream
+              This unit is the only place CanvasNet.Pdf is called, so the promise that a page becomes
+              a real, decodable PNG at the requested resolution lives here. Everything upstream
               depends on this producing genuine image bytes rather than an opaque buffer.
             tests:
               - PageRenderer_Render_SinglePage_ReturnsValidPng
 
-          - id: DocDownPdfRendering-PageRenderer-ProbeCheapAndNonThrowing
-            title: >-
-              PageRenderer shall report whether the native stack can load for the current runtime
-              identifier, cheaply and without throwing.
+          - id: DocDownPdfRendering-PageRenderer-GetsPageCount
+            title: PageRenderer shall report the number of pages in a PDF document.
             justification: |
-              The extractor's availability probe is only as cheap and safe as this check. Loading the
-              native once and caching the result, without throwing on a missing binary, is what lets a
-              plain extraction avoid native cost and lets an unavailable stack be reported rather than
-              crash selection.
+              The extractor needs the page count to honor a requested page range without rasterizing
+              pages outside it, and this unit is the one place that opens the document, so it is the
+              natural place to answer the question.
             tests:
-              - PageRenderer_ProbeAvailability_AnyEnvironment_ReflectsUsabilityWithoutThrowing
+              - PageRenderer_GetPageCount_MultiPageDocument_ReturnsPageCount
 
-          - id: DocDownPdfRendering-PageRenderer-ReportsUnavailableWithReason
-            title: PageRenderer shall carry a non-empty reason on an unavailable probe result.
+          - id: DocDownPdfRendering-PageRenderer-ConcurrentCallsDoNotInterfere
+            title: PageRenderer shall produce correct output when called concurrently from multiple threads.
             justification: |
-              An unavailable native stack reported without a cause turns a fixable environment problem
-              into a mystery. Requiring a reason on the unavailable result is what guarantees the
-              extractor can surface a displayable explanation.
-            tests:
-              - NativeProbeResult_Unavailable_CarriesReason
-              - NativeProbeResult_Unavailable_EmptyReason_Throws
-
-          - id: DocDownPdfRendering-PageRenderer-SerializesNativeCalls
-            title: PageRenderer shall serialize every native rasterization call process-wide.
-            justification: |
-              PDFium is not thread-safe, so two concurrent renders would corrupt shared native state.
-              A single process-wide lock guarantees exactly one rasterization runs at a time, which
-              concurrent renders must observe by all succeeding.
+              Several pages, possibly from different documents, can be rendered in the same run. Each
+              call opens its own `PdfDocument` and `Surface` with no shared mutable state in this unit,
+              so concurrent calls must all succeed without corrupting one another's output.
             tests:
               - PageRenderer_Render_ConcurrentCalls_AllProduceValidPng
 
@@ -55,6 +64,7 @@ sections:
             justification: |
               Failing where the mistake was made names the offending caller. A null document is a
               programming error, not a render fault, so it is rejected up front rather than carried
-              into the native call.
+              into the rasterization call.
             tests:
               - PageRenderer_Render_NullPdf_Throws
+              - PageRenderer_GetPageCount_NullPdf_Throws

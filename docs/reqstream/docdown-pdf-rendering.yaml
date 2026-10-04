@@ -5,8 +5,8 @@
 # page-rendering package from the perspective of a host that registers it, without
 # specifying implementation details. Each decomposes into unit requirements linked
 # below via children, and is proven by system-level tests. The OTS requirements for
-# the native rasterization stack (PDFtoImage, PDFium, SkiaSharp) are linked as
-# children so the package's dependence on them is traced rather than assumed.
+# the rasterization stack (CanvasNet.Pdf, CanvasNet) are linked as children so the
+# package's dependence on them is traced rather than assumed.
 #
 # SUPERSEDED REQUIREMENT: DocDownPdfRendering-RenderedPagesCapability
 # required the system to declare a superset of capabilities. It is superseded (not
@@ -28,6 +28,20 @@
 # is superseded (not satisfied) by DocDownPdfRendering-PerPageFailureReportedAsNote
 # because DocDown now records only the factual note that the attempted page could
 # not be rasterized and continues with normal completion.
+#
+# SUPERSEDED REQUIREMENT: DocDownPdfRendering-ProbeReportsUnavailableWithReason
+# required the system to report itself unavailable, with a reason, when the native
+# rasterization stack could not load for the current runtime identifier. It is
+# superseded (removed, not replaced) by DocDownPdfRendering-ReportsRenderedPagesAvailability
+# because CanvasNet.Pdf is fully managed and carries no runtime-identifier-specific
+# asset, so there is no environment in which this backend is unavailable.
+#
+# SUPERSEDED REQUIREMENT: DocDownPdfRendering-NativeCallsSerialized
+# required the system to serialize its native rasterization calls process-wide
+# because PDFium was not thread-safe. It is superseded (not satisfied) by
+# DocDownPdfRendering-ConcurrentRendersDoNotInterfere because this unit now opens an
+# independent document per call with no shared mutable state, so there is nothing
+# for a process-wide lock to protect.
 
 sections:
   - title: DocDownPdfRendering Requirements
@@ -38,8 +52,7 @@ sections:
           without reflection or assembly scanning.
         tags: [system]
         justification: |
-          A host must be able to read its own dependency graph off its own code, and this is the one
-          package whose registration also pulls a native stack into the process. One explicit call
+          A host must be able to read its own dependency graph off its own code. One explicit call
           keeps that edge visible and reviewable, and keeps single-file publishing viable because no
           backend is discovered by scanning.
         children:
@@ -47,24 +60,23 @@ sections:
           - DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-ReflectionFree
           - DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-ReturnsBuilderForChaining
           - DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-RejectsNullBuilder
-          - DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-NoNativeTypeOnSurface
+          - DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-NoCanvasNetTypeOnSurface
         tests:
           - AddPdfRendering_OnBuilder_RegistersRenderingExtractor
 
       - id: DocDownPdfRendering-ReportsRenderedPagesAvailability
         title: >-
-          The system shall report itself available with rendered-page support when the native
-          renderer can run, and unavailable with a reason when it cannot.
+          The system shall unconditionally report itself available with rendered-page support.
         tags: [system]
         justification: |
-          Page rendering is the one environment-dependent fact selection needs from this package.
-          Reporting rendered-page support only when the native stack is actually usable lets Core
-          choose this backend before any document is opened, and reporting a reason when it is not
-          usable keeps the outcome explainable without this system emitting its own extraction note.
+          Page rendering is backed by CanvasNet.Pdf, a fully managed library that carries no
+          runtime-identifier-specific asset, so there is no environment in which this backend cannot
+          rasterize. Reporting rendered-page support unconditionally lets Core choose this backend
+          before any document is opened, with nothing to probe.
         children:
-          - DocDownPdfRendering-PdfPageRenderingExtractor-ReportsRenderedPagesAvailability
+          - DocDownPdfRendering-PdfPageRenderingExtractor-ReportsUnconditionalAvailability
         tests:
-          - PdfPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReflectsNativeStackWithoutThrowing
+          - PdfPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReportsUnconditionallyAvailable
 
       - id: DocDownPdfRendering-RendersPagesToPng
         title: The system shall render requested document pages to PNG images in the pages folder.
@@ -77,7 +89,8 @@ sections:
           - DocDownPdfRendering-PdfPageRenderingExtractor-WritesRenderedPages
           - DocDownPdfRendering-PageRenderer-RendersPageToPng
           - DocDownPdfRendering-PageRenderer-RejectsNullDocument
-          - DocDown-OTS-PDFtoImage
+          - DocDown-OTS-CanvasNetPdf
+          - DocDown-OTS-CanvasNet
         tests:
           - DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages
           - PdfPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs
@@ -86,10 +99,9 @@ sections:
         title: The system shall be selected over the managed PDF backend when page rendering is requested.
         tags: [system]
         justification: |
-          A caller who asks for rendered pages must get them when an available backend reports that it
-          can provide them in this environment. Because both backends serve the PDF format, selection
-          must prefer the backend that can actually produce page images here rather than the lighter
-          managed backend that cannot.
+          A caller who asks for rendered pages must get them, since this backend is always available
+          to provide them. Because both backends serve the PDF format, selection must prefer the
+          backend that produces page images over the lighter managed backend that does not.
         tests:
           - DocDownPdfRendering_Select_PagesRequested_RenderingBackendWins
 
@@ -99,9 +111,9 @@ sections:
           requested.
         tags: [system]
         justification: |
-          A plain extraction should pay nothing for rendered-page work it did not ask for, including the
-          cost of loading a native stack. When rendering is not requested the lighter managed backend
-          must win, so no native code is touched.
+          A plain extraction should pay nothing for rendered-page work it did not ask for. When
+          rendering is not requested the lighter managed backend must win, so rasterization is never
+          touched.
         tests:
           - DocDownPdfRendering_Select_PagesNotRequested_BaseBackendWins
 
@@ -111,29 +123,14 @@ sections:
           the probe.
         tags: [system]
         justification: |
-          Availability is probed on every engine build, including for plain extractions that never
-          render. A probe that rasterized, opened the document, or threw would tax every extraction
-          and could abort selection, so it must be a cheap, non-throwing check.
+          Availability is consulted on every engine build, including for plain extractions that never
+          render. A probe that rasterized, opened a document, or threw would tax every extraction and
+          could abort selection, so it must be a cheap, non-throwing check — trivially so, since it
+          now returns a constant.
         children:
-          - DocDownPdfRendering-PdfPageRenderingExtractor-ProbeIsCheapAndSafe
-          - DocDownPdfRendering-PageRenderer-ProbeCheapAndNonThrowing
+          - DocDownPdfRendering-PdfPageRenderingExtractor-ReportsUnconditionalAvailability
         tests:
-          - PdfPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReflectsNativeStackWithoutThrowing
-          - PageRenderer_ProbeAvailability_AnyEnvironment_ReflectsUsabilityWithoutThrowing
-
-      - id: DocDownPdfRendering-ProbeReportsUnavailableWithReason
-        title: >-
-          The system shall report itself unavailable, with a reason, when the native rasterization
-          stack cannot load for the current runtime identifier.
-        tags: [system]
-        justification: |
-          A missing or incompatible native binary is a real deployment condition, and an unavailable
-          backend reported without a cause turns a fixable environment problem into a mystery. The
-          reason is what lets selection report the situation honestly and lets an operator act.
-        children:
-          - DocDownPdfRendering-PageRenderer-ReportsUnavailableWithReason
-        tests:
-          - NativeProbeResult_Unavailable_CarriesReason
+          - PdfPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReportsUnconditionallyAvailable
 
       - id: DocDownPdfRendering-PerPageFailureReportedAsNote
         title: >-
@@ -141,11 +138,11 @@ sections:
           naming the page, continue with the remaining pages, and still complete normally.
         tags: [system]
         justification: |
-          Rendering can fail on one page — an unsupported page, an out-of-memory at a high DPI, or a
-          native fault — while the rest succeed. Recording only the factual note that the attempted
-          page could not be rasterized keeps the run alive and keeps the report aligned with DocDown's
-          reduced output model: report what was attempted and what was produced, without adding an
-          acceptability judgement.
+          Rendering can fail on one page — an unsupported page or an out-of-memory at a high DPI —
+          while the rest succeed. Recording only the factual note that the attempted page could not be
+          rasterized keeps the run alive and keeps the report aligned with DocDown's reduced output
+          model: report what was attempted and what was produced, without adding an acceptability
+          judgement.
         children:
           - DocDownPdfRendering-PdfPageRenderingExtractor-ReportsPageFailuresAsNotes
         tests:
@@ -168,6 +165,8 @@ sections:
           A caller working with a large document needs a bounded slice, and rasterization is the most
           expensive step. Rendering pages outside the requested range would waste the most time and
           contradict the request.
+        children:
+          - DocDownPdfRendering-PageRenderer-GetsPageCount
         tests:
           - DocDownPdfRendering_Render_PageRange_RestrictsRenderedPages
 
@@ -185,15 +184,15 @@ sections:
         tests:
           - PdfPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs
 
-      - id: DocDownPdfRendering-NativeCallsSerialized
-        title: The system shall serialize its native rasterization calls process-wide.
+      - id: DocDownPdfRendering-ConcurrentRendersDoNotInterfere
+        title: The system shall produce correct output when rendering concurrently from multiple threads.
         tags: [system]
         justification: |
-          PDFium is not thread-safe. Two concurrent extractions that both render would corrupt the
-          shared native renderer's state. Serializing every native call is the price of a native
-          library that was never designed for concurrency, and it must be paid rather than left latent.
+          Several pages, possibly from different documents, can be rendered in the same run. Each
+          render opens its own document and surface with no shared mutable state in this package, so
+          concurrent renders must all succeed without corrupting one another's output.
         children:
-          - DocDownPdfRendering-PageRenderer-SerializesNativeCalls
+          - DocDownPdfRendering-PageRenderer-ConcurrentCallsDoNotInterfere
         tests:
           - PageRenderer_Render_ConcurrentCalls_AllProduceValidPng
 
@@ -211,14 +210,14 @@ sections:
 
       - id: DocDownPdfRendering-SelfValidation
         title: >-
-          The system shall contribute a self-validation case that proves the native stack genuinely
+          The system shall contribute a self-validation case that proves rendering genuinely
           rasterizes in the deployed environment.
         tags: [system]
         justification: |
-          Declared availability is not proof for a native stack; only a real render is. A contributed
-          case that rasterizes the embedded document lets an operator confirm rendering
-          works where it is installed, and reports a reasoned skip where the native stack is absent.
+          Declared availability is not proof of behavior; only a real render is. A contributed case
+          that rasterizes the embedded document lets an operator confirm rendering works, and passes
+          unconditionally since CanvasNet.Pdf carries no environment-dependent failure mode.
         children:
           - DocDownPdfRendering-PdfPageRenderingExtractor-ContributesSelfTests
         tests:
-          - PdfPageRenderingExtractor_GetSelfTestCases_AnyEnvironment_ReportsHonestRenderCaseStatus
+          - PdfPageRenderingExtractor_GetSelfTestCases_AnyEnvironment_PassesRenderCase

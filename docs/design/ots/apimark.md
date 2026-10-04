@@ -24,10 +24,10 @@ graph.
 
 ### Prerelease Version — a Recorded Judgement Call
 
-**The pinned version, `0.5.0-beta.3`, is a prerelease.** Stable ApiMark releases exist (the
-`0.4.x` line, most recently `0.4.10`), so pinning a beta in a repository with this compliance
-posture is a deliberate judgement rather than the absence of an alternative. It is recorded here
-so that it is a decision on the record rather than an unnoticed default.
+**The pinned version is a prerelease.** An older, stable ApiMark release line exists, so pinning
+a newer prerelease in a repository with this compliance posture is a deliberate judgement rather
+than the absence of an alternative. It is recorded here so that it is a decision on the record
+rather than an unnoticed default.
 
 The reasoning, and the exposure it accepts:
 
@@ -39,13 +39,13 @@ The reasoning, and the exposure it accepts:
 - **The failure mode is loud, not silent.** The MSBuild task runs after `Build` and fails the
   build on error. A regression surfaces as a red build in CI, not as a quietly corrupt artifact.
 - **The prerelease is what supports the feature being used.** `ApiMarkPackDocs` is wired through
-  `TargetsForTfmSpecificContentInPackage`, and the `0.5.0` line is where that packaging path and
-  the `--format` selection it depends on are current.
-- **The pin is exact.** `[0.5.0-beta.3]` cannot float onto `0.5.0-beta.4` or a later beta, so no
-  restore can change the generator without a reviewed commit.
+  `TargetsForTfmSpecificContentInPackage`, and the pinned prerelease line is where that packaging
+  path and the `--format` selection it depends on are current.
+- **The pin is exact.** The reference cannot float onto a later prerelease, so no restore can
+  change the generator without a reviewed commit.
 
 The exposure is therefore bounded to the content of a documentation folder inside the package,
-and is accepted on that basis. The pin should be moved to a stable `0.5.x` release once one is
+and is accepted on that basis. The pin should be moved to a stable release once one is
 published.
 
 ### Features Used
@@ -81,7 +81,7 @@ it does not appear in any produced `.nuspec` dependency list and does not flow t
 dependency.
 
 **Version pinning — the same rule applied to PdfPig and the Open XML SDK.** The reference is
-pinned to the exact range `[0.5.0-beta.3]` for restore determinism and SBOM reproducibility: a
+pinned to an exact version range for restore determinism and SBOM reproducibility: a
 floating reference would allow a restore to substitute a different generator and silently change
 the documentation shipped in a package. The pin is also what bounds the prerelease exposure
 described above.

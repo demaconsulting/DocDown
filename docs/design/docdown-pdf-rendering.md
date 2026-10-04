@@ -8,9 +8,11 @@ and adds the one thing that backend cannot: raster images of the pages themselve
 separately distributed, opt-in NuGet package that a host registers explicitly alongside
 `DocDown.Core` and `DocDown.Pdf`.
 
-It is also the first and only DocDown package that carries native binaries. That single fact shapes
-its design, its packaging, and the honesty obligations it must meet, and it is why page rendering is
-a separate package rather than part of `DocDown.Pdf`, which stays fully managed and
+It rasterizes through `DemaConsulting.CanvasNet.Pdf`/`DemaConsulting.CanvasNet`, a fully-managed PDF
+rendering stack with no native binaries. Page rendering is still a separate package from
+`DocDown.Pdf` because it is a distinct architectural concern — rasterization versus parsing — and an
+additional dependency a consumer who only needs text and metadata should not have to carry, not
+because of any native-binary consequence; both packages are fully managed and
 runtime-identifier agnostic.
 
 ## Architecture
@@ -19,18 +21,16 @@ The system is flat: it has no subsystems, because there is one architectural bou
 rasterization — rather than several. Three units divide the work.
 
 - **PdfPageRenderingExtractor** is the backend the engine selects and invokes. It exposes the stable
-  PDF-rendering identity this package uses for selection and reporting; answers the cheap
-  availability probe that reports
-  rendered-page support when the native stack is usable here; delegates the managed aspects to the
-  base PDF backend; drives the rasterization of the requested pages; reports a plain note when a
-  page it attempted could not be rasterized; and returns `Produced` unless the delegated managed
-  extraction reports `Unreadable`.
-- **PageRenderer** is the single native-interop seam. It rasterizes one page to a PNG behind a
-  process-wide lock, and answers a cheap, non-throwing question about whether the native stack can
-  load. It is the only place a PDFtoImage type appears; no DocDown type names PDFium or SkiaSharp
-  at all, so the native components stay an implementation detail of PDFtoImage.
+  PDF-rendering identity this package uses for selection and reporting; reports itself
+  unconditionally available for rendered pages, since CanvasNet.Pdf has no load-time dependency that
+  could be absent; delegates the managed aspects to the base PDF backend; drives the rasterization of
+  the requested pages; reports a plain note when a page it attempted could not be rasterized; and
+  returns `Produced` unless the delegated managed extraction reports `Unreadable`.
+- **PageRenderer** is the single rasterization seam. It opens a `CanvasNet.Pdf.PdfDocument` per call,
+  rasterizes one page to a `Surface`, and encodes it to PNG bytes with `PngCodec`. It is the only
+  place a CanvasNet.Pdf or CanvasNet type appears; no other DocDown type names either package.
 - **PdfRenderingDocDownBuilderExtensions** is the one visible edge from a host to this package: the
-  single `AddPdfRendering` call that registers the backend. It carries no native-rasterizer type on
+  single `AddPdfRendering` call that registers the backend. It carries no CanvasNet type on
   its surface, so a host can reference it without those types entering its own compilation.
 
 ### The single-backend selection problem, and its resolution
@@ -51,10 +51,10 @@ in a run that did render — which is literally true of the managed inner backen
 not contradicted, by this backend's own `pages.renderer` fact.
 
 Selection learns that this backend can satisfy a render request from
-`ProbeAvailability()`. When the native stack can load, the probe returns
-`ExtractorAvailability.Available(providesRenderedPages: true)`; otherwise it returns
-`ExtractorAvailability.Unavailable(reason)`. That is the only selection-time statement this package
-makes about rendered pages.
+`ProbeAvailability()`, which unconditionally returns
+`ExtractorAvailability.Available(providesRenderedPages: true)`: CanvasNet.Pdf is a fully-managed
+dependency resolved at restore time, with no runtime load step that could fail, so there is nothing
+to probe for. That is the only selection-time statement this package makes about rendered pages.
 
 ### The division of honesty between Core, the managed backend, and this package
 
@@ -63,9 +63,8 @@ whether any available backend in this environment could render pages. The manage
 a PDF reader knows: which encoding an image used and whether the pages carried glyphs. This package
 supplies the third layer — the facts only a rasterizer knows.
 
-If the native stack cannot load for the current runtime identifier, this package reports that only
-through `ProbeAvailability()`, and Core handles the selection consequence before `ExtractAsync` runs.
-If rendering begins and a specific page cannot be rasterized, this package reports one short factual
+Rendering is always available, so this package never reports a selection-time unavailability. If
+rendering begins and a specific page cannot be rasterized, this package reports one short factual
 note — `Page N could not be rasterized.` — because it attempted that step and could not complete it.
 The note stays limited to that extraction fact itself.
 
@@ -81,54 +80,60 @@ The note stays limited to that extraction fact itself.
 | Source document | Inbound | PDF byte stream | Not guaranteed seekable; buffered once |
 
 - **`IDocumentExtractor`** is implemented by `PdfPageRenderingExtractor`. `ProbeAvailability` must be
-  well under 50 ms, side-effect free, must not open the document, and must not throw; it answers a
-  cached native-loadability check, returns `Available(providesRenderedPages: true)` only when page
-  rendering is usable here, and never rasterizes.
+  well under 50 ms, side-effect free, must not open the document, and must not throw; it
+  unconditionally returns `Available(providesRenderedPages: true)` and never rasterizes.
 - **`ISelfValidating`** enumeration is cheap; the render round-trip work happens only when the case's
   delegate is invoked.
 - **`IExtractionSink`** is the only output channel; no filesystem path is ever constructed here.
 - **`PdfDocumentExtractor`** is constructed and driven directly to produce the managed aspects, so
   the managed extraction is a single source of truth rather than a re-implementation.
 - **`DocDownBuilder`** is extended by exactly one method, `AddPdfRendering`.
-- **The source document** is buffered before use because both the managed backend and the native
-  renderer read it from the start, and a stream source is read-once and possibly non-seekable.
+- **The source document** is buffered before use because both the managed backend and the
+  rasterizer read it from the start, and a stream source is read-once and possibly non-seekable.
 
-No PDFtoImage, PDFium, or SkiaSharp type appears on any public interface. That containment is
+No CanvasNet.Pdf or CanvasNet type appears on any public interface. That containment is
 machine-enforced by a reflection test over the package's exported types.
 
 ## Dependencies
 
 - **DocDown.Core** — the extraction contract, the sink, the options, and the output layout.
 - **DocDown.Pdf** — the managed text/embedded-image/metadata extractor this package delegates to.
-  This is a project reference, not a native dependency; it adds no native asset.
-- **PDFtoImage** (OTS) — the managed rasterization API, which carries a native rasterizer and 2D
-  backend (PDFium and SkiaSharp) transitively. No DocDown type names either of those; the PNG bytes
-  come back from `Conversion.SavePng`. Confined to `PageRenderer` and absent from the public
-  API. See *PDFtoImage* under the OTS integration design.
+  This is a project reference; it adds no native asset.
+- **CanvasNet.Pdf** (OTS) — the fully-managed PDF rasterization API: `PdfDocument.Open`,
+  `GetPageInfo`, and `Render` produce a `Surface`. Confined to `PageRenderer` and absent from the
+  public API. See *CanvasNet.Pdf* under the OTS integration design.
+- **CanvasNet** (OTS) — the fully-managed 2D canvas/codec library CanvasNet.Pdf builds on; this
+  package references it directly for `PngCodec.Save`, which encodes the rendered `Surface` to PNG
+  bytes. See *CanvasNet* under the OTS integration design.
 - **PdfPig** — reached only through the `DocDown.Pdf` project reference, for the delegated managed
-  extraction. No type in this package names it; the page count comes from PDFtoImage, the same
-  component that rasterizes the pages.
+  extraction. No type in this package names it.
 
 ## Risk Control Measures
 
-- **Native containment.** PDFtoImage types appear in exactly one file
-  (`PageRenderer.cs`) and in no public signature, and no DocDown type names PDFium or SkiaSharp at
-  all. A reflection test fails the build if any reaches
-  the exported surface, so the native stack stays confined and replaceable.
-- **Portability of the other packages.** `DocDown.Core`, `DocDown.Pdf`, and `DocDown.Tool` remain
-  free of native assets and runtime-identifier-specific dependencies. That `DocDown.Pdf` ships no
-  native asset is asserted against its produced `.nupkg`, not merely its build output, precisely
-  because this package now exists to carry the native stack instead.
-- **Per-page fault isolation.** Each page is rasterized independently. An unsupported page, an
-  out-of-memory at a high DPI, or a native fault mid-run is caught per page, recorded as the plain
-  note `Page N could not be rasterized.`, and the run continues with the remaining pages. No render
+- **Rasterizer containment.** CanvasNet.Pdf and CanvasNet types appear in exactly one file
+  (`PageRenderer.cs`) and in no public signature. A reflection test fails the build if either
+  reaches the exported surface, so the rasterizer stays confined and replaceable.
+- **Portability of the whole package graph.** `DocDown.Core`, `DocDown.Pdf`, `DocDown.Pdf.Rendering`,
+  and `DocDown.Tool` are all fully managed and free of runtime-identifier-specific dependencies. That
+  the PDF packages ship no native asset is asserted against their produced `.nupkg` files, not merely
+  their build output.
+- **Per-page fault isolation.** Each page is rasterized independently. An unsupported page or an
+  out-of-memory at a high DPI is caught per page, recorded as the plain note
+  `Page N could not be rasterized.`, and the run continues with the remaining pages. No render
   fault reaches the caller as an exception.
-- **Cheap, honest availability.** The probe loads the native once, caches the result, and never
-  rasterizes, so a plain extraction pays nothing and a missing native binary is reported with a
-  reason rather than discovered at render time or as a crash.
-- **Serialized native calls.** PDFium is not thread-safe, so every native call runs under a single
-  process-wide lock; concurrent extractions rasterize one at a time rather than corrupting shared
-  native state.
+- **Unconditional, honest availability.** CanvasNet.Pdf is a fully-managed dependency resolved at
+  restore time, with nothing to probe for at run time, so `ProbeAvailability()` always reports page
+  rendering as available; a plain extraction that does not request rendering still pays nothing,
+  because the backend is only selected and only opens a document when rendering is requested.
+- **Independent per-call document instances.** `PageRenderer` opens and disposes its own
+  `PdfDocument` per call rather than sharing mutable state across calls, so concurrent renders do not
+  corrupt each other's state. The one shared mutable state in the dependency graph — CanvasNet's
+  lazily-built system font catalog and its bundled-fallback font cache — is confirmed safe for
+  concurrent use by design, not merely assumed: the catalog build is a one-time `Lazy<T>` in
+  execution-and-publication mode, so concurrent callers block on a single build and share its
+  published result, and the fallback cache is a dictionary guarded by a dedicated lock around both
+  lookup and population. The concurrent-render test in this package's test suite is the regression
+  guard for this behavior.
 
 ## Data Flow
 
@@ -147,41 +152,21 @@ machine-enforced by a reflection test over the package's exported types.
 5. It returns `Produced` after the attempted page loop completes.
 6. The engine finalizes the content and writes `summary.txt` and `manifest.json`.
 
-## Design Constraints and Native-Binary Consequences
+## Design Constraints
 
-This package's native stack has consequences that a reader of this system's constraints needs stated
-plainly and completely.
-
-- **PDFtoImage is chosen over the Phase-1 plan's lean toward `PdfPig.Rendering.Skia`, deliberately.**
-  Three concrete reasons. First, `PdfPig.Rendering.Skia` pulls in the three PdfPig filter add-ons
-  (`PdfPig.Filters.Dct.JpegLibrary`, `PdfPig.Filters.Jbig2.PdfboxJbig2`,
-  `PdfPig.Filters.Jpx.OpenJpeg`) that `DocDown.Pdf` deliberately and with documented intent does not
-  reference; adopting it would silently reverse that decision. Second, it publishes no `net10.0`
-  asset, its stable line tops out below its current prerelease, and it lags SkiaSharp's major
-  version. Third, PDFtoImage resolves to eight packages with complete, automatic runtime-identifier
-  coverage, whereas the Skia option resolves to thirteen or more and is missing
-  `HarfBuzzSharp.NativeAssets.Linux`, leaving Linux runtimes without `libHarfBuzzSharp` unless a
-  fourteenth package is hand-added. PDFtoImage ships real `net8.0`, `net9.0`, and `net10.0` assets,
-  matching this repository's target frameworks exactly.
-- **Single-file publish is always runtime-identifier specific.** A portable single binary cannot
-  select the per-runtime native assets, so `dotnet publish -r <rid>` is mandatory for a
-  self-contained single-file `docdown`, and a standalone distribution needs a **per-RID publish
-  matrix** (win-x64/arm64, linux-x64/arm64, osx-x64/arm64). Documenting that matrix and its recipe is
-  in scope; adding the CI workflow that produces it is a separable, later increment.
-- **`IncludeNativeLibrariesForSelfExtract=true` is a genuine single file, but with costs.** It
-  extracts the natives to `%TEMP%\.net` (Windows) or `$HOME/.net` (Unix) at startup, which **breaks
-  under systemd where `$HOME` is undefined**, adds first-run latency, and needs a writable directory
-  (bad for a read-only container). It is a tradeoff to choose deliberately, not a default.
-- **The `dotnet tool` package stays runtime-identifier agnostic.** `PackAsTool` produces one
-  RID-agnostic package; a framework-dependent tool resolves `runtimes/<rid>/native` from the package
-  at run time via `deps.json`, so `dotnet tool install -g` works on every runtime identifier from one
-  (larger) package. The per-RID matrix is required only for the optional self-contained single-file
-  executable, which is a different artifact.
-- **PDFium is not thread-safe.** PDFtoImage serializes every call into PDFium behind a lock, so only
-  one document can be rasterized at a time in a process; `PageRenderer` mirrors this with its own
-  process-wide lock. Concurrent extractions cannot rasterize in parallel.
+- **CanvasNet.Pdf replaces the previously used PDFtoImage (PDFium/SkiaSharp) backend.** CanvasNet.Pdf
+  is fully managed, with its only transitive dependency being `System.Numerics.Tensors`, confirmed
+  to carry no native binaries. Adopting it removes the per-runtime-identifier native asset, the
+  publish-matrix and single-file-extraction concerns, and the process-wide rasterization lock that a
+  native rasterizer required.
+- **No `<RuntimeIdentifier>` in the library project, and nothing RID-specific to resolve.** The
+  package is RID-agnostic end to end: a framework-dependent reference and a self-contained
+  single-file publish behave the same way on every supported platform, because there is no
+  per-runtime-identifier native asset to select at publish or run time.
+- **Thread-safety is not documented by CanvasNet.Pdf either way.** This package does not rely on any
+  shared mutable rasterization state: `PageRenderer` opens, uses, and disposes its own
+  `PdfDocument` per call. See the font-catalog residual risk recorded under Risk Control Measures
+  above.
 - **Trim and AOT compatibility are unverified for this stack.** They are not claimed. `PublishTrimmed`
-  and AOT are left off on the rendering-inclusive tool, and this constraint is recorded rather than
-  worked around; explicit, reflection-free registration keeps single-file publish viable regardless.
-- **No `<RuntimeIdentifier>` in the library project.** The package stays RID-agnostic; only its
-  transitive natives are RID-specific, and they are resolved by consumers.
+  and AOT are left off, and this constraint is recorded rather than worked around; explicit,
+  reflection-free registration keeps single-file publish viable regardless.

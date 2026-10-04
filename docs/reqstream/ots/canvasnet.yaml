@@ -1,0 +1,28 @@
+---
+# CanvasNet OTS Software Requirements
+#
+# Requirements for CanvasNet, the fully-managed canvas and codec library DocDown.Pdf.Rendering
+# references directly for PNG encoding. Like PdfPig and CanvasNet.Pdf, it is a runtime library
+# shipped to consumers rather than a build-time tool, so its evidence comes from the rendering
+# tests that exercise it transitively - the exact tests are named here rather than claimed
+# broadly. It is recorded as its own OTS item, distinct from CanvasNet.Pdf, because this package
+# references it directly (PngCodec.Save) rather than only transitively through CanvasNet.Pdf.
+
+sections:
+  - title: OTS Software Requirements
+    sections:
+      - title: CanvasNet Requirements
+        requirements:
+          - id: DocDown-OTS-CanvasNet
+            title: >-
+              CanvasNet shall encode a rasterized page surface as PNG bytes through a managed API.
+            justification: |
+              DocDown.Pdf.Rendering's rendered-pages capability ends with a PNG file, and CanvasNet's
+              `PngCodec.Save` is the one call that turns the `Surface` CanvasNet.Pdf rasterizes into
+              those bytes. The capability is only as truthful as CanvasNet's ability to encode a
+              surface faithfully.
+            tags: [ots]
+            tests:
+              - PageRenderer_Render_SinglePage_ReturnsValidPng
+              - PdfPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs
+              - DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages

@@ -39,9 +39,9 @@ folder:
 Three principles constrain every design decision in this document:
 
 - **The output layout is invariant; an extraction is either produced or unreadable.** What can be
-  extracted legitimately varies with the operating system, the installed applications, and the
-  available native binaries. A consumer may therefore rely on the *shape* of produced output
-  without treating the result as a quality grade.
+  extracted legitimately varies with the operating system and the installed applications. A
+  consumer may therefore rely on the *shape* of produced output without treating the result as a
+  quality grade.
 - **Reporting is factual and limited.** The content inventory counts what the extractor looked for,
   including deliberate zeros, and notes record only steps DocDown attempted but could not
   complete.
@@ -87,14 +87,14 @@ items, specifically:
     accounting for every one it could not deliver
   - **PdfDocDownBuilderExtensions (Unit)** — The reflection-free registration seam
 - **DocDown.Pdf.Rendering (System)** — Optional PDF page rendering (rasterization); flat, with no
-  subsystems, and the first and only DocDown package that carries native binaries
+  subsystems, and fully managed like the rest of DocDown
   - **PdfPageRenderingExtractor (Unit)** — The page-rendering backend the engine selects when
-    rendering is requested and available: delegates the managed aspects, rasterizes pages, and
+    rendering is requested: delegates the managed aspects, rasterizes pages, and
     records notes for pages it cannot render
-  - **PageRenderer (Unit)** — The single native-interop seam: rasterizes one page to PNG behind a
-    process-wide lock and answers a cheap, non-throwing availability probe
+  - **PageRenderer (Unit)** — The single rasterization seam: opens a CanvasNet.Pdf document per
+    call and rasterizes one page to a PNG
   - **PdfRenderingDocDownBuilderExtensions (Unit)** — The reflection-free registration seam,
-    carrying no native-rasterizer type on its surface
+    carrying no CanvasNet type on its surface
 - **DocDown.Tool (System)** — The `docdown` command-line tool; two subsystems and one direct unit
   - **Program (Unit, direct)** — The entry point: priority-ordered dispatch, banner and help,
     explicit engine registration, extraction and reporting, and the auxiliary commands
@@ -121,16 +121,16 @@ items, specifically:
 The following OTS items are also covered:
 
 - **BuildMark** — build-notes documentation tool
+- **CanvasNet** — fully-managed 2D canvas/codec library, a runtime dependency of
+  DocDown.Pdf.Rendering used for PNG encoding
+- **CanvasNet.Pdf** — fully-managed PDF rasterization API, the runtime dependency of
+  DocDown.Pdf.Rendering used to rasterize pages. It and CanvasNet carry no native assets
 - **FileAssert** — document assertion tool
 - **Open XML SDK** — managed Open XML reader/writer, a runtime dependency of DocDown.Office
   shipped to consumers rather than a build-time tool
 - **Pandoc** — Markdown-to-HTML conversion tool
 - **PdfPig** — managed PDF parser, a runtime dependency of DocDown.Pdf shipped to consumers rather
   than a build-time tool
-- **PDFtoImage** — managed page-rasterization API, the runtime dependency of DocDown.Pdf.Rendering;
-  it delivers a native rasterizer and 2D backend (PDFium and SkiaSharp) transitively, and those are
-  the only native binaries DocDown ships. No DocDown type names either of them, so neither is a
-  listed OTS item
 - **ReqStream** — requirements traceability tool
 - **ReviewMark** — file review enforcement tool
 - **SarifMark** — SARIF report conversion tool
@@ -179,24 +179,24 @@ is flat - four units, no subsystems - because it spans one architectural boundar
 than several. It depends on DocDown.Core for the extraction contract and on the PdfPig OTS parser for
 PDF structure, and a host joins the two with a single explicit registration call.
 
-DocDown.Pdf.Rendering is the third system: the optional page-rendering backend, and the first and
-only DocDown package that carries native binaries. It too is flat - three units, no subsystems -
-because it spans one boundary, rasterization. It depends on DocDown.Core for the contract and on
-DocDown.Pdf for the managed text/image/metadata extraction it delegates to, and it wraps the
-PDFtoImage OTS API (with its transitive PDFium and SkiaSharp native stack) in a single native-interop
-seam. Because selection is deterministic, the rendering backend is chosen over the managed backend
-only when page rendering is requested and available; a host that never registers it never loads a
-native binary.
+DocDown.Pdf.Rendering is the third system: the optional page-rendering backend. It too is flat -
+three units, no subsystems - because it spans one boundary, rasterization. It depends on
+DocDown.Core for the contract and on DocDown.Pdf for the managed text/image/metadata extraction it
+delegates to, and it wraps the fully-managed CanvasNet.Pdf and CanvasNet OTS APIs in a single
+rasterization seam. Because selection is deterministic, the rendering backend is chosen over the
+managed backend only when page rendering is requested; rendering is always available, since
+CanvasNet.Pdf carries no native assets.
 
 DocDown.Tool is the fourth system: the `docdown` command-line tool, a thin executable shell over
 DocDown.Core and the registered backends. It has two subsystems - Cli, which owns the command line,
 and SelfTest, which drives the `--validate` self-validation - plus Program, the entry point, as a
-direct unit. It registers its backends explicitly - `AddPdf().AddPdfRendering().AddWord()` - so it can
-be published as a single-file executable; because the rendering backend carries a native stack, a
-self-contained single-file publish is runtime-identifier specific and trimming and AOT are left off as
-unverified, while a framework-dependent `dotnet tool install -g` stays portable across runtime
-identifiers. It is the only package that references the DemaConsulting.TestResults OTS library, which
-keeps DocDown.Core free of runtime dependencies.
+direct unit. It registers its backends explicitly - `AddPdf().AddPdfRendering().AddWord()` - so it
+can be published as a single-file executable. Every backend it carries, including PDF page
+rendering, is fully managed and runtime-identifier agnostic, so both a framework-dependent
+`dotnet tool install -g` and a self-contained single-file publish stay portable across platforms;
+trimming and AOT are still left off as unverified for this dependency graph. It is the only package
+that references the DemaConsulting.TestResults OTS library, which keeps DocDown.Core free of
+runtime dependencies.
 
 DocDown.Office is the fifth system: the Microsoft Office extraction backends, and the second family of
 formats after PDF. It is one package holding four format subsystems — Word, Excel, PowerPoint and
@@ -339,7 +339,7 @@ DemaConsulting.DocDown.Pdf/
 
 DemaConsulting.DocDown.Pdf.Rendering/
 ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
-├── PageRenderer.cs                  — Unit: the single native-interop seam behind a process-wide lock
+├── PageRenderer.cs                  — Unit: the single rasterization seam over CanvasNet.Pdf
 ├── PdfPageRenderingExtractor.cs     — Unit: page-rendering backend; delegates, rasterizes, and records notes
 ├── PdfRenderingDocDownBuilderExtensions.cs — Unit: the reflection-free AddPdfRendering registration seam
 
@@ -355,7 +355,7 @@ DemaConsulting.DocDown.Tool/
 ## Code Coverage Policy
 
 `[ExcludeFromCodeCoverage]` is applied only to interop adapters — the thin seams that call into
-native binaries or out-of-process applications and cannot be exercised in continuous integration.
+out-of-process applications and cannot be exercised in continuous integration.
 It is never applied to decision logic, so that reported coverage remains an honest measure of what
 the test suite actually verifies.
 

@@ -226,11 +226,11 @@ jobs:
           --property:PackageVersion=${{ inputs.version }}
 
       # Asserts the shape of the packages just produced: the tool is a RID-agnostic .NET
-      # tool carrying natives for exactly the supported platforms and no native debug
-      # symbols, and the PDF library packages stay fully managed. These run here, against
-      # the real artifact, rather than inside the test suite - packing is a build activity,
-      # and doing it from a test rebuilt the whole dependency graph per test and collided
-      # with concurrent packs on shared intermediate paths.
+      # tool carrying no native assets, and the PDF library packages stay fully managed.
+      # These run here, against the real artifact, rather than inside the test suite -
+      # packing is a build activity, and doing it from a test rebuilt the whole
+      # dependency graph per test and collided with concurrent packs on shared
+      # intermediate paths.
       - name: Assert Packages with FileAssert
         run: >
           dotnet fileassert
@@ -334,10 +334,9 @@ jobs:
   #
   # This job tests what the unit suite structurally cannot. The suite runs against
   # project references on the machine that built them, so it never observes the
-  # packaged tool resolving its own native binaries from the runtimes/ folder that
-  # shipped inside the package. The tool deliberately carries natives for only the
-  # platforms below, so a mistake in that trimming is invisible everywhere else and
-  # would surface first in a user's hands.
+  # packaged tool exactly as a user installs and runs it. Running the self-test
+  # suite through the installed package on every platform catches anything that
+  # only breaks once the tool is actually packaged and installed.
   #
   # Only .NET 10 is covered because the tool is packaged for net10.0 alone; the
   # libraries keep their multi-framework matrix in the build job above.
@@ -433,26 +432,21 @@ jobs:
             || { echo "✗ Self-validation failed"; exit 1; }
           echo "✓ Self-validation succeeded"
 
-      - name: Verify page rendering used the packaged natives
+      - name: Verify page rendering actually ran
         shell: bash
         run: |
           # The decisive check, and the reason a zero exit code is not enough on its own.
-          # The rendering backend probes for its native stack and reports itself
-          # unavailable when it cannot load one, which turns a self-test into a SKIP
-          # rather than a failure. A package missing the natives for this platform would
-          # therefore install, run, exit zero, and quietly stop rendering. Requiring a
-          # PASS is what makes this job prove the trimmed runtimes/ folder is correct.
+          # The rendering backend's self-test always passes, since CanvasNet.Pdf is a
+          # fully-managed dependency with nothing to probe for or fail to load. Requiring
+          # a PASS still proves rendering genuinely works through the packaged tool, not
+          # merely that the process exited zero.
           echo "Verifying pdf-rendering.renderRoundTrip actually ran..."
           grep -q '^\[PASS\] pdf-rendering.renderRoundTrip' validate.txt || {
             echo "✗ Page rendering did not pass on ${{ matrix.os }}."
-            echo "  A SKIP here means the packaged tool could not load PDFium/SkiaSharp,"
-            echo "  which usually means this platform's runtime identifier was trimmed"
-            echo "  out of the package. See SupportedToolRuntimeIdentifiers in"
-            echo "  src/DemaConsulting.DocDown.Tool/DemaConsulting.DocDown.Tool.csproj."
             grep -E 'pdf-rendering|renderRoundTrip' validate.txt || true
             exit 1
           }
-          echo "✓ Page rendering passed using the packaged native binaries"
+          echo "✓ Page rendering passed through the packaged tool"
 
       # === UPLOAD ARTIFACTS ===
       # This section uploads all generated artifacts for use by downstream jobs.

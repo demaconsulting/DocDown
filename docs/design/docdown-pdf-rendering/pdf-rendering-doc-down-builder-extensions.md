@@ -6,18 +6,18 @@
 
 `PdfRenderingDocDownBuilderExtensions` is the registration seam: the single, explicit call that adds
 the page-rendering backend to a `DocDownBuilder`. Its single responsibility is to be the one visible
-edge from a host to this package and, transitively, to the native rasterization stack it carries.
+edge from a host to this package and, transitively, to the rasterization stack it carries.
 
 That edge matters more than its size suggests. DocDown registers backends explicitly rather than by
-reflection or assembly scanning, so a host's set of active backends — and whether a native stack is
-loaded at all — is a property of its own code rather than of what happens to be on disk. A host that
-never calls `AddPdfRendering` never loads a native binary.
+reflection or assembly scanning, so a host's set of active backends is a property of its own code
+rather than of what happens to be on disk. A host that never calls `AddPdfRendering` never pulls the
+rasterization stack into its reachable extraction paths.
 
 ### Data Model
 
 `PdfRenderingDocDownBuilderExtensions` is a `public static class` with no state. It references no
-PDFtoImage, PDFium, or SkiaSharp type at all, so a host can reference the surface it configures
-without the native rasterizer's types entering its own compilation.
+CanvasNet.Pdf or CanvasNet type at all, so a host can reference the surface it configures without
+the rasterizer's types entering its own compilation.
 
 ### Key Methods
 

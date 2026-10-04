@@ -2,11 +2,12 @@ package DocDownPdfRendering {
     doc
     /*
      * DocDown.Pdf.Rendering is the optional .NET library that rasterizes PDF pages to PNG
-     * images for the DocDown output contract. It is the first and only DocDown package that
-     * carries native binaries (PDFtoImage, wrapping PDFium and SkiaSharp). It is a full
-     * superset extractor: it delegates text, embedded-image, and metadata extraction to the
-     * managed DocDown.Pdf backend and adds rendered pages, so the single-backend engine
-     * selection can choose it when page rendering is requested.
+     * images for the DocDown output contract. It rasterizes through DemaConsulting.CanvasNet.Pdf,
+     * a fully-managed rasterizer whose only dependency is DemaConsulting.CanvasNet, so the
+     * package carries no native asset for any runtime identifier. It is a full superset
+     * extractor: it delegates text, embedded-image, and metadata extraction to the managed
+     * DocDown.Pdf backend and adds rendered pages, so the single-backend engine selection can
+     * choose it when page rendering is requested.
      */
 
     part def DocDownPdfRenderingSystem {

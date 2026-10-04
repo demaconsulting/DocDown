@@ -46,7 +46,6 @@ public class PdfRenderingGoldenTests
     public async Task PdfRenderingGolden_Summary_SimpleRenderedPdf_MatchesCommittedGolden()
     {
         // Arrange: a generated one-page PDF rendered through the real backend
-        SkipWhenRendererUnavailable();
         using var temp = new TempScratch();
         var engine = new DocDownBuilder().AddPdf().AddPdfRendering().Build();
         var input = Path.Combine(temp.Path, "simple.pdf");
@@ -123,20 +122,5 @@ public class PdfRenderingGoldenTests
         var root = directory?.FullName
             ?? throw new InvalidOperationException("Could not locate the repository root from the test output folder.");
         return Path.Combine(root, "test", "DemaConsulting.DocDown.Pdf.Rendering.Tests", "golden");
-    }
-
-    /// <summary>
-    ///     Skips the calling test when the native PDF renderer is unavailable in this environment.
-    /// </summary>
-    /// <remarks>
-    ///     The committed golden captures the real rendered-page path, so it is meaningful only where
-    ///     the native rendering stack can load.
-    /// </remarks>
-    private static void SkipWhenRendererUnavailable()
-    {
-        var probe = PageRenderer.ProbeAvailability();
-        Assert.SkipWhen(
-            !probe.IsAvailable,
-            $"PDF page rendering is unavailable in this environment: {probe.Reason}.");
     }
 }

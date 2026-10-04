@@ -28,7 +28,7 @@ sections:
               - DocDownTool-Validation-Outcome
             tests:
               - DocDownTool_Validate_ResultsTrx_ProducesWellFormedTrx
-              - DocDownTool_Validate_RenderingSelfTestCase_IsRecordedAndNotFailed
+              - DocDownTool_Validate_RenderingSelfTestCase_IsRecordedAndPasses
 
           - id: DocDownTool-SelfTest-Adaptation
             title: >-

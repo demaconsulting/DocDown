@@ -228,7 +228,7 @@ public class SummaryWriterGoldenTests
             includeRenderer
                 ? [
                     new EnvironmentFact("DocDown.Pdf", "pdf.parser", "PdfPig (managed)", true),
-                    new EnvironmentFact("DocDown.Pdf.Rendering", "pages.renderer", "PDFtoImage (PDFium/SkiaSharp, native)", true)
+                    new EnvironmentFact("DocDown.Pdf.Rendering", "pages.renderer", "CanvasNet.Pdf (managed)", true)
                 ]
                 : [
                     new EnvironmentFact("DocDown.Pdf", "pdf.parser", "PdfPig (managed)", true),

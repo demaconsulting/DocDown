@@ -28,7 +28,7 @@ The system has two subsystems and one direct unit, following the DEMA tool house
 ### Why registration is explicit
 
 The tool builds its engine with one visible registration chain:
-`new DocDownBuilder().AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().Build()`.
+`new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().Build()`.
 There is no reflection and no assembly scanning. That is the fact that keeps single-file publishing
 viable: a reflection-discovered backend would be invisible to the trimmer and absent from a
 single-file image. The same explicit registration is what self-validation exercises, so the
@@ -62,8 +62,9 @@ here, on the tool side of the boundary. Neither Core nor the extraction backends
 - **DocDown.Pdf** — the managed PDF extraction backend, added through `AddPdf`. See the
   *DocDown.Pdf System Design*.
 - **DocDown.Pdf.Rendering** — the optional page-rendering backend, added through
-  `AddPdfRendering`. It is the only reference that carries a native stack (PDFium/SkiaSharp) into
-  the tool. See the *DocDown.Pdf.Rendering System Design*.
+  `AddPdfRendering`. It depends on the fully-managed `DemaConsulting.CanvasNet.Pdf`/
+  `DemaConsulting.CanvasNet` packages and carries no native assets. See the
+  *DocDown.Pdf.Rendering System Design*.
 - **DocDown.Word** — the Word extraction backend, added through `AddWord`. See the
   *DocDown.Word System Design*.
 - **DocDown.Visio** — the Visio extraction backends, added through `AddVisio`. See the
@@ -75,40 +76,24 @@ here, on the tool side of the boundary. Neither Core nor the extraction backends
 - **DemaConsulting.TestResults** (OTS) — the test-results object model and the TRX/JUnit
   serializers, referenced only by this tool. See *TestResults* under the OTS integration design.
 
-The tool therefore carries the rendering backend's native binaries transitively, but the packaged
-`.nupkg` stays **runtime-identifier-agnostic**: `PackAsTool` places every tool asset under the
-literal `any` platform folder (`tools/<tfm>/any/…`), with the native assets resolved from
-`tools/<tfm>/any/runtimes/<rid>/native/…` at run time, so a single package installs on every
-supported RID from one `dotnet tool install`. A self-contained single-file publish, by contrast, is
-RID-specific and needs `dotnet publish -r <rid>`. This RID-agnostic property is proven against the
-produced package artifact by `DocDownTool_Package_IsRidAgnosticDotNetTool`, not merely
-asserted from project metadata.
+Every backend reachable from the tool is fully managed and runtime-identifier agnostic, so the
+packaged `.nupkg` carries no native assets at all: `PackAsTool` places every tool asset under the
+literal `any` platform folder (`tools/<tfm>/any/…`), and one package installs on every supported
+RID from one `dotnet tool install`. This RID-agnostic property is proven against the produced
+package artifact by `DocDownTool_Package_IsRidAgnosticDotNetTool`, and the absence of any native
+asset is proven by `DocDownTool_Package_CarriesNoNativeAssets`, not merely asserted from project
+metadata.
 
 ### Packaged footprint
-
-Carrying a native rasterizer for every runtime identifier makes the tool package large, so what it
-carries is a deliberate choice rather than whatever the dependency graph offers.
 
 - **One target framework.** A tool is executed, never referenced, so the package is built for
   `net10.0` alone. Installing the tool therefore requires a .NET 10 runtime. The libraries keep
   their `net8.0;net9.0;net10.0` matrix, so this constrains only the command line.
-- **No native debug symbols.** The PDFium and SkiaSharp runtime packages ship a `.pdb` beside each
-  native binary; `libSkiaSharp.pdb` alone is 82–88 MB per Windows RID. They describe third-party
-  native code a DocDown stack trace never enters. The tool's own managed symbols still ship in the
-  companion `.snupkg`.
-- **Supported platforms only.** SkiaSharp and PDFium between them publish natives for around twenty
-  runtime identifiers. The package carries four entries: `win-x64`, `linux-x64`, and `osx-arm64` —
-  exactly the CI matrix legs — plus the bare `osx` runtime identifier, which is not a fourth
-  platform but the fat macOS dylib that SkiaSharp publishes and that runtime-identifier fallback
-  (`osx-arm64` → `osx` → `unix`) resolves on Apple Silicon. Without it macOS could parse a PDF but
-  not rasterize one. This is an allow list, not a deny list: a deny list readmits whatever platform
-  a dependency update happens to add, which is how the package grew unnoticed. Adding a platform
-  means adding its runtime identifier and a CI leg that exercises it.
-
-Together these took the package from 592 MB to 32 MB. Both controls are enforced against the
-produced artifact by `DocDownTool_Package_CarriesOnlySupportedNatives`, which
-asserts the shipped runtime identifiers are *exactly* the supported set, so a dependency update can
-neither quietly restore the bulk nor silently strip the tool of natives it needs.
+- **No native assets.** Every dependency in the tool's graph, including the PDF page-rendering
+  backend's `DemaConsulting.CanvasNet.Pdf`/`DemaConsulting.CanvasNet` packages, is fully managed, so
+  there is nothing under `runtimes/` to trim or allow-list. This is enforced against the produced
+  artifact by `DocDownTool_Package_CarriesNoNativeAssets`, so a future dependency that reintroduces
+  a native asset fails the build rather than quietly inflating the package.
 
 ## Risk Control Measures
 

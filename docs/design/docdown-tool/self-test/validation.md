@@ -28,7 +28,7 @@ the in-process checks and the engine self-test cases.
   via `Context.Create([... "--silent", "--log", <temp>])` and `Program.Run`, then asserts on the
   captured log. This is the same silence-plus-log mechanism the reference DEMA tool uses.
 - **`RunEngineSelfTests`** (private) — builds the engine with
-  `new DocDownBuilder().AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().Build()`,
+  `new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().Build()`,
   enumerates `GetSelfTestCases()`, runs each case in its own work folder, maps the result through
   `SelfTestAdapter`, and prints a pass, fail, or skip line. The current Core portion of that union is
   `core.layout-invariance` and `core.manifest-schema`. A case that throws is recorded as a failure so

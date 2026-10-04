@@ -128,10 +128,11 @@ TestResults OTS item. Evidence for `DocDownTool-SelfValidationSkipDistinct`.
 
 ### The rendering backend self-test is surfaced
 
-**Test**: `DocDownTool_Validate_RenderingSelfTestCase_IsRecordedAndNotFailed`
+**Test**: `DocDownTool_Validate_RenderingSelfTestCase_IsRecordedAndPasses`
 
 Proves the rendering backend contributes its own self-test case under `--validate`, and that the case
-is recorded without a failure outcome. Evidence for `DocDownTool-SelfValidation`.
+is always recorded as passed, since CanvasNet.Pdf is always available. Evidence for
+`DocDownTool-SelfValidation`.
 
 ### Registered backends are listed
 
@@ -161,32 +162,15 @@ trace. Evidence for `DocDownTool-ExpectedErrors`.
 Inspects the `.nupkg` the build just produced, rather than the project's source metadata. Proves the
 package is **runtime-identifier-agnostic**: the tool's assets sit under the literal `any` platform
 folder (`tools/net10.0/any/…`, exactly one framework folder), and a `DotnetToolSettings.xml` declares
-`Command Name="docdown"`. The test deliberately does **not** assert the absence of native assets: the
-tool carries the rendering package's PDFium/SkiaSharp binaries transitively by design, under
-`tools/<tfm>/any/runtimes/<rid>/native/…`, and they are resolved at run time — so the claim under
-test is RID-agnosticism (one package installs on every supported RID), not native-freedom. Evidence
-for `DocDownTool-Packaging`.
+`Command Name="docdown"`. Evidence for `DocDownTool-Packaging`.
 
-### The produced package carries no native symbols and only supported runtimes
+### The produced package carries no native assets
 
-**Test**: `DocDownTool_Package_CarriesOnlySupportedNatives` (FileAssert, `packages` tag)
+**Test**: `DocDownTool_Package_CarriesNoNativeAssets` (FileAssert, `packages` tag)
 
-Inspects the produced `.nupkg`, asserting that no entry under `runtimes/` is a `.pdb`, that the
-archive carries exactly six native binaries, and that each of `win-x64`, `linux-x64`, `osx-arm64`,
-and `osx` is present. Both excluded categories are pure payload: native debug symbols describe
-third-party code a DocDown stack trace never enters, and natives for unsupported platforms are
-exercised by no CI matrix leg.
-
-Bounding the native count at exactly six, rather than probing for known-bad names, is what makes the
-check an allow list. That direction matters: probing for names admits any platform a future
-dependency update happens to publish, which is how the package reached 592 MB unnoticed, whereas a
-fixed count fails on both an unexpected addition and an unexpected removal. It therefore also serves
-as the check that the tool has not been stripped of natives it genuinely needs. `osx` is present
-alongside `osx-arm64` because SkiaSharp publishes macOS as one fat dylib resolved through
-runtime-identifier fallback, not because macOS is claimed twice.
-
-The test is a size control, and size has no functional signal — nothing else in the suite would
-fail if either category returned. It therefore asserts against the packed artifact rather than the
-project file, for the same reason as the RID-agnosticism test above: the claim is about what ships.
-It also asserts the native set is non-empty so the checks cannot pass vacuously. Evidence for
+Inspects the produced `.nupkg`, asserting nothing exists under `runtimes/`. Every backend reachable
+from the tool, including the PDF page-rendering backend's `DemaConsulting.CanvasNet.Pdf`/
+`DemaConsulting.CanvasNet` dependency, is fully managed, so the package should carry no native asset
+at all. The check asserts against the packed artifact rather than the project file, for the same
+reason as the RID-agnosticism test above: the claim is about what ships. Evidence for
 `DocDownTool-PackagedFootprint`.

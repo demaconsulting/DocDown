@@ -35,7 +35,7 @@ which reads the assembly's `AssemblyInformationalVersionAttribute` on each acces
   supported formats, and availability from `DocDownEngine.GetBackends()`, which returns an
   `IReadOnlyList<ExtractorCandidate>`.
 - **`BuildEngine`** (private) —
-  `new DocDownBuilder().AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().Build()`;
+  `new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().Build()`;
   the one explicit, reflection-free registration chain the whole tool uses.
 
 ### Error Handling

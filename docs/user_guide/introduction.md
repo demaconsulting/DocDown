@@ -207,10 +207,9 @@ Word documents, Excel workbooks, PowerPoint presentations and Visio drawings; an
 `DemaConsulting.DocDown.Tool`, the
 `docdown` command-line tool.
 
-`DocDown.Pdf` is fully managed and ships no native assets. `DocDown.Pdf.Rendering` is the one
-package that carries native binaries (PDFium and SkiaSharp, via PDFtoImage): a framework-dependent
-install works on supported runtime identifiers, but a self-contained single-file build is
-runtime-identifier specific and must be published with `dotnet publish -r <rid>`.
+`DocDown.Pdf` is fully managed and ships no native assets. `DocDown.Pdf.Rendering` is also fully
+managed, depending on the `DemaConsulting.CanvasNet.Pdf`/`DemaConsulting.CanvasNet` packages for
+rasterization, so it carries no native assets either and is runtime-identifier agnostic.
 
 The Word and Excel backends are fully managed and read `.docx` and `.xlsx` on every platform
 with no native dependency. the PowerPoint and Visio backends extract on every platform
@@ -245,7 +244,7 @@ Core directly; install Core yourself only when you are building a backend of you
 
 | Format | Package (all prefixed `DemaConsulting.`) | Optional extra | Platform note |
 | --- | --- | --- | --- |
-| PDF `.pdf` | `DocDown.Pdf` | `DocDown.Pdf.Rendering` for page images | Managed; the add-on has native binaries |
+| PDF `.pdf` | `DocDown.Pdf` | `DocDown.Pdf.Rendering` for page images | Fully managed; every platform |
 | Word `.docx` | `DocDown.Office` | — | Managed; every platform |
 | Excel `.xlsx` | `DocDown.Office` | — | Managed; a workbook is not paginated |
 | PowerPoint `.pptx` | `DocDown.Office` | — | Slide images need Windows and PowerPoint |
@@ -280,10 +279,9 @@ dotnet add package DemaConsulting.DocDown.Core
 dotnet add package DemaConsulting.DocDown.Pdf
 ```
 
-To also rasterize PDF pages to images, add the optional rendering package. It carries native
-binaries (PDFium and SkiaSharp, via PDFtoImage), so a self-contained single-file build is
-runtime-identifier specific and must be published with `dotnet publish -r <rid>`; a
-framework-dependent reference works on every supported runtime identifier:
+To also rasterize PDF pages to images, add the optional rendering package. It depends on the fully
+managed `DemaConsulting.CanvasNet.Pdf`/`DemaConsulting.CanvasNet` packages, so it carries no native
+assets and is runtime-identifier agnostic like the rest of the library:
 
 ```bash
 dotnet add package DemaConsulting.DocDown.Pdf.Rendering
@@ -317,16 +315,12 @@ dotnet tool install -g DemaConsulting.DocDown.Tool          # global
 dotnet tool install --local DemaConsulting.DocDown.Tool     # local tool manifest
 ```
 
-The tool requires a **.NET 10 runtime** and ships natives for **Windows x64, Linux x64, and macOS
-arm64** — the platforms it is built and tested on. It is packaged for a single framework and those
-platforms because a tool is executed rather than referenced: carrying the PDF rasterizer's native
-binaries once per framework, for every runtime identifier its dependencies publish, made the
-download a hundred times larger than the code it delivered. The libraries are unaffected — they
-target .NET 8, 9, and 10 and are platform-neutral apart from the optional PDF page renderer, so
-referencing them never constrains your project to the tool's runtime or platform.
-
-If you need the tool on another platform, build it from source with that runtime identifier added;
-nothing in DocDown itself is platform-specific.
+The tool requires a **.NET 10 runtime**. It is packaged for a single framework because a tool is
+executed rather than referenced, so a second and third framework would add no reachable surface.
+Every backend it carries, including PDF page rendering, is fully managed and runtime-identifier
+agnostic, so one package installs and runs on every platform with a .NET 10 runtime. The libraries
+are unaffected — they target .NET 8, 9, and 10 and are platform-neutral, including the optional PDF
+page renderer, so referencing them never constrains your project to the tool's runtime.
 
 ## API Documentation
 
@@ -435,12 +429,12 @@ A few things are worth knowing:
   pages were requested and a renderer is available. Otherwise the lighter managed backend runs.
 - **`--dpi` (or `PageRenderDpi`) controls resolution.** A higher DPI produces a larger, more
   detailed page image and a larger file. The default is 150.
-- **Notes stay factual.** If a page cannot be rasterized, or the native renderer for your platform
-  cannot load, extraction still produces the layout and records a short note about what could not be
-  completed.
-- **Native binaries mean RID-specific self-contained single-file builds.** A framework-dependent
-  install resolves the correct native binary for your runtime at run time. A self-contained
-  single-file build must be published per runtime identifier with `dotnet publish -r <rid>`.
+- **Notes stay factual.** If a page cannot be rasterized, extraction still produces the layout and
+  records a short note about what could not be completed.
+- **Fully managed, like the rest of the library.** `DocDown.Pdf.Rendering` depends on the
+  `DemaConsulting.CanvasNet.Pdf`/`DemaConsulting.CanvasNet` packages, which carry no native assets,
+  so a reference works the same way on every supported platform and there is no RID-specific
+  single-file publish concern.
 
 ## Notes you may see while reading PDFs
 
@@ -711,7 +705,7 @@ using DocDown.Word;
 
 var engine = new DocDownBuilder()
     .AddPdf()          // .pdf  - text, embedded images, metadata
-    .AddPdfRendering() // .pdf  - page images (adds native binaries)
+    .AddPdfRendering() // .pdf  - page images (fully managed)
     .AddWord()         // .docx - text, tables, images; no page images
     .AddExcel()        // .xlsx - cells, formulas, charts; workbooks are never rendered
     .AddPowerPoint()   // .pptx - slide text and notes; slide images need PowerPoint
@@ -855,7 +849,7 @@ that legitimately cannot run it:
 - `pdf.parseRoundTrip`, `word.openxml.parseRoundTrip`, `visio.openxml.parseRoundTrip`,
   `powerpoint.openxml.parseRoundTrip`, and `excel.openxml.parseRoundTrip` — each managed backend
   reads an embedded document authored in the application whose format it reads.
-- `pdf-rendering.renderRoundTrip` — the native PDF rasterizer renders a page of an embedded PDF
+- `pdf-rendering.renderRoundTrip` — the CanvasNet.Pdf rasterizer renders a page of an embedded PDF
   exported from Microsoft Word.
 - `pdf.pageRendering`, `word.pageRendering`, `visio.pageRendering`, `powerpoint.pageRendering`, and
   `excel.pageRendering` — always skipped: these backends state that they do not render pages.

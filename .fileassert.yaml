@@ -371,51 +371,34 @@ tests:
               text:
                 - contains: 'Command Name="docdown"'
 
-  - name: DocDownTool_Package_CarriesOnlySupportedNatives
-    description: "The tool package ships no native symbols and only supported runtime identifiers"
+  - name: DocDownTool_Package_CarriesNoNativeAssets
+    description: "The tool package is fully managed and carries no native assets"
     tags: [packages]
     files:
       - pattern: "packages/DemaConsulting.DocDown.Tool.*.nupkg"
         count: 1
         zip:
           files:
-            # No native debug symbols. These describe third-party native code a DocDown stack
-            # trace never enters, and libSkiaSharp.pdb alone is 82-88 MB per Windows runtime
-            # identifier - once the dominant cost of a 592 MB package.
-            - pattern: "**/runtimes/**/*.pdb"
-              max: 0
-            # Exactly six native binaries, one per supported runtime identifier below. The
-            # bound is what stops a newly published platform from being admitted silently:
-            # a deny list readmits whatever a dependency update adds next.
+            # Every backend reachable from the tool, including the PDF page-rendering
+            # backend (now CanvasNet.Pdf), is fully managed and runtime-identifier
+            # agnostic, so the published package must carry nothing under runtimes/.
             - pattern: "**/runtimes/**"
-              min: 6
-              max: 6
-            - pattern: "**/runtimes/win-x64/native/*"
-              min: 2
-            - pattern: "**/runtimes/linux-x64/native/*"
-              min: 2
-            # PDFium publishes a true osx-arm64 asset; SkiaSharp publishes macOS as one fat
-            # dylib under 'osx' that runtime-identifier fallback resolves on Apple Silicon.
-            # Both are required, or macOS parses a PDF but cannot rasterize one.
-            - pattern: "**/runtimes/osx-arm64/native/*"
-              min: 1
-            - pattern: "**/runtimes/osx/native/*"
-              min: 1
+              max: 0
 
   - name: DocDownPdf_Package_ContainsNoNativeAssets
     description: "The PDF packages are fully managed and runtime-identifier agnostic"
     tags: [packages]
     files:
       # Matches both DocDown.Pdf and DocDown.Pdf.Rendering. Neither ships a native asset:
-      # the rendering package declares its dependency on PDFtoImage and SkiaSharp, and
-      # those packages carry the binaries. Asserting across both is therefore stronger
+      # the rendering package depends on CanvasNet.Pdf and CanvasNet, both fully managed
+      # libraries with no native binaries. Asserting across both is therefore stronger
       # than naming the parser alone, and catches a native ever being vendored directly.
       - pattern: "packages/DemaConsulting.DocDown.Pdf*.nupkg"
         min: 2
         zip:
           files:
             # A consumer restoring these packages gets libraries deployable anywhere the
-            # runtime is, with the native stack resolved from its own packages instead.
+            # runtime is, with no native stack to resolve at all.
             - pattern: "runtimes/**"
               max: 0
             - pattern: "**/*.so"

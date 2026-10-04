@@ -86,39 +86,31 @@ words:
   # Increment 0 (legacy Office binary formats): the IANA media-type token for legacy .doc
   # (application/msword), the parallel of the already-listed modern OOXML media-type tokens.
   - msword
-  # Increment 5 (DocDown.Pdf.Rendering): the PDFtoImage/PDFium/SkiaSharp native stack, its authors
-  # and native-asset names, the rasterization vocabulary, and the packaging/runtime terms the
-  # native-binary consequences section uses.
+  # Increment 5 (DocDown.Pdf.Rendering): the rasterization vocabulary and the packaging/runtime
+  # terms the backend's design docs use. PDFtoImage/PDFium/SkiaSharp remain as the superseded
+  # rasterizer named in "replaces the previously used X" historical-comparison prose.
   - PDFtoImage
   - PDFium
   - SkiaSharp
-  - Skia
-  - bblanchon
-  - sungaila
-  - HarfBuzz
-  - HarfBuzzSharp
   - rasterize
   - rasterizes
   - rasterized
   - rasterizer
   - rasterization
-  - Ghostscript
-  - systemd
-  - musl
-  - riscv
-  - loongarch
   - nupkg
   - snupkg
   - deps
-  - loadability
   - unrenderable
   - overclaiming
-  - bitness
-  - nologo
-  - Pngs
-  - PDFR
   - IHDR
-  - Pdfbox
+  - Pngs
+  # Increment 5 follow-up (CanvasNet.Pdf swap): the fully-managed rendering backend's package
+  # name, lowercase filename tokens used in reqstream/design/verification OTS file paths, and
+  # pixel-format/concurrency vocabulary introduced by its design docs.
+  - CanvasNet
+  - canvasnetpdf
+  - RGBA
+  - desynchronize
   # Increment 6 (DocDown.Word): Open XML field-instruction keywords used for structural furniture
   # detection, the backend identifier token, and descriptive vocabulary introduced by the mapping.
   - openxml

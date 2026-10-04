@@ -58,14 +58,14 @@ constituent software items, specifically:
     accounting for every one it could not deliver
   - **PdfDocDownBuilderExtensions (Unit)** — The reflection-free registration seam
 - **DocDown.Pdf.Rendering (System)** — Optional PDF page rendering (rasterization); flat, with no
-  subsystems, and the first and only DocDown package that carries native binaries
+  subsystems, and fully managed like the rest of DocDown
   - **PdfPageRenderingExtractor (Unit)** — The page-rendering backend selected when rendering is
-    requested and available: delegates the managed aspects, rasterizes pages, and records notes for
+    requested: delegates the managed aspects, rasterizes pages, and records notes for
     pages it cannot render
-  - **PageRenderer (Unit)** — The single native-interop seam: rasterizes one page to PNG behind a
-    process-wide lock and answers a cheap, non-throwing availability probe
+  - **PageRenderer (Unit)** — The single rasterization seam: opens a CanvasNet.Pdf document per call
+    and rasterizes one page to a PNG
   - **PdfRenderingDocDownBuilderExtensions (Unit)** — The reflection-free registration seam, free of
-    any native-rasterizer type
+    any CanvasNet type
 - **DocDown.Tool (System)** — The `docdown` command-line tool; two subsystems and one direct unit
   - **Program (Unit, direct)** — The entry point: priority-ordered dispatch, banner and help,
     explicit engine registration, extraction and reporting, and the auxiliary commands
@@ -156,15 +156,16 @@ DocDown attempted but could not complete.
 The following OTS items are also covered:
 
 - **BuildMark** — build-notes documentation tool
+- **CanvasNet** — fully-managed canvas and codec library, verified by transitive evidence from the
+  DocDown.Pdf.Rendering render tests rather than from a pipeline stage
+- **CanvasNet.Pdf** — fully-managed PDF rasterization API, verified by transitive evidence from the
+  DocDown.Pdf.Rendering render tests rather than from a pipeline stage
 - **FileAssert** — document assertion tool
 - **Open XML SDK** — managed WordprocessingML reader/writer, verified by transitive evidence from the
   DocDown.Word extraction tests rather than from a pipeline stage
 - **Pandoc** — Markdown-to-HTML conversion tool
 - **PdfPig** — managed PDF parser, verified by transitive evidence from the DocDown.Pdf test suites
   rather than from a pipeline stage
-- **PDFtoImage** — managed page-rasterization API, verified by transitive evidence from the
-  DocDown.Pdf.Rendering render tests; its native rasterizer and 2D backend (PDFium and SkiaSharp)
-  arrive transitively and are not separately listed, because no DocDown type names either
 - **ReqStream** — requirements traceability tool
 - **ReviewMark** — file review enforcement tool
 - **SarifMark** — SARIF report conversion tool
