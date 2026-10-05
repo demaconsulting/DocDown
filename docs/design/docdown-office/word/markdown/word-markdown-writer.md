@@ -6,9 +6,11 @@
 
 `WordMarkdownWriter` renders a `WordDocumentModel` — or any block sequence within it — to a single
 markdown flow. It is presentational only: it shapes text, headings, lists, tables, images,
-comments, footnotes, and the `## Document Control` section, while inventory and extraction-note
-reporting live with the emitter. The single responsibility keeps the mapping testable from a
-hand-built model with no document behind it.
+footnotes, and the `## Document Control` section, while inventory and extraction-note
+reporting live with the emitter. Reviewer comments are deliberately outside that responsibility:
+they are commentary about the document rather than part of it, and the emitter routes them to the
+dedicated review-comments artifact instead. The single responsibility keeps the mapping testable
+from a hand-built model with no document behind it.
 
 ### Data Model
 
@@ -22,7 +24,8 @@ prose from being reinterpreted as headings, emphasis, links, list markers, or ta
 - **`static string Write(WordDocumentModel model, IReadOnlyDictionary<string, string> imagePaths)`**
   — renders a whole document. Places the `## Document Control` section immediately after a leading
   title heading and before the body, synthesizing `# {Title}` when the body has no leading heading
-  but the metadata names a title. Appends `## Comments` and `## Footnotes` last. Pure.
+  but the metadata names a title. Appends `## Footnotes` last. Reviewer comments carried on the
+  model are deliberately not rendered. Pure.
 - **`static string WriteBlocks(IReadOnlyList<WordBlock>, IReadOnlyDictionary<string, string>)`** —
   renders a block sequence, used for the body and for each document-control subsection. Pure.
 - **`internal static string RenderInlines(IReadOnlyList<WordInline>?)`** — renders inline runs,
@@ -35,8 +38,8 @@ prose from being reinterpreted as headings, emphasis, links, list markers, or ta
   headings, paragraphs, list items, tables, images, and page breaks with the spacing rules markdown
   requires. Tables delegate to `WordTableWriter.Write()`; images emit links only when the sink
   supplied a resolved path.
-- **`AppendDocumentControl()`**, **`AppendComments()`**, and **`AppendFootnotes()`** (private) —
-  append the surviving document-control subsections, the comment list, and the footnote
+- **`AppendDocumentControl()`** and **`AppendFootnotes()`** (private) —
+  append the surviving document-control subsections and the footnote
   definitions in the positions the system design requires.
 
 ### Error Handling
@@ -49,7 +52,8 @@ the writer received.
 ### Dependencies
 
 - **`WordDocumentModel`, `WordBlock`, `WordBlockKind`, `WordInline`, `WordListInfo`, `WordImageRef`,
-  `WordDocumentControlSection`, and `WordComment`** — the model this unit renders.
+  and `WordDocumentControlSection`** — the model this unit renders. `WordComment` is carried on the
+  model but is not rendered by this unit.
 - **`WordTableWriter`** — delegated for every `Table` block.
 
 ### Callers

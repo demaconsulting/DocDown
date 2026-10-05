@@ -34,7 +34,9 @@ path.
 Per IEC 62304 §5.5.2, a `WordContentEmitter` unit test run passes when the emitted content reaches
 the sink as one continuous flow; when the content inventory reports looked-for
 counts, including zero text blocks for an empty document and distinct comment-author counts for
-reviewed drafts; when document metadata is handed to the sink exactly once when present and not at
+reviewed drafts; when every comment on the model reaches the sink as a review comment carrying its
+author, body, and location hint, and reaches the content flow not at all; when document metadata is
+handed to the sink exactly once when present and not at
 all when absent; and when incomplete steps are surfaced only as short notes for charts, flattened
 and merged or nested table structure.
 
@@ -51,6 +53,20 @@ authors in the inventory, reports zero text blocks for an empty document, and wr
 whose image links resolve on disk through the real backend. Evidence for
 `DocDownWord-Markdown-WordContentEmitter-EmitsModelContent` and
 `DocDownWord-Markdown-WordContentEmitter-ReportsContentInventory`.
+
+#### Comments reach the sink as review comments, not as content
+
+**Tests**: `WordContentEmitter_Emit_BodyWithComments_ReportsReviewComments`,
+`WordContentEmitter_Emit_CommentWithoutLocation_ReportsLocationUnknown`,
+`DocDownWord_Extract_DocxWithComment_WritesReviewCommentsNotContent`
+
+Prove each of the model's comments reaches the sink as a `DocumentComment` carrying its author, its
+body rendered as inline markdown, and its location hint, while none of that text appears in the
+written content; that a comment with no resolved location is reported as `(location unknown)`
+rather than with an invented one; and that end to end through the real engine the remark lands in
+`review-comments.md` with its author and `§Overview` hint and nowhere in `content.md`. Asserting
+both halves together is what makes the move out of the content flow falsifiable. Evidence for
+`DocDownWord-Markdown-WordContentEmitter-ReportsReviewComments`.
 
 #### Charts are surfaced as a short note
 

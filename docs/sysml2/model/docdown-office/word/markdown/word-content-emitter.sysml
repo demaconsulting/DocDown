@@ -1,6 +1,6 @@
 package DocDownOffice {
     part def WordContentEmitter {
-        doc /* The model-to-sink emission path: writes the model's content (single-flow or per-part), images, the content inventory, and notes through the sink. */
+        doc /* The model-to-sink emission path: writes the model's content (single-flow or per-part), images, the content inventory, the document's reviewer comments as review comments with their location hints, and notes through the sink. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Office/Word/Markdown/WordContentEmitter.cs */
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Word/Markdown/WordContentEmitterTests.cs */

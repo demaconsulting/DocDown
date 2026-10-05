@@ -33,7 +33,9 @@ tables map into structured blocks; when a header carrying a revision and classif
 Document Control section; when a footer carrying only page-number fields is omitted from that
 section and counted on the model; when an identical header shared across sections is emitted once;
 when tracked changes render in the accepted view; when a password-protected container raises
-`WordExtractionException`; when a comment's author and text are collected; when title, author, and
+`WordExtractionException`; when a comment's author and text are collected; when a comment's anchor
+resolves into a location hint naming its heading and quoting its text, degrading gracefully when
+the document anchors it partially or not at all; when title, author, and
 producer page count are surfaced from document metadata; and when image naming text is chosen from
 authored sources, captions, object names, or nearby headings according to the documented order.
 
@@ -94,6 +96,27 @@ case-insensitively when given an OLE compound file rather than a Zip package. Ev
 
 Proves the model carries one comment whose `Author` is `Reviewer` and whose flattened content
 contains `clarify`. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-CollectsComments`.
+
+#### An anchored comment's location names its heading and quotes the anchored text
+
+**Test**: `WordOpenXmlReader_Read_AnchoredComment_LocationNamesHeadingAndSnippet`
+
+Proves a comment bracketed by `w:commentRangeStart` and `w:commentRangeEnd` over a run under the
+heading `Overview` resolves `Location` to exactly `§Overview — "Body with a comment anchor."`, so a
+reader given the comment away from the document can find the text it annotates. Evidence for
+`DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation`.
+
+#### Each comment's location resolves from its own anchor, or from none
+
+**Test**: `WordOpenXmlReader_Read_MultipleComments_LocationsResolveIndependently`
+
+Proves three comments anchored three different ways resolve independently: a bracketed range under
+`Scope` yields the heading plus an ellipsized snippet of the long anchored run; a bare
+`w:commentReference` point under `Limitations` brackets no text and degrades to `§Limitations`; and
+a comment the document anchors nowhere yields a null `Location` rather than borrowing a neighbour's.
+A reader that resolved anchors by position rather than by id, or that invented a location for the
+unanchored comment, fails here. Evidence for
+`DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation`.
 
 #### The title and author metadata are surfaced
 

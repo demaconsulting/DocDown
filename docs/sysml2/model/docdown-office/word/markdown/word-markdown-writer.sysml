@@ -1,6 +1,6 @@
 package DocDownOffice {
     part def WordMarkdownWriter {
-        doc /* Renders the backend-neutral document model to one markdown flow: headings, lists, inline formatting, image links, comments, footnotes, and the Document Control section, escaping markdown metacharacters. */
+        doc /* Renders the backend-neutral document model to one markdown flow: headings, lists, inline formatting, image links, footnotes, and the Document Control section, escaping markdown metacharacters. Reviewer comments are carried on the model but deliberately not rendered here. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Office/Word/Markdown/WordMarkdownWriter.cs */
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Word/Markdown/WordMarkdownWriterTests.cs */

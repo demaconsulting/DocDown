@@ -779,6 +779,8 @@ reviews:
       - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-merged-cells-gap.txt"
       # golden outputs
       - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-document-control.txt"
+      # golden outputs
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-review-comments.txt"
 
   # DocDownWord-Design Review (one per system)
   - id: DocDownWord-Design

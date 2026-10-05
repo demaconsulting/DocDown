@@ -104,9 +104,11 @@ application.
 3. The extractor buffers the source, checks for the OLE signature that identifies an encrypted
    `.docx`, opens the package read-only, and hands the stream to `WordOpenXmlReader.Read()`.
 4. `WordOpenXmlReader` walks the document and produces a `WordDocumentModel` containing the body
-   flow, deduplicated document-control content, comments, footnotes, image references, metadata,
+   flow, deduplicated document-control content, comments with their resolved location hints,
+   footnotes, image references, metadata,
    and the counts the emitter needs for inventory and notes.
-5. `WordContentEmitter.EmitAsync()` writes images first, writes a single `content.md`, reports
+5. `WordContentEmitter.EmitAsync()` writes images first, writes a single `content.md`, reports each
+   of the model's comments as a `DocumentComment` review comment, reports
    `DocumentInfo`, reports the content inventory, reports
    document metadata when captured, and emits short notes for incomplete steps the model implies.
 6. Normal completion returns `ExtractionOutcome.Produced`. If reading or emission throws, Core
@@ -129,6 +131,12 @@ Word extraction reads materially better than the same document routed through PD
 - **Image passthrough.** Every image is written in its source encoding with
   `ImageTransform.Passthrough`. Pixel dimensions remain unstated because `wp:extent` is a display
   size in EMUs, not a pixel count.
+- **Reviewer comments are not content.** A comment is commentary *about* the document, not part of
+  it, so it is never rendered into `content.md`. The reader resolves each comment's anchor into a
+  location hint — the nearest preceding heading plus a bounded, ellipsized snippet of the anchored
+  text, rendered `§Scope — "the quick brown fox…"` — and the emitter reports the comment to Core as
+  a `DocumentComment`. Core writes the dedicated `review-comments.md` artifact. A comment the
+  document anchors nowhere is reported with `(location unknown)` rather than an invented location.
 - **Content inventory.** The system reports counts for text blocks, headings, tables, list items,
   inline images, comments, distinct comment authors, and footnotes. Categories a reader genuinely
   looked for, such as text blocks, comments, distinct comment authors, and footnotes, are marked

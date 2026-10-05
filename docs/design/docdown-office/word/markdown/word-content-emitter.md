@@ -6,8 +6,8 @@
 
 `WordContentEmitter` emits a rendered `WordDocumentModel` through the extraction sink, applying the
 package's reporting policy in one place. It writes content, images, `DocumentInfo`, content
-inventory, metadata, and short extraction notes derived from the model. Nothing is omitted
-silently.
+inventory, reviewer comments, metadata, and short extraction notes derived from the model. Nothing
+is omitted silently.
 
 The unit exists because model-to-sink emission is one responsibility. Holding it apart from the
 reader is what lets every emission decision be proved from a hand-built model with no document
@@ -25,7 +25,8 @@ it writes through the sink. The unit reads only the shared `WordDocumentModel`,
 
 - **`static ValueTask EmitAsync(IExtractionSink sink, ExtractionOptions options, WordDocumentModel model,
   CancellationToken cancellationToken)`** — writes images first so the content renderer can place
-  the sink-allocated links, writes the document as one continuous flow, reports
+  the sink-allocated links, writes the document as one continuous flow, reports each of the model's
+  comments as a review comment, reports
   `DocumentInfo`, reports the content inventory, reports document metadata when present, and
   reports any extraction notes implied by the model. Preconditions: every argument non-null.
   Postcondition: every artifact was routed through the sink; no filesystem path was written
@@ -45,6 +46,12 @@ it writes through the sink. The unit reads only the shared `WordDocumentModel`,
   blocks, headings, tables, list items, inline images, comments, distinct comment authors, and
   footnotes. Text blocks, comments, distinct comment authors, and footnotes are marked looked-for
   so zero remains explicit.
+- **`ReportReviewComments()`** (private) — reports each of the model's comments to the sink as a
+  `DocumentComment` carrying the comment's author, its body rendered as inline markdown, and its
+  resolved location hint. A comment the reader could not anchor is reported with the literal
+  `(location unknown)` rather than an invented location. This is the only route reviewer comments
+  take: they are never rendered into `content.md`, because a reviewer's remark is commentary about
+  the document rather than part of it.
 - **`ReportExtractionNotes()`** (private) — emits only the incomplete-step notes the current design
   allows: charts whose chart parts were not read, merged or nested table structure flattened for
   markdown.
@@ -61,7 +68,8 @@ becomes a zero-count inventory entry. The unit performs no filesystem I/O of its
 ### Dependencies
 
 - **DocDown.Core** — `IExtractionSink`, `ExtractionOptions`, `DocumentInfo`, `ContentFeature`,
-  `ImageHint`, `ImageTransform`, `ContentPart`, `ContentPartKind`, and `ExtractionNote`.
+  `ImageHint`, `ImageTransform`, `ContentPart`, `ContentPartKind`, `DocumentComment`, and
+  `ExtractionNote`.
 - **`WordDocumentModel`, `WordBlock`, `WordImageRef`, `WordTableModel`, and
   `WordDocumentControlSection`** — the model and its supporting records.
 - **`WordMarkdownWriter` and `WordTableWriter`** — the rendering helpers used for content and
