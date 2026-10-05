@@ -62,3 +62,31 @@ the narration no render can supply. Evidence for
 Proves a deck with no speaker notes yields slides whose notes are null, so a genuine absence is
 distinguishable from a missed read. Evidence for
 `DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-YieldsNullNotesWhenAbsent`.
+
+#### A legacy slide comment is read with its author resolved
+
+**Test**: `PowerPointOpenXmlReader_Read_DeckWithComment_ReadsCommentWithResolvedAuthor`
+
+Proves a slide's legacy comments part reaches the model with the comment text and the author name
+resolved through the presentation''s comment-author list rather than the bare numeric identifier the
+comment itself carries. Evidence for
+`DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ResolvesCommentAuthors`.
+
+#### Comments stay with the slide that carries them
+
+**Test**: `PowerPointOpenXmlReader_Read_DeckWithCommentsOnTwoSlides_AttributesCommentsToOwningSlide`
+
+Proves a two-slide deck with a different comment and author on each slide reports each remark against the
+slide ordinal that carries it, so attribution is proven rather than assumed from a single-slide case.
+Evidence for `DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsSlideComments`.
+
+#### A deck with no comments part yields no comments
+
+**Test**: `PowerPointOpenXmlReader_Read_DeckWithoutComments_YieldsNoComments`
+
+Proves the ordinary case — a deck nobody reviewed — yields slides with no comments rather than an error.
+This is also the shape taken by a deck whose comments are all modern persona comments, which the reader
+states plainly it does not read; the test therefore also pins the observable consequence of that stated
+scope limitation. Evidence for
+`DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsSlideComments` and
+`DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExcludesModernPersonaComments`.

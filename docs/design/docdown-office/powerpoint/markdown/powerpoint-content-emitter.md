@@ -23,7 +23,8 @@ suppressed.
   CancellationToken)`** — the whole emission. For an empty deck it writes empty content, reports page
   count zero, reports zero-count inventory for the looked-for document structure, and returns.
   Otherwise it writes embedded images first, writes the per-slide content, reports document info and
-  captured metadata, reports plain notes for attempted image steps that could not be completed, and
+  captured metadata, reports plain notes for attempted image steps that could not be completed,
+  reports every slide comment as a review comment, and
   reports the content inventory. Preconditions: all arguments non-null.
 - **`WriteContentAsync`** (private) — writes the deck as one content flow, each slide carrying its
   title heading, body text, and speaker notes, with inline image links resolved from the sink's
@@ -32,6 +33,14 @@ suppressed.
   deck embeds no images; otherwise records plain notes for images that exceeded a caller size limit.
 - **`ReportSizeSkipNote`** (private) — records a one-sentence note naming how many embedded images
   exceeded the caller-supplied size limit and were not written.
+- **`ReportReviewComments`** (private) — reports each slide's comments to the sink as `DocumentComment`
+  entries located `Slide {n}` using the slide's 1-based ordinal. A reviewer's remark is commentary
+  *about* the deck rather than part of it, so it is never written into the content flow, where a
+  consumer could not tell a reviewer's words from the author's; Core collects the reported comments
+  into the dedicated `review-comments.md` artifact. The slide number is the location because a deck's
+  argument is sequential and the number is how a reader navigates back to it. A deck with no comments
+  reports none, and Core writes no artifact. Modern persona comments never reach the model at all; see
+  *PowerPointOpenXmlReader Design* for that stated limitation.
 - **`ReportContentFeatures`** (private) — reports the outline counts (slides, slide titles, sets of
   speaker notes, inline images) from the model. The speaker-notes count is declared looked for, so it
   is stated even at zero.

@@ -1,6 +1,6 @@
 package DocDownOffice {
     part def ExcelOpenXmlReader {
-        doc /* The one place that touches the Open XML spreadsheet object model: resolves shared strings, walks each worksheet in workbook order, keeps only cells that carry a value or a formula, never truncates a value, keeps a formula alongside its value and address, and delegates the drawing layer to the image, chart, and drawing-text readers. */
+        doc /* The one place that touches the Open XML spreadsheet object model: resolves shared strings, walks each worksheet in workbook order, keeps only cells that carry a value or a formula, never truncates a value, keeps a formula alongside its value and address, reads each worksheet's reviewer comments from both the legacy and the modern threaded grammars and reports a cell carrying both only once by preferring the threaded comment, and delegates the drawing layer to the image, chart, and drawing-text readers. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelOpenXmlReader.cs */
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Excel/OpenXml/ExcelOpenXmlReaderTests.cs */

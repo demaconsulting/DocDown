@@ -214,3 +214,20 @@ sections:
                   - ExcelContentEmitter_Emit_Workbook_ReportsContentFeatures
                   - ExcelContentEmitter_Emit_NoImages_ReportsZeroImageInventory
                   - ExcelContentEmitter_Emit_EmptyWorkbook_ReportsZeroCountInventory
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-ReportsReviewComments
+                title: >-
+                  ExcelContentEmitter shall report each cell comment as a review comment located by
+                  sheet name and cell reference, and shall not write any comment text into the sheet
+                  parts.
+                justification: |
+                  A reviewer's remark is commentary about the workbook rather than a value the workbook
+                  carries, so placing it in a sheet listing would leave a consumer unable to tell a
+                  reviewer's words from a cell's. Reporting it to the core instead collects every remark
+                  in one dedicated artifact. The location is written as `SheetName!CellRef` — the same
+                  addressing the listing already uses — so a reader can take the location straight back
+                  to the cell the remark annotates. A workbook with no comments reports none, so the
+                  artifact is written only where there is something to put in it.
+                tests:
+                  - ExcelContentEmitter_Emit_SheetComments_ReportsCellQualifiedReviewComments
+                  - ExcelContentEmitter_Emit_WorkbookWithoutComments_ReportsNoReviewComments

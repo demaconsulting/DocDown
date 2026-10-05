@@ -36,6 +36,7 @@ sections:
               - DocDownExcel-Markdown-ExcelContentEmitter-WritesEmptyWorksheetMessage
               - DocDownExcel-Markdown-ExcelContentEmitter-StaysSilentOnPageRequest
               - DocDownExcel-Markdown-ExcelContentEmitter-ReportsContentFeatures
+              - DocDownExcel-Markdown-ExcelContentEmitter-ReportsReviewComments
             tests:
               - ExcelContentEmitter_Emit_TwoSheets_WritesTitledSheetParts
 

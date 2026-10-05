@@ -44,7 +44,12 @@ walks each worksheet in workbook order. It keeps only cells that carry a value o
 shared-string or inline-string cell to its whole text, resolves a boolean to `TRUE` or `FALSE`, and
 reads every other type exactly as stored so no precision is lost. It reads merged ranges, embedded
 images through `ExcelOpenXmlImageReader`, charts through `ExcelChartReader`, shape annotations through
-`ExcelDrawingTextReader`, and the OPC core properties into workbook metadata.
+`ExcelDrawingTextReader`, and the OPC core properties into workbook metadata. It also reads each
+worksheet's reviewer comments from both grammars — the legacy comments part, whose authors come from
+that part's own author list, and the modern threaded comments parts, whose authors come from the
+workbook's person part — and deduplicates a cell carrying both by preferring the threaded comment and
+keeping a legacy comment only where no threaded comment exists for that cell reference. The rule is
+positional rather than text-matched; see *ExcelOpenXmlReader Design* for why.
 
 **The image reader.** `ExcelOpenXmlImageReader` walks each worksheet's drawing part in workbook order,
 yields every image part it holds as a passthrough with null pixel dimensions, deduplicates by

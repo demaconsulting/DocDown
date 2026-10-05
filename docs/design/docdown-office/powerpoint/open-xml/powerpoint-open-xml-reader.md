@@ -15,19 +15,51 @@ seekable stream.
 `PowerPointOpenXmlReader` is an `internal static class`. It holds no state and is safe to reuse. It
 reads into `PowerPointDeckModel` — the slides in presentation order, the deduplicated images, and the
 deck metadata — where each `PowerPointSlideModel` carries its 1-based ordinal, its title or null, its
-body text lines, its speaker notes or null, and the images it references.
+body text lines, its speaker notes or null, the images it references, and the reviewer comments
+attached to it. Each `PowerPointCommentModel` carries the resolved author name (or `null` when the
+deck names nobody for it) and the comment text taken whole.
+
+### Stated scope limitation: modern persona comments
+
+PowerPoint has two comment grammars. The **legacy** grammar stores a slide's comments in
+`ppt/comments/comment<n>.xml`, exposed as `SlidePart.SlideCommentsPart`, and names each comment's
+author by an identifier resolved through the presentation's `commentAuthors.xml`
+(`PresentationPart.CommentAuthorsPart`). This reader reads that grammar.
+
+The **modern** grammar — the persona-based, cloud-synced comments that current PowerPoint writes — is
+deliberately **not** read. `DocumentFormat.OpenXml 3.5.1`, the SDK this package is built on, exposes
+no part type or property for it, so there is no supported way to reach it; reaching into the package
+by raw relationship would be guessing at an unversioned grammar that the SDK may expose properly in a
+later release.
+
+The consequence is concrete and is stated here rather than left as a silent gap: **a deck whose
+comments were all authored as modern persona comments reports no comments at all.** That output is
+indistinguishable, from the artifacts alone, from a deck that genuinely has no comments. A user who
+finds `review-comments.md` absent for a deck they know carries remarks should read this limitation,
+not a fault. The same statement appears in the reader's own XML documentation so it is visible at the
+call site.
 
 ### Key Methods
 
 - **`PowerPointDeckModel Read(Stream stream)`** — opens the package read-only, walks the
   presentation's `SlideIdList` to order the slide parts by presentation order and assign 1-based
-  ordinals, resolves the embedded images through `PowerPointOpenXmlImageReader`, reads each slide, and
+  ordinals, resolves the embedded images through `PowerPointOpenXmlImageReader`, loads the
+  presentation's comment-author list, reads each slide, and
   maps the OPC core properties to deck metadata. Precondition: `stream` is non-null, readable, and
   seekable. Throws `PowerPointExtractionException` when the package cannot be opened or carries no
   presentation part.
 - **`ReadSlide`** (private) — reads one slide: the title from the title placeholder, every other
-  shape's paragraphs as body lines, and the speaker notes; returns the slide model with its ordinal
+  shape's paragraphs as body lines, the speaker notes, and the reviewer comments; returns the slide
+  model with its ordinal
   and image references.
+- **`LoadCommentAuthors`** (private) — reads `PresentationPart.CommentAuthorsPart` into a map of
+  author identifier to display name, up front, so every comment resolves its author without
+  re-walking the package. A deck with no comment-authors part yields an empty map.
+- **`ReadComments`** (private) — reads `SlidePart.SlideCommentsPart` in declared order, resolving each
+  comment's author identifier against that map. An identifier the list does not name yields no
+  attribution rather than a bare number. A comment with no text is dropped because it says nothing. A
+  slide with no comments part yields no comments rather than an error. Modern persona comments are not
+  read; see the stated scope limitation above.
 - **`ReadNotes`** (private) — reads the speaker notes from the notes slide's body placeholder only, so
   slide-number and date furniture on the notes slide do not contaminate the narration; returns null
   when the slide has no notes.
@@ -50,7 +82,8 @@ genuinely blank paragraphs and notes-slide furniture.
 - **DocDown.Core** — `EmbeddedImage`, `DocumentMetadata`, `OpcCoreProperties`, `OpcMetadataMapper`,
   and the model types the reader populates.
 - **DocumentFormat.OpenXml** (OTS) — `PresentationDocument`, `PresentationPart`, `SlidePart`,
-  `NotesSlidePart`, and the Presentation and Drawing element types.
+  `NotesSlidePart`, `CommentAuthorsPart`, `SlideCommentsPart`, and the Presentation and Drawing
+  element types.
 - **PowerPointOpenXmlImageReader** — resolves the deck's embedded images and per-slide references.
 
 ### Callers

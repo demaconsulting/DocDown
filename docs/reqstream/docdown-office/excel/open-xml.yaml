@@ -40,14 +40,20 @@ sections:
             justification: |
               The reader is where an `.xlsx` becomes the model the rest of the package works on, so it
               resolves shared strings, keeps only cells that carry a value or a formula, never
-              truncates a value, retains the formula alongside its computed value, and carries each
-              worksheet's name and each cell's address so a fact stays citable.
+              truncates a value, retains the formula alongside its computed value, carries each
+              worksheet's name and each cell's address so a fact stays citable, and recovers the
+              reviewer comments — legacy and modern threaded alike — that a cell walk alone never
+              visits.
             children:
               - DocDownExcel-OpenXml-ExcelOpenXmlReader-PreservesVerbatimValues
               - DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsNumericValuesVerbatim
               - DocDownExcel-OpenXml-ExcelOpenXmlReader-KeepsFormulaAndValue
               - DocDownExcel-OpenXml-ExcelOpenXmlReader-PreservesSheetIdentity
               - DocDownExcel-OpenXml-ExcelOpenXmlReader-DropsEmptyCells
+              - DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsLegacyComments
+              - DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsThreadedComments
+              - DocDownExcel-OpenXml-ExcelOpenXmlReader-DeduplicatesThreadedAndLegacyComments
+              - DocDownExcel-OpenXml-ExcelOpenXmlReader-AttributesCommentsToSheet
             tests:
               - ExcelOpenXmlReader_Read_TwoSheetWorkbook_ReturnsSheetsInOrderWithNames
 

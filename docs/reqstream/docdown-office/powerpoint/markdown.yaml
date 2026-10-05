@@ -33,5 +33,6 @@ sections:
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsEmptyDeckInInventory
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsContentFeatures
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesSingleFlow
+              - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsReviewComments
             tests:
               - PowerPointContentEmitter_Emit_WritesTitleBodyAndNotes

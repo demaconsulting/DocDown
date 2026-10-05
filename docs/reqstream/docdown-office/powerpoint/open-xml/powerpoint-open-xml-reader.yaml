@@ -75,3 +75,44 @@ sections:
                   the content inventory.
                 tests:
                   - PowerPointOpenXmlReader_Read_DeckWithoutNotes_YieldsNullNotes
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsSlideComments
+                title: >-
+                  PowerPointOpenXmlReader shall read each slide's legacy comments from its slide-comments
+                  part, recording each against the slide that carries it.
+                justification: |
+                  A remark is only actionable if a reader can take it back to the slide it was made about,
+                  so the slide's 1-based ordinal travels with the comment. A comment with no text is
+                  dropped because it says nothing, and a deck with no comments part yields no comments
+                  rather than an error, because having nothing to say is the ordinary case and not a
+                  fault.
+                tests:
+                  - PowerPointOpenXmlReader_Read_DeckWithCommentsOnTwoSlides_AttributesCommentsToOwningSlide
+                  - PowerPointOpenXmlReader_Read_DeckWithoutComments_YieldsNoComments
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ResolvesCommentAuthors
+                title: >-
+                  PowerPointOpenXmlReader shall resolve each comment's author through the presentation's
+                  comment-author list.
+                justification: |
+                  A slide comment carries only an author identifier; the names live once in the
+                  presentation's comment-authors part, so they are loaded up front and every comment
+                  resolves through them without re-walking the package. An identifier the list does not
+                  name yields no attribution rather than a bare number, because inventing or exposing a
+                  non-name as a reviewer's name is worse than stating none.
+                tests:
+                  - PowerPointOpenXmlReader_Read_DeckWithComment_ReadsCommentWithResolvedAuthor
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExcludesModernPersonaComments
+                title: >-
+                  PowerPointOpenXmlReader shall not read modern persona-based, cloud-synced comments,
+                  and this exclusion shall be a stated scope limitation rather than a silent gap.
+                justification: |
+                  The Open XML SDK this package depends on exposes no part or property for the modern
+                  persona comment grammar, so there is no supported way to reach it, and reaching into
+                  the package by raw relationship would be guessing at an unversioned grammar. A deck
+                  whose comments are all modern therefore reports none. The boundary is recorded in the
+                  reader's own documentation and in the unit design document so a user who finds no
+                  comments can tell a limitation from a fault.
+                tests:
+                  - PowerPointOpenXmlReader_Read_DeckWithoutComments_YieldsNoComments

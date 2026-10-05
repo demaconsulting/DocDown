@@ -144,3 +144,20 @@ sections:
                   links the flow carries must resolve from the scratch root where it is written.
                 tests:
                   - PowerPointContentEmitter_Emit_ImageLinks_ResolveOnDisk
+
+              - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsReviewComments
+                title: >-
+                  PowerPointContentEmitter shall report each slide comment as a review comment located
+                  by the slide's 1-based ordinal, and shall not write any comment text into the content
+                  flow.
+                justification: |
+                  A reviewer's remark is commentary about the deck rather than part of it, so placing it
+                  in the content flow would leave a consumer unable to tell a reviewer's words from the
+                  author's. Reporting it to the core instead collects every remark in one dedicated
+                  artifact. The location is written as `Slide {n}` because a deck's argument is
+                  sequential and the slide number is how a reader navigates back to it. A deck with no
+                  comments reports none, so the artifact is written only where there is something to put
+                  in it.
+                tests:
+                  - PowerPointContentEmitter_Emit_SlideComments_ReportsSlideQualifiedReviewComments
+                  - PowerPointContentEmitter_Emit_DeckWithoutComments_ReportsNoReviewComments

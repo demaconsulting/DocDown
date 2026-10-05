@@ -34,19 +34,25 @@ sections:
           - id: DocDownPowerPoint-OpenXml-Reading
             title: >-
               The subsystem shall read the presentation package into the backend-neutral model,
-              preserving slide order and extracting each slide's title, body text, and speaker notes.
+              preserving slide order and extracting each slide's title, body text, speaker notes, and
+              legacy reviewer comments.
             justification: |
               The reader is where a `.pptx` becomes the model the rest of the package works on, so it
               walks slides in presentation order, separates the title placeholder from the body
               shapes, reads the notes slide's body placeholder so the narration is recovered from the
-              file itself, and wraps a package it cannot open or a missing presentation part so Core
-              sees a structured failure.
+              file itself, reads the legacy slide-comments part so a deck's review history is not
+              silently dropped, and wraps a package it cannot open or a missing presentation part so
+              Core sees a structured failure. The modern persona-based, cloud-synced comment grammar is
+              a stated exclusion rather than a silent gap.
             children:
               - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-PreservesSlideOrder
               - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExtractsTitle
               - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExtractsBodyText
               - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExtractsSpeakerNotes
               - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-YieldsNullNotesWhenAbsent
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsSlideComments
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ResolvesCommentAuthors
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExcludesModernPersonaComments
             tests:
               - PowerPointOpenXmlReader_Read_DeckWithNotes_ReturnsSlidesInOrder
 

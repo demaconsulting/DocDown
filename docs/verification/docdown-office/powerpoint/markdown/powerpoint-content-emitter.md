@@ -98,3 +98,21 @@ reported from the model, including zero inline images for an image-free deck. Ev
 Proves the deck is written as one `content.md` and that its inline image links resolve on disk from
 the scratch root. Evidence for
 `DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesSingleFlow`.
+
+#### Slide comments are reported as slide-qualified review comments
+
+**Test**: `PowerPointContentEmitter_Emit_SlideComments_ReportsSlideQualifiedReviewComments`
+
+Proves both halves of the separation together, from a hand-built model with no deck behind it. Each
+comment reaches the sink as a `DocumentComment` whose location is `Slide 1` or `Slide 2`, carrying its
+author or an explicit absence of one, and none of the comment text appears in the content flow. Asserting
+both halves is what makes the separation falsifiable rather than merely described. Evidence for
+`DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsReviewComments`.
+
+#### A deck with no comments reports none
+
+**Test**: `PowerPointContentEmitter_Emit_DeckWithoutComments_ReportsNoReviewComments`
+
+Proves the emitter reports no review comments for a model carrying none, so Core writes the dedicated
+artifact only where there is something to put in it. Evidence for
+`DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsReviewComments`.

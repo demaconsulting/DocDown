@@ -22,13 +22,21 @@ its explanatory note.
   CancellationToken)`** — the whole emission. It writes embedded images first so each worksheet can
   link its pictures inline, writes one `ContentPartKind.Sheet` part per worksheet followed by one
   `ContentPartKind.Chart` part per chart the worksheet shows, records a note for each unreadable chart,
-  reports document info and metadata, reports image-write notes for caller-supplied size-limit misses,
+  reports document info and metadata, reports every cell comment as a review comment,
+  reports image-write notes for caller-supplied size-limit misses,
   and reports the content inventory from the model. An empty workbook is conveyed by
   zero-count inventory entries; an empty worksheet says so in its own sheet part.
 - **`RenderSheet`** (private) — renders one worksheet: a heading, the merged-range note, the additive
   grid table when the region is dense and table-shaped, then the always-present address/value/formula
   listing, then the chart references, shape text, and inline image links. The listing is the lossless
   ledger; the grid table restores row and column relationships without ever replacing it.
+- **`ReportReviewComments`** (private) — reports each sheet's cell comments to the sink as
+  `DocumentComment` entries located `SheetName!CellRef`, for example `Sheet1!B7`. A reviewer's remark is
+  commentary *about* the workbook rather than a value it carries, so it is never written into a sheet
+  part, where a consumer could not tell a reviewer's words from a cell's; Core collects the reported
+  comments into the dedicated `review-comments.md` artifact. The location reuses the addressing the
+  sheet listing already uses, so a reader can take it straight back to the annotated cell. A workbook
+  with no comments reports none, and Core writes no artifact.
 - **`ReportContentFeatures`** (private) — reports the inventory counts (`worksheets`, `populated cells`,
   `cells carrying a formula`, `inline images`, `charts`, `annotated drawing shapes`, and
   `cached chart data points`) from the model and marks each count `LookedFor = true`, so a zero remains
