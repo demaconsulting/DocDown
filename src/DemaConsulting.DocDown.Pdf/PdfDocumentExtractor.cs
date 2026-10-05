@@ -112,6 +112,10 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
         // Report the content inventory from the same facts used to render the output, so an empty
         // or text-free PDF is described by counts rather than by judgment-oriented machinery
         ReportContentFeatures(sink, options, pages, textResult, imageResult);
+
+        // Reviewer commentary travels separately from the content: it describes the document rather
+        // than belonging to it, so it is reported after the page text is written rather than mixed in
+        ReportReviewComments(sink, pages, cancellationToken);
         return ExtractionOutcome.Produced;
     }
 
@@ -228,6 +232,32 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
         {
             sink.ReportContentFeature(new ContentFeature(
                 "inline images", images.Written, "inline image", LookedFor: images.Found == 0));
+        }
+    }
+
+    /// <summary>
+    ///     Reports the reviewer commentary the selected pages carry as annotations.
+    /// </summary>
+    /// <param name="sink">The sink to report through.</param>
+    /// <param name="pages">The selected pages, the same ones the content walk used.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <remarks>
+    ///     The same page selection drives comments and content, so a requested page range narrows both
+    ///     together and a comment can never arrive from a page the output does not contain. The
+    ///     location hint is worded here rather than in the extractor because how a comment's position
+    ///     is phrased is a presentation decision; for a PDF the honest unit of position is the page,
+    ///     since an annotation's rectangle locates it on the sheet rather than within the prose.
+    ///     Side effect: records review comments on the sink.
+    /// </remarks>
+    private static void ReportReviewComments(
+        IExtractionSink sink, IReadOnlyList<Page> pages, CancellationToken cancellationToken)
+    {
+        foreach (var annotation in PdfAnnotationExtractor.Extract(pages, sink, cancellationToken))
+        {
+            sink.ReportReviewComment(new DocumentComment(
+                annotation.Author,
+                annotation.Body,
+                $"Page {annotation.PageNumber.ToString(CultureInfo.InvariantCulture)}"));
         }
     }
 

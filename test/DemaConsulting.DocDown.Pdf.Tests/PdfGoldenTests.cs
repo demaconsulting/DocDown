@@ -72,6 +72,18 @@ public class PdfGoldenTests
         AssertGoldenAsync("summary-pdf-unreadable-encrypted.txt", "encrypted.pdf", PdfFixtures.Encrypted(), new ExtractionOptions());
 
     /// <summary>
+    ///     Proves the summary for an annotated PDF matches its committed golden.
+    /// </summary>
+    /// <remarks>
+    ///     The committed golden is what makes the review-comments line of the summary reviewable:
+    ///     whether the artifact is announced, and how its comment count is worded, is visible in a
+    ///     diff rather than buried in an assertion.
+    /// </remarks>
+    [Fact]
+    public Task PdfGolden_Annotated_MatchesCommittedGolden() =>
+        AssertGoldenAsync("summary-pdf-annotated.txt", "annotated.pdf", PdfFixtures.WithAnnotations(), new ExtractionOptions());
+
+    /// <summary>
     ///     Extracts a fixture and asserts the normalized summary matches its committed golden.
     /// </summary>
     /// <param name="goldenName">The golden file name.</param>

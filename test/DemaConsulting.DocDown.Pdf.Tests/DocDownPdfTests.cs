@@ -528,6 +528,74 @@ public class DocDownPdfTests
     }
 
     /// <summary>
+    ///     Proves an annotated PDF's reviewer comments reach the dedicated artifact and the manifest.
+    /// </summary>
+    /// <remarks>
+    ///     The end-to-end claim the feature is for: a remark a reviewer wrote in the margin of a PDF
+    ///     survives the whole pipeline, stays out of the document's own content, and arrives
+    ///     attributed to its author and page.
+    /// </remarks>
+    [Fact]
+    public async Task DocDownPdf_Extract_AnnotatedPdf_WritesReviewCommentsArtifact()
+    {
+        // Arrange: a two-page document carrying reviewer annotations
+        using var temp = new TempScratch();
+        var engine = BuildEngine();
+        var input = WriteFixture(temp, "annotated.pdf", PdfFixtures.WithAnnotations());
+        var scratch = Path.Combine(temp.Path, "out");
+
+        // Act: extract the whole document
+        var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
+
+        // Assert: the run was clean and the review artifact carries each remark with author and page
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Empty(result.Notes);
+        var comments = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        Assert.Contains("- **Alice Reviewer** (Page 1): Section 2 needs a citation.", comments, StringComparison.Ordinal);
+        Assert.Contains("- **Carol Editor** (Page 1): This claim needs evidence.", comments, StringComparison.Ordinal);
+        Assert.Contains("- **Dave Approver** (Page 2): Rewrite this conclusion.", comments, StringComparison.Ordinal);
+
+        // Assert: an unattributed remark is kept without a name being invented for it
+        Assert.Contains("Typo in the second paragraph.", comments, StringComparison.Ordinal);
+        Assert.DoesNotContain("Jump to the appendix.", comments, StringComparison.Ordinal);
+
+        // Assert: the manifest describes the same review, and the commentary stayed out of the content
+        using var manifest = await ReadManifestAsync(scratch);
+        Assert.Equal(5, manifest.RootElement.GetProperty("reviewComments").GetArrayLength());
+        Assert.Equal("review-comments.md", manifest.RootElement.GetProperty("reviewCommentsPath").GetString());
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        Assert.DoesNotContain("Section 2 needs a citation.", content, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
+    ///     Proves a PDF with no annotations produces no review-comments artifact.
+    /// </summary>
+    /// <remarks>
+    ///     A document nobody commented on has no review to describe, so the artifact's absence is the
+    ///     honest report; an empty file would imply a review took place and found nothing to say.
+    /// </remarks>
+    [Fact]
+    public async Task DocDownPdf_Extract_PdfWithoutAnnotations_WritesNoReviewCommentsArtifact()
+    {
+        // Arrange: an ordinary single-page text document
+        using var temp = new TempScratch();
+        var engine = BuildEngine();
+        var input = WriteFixture(temp, "simple.pdf", PdfFixtures.SimpleText());
+        var scratch = Path.Combine(temp.Path, "out");
+
+        // Act: extract it
+        await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
+
+        // Assert: no artifact, and nothing in the manifest claiming otherwise
+        Assert.False(File.Exists(Path.Combine(scratch, "review-comments.md")));
+        using var manifest = await ReadManifestAsync(scratch);
+        Assert.Equal(JsonValueKind.Null, manifest.RootElement.GetProperty("reviewCommentsPath").ValueKind);
+        Assert.Equal(0, manifest.RootElement.GetProperty("reviewComments").GetArrayLength());
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
     ///     Proves every extraction scenario writes the standard summary and manifest layout.
     /// </summary>
     /// <param name="scenario">The fixture key identifying the document under test.</param>
@@ -542,6 +610,7 @@ public class DocDownPdfTests
     [InlineData("zeroPage")]
     [InlineData("malformed")]
     [InlineData("encrypted")]
+    [InlineData("annotated")]
     public async Task DocDownPdf_Extract_AnyOutcome_WritesStandardLayout(string scenario)
     {
         // Arrange: the named fixture and a fresh scratch folder
@@ -748,6 +817,7 @@ public class DocDownPdfTests
         "zeroPage" => PdfFixtures.ZeroPage(),
         "malformed" => PdfFixtures.Malformed(),
         "encrypted" => PdfFixtures.Encrypted(),
+        "annotated" => PdfFixtures.WithAnnotations(),
         _ => throw new ArgumentException($"Unknown fixture scenario '{scenario}'.", nameof(scenario))
     };
 
