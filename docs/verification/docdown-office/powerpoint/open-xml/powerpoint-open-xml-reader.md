@@ -85,8 +85,21 @@ Evidence for `DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsSlideCommen
 **Test**: `PowerPointOpenXmlReader_Read_DeckWithoutComments_YieldsNoComments`
 
 Proves the ordinary case — a deck nobody reviewed — yields slides with no comments rather than an error.
-This is also the shape taken by a deck whose comments are all modern persona comments, which the reader
-states plainly it does not read; the test therefore also pins the observable consequence of that stated
-scope limitation. Evidence for
+Evidence for
 `DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsSlideComments` and
+`DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExcludesModernPersonaComments`.
+
+#### Modern persona comments are counted without being read
+
+**Tests**: `PowerPointOpenXmlReader_Read_DeckWithModernComments_CountsThemWithoutReadingThem`,
+`PowerPointOpenXmlReader_Read_DeckWithComment_CountsNoModernComments`
+
+Prove a deck carrying a `PowerPointCommentPart` and no legacy comments part yields no comments while
+reporting `ModernCommentCount` and `ModernCommentSlideCount`, and that an ordinary legacy-commented
+deck reports zero modern comments. The pair is what makes the boundary observable rather than merely
+documented: before this, such a deck was indistinguishable from one nobody commented on. Asserting
+the legacy deck's zero alongside the modern deck's count is what keeps the counter from becoming a
+count of comments in general. Nothing asserts any modern comment's text or author, because the
+reader deliberately reads neither. Evidence for
+`DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-CountsModernPersonaComments` and
 `DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExcludesModernPersonaComments`.

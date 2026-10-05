@@ -116,3 +116,26 @@ both halves is what makes the separation falsifiable rather than merely describe
 Proves the emitter reports no review comments for a model carrying none, so Core writes the dedicated
 artifact only where there is something to put in it. Evidence for
 `DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsReviewComments`.
+
+#### Comments and their authors are inventoried
+
+**Test**: `PowerPointContentEmitter_Emit_SlideComments_InventoriesCommentsAndAuthors`
+
+Proves the emitter reports `comments` and `distinct comment authors` as looked-for content features
+counted from the model. Reviewer commentary leaves `content.md` entirely, so the inventory is the
+only place the summary says a deck carries any; the author count is asserted separately from the
+comment count because two remarks by one reviewer and two remarks by two reviewers describe
+different drafts. Evidence for
+`DocDownPowerPoint-Markdown-PowerPointContentEmitter-InventoriesComments`.
+
+#### Unread modern comments are surfaced as a short note
+
+**Tests**: `PowerPointContentEmitter_Emit_ModernComments_ReportsNoteNamingTheCounts`,
+`PowerPointContentEmitter_Emit_NoModernComments_ReportsNoNote`
+
+Prove a model carrying modern-comment counts produces a note naming how many comments sit on how
+many slides and stating that this extractor does not read them, and that a model carrying none
+produces no note at all. The silent case is asserted because a note raised unconditionally would
+describe an ordinary absence as a shortfall, which is the failure mode the note exists to avoid in
+the other direction. Evidence for
+`DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsModernCommentsNote`.

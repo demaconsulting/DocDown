@@ -26,6 +26,7 @@ sections:
               - DocDownWord-Markdown-WordMarkdownWriter-RendersImageLink
               - DocDownWord-Markdown-WordMarkdownWriter-NeutralAltForNonDescriptive
               - DocDownWord-Markdown-WordMarkdownWriter-RendersFootnotes
+              - DocDownWord-Markdown-WordMarkdownWriter-RendersPlainText
               - DocDownWord-Markdown-WordMarkdownWriter-PlacesDocumentControl
             tests:
               - WordMarkdownWriter_Write_Headings_RendersHashLevels
@@ -62,6 +63,7 @@ sections:
               - DocDownWord-Markdown-WordContentEmitter-EmitsModelContent
               - DocDownWord-Markdown-WordContentEmitter-ReportsContentInventory
               - DocDownWord-Markdown-WordContentEmitter-ReportsReviewComments
+              - DocDownWord-Markdown-WordContentEmitter-ReportsImageOnlyCommentsNote
               - DocDownWord-Markdown-WordContentEmitter-ReportsChartNote
               - DocDownWord-Markdown-WordContentEmitter-ReportsFlattenedTableNote
             tests:

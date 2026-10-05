@@ -91,6 +91,7 @@ sections:
                   attribution rather than a raw identifier that would read as a name without being one.
                 tests:
                   - ExcelOpenXmlReader_Read_ThreadedCommentWorkbook_ReadsCommentWithResolvedPerson
+                  - ExcelOpenXmlReader_Read_MultiReplyThread_KeepsEveryReplyInOrder
 
               - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-DeduplicatesThreadedAndLegacyComments
                 title: >-
@@ -104,9 +105,12 @@ sections:
                   backward-compatibility stand-in. The rule is positional rather than textual — a legacy
                   comment is kept only where no threaded comment exists for that cell reference — because
                   the placeholder wording varies by application version and locale and matching it would
-                  be guessing.
+                  be guessing. A cell commented only in the threaded part has no place in the
+                  legacy part's sheet-ordered walk, so it is appended after the cells that do,
+                  keeping every remark present and every legacy-anchored position unchanged.
                 tests:
                   - ExcelOpenXmlReader_Read_ThreadedAndLegacyOnSameCell_KeepsOnlyThreadedComment
+                  - ExcelOpenXmlReader_Read_ThreadedOnlyCell_IsAppendedAfterLegacyOrderedCells
 
               - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-AttributesCommentsToSheet
                 title: >-

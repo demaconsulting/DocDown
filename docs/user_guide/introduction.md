@@ -172,7 +172,16 @@ plus a sixth that appears only when the document carries reviewer comments:
   single human-readable phrase composed by the backend that knows the format: Word uses
   `§Heading — "snippet…"`, Excel uses `Sheet1!B7`, PowerPoint uses `Slide 4`, and PDF uses
   `Page 12`. A comment the document leaves unattributed is reported as `**Unattributed**` rather
-  than being dropped or given a guessed name.
+  than being dropped or given a guessed name. The `Body` is written with inline markdown characters
+  escaped, so a remark containing `*` or `_` reads as the reviewer typed it rather than turning
+  into emphasis; `manifest.json` records the same comment text exactly as the document holds it,
+  without that escaping, because it is data rather than prose.
+
+  Two scope limits are worth knowing. A Word comment whose only content is a picture or ink
+  drawing cannot be rendered as text, so it is left out of the file and counted in an extraction
+  note. And PowerPoint reads the classic comment grammar only: the newer persona-based "modern"
+  comments are out of scope for now, and a deck carrying them says so in an extraction note naming
+  how many there are, so you can tell such a deck from one nobody commented on.
 - **`images/` and `pages/`** — extracted embedded images and optional rendered page images.
 
 `summary.txt` is intentionally compact because it is the artifact a user pastes into an LLM context

@@ -118,6 +118,19 @@ A reader that resolved anchors by position rather than by id, or that invented a
 unanchored comment, fails here. Evidence for
 `DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation`.
 
+#### A comment carrying no text is dropped, and a picture-only comment is counted
+
+**Tests**: `WordOpenXmlReader_Read_EmptyComment_IsDroppedAndRealCommentSurvives`,
+`WordOpenXmlReader_Read_ImageOnlyComment_IsDroppedAndCounted`
+
+Prove a schema-valid `w:comment` carrying no runs never enters the model while a real comment in the
+same document does, and that a comment whose only content is a drawing is likewise absent from
+`Comments` but counted in `CommentsWithUnreadableContent`. Asserting the surviving comment alongside
+the dropped one is what makes the guard falsifiable: a reader that dropped the whole comments part
+would pass a test that only checked for absence. The split between dropped-silently and
+dropped-and-counted is asserted directly, because a wholly empty comment lost nothing while a drawn
+remark did. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-DropsTextlessComments`.
+
 #### The title and author metadata are surfaced
 
 **Test**: `WordOpenXmlReader_Read_Metadata_TitleAndAuthorSurfaced`

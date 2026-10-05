@@ -105,15 +105,20 @@ sections:
           - id: DocDownPdf-PdfDocumentExtractor-ReportsContentInventory
             title: >-
               PdfDocumentExtractor shall report content-inventory counts for selected pages,
-              headings, paragraphs, and inline images, including zero where it genuinely looked and
-              found none.
+              headings, paragraphs, inline images, comments, and distinct comment authors,
+              including zero where it genuinely looked and found none.
             justification: |
               The governing reporting principle is to say what was extracted and where, not to judge
               the document. Counts from the same extraction walk that produced the output keep empty
-              and text-free PDFs observable without reviving gaps or diagnostics.
+              and text-free PDFs observable without reviving gaps or diagnostics. Reviewer
+              commentary is counted here too, because it leaves content.md entirely for its own
+              artifact and the inventory is otherwise the only place the summary could say a PDF
+              carries any at all; the annotations are read once and that single result feeds both
+              the counts and the reported comments, so the two can never describe different walks.
             tests:
               - PdfDocumentExtractor_ExtractAsync_NoTextLayer_WritesImageBackedContentWithZeroTextCounts
               - PdfDocumentExtractor_ExtractAsync_ZeroPageDocument_ReportsZeroCountInventoryWithoutThrowing
+              - PdfDocumentExtractor_ExtractAsync_AnnotatedDocument_InventoriesComments
 
           - id: DocDownPdf-PdfDocumentExtractor-MapsParserFailures
             title: >-

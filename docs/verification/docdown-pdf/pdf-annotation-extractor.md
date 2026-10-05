@@ -97,6 +97,18 @@ Proves a popup window carrying no text of its own contributes no comment, which 
 reader's remark from appearing twice. Evidence for
 `DocDownPdf-PdfAnnotationExtractor-SkipsEmptyAnnotations`.
 
+#### A popup repeating its parent's text produces both entries
+
+**Test**: `PdfAnnotationExtractor_Extract_PopupDuplicatingParent_ReportsBothEntries`
+
+Characterizes the stated limit of the blankness rule: a `Popup` whose `/Contents` repeats its
+parent's text is not blank, so both entries are reported and the remark appears twice. The rule
+removes the common duplicate — producers overwhelmingly leave the popup's text empty — and does not
+attempt to recognize a repeated one, because comparing bodies across annotations would silently drop
+a reviewer's genuine second remark that happened to say the same thing. Pinning the behavior here
+makes the boundary a decided one rather than an untested corner, and makes any future change to it
+visible. Evidence for `DocDownPdf-PdfAnnotationExtractor-SkipsEmptyAnnotations`.
+
 #### Comments are attributed to the right page
 
 **Test**: `PdfAnnotationExtractor_Extract_MultiPageDocument_AttributesCommentsToTheirPages`

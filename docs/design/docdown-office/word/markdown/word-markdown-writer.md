@@ -32,6 +32,16 @@ prose from being reinterpreted as headings, emphasis, links, list markers, or ta
   escaping literal text and applying the minimal preserved formatting: bold as `**…**`, italic as
   `*…*`, and hyperlinks as `[text](href)`. A `Raw` inline is emitted verbatim so footnote markers
   and hard breaks survive escaping. Pure.
+- **`internal static string RenderPlainText(IReadOnlyList<WordInline>?)`** — concatenates the same
+  inline runs into literal text, applying neither escaping nor formatting markers, and returns the
+  empty string for `null` or an empty sequence. Both renderings exist because the two consumers want
+  genuinely different things from the same runs: `RenderInlines` produces *markdown* for
+  `content.md`, where a stray `*` must be escaped or a parser reads it as structure, while this
+  produces the text *as the document records it*, for the review comments that travel to Core and
+  from there into `manifest.json`, whose documented contract is exactly that. Having one unit own
+  both forms keeps the choice explicit at each call site instead of leaving a caller to un-escape
+  what it was handed. It is also the test for whether a run sequence says anything at all: a comment
+  whose runs reduce to whitespace carried no words, whatever markup surrounded them. Pure.
 - **`internal static string Escape(string text)`** — backslash-escapes each character in the
   `EscapedCharacters` set. Pure.
 - **`AppendBlocks()`** and **`AppendBlock()`** (private) — walk the block sequence and emit

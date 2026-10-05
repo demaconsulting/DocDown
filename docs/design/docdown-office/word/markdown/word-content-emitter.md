@@ -47,14 +47,27 @@ it writes through the sink. The unit reads only the shared `WordDocumentModel`,
   footnotes. Text blocks, comments, distinct comment authors, and footnotes are marked looked-for
   so zero remains explicit.
 - **`ReportReviewComments()`** (private) — reports each of the model's comments to the sink as a
-  `DocumentComment` carrying the comment's author, its body rendered as inline markdown, and its
+  `DocumentComment` carrying the comment's author, its body as **literal text** rendered through
+  `WordMarkdownWriter.RenderPlainText`, and its
   resolved location hint. A comment the reader could not anchor is reported with the literal
-  `(location unknown)` rather than an invented location. This is the only route reviewer comments
+  `(location unknown)` rather than an invented location. The body is reported unescaped because it
+  reaches `manifest.json` as well as `review-comments.md`, and the manifest's documented contract is
+  "the comment text as the document records it"; escaping is `ReviewCommentsWriter`'s job, at the
+  point the markdown is written, which is also what makes every backend report the same thing. A
+  comment whose rendered body is blank is skipped: the reader already drops those, so this is the
+  second of two layers, placed here because this is the only unit that calls
+  `IExtractionSink.ReportReviewComment` for Word and that method rejects a blank body by contract.
+  This is the only route reviewer comments
   take: they are never rendered into `content.md`, because a reviewer's remark is commentary about
   the document rather than part of it.
 - **`ReportExtractionNotes()`** (private) — emits only the incomplete-step notes the current design
   allows: charts whose chart parts were not read, merged or nested table structure flattened for
-  markdown.
+  markdown, and comments whose only content was a picture or ink.
+- **`ReportImageOnlyCommentsNote()`** (private) — states, when `CommentsWithUnreadableContent` is
+  non-zero, how many comments carry only a picture or ink and therefore do not appear in
+  `review-comments.md`. This is the narrow case a note exists for: the reviewer did leave a remark,
+  the extractor attempted to read it, and what it found cannot be rendered as comment text. A
+  comment nobody ever typed into is not reported, because nothing was lost there.
 - **`CountTextualBlocks()`** and **`EnumerateTables()`** (private) — the small pure helpers used to
   derive looked-for inventory counts and flattened-table totals from the model.
 

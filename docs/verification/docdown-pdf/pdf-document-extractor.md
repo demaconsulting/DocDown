@@ -112,6 +112,18 @@ Proves the extractor reports content-feature counts from the extraction walk its
 headings and paragraphs for a scanned page and all-zero counts for a zero-page document. Evidence
 for `DocDownPdf-PdfDocumentExtractor-ReportsContentInventory`.
 
+#### Comments and their authors are inventoried from a single annotation pass
+
+**Test**: `PdfDocumentExtractor_ExtractAsync_AnnotatedDocument_InventoriesComments`
+
+Proves an annotated document reports `comments` and `distinct comment authors` as looked-for content
+features whose counts agree exactly with the review comments the same extraction reported. Reviewer
+commentary leaves `content.md` entirely, so the inventory is the only place the summary says a PDF
+carries any. Asserting the counts against the reported comments rather than against a literal is
+what pins the single-pass arrangement: the annotations are read once and that one result feeds both
+the inventory and the comments, so the two can never describe different walks of the same pages.
+Evidence for `DocDownPdf-PdfDocumentExtractor-ReportsContentInventory`.
+
 #### Parser faults propagate with their explanation intact
 
 **Tests**: `PdfDocumentExtractor_ExtractAsync_MalformedDocument_PropagatesParserFaultForCore`,

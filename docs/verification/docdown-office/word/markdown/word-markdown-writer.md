@@ -69,6 +69,19 @@ Proves the run `a*b_c|d#e` renders as `a\*b\_c\|d\#e`, so literal text that happ
 markdown metacharacters does not surface as unintended formatting. Evidence for
 `DocDownWord-Markdown-WordMarkdownWriter-EscapesSpecialCharacters`.
 
+#### Plain-text rendering escapes nothing
+
+**Tests**: `WordMarkdownWriter_RenderPlainText_MarkdownCharacters_AreNotEscaped`,
+`WordMarkdownWriter_RenderPlainText_NullOrEmpty_ReturnsEmpty`
+
+Prove the same inline runs that `RenderInlines` escapes come back from `RenderPlainText` exactly as
+the document records them, and that a null or empty run sequence yields the empty string. The two
+renderings are asserted against the same markdown-significant input, which is what keeps the
+distinction real: one produces markdown for `content.md`, the other produces data for the review
+comments that travel to Core and from there into `manifest.json`. The empty case also pins the
+blankness test the reader and emitter both rely on to drop a comment that says nothing. Evidence for
+`DocDownWord-Markdown-WordMarkdownWriter-RendersPlainText`.
+
 #### Bold, italic, and hyperlink runs render as inline markdown
 
 **Test**: `WordMarkdownWriter_Write_BoldItalicAndLink_RenderInline`

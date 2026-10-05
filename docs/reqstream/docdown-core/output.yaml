@@ -90,6 +90,7 @@ sections:
               - DocDownCore-Output-ReviewCommentsWriter-ConditionalArtifact
               - DocDownCore-Output-ReviewCommentsWriter-EntryFormat
               - DocDownCore-Output-ReviewCommentsWriter-ReportOrder
+              - DocDownCore-Output-ReviewCommentsWriter-EscapesMarkdown
               - DocDownCore-Output-ReviewCommentsWriter-UnattributedReported
               - DocDownCore-Output-ExtractionSink-RecordsReviewComments
               - DocDownCore-Output-ManifestWriter-ReviewCommentsSerialized

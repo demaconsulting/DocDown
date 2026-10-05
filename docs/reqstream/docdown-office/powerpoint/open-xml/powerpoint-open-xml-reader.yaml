@@ -105,14 +105,39 @@ sections:
 
               - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExcludesModernPersonaComments
                 title: >-
-                  PowerPointOpenXmlReader shall not read modern persona-based, cloud-synced comments,
-                  and this exclusion shall be a stated scope limitation rather than a silent gap.
+                  PowerPointOpenXmlReader shall not read the text or authorship of modern
+                  persona-based, cloud-synced comments, and this exclusion shall be a stated scope
+                  limitation rather than a silent gap.
                 justification: |
-                  The Open XML SDK this package depends on exposes no part or property for the modern
-                  persona comment grammar, so there is no supported way to reach it, and reaching into
-                  the package by raw relationship would be guessing at an unversioned grammar. A deck
-                  whose comments are all modern therefore reports none. The boundary is recorded in the
-                  reader's own documentation and in the unit design document so a user who finds no
-                  comments can tell a limitation from a fault.
+                  This is a scope choice, not a tooling limit. The Open XML SDK this package depends
+                  on does expose the part and its grammar, through SlidePart.commentParts,
+                  PowerPointCommentPart.CommentList, and the
+                  DocumentFormat.OpenXml.Office2021.PowerPoint.Comment namespace. What is not read is
+                  the modern author model: a modern comment names its author through a separate
+                  persona and author list rather than through the presentation's comment-authors
+                  part, and that resolution could not be validated here against a deck a genuine
+                  PowerPoint wrote. Reading the comments without it would mean attributing a
+                  reviewer's words on unverified reasoning, which is worse than stating the boundary.
+                  A deck whose comments are all modern therefore contributes no comments, and the
+                  boundary is recorded in the reader's own documentation, in the unit design
+                  document, and — through the count below — in the extraction output itself, so a
+                  user who finds no comments can tell a limitation from a fault.
                 tests:
                   - PowerPointOpenXmlReader_Read_DeckWithoutComments_YieldsNoComments
+                  - PowerPointOpenXmlReader_Read_DeckWithModernComments_CountsThemWithoutReadingThem
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-CountsModernPersonaComments
+                title: >-
+                  PowerPointOpenXmlReader shall count the modern persona-based comments each slide
+                  carries, and the number of slides carrying them, without reading them.
+                justification: |
+                  A deck whose comments are all modern would otherwise be indistinguishable in the
+                  output from a deck nobody ever commented on, which states something about the
+                  document that is not true. Counting them costs one pass over a typed SDK accessor
+                  and lets the emitter report their presence as an extraction note, so the boundary
+                  above is visible to whoever holds the output rather than only to whoever reads this
+                  repository. Only the count is taken: no comment text and no author is read, so
+                  nothing is attributed on reasoning that could not be validated.
+                tests:
+                  - PowerPointOpenXmlReader_Read_DeckWithModernComments_CountsThemWithoutReadingThem
+                  - PowerPointOpenXmlReader_Read_DeckWithComment_CountsNoModernComments

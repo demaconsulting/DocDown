@@ -181,3 +181,15 @@ described. Evidence for `DocDownExcel-Markdown-ExcelContentEmitter-ReportsReview
 Proves the emitter reports no review comments for a model carrying none, so Core writes the dedicated
 artifact only where there is something to put in it. Evidence for
 `DocDownExcel-Markdown-ExcelContentEmitter-ReportsReviewComments`.
+
+#### Comments and their authors are inventoried
+
+**Tests**: `ExcelContentEmitter_Emit_SheetComments_InventoriesCommentsAndAuthors`,
+`ExcelContentEmitter_Emit_NoComments_ReportsCommentFeaturesAtZero`
+
+Prove the emitter reports `comments` and `distinct comment authors` as looked-for content features
+counted from the model, and that a workbook carrying none still reports both at zero. Reviewer
+commentary leaves the sheet listings entirely, so the inventory is the only place the summary says a
+workbook carries any; the zero case is asserted because a looked-for count that disappeared when it
+reached zero would leave a reader unable to tell "none found" from "not counted". Evidence for
+`DocDownExcel-Markdown-ExcelContentEmitter-InventoriesComments`.

@@ -80,6 +80,14 @@ its own is merely the window that displays its parent's remark, so emitting eith
 comment nobody wrote — and, in the popup's case, duplicate one that was. A highlight or popup that
 *does* carry text is a genuine remark and is kept.
 
+**Stated limitation of that rule.** A producer that copies a parent annotation's `/Contents` into
+the `Popup` that displays it yields two entries for one remark. Deduplicating would mean resolving
+each popup's `/Parent` through an indirect reference, which this unit does not do, and matching on
+text would silently drop a reviewer who genuinely wrote the same words twice. Duplicating is the
+safer error, because nothing a reviewer wrote is lost, so the behavior is characterized by a test
+(`PdfAnnotationExtractor_Extract_PopupDuplicatingParent_ReportsBothEntries`) and stated here rather
+than changed.
+
 ### Author resolution
 
 PdfPig's `Annotation` exposes no author member, so the author is read from the annotation

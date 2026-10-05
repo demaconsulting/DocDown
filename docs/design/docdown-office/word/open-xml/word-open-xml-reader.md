@@ -69,7 +69,16 @@ used per document. The important state is:
 - **`BuildComments()`** (private) — resolves every comment's location hint from the anchor table
   *before* rendering any comment body, because rendering a body walks it through the same container
   walk and any markers it contains must not pollute a later comment's anchor. Each `w:comment` is
-  then paired with its author, rendered inlines, and resolved location.
+  then paired with its author, rendered inlines, and resolved location. A comment whose inlines
+  reduce to no text is **dropped**, because it says nothing — the same rule the Excel, PowerPoint,
+  and PDF readers apply, so the model-level invariant "no comment without text" holds for every
+  format. A schema-valid `w:comment` carrying no runs arises in practice from a reviewer inserting a
+  comment without typing and from a comment whose runs are all tracked deletions, and admitting one
+  would both attribute an empty remark to a named person and, because Core rejects a blank comment
+  body by contract, abort the entire extraction. A dropped comment whose only content was a picture
+  or ink is counted in `CommentsWithUnreadableContent` rather than passing silently, because the
+  reviewer did leave a remark this backend cannot render; a wholly empty comment is not counted,
+  because nothing was lost and a note would assert a shortfall that did not occur.
 - **`CollectImage()`**, **`GatherImageTextCandidates()`**, and **`FindAdjacentCaption()`**
   (private) — choose each image's naming and description text. They prefer authored descriptions
   and titles, then caption text, then object names, then the nearest heading, and they

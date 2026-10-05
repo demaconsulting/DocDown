@@ -38,9 +38,14 @@ its explanatory note.
   sheet listing already uses, so a reader can take it straight back to the annotated cell. A workbook
   with no comments reports none, and Core writes no artifact.
 - **`ReportContentFeatures`** (private) — reports the inventory counts (`worksheets`, `populated cells`,
-  `cells carrying a formula`, `inline images`, `charts`, `annotated drawing shapes`, and
-  `cached chart data points`) from the model and marks each count `LookedFor = true`, so a zero remains
-  visible when the backend explicitly looked for that feature.
+  `cells carrying a formula`, `inline images`, `charts`, `annotated drawing shapes`,
+  `cached chart data points`, `comments`, and `distinct comment authors`) from the model and marks each count
+  `LookedFor = true`, so a zero remains
+  visible when the backend explicitly looked for that feature. The two comment counts matter
+  particularly: reviewer commentary leaves the sheet listings entirely for `review-comments.md`, so
+  the inventory is the only place the summary says a workbook carries any at all. The vocabulary
+  matches what the Word and PowerPoint backends report, so the same two lines mean the same thing
+  across formats.
 - **`ReportImageNotes`** (private) — records plain-language notes when the image write attempted work the
   backend could not finish: images skipped because they exceed caller-supplied size limits.
 - **`BuildUnreadableChartNote`** (private) — builds the one-sentence note naming the chart and part URI

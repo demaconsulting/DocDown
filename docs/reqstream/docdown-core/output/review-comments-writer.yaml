@@ -52,6 +52,25 @@ sections:
                 tests:
                   - ReviewCommentsWriter_WriteAsync_ManyComments_WritesEntriesInReportOrder
 
+              - id: DocDownCore-Output-ReviewCommentsWriter-EscapesMarkdown
+                title: >-
+                  ReviewCommentsWriter shall escape the Markdown characters that would change an
+                  entry's inline structure in each comment's author, location, and body.
+                justification: |
+                  Extractors report a comment's text as the document records it, so that
+                  manifest.json carries the reviewer's words unaltered. That raw text can contain
+                  characters Markdown reads as structure: a remark naming a *field* would render
+                  in italics with the asterisks gone, and one citing a [reference] would render as
+                  a broken link. Escaping here, where the Markdown file is written, is the only
+                  place that fixes the rendering without corrupting the recorded text, and it
+                  cannot be forgotten by one backend the way per-extractor escaping was. The set
+                  is deliberately minimal — only the characters that take effect mid-line — so an
+                  entry is not littered with backslashes before characters that were never going
+                  to be interpreted.
+                tests:
+                  - ReviewCommentsWriter_WriteAsync_MarkdownCharacters_EscapedInFileButNotInRecord
+                  - ReviewCommentsWriter_WriteAsync_StructuralCharacters_AreNotEscaped
+
               - id: DocDownCore-Output-ReviewCommentsWriter-UnattributedReported
                 title: >-
                   ReviewCommentsWriter shall report a comment the document leaves unattributed as

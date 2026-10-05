@@ -53,6 +53,7 @@ sections:
               - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsSlideComments
               - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ResolvesCommentAuthors
               - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExcludesModernPersonaComments
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-CountsModernPersonaComments
             tests:
               - PowerPointOpenXmlReader_Read_DeckWithNotes_ReturnsSlidesInOrder
 

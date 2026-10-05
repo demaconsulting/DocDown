@@ -1,6 +1,6 @@
 package DocDownOffice {
     part def WordOpenXmlReader {
-        doc /* Turns the Open XML document into the backend-neutral model: maps headings, lists, tables, fields, comments, footnotes, and Document Control, resolves each comment's anchor into a heading-and-snippet location hint, renders tracked changes in the accepted view, detects the protected container, and surfaces the document metadata. */
+        doc /* Turns the Open XML document into the backend-neutral model: maps headings, lists, tables, fields, comments, footnotes, and Document Control, drops comments carrying no text while counting those whose only content is a picture or ink, resolves each comment's anchor into a heading-and-snippet location hint, renders tracked changes in the accepted view, detects the protected container, and surfaces the document metadata. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Office/Word/OpenXml/WordOpenXmlReader.cs */
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Word/OpenXml/WordOpenXmlReaderTests.cs */

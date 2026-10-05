@@ -42,6 +42,7 @@ sections:
               - DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedView
               - DocDownWord-OpenXml-WordOpenXmlReader-DetectsPasswordProtected
               - DocDownWord-OpenXml-WordOpenXmlReader-CollectsComments
+              - DocDownWord-OpenXml-WordOpenXmlReader-DropsTextlessComments
               - DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation
               - DocDownWord-OpenXml-WordOpenXmlReader-SurfacesMetadata
               - DocDownWord-OpenXml-WordOpenXmlReader-ReportsProducerPageCount

@@ -228,7 +228,14 @@ out/
   comments means no file. `summary.txt` says so explicitly in its Layout block, and
   `manifest.json` leaves `reviewCommentsPath` null. The `Location` is one human-readable phrase
   composed by the backend that knows the format: Word uses `§Heading — "snippet…"`, Excel uses
-  `Sheet1!B7`, PowerPoint uses `Slide 4`, and PDF uses `Page 12`.
+  `Sheet1!B7`, PowerPoint uses `Slide 4`, and PDF uses `Page 12`. The `Body` is written with
+  inline markdown characters escaped so a reviewer's words read literally; `manifest.json` records
+  the same comment text exactly as the document holds it, unescaped.
+
+  PowerPoint reads the classic comment grammar. Newer "modern" comments — the persona-based ones
+  recent PowerPoint versions write — are out of scope for now; a deck that carries them says so in
+  an extraction note naming how many there are, so a commented deck is never mistaken for an
+  uncommented one.
 - **`images/` and `pages/`** — extracted embedded images and optional rendered page images.
 
 `summary.txt` stays compact because it is the artifact a user pastes into an LLM context window.

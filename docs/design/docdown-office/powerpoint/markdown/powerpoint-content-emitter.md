@@ -39,11 +39,20 @@ suppressed.
   consumer could not tell a reviewer's words from the author's; Core collects the reported comments
   into the dedicated `review-comments.md` artifact. The slide number is the location because a deck's
   argument is sequential and the number is how a reader navigates back to it. A deck with no comments
-  reports none, and Core writes no artifact. Modern persona comments never reach the model at all; see
-  *PowerPointOpenXmlReader Design* for that stated limitation.
+  reports none, and Core writes no artifact. Modern persona comments never reach the model's comment
+  lists at all; the reader counts them instead, and `ReportModernCommentsNote` below states their
+  presence. See *PowerPointOpenXmlReader Design* for that stated limitation.
 - **`ReportContentFeatures`** (private) — reports the outline counts (slides, slide titles, sets of
-  speaker notes, inline images) from the model. The speaker-notes count is declared looked for, so it
-  is stated even at zero.
+  speaker notes, inline images, comments, distinct comment authors) from the model. The
+  speaker-notes count and both comment counts are declared looked for, so each
+  is stated even at zero. The comment counts matter particularly: reviewer commentary leaves
+  `content.md` entirely for `review-comments.md`, so the inventory is the only place the summary says
+  a deck carries any at all.
+- **`ReportModernCommentsNote`** (private) — records a one-sentence note, when the deck carries any,
+  naming how many modern persona-based comments sit on how many slides and stating that this
+  extractor does not read them. Without it a deck whose comments are all modern reads exactly like a
+  deck nobody commented on, which reports a boundary of the extractor as a fact about the document.
+  Nothing is reported when the deck carries none, because there is no shortfall to state.
 
 ### The speaker-notes accounting
 

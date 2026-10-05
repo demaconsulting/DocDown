@@ -1,6 +1,6 @@
 package DocDownOffice {
     part def PowerPointContentEmitter {
-        doc /* The single emission path: turns a read deck model into the output contract, writing each slide's title, body text, and speaker notes in presentation order, plus the inline images, the content inventory, the slide comments reported to Core as Slide {n} review comments, and the notes the model and options imply. */
+        doc /* The single emission path: turns a read deck model into the output contract, writing each slide's title, body text, and speaker notes in presentation order, plus the inline images, the content inventory including the comment and comment-author counts, the slide comments reported to Core as Slide {n} review comments, a note naming any modern persona comments the deck carries that this extractor leaves unread, and the notes the model and options imply. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Office/PowerPoint/Markdown/PowerPointContentEmitter.cs */
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/PowerPoint/Markdown/PowerPointContentEmitterTests.cs */

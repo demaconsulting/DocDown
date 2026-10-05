@@ -164,6 +164,12 @@ words:
   - Annot
   - Annots
 
+  # 'Textless' describes a Word comment element that carries no text runs at all — a schema-valid
+  # but empty w:comment. The word names the condition the reader guards against precisely and
+  # appears in the requirement identifier for that guard. A regular English '-less' formation, not
+  # a misspelling.
+  - Textless
+
 # Ignore the raster and PDF payloads the PDF test fixtures build documents from. These are
 # generated binary data expressed as text so the repository stays free of committed binaries:
 # base64 image bytes, and PDF object syntax appended after a '\n' escape (which the checker

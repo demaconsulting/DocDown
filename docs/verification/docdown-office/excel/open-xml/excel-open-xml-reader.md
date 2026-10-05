@@ -106,3 +106,23 @@ Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlReader-AttributesCommentsToSheet`
 
 Proves the ordinary case — a workbook nobody reviewed — yields sheets with no comments rather than an
 error. Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlReader-AttributesCommentsToSheet`.
+
+#### A multi-reply thread keeps every reply, in order
+
+**Test**: `ExcelOpenXmlReader_Read_MultiReplyThread_KeepsEveryReplyInOrder`
+
+Proves a cell whose threaded conversation carries three turns yields all three, with their authors,
+in the order they were written. A rule that kept only a thread's first turn would discard the replies
+that usually carry the resolution, and a single-comment fixture cannot tell the two behaviors apart;
+reply order is asserted because a conversation read out of sequence reverses who answered whom.
+Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsThreadedComments`.
+
+#### A threaded-only cell is appended after the legacy-ordered cells
+
+**Test**: `ExcelOpenXmlReader_Read_ThreadedOnlyCell_IsAppendedAfterLegacyOrderedCells`
+
+Proves a cell commented only in the threaded part appears after the cells the legacy part orders,
+and that a cell carrying both keeps the position its legacy entry held. The whole reference sequence
+is pinned rather than only the trailing cell, because the fixture's threaded-only cell sorts last
+anyway and an assertion on it alone could pass by luck. Evidence for
+`DocDownExcel-OpenXml-ExcelOpenXmlReader-DeduplicatesThreadedAndLegacyComments`.

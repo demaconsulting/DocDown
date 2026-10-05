@@ -52,14 +52,21 @@ The instance is immutable after construction. All run-specific facts live in loc
   count. Blank metadata values are normalized to absent rather than reported as empty strings.
 - **`ReportContentFeatures`** (private) - records the `pages`, `headings`, `paragraphs`, and, when
   honestly known, `inline images` content features from the same extraction pass that produced the
-  markdown and images.
-- **`ReportReviewComments`** (private) - asks `PdfAnnotationExtractor` to read the same selected
-  pages and reports each remark through `IExtractionSink.ReportReviewComment`, formatting its
+  markdown and images, together with `comments` and `distinct comment authors` counted from the
+  annotations already read. Reviewer commentary leaves `content.md` entirely for
+  `review-comments.md`, so the inventory is the only place the summary says a PDF carries any at
+  all; both counts are declared looked for, so a zero still states that the extraction inspected
+  them. The vocabulary matches what the Word, Excel, and PowerPoint backends report.
+- **`ReportReviewComments`** (private) - reports each remark `PdfAnnotationExtractor` read through
+  `IExtractionSink.ReportReviewComment`, formatting its
   location as `Page {n}`. The location wording lives here rather than in the annotation extractor
   because how a comment's position is phrased is a presentation decision; for a PDF the honest unit
   of position is the page, since an annotation's rectangle locates it on the sheet rather than within
   the prose. Driving comments and content from the same page selection is what makes it impossible
-  for a comment to arrive from a page the output does not contain.
+  for a comment to arrive from a page the output does not contain. `ExtractAsync` calls
+  `PdfAnnotationExtractor.Extract` **once**, before the inventory, and passes that one result to
+  both this method and `ReportContentFeatures`, so the counts and the reported comments can never
+  describe two different walks of the same pages.
 
 ### Error Handling
 

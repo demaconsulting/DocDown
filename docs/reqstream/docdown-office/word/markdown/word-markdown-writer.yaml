@@ -49,6 +49,21 @@ sections:
                 tests:
                   - WordMarkdownWriter_Write_SpecialCharacters_AreEscaped
 
+              - id: DocDownWord-Markdown-WordMarkdownWriter-RendersPlainText
+                title: >-
+                  WordMarkdownWriter shall offer a rendering that concatenates a run of inlines into
+                  literal text, applying neither escaping nor formatting markers.
+                justification: |
+                  Not every string the model produces is destined for the content file. A comment's
+                  body is reported to Core as data — it reaches manifest.json, whose contract is the
+                  reviewer's words as the document records them — and is escaped later, if at all,
+                  by whichever writer renders it. Having one rendering for Markdown output and one
+                  for data makes the distinction explicit at every call site, where a single
+                  escaping renderer silently forced every consumer to accept Markdown escaping.
+                tests:
+                  - WordMarkdownWriter_RenderPlainText_MarkdownCharacters_AreNotEscaped
+                  - WordMarkdownWriter_RenderPlainText_NullOrEmpty_ReturnsEmpty
+
               - id: DocDownWord-Markdown-WordMarkdownWriter-RendersInlineFormatting
                 title: WordMarkdownWriter shall render bold, italic, and hyperlink runs as inline markdown.
                 justification: |

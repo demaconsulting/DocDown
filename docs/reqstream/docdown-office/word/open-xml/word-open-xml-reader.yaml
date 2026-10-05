@@ -94,6 +94,25 @@ sections:
                 tests:
                   - WordOpenXmlReader_Read_Comment_CollectsAuthorAndText
 
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-DropsTextlessComments
+                title: >-
+                  WordOpenXmlReader shall drop a comment that carries no text, and shall count a
+                  comment whose only content is a picture or ink so the extraction can report it.
+                justification: |
+                  Core refuses a review comment with a blank body, because an entry naming an author
+                  and a location but saying nothing is a claim that a reviewer wrote nothing. Honoring
+                  that invariant here — where every other backend already honors it — is what keeps a
+                  single schema-valid empty comment from aborting the whole extraction and costing the
+                  reader the document's text as well as its commentary. A wholly empty comment is
+                  dropped silently because there was nothing to read; a picture-only or ink-only
+                  comment is counted instead, because the document does carry a remark this reader
+                  cannot render, and a reader who is not told would believe the document had no such
+                  comment at all.
+                tests:
+                  - WordOpenXmlReader_Read_EmptyComment_IsDroppedAndRealCommentSurvives
+                  - WordOpenXmlReader_Read_ImageOnlyComment_IsDroppedAndCounted
+                  - DocDownWord_Extract_DocxWithEmptyComment_StillProducesContentAndRealComment
+
               - id: DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation
                 title: >-
                   WordOpenXmlReader shall resolve each comment's anchor into a location hint naming

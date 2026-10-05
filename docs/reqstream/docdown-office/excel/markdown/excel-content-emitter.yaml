@@ -215,6 +215,23 @@ sections:
                   - ExcelContentEmitter_Emit_NoImages_ReportsZeroImageInventory
                   - ExcelContentEmitter_Emit_EmptyWorkbook_ReportsZeroCountInventory
 
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-InventoriesComments
+                title: >-
+                  ExcelContentEmitter shall report the workbook's comment count and the number of
+                  distinct people who wrote them as content features that were looked for.
+                justification: |
+                  Reviewer commentary leaves the sheet listings entirely and lands in its own
+                  artifact, so the inventory is the only place the summary says a workbook carries
+                  any at all. A reader scanning the summary to decide what to open would otherwise
+                  have to open review-comments.md to discover it exists. Marking both counts as
+                  looked for means a zero still states plainly that the extraction inspected them,
+                  which distinguishes a workbook nobody commented on from a backend that never
+                  checked. The vocabulary matches what the Word backend already reports, so the same
+                  two lines mean the same thing across formats.
+                tests:
+                  - ExcelContentEmitter_Emit_SheetComments_InventoriesCommentsAndAuthors
+                  - ExcelContentEmitter_Emit_NoComments_ReportsCommentFeaturesAtZero
+
               - id: DocDownExcel-Markdown-ExcelContentEmitter-ReportsReviewComments
                 title: >-
                   ExcelContentEmitter shall report each cell comment as a review comment located by

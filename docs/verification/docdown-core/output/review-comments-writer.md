@@ -83,6 +83,26 @@ Proves a body spanning lines in both line-ending conventions is flattened onto o
 words intact, so the comment cannot be misread as document text and the file stays one entry per line.
 Evidence for `DocDownCore-Output-ReviewCommentsWriter-EntryFormat`.
 
+##### Markdown characters are escaped in the file but not in the record
+
+**Test**: `ReviewCommentsWriter_WriteAsync_MarkdownCharacters_EscapedInFileButNotInRecord`
+
+Proves a comment whose author, location, and body all carry markdown-significant characters is
+written with those characters escaped, while what the extractor reported — and therefore what
+`manifest.json` carries — stays exactly as the document recorded it. Both halves are asserted in one
+test because the two artifacts make different promises and a future change must not satisfy one by
+breaking the other. Evidence for `DocDownCore-Output-ReviewCommentsWriter-EscapesMarkdown`.
+
+##### Line-structural characters are left alone
+
+**Test**: `ReviewCommentsWriter_WriteAsync_StructuralCharacters_AreNotEscaped`
+
+Proves ordinary text containing characters that are structural only at the start of a line is
+written through unchanged, with no backslash anywhere in the file. This pins the escape set to the
+inline-structural one: escaping a trailing `.` is what once made a comment read as
+`Please clarify the scope\.` in the shipped output. Evidence for
+`DocDownCore-Output-ReviewCommentsWriter-EscapesMarkdown`.
+
 ##### A null sink is rejected
 
 **Test**: `ReviewCommentsWriter_WriteAsync_NullSink_Throws`

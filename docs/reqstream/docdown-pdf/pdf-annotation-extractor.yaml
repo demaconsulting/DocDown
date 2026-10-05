@@ -84,10 +84,17 @@ sections:
               popup with no text of its own is merely the window that displays its parent's remark.
               Emitting either would invent a comment nobody wrote and, in the popup's case, duplicate
               one that was. This rule is what lets the markup types be included safely: it separates a
-              mark that carries a remark from one that is only a mark.
+              mark that carries a remark from one that is only a mark. A popup that carries its
+              parent's text rather than none falls on the other side of that rule and is reported
+              as its own entry: deduplicating would mean resolving each popup's parent through an
+              indirect reference, which this unit does not do, and matching on text would silently
+              drop a reviewer who genuinely wrote the same words twice. Duplicating is the safer
+              error, because nothing a reviewer wrote is lost, so the behavior is characterized by
+              a test and stated as a limitation rather than changed.
             tests:
               - PdfAnnotationExtractor_Extract_HighlightWithoutContent_IsExcluded
               - PdfAnnotationExtractor_Extract_EmptyPopup_IsExcluded
+              - PdfAnnotationExtractor_Extract_PopupDuplicatingParent_ReportsBothEntries
 
           - id: DocDownPdf-PdfAnnotationExtractor-PreservesDocumentOrder
             title: >-
