@@ -19,18 +19,65 @@ public class ManifestWriterTests
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>
-    ///     Proves the manifest declares schema version 3.0.
+    ///     Proves the manifest declares schema version 3.1.
     /// </summary>
     [Fact]
-    public async Task ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionThreePointZero()
+    public async Task ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionThreePointOne()
     {
         // Arrange / Act: a produced text run serialized to a manifest
         using var temp = new TempScratch();
         var folder = await RunProducedAsync(temp, WriteText);
         using var document = await ParseManifestAsync(folder);
 
-        // Assert: the reduced manifest shape pins the 3.0 schema
-        Assert.Equal("3.0", document.RootElement.GetProperty("schemaVersion").GetString());
+        // Assert: the reduced manifest shape pins the 3.1 schema
+        Assert.Equal("3.1", document.RootElement.GetProperty("schemaVersion").GetString());
+    }
+
+    /// <summary>
+    ///     Proves a document with no reviewer comments serializes an empty array and no path.
+    /// </summary>
+    [Fact]
+    public async Task ManifestWriter_WriteAsync_NoReviewComments_SerializesEmptyArrayAndNullPath()
+    {
+        // Arrange / Act: a produced run whose document carries no reviewer comments
+        using var temp = new TempScratch();
+        var folder = await RunProducedAsync(temp, WriteText);
+        using var document = await ParseManifestAsync(folder);
+        var root = document.RootElement;
+
+        // Assert: the array is always serialized, and the conditional artifact is honestly unclaimed
+        Assert.Empty(root.GetProperty("reviewComments").EnumerateArray().ToList());
+        Assert.Equal(JsonValueKind.Null, root.GetProperty("reviewCommentsPath").ValueKind);
+    }
+
+    /// <summary>
+    ///     Proves reported reviewer comments are serialized in report order with their claimed path.
+    /// </summary>
+    [Fact]
+    public async Task ManifestWriter_WriteAsync_ReviewCommentsReported_SerializesCommentsInOrderAndClaimsPath()
+    {
+        // Arrange: a produced run that records two reviewer comments
+        using var temp = new TempScratch();
+        var folder = await RunProducedAsync(temp, async sink =>
+        {
+            await sink.WriteContentAsync("# Document\n\nWith reviewer comments.\n", CancellationToken.None);
+            sink.ReportReviewComment(new DocumentComment("Ada", "Check this figure.", "Page 1"));
+            sink.ReportReviewComment(new DocumentComment(null, "Agreed.", "Page 2"));
+        });
+
+        // Act: parse the manifest
+        using var document = await ParseManifestAsync(folder);
+        var root = document.RootElement;
+        var comments = root.GetProperty("reviewComments").EnumerateArray().ToList();
+
+        // Assert: each comment is recorded verbatim, in report order, alongside the claimed artifact path
+        Assert.Equal(2, comments.Count);
+        Assert.Equal("Ada", comments[0].GetProperty("author").GetString());
+        Assert.Equal("Check this figure.", comments[0].GetProperty("body").GetString());
+        Assert.Equal("Page 1", comments[0].GetProperty("location").GetString());
+        Assert.Equal(JsonValueKind.Null, comments[1].GetProperty("author").ValueKind);
+        Assert.Equal("Agreed.", comments[1].GetProperty("body").GetString());
+        Assert.Equal("review-comments.md", root.GetProperty("reviewCommentsPath").GetString());
     }
 
     /// <summary>
@@ -69,7 +116,7 @@ public class ManifestWriterTests
         var report = BuildReport(temp, Options(), ExtractionOutcome.Unreadable, null, failure);
 
         // Act: serialize the unreadable manifest
-        await ManifestWriter.WriteAsync(folder, sink, report, null, Ct);
+        await ManifestWriter.WriteAsync(folder, sink, report, null, null, Ct);
         using var document = await ParseManifestAsync(folder);
 
         // Assert: the failure is recorded verbatim and the extractor block is null
@@ -228,12 +275,13 @@ public class ManifestWriterTests
         await WriteText(sink);
         var report = BuildReport(temp, options, ExtractionOutcome.Produced, SuccessExtractor(), null);
         var content = await ContentWriter.WriteAsync(sink, "Document", Ct);
+        var reviewComments = await ReviewCommentsWriter.WriteAsync(sink, Ct);
 
         // Act: serialize twice into the same folder, snapshotting the first output
-        await ManifestWriter.WriteAsync(folder, sink, report, content, Ct);
+        await ManifestWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
         var firstSnapshot = Path.Combine(temp.Path, "first-manifest.json");
         File.Copy(Path.Combine(folder.AbsolutePath, "manifest.json"), firstSnapshot);
-        await ManifestWriter.WriteAsync(folder, sink, report, content, Ct);
+        await ManifestWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
         var manifestBytes = await File.ReadAllBytesAsync(Path.Combine(folder.AbsolutePath, "manifest.json"), Ct);
 
         // Assert: the bytes are stable, BOM-free, and use Unix line endings only
@@ -309,8 +357,9 @@ public class ManifestWriterTests
         var sink = new ExtractionSink(folder, effective);
         await write(sink);
         var content = await ContentWriter.WriteAsync(sink, "Document", Ct);
+        var reviewComments = await ReviewCommentsWriter.WriteAsync(sink, Ct);
         var report = BuildReport(temp, effective, ExtractionOutcome.Produced, SuccessExtractor(), null);
-        await ManifestWriter.WriteAsync(folder, sink, report, content, Ct);
+        await ManifestWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
         return folder;
     }
 

@@ -246,6 +246,31 @@ public class ScratchFolderTests
     }
 
     /// <summary>
+    ///     Proves a folder written under the newer additive schema is still recognized and its
+    ///     conditional review-comments artifact is accounted for.
+    /// </summary>
+    [Fact]
+    public void ScratchFolder_Prepare_PriorRunWithReviewComments_IsRecognizedAndCleaned()
+    {
+        // Arrange: a prior run that declared the 3.1 schema and wrote the conditional artifact
+        using var temp = new TempScratch();
+        var target = Path.Combine(temp.Path, "prior-3-1-run");
+        Directory.CreateDirectory(target);
+        File.WriteAllText(Path.Combine(target, "summary.txt"), "summary");
+        File.WriteAllText(Path.Combine(target, "review-comments.md"), "# Review comments\n\n- **Ada** (Page 1): A remark.\n");
+        File.WriteAllText(
+            Path.Combine(target, "manifest.json"),
+            DocDownManifest(target, schemaVersion: "3.1", reviewCommentsPath: "review-comments.md"));
+
+        // Act: prepare over the proven DocDown folder
+        var folder = ScratchFolder.Prepare(target, ScratchFolderMode.CleanIfDocDownFolder);
+
+        // Assert: the newer schema was accepted and the accounted artifact was cleaned, not left as a stray
+        Assert.False(File.Exists(Path.Combine(folder.AbsolutePath, "review-comments.md")));
+        Assert.False(File.Exists(Path.Combine(folder.AbsolutePath, "summary.txt")));
+    }
+
+    /// <summary>
     ///     Proves a genuine manifest copied among the caller's files is refused because it names another folder.
     /// </summary>
     [Fact]
@@ -367,16 +392,20 @@ public class ScratchFolderTests
     /// <param name="images">The image paths to account for.</param>
     /// <param name="pages">The page paths to account for.</param>
     /// <param name="parts">The part paths to account for.</param>
+    /// <param name="schemaVersion">The schema version the manifest declares.</param>
+    /// <param name="reviewCommentsPath">The review-comments path to account for, or <see langword="null"/>.</param>
     /// <returns>The manifest JSON body.</returns>
     private static string DocDownManifest(
         string scratchFolder,
         IReadOnlyList<string>? images = null,
         IReadOnlyList<string>? pages = null,
-        IReadOnlyList<string>? parts = null)
+        IReadOnlyList<string>? parts = null,
+        string schemaVersion = "3.0",
+        string? reviewCommentsPath = null)
     {
         var manifest = new
         {
-            schemaVersion = "3.0",
+            schemaVersion,
             tool = new { name = "DocDown", package = "DemaConsulting.DocDown.Core" },
             scratchFolder,
             extractedAtUtc = "2024-01-02T03:04:05Z",
@@ -398,6 +427,8 @@ public class ScratchFolderTests
             images = (images ?? []).Select(path => new { path, mediaType = "image/png", widthPx = 1, heightPx = 1, sizeBytes = 1, sha256 = "11", sourcePage = 1, sourcePages = new[] { 1 }, referencedByTemplate = false, sourceRef = (string?)null, transform = "passthrough", references = 1, description = (string?)null, descriptionSource = (string?)null }).ToArray(),
             pages = (pages ?? []).Select(path => new { path, pageNumber = 1, sizeBytes = 1, sha256 = "22" }).ToArray(),
             parts = (parts ?? []).Select(path => new { path, kind = "section", ordinal = 1, title = "Part", characterCount = 1 }).ToArray(),
+            reviewComments = Array.Empty<object>(),
+            reviewCommentsPath,
             notes = Array.Empty<string>(),
             requestedOptions = new
             {

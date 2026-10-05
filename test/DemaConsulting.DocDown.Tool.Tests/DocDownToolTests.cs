@@ -147,7 +147,7 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         Assert.True(File.Exists(manifestPath));
         using var manifest = JsonDocument.Parse(File.ReadAllText(manifestPath));
         var root = manifest.RootElement;
-        Assert.Equal("3.0", root.GetProperty("schemaVersion").GetString());
+        Assert.Equal("3.1", root.GetProperty("schemaVersion").GetString());
         var note = Assert.Single(root.GetProperty("notes").EnumerateArray().Select(static element => element.GetString()));
         Assert.Equal("Embedded image extraction was disabled by the caller; no images were written.", note);
         Assert.False(root.TryGetProperty("artifacts", out _));

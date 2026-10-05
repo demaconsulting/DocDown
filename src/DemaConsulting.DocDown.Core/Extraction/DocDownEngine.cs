@@ -358,15 +358,16 @@ public sealed class DocDownEngine
         // Step 8: record the notes Core knows about that the backend cannot report itself
         EmitCoreDerivedNotes(sink, inputs.Options, selected, providesRenderedPages, inputs.Detection);
 
-        // Step 9: finalize content, then serialize the manifest and summary
+        // Step 9: finalize content and any review comments, then serialize the manifest and summary
         var content = await ContentWriter.WriteAsync(
             sink, sink.DocumentInfo?.Title, cancellationToken).ConfigureAwait(false);
+        var reviewComments = await ReviewCommentsWriter.WriteAsync(sink, cancellationToken).ConfigureAwait(false);
 
         var environment = BuildEnvironment(FinalFacts(sink, inputs.Candidates, selected.Id));
         var report = new ExtractionReport(
             ExtractionOutcome.Produced, inputs.Source, inputs.Detection, selected,
             environment, inputs.Options, inputs.Timestamp, null);
-        return await ProduceResultAsync(folder, sink, report, content, cancellationToken).ConfigureAwait(false);
+        return await ProduceResultAsync(folder, sink, report, content, reviewComments, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -382,17 +383,20 @@ public sealed class DocDownEngine
     /// <remarks>
     ///     Serializes the manifest and summary so even an unreadable run produces a self-describing
     ///     layout carrying the prose failure. Content is not written, so <c>content.md</c> is honestly
-    ///     absent. Performs filesystem I/O.
+    ///     absent. The review-comments writer still runs, because a backend may have reported comments
+    ///     before the step that failed; it writes nothing when none were reported, which is the usual
+    ///     case here. Performs filesystem I/O.
     /// </remarks>
     private static async ValueTask<ExtractionResult> WriteFailureAsync(
         ScratchFolder folder, ExtractionSink sink, PipelineInputs inputs,
         ExtractorDescriptor? selected, ExtractionFailure failure, CancellationToken cancellationToken)
     {
+        var reviewComments = await ReviewCommentsWriter.WriteAsync(sink, cancellationToken).ConfigureAwait(false);
         var environment = BuildEnvironment(FinalFacts(sink, inputs.Candidates, selected?.Id));
         var report = new ExtractionReport(
             ExtractionOutcome.Unreadable, inputs.Source, inputs.Detection, selected,
             environment, inputs.Options, inputs.Timestamp, failure);
-        return await ProduceResultAsync(folder, sink, report, null, cancellationToken).ConfigureAwait(false);
+        return await ProduceResultAsync(folder, sink, report, null, reviewComments, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -402,6 +406,7 @@ public sealed class DocDownEngine
     /// <param name="sink">The sink holding the recorded content.</param>
     /// <param name="report">The report with a provisional outcome; the final outcome is resolved here.</param>
     /// <param name="content">The content-write result, or <see langword="null"/> when no content was written.</param>
+    /// <param name="reviewComments">The review-comments write result.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>The assembled extraction result.</returns>
     /// <remarks>
@@ -411,17 +416,18 @@ public sealed class DocDownEngine
     /// </remarks>
     private static async ValueTask<ExtractionResult> ProduceResultAsync(
         ScratchFolder folder, ExtractionSink sink, ExtractionReport report,
-        ContentWriteResult? content, CancellationToken cancellationToken)
+        ContentWriteResult? content, ReviewCommentsWriteResult? reviewComments,
+        CancellationToken cancellationToken)
     {
         // The outcome is a fact about whether output exists: a failure is unreadable, anything else produced
         var outcome = report.Failure is not null ? ExtractionOutcome.Unreadable : ExtractionOutcome.Produced;
         var finalReport = report with { Outcome = outcome };
 
-        await ManifestWriter.WriteAsync(folder, sink, finalReport, content, cancellationToken).ConfigureAwait(false);
+        await ManifestWriter.WriteAsync(folder, sink, finalReport, content, reviewComments, cancellationToken).ConfigureAwait(false);
         await MetadataWriter.WriteAsync(folder, sink, cancellationToken).ConfigureAwait(false);
-        await SummaryWriter.WriteAsync(folder, sink, finalReport, content, cancellationToken).ConfigureAwait(false);
+        await SummaryWriter.WriteAsync(folder, sink, finalReport, content, reviewComments, cancellationToken).ConfigureAwait(false);
 
-        return BuildResult(folder, sink, finalReport, content);
+        return BuildResult(folder, sink, finalReport, content, reviewComments);
     }
 
     /// <summary>
@@ -431,13 +437,16 @@ public sealed class DocDownEngine
     /// <param name="sink">The sink holding the recorded images, pages, and notes.</param>
     /// <param name="report">The final report (with resolved outcome, selected extractor, detection, environment).</param>
     /// <param name="content">The content-write result, or <see langword="null"/> when none was written.</param>
+    /// <param name="reviewComments">The review-comments write result.</param>
     /// <returns>The assembled result.</returns>
     /// <remarks>
     ///     The summary and manifest paths are absolute so a caller can use them directly; the content,
-    ///     image, page, and part paths stay relative to the scratch folder to match the manifest. Pure.
+    ///     review-comments, image, page, and part paths stay relative to the scratch folder to match
+    ///     the manifest. Pure.
     /// </remarks>
     private static ExtractionResult BuildResult(
-        ScratchFolder folder, ExtractionSink sink, ExtractionReport report, ContentWriteResult? content)
+        ScratchFolder folder, ExtractionSink sink, ExtractionReport report,
+        ContentWriteResult? content, ReviewCommentsWriteResult? reviewComments)
     {
         var absolute = folder.AbsolutePath;
         return new ExtractionResult(
@@ -446,6 +455,7 @@ public sealed class DocDownEngine
             Path.Combine(absolute, "summary.txt"),
             Path.Combine(absolute, "manifest.json"),
             content?.ContentPath,
+            reviewComments?.Path,
             sink.Images.Select(image => image.Path).ToList(),
             sink.Pages.Select(page => page.Path).ToList(),
             content?.PartPaths ?? [],
@@ -479,6 +489,7 @@ public sealed class DocDownEngine
             requested,
             Path.Combine(requested, "summary.txt"),
             Path.Combine(requested, "manifest.json"),
+            null,
             null,
             [],
             [],
@@ -761,7 +772,7 @@ public sealed class DocDownEngine
         using var document = JsonDocument.Parse(File.ReadAllText(result.ManifestPath));
         var root = document.RootElement;
 
-        if (!root.TryGetProperty("schemaVersion", out var schema) || schema.GetString() != "3.0")
+        if (!root.TryGetProperty("schemaVersion", out var schema) || schema.GetString() != "3.1")
         {
             return (false, "manifest schemaVersion is missing or unsupported");
         }

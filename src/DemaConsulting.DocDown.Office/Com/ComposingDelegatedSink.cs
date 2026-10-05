@@ -82,6 +82,9 @@ internal sealed class ComposingDelegatedSink : IExtractionSink
     public void ReportNote(ExtractionNote note) => _inner.ReportNote(note);
 
     /// <inheritdoc />
+    public void ReportReviewComment(DocumentComment comment) => _inner.ReportReviewComment(comment);
+
+    /// <inheritdoc />
     /// <remarks>
     ///     Suppresses the managed backend's the managed backend's page-rendering "not available" fact,
     ///     which contradicts the rendering this COM run performed; forwards every other fact

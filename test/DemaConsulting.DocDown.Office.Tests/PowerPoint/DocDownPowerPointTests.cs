@@ -135,7 +135,7 @@ public class DocDownPowerPointTests
         Assert.Contains("Nothing was left incomplete.", summary, StringComparison.Ordinal);
 
         using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
-        Assert.Equal("3.0", manifest.RootElement.GetProperty("schemaVersion").GetString());
+        Assert.Equal("3.1", manifest.RootElement.GetProperty("schemaVersion").GetString());
         Assert.Equal("produced", manifest.RootElement.GetProperty("status").GetString());
         Assert.Equal(0, manifest.RootElement.GetProperty("notes").GetArrayLength());
         var feature = manifest.RootElement

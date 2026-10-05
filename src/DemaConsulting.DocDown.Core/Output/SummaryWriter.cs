@@ -41,6 +41,9 @@ public static class SummaryWriter
     /// <param name="sink">The sink holding the recorded content. Must not be null.</param>
     /// <param name="report">The engine-side facts describing the extraction. Must not be null.</param>
     /// <param name="content">The content-write result, or <see langword="null"/> when no content was written.</param>
+    /// <param name="reviewComments">
+    ///     The review-comments write result, or <see langword="null"/> when the writer did not run.
+    /// </param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>A task that completes when the summary has been written.</returns>
     /// <exception cref="ArgumentNullException">Thrown when any required argument is <see langword="null"/>.</exception>
@@ -50,7 +53,8 @@ public static class SummaryWriter
     /// </remarks>
     public static async ValueTask WriteAsync(
         ScratchFolder folder, ExtractionSink sink, ExtractionReport report,
-        ContentWriteResult? content, CancellationToken cancellationToken)
+        ContentWriteResult? content, ReviewCommentsWriteResult? reviewComments,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(folder);
         ArgumentNullException.ThrowIfNull(sink);
@@ -64,7 +68,7 @@ public static class SummaryWriter
         AppendBackend(builder, report);
         AppendEnvironment(builder, report.Environment);
         AppendDocumentMetadata(builder, sink.DocumentMetadata);
-        AppendLayout(builder, sink, content);
+        AppendLayout(builder, sink, content, reviewComments);
         AppendWhatWasExtracted(builder, sink, content, report.DetectedFormat.Format.Id);
         AppendNotes(builder, sink.Notes);
 
@@ -447,13 +451,20 @@ public static class SummaryWriter
     /// <param name="builder">The buffer to append to.</param>
     /// <param name="sink">The sink holding the recorded images and pages.</param>
     /// <param name="content">The content-write result, or <see langword="null"/> when no content was written.</param>
+    /// <param name="reviewComments">
+    ///     The review-comments write result, or <see langword="null"/> when the writer did not run.
+    /// </param>
     /// <remarks>
     ///     Every standard artifact is listed with a short presence phrase (a count for the resource
     ///     folders), so an absent folder is always accompanied here by an explicit statement rather
-    ///     than silence. The counts are the plain facts of what was written; there is no completeness
-    ///     grade.
+    ///     than silence. <c>review-comments.md</c> is the one artifact whose presence varies with the
+    ///     document, so it is listed on the same terms: present with a count when the document
+    ///     carries reviewer comments, and explicitly not present when it carries none. The counts are
+    ///     the plain facts of what was written; there is no completeness grade.
     /// </remarks>
-    private static void AppendLayout(StringBuilder builder, ExtractionSink sink, ContentWriteResult? content)
+    private static void AppendLayout(
+        StringBuilder builder, ExtractionSink sink, ContentWriteResult? content,
+        ReviewCommentsWriteResult? reviewComments)
     {
         AppendHeader(builder, "Layout");
         builder.Append("  summary.txt          this file\n");
@@ -461,18 +472,20 @@ public static class SummaryWriter
         builder.Append("  metadata.json        what the document asserts about itself\n");
         builder.Append("  content.md           ")
             .Append(content is { ContentPresent: true } ? "PRESENT" : "not present").Append('\n');
+        builder.Append("  review-comments.md   ")
+            .Append(FolderCountPhrase(reviewComments?.Count ?? 0, "comments")).Append('\n');
         builder.Append("  images/              ").Append(FolderCountPhrase(sink.Images.Count, "extracted")).Append('\n');
         builder.Append("  pages/               ").Append(FolderCountPhrase(sink.Pages.Count, "rendered")).Append('\n');
         builder.Append('\n');
     }
 
     /// <summary>
-    ///     Produces the presence phrase for a resource folder from its written count.
+    ///     Produces the presence phrase for an artifact from its written count.
     /// </summary>
-    /// <param name="count">The number of files written into the folder.</param>
-    /// <param name="verb">The past participle describing what was done (for example <c>extracted</c>).</param>
+    /// <param name="count">The number of files written into the folder, or of entries written into the artifact.</param>
+    /// <param name="verb">The past participle or noun describing what was written (for example <c>extracted</c>).</param>
     /// <returns>A short presence phrase.</returns>
-    /// <remarks>States the plain count; a folder with nothing written reads as "not present". Pure.</remarks>
+    /// <remarks>States the plain count; an artifact with nothing written reads as "not present". Pure.</remarks>
     private static string FolderCountPhrase(int count, string verb) => count > 0
         ? $"PRESENT - {count.ToString(CultureInfo.InvariantCulture)} {verb}"
         : "not present - none were written";
