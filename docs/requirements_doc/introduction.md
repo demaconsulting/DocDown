@@ -7,7 +7,8 @@ This document contains the requirements for the DocDown project.
 DocDown is a family of .NET libraries and a command-line tool that extract useful information
 from documents of many types into a scratch folder, in a predictable layout designed to be fed to
 multimodal AI agents. Every extraction produces the same four artifacts — `summary.txt`,
-`manifest.json`, `content.md`, and the `images/` and `pages/` resource folders — so that the
+`manifest.json`, `content.md`, and the `images/` and `pages/` resource folders — plus
+`review-comments.md` when the document carries reviewer comments, so that the
 output layout is invariant even though the extracted content is best-effort and depends on the
 execution environment.
 

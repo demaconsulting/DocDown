@@ -10,6 +10,7 @@ package DocDownCore {
         part scratchFolder : ScratchFolder;
         part extractionSink : ExtractionSink;
         part contentWriter : ContentWriter;
+        part reviewCommentsWriter : ReviewCommentsWriter;
         part summaryWriter : SummaryWriter;
         part manifestWriter : ManifestWriter;
         part imageTextSelector : ImageTextSelector;
@@ -94,6 +95,24 @@ package DocDownCore {
         comment designRef /* Design: docs/design/docdown-core/output.md (documented as a supporting type) */
         comment verificationRef /* Verification: docs/verification/docdown-core/output.md (documented as a supporting type) */
         comment reqRef /* Requirements: docs/reqstream/docdown-core/output.yaml (documented as a supporting type) */
+    }
+
+    part def DocumentComment {
+        doc /* One reviewer comment a document carries: an optional author, the comment body, and a single precomputed human-readable location phrase composed by the backend. */
+
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ReviewCommentsWriter.cs */
+        comment designRef /* Design: docs/design/docdown-core/output/review-comments-writer.md (documented as a supporting type) */
+        comment verificationRef /* Verification: docs/verification/docdown-core/output/review-comments-writer.md (documented as a supporting type) */
+        comment reqRef /* Requirements: docs/reqstream/docdown-core/output/review-comments-writer.yaml (documented as a supporting type) */
+    }
+
+    part def ReviewCommentsWriteResult {
+        doc /* The outcome of finalizing review-comments.md: the relative path when a file was written, or null and a zero count when the document carried no comments. */
+
+        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Output/ReviewCommentsWriter.cs */
+        comment designRef /* Design: docs/design/docdown-core/output/review-comments-writer.md (documented as a supporting type) */
+        comment verificationRef /* Verification: docs/verification/docdown-core/output/review-comments-writer.md (documented as a supporting type) */
+        comment reqRef /* Requirements: docs/reqstream/docdown-core/output/review-comments-writer.yaml (documented as a supporting type) */
     }
 
     part def MetadataWriter {

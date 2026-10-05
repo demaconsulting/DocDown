@@ -20,7 +20,8 @@ failure containment, and result assembly.
 
 Per IEC 62304 §5.5.2, `DocDownEngine` passes when it runs the documented pipeline order, never gives a
 backend the scratch path, clones options before use, returns only `Produced` or `Unreadable`, records
-render-request notes correctly, contains backend faults, reports registered candidates, exposes the
+render-request notes correctly, finalizes the conditional review-comments artifact and reports its
+path only when one was written, contains backend faults, reports registered candidates, exposes the
 two Core self-test cases, propagates cancellation, and rejects null or empty required arguments.
 
 #### Test Scenarios
@@ -32,6 +33,14 @@ two Core self-test cases, propagates cancellation, and rejects null or empty req
 ##### A paginated render request with no renderer records a note
 
 **Test**: `DocDownEngine_ExtractAsync_PaginatedFormat_RenderRequestUnavailable_RecordsNote`
+
+##### The review-comments artifact is finalized and claimed honestly
+
+**Tests**: `DocDownEngine_ExtractAsync_BackendReportsReviewComments_WritesAndClaimsArtifact`,
+`DocDownEngine_ExtractAsync_NoReviewComments_WritesNoArtifactAndClaimsNone`
+
+Proves a commented document yields `review-comments.md`, a result that claims it, and a summary that
+counts it, while an uncommented document yields no file, no claimed path, and a summary that says so.
 
 ##### A refused scratch folder returns failure without writing artifacts
 

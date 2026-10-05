@@ -15,7 +15,9 @@ throughout the repository.
   scratch folder), `manifest.json` (its machine-readable twin), `metadata.json`
   (what the document asserts about itself — creator, dates, and the like — with
   per-field provenance), `content.md` (the textual content as markdown, linking to
-  extracted images), and the `images/` and `pages/` resource folders. The output
+  extracted images), and the `images/` and `pages/` resource folders. A sixth
+  artifact, `review-comments.md`, is written conditionally — only when the source
+  document actually carries reviewer comments or annotations. The output
   layout is invariant; the extracted content is best-effort and environment-dependent,
   and whatever could not be extracted is reported explicitly with a reason rather
   than silently omitted.

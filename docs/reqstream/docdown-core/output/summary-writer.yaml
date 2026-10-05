@@ -108,6 +108,20 @@ sections:
                 tests:
                   - SummaryWriter_WriteAsync_WithImages_SummarizesInAggregateAndExplainsTemplateImages
 
+              - id: DocDownCore-Output-SummaryWriter-ReviewCommentsAnnounced
+                title: >-
+                  SummaryWriter shall state in the layout block whether review-comments.md was
+                  written and how many comments it records.
+                justification: |
+                  review-comments.md is the one artifact whose presence varies with the document, so
+                  a reader scanning the layout would otherwise have to guess whether its absence
+                  means no review or a failed extraction. Stating the absence explicitly, and
+                  counting the comments when present, keeps the layout block a complete account of
+                  the run.
+                tests:
+                  - SummaryWriter_WriteAsync_WithReviewComments_AnnouncesArtifactAsPresentAndCounted
+                  - SummaryWriter_WriteAsync_WithoutReviewComments_AnnouncesArtifactAsAbsent
+
               - id: DocDownCore-Output-SummaryWriter-GoldenOutput
                 title: SummaryWriter shall render representative summary output matching the committed golden files.
                 justification: |

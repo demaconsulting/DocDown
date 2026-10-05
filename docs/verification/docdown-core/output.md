@@ -5,9 +5,9 @@ This document describes the verification strategy for the Output subsystem.
 ### Verification Approach
 
 Output is verified through subsystem tests in `OutputTests.cs`. The tests drive the real
-`ScratchFolder`, `ExtractionSink`, `ContentWriter`, `MetadataWriter`, `ManifestWriter`, and
-`SummaryWriter` over a real `TempScratch` folder. No mocking is used because the subsystem's value is
-what it actually writes to disk.
+`ScratchFolder`, `ExtractionSink`, `ContentWriter`, `ReviewCommentsWriter`, `MetadataWriter`,
+`ManifestWriter`, and `SummaryWriter` over a real `TempScratch` folder. No mocking is used because
+the subsystem's value is what it actually writes to disk.
 
 ### Test Environment
 
@@ -19,10 +19,11 @@ what it actually writes to disk.
 ### Acceptance Criteria
 
 Per IEC 62304 §5.5.2, Output passes when it prepares the scratch folder and writes the root
-artifacts, emits the reduced schema `manifest.json`, writes `content.md` when text exists,
-deduplicates identical images, names rendered pages by source page number, carries notes into both
-summary and manifest, contains hostile path input, produces deterministic bytes at a fixed timestamp,
-and records image provenance per image.
+artifacts, emits the reduced schema `manifest.json`, writes `content.md` when text exists, writes
+`review-comments.md` only when the document carries reviewer comments, deduplicates identical images,
+names rendered pages by source page number, carries notes into both summary and manifest, contains
+hostile path input, produces deterministic bytes at a fixed timestamp, and records image provenance
+per image.
 
 ### Test Scenarios
 
@@ -34,9 +35,9 @@ and records image provenance per image.
 
 **Test**: `Output_SummaryContent_Written_ContainsMandatorySections`
 
-#### The manifest parses as schema version 3.0
+#### The manifest parses as schema version 3.1
 
-**Test**: `Output_ManifestContent_Written_ParsesWithSchemaVersionThreePointZero`
+**Test**: `Output_ManifestContent_Written_ParsesWithSchemaVersionThreePointOne`
 
 #### Written text produces content.md
 
@@ -53,6 +54,13 @@ and records image provenance per image.
 #### Notes appear in both summary and manifest
 
 **Test**: `Output_Notes_Reported_AppearInSummaryAndManifest`
+
+#### Review comments appear in the artifact, the summary, and the manifest
+
+**Test**: `Output_ReviewComments_Reported_AppearInArtifactSummaryAndManifest`
+
+Proves a reported reviewer comment reaches `review-comments.md`, is announced and counted in the
+summary layout block, and is serialized into the manifest alongside the claimed artifact path.
 
 #### A malicious image name stays contained
 

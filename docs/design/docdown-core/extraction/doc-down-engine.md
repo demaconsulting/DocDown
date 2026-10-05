@@ -77,8 +77,9 @@ summary and the manifest.
 - **`ExtractorRegistry`** — candidate enumeration, extractor resolution, and self-test contribution.
 - **`FormatSniffer`** — format detection.
 - **`ExtractorSelector`** — deterministic selection.
-- **`ScratchFolder`**, **`ExtractionSink`**, **`ContentWriter`**, **`MetadataWriter`**,
-  **`ManifestWriter`**, and **`SummaryWriter`** — output preparation and serialization.
+- **`ScratchFolder`**, **`ExtractionSink`**, **`ContentWriter`**, **`ReviewCommentsWriter`**,
+  **`MetadataWriter`**, **`ManifestWriter`**, and **`SummaryWriter`** — output preparation and
+  serialization.
 
 #### Callers
 

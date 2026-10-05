@@ -21,6 +21,7 @@ includes:
   - docs/reqstream/docdown-core/output/scratch-folder.yaml
   - docs/reqstream/docdown-core/output/extraction-sink.yaml
   - docs/reqstream/docdown-core/output/content-writer.yaml
+  - docs/reqstream/docdown-core/output/review-comments-writer.yaml
   - docs/reqstream/docdown-core/output/summary-writer.yaml
   - docs/reqstream/docdown-core/output/manifest-writer.yaml
   - docs/reqstream/docdown-core/output/image-text-selector.yaml

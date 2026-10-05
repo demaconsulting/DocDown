@@ -17,6 +17,7 @@ input-files:
   - docs/design/docdown-core/output/scratch-folder.md
   - docs/design/docdown-core/output/extraction-sink.md
   - docs/design/docdown-core/output/content-writer.md
+  - docs/design/docdown-core/output/review-comments-writer.md
   - docs/design/docdown-core/output/summary-writer.md
   - docs/design/docdown-core/output/manifest-writer.md
   - docs/design/docdown-core/output/image-text-selector.md

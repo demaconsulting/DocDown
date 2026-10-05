@@ -40,6 +40,8 @@ Its key fields are:
 - **`ReportContentFeature`** — accumulates counted content features, keeping a zero only when the
   backend marked the feature as `LookedFor`.
 - **`ReportNote`** — records one `ExtractionNote` verbatim.
+- **`ReportReviewComment`** — records one `DocumentComment` verbatim, in report order, after
+  rejecting a comment with no body or no location.
 - **`ReportEnvironmentFact`** — records one environment fact in emission order.
 
 #### Error Handling

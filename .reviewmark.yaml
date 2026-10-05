@@ -293,6 +293,21 @@ reviews:
       - "src/DemaConsulting.DocDown.Core/Output/ContentWriter.cs"                    # unit source
       - "test/DemaConsulting.DocDown.Core.Tests/Output/ContentWriterTests.cs"        # unit tests
 
+  # DocDownCore-Output-ReviewCommentsWriter Review (one per unit)
+  - id: DocDownCore-Output-ReviewCommentsWriter
+    title: Review that DocDown.Core Output ReviewCommentsWriter Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/output.md"
+      - "docs/reqstream/docdown-core/output.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/output/review-comments-writer.yaml"             # unit requirements
+      - "docs/design/docdown-core/output/review-comments-writer.md"                  # unit design
+      - "docs/verification/docdown-core/output/review-comments-writer.md"            # unit verification
+      - "src/DemaConsulting.DocDown.Core/Output/ReviewCommentsWriter.cs"             # unit source
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/ReviewCommentsWriterTests.cs"  # unit tests
+
   # DocDownCore-Output-SummaryWriter Review (one per unit)
   - id: DocDownCore-Output-SummaryWriter
     title: Review that DocDown.Core Output SummaryWriter Implementation is Correct

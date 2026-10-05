@@ -192,16 +192,18 @@ Not supported today:
 
 ## The Output Contract
 
-When DocDown produces an extraction, it writes the same five artifacts under the scratch folder:
+When DocDown produces an extraction, it writes the same five artifacts under the scratch folder,
+plus a sixth that appears only when the document carries reviewer comments:
 
 ```text
 out/
-├── summary.txt      # what was extracted and where — paste this into the model context window
-├── manifest.json    # machine-readable twin of summary.txt
-├── metadata.json    # what the document asserts about itself, with provenance
-├── content.md       # textual content as markdown, linking into images/
-├── images/          # extracted embedded images
-└── pages/           # rendered page images, when requested and available
+├── summary.txt         # what was extracted and where — paste this into the model context window
+├── manifest.json       # machine-readable twin of summary.txt
+├── metadata.json       # what the document asserts about itself, with provenance
+├── content.md          # textual content as markdown, linking into images/
+├── review-comments.md  # reviewer comments — only when the document has any
+├── images/             # extracted embedded images
+└── pages/              # rendered page images, when requested and available
 ```
 
 - **`summary.txt`** — the short human- and agent-readable summary of what was extracted and where,
@@ -211,13 +213,22 @@ out/
   Counts are explicit, including a plain `0` for features the backend genuinely looked for, such
   as PowerPoint speaker notes in a deck that has none.
 - **`manifest.json`** — the machine-readable twin of `summary.txt`. Its schema version is now
-  `3.0`; it carries a `notes` string array and preserves per-image provenance, content inventory,
+  `3.1`; it carries a `notes` string array, a `reviewComments` array, and preserves per-image
+  provenance, content inventory,
   and metadata-facing details. It describes the document that was extracted and nothing else: there
   is no `environment` block (`summary.txt` still reports which backend ran and what was
   available), no `requestedOptions` echo of the caller's own arguments, and no SHA-256 digests.
 - **`metadata.json`** — what the document asserts about itself, with per-field provenance and blank
   values omitted.
 - **`content.md`** — the extracted textual content as markdown, linking to extracted images.
+- **`review-comments.md`** — the reviewer comments and annotations the document carries, one entry
+  per comment as `- **Author** (Location): Body`. This file is written **only** when the document
+  actually has reviewer comments. An empty file would assert that a review happened and found
+  nothing, which is a different claim from the document never having been commented on — so no
+  comments means no file. `summary.txt` says so explicitly in its Layout block, and
+  `manifest.json` leaves `reviewCommentsPath` null. The `Location` is one human-readable phrase
+  composed by the backend that knows the format: Word uses `§Heading — "snippet…"`, Excel uses
+  `Sheet1!B7`, PowerPoint uses `Slide 4`, and PDF uses `Page 12`.
 - **`images/` and `pages/`** — extracted embedded images and optional rendered page images.
 
 `summary.txt` stays compact because it is the artifact a user pastes into an LLM context window.
@@ -357,7 +368,8 @@ package you installed.
 
 ## Features
 
-- **Uniform Output Layout**: The same five artifacts for every produced extraction
+- **Uniform Output Layout**: The same five artifacts for every produced extraction, plus a sixth
+  when the document carries reviewer comments
 - **Inventory-First Reporting**: Explicit counts, including `0` for features the backend checked
 - **Plain Notes**: Message-only extraction notes with no diagnostic taxonomy or acceptability
   judgment

@@ -13,10 +13,12 @@
 # manifest schema 2.0 no longer carries a completeness verdict.
 #
 # SUPERSEDED REQUIREMENT: DocDownCore-Output-ManifestWriter-SchemaVersion (2.0 wording)
-# is retained at version 3.0 rather than retired; the manifest still declares a schema version, but
+# is retained at version 3.1 rather than retired; the manifest still declares a schema version, but
 # the declared value moved to 3.0 when the digests, environment block, and requested-options echo
 # were removed, because a consumer pinned to 2.0 would otherwise meet a manifest missing fields
-# that schema promised.
+# that schema promised. It moved again to 3.1 when the reviewComments array and reviewCommentsPath
+# were added: a purely additive change raises the minor version because a consumer pinned to 3.0
+# still finds everything 3.0 promised.
 
 sections:
   - title: DocDownCore Requirements
@@ -26,11 +28,27 @@ sections:
           - title: ManifestWriter Requirements
             requirements:
               - id: DocDownCore-Output-ManifestWriter-SchemaVersion
-                title: ManifestWriter shall declare manifest schema version 3.0.
+                title: ManifestWriter shall declare manifest schema version 3.1.
                 justification: |
                   Machine consumers need an explicit schema version before they act on the file.
+                  The minor version is raised for a purely additive change, so a consumer pinned to
+                  3.0 still finds everything 3.0 promised; the major version is reserved for a
+                  removal, which is the change that can actually break such a consumer.
                 tests:
-                  - ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionThreePointZero
+                  - ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionThreePointOne
+
+              - id: DocDownCore-Output-ManifestWriter-ReviewCommentsSerialized
+                title: >-
+                  ManifestWriter shall serialize the recorded reviewer comments and the path of the
+                  review-comments artifact when one was written.
+                justification: |
+                  A machine consumer must be able to read the reviewer commentary and locate the
+                  artifact without opening it. The array is always present so a consumer never has
+                  to distinguish "no comments" from "field missing", while the path is claimed only
+                  when a file actually exists behind it.
+                tests:
+                  - ManifestWriter_WriteAsync_NoReviewComments_SerializesEmptyArrayAndNullPath
+                  - ManifestWriter_WriteAsync_ReviewCommentsReported_SerializesCommentsInOrderAndClaimsPath
 
               - id: DocDownCore-Output-ManifestWriter-MachineTwin
                 title: >-

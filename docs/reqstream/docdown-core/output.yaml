@@ -74,7 +74,30 @@ sections:
               - DocDownCore-Output-ManifestWriter-ReducedSchema
               - DocDownCore-Output-ManifestWriter-NotesSerialized
             tests:
-              - Output_ManifestContent_Written_ParsesWithSchemaVersionThreePointZero
+              - Output_ManifestContent_Written_ParsesWithSchemaVersionThreePointOne
+
+          - id: DocDownCore-Output-ReviewComments
+            title: >-
+              The subsystem shall write the reviewer commentary a document carries as its own
+              conditional artifact, and shall account for it in the summary and the manifest.
+            justification: |
+              Reviewer commentary is editorial conversation about a document rather than the
+              document's own content, so interleaving it into content.md would force every
+              consumer to filter one out of the other. Writing it separately — and only when the
+              document actually carries comments — gives a reviewer-facing consumer one file to
+              read, and gives every other consumer an unambiguous signal that no review was found.
+            children:
+              - DocDownCore-Output-ReviewCommentsWriter-ConditionalArtifact
+              - DocDownCore-Output-ReviewCommentsWriter-EntryFormat
+              - DocDownCore-Output-ReviewCommentsWriter-ReportOrder
+              - DocDownCore-Output-ReviewCommentsWriter-UnattributedReported
+              - DocDownCore-Output-ExtractionSink-RecordsReviewComments
+              - DocDownCore-Output-ManifestWriter-ReviewCommentsSerialized
+              - DocDownCore-Output-SummaryWriter-ReviewCommentsAnnounced
+              - DocDownCore-Output-ScratchFolder-AdditiveSchemaAccepted
+              - DocDownCore-Extraction-DocDownEngine-ReviewCommentsFinalized
+            tests:
+              - Output_ReviewComments_Reported_AppearInArtifactSummaryAndManifest
 
           - id: DocDownCore-Output-DocumentMetadata
             title: >-

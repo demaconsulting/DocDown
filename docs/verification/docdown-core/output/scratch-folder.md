@@ -20,7 +20,8 @@ deletes on disk.
 Per IEC 62304 §5.5.2, `ScratchFolder` passes when traversal and rooted paths are refused, safe
 relative paths remain contained, illegal characters and reserved device names are rejected, overlong
 paths fail with `ScratchFolderException`, slugging is deterministic and Windows-portable,
-`CleanIfDocDownFolder` deletes only proven prior DocDown output for the same folder, folder changes
+`CleanIfDocDownFolder` deletes only proven prior DocDown output for the same folder — including
+output written under any manifest schema version this library has produced — folder changes
 during preparation are refused, and `Overwrite` clears contents unconditionally.
 
 #### Test Scenarios
@@ -62,6 +63,14 @@ during preparation are refused, and `Overwrite` clears contents unconditionally.
 ##### Copied or mismatched manifests are refused
 
 **Test**: `ScratchFolder_Prepare_CopiedGenuineManifestAmongUserFiles_RefusesAndPreservesContents`
+
+##### A prior run under a newer additive schema is still recognized
+
+**Test**: `ScratchFolder_Prepare_PriorRunWithReviewComments_IsRecognizedAndCleaned`
+
+Proves a folder whose manifest declares the additive `3.1` schema is accepted as proven DocDown
+output and that the conditional `review-comments.md` it accounts for is cleaned rather than treated
+as an unaccounted stray.
 
 ##### Unaccounted files and escaping manifest paths are refused
 

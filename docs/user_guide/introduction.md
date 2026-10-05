@@ -143,7 +143,8 @@ outcomes.
 
 # The Output Contract
 
-When DocDown produces an extraction, it writes the same five artifacts under the scratch folder:
+When DocDown produces an extraction, it writes the same five artifacts under the scratch folder,
+plus a sixth that appears only when the document carries reviewer comments:
 
 - **`summary.txt`** — the short human- and agent-readable summary of what was extracted and where,
   including the absolute scratch path. It opens with a plain-English gist and then records Scratch,
@@ -151,8 +152,9 @@ When DocDown produces an extraction, it writes the same five artifacts under the
   extracted, and Could not read. When an unreadable result is written to the layout, `summary.txt`
   also includes a Failure section. The Could not read section contains the recorded notes or the
   sentence `Nothing was left incomplete.`
-- **`manifest.json`** — the machine-readable twin of `summary.txt`. Its schema version is `3.0`.
-  It carries a `notes` string array and preserves the content inventory, image provenance, and
+- **`manifest.json`** — the machine-readable twin of `summary.txt`. Its schema version is `3.1`.
+  It carries a `notes` string array, a `reviewComments` array, and preserves the content inventory,
+  image provenance, and
   metadata-facing details. It describes the document that was extracted and nothing else: there is
   no `environment` block, no `requestedOptions` echo of the caller's own arguments, and no
   SHA-256 digests. `summary.txt` keeps its Environment section, which is where a reader looks to
@@ -160,6 +162,17 @@ When DocDown produces an extraction, it writes the same five artifacts under the
 - **`metadata.json`** — what the document asserts about itself, with per-field provenance and blank
   values omitted.
 - **`content.md`** — the extracted textual content as markdown, linking to extracted images.
+- **`review-comments.md`** — the reviewer comments and annotations the document carries, one entry
+  per comment as `- **Author** (Location): Body`, in the order the document records them. This file
+  is written **only** when the document actually has reviewer comments: an empty file would assert
+  that a review happened and found nothing, which is a different claim from the document never
+  having been commented on. When there are none, `summary.txt` says `not present - none were
+  written` in its Layout block and `manifest.json` leaves `reviewCommentsPath` null, so you never
+  have to guess whether a missing file means no review or a failed extraction. The `Location` is a
+  single human-readable phrase composed by the backend that knows the format: Word uses
+  `§Heading — "snippet…"`, Excel uses `Sheet1!B7`, PowerPoint uses `Slide 4`, and PDF uses
+  `Page 12`. A comment the document leaves unattributed is reported as `**Unattributed**` rather
+  than being dropped or given a guessed name.
 - **`images/` and `pages/`** — extracted embedded images and optional rendered page images.
 
 `summary.txt` is intentionally compact because it is the artifact a user pastes into an LLM context

@@ -24,8 +24,8 @@ Two rules govern every interaction among these subsystems:
 
 - **The output layout is invariant.** Once Core accepts a scratch folder, it always uses the same
   root artifact names: `summary.txt`, `manifest.json`, and `metadata.json`. A produced run also
-  writes `content.md`; `images/`, `pages/`, and `parts/` appear only when that run produced those
-  resources, but their names and locations never vary.
+  writes `content.md`; `review-comments.md`, `images/`, `pages/`, and `parts/` appear only when that
+  run produced those resources, but their names and locations never vary.
 - **Reporting is limited to inventory and notes.** Core reports what it extracted through the
   content inventory and reports only attempted-but-incomplete steps through plain notes. It does not
   issue verdicts, grades, remedies, or impact statements.

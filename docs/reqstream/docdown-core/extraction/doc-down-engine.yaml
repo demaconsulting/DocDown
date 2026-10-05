@@ -25,6 +25,19 @@ sections:
                   - DocDownEngine_ExtractAsync_NonPaginatedFormat_RenderRequest_SucceedsSilently
                   - DocDownEngine_ExtractAsync_PaginatedFormat_RenderRequestUnavailable_RecordsNote
 
+              - id: DocDownCore-Extraction-DocDownEngine-ReviewCommentsFinalized
+                title: >-
+                  DocDownEngine shall finalize the review-comments artifact and report its path on
+                  the extraction result, or report no path when no comments were found.
+                justification: |
+                  The engine is the only component that sees both the backend's reports and the
+                  finished folder, so it is the only place that can bind the conditional artifact to
+                  the result a caller receives. Reporting the path only when the file exists means a
+                  caller can act on the result without first probing the filesystem.
+                tests:
+                  - DocDownEngine_ExtractAsync_BackendReportsReviewComments_WritesAndClaimsArtifact
+                  - DocDownEngine_ExtractAsync_NoReviewComments_WritesNoArtifactAndClaimsNone
+
               - id: DocDownCore-Extraction-DocDownEngine-PipelineOrder
                 title: >-
                   DocDownEngine shall run the extraction stages in a fixed order and not invoke a
