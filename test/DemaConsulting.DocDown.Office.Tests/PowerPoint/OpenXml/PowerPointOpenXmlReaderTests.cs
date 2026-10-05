@@ -125,6 +125,44 @@ public class PowerPointOpenXmlReaderTests
     }
 
     /// <summary>
+    ///     Proves a deck whose only comments are modern persona comments reports no comments but does
+    ///     count them, so an unread remark is never mistaken for an absent one.
+    /// </summary>
+    /// <remarks>
+    ///     Reading modern comments is outside this feature's scope, because resolving a persona to a
+    ///     name needs the person list and a validation pass neither of which this unit has. Saying
+    ///     nothing at all would be the worse failure: a reviewer who wrote three comments in current
+    ///     PowerPoint would see an output indistinguishable from one for a deck nobody reviewed. So
+    ///     the reader counts what it will not read, and the emitter turns that count into a note.
+    /// </remarks>
+    [Fact]
+    public void PowerPointOpenXmlReader_Read_DeckWithModernComments_CountsThemWithoutReadingThem()
+    {
+        using var stream = new MemoryStream(PptxFixtures.DeckWithModernComments());
+
+        var model = PowerPointOpenXmlReader.Read(stream);
+
+        Assert.Empty(Assert.Single(model.Slides).Comments);
+        Assert.Equal(1, model.ModernCommentCount);
+        Assert.Equal(1, model.ModernCommentSlideCount);
+    }
+
+    /// <summary>
+    ///     Proves a deck with only legacy comments reports no modern comments, so the note that
+    ///     announces unread commentary stays silent when there is none.
+    /// </summary>
+    [Fact]
+    public void PowerPointOpenXmlReader_Read_DeckWithComment_CountsNoModernComments()
+    {
+        using var stream = new MemoryStream(PptxFixtures.DeckWithComment());
+
+        var model = PowerPointOpenXmlReader.Read(stream);
+
+        Assert.Equal(0, model.ModernCommentCount);
+        Assert.Equal(0, model.ModernCommentSlideCount);
+    }
+
+    /// <summary>
     ///     Proves each comment stays with the slide that carries it, so a remark on one slide is
     ///     never reported against another.
     /// </summary>

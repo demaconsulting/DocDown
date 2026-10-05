@@ -1,6 +1,7 @@
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using D = DocumentFormat.OpenXml.Drawing;
+using O21 = DocumentFormat.OpenXml.Office2021.PowerPoint.Comment;
 using P = DocumentFormat.OpenXml.Presentation;
 
 namespace DemaConsulting.DocDown.Office.Tests.PowerPoint.TestData;
@@ -69,6 +70,24 @@ public static class PptxFixtures
 
         var second = AddSlide(presentationPart, 257U, "Details", ["Detail line"], notes: null);
         AddComments(second, [(1U, "Cite the source for this figure.")]);
+    });
+
+    /// <summary>
+    ///     Builds a single-slide deck whose only comments are modern persona comments, carried in the
+    ///     Office 2021 comment part rather than the legacy slide-comments part.
+    /// </summary>
+    /// <returns>The deck bytes.</returns>
+    /// <remarks>
+    ///     This is the shape current desktop and web PowerPoint writes. No legacy comments part and no
+    ///     comment-author list are attached on purpose: the whole point of the fixture is a deck whose
+    ///     commentary the reader does not read, so that a deck with unread comments can be told apart
+    ///     from a deck with none. The comment carries only an identifier and an author identifier,
+    ///     because only its presence is counted — nothing downstream reads the persona or the text.
+    /// </remarks>
+    public static byte[] DeckWithModernComments() => Build(presentationPart =>
+    {
+        var slidePart = AddSlide(presentationPart, 256U, "Overview", ["First bullet"], notes: null);
+        AddModernComments(slidePart, 1);
     });
 
     /// <summary>
@@ -278,6 +297,33 @@ public static class PptxFixtures
         }
 
         var part = slidePart.AddNewPart<SlideCommentsPart>();
+        part.CommentList = commentList;
+    }
+
+    /// <summary>
+    ///     Attaches a modern persona comment part to a slide.
+    /// </summary>
+    /// <param name="slidePart">The slide part to attach the comments to.</param>
+    /// <param name="count">How many comments to write.</param>
+    /// <remarks>
+    ///     Each comment is given the identifiers the schema names and nothing else. The reader counts
+    ///     these comments to report them as present-but-unread, so their bodies and personas are
+    ///     deliberately absent: a fixture that supplied them would suggest they are read.
+    /// </remarks>
+    private static void AddModernComments(SlidePart slidePart, int count)
+    {
+        var commentList = new O21.CommentList();
+        for (var index = 0; index < count; index++)
+        {
+            commentList.AppendChild(new O21.Comment
+            {
+                Id = $"{{00000000-0000-0000-0000-00000000000{index}}}",
+                AuthorId = "{11111111-1111-1111-1111-111111111111}",
+                Created = new DateTimeValue(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc))
+            });
+        }
+
+        var part = slidePart.AddNewPart<PowerPointCommentPart>();
         part.CommentList = commentList;
     }
 

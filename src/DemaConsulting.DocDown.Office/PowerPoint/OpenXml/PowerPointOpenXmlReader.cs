@@ -3,6 +3,7 @@ using DocDown.Core;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using D = DocumentFormat.OpenXml.Drawing;
+using O21 = DocumentFormat.OpenXml.Office2021.PowerPoint.Comment;
 using P = DocumentFormat.OpenXml.Presentation;
 
 namespace DocDown.PowerPoint.OpenXml;
@@ -74,12 +75,21 @@ internal static class PowerPointOpenXmlReader
             var imageCollection = PowerPointOpenXmlImageReader.Collect(presentationPart, slideOrdinals);
             var authorNames = LoadCommentAuthors(presentationPart);
 
+            var modernCommentCount = 0;
+            var modernCommentSlideCount = 0;
             foreach (var (slidePart, slideOrdinal) in slideParts)
             {
                 var imageRefs = imageCollection.SlideImageRefs.TryGetValue(slideOrdinal, out var refs)
                     ? refs
                     : [];
                 slides.Add(ReadSlide(slidePart, slideOrdinal, imageRefs, authorNames));
+
+                var modernOnThisSlide = CountModernComments(slidePart);
+                if (modernOnThisSlide > 0)
+                {
+                    modernCommentCount += modernOnThisSlide;
+                    modernCommentSlideCount++;
+                }
             }
 
             var images = imageCollection.Images;
@@ -99,9 +109,34 @@ internal static class PowerPointOpenXmlReader
                 document.PackageProperties.LastPrinted,
                 document.PackageProperties.Version,
                 document.PackageProperties.Language,
-                document.PackageProperties.Identifier)));
+                document.PackageProperties.Identifier)),
+                modernCommentCount,
+                modernCommentSlideCount);
         }
     }
+
+    /// <summary>
+    ///     Counts the modern persona-based comments a slide carries, without reading any of them.
+    /// </summary>
+    /// <param name="slidePart">The slide part to inspect.</param>
+    /// <returns>The number of modern comments attached to the slide; zero when it carries none.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         Counting is deliberately all this does. A deck whose comments are all modern would
+    ///         otherwise be indistinguishable in the output from a deck nobody ever commented on,
+    ///         which is the one thing this repository will not do: an absence caused by a boundary of
+    ///         the extractor must be reported, not silently rendered as an absence in the document.
+    ///         The emitter turns a non-zero count into a plain note.
+    ///     </para>
+    ///     <para>
+    ///         The count comes from the SDK's own typed accessors — <see cref="SlidePart.commentParts"/>
+    ///         and <see cref="PowerPointCommentPart.CommentList"/> over
+    ///         <c>DocumentFormat.OpenXml.Office2021.PowerPoint.Comment</c> — so nothing here reaches
+    ///         into the package by raw relationship or guesses at a grammar. Read-only over the part.
+    ///     </para>
+    /// </remarks>
+    private static int CountModernComments(SlidePart slidePart) =>
+        slidePart.commentParts.Sum(part => part.CommentList?.Elements<O21.Comment>().Count() ?? 0);
 
     /// <summary>
     ///     Reads one slide into the model: its title, body text lines, speaker notes, and the
@@ -195,12 +230,22 @@ internal static class PowerPointOpenXmlReader
     ///     </para>
     ///     <para>
     ///         <strong>Stated scope limitation.</strong> The modern persona-based, cloud-synced
-    ///         comments that current PowerPoint writes are deliberately <em>not</em> read:
-    ///         <c>DocumentFormat.OpenXml 3.5.1</c> exposes no part or property for them, so there is
-    ///         no supported way to reach them, and reaching into the package by raw relationship
-    ///         would be guessing at an unversioned grammar. A deck whose comments are all modern
-    ///         therefore reports none. This is a stated boundary of what this reader covers, recorded
-    ///         here and in the unit design document rather than left as a silent gap.
+    ///         comments that current PowerPoint writes are deliberately <em>not</em> read. This is a
+    ///         scope choice, not a tooling limit: <c>DocumentFormat.OpenXml 3.5.1</c> does expose the
+    ///         part and its grammar through <see cref="SlidePart.commentParts"/>,
+    ///         <see cref="PowerPointCommentPart.CommentList"/>, and the
+    ///         <c>DocumentFormat.OpenXml.Office2021.PowerPoint.Comment</c> namespace. What is not
+    ///         read is the modern author model: a modern comment names its author through a separate
+    ///         persona and author list rather than through the presentation's comment-authors part,
+    ///         and that resolution could not be validated here against a genuine
+    ///         PowerPoint-authored deck, so reading the comments would mean attributing them on
+    ///         unverified reasoning.
+    ///     </para>
+    ///     <para>
+    ///         So that the boundary is visible to whoever holds the output rather than only in this
+    ///         repository's documents, <see cref="CountModernComments"/> counts them and the emitter
+    ///         states their presence as an extraction note: a deck whose comments are all modern
+    ///         reports none here, but says so plainly instead of reading as a deck nobody commented on.
     ///     </para>
     ///     <para>
     ///         A comment with no text is dropped, because it says nothing. Read-only over the part.
@@ -401,6 +446,16 @@ public sealed class PowerPointExtractionException : Exception
 ///     first-slide title used as the document title is a heuristic and is deliberately not part of
 ///     this authored metadata.
 /// </param>
+/// <param name="ModernCommentCount">
+///     The number of modern persona-based, cloud-synced comments the deck carries that this reader
+///     counts but does not read. Zero for a deck that carries none. The emitter turns a non-zero
+///     count into a note, so a deck whose comments are all modern is distinguishable from a deck
+///     nobody commented on.
+/// </param>
+/// <param name="ModernCommentSlideCount">
+///     The number of slides carrying at least one such comment, so the note can say where they are
+///     without naming every slide.
+/// </param>
 /// <remarks>
 ///     The reader populates this model from the Open XML package and hands it to the emitter, so
 ///     every decision about what reaches the output is made once against a model that can be built
@@ -409,7 +464,9 @@ public sealed class PowerPointExtractionException : Exception
 internal sealed record PowerPointDeckModel(
     IReadOnlyList<PowerPointSlideModel> Slides,
     IReadOnlyList<EmbeddedImage> Images,
-    DocumentMetadata? Metadata = null)
+    DocumentMetadata? Metadata = null,
+    int ModernCommentCount = 0,
+    int ModernCommentSlideCount = 0)
 {
     /// <summary>
     ///     Initializes a deck model that embeds no images, for a hand-built model with no deck behind it.
@@ -446,9 +503,9 @@ internal sealed record PowerPointDeckModel(
 /// <param name="Comments">
 ///     The reviewer comments attached to the slide, in the order the deck declares them. Empty when
 ///     the slide carries none, and empty for a deck whose comments are all modern persona comments,
-///     which this reader states plainly it does not read. A comment is commentary <em>about</em> the
-///     deck rather than part of it, so it travels to Core as a review comment and never into
-///     <c>content.md</c>.
+///     which this reader counts and reports as present-but-unread rather than reading. A comment is
+///     commentary <em>about</em> the deck rather than part of it, so it travels to Core as a review
+///     comment and never into <c>content.md</c>.
 /// </param>
 /// <remarks>Immutable and thread-safe.</remarks>
 internal sealed record PowerPointSlideModel(
