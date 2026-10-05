@@ -69,6 +69,35 @@ public class DocDownWordTests
     }
 
     /// <summary>
+    ///     Proves a document's reviewer comments reach the dedicated review-comments artifact with
+    ///     their location hints, and leave the extracted content untouched.
+    /// </summary>
+    /// <remarks>
+    ///     Comments used to be appended to <c>content.md</c> under a <c>## Comments</c> heading, which
+    ///     left a consumer unable to tell the author's words from a reviewer's. This drives the whole
+    ///     engine so the move is proven where it is observable: on disk.
+    /// </remarks>
+    [Fact]
+    public async Task DocDownWord_Extract_DocxWithComment_WritesReviewCommentsNotContent()
+    {
+        // Arrange / Act: extract a document whose single comment is anchored under a heading
+        using var temp = new TempScratch();
+        var (scratch, _) = await ExtractAsync(temp, "commented.docx", DocxFixtures.DocumentWithComment());
+
+        // Assert: the comment is in review-comments.md with its author and location hint
+        var reviewComments = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        Assert.Contains("**Reviewer**", reviewComments, StringComparison.Ordinal);
+        Assert.Contains("§Overview", reviewComments, StringComparison.Ordinal);
+        Assert.Contains("clarify", reviewComments, StringComparison.Ordinal);
+
+        // Assert: and nowhere in the extracted content
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        Assert.DoesNotContain("## Comments", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("clarify", content, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
     ///     Proves embedded images are written and linked from the content.
     /// </summary>
     [Fact]

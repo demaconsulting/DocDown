@@ -12,7 +12,9 @@ namespace DocDown.Word.Markdown;
 ///         with no document behind it. It is deliberately presentational —
 ///         it emits markdown and nothing else. The inventory counts and notes that describe a
 ///         flattened table structure or another extraction fact live with the emitter, which has the
-///         sink; the writer only shapes text.
+///         sink; the writer only shapes text. Reviewer comments are not shaped here at all: they are
+///         not the document's own content, so the emitter reports them through the sink as review
+///         comments rather than letting them interleave with the extracted text.
 ///     </para>
 ///     <para>
 ///         Inline formatting is intentionally minimal (bold, italic, hyperlinks) and every literal
@@ -25,7 +27,7 @@ internal static class WordMarkdownWriter
 {
     /// <summary>
     ///     Renders a whole document model to one markdown flow, placing document control after the
-    ///     title heading and appending comments and footnotes.
+    ///     title heading and appending footnotes.
     /// </summary>
     /// <param name="model">The model to render. Must not be null.</param>
     /// <param name="imagePaths">A map from an image source reference to the relative path the sink allocated. Must not be null.</param>
@@ -34,7 +36,9 @@ internal static class WordMarkdownWriter
     /// <remarks>
     ///     The document-control section is placed immediately after the document's title heading and
     ///     before the body — the position of metadata about the whole document — rather than
-    ///     interrupting the narrative. Side-effect free.
+    ///     interrupting the narrative. The model's comments are deliberately not rendered here: a
+    ///     reviewer's remarks are not the document's content, so they are reported through the sink
+    ///     as review comments and collected in <c>review-comments.md</c> instead. Side-effect free.
     /// </remarks>
     public static string Write(WordDocumentModel model, IReadOnlyDictionary<string, string> imagePaths)
     {
@@ -64,7 +68,6 @@ internal static class WordMarkdownWriter
             AppendBlocks(builder, body.Skip(insertIndex).ToList(), imagePaths);
         }
 
-        AppendComments(builder, model.Comments);
         AppendFootnotes(builder, model.Footnotes);
 
         return builder.ToString();
@@ -320,34 +323,6 @@ internal static class WordMarkdownWriter
             builder.Append("### ").Append(Escape(section.Label)).Append("\n\n");
             AppendBlocks(builder, section.Blocks, imagePaths);
         }
-    }
-
-    /// <summary>
-    ///     Appends the <c>## Comments</c> section when the document has comments.
-    /// </summary>
-    /// <param name="builder">The builder to append to.</param>
-    /// <param name="comments">The document comments.</param>
-    /// <remarks>Side effect: appends to <paramref name="builder"/>.</remarks>
-    private static void AppendComments(StringBuilder builder, IReadOnlyList<WordComment> comments)
-    {
-        if (comments.Count == 0)
-        {
-            return;
-        }
-
-        builder.Append("## Comments\n\n");
-        foreach (var comment in comments)
-        {
-            builder.Append("- ");
-            if (comment.Author is { Length: > 0 } author)
-            {
-                builder.Append("**").Append(Escape(author)).Append("**: ");
-            }
-
-            builder.Append(RenderInlines(comment.Content)).Append('\n');
-        }
-
-        builder.Append('\n');
     }
 
     /// <summary>

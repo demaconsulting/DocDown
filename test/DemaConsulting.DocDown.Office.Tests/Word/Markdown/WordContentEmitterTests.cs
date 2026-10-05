@@ -47,7 +47,7 @@ public class WordContentEmitterTests
     /// <summary>
     ///     Proves a body carrying a heading and author-attributed comments writes content and reports
     ///     the outline features — headings, comments, and distinct comment authors — that make the
-    ///     <c>## Comments</c> section discoverable, and reports no incomplete-step notes.
+    ///     reviewer commentary discoverable, and reports no incomplete-step notes.
     /// </summary>
     [Fact]
     public async Task WordContentEmitter_Emit_BodyWithComments_ReportsOutlineAndSucceeds()
@@ -73,6 +73,67 @@ public class WordContentEmitterTests
         Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "headings", Count: 1 });
         Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "comments", Count: 2 });
         Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "distinct comment authors", Count: 2 });
+    }
+
+    /// <summary>
+    ///     Proves each comment reaches the sink as a review comment carrying its author, rendered
+    ///     body, and location hint, and that none of that text reaches the content flow.
+    /// </summary>
+    /// <remarks>
+    ///     This is the behavior that moved: a reviewer's remarks belong in the dedicated
+    ///     review-comments artifact, not interleaved with the author's own words in
+    ///     <c>content.md</c>. Asserting both halves together is what makes the move falsifiable.
+    /// </remarks>
+    [Fact]
+    public async Task WordContentEmitter_Emit_BodyWithComments_ReportsReviewComments()
+    {
+        var model = Model(
+            body: [new WordBlock(WordBlockKind.Paragraph, [new WordInline("First paragraph of the draft.")])],
+            comments:
+            [
+                new WordComment("Reviewer One", [new WordInline("Please clarify the scope.")], "§Scope — \"the draft\""),
+                new WordComment("Reviewer Two", [new WordInline("Agreed with the above.")], "§Limitations")
+            ]);
+        var sink = new RecordingSink();
+
+        await WordContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+
+        Assert.Collection(
+            sink.ReviewComments,
+            first =>
+            {
+                Assert.Equal("Reviewer One", first.Author);
+                Assert.Equal("Please clarify the scope\\.", first.Body);
+                Assert.Equal("§Scope — \"the draft\"", first.Location);
+            },
+            second =>
+            {
+                Assert.Equal("Reviewer Two", second.Author);
+                Assert.Equal("Agreed with the above\\.", second.Body);
+                Assert.Equal("§Limitations", second.Location);
+            });
+
+        var content = Assert.Single(sink.ContentWrites);
+        Assert.DoesNotContain("## Comments", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("Please clarify the scope", content, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves a comment the document anchors nowhere is reported with a stated-unknown location
+    ///     rather than an invented one.
+    /// </summary>
+    [Fact]
+    public async Task WordContentEmitter_Emit_CommentWithoutLocation_ReportsLocationUnknown()
+    {
+        var model = Model(
+            body: [new WordBlock(WordBlockKind.Paragraph, [new WordInline("Body text.")])],
+            comments: [new WordComment("Reviewer One", [new WordInline("A note.")])]);
+        var sink = new RecordingSink();
+
+        await WordContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+
+        var reported = Assert.Single(sink.ReviewComments);
+        Assert.Equal("(location unknown)", reported.Location);
     }
 
     /// <summary>

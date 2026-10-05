@@ -51,6 +51,10 @@ internal static class WordContentEmitter
         var partCount = await WriteContentAsync(sink, model, imagePaths, cancellationToken)
             .ConfigureAwait(false);
 
+        // Reviewer remarks are not the document's content, so they leave content.md untouched and
+        // travel to Core as review comments for the dedicated review-comments.md artifact
+        ReportReviewComments(sink, model);
+
         sink.ReportDocumentInfo(new DocumentInfo(model.Title, model.Author, model.ProducerPageCount, partCount));
 
         ReportContentFeatures(sink, model);
@@ -65,6 +69,42 @@ internal static class WordContentEmitter
     }
 
     /// <summary>
+    ///     Reports the document's comments through the sink as review comments.
+    /// </summary>
+    /// <param name="sink">The sink to report through.</param>
+    /// <param name="model">The document model whose comments are reported.</param>
+    /// <remarks>
+    ///     <para>
+    ///         A reviewer's remark is commentary <em>about</em> the document rather than part of it,
+    ///         and interleaving it into <c>content.md</c> left a consumer unable to tell the author's
+    ///         words from a reviewer's. Reporting each comment to Core instead collects them in one
+    ///         <c>review-comments.md</c> artifact, in the order the reader found them.
+    ///     </para>
+    ///     <para>
+    ///         A comment whose anchor markers the document does not carry has no location to state,
+    ///         so <see cref="UnknownLocation"/> is used rather than inventing a position. Side effect:
+    ///         records review comments on the sink.
+    ///     </para>
+    /// </remarks>
+    private static void ReportReviewComments(IExtractionSink sink, WordDocumentModel model)
+    {
+        foreach (var comment in model.Comments)
+        {
+            sink.ReportReviewComment(new DocumentComment(
+                comment.Author,
+                WordMarkdownWriter.RenderInlines(comment.Content),
+                comment.Location ?? UnknownLocation));
+        }
+    }
+
+    /// <summary>The location stated for a comment the document anchors nowhere this reader could resolve.</summary>
+    /// <remarks>
+    ///     Stating the absence plainly keeps every review comment the same shape without claiming a
+    ///     position the document never gave.
+    /// </remarks>
+    private const string UnknownLocation = "(location unknown)";
+
+    /// <summary>
     ///     Reports an outline of what the rendered <c>content.md</c> contains, counted from the model.
     /// </summary>
     /// <param name="sink">The sink to report through.</param>
@@ -75,13 +115,16 @@ internal static class WordContentEmitter
     ///         valuable thing a Word draft can carry — the author-attributed reviewer comments —
     ///         invisible. An agent asked to find reviewer commentary in a draft holding 53 such
     ///         comments went to a different document and answered by inference, because nothing told
-    ///         it the <c>## Comments</c> section existed. Naming the comment count, and how many
+    ///         it the comments had been extracted at all. Naming the comment count, and how many
     ///         distinct people wrote them, makes that content discoverable for a handful of tokens.
     ///     </para>
     ///     <para>
     ///         The counts come from the model the reader built by walking the document, not from
     ///         scanning the rendered markdown: the model already knows, and a regex over markdown would
-    ///         describe a rendering rather than the document. Features whose absence matters to a reader
+    ///         describe a rendering rather than the document. Counting comments here remains correct
+    ///         even though their text is now reported as review comments rather than rendered into
+    ///         <c>content.md</c> — the inventory answers "what does this document carry", which is
+    ///         independent of which artifact carries it. Features whose absence matters to a reader
     ///         — text blocks, comments, distinct comment authors, and footnotes — are marked as looked
     ///         for so a zero count still states plainly that Word extraction inspected them. Side effect:
     ///         records reports on the sink.

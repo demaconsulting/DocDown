@@ -354,25 +354,122 @@ public static class DocxFixtures
     });
 
     /// <summary>
-    ///     Builds a document carrying a single author-attributed comment.
+    ///     Builds a document carrying a single author-attributed comment anchored, with real range
+    ///     markers, over a specific run beneath a specific heading.
     /// </summary>
     /// <returns>The document bytes.</returns>
-    /// <remarks>Used to prove comments are rendered into a comments section with the author.</remarks>
+    /// <remarks>
+    ///     Used to prove a comment's author, text, and resolved location hint survive extraction and
+    ///     reach the review-comments artifact. The anchor markers are genuine
+    ///     <c>w:commentRangeStart</c>/<c>w:commentRangeEnd</c>/<c>w:commentReference</c> elements, so
+    ///     the location hint is exercised exactly as a real document would exercise it.
+    /// </remarks>
     public static byte[] DocumentWithComment() => BuildDocx((document, mainPart) =>
     {
         var body = new W.Body();
-        body.AppendChild(TextParagraph("Body with a comment anchor."));
+        body.AppendChild(StyledParagraph("Overview", "Heading1"));
+        body.AppendChild(RangeCommentedParagraph("1", "Body with a comment anchor."));
         SetBody(mainPart, body);
 
         var commentsPart = mainPart.AddNewPart<WordprocessingCommentsPart>();
         var comments = new W.Comments();
-        var comment = new W.Comment { Id = "1", Author = "Reviewer" };
-        comment.AppendChild(TextParagraph("Please clarify this section."));
-        comments.AppendChild(comment);
+        comments.AppendChild(Comment("1", "Reviewer", "Please clarify this section."));
         commentsPart.Comments = comments;
 
         SetProperties(document, "Commented Report", "DocDown Test Suite");
     });
+
+    /// <summary>
+    ///     Builds a document whose three comments are anchored three different ways: a bracketed
+    ///     range under one heading, a bare reference point under another, and no markers at all.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>
+    ///     Used to prove each comment's location hint resolves independently and degrades honestly.
+    ///     The first comment's anchored run is deliberately longer than the snippet bound so the
+    ///     ellipsizing is exercised; the third comment exists only in the comments part, as it would
+    ///     in a document whose anchored text was later deleted.
+    /// </remarks>
+    public static byte[] DocumentWithAnchoredComments() => BuildDocx((document, mainPart) =>
+    {
+        var body = new W.Body();
+        body.AppendChild(StyledParagraph("Scope", "Heading1"));
+        body.AppendChild(RangeCommentedParagraph(
+            "1", "The quick brown fox jumps over the lazy dog and keeps running far beyond the fence."));
+        body.AppendChild(StyledParagraph("Limitations", "Heading1"));
+        body.AppendChild(PointCommentedParagraph("2", "Second section body."));
+        SetBody(mainPart, body);
+
+        var commentsPart = mainPart.AddNewPart<WordprocessingCommentsPart>();
+        var comments = new W.Comments();
+        comments.AppendChild(Comment("1", "Alice", "Clarify the scope."));
+        comments.AppendChild(Comment("2", "Bob", "Note the limitation."));
+        comments.AppendChild(Comment("3", "Carol", "Orphaned remark."));
+        commentsPart.Comments = comments;
+
+        SetProperties(document, "Anchored Comments Report", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a paragraph whose text run is bracketed by a comment range and closed by the
+    ///     comment's reference marker.
+    /// </summary>
+    /// <param name="commentId">The comment id shared with the comments part.</param>
+    /// <param name="text">The anchored run text.</param>
+    /// <returns>The paragraph element.</returns>
+    /// <remarks>This is the element shape Word itself writes for a comment attached to selected text. Pure.</remarks>
+    private static W.Paragraph RangeCommentedParagraph(string commentId, string text)
+    {
+        var paragraph = new W.Paragraph();
+        paragraph.AppendChild(new W.CommentRangeStart { Id = commentId });
+        paragraph.AppendChild(Run(text));
+        paragraph.AppendChild(new W.CommentRangeEnd { Id = commentId });
+        paragraph.AppendChild(CommentReferenceRun(commentId));
+        return paragraph;
+    }
+
+    /// <summary>
+    ///     Builds a paragraph carrying a comment reference point with no bracketing range.
+    /// </summary>
+    /// <param name="commentId">The comment id shared with the comments part.</param>
+    /// <param name="text">The paragraph text.</param>
+    /// <returns>The paragraph element.</returns>
+    /// <remarks>This is the shape left behind when a comment's anchored range is removed but its reference survives. Pure.</remarks>
+    private static W.Paragraph PointCommentedParagraph(string commentId, string text)
+    {
+        var paragraph = new W.Paragraph();
+        paragraph.AppendChild(Run(text));
+        paragraph.AppendChild(CommentReferenceRun(commentId));
+        return paragraph;
+    }
+
+    /// <summary>
+    ///     Builds the run that carries a comment's reference marker.
+    /// </summary>
+    /// <param name="commentId">The comment id shared with the comments part.</param>
+    /// <returns>The run element.</returns>
+    /// <remarks>Pure.</remarks>
+    private static W.Run CommentReferenceRun(string commentId)
+    {
+        var run = new W.Run();
+        run.AppendChild(new W.CommentReference { Id = commentId });
+        return run;
+    }
+
+    /// <summary>
+    ///     Builds one comment definition for the comments part.
+    /// </summary>
+    /// <param name="id">The comment id cross-referenced by the body's anchor markers.</param>
+    /// <param name="author">The comment author.</param>
+    /// <param name="text">The comment body text.</param>
+    /// <returns>The comment element.</returns>
+    /// <remarks>Pure.</remarks>
+    private static W.Comment Comment(string id, string author, string text)
+    {
+        var comment = new W.Comment { Id = id, Author = author };
+        comment.AppendChild(TextParagraph(text));
+        return comment;
+    }
 
     /// <summary>
     ///     Builds a document with two top-level headings for per-part splitting.

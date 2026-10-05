@@ -122,19 +122,28 @@ public class WordMarkdownWriterTests
     }
 
     /// <summary>
-    ///     Proves comments render into a comments section attributed to the author.
+    ///     Proves comments present on the model are not rendered into the content flow.
     /// </summary>
+    /// <remarks>
+    ///     A reviewer's remark is commentary about the document rather than part of it, and
+    ///     interleaving it into <c>content.md</c> left a consumer unable to tell the author's words
+    ///     from a reviewer's. The comments still travel on the model — the emitter reports them to
+    ///     Core as review comments — so this asserts the writer's silence rather than the model's
+    ///     emptiness.
+    /// </remarks>
     [Fact]
-    public void WordMarkdownWriter_Write_Comments_RendersCommentsSection()
+    public void WordMarkdownWriter_Write_Comments_NotRenderedIntoContent()
     {
         var model = Model(
             [new WordBlock(WordBlockKind.Paragraph, [new WordInline("Body")])],
-            comments: [new WordComment("Reviewer", [new WordInline("Please clarify")])]);
+            comments: [new WordComment("Reviewer", [new WordInline("Please clarify")], "§Scope")]);
 
         var markdown = WordMarkdownWriter.Write(model, NoImages);
 
-        Assert.Contains("## Comments", markdown, StringComparison.Ordinal);
-        Assert.Contains("**Reviewer**: Please clarify", markdown, StringComparison.Ordinal);
+        Assert.Contains("Body", markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("## Comments", markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("Please clarify", markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("Reviewer", markdown, StringComparison.Ordinal);
     }
 
     /// <summary>

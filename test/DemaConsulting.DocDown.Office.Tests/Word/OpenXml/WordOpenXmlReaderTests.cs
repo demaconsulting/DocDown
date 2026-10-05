@@ -130,6 +130,47 @@ public class WordOpenXmlReaderTests
     }
 
     /// <summary>
+    ///     Proves a comment anchored over a run with range markers resolves a location hint naming
+    ///     the nearest preceding heading and quoting the anchored text.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_AnchoredComment_LocationNamesHeadingAndSnippet()
+    {
+        var model = Read(DocxFixtures.DocumentWithComment());
+
+        var comment = Assert.Single(model.Comments);
+        Assert.Equal("§Overview — \"Body with a comment anchor.\"", comment.Location);
+    }
+
+    /// <summary>
+    ///     Proves each comment's location resolves from its own anchor, and that a comment the
+    ///     document anchors nowhere degrades to no location rather than borrowing another's.
+    /// </summary>
+    /// <remarks>
+    ///     The three comments in the fixture are anchored three different ways — a bracketed range,
+    ///     a bare reference point, and no markers at all — so a reader that resolved anchors by
+    ///     position rather than by id, or that invented a location for the unanchored comment, fails
+    ///     here.
+    /// </remarks>
+    [Fact]
+    public void WordOpenXmlReader_Read_MultipleComments_LocationsResolveIndependently()
+    {
+        var model = Read(DocxFixtures.DocumentWithAnchoredComments());
+
+        Assert.Equal(3, model.Comments.Count);
+
+        // A bracketed range yields the heading and an ellipsized snippet of the anchored run
+        Assert.StartsWith("§Scope — \"The quick brown fox", model.Comments[0].Location, StringComparison.Ordinal);
+        Assert.EndsWith("…\"", model.Comments[0].Location, StringComparison.Ordinal);
+
+        // A bare reference point brackets no text, so the hint degrades to the heading alone
+        Assert.Equal("§Limitations", model.Comments[1].Location);
+
+        // No anchor markers at all: no location is claimed
+        Assert.Null(model.Comments[2].Location);
+    }
+
+    /// <summary>
     ///     Proves the producer-reported page count is read from the extended properties.
     /// </summary>
     [Fact]
