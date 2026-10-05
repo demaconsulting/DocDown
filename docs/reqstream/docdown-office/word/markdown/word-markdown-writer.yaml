@@ -2,8 +2,16 @@
 # Software Unit Requirements for WordMarkdownWriter
 #
 # WordMarkdownWriter renders the backend-neutral document model to a single markdown flow:
-# headings, lists, inline formatting, image links, comments, footnotes, and the Document
-# Control section, escaping content that markdown would otherwise interpret.
+# headings, lists, inline formatting, image links, footnotes, and the Document Control
+# section, escaping content that markdown would otherwise interpret.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-Markdown-WordMarkdownWriter-RendersComments
+# required reviewer comments to be rendered under a Comments section in the content flow. It is
+# superseded (not satisfied) because a reviewer's remark is commentary about the document rather
+# than part of it, and interleaving the two left a consumer unable to tell the author's words from
+# a reviewer's. Comments are now reported to the core as review comments and written to the
+# dedicated review-comments artifact; the replacement is
+# DocDownWord-Markdown-WordContentEmitter-ReportsReviewComments.
 
 sections:
   - title: DocDownWord Requirements
@@ -71,14 +79,6 @@ sections:
                   seeded the image's file name.
                 tests:
                   - WordMarkdownWriter_Write_HeadingNamedImage_KeepsNeutralAltText
-
-              - id: DocDownWord-Markdown-WordMarkdownWriter-RendersComments
-                title: WordMarkdownWriter shall render document comments under a Comments section.
-                justification: |
-                  Comments are content a reviewer added, distinct from the body. Collecting them under
-                  their own heading preserves them without interleaving them into the text they annotate.
-                tests:
-                  - WordMarkdownWriter_Write_Comments_RendersCommentsSection
 
               - id: DocDownWord-Markdown-WordMarkdownWriter-RendersFootnotes
                 title: WordMarkdownWriter shall render footnotes as references and a Footnotes section.

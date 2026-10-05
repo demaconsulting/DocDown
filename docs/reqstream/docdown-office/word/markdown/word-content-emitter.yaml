@@ -2,8 +2,8 @@
 # Software Unit Requirements for WordContentEmitter
 #
 # WordContentEmitter is the single emission path: it writes the model's content, images, content
-# inventory, metadata, and extraction notes through the sink, so every output the model implies is
-# produced in one place.
+# inventory, reviewer comments, metadata, and extraction notes through the sink, so every output
+# the model implies is produced in one place.
 #
 # SUPERSEDED REQUIREMENT: DocDownWord-Markdown-WordContentEmitter-ReportsGapsAndDiagnostics
 # required emission through gap and diagnostic machinery. It is superseded (not satisfied) by
@@ -51,6 +51,23 @@ sections:
                 tests:
                   - WordContentEmitter_Emit_BodyWithComments_ReportsOutlineAndSucceeds
                   - WordOpenXmlExtractor_Extract_EmptyDocument_ProducesZeroCountTextInventory
+
+              - id: DocDownWord-Markdown-WordContentEmitter-ReportsReviewComments
+                title: >-
+                  WordContentEmitter shall report each of the document's comments to the sink as a
+                  review comment carrying its author, body, and location hint, rather than rendering
+                  it into the content.
+                justification: |
+                  A reviewer's remark is commentary about the document, not part of it, and
+                  interleaving the two left a consumer unable to tell the author's words from a
+                  reviewer's. Reporting comments to the sink routes them to the dedicated
+                  review-comments artifact, where the location hint is what lets a reader find the
+                  text each remark was attached to. A comment the document anchors nowhere is
+                  reported with a stated-unknown location rather than an invented one.
+                tests:
+                  - WordContentEmitter_Emit_BodyWithComments_ReportsReviewComments
+                  - WordContentEmitter_Emit_CommentWithoutLocation_ReportsLocationUnknown
+                  - DocDownWord_Extract_DocxWithComment_WritesReviewCommentsNotContent
 
               - id: DocDownWord-Markdown-WordContentEmitter-ReportsChartNote
                 title: >-

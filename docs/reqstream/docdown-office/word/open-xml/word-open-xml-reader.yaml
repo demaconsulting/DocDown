@@ -89,10 +89,27 @@ sections:
                 title: WordOpenXmlReader shall collect a comment's author and text.
                 justification: |
                   A comment is reviewer-authored content, and both its author and its text matter.
-                  Collecting both is what lets the writer render a faithful Comments section and lets
-                  the content inventory count distinct comment authors.
+                  Collecting both is what lets the review-comments artifact attribute each remark and
+                  lets the content inventory count distinct comment authors.
                 tests:
                   - WordOpenXmlReader_Read_Comment_CollectsAuthorAndText
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation
+                title: >-
+                  WordOpenXmlReader shall resolve each comment's anchor into a location hint naming
+                  the nearest preceding heading and quoting a bounded snippet of the anchored text,
+                  degrading to whichever part is available and claiming no location when the document
+                  anchors the comment nowhere.
+                justification: |
+                  A reviewer's remark reported away from the text it annotates is only actionable if
+                  the reader can find that text again. Following the comment range and reference
+                  markers back to their heading and wording restores that connection, and bounding the
+                  quoted snippet keeps the hint a pointer rather than a second copy of the document.
+                  Degrading to a partial hint, or to none, keeps the reader from being pointed
+                  somewhere the comment was never attached.
+                tests:
+                  - WordOpenXmlReader_Read_AnchoredComment_LocationNamesHeadingAndSnippet
+                  - WordOpenXmlReader_Read_MultipleComments_LocationsResolveIndependently
 
               - id: DocDownWord-OpenXml-WordOpenXmlReader-SurfacesMetadata
                 title: >-
