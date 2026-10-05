@@ -472,8 +472,11 @@ public static class SummaryWriter
         builder.Append("  metadata.json        what the document asserts about itself\n");
         builder.Append("  content.md           ")
             .Append(content is { ContentPresent: true } ? "PRESENT" : "not present").Append('\n');
+        var commentCount = reviewComments?.Count ?? 0;
         builder.Append("  review-comments.md   ")
-            .Append(FolderCountPhrase(reviewComments?.Count ?? 0, "comments")).Append('\n');
+
+            // A count reads as prose, so the noun agrees with it: one comment, two comments
+            .Append(FolderCountPhrase(commentCount, commentCount == 1 ? "comment" : "comments")).Append('\n');
         builder.Append("  images/              ").Append(FolderCountPhrase(sink.Images.Count, "extracted")).Append('\n');
         builder.Append("  pages/               ").Append(FolderCountPhrase(sink.Pages.Count, "rendered")).Append('\n');
         builder.Append('\n');

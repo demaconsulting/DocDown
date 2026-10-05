@@ -188,7 +188,7 @@ public class OutputTests
         var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
         using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
         Assert.Contains("- **Ada** (Page 1): Clarify this paragraph.", reviewComments, StringComparison.Ordinal);
-        Assert.Contains("review-comments.md   PRESENT - 1 comments", summary, StringComparison.Ordinal);
+        Assert.Contains("review-comments.md   PRESENT - 1 comment\n", summary, StringComparison.Ordinal);
         Assert.Equal(
             "Clarify this paragraph.",
             Assert.Single(manifest.RootElement.GetProperty("reviewComments").EnumerateArray().ToList())

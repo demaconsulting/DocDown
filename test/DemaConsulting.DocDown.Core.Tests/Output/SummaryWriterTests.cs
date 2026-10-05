@@ -156,6 +156,34 @@ public class SummaryWriterTests
     }
 
     /// <summary>
+    ///     Proves the layout line reads as prose when exactly one comment exists: "1 comment", not
+    ///     "1 comments".
+    /// </summary>
+    /// <remarks>
+    ///     The summary is read by people, and a single comment is by far the most common non-empty
+    ///     case, so the one count most readers will ever see is the one that must agree.
+    /// </remarks>
+    [Fact]
+    public async Task SummaryWriter_WriteAsync_WithOneReviewComment_UsesSingularNoun()
+    {
+        // Arrange / Act: a produced run whose document carries exactly one reviewer comment
+        using var temp = new TempScratch();
+        var summary = await RenderSummaryAsync(
+            temp,
+            async sink =>
+            {
+                await sink.WriteContentAsync("# Document\n\nText present.\n", CancellationToken.None);
+                sink.ReportReviewComment(new DocumentComment("Ada", "Clarify this.", "Page 1"));
+            },
+            ExtractionOutcome.Produced,
+            SuccessExtractor(),
+            null);
+
+        // Assert: the noun agrees with the count
+        Assert.Contains("  review-comments.md   PRESENT - 1 comment\n", summary, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves the layout block states the review-comments artifact is absent when none exist.
     /// </summary>
     [Fact]
