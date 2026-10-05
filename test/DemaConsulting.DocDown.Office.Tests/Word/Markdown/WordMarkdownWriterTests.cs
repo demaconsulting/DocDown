@@ -147,6 +147,42 @@ public class WordMarkdownWriterTests
     }
 
     /// <summary>
+    ///     Proves the literal renderer returns the text as the document records it, escaping nothing,
+    ///     and returns empty for an absent or empty run sequence.
+    /// </summary>
+    /// <remarks>
+    ///     The escaped and literal forms exist for two different consumers: <c>content.md</c>, which
+    ///     is markdown and needs escaping, and the review comments Core carries into
+    ///     <c>manifest.json</c>, whose contract is the text as the document records it. Asserting the
+    ///     markdown-significant characters pass through untouched is what keeps the two from being
+    ///     quietly collapsed back into one.
+    /// </remarks>
+    [Fact]
+    public void WordMarkdownWriter_RenderPlainText_MarkdownCharacters_AreNotEscaped()
+    {
+        var inlines = new[] { new WordInline("Flag *urgent* "), new WordInline("[see §4].") };
+
+        var text = WordMarkdownWriter.RenderPlainText(inlines);
+
+        Assert.Equal("Flag *urgent* [see §4].", text);
+        Assert.DoesNotContain("\\", text, StringComparison.Ordinal);
+
+        // The same runs rendered as markdown do escape, so the two forms are genuinely different
+        Assert.Contains("\\*", WordMarkdownWriter.RenderInlines(inlines), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves the literal renderer treats an absent or empty run sequence as empty text rather
+    ///     than throwing.
+    /// </summary>
+    [Fact]
+    public void WordMarkdownWriter_RenderPlainText_NullOrEmpty_ReturnsEmpty()
+    {
+        Assert.Equal(string.Empty, WordMarkdownWriter.RenderPlainText(null));
+        Assert.Equal(string.Empty, WordMarkdownWriter.RenderPlainText([]));
+    }
+
+    /// <summary>
     ///     Proves footnotes render into a footnotes section with numbered definitions.
     /// </summary>
     [Fact]

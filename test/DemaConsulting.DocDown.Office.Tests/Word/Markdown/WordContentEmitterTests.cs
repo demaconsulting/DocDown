@@ -22,12 +22,14 @@ public class WordContentEmitterTests
     /// <param name="comments">The document comments.</param>
     /// <param name="chartsFound">The number of embedded charts to declare.</param>
     /// <param name="metadata">The self-reported metadata, or <see langword="null"/> for none.</param>
+    /// <param name="commentsWithUnreadableContent">The number of comments carrying only a picture or ink.</param>
     /// <returns>The constructed model.</returns>
     private static WordDocumentModel Model(
         IReadOnlyList<WordBlock> body,
         IReadOnlyList<WordComment>? comments = null,
         int chartsFound = 0,
-        DocumentMetadata? metadata = null) =>
+        DocumentMetadata? metadata = null,
+        int commentsWithUnreadableContent = 0) =>
         new(
             body,
             DocumentControl: [],
@@ -42,7 +44,8 @@ public class WordContentEmitterTests
             HeaderFooterPartsPageFurniture: 0,
             EmptyTablesSkipped: 0,
             ChartsFound: chartsFound,
-            Metadata: metadata);
+            Metadata: metadata,
+            CommentsWithUnreadableContent: commentsWithUnreadableContent);
 
     /// <summary>
     ///     Proves a body carrying a heading and author-attributed comments writes content and reports
@@ -76,13 +79,17 @@ public class WordContentEmitterTests
     }
 
     /// <summary>
-    ///     Proves each comment reaches the sink as a review comment carrying its author, rendered
-    ///     body, and location hint, and that none of that text reaches the content flow.
+    ///     Proves each comment reaches the sink as a review comment carrying its author, body as the
+    ///     document records it, and location hint, and that none of that text reaches the content flow.
     /// </summary>
     /// <remarks>
     ///     This is the behavior that moved: a reviewer's remarks belong in the dedicated
     ///     review-comments artifact, not interleaved with the author's own words in
     ///     <c>content.md</c>. Asserting both halves together is what makes the move falsifiable.
+    ///     The body is asserted literal, and asserted free of backslashes, because Core carries it
+    ///     verbatim into <c>manifest.json</c>, whose contract is the text as the document records
+    ///     it; markdown escaping belongs to the writer that emits markdown, not to this reporting
+    ///     step. An earlier assertion here locked in the escaped form and with it the defect.
     /// </remarks>
     [Fact]
     public async Task WordContentEmitter_Emit_BodyWithComments_ReportsReviewComments()
@@ -103,19 +110,92 @@ public class WordContentEmitterTests
             first =>
             {
                 Assert.Equal("Reviewer One", first.Author);
-                Assert.Equal("Please clarify the scope\\.", first.Body);
+                Assert.Equal("Please clarify the scope.", first.Body);
+                Assert.DoesNotContain("\\", first.Body, StringComparison.Ordinal);
                 Assert.Equal("§Scope — \"the draft\"", first.Location);
             },
             second =>
             {
                 Assert.Equal("Reviewer Two", second.Author);
-                Assert.Equal("Agreed with the above\\.", second.Body);
+                Assert.Equal("Agreed with the above.", second.Body);
                 Assert.Equal("§Limitations", second.Location);
             });
 
         var content = Assert.Single(sink.ContentWrites);
         Assert.DoesNotContain("## Comments", content, StringComparison.Ordinal);
         Assert.DoesNotContain("Please clarify the scope", content, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves a comment body carrying markdown-significant characters reaches the sink exactly as
+    ///     the document records it, with no escaping applied.
+    /// </summary>
+    /// <remarks>
+    ///     A reviewer who wrote <c>*urgent*</c> wrote those asterisks. The manifest must record them,
+    ///     and the review-comments writer — not this unit — decides what markdown needs escaping when
+    ///     it writes the artifact.
+    /// </remarks>
+    [Fact]
+    public async Task WordContentEmitter_Emit_CommentWithMarkdownCharacters_ReportsBodyUnescaped()
+    {
+        var model = Model(
+            body: [new WordBlock(WordBlockKind.Paragraph, [new WordInline("Body text.")])],
+            comments: [new WordComment("Reviewer One", [new WordInline("This is *urgent* [see §4].")])]);
+        var sink = new RecordingSink();
+
+        await WordContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+
+        var reported = Assert.Single(sink.ReviewComments);
+        Assert.Equal("This is *urgent* [see §4].", reported.Body);
+    }
+
+    /// <summary>
+    ///     Proves a comment whose runs reduce to whitespace is skipped rather than reported, and that
+    ///     emitting such a model does not throw.
+    /// </summary>
+    /// <remarks>
+    ///     The reader already drops these, so this is the second of two layers guarding the same
+    ///     invariant. It is worth having and worth testing here because this unit is the only caller
+    ///     of <c>ReportReviewComment</c> for Word, that method rejects a blank body by contract, and
+    ///     a thrown exception from this point once turned a readable document into a failed
+    ///     extraction with no <c>content.md</c> at all.
+    /// </remarks>
+    [Fact]
+    public async Task WordContentEmitter_Emit_BlankComment_IsSkippedWithoutThrowing()
+    {
+        var model = Model(
+            body: [new WordBlock(WordBlockKind.Paragraph, [new WordInline("Body text.")])],
+            comments:
+            [
+                new WordComment("Silent Reviewer", [new WordInline("   ")]),
+                new WordComment("Reviewer One", [new WordInline("A real remark.")])
+            ]);
+        var sink = new RecordingSink();
+
+        await WordContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+
+        var reported = Assert.Single(sink.ReviewComments);
+        Assert.Equal("Reviewer One", reported.Author);
+        Assert.Single(sink.ContentWrites);
+    }
+
+    /// <summary>
+    ///     Proves the emitter states, as a plain note, that comments carrying only a picture or ink
+    ///     left no text in the review-comments artifact, and stays silent when there are none.
+    /// </summary>
+    [Fact]
+    public async Task WordContentEmitter_Emit_ImageOnlyComments_ReportsNote()
+    {
+        var model = Model(
+            body: [new WordBlock(WordBlockKind.Paragraph, [new WordInline("Body text.")])],
+            commentsWithUnreadableContent: 2);
+        var sink = new RecordingSink();
+
+        await WordContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
+
+        var note = Assert.Single(sink.Notes);
+        Assert.Contains("only a picture or ink", note.Message, StringComparison.Ordinal);
+        Assert.Contains("2 comments", note.Message, StringComparison.Ordinal);
     }
 
     /// <summary>

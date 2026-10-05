@@ -142,6 +142,38 @@ internal static class WordMarkdownWriter
     }
 
     /// <summary>
+    ///     Renders a sequence of inline runs to literal text, applying no markdown escaping and no
+    ///     inline formatting.
+    /// </summary>
+    /// <param name="inlines">The inline runs to render, or <see langword="null"/> for none.</param>
+    /// <returns>The concatenated literal text, empty when there are no runs.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         Both this and <see cref="RenderInlines"/> exist because the two consumers want
+    ///         genuinely different things from the same runs. <see cref="RenderInlines"/> produces
+    ///         <em>markdown</em> for <c>content.md</c>, where a stray <c>*</c> must be escaped or a
+    ///         parser will read it as structure. This produces the text <em>as the document records
+    ///         it</em>, for the review comments that travel to Core and from there into
+    ///         <c>manifest.json</c>, whose documented contract is exactly that. Having one unit own
+    ///         both forms keeps the choice between them explicit at each call site instead of
+    ///         leaving a caller to un-escape what it was handed.
+    ///     </para>
+    ///     <para>
+    ///         It is also the test for whether a run sequence says anything at all: a comment whose
+    ///         runs reduce to whitespace carried no words, whatever markup surrounded them. Pure.
+    ///     </para>
+    /// </remarks>
+    internal static string RenderPlainText(IReadOnlyList<WordInline>? inlines)
+    {
+        if (inlines is null || inlines.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        return string.Concat(inlines.Select(inline => inline.Text));
+    }
+
+    /// <summary>
     ///     Escapes every literal markdown-significant character in a text run.
     /// </summary>
     /// <param name="text">The literal text to escape.</param>

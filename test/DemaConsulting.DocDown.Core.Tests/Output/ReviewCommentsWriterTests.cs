@@ -131,6 +131,72 @@ public class ReviewCommentsWriterTests
     }
 
     /// <summary>
+    ///     Proves markdown-significant characters in a body, author, or location are escaped where
+    ///     the markdown is written, while what the extractor reported stays exactly as the document
+    ///     recorded it.
+    /// </summary>
+    /// <remarks>
+    ///     The two artifacts make different promises and both must be kept. <c>manifest.json</c>
+    ///     promises the comment text as the document records it, so the sink's recorded body carries
+    ///     a reviewer's literal <c>*urgent*</c>. <c>review-comments.md</c> is markdown, so the same
+    ///     text must not read there as emphasis nobody asked for. Escaping here, once, is what lets
+    ///     every backend report raw text; asserting both halves in one test is what keeps a future
+    ///     change from satisfying one promise by breaking the other.
+    /// </remarks>
+    [Fact]
+    public async Task ReviewCommentsWriter_WriteAsync_MarkdownCharacters_EscapedInFileButNotInRecord()
+    {
+        // Arrange: a comment whose author, location, and body all carry markdown-significant text
+        using var temp = new TempScratch();
+        var sink = NewSink(temp);
+        sink.ReportReviewComment(new DocumentComment(
+            "A*da", "This is *urgent* — see `scope` and [1] \\ <tag>.", "§Scope_2"));
+
+        // Act: finalize the review-comments document
+        await ReviewCommentsWriter.WriteAsync(sink, Ct);
+        var document = await ReadReviewCommentsAsync(sink);
+
+        // Assert: the written markdown escapes what could restructure the entry
+        Assert.Contains(
+            "- **A\\*da** (§Scope\\_2): This is \\*urgent\\* — see \\`scope\\` and \\[1\\] \\\\ \\<tag>.\n",
+            document,
+            StringComparison.Ordinal);
+
+        // Assert: and what the extractor reported — which is what the manifest carries — is untouched
+        var recorded = Assert.Single(sink.ReviewComments);
+        Assert.Equal("This is *urgent* — see `scope` and [1] \\ <tag>.", recorded.Body);
+        Assert.Equal("A*da", recorded.Author);
+        Assert.Equal("§Scope_2", recorded.Location);
+    }
+
+    /// <summary>
+    ///     Proves text carrying no markdown-significant character is written through unchanged, so
+    ///     the escaping adds no backslashes of its own.
+    /// </summary>
+    /// <remarks>
+    ///     The escape set is deliberately the inline-structural one. A body sits mid-line, where a
+    ///     <c>#</c>, a <c>-</c>, a <c>|</c>, or a trailing <c>.</c> cannot take effect, and escaping
+    ///     them is exactly what once made a comment read as <c>Please clarify the scope\.</c>.
+    /// </remarks>
+    [Fact]
+    public async Task ReviewCommentsWriter_WriteAsync_StructuralCharacters_AreNotEscaped()
+    {
+        // Arrange: a comment carrying characters that are structural only at the start of a line
+        using var temp = new TempScratch();
+        var sink = NewSink(temp);
+        sink.ReportReviewComment(new DocumentComment("Ada", "Please clarify the scope.", "Sheet1!B7"));
+
+        // Act: finalize the review-comments document
+        await ReviewCommentsWriter.WriteAsync(sink, Ct);
+        var document = await ReadReviewCommentsAsync(sink);
+
+        // Assert: the entry reads as the reviewer wrote it, with no backslashes added
+        Assert.Contains(
+            "- **Ada** (Sheet1!B7): Please clarify the scope.\n", document, StringComparison.Ordinal);
+        Assert.DoesNotContain("\\", document, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves a null sink is rejected rather than producing a partial artifact.
     /// </summary>
     [Fact]

@@ -23,7 +23,11 @@ namespace DocDown.Core;
 ///     <para>
 ///         The writer invents no content: the author, body, and location of each entry come from the
 ///         extractor verbatim, and entries are emitted in the order the extractor reported them —
-///         the same discipline <see cref="ContentWriter"/> applies to parts. It performs filesystem
+///         the same discipline <see cref="ContentWriter"/> applies to parts. The only transformation
+///         applied is markdown escaping, which happens here because this is where markdown is
+///         written: the extractors report the text as the document records it, and
+///         <c>manifest.json</c> carries exactly that, while this file escapes what would otherwise
+///         restructure an entry. It performs filesystem
 ///         I/O through the scratch-folder gate and holds no state, so it is safe to call from the
 ///         single extraction flow; it is not designed for concurrent invocation against the same
 ///         folder.
@@ -103,13 +107,71 @@ public static class ReviewCommentsWriter
     /// <remarks>
     ///     The shape is <c>- **Author** (Location): Body</c>: the author is emphasized so a reader
     ///     scanning the file can follow one reviewer's thread, and the location precedes the body so
-    ///     the entry reads as a statement about a place in the document. Pure.
+    ///     the entry reads as a statement about a place in the document. Every field is escaped on
+    ///     the way in, because this is where markdown is written. Pure.
     /// </remarks>
     private static void AppendEntry(StringBuilder builder, DocumentComment comment)
     {
         var author = string.IsNullOrWhiteSpace(comment.Author) ? UnattributedAuthor : comment.Author;
-        builder.Append("- **").Append(author).Append("** (").Append(comment.Location).Append("): ")
-            .Append(Flatten(comment.Body)).Append('\n');
+        builder.Append("- **").Append(EscapeInline(author)).Append("** (")
+            .Append(EscapeInline(comment.Location)).Append("): ")
+            .Append(EscapeInline(Flatten(comment.Body))).Append('\n');
+    }
+
+    /// <summary>The literal characters escaped in an entry's author, location, and body.</summary>
+    /// <remarks>
+    ///     <para>
+    ///         Deliberately the inline-structural set only. Each entry's text sits mid-line, after
+    ///         <c>): </c>, where a <c>#</c>, a <c>-</c>, a <c>|</c>, or a trailing <c>.</c> cannot
+    ///         take effect as a heading, a list marker, a table separator, or an ordered-list
+    ///         number — so escaping them would litter the output with backslashes that mean nothing,
+    ///         which is precisely what made one backend's comment text read as
+    ///         <c>Please clarify the scope\.</c>. What <em>can</em> restructure an entry from the
+    ///         middle of a line is emphasis, code spans, link syntax, inline HTML, and the escape
+    ///         character itself, so exactly those are escaped.
+    ///     </para>
+    ///     <para>
+    ///         The backslash is listed first in intent as well as position: escaping it keeps a body
+    ///         that genuinely contains one from producing a different escape in the output.
+    ///     </para>
+    /// </remarks>
+    private static readonly HashSet<char> EscapedCharacters = ['\\', '`', '*', '_', '[', ']', '<'];
+
+    /// <summary>
+    ///     Escapes the markdown-significant characters that could restructure an entry.
+    /// </summary>
+    /// <param name="text">The text to escape.</param>
+    /// <returns>The text with each significant character backslash-escaped.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         Escaping happens here, once, where markdown is written, rather than in each backend.
+    ///         That keeps every backend reporting the comment text <em>as the document records
+    ///         it</em> — which is what <c>manifest.json</c> promises its consumers — while still
+    ///         producing a <c>review-comments.md</c> a markdown parser reads as one entry per
+    ///         comment. A reviewer who wrote <c>*urgent*</c> gets those asterisks back, rather than
+    ///         emphasis they never asked for.
+    ///     </para>
+    ///     <para>Pure.</para>
+    /// </remarks>
+    private static string EscapeInline(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return text;
+        }
+
+        var builder = new StringBuilder(text.Length + 8);
+        foreach (var character in text)
+        {
+            if (EscapedCharacters.Contains(character))
+            {
+                builder.Append('\\');
+            }
+
+            builder.Append(character);
+        }
+
+        return builder.ToString();
     }
 
     /// <summary>
