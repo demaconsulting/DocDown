@@ -127,15 +127,23 @@ public static class ReviewCommentsWriter
     ///         number — so escaping them would litter the output with backslashes that mean nothing,
     ///         which is precisely what made one backend's comment text read as
     ///         <c>Please clarify the scope\.</c>. What <em>can</em> restructure an entry from the
-    ///         middle of a line is emphasis, code spans, link syntax, inline HTML, and the escape
-    ///         character itself, so exactly those are escaped.
+    ///         middle of a line is emphasis, code spans, link syntax, inline HTML, entity
+    ///         references, GFM strikethrough, and the escape character itself, so exactly those
+    ///         are escaped.
+    ///     </para>
+    ///     <para>
+    ///         <c>&amp;</c> and <c>~</c> are in the set for the same reason, even though neither
+    ///         restructures the list: an unescaped <c>&amp;amp;</c> renders as a bare
+    ///         <c>&amp;</c> and an unescaped <c>~~x~~</c> renders struck through, so leaving them
+    ///         out would silently alter a reviewer's words and make the documented promise that
+    ///         the body reads literally untrue.
     ///     </para>
     ///     <para>
     ///         The backslash is listed first in intent as well as position: escaping it keeps a body
     ///         that genuinely contains one from producing a different escape in the output.
     ///     </para>
     /// </remarks>
-    private static readonly HashSet<char> EscapedCharacters = ['\\', '`', '*', '_', '[', ']', '<'];
+    private static readonly HashSet<char> EscapedCharacters = ['\\', '`', '*', '_', '[', ']', '<', '&', '~'];
 
     /// <summary>
     ///     Escapes the markdown-significant characters that could restructure an entry.

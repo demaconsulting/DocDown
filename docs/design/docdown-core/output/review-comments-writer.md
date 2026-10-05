@@ -52,8 +52,9 @@ differ in a stated way.
   emphasized so a reader can follow one reviewer's thread, and the location precedes the body so the
   entry reads as a statement about a place in the document. Every field passes through
   `EscapeInline` on the way in, because this is where markdown is written.
-- **`EscapeInline`** — backslash-escapes the inline-structural set `` \ ` * _ [ ] < `` in the author,
-  the location, and the flattened body. Escaping lives here, once, rather than in each backend: that
+- **`EscapeInline`** — backslash-escapes the inline-structural set `` \ ` * _ [ ] < & ~ `` in the
+  author, the location, and the flattened body. Escaping lives here, once, rather than in each
+  backend: that
   keeps every extractor reporting the comment text *as the document records it*, which is what
   `manifest.json` promises its consumers, while still producing a `review-comments.md` a markdown
   parser reads as one entry per comment. A reviewer who wrote `*urgent*` gets those asterisks back
@@ -64,7 +65,9 @@ differ in a stated way.
   comment text read as `Please clarify the scope\.` before escaping moved here. What *can*
   restructure an entry from mid-line is emphasis, code spans, link syntax, and inline HTML, so
   exactly those are escaped, together with the backslash itself so a body that genuinely contains
-  one does not produce a different escape in the output.
+  one does not produce a different escape in the output. `&` and `~` are escaped for a related but
+  distinct reason: neither restructures the list, but an unescaped `&amp;` would render as a bare
+  `&` and an unescaped `~~old~~` struck through, either of which silently alters a reviewer's words.
 - **`Flatten`** — replaces a body's line breaks with single spaces so a multi-line comment cannot
   break out of its list entry and read as document text. Nothing is truncated or summarized.
 

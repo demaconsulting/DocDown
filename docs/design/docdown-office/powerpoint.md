@@ -96,9 +96,13 @@ interop assembly.
   the emitter reports it to Core as a `DocumentComment` located `Slide {n}` and Core writes the
   dedicated `review-comments.md` artifact. Authors are resolved through the presentation's
   comment-author list. **The modern persona-based, cloud-synced comments that current PowerPoint
-  writes are a stated scope limitation: they are not read, because `DocumentFormat.OpenXml 3.5.1`
-  exposes no part or property for them.** A deck whose comments are all modern therefore reports
-  none. See *PowerPointOpenXmlReader Design* for the full statement of that boundary.
+  writes are a stated scope limitation: they are deliberately not read. This is a scope choice, not
+  a tooling limit — `DocumentFormat.OpenXml 3.5.1` does expose the part and its grammar; what could
+  not be validated here is the modern author model, and attributing a reviewer's words on unverified
+  reasoning is a worse outcome than stating the boundary.** A deck whose comments are all modern is
+  not silently reported as having no comments at all: the reader counts those comments and the
+  emitter states the unread count as a note. See *PowerPointOpenXmlReader Design* for the full
+  statement of that boundary.
 - **Two reporting forms only.** The system uses content inventory for what was looked for and found,
   including counted zeros, and plain notes only when an attempted step could not be completed. It does
   not classify ordinary document content as acceptable or unacceptable.

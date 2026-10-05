@@ -91,7 +91,10 @@ Proves a comment whose author, location, and body all carry markdown-significant
 written with those characters escaped, while what the extractor reported — and therefore what
 `manifest.json` carries — stays exactly as the document recorded it. Both halves are asserted in one
 test because the two artifacts make different promises and a future change must not satisfy one by
-breaking the other. Evidence for `DocDownCore-Output-ReviewCommentsWriter-EscapesMarkdown`.
+breaking the other. The case covers `&` and `~` alongside the structural characters: neither
+restructures the entry, but an unescaped `&amp;` would render as a bare `&` and an unescaped
+`~~old~~` struck through, either of which silently alters a reviewer's words. Evidence for
+`DocDownCore-Output-ReviewCommentsWriter-EscapesMarkdown`.
 
 ##### Line-structural characters are left alone
 

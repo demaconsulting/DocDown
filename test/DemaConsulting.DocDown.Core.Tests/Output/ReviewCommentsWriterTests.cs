@@ -142,6 +142,11 @@ public class ReviewCommentsWriterTests
     ///     text must not read there as emphasis nobody asked for. Escaping here, once, is what lets
     ///     every backend report raw text; asserting both halves in one test is what keeps a future
     ///     change from satisfying one promise by breaking the other.
+    ///     <para>
+    ///         <c>&amp;</c> and <c>~</c> are covered too: neither restructures the list, but an
+    ///         unescaped <c>&amp;amp;</c> would render as a bare <c>&amp;</c> and an unescaped
+    ///         <c>~~x~~</c> struck through, either of which silently alters a reviewer's words.
+    ///     </para>
     /// </remarks>
     [Fact]
     public async Task ReviewCommentsWriter_WriteAsync_MarkdownCharacters_EscapedInFileButNotInRecord()
@@ -150,21 +155,22 @@ public class ReviewCommentsWriterTests
         using var temp = new TempScratch();
         var sink = NewSink(temp);
         sink.ReportReviewComment(new DocumentComment(
-            "A*da", "This is *urgent* — see `scope` and [1] \\ <tag>.", "§Scope_2"));
+            "A*da", "This is *urgent* — see `scope` and [1] \\ <tag> &amp; ~~old~~.", "§Scope_2"));
 
         // Act: finalize the review-comments document
         await ReviewCommentsWriter.WriteAsync(sink, Ct);
         var document = await ReadReviewCommentsAsync(sink);
 
-        // Assert: the written markdown escapes what could restructure the entry
+        // Assert: the written markdown escapes what could restructure or re-render the entry
         Assert.Contains(
-            "- **A\\*da** (§Scope\\_2): This is \\*urgent\\* — see \\`scope\\` and \\[1\\] \\\\ \\<tag>.\n",
+            "- **A\\*da** (§Scope\\_2): This is \\*urgent\\* — see \\`scope\\` and \\[1\\] \\\\ \\<tag> "
+            + "\\&amp; \\~\\~old\\~\\~.\n",
             document,
             StringComparison.Ordinal);
 
         // Assert: and what the extractor reported — which is what the manifest carries — is untouched
         var recorded = Assert.Single(sink.ReviewComments);
-        Assert.Equal("This is *urgent* — see `scope` and [1] \\ <tag>.", recorded.Body);
+        Assert.Equal("This is *urgent* — see `scope` and [1] \\ <tag> &amp; ~~old~~.", recorded.Body);
         Assert.Equal("A*da", recorded.Author);
         Assert.Equal("§Scope_2", recorded.Location);
     }
