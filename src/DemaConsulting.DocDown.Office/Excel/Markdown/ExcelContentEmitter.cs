@@ -116,6 +116,10 @@ internal static class ExcelContentEmitter
         sink.ReportDocumentInfo(new DocumentInfo(
             Title: null, Author: null, PageCount: null, PartCount: model.Sheets.Count));
 
+        // Reviewer remarks are commentary about the workbook rather than part of it, so they leave
+        // the sheet parts untouched and travel to Core as review comments
+        ReportReviewComments(sink, model);
+
         // Report the workbook's self-reported metadata for metadata.json when the reader captured it
         if (model.Metadata is { } metadata)
         {
@@ -130,6 +134,36 @@ internal static class ExcelContentEmitter
         // A page-rendering request is deliberately not answered with a note: a workbook has no page
         // grid, so rendering applies to nothing. The engine records that non-applicability itself,
         // so this backend stays silent rather than recording a shortfall for a request it cannot lose.
+    }
+
+    /// <summary>
+    ///     Reports the workbook's cell comments through the sink as review comments.
+    /// </summary>
+    /// <param name="sink">The sink to report through.</param>
+    /// <param name="model">The workbook model whose comments are reported.</param>
+    /// <remarks>
+    ///     <para>
+    ///         A reviewer's remark is commentary <em>about</em> the workbook rather than part of it,
+    ///         so it never joins the sheet's verbatim listing, where a consumer could not tell a
+    ///         reviewer's words from a cell's. Reporting each comment to Core instead collects them in
+    ///         one <c>review-comments.md</c> artifact.
+    ///     </para>
+    ///     <para>
+    ///         Each comment is located as <c>SheetName!CellRef</c> — the same addressing the listing
+    ///         uses — so a reader can take the location straight back to the cell the remark annotates.
+    ///         Side effect: records review comments on the sink.
+    ///     </para>
+    /// </remarks>
+    private static void ReportReviewComments(IExtractionSink sink, ExcelWorkbookModel model)
+    {
+        foreach (var sheet in model.Sheets)
+        {
+            foreach (var comment in sheet.Comments)
+            {
+                sink.ReportReviewComment(new DocumentComment(
+                    comment.Author, comment.Text, $"{sheet.Name}!{comment.Reference}"));
+            }
+        }
     }
 
     /// <summary>

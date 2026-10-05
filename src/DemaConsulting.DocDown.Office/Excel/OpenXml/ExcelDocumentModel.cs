@@ -67,12 +67,35 @@ internal sealed record ExcelWorkbookModel(
 ///     annotations that live in the drawing layer and in no cell — in drawing order. Empty when the
 ///     worksheet carries no annotated shape.
 /// </param>
+/// <param name="Comments">
+///     The reviewer comments attached to the worksheet's cells, in cell order. Empty when the
+///     worksheet carries none. A comment is commentary <em>about</em> the sheet rather than part of
+///     it, so it travels to Core as a review comment and never into the sheet's content part.
+/// </param>
 /// <remarks>Immutable and thread-safe.</remarks>
 internal sealed record ExcelSheetModel(
     string Name, IReadOnlyList<ExcelCellModel> Cells, IReadOnlyList<string> MergedRanges,
     IReadOnlyList<ExcelSheetImageRef> Images, IReadOnlyList<ExcelChartModel> Charts,
-    IReadOnlyList<string> ShapeTexts)
+    IReadOnlyList<string> ShapeTexts, IReadOnlyList<ExcelCommentModel> Comments)
 {
+    /// <summary>
+    ///     Initializes a worksheet model that carries no reviewer comments, for a hand-built model.
+    /// </summary>
+    /// <param name="name">The worksheet name.</param>
+    /// <param name="cells">The worksheet's non-empty cells.</param>
+    /// <param name="mergedRanges">The A1-style merged ranges.</param>
+    /// <param name="images">The images the worksheet references.</param>
+    /// <param name="charts">The charts the worksheet shows.</param>
+    /// <param name="shapeTexts">The text of the drawing shapes floating over the worksheet.</param>
+    /// <remarks>A convenience for tests that exercise shape text but not comments; comments default to empty.</remarks>
+    public ExcelSheetModel(
+        string name, IReadOnlyList<ExcelCellModel> cells, IReadOnlyList<string> mergedRanges,
+        IReadOnlyList<ExcelSheetImageRef> images, IReadOnlyList<ExcelChartModel> charts,
+        IReadOnlyList<string> shapeTexts)
+        : this(name, cells, mergedRanges, images, charts, shapeTexts, [])
+    {
+    }
+
     /// <summary>
     ///     Initializes a worksheet model that carries no annotated shapes, for a hand-built model.
     /// </summary>
@@ -85,7 +108,7 @@ internal sealed record ExcelSheetModel(
     public ExcelSheetModel(
         string name, IReadOnlyList<ExcelCellModel> cells, IReadOnlyList<string> mergedRanges,
         IReadOnlyList<ExcelSheetImageRef> images, IReadOnlyList<ExcelChartModel> charts)
-        : this(name, cells, mergedRanges, images, charts, [])
+        : this(name, cells, mergedRanges, images, charts, [], [])
     {
     }
 
@@ -100,7 +123,7 @@ internal sealed record ExcelSheetModel(
     public ExcelSheetModel(
         string name, IReadOnlyList<ExcelCellModel> cells, IReadOnlyList<string> mergedRanges,
         IReadOnlyList<ExcelSheetImageRef> images)
-        : this(name, cells, mergedRanges, images, [], [])
+        : this(name, cells, mergedRanges, images, [], [], [])
     {
     }
 
@@ -112,10 +135,27 @@ internal sealed record ExcelSheetModel(
     /// <param name="mergedRanges">The A1-style merged ranges.</param>
     /// <remarks>A convenience for tests that do not exercise inline image links; images, charts, and shape texts default to empty.</remarks>
     public ExcelSheetModel(string name, IReadOnlyList<ExcelCellModel> cells, IReadOnlyList<string> mergedRanges)
-        : this(name, cells, mergedRanges, [], [], [])
+        : this(name, cells, mergedRanges, [], [], [], [])
     {
     }
 }
+
+/// <summary>
+///     One reviewer comment attached to a worksheet cell: where it is anchored, who wrote it, and
+///     what it says.
+/// </summary>
+/// <param name="Reference">
+///     The A1-style address of the cell the comment is attached to (for example <c>B7</c>), so the
+///     remark can be cited back to the cell it annotates.
+/// </param>
+/// <param name="Author">
+///     The comment's author as the workbook names them — the legacy author list entry, or the
+///     threaded comment's person — or <see langword="null"/> when the workbook names nobody, so no
+///     attribution is invented.
+/// </param>
+/// <param name="Text">The comment's text, taken whole so a long remark is never clipped.</param>
+/// <remarks>Immutable and thread-safe.</remarks>
+internal sealed record ExcelCommentModel(string Reference, string? Author, string Text);
 
 /// <summary>
 ///     One image occurrence on a worksheet: the package-part reference that keys the written-path

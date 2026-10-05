@@ -121,4 +121,92 @@ public class ExcelOpenXmlReaderTests
         var sheet = Assert.Single(model.Sheets);
         Assert.Empty(sheet.Cells);
     }
+
+    /// <summary>
+    ///     Proves a worksheet whose only comment is a legacy one is read, with its author resolved
+    ///     through the comments part's own author list.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_LegacyCommentWorkbook_ReadsCommentWithAuthor()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.LegacyCommentWorkbook());
+
+        var model = ExcelOpenXmlReader.Read(stream);
+
+        var comment = Assert.Single(Assert.Single(model.Sheets).Comments);
+        Assert.Equal("B7", comment.Reference);
+        Assert.Equal("Dana Reyes", comment.Author);
+        Assert.Equal("Confirm this against the test report.", comment.Text);
+    }
+
+    /// <summary>
+    ///     Proves a worksheet whose only comment is a modern threaded one is read, with its author
+    ///     resolved through the workbook's person list rather than left as a raw identifier.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_ThreadedCommentWorkbook_ReadsCommentWithResolvedPerson()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.ThreadedCommentWorkbook());
+
+        var model = ExcelOpenXmlReader.Read(stream);
+
+        var comment = Assert.Single(Assert.Single(model.Sheets).Comments);
+        Assert.Equal("C3", comment.Reference);
+        Assert.Equal("Morgan Patel", comment.Author);
+        Assert.Equal("This mass excludes the bracket.", comment.Text);
+    }
+
+    /// <summary>
+    ///     Proves a cell carrying both a threaded comment and the backward-compatibility legacy
+    ///     comment beside it reports the threaded remark once, not both: a reader shown the same
+    ///     remark twice would read it as two reviewers raising the same point.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_ThreadedAndLegacyOnSameCell_KeepsOnlyThreadedComment()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.ThreadedAndLegacyCommentWorkbook());
+
+        var model = ExcelOpenXmlReader.Read(stream);
+
+        var comment = Assert.Single(Assert.Single(model.Sheets).Comments);
+        Assert.Equal("D5", comment.Reference);
+        Assert.Equal("Threaded remark that supersedes the placeholder.", comment.Text);
+    }
+
+    /// <summary>
+    ///     Proves each comment stays with the worksheet that carries it, so a remark on one sheet is
+    ///     never reported against another.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_MultiSheetCommentWorkbook_AttributesCommentsToOwningSheet()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.MultiSheetCommentWorkbook());
+
+        var model = ExcelOpenXmlReader.Read(stream);
+
+        Assert.Equal(2, model.Sheets.Count);
+
+        var first = Assert.Single(model.Sheets[0].Comments);
+        Assert.Equal("Inputs", model.Sheets[0].Name);
+        Assert.Equal("A1", first.Reference);
+        Assert.Equal("Dana Reyes", first.Author);
+
+        var second = Assert.Single(model.Sheets[1].Comments);
+        Assert.Equal("Results", model.Sheets[1].Name);
+        Assert.Equal("B2", second.Reference);
+        Assert.Equal("Sam Whitfield", second.Author);
+    }
+
+    /// <summary>
+    ///     Proves a workbook with no comment parts at all yields no comments rather than an error.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_WorkbookWithoutComments_YieldsNoComments()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.TwoSheetWorkbook());
+
+        var model = ExcelOpenXmlReader.Read(stream);
+
+        Assert.All(model.Sheets, sheet => Assert.Empty(sheet.Comments));
+    }
 }

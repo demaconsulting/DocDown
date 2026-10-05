@@ -36,6 +36,65 @@ public class ExcelContentEmitterTests
     }
 
     /// <summary>
+    ///     Proves each cell comment reaches the sink as a review comment located by sheet name and
+    ///     cell reference, and that none of its text reaches the sheet listing.
+    /// </summary>
+    /// <remarks>
+    ///     A reviewer's remark is commentary about the workbook, not a cell value; asserting both
+    ///     halves together is what makes that separation falsifiable.
+    /// </remarks>
+    [Fact]
+    public async Task ExcelContentEmitter_Emit_SheetComments_ReportsCellQualifiedReviewComments()
+    {
+        var model = new ExcelWorkbookModel(
+        [
+            new ExcelSheetModel("Inputs", [new ExcelCellModel("A1", "Inlet", null)], [], [], [],
+                [], [new ExcelCommentModel("A1", "Dana Reyes", "Inlet value is provisional.")]),
+            new ExcelSheetModel("Results", [new ExcelCellModel("B2", "Pass", null)], [], [], [],
+                [], [new ExcelCommentModel("B2", null, "Rerun after the firmware update.")])
+        ]);
+        var sink = new RecordingSink();
+
+        await ExcelContentEmitter.EmitAsync(
+            sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
+
+        Assert.Collection(
+            sink.ReviewComments,
+            first =>
+            {
+                Assert.Equal("Dana Reyes", first.Author);
+                Assert.Equal("Inlet value is provisional.", first.Body);
+                Assert.Equal("Inputs!A1", first.Location);
+            },
+            second =>
+            {
+                Assert.Null(second.Author);
+                Assert.Equal("Rerun after the firmware update.", second.Body);
+                Assert.Equal("Results!B2", second.Location);
+            });
+
+        Assert.All(sink.Parts, part =>
+            Assert.DoesNotContain("Inlet value is provisional", part.Markdown, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    ///     Proves a workbook carrying no comments reports none, so the dedicated artifact is written
+    ///     only where there is something to put in it.
+    /// </summary>
+    [Fact]
+    public async Task ExcelContentEmitter_Emit_WorkbookWithoutComments_ReportsNoReviewComments()
+    {
+        var model = new ExcelWorkbookModel(
+            [new ExcelSheetModel("Inputs", [new ExcelCellModel("A1", "Inlet", null)], [])]);
+        var sink = new RecordingSink();
+
+        await ExcelContentEmitter.EmitAsync(
+            sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
+
+        Assert.Empty(sink.ReviewComments);
+    }
+
+    /// <summary>
     ///     Proves each worksheet becomes a titled sheet part and the content inventory reports the
     ///     workbook's worksheet count.
     /// </summary>
