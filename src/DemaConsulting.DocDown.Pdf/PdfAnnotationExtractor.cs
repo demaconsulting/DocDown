@@ -39,6 +39,15 @@ namespace DocDown.Pdf;
 ///         <em>does</em> carry text is a genuine remark and is kept.
 ///     </para>
 ///     <para>
+///         <strong>Stated limitation of that rule.</strong> A producer that copies a parent
+///         annotation's <c>/Contents</c> into the <c>Popup</c> that displays it yields two
+///         entries for one remark. Deduplicating would mean resolving each popup's
+///         <c>/Parent</c> through an indirect reference, which this unit does not do, and a
+///         text match would silently drop a reviewer who genuinely wrote the same words twice.
+///         Duplicating is the safer error — nothing a reviewer wrote is lost — so the behavior
+///         is characterized by a test rather than changed.
+///     </para>
+///     <para>
 ///         The author is read from the annotation dictionary's <c>/T</c> entry, because PdfPig's
 ///         <see cref="Annotation"/> exposes no author member of its own. A PDF may store that entry
 ///         as either a literal or a hexadecimal string, so both are read; an annotation that names no

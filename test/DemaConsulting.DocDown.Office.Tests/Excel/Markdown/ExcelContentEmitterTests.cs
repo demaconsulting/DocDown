@@ -36,6 +36,65 @@ public class ExcelContentEmitterTests
     }
 
     /// <summary>
+    ///     Proves the content inventory names the workbook's comments and how many distinct people
+    ///     wrote them, so <c>summary.txt</c> can show a workbook carries reviewer commentary at all.
+    /// </summary>
+    /// <remarks>
+    ///     Comments leave <c>content.md</c> entirely, so without an inventory entry the summary gives
+    ///     a reader no sign that a separate review-comments artifact exists. The unattributed comment
+    ///     is excluded from the author count because the workbook names nobody for it.
+    /// </remarks>
+    [Fact]
+    public async Task ExcelContentEmitter_Emit_SheetComments_InventoriesCommentsAndAuthors()
+    {
+        // Arrange: three comments across two sheets, two by the same person and one unattributed
+        var model = new ExcelWorkbookModel(
+        [
+            new ExcelSheetModel("Inputs", [new ExcelCellModel("A1", "Inlet", null)], [], [], [], [],
+            [
+                new ExcelCommentModel("A1", "Dana Reyes", "Inlet value is provisional."),
+                new ExcelCommentModel("A2", null, "Source unknown.")
+            ]),
+            new ExcelSheetModel("Results", [new ExcelCellModel("B2", "Pass", null)], [], [], [], [],
+                [new ExcelCommentModel("B2", "Dana Reyes", "Rerun after the firmware update.")])
+        ]);
+        var sink = new RecordingSink();
+
+        // Act: emit the workbook
+        await ExcelContentEmitter.EmitAsync(
+            sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
+
+        // Assert: every comment is counted, but only the named author contributes to the author count
+        Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "comments", Count: 3, LookedFor: true });
+        Assert.Contains(
+            sink.ContentFeatures,
+            feature => feature is { Label: "distinct comment authors", Count: 1, LookedFor: true });
+    }
+
+    /// <summary>
+    ///     Proves a workbook with no comments still reports the comment features, at zero, so a
+    ///     reader can tell "none were found" from "none were looked for".
+    /// </summary>
+    [Fact]
+    public async Task ExcelContentEmitter_Emit_NoComments_ReportsCommentFeaturesAtZero()
+    {
+        // Arrange: an ordinary workbook with no commentary anywhere
+        var model = new ExcelWorkbookModel(
+            [new ExcelSheetModel("Inputs", [new ExcelCellModel("A1", "Inlet", null)], [], [], [], [], [])]);
+        var sink = new RecordingSink();
+
+        // Act: emit the workbook
+        await ExcelContentEmitter.EmitAsync(
+            sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
+
+        // Assert: the entries are present and zero, which is what distinguishes looked-for from absent
+        Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "comments", Count: 0, LookedFor: true });
+        Assert.Contains(
+            sink.ContentFeatures,
+            feature => feature is { Label: "distinct comment authors", Count: 0, LookedFor: true });
+    }
+
+    /// <summary>
     ///     Proves each cell comment reaches the sink as a review comment located by sheet name and
     ///     cell reference, and that none of its text reaches the sheet listing.
     /// </summary>

@@ -426,6 +426,45 @@ public static class PdfFixtures
     }
 
     /// <summary>
+    ///     Assembles a single-page PDF whose <c>Popup</c> annotation repeats the <c>/Contents</c> of
+    ///     the <c>Text</c> annotation it belongs to.
+    /// </summary>
+    /// <returns>The bytes of the document.</returns>
+    /// <remarks>
+    ///     Some producers copy a parent annotation's text into the popup window that displays it.
+    ///     The extractor judges each annotation on its own type and content, so both are kept and the
+    ///     remark appears twice. This fixture exists to characterize that — to make it a reviewable,
+    ///     asserted behavior rather than an untested corner — not to assert it is desirable.
+    ///     Deduplicating would require resolving the popup's <c>/Parent</c> indirect reference, and a
+    ///     text match would drop a reviewer who genuinely repeated themselves.
+    /// </remarks>
+    public static byte[] WithPopupDuplicatingParent()
+    {
+        var pageText = "BT /F1 18 Tf 72 700 Td (Page with a duplicating popup.) Tj ET\n"u8.ToArray();
+
+        var body = new List<(string Header, byte[]? Stream)>
+        {
+            ("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n", null),
+            ("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n", null),
+            ("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R "
+             + "/Resources << /Font << /F1 7 0 R >> >> /Annots [4 0 R 5 0 R] >>\nendobj\n", null),
+
+            // The parent sticky note, naming its popup
+            ("4 0 obj\n<< /Type /Annot /Subtype /Text /Rect [100 700 120 720] /T (Alice Reviewer) "
+             + "/Popup 5 0 R /Contents (Section 2 needs a citation.) >>\nendobj\n", null),
+
+            // The popup that displays it, carrying a copy of the same words and the same author
+            ("5 0 obj\n<< /Type /Annot /Subtype /Popup /Rect [300 600 500 700] /Parent 4 0 R "
+             + "/T (Alice Reviewer) /Contents (Section 2 needs a citation.) >>\nendobj\n", null),
+
+            ($"6 0 obj\n<< /Length {pageText.Length.ToString(CultureInfo.InvariantCulture)} >>\nstream\n", pageText),
+            ("7 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n", null)
+        };
+
+        return Assemble(body);
+    }
+
+    /// <summary>
     ///     Assembles a two-page PDF whose first page's annotation structures are damaged.
     /// </summary>
     /// <returns>The bytes of the document.</returns>

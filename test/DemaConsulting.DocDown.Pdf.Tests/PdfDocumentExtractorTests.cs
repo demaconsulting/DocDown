@@ -130,6 +130,35 @@ public class PdfDocumentExtractorTests
     }
 
     /// <summary>
+    ///     Proves the content inventory names the document's reviewer comments and how many distinct
+    ///     people wrote them, counted from the same annotation walk that produced the comments.
+    /// </summary>
+    /// <remarks>
+    ///     Reviewer commentary leaves <c>content.md</c> entirely, so the inventory is the only place
+    ///     <c>summary.txt</c> says a PDF carries any at all; without it a reader paging through the
+    ///     summary cannot tell an annotated document from a clean one. The annotations are read once
+    ///     and shared between the inventory and the review comments, so the two can never disagree —
+    ///     which is what asserting both counts against the same extraction checks. The unattributed
+    ///     remark is excluded from the author count because the document names nobody for it.
+    /// </remarks>
+    [Fact]
+    public async Task PdfDocumentExtractor_ExtractAsync_AnnotatedDocument_InventoriesComments()
+    {
+        // Arrange: a recording sink over the two-page annotated document
+        var sink = new RecordingSink();
+
+        // Act: extract through the sink
+        await ExtractAsync(PdfFixtures.WithAnnotations(), sink);
+
+        // Assert: the inventory counts match the comments actually reported
+        Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "comments", Count: 5, LookedFor: true });
+        Assert.Contains(
+            sink.ContentFeatures,
+            feature => feature is { Label: "distinct comment authors", Count: 4, LookedFor: true });
+        Assert.Equal(5, sink.ReviewComments.Count);
+    }
+
+    /// <summary>
     ///     Proves a page range narrows reviewer comments along with the content.
     /// </summary>
     /// <remarks>
@@ -230,6 +259,16 @@ public class PdfDocumentExtractorTests
             {
                 Assert.Equal("inline images", feature.Label);
                 Assert.Equal(1, feature.Count);
+            },
+            feature =>
+            {
+                Assert.Equal("comments", feature.Label);
+                Assert.Equal(0, feature.Count);
+            },
+            feature =>
+            {
+                Assert.Equal("distinct comment authors", feature.Label);
+                Assert.Equal(0, feature.Count);
             });
     }
 
@@ -273,6 +312,16 @@ public class PdfDocumentExtractorTests
             feature =>
             {
                 Assert.Equal("inline images", feature.Label);
+                Assert.Equal(0, feature.Count);
+            },
+            feature =>
+            {
+                Assert.Equal("comments", feature.Label);
+                Assert.Equal(0, feature.Count);
+            },
+            feature =>
+            {
+                Assert.Equal("distinct comment authors", feature.Label);
                 Assert.Equal(0, feature.Count);
             });
     }

@@ -137,6 +137,55 @@ public static class XlsxFixtures
     });
 
     /// <summary>
+    ///     Builds a workbook whose single worksheet carries a multi-reply threaded conversation on one
+    ///     cell — with its backward-compatibility legacy entry — a plain legacy comment on an earlier
+    ///     cell, and a second cell commented only in the threaded part.
+    /// </summary>
+    /// <returns>The workbook bytes.</returns>
+    /// <remarks>
+    ///     This fixture exists to pin the two halves of the ordering rule that a single-comment
+    ///     workbook cannot show. The conversation on <c>B2</c> runs to three turns so a reader can see
+    ///     whether replies keep the order they were written in; <c>A1</c> is legacy-only and sits
+    ///     before it so the legacy part's cell order is what the walk follows; and <c>Z9</c> is
+    ///     threaded-only, placed on a cell that sorts last, so it can only arrive at the end by being
+    ///     appended rather than by luck of the sheet layout. Each author is distinct so attribution
+    ///     and ordering can be asserted together.
+    /// </remarks>
+    public static byte[] ThreadedReplyOrderingWorkbook() => Build(workbookPart =>
+    {
+        var sheets = new S.Sheets();
+        var worksheetPart = AddSheet(workbookPart, sheets, "Sheet1", 1U,
+        [
+            InlineStringCell("A1", "Inlet"),
+            InlineStringCell("B2", "Pending"),
+            InlineStringCell("Z9", "Tail")
+        ]);
+
+        AddLegacyComments(
+            worksheetPart,
+            ["Dana Reyes", "Morgan Patel"],
+            [
+                ("A1", 0U, "Inlet value is provisional."),
+                ("B2", 1U, "Comment placeholder for older readers.")
+            ]);
+
+        AddPersons(
+            workbookPart,
+            [("{AAAA}", "Morgan Patel"), ("{BBBB}", "Sam Whitfield"), ("{CCCC}", "Dana Reyes")]);
+
+        AddThreadedComments(
+            worksheetPart,
+            [
+                ("B2", "{AAAA}", "This mass excludes the bracket."),
+                ("B2", "{BBBB}", "Agreed - add the bracket to the next revision."),
+                ("B2", "{CCCC}", "Revision issued, closing this."),
+                ("Z9", "{BBBB}", "This trailing cell was never reviewed.")
+            ]);
+
+        workbookPart.Workbook!.AppendChild(sheets);
+    });
+
+    /// <summary>
     ///     Builds a two-sheet workbook with a comment on each sheet, so comment-to-sheet attribution
     ///     can be proven rather than assumed from a single-sheet case.
     /// </summary>

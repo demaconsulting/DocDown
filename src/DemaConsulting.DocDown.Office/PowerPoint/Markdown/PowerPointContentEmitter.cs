@@ -87,6 +87,36 @@ internal static class PowerPointContentEmitter
         ReportReviewComments(sink, model);
 
         ReportContentFeatures(sink, model, notesCount, imagePaths);
+        ReportModernCommentsNote(sink, model);
+    }
+
+    /// <summary>
+    ///     Reports that the deck carries modern persona-based comments this extractor does not read.
+    /// </summary>
+    /// <param name="sink">The sink to report through.</param>
+    /// <param name="model">The deck model carrying the modern-comment counts.</param>
+    /// <remarks>
+    ///     Without this note a deck whose comments are all modern reads exactly like a deck nobody
+    ///     commented on, which states something about the document that is not true. The note is an
+    ///     attempted-and-incomplete step, which is what an <see cref="ExtractionNote"/> carries: the
+    ///     reader found the comments and counted them, and chose not to read them. Nothing is
+    ///     reported when the deck carries none. Side effect: records a note on the sink.
+    /// </remarks>
+    private static void ReportModernCommentsNote(IExtractionSink sink, PowerPointDeckModel model)
+    {
+        if (model.ModernCommentCount == 0)
+        {
+            return;
+        }
+
+        var commentCount = model.ModernCommentCount.ToString(CultureInfo.InvariantCulture);
+        var commentNoun = model.ModernCommentCount == 1 ? "comment" : "comments";
+        var slideCount = model.ModernCommentSlideCount.ToString(CultureInfo.InvariantCulture);
+        var slideNoun = model.ModernCommentSlideCount == 1 ? "slide" : "slides";
+        sink.ReportNote(new ExtractionNote(
+            $"The presentation carries {commentCount} modern (persona-based, cloud-synced) {commentNoun} on "
+            + $"{slideCount} {slideNoun}, which this extractor does not read, so {(model.ModernCommentCount == 1 ? "it does" : "they do")} "
+            + "not appear in review-comments.md."));
     }
 
     /// <summary>
@@ -150,6 +180,21 @@ internal static class PowerPointContentEmitter
         sink.ReportContentFeature(new ContentFeature(
             "inline images",
             model.Slides.Sum(slide => slide.Images.Count(image => imagePaths.ContainsKey(image.SourceRef)))));
+
+        // Reviewer commentary is the content least visible from a rendered deck and the most
+        // valuable in a draft, so it is inventoried by the same counts Word reports: how many
+        // remarks there are, and how many people wrote them
+        sink.ReportContentFeature(new ContentFeature(
+            "comments", model.Slides.Sum(slide => slide.Comments.Count), LookedFor: true));
+        sink.ReportContentFeature(new ContentFeature(
+            "distinct comment authors",
+            model.Slides.SelectMany(slide => slide.Comments)
+                .Select(comment => comment.Author)
+                .Where(author => author is not null)
+                .Distinct(StringComparer.Ordinal)
+                .Count(),
+            "distinct comment author",
+            LookedFor: true));
     }
 
     /// <summary>The empty path map used when images are suppressed, so content rendering emits no links.</summary>

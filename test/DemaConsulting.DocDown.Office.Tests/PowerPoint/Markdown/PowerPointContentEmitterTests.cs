@@ -36,6 +36,99 @@ public class PowerPointContentEmitterTests
     }
 
     /// <summary>
+    ///     Proves a deck carrying modern persona comments raises a note naming how many there are and
+    ///     how many slides they sit on, so unread commentary is visible rather than silently absent.
+    /// </summary>
+    /// <remarks>
+    ///     Without the note, a deck reviewed entirely in current PowerPoint produces output identical
+    ///     to a deck nobody reviewed, and a reader has no way to learn that commentary exists. The
+    ///     counts are asserted rather than just the presence of a note because a note that says
+    ///     "some comments" would not tell a reader whether to go back to the source deck.
+    /// </remarks>
+    [Fact]
+    public async Task PowerPointContentEmitter_Emit_ModernComments_ReportsNoteNamingTheCounts()
+    {
+        // Arrange: a deck whose two unread modern comments sit on a single slide
+        var model = new PowerPointDeckModel(
+            [new PowerPointSlideModel(1, "Overview", ["First bullet"], null, [], [])],
+            [],
+            null,
+            ModernCommentCount: 2,
+            ModernCommentSlideCount: 1);
+        var sink = new RecordingSink();
+
+        // Act: emit the deck
+        await PowerPointContentEmitter.EmitAsync(
+            sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
+
+        // Assert: the note names both counts and says where the comments did not go
+        var note = Assert.Single(sink.Notes, candidate => candidate.Message.Contains("modern", StringComparison.Ordinal));
+        Assert.Contains("2 modern", note.Message, StringComparison.Ordinal);
+        Assert.Contains("1 slide", note.Message, StringComparison.Ordinal);
+        Assert.Contains("review-comments.md", note.Message, StringComparison.Ordinal);
+        Assert.Empty(sink.ReviewComments);
+    }
+
+    /// <summary>
+    ///     Proves a deck with no modern comments raises no note about them, so the note means
+    ///     something when it does appear.
+    /// </summary>
+    [Fact]
+    public async Task PowerPointContentEmitter_Emit_NoModernComments_ReportsNoNote()
+    {
+        // Arrange: an ordinary deck with a legacy comment and no modern ones
+        var model = new PowerPointDeckModel(
+        [
+            new PowerPointSlideModel(1, "Overview", ["First bullet"], null, [],
+                [new PowerPointCommentModel("Dana Reyes", "Opening is too broad.")])
+        ]);
+        var sink = new RecordingSink();
+
+        // Act: emit the deck
+        await PowerPointContentEmitter.EmitAsync(
+            sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
+
+        // Assert: nothing is said about commentary the deck does not carry
+        Assert.DoesNotContain(sink.Notes, candidate => candidate.Message.Contains("modern", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    ///     Proves the content inventory names the deck's comments and how many distinct people wrote
+    ///     them, so <c>summary.txt</c> can show a deck carries reviewer commentary at all.
+    /// </summary>
+    /// <remarks>
+    ///     Comments leave <c>content.md</c> entirely, so without an inventory entry the summary gives
+    ///     a reader no sign that a separate review-comments artifact exists. The unattributed comment
+    ///     is excluded from the author count because the deck names nobody for it.
+    /// </remarks>
+    [Fact]
+    public async Task PowerPointContentEmitter_Emit_SlideComments_InventoriesCommentsAndAuthors()
+    {
+        // Arrange: three comments across two slides, two by the same person and one unattributed
+        var model = new PowerPointDeckModel(
+        [
+            new PowerPointSlideModel(1, "Overview", ["First bullet"], null, [],
+            [
+                new PowerPointCommentModel("Dana Reyes", "Opening is too broad."),
+                new PowerPointCommentModel(null, "Cite the source for this figure.")
+            ]),
+            new PowerPointSlideModel(2, "Details", ["Detail line"], null, [],
+                [new PowerPointCommentModel("Dana Reyes", "Tighten this claim.")])
+        ]);
+        var sink = new RecordingSink();
+
+        // Act: emit the deck
+        await PowerPointContentEmitter.EmitAsync(
+            sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
+
+        // Assert: every comment is counted, but only the named author contributes to the author count
+        Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "comments", Count: 3, LookedFor: true });
+        Assert.Contains(
+            sink.ContentFeatures,
+            feature => feature is { Label: "distinct comment authors", Count: 1, LookedFor: true });
+    }
+
+    /// <summary>
     ///     Proves each slide comment reaches the sink as a review comment located by the slide's
     ///     1-based ordinal, and that none of its text reaches the content flow.
     /// </summary>

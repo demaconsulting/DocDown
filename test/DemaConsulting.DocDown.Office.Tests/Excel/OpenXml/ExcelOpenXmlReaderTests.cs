@@ -174,6 +174,55 @@ public class ExcelOpenXmlReaderTests
     }
 
     /// <summary>
+    ///     Proves every turn of a multi-reply conversation survives, in the order it was written.
+    /// </summary>
+    /// <remarks>
+    ///     The deduplication rule replaces a cell's legacy placeholder with its <em>whole</em> thread,
+    ///     not with its first turn. A rule that kept only one turn would silently discard the replies
+    ///     that usually carry the resolution — the part of a conversation a reader most needs — and a
+    ///     single-comment fixture cannot tell the two behaviors apart. Reply order is asserted because
+    ///     a conversation read out of sequence reverses who answered whom.
+    /// </remarks>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_MultiReplyThread_KeepsEveryReplyInOrder()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.ThreadedReplyOrderingWorkbook());
+
+        var model = ExcelOpenXmlReader.Read(stream);
+
+        var thread = Assert.Single(model.Sheets).Comments
+            .Where(comment => comment.Reference == "B2")
+            .ToList();
+        Assert.Equal(
+            ["This mass excludes the bracket.", "Agreed - add the bracket to the next revision.", "Revision issued, closing this."],
+            thread.Select(comment => comment.Text));
+        Assert.Equal(["Morgan Patel", "Sam Whitfield", "Dana Reyes"], thread.Select(comment => comment.Author));
+    }
+
+    /// <summary>
+    ///     Proves a cell commented only in the threaded part is appended after the legacy-ordered
+    ///     cells rather than interleaved among them.
+    /// </summary>
+    /// <remarks>
+    ///     The legacy part lists commented cells in sheet order, so it is what the walk follows; a
+    ///     cell with no legacy entry has no place in that order and is appended. The fixture puts the
+    ///     threaded-only comment on <c>Z9</c> — a cell that sorts last anyway — so a passing assertion
+    ///     could be luck; what makes the test meaningful is the whole sequence being pinned, including
+    ///     that the <c>B2</c> thread lands where its legacy placeholder sat rather than at the end.
+    /// </remarks>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_ThreadedOnlyCell_IsAppendedAfterLegacyOrderedCells()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.ThreadedReplyOrderingWorkbook());
+
+        var model = ExcelOpenXmlReader.Read(stream);
+
+        var comments = Assert.Single(model.Sheets).Comments;
+        Assert.Equal(["A1", "B2", "B2", "B2", "Z9"], comments.Select(comment => comment.Reference));
+        Assert.Equal("This trailing cell was never reviewed.", comments[^1].Text);
+    }
+
+    /// <summary>
     ///     Proves each comment stays with the worksheet that carries it, so a remark on one sheet is
     ///     never reported against another.
     /// </summary>

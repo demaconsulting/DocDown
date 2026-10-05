@@ -203,6 +203,20 @@ internal static class ExcelContentEmitter
                 chart.Data?.Series.Sum(series => series.Points.Count) ?? 0)),
             "cached chart data point",
             LookedFor: true));
+
+        // Reviewer commentary travels to its own artifact, so the inventory is the only place the
+        // summary states that a workbook carries any at all; the counts match Word's vocabulary
+        sink.ReportContentFeature(new ContentFeature(
+            "comments", model.Sheets.Sum(sheet => sheet.Comments.Count), LookedFor: true));
+        sink.ReportContentFeature(new ContentFeature(
+            "distinct comment authors",
+            model.Sheets.SelectMany(sheet => sheet.Comments)
+                .Select(comment => comment.Author)
+                .Where(author => author is not null)
+                .Distinct(StringComparer.Ordinal)
+                .Count(),
+            "distinct comment author",
+            LookedFor: true));
     }
 
     /// <summary>

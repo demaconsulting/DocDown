@@ -109,13 +109,16 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
             pages, document.Information?.Title, imageResult.Images, cancellationToken);
         await sink.WriteContentAsync(textResult.Markdown, cancellationToken).ConfigureAwait(false);
 
+        // Reviewer commentary travels separately from the content: it describes the document rather
+        // than belonging to it. The annotations are read once, here, so the inventory below and the
+        // review comments reported after it describe the same walk rather than two of them.
+        var annotations = PdfAnnotationExtractor.Extract(pages, sink, cancellationToken);
+
         // Report the content inventory from the same facts used to render the output, so an empty
         // or text-free PDF is described by counts rather than by judgment-oriented machinery
-        ReportContentFeatures(sink, options, pages, textResult, imageResult);
+        ReportContentFeatures(sink, options, pages, textResult, imageResult, annotations);
 
-        // Reviewer commentary travels separately from the content: it describes the document rather
-        // than belonging to it, so it is reported after the page text is written rather than mixed in
-        ReportReviewComments(sink, pages, cancellationToken);
+        ReportReviewComments(sink, annotations);
         return ExtractionOutcome.Produced;
     }
 
@@ -212,6 +215,7 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
     /// <param name="pages">The selected pages.</param>
     /// <param name="text">The text-extraction outcome.</param>
     /// <param name="images">The image-extraction outcome.</param>
+    /// <param name="annotations">The reviewer comments read from the same pages, counted here and reported separately.</param>
     /// <remarks>
     ///     Counts are reported from the real PDF structures the extractor walked rather than from a
     ///     regex over the rendered markdown. Zero counts are kept only where the backend genuinely
@@ -222,7 +226,7 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
     /// </remarks>
     private static void ReportContentFeatures(
         IExtractionSink sink, ExtractionOptions options, IReadOnlyList<Page> pages,
-        PdfTextResult text, PdfImageResult images)
+        PdfTextResult text, PdfImageResult images, IReadOnlyList<PdfReviewAnnotation> annotations)
     {
         sink.ReportContentFeature(new ContentFeature("pages", pages.Count, "page", LookedFor: true));
         sink.ReportContentFeature(new ContentFeature("headings", text.HeadingCount, LookedFor: true));
@@ -233,14 +237,25 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
             sink.ReportContentFeature(new ContentFeature(
                 "inline images", images.Written, "inline image", LookedFor: images.Found == 0));
         }
+
+        // Reviewer commentary lands in its own artifact, so the inventory is the only place the
+        // summary says a PDF carries any; the counts use the same vocabulary as the other backends
+        sink.ReportContentFeature(new ContentFeature("comments", annotations.Count, LookedFor: true));
+        sink.ReportContentFeature(new ContentFeature(
+            "distinct comment authors",
+            annotations.Select(annotation => annotation.Author)
+                .Where(author => author is not null)
+                .Distinct(StringComparer.Ordinal)
+                .Count(),
+            "distinct comment author",
+            LookedFor: true));
     }
 
     /// <summary>
     ///     Reports the reviewer commentary the selected pages carry as annotations.
     /// </summary>
     /// <param name="sink">The sink to report through.</param>
-    /// <param name="pages">The selected pages, the same ones the content walk used.</param>
-    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <param name="annotations">The annotations already read from the selected pages, in document order.</param>
     /// <remarks>
     ///     The same page selection drives comments and content, so a requested page range narrows both
     ///     together and a comment can never arrive from a page the output does not contain. The
@@ -250,9 +265,9 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
     ///     Side effect: records review comments on the sink.
     /// </remarks>
     private static void ReportReviewComments(
-        IExtractionSink sink, IReadOnlyList<Page> pages, CancellationToken cancellationToken)
+        IExtractionSink sink, IReadOnlyList<PdfReviewAnnotation> annotations)
     {
-        foreach (var annotation in PdfAnnotationExtractor.Extract(pages, sink, cancellationToken))
+        foreach (var annotation in annotations)
         {
             sink.ReportReviewComment(new DocumentComment(
                 annotation.Author,

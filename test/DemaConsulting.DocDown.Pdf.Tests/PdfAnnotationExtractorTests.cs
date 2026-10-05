@@ -152,6 +152,33 @@ public class PdfAnnotationExtractorTests
     }
 
     /// <summary>
+    ///     Characterizes what happens when a producer copies a parent annotation's text into the
+    ///     popup that displays it: the remark is reported twice.
+    /// </summary>
+    /// <remarks>
+    ///     This test asserts the current behavior rather than a desired one, so the limitation is
+    ///     reviewable instead of merely undiscovered. Deduplicating would mean resolving the popup's
+    ///     <c>/Parent</c> through an indirect reference, which this unit does not do, and matching on
+    ///     text would silently drop a reviewer who genuinely wrote the same words twice. Duplicating
+    ///     loses nothing a reviewer wrote, which is the safer of the two errors; if that judgment
+    ///     ever changes, this test is where the change becomes visible.
+    /// </remarks>
+    [Fact]
+    public void PdfAnnotationExtractor_Extract_PopupDuplicatingParent_ReportsBothEntries()
+    {
+        // Arrange: a page whose popup repeats its parent sticky note's /Contents verbatim
+        var sink = new RecordingSink();
+
+        // Act: read its annotations
+        var comments = Extract(PdfFixtures.WithPopupDuplicatingParent(), sink);
+
+        // Assert: both annotations pass the type table and the content rule, so both are kept
+        Assert.Equal(2, comments.Count);
+        Assert.All(comments, comment => Assert.Equal("Section 2 needs a citation.", comment.Body));
+        Assert.All(comments, comment => Assert.Equal("Alice Reviewer", comment.Author));
+    }
+
+    /// <summary>
     ///     Proves a comment is attributed to the page its annotation sits on.
     /// </summary>
     [Fact]

@@ -42,7 +42,8 @@ Layout
 What WAS extracted
 ------------------
   content.md   92 characters of text.
-               Contains 2 pages, 0 headings, 2 paragraphs, and 0 inline images.
+               Contains 2 pages, 0 headings, 2 paragraphs, 0 inline images, 5 comments, and 4 distinct comment
+               authors.
 
 Could not read
 --------------
