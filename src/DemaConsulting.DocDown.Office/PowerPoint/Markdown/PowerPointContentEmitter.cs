@@ -82,7 +82,42 @@ internal static class PowerPointContentEmitter
         // Report the plain-language notes for the images written above
         ReportImages(sink, imageResult);
 
+        // Reviewer remarks are commentary about the deck rather than part of it, so they leave
+        // content.md untouched and travel to Core as review comments
+        ReportReviewComments(sink, model);
+
         ReportContentFeatures(sink, model, notesCount, imagePaths);
+    }
+
+    /// <summary>
+    ///     Reports the deck's slide comments through the sink as review comments.
+    /// </summary>
+    /// <param name="sink">The sink to report through.</param>
+    /// <param name="model">The deck model whose comments are reported.</param>
+    /// <remarks>
+    ///     <para>
+    ///         A reviewer's remark is commentary <em>about</em> the deck rather than part of it, so
+    ///         it never joins a slide's text, where a consumer could not tell a reviewer's words from
+    ///         the author's. Reporting each comment to Core instead collects them in one
+    ///         <c>review-comments.md</c> artifact.
+    ///     </para>
+    ///     <para>
+    ///         Each comment is located as <c>Slide {n}</c> using the slide's 1-based ordinal — the
+    ///         same position the content flow headings carry — because a deck's argument is
+    ///         sequential and the slide number is how a reader navigates back to it. Side effect:
+    ///         records review comments on the sink.
+    ///     </para>
+    /// </remarks>
+    private static void ReportReviewComments(IExtractionSink sink, PowerPointDeckModel model)
+    {
+        foreach (var slide in model.Slides)
+        {
+            var location = $"Slide {slide.Ordinal.ToString(CultureInfo.InvariantCulture)}";
+            foreach (var comment in slide.Comments)
+            {
+                sink.ReportReviewComment(new DocumentComment(comment.Author, comment.Text, location));
+            }
+        }
     }
 
     /// <summary>

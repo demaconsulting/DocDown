@@ -72,13 +72,14 @@ internal static class PowerPointOpenXmlReader
             }
 
             var imageCollection = PowerPointOpenXmlImageReader.Collect(presentationPart, slideOrdinals);
+            var authorNames = LoadCommentAuthors(presentationPart);
 
             foreach (var (slidePart, slideOrdinal) in slideParts)
             {
                 var imageRefs = imageCollection.SlideImageRefs.TryGetValue(slideOrdinal, out var refs)
                     ? refs
                     : [];
-                slides.Add(ReadSlide(slidePart, slideOrdinal, imageRefs));
+                slides.Add(ReadSlide(slidePart, slideOrdinal, imageRefs, authorNames));
             }
 
             var images = imageCollection.Images;
@@ -103,18 +104,21 @@ internal static class PowerPointOpenXmlReader
     }
 
     /// <summary>
-    ///     Reads one slide into the model: its title, body text lines, and speaker notes.
+    ///     Reads one slide into the model: its title, body text lines, speaker notes, and the
+    ///     reviewer comments attached to it.
     /// </summary>
     /// <param name="slidePart">The slide part.</param>
     /// <param name="ordinal">The slide's 1-based ordinal.</param>
     /// <param name="imageRefs">The images this slide references, in reading order, for inline linking.</param>
+    /// <param name="authorNames">The presentation's comment-author names, keyed by author identifier.</param>
     /// <returns>The slide model.</returns>
     /// <remarks>
     ///     The title comes from the title placeholder; every other shape's paragraphs become body
     ///     lines. The notes come from the notes slide's body placeholder. Read-only over the part.
     /// </remarks>
     private static PowerPointSlideModel ReadSlide(
-        SlidePart slidePart, int ordinal, IReadOnlyList<PowerPointSlideImageRef> imageRefs)
+        SlidePart slidePart, int ordinal, IReadOnlyList<PowerPointSlideImageRef> imageRefs,
+        IReadOnlyDictionary<uint, string> authorNames)
     {
         string? title = null;
         var lines = new List<string>();
@@ -142,7 +146,94 @@ internal static class PowerPointOpenXmlReader
         }
 
         var notes = ReadNotes(slidePart);
-        return new PowerPointSlideModel(ordinal, title, lines, notes, imageRefs);
+        var comments = ReadComments(slidePart, authorNames);
+        return new PowerPointSlideModel(ordinal, title, lines, notes, imageRefs, comments);
+    }
+
+    /// <summary>
+    ///     Loads the presentation's comment-author list, which a slide comment names only by index.
+    /// </summary>
+    /// <param name="presentationPart">The presentation part.</param>
+    /// <returns>The author names, keyed by the identifier a comment cites, or an empty map when the deck declares none.</returns>
+    /// <remarks>
+    ///     A slide comment carries only an <c>authorId</c>; the names live once in the presentation's
+    ///     comment-authors part, so reading them up front lets every comment resolve its author
+    ///     without re-walking the package. An identifier the list does not name yields no attribution
+    ///     rather than a guess. Read-only over the part.
+    /// </remarks>
+    private static IReadOnlyDictionary<uint, string> LoadCommentAuthors(PresentationPart presentationPart)
+    {
+        var names = new Dictionary<uint, string>();
+        var list = presentationPart.CommentAuthorsPart?.CommentAuthorList;
+        if (list is null)
+        {
+            return names;
+        }
+
+        foreach (var author in list.Elements<P.CommentAuthor>())
+        {
+            if (author.Id?.Value is { } id && author.Name?.Value is { Length: > 0 } name)
+            {
+                names[id] = name;
+            }
+        }
+
+        return names;
+    }
+
+    /// <summary>
+    ///     Reads the reviewer comments attached to a slide, from its legacy slide-comments part.
+    /// </summary>
+    /// <param name="slidePart">The slide part.</param>
+    /// <param name="authorNames">The presentation's comment-author names, keyed by author identifier.</param>
+    /// <returns>The slide's comments in the order the part declares them, or an empty list when it has none.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         Only the legacy comments part (<c>ppt/comments/comment<em>n</em>.xml</c>, exposed as
+    ///         <see cref="SlidePart.SlideCommentsPart"/>) is read, and its author identifiers are
+    ///         resolved through the presentation's comment-authors part.
+    ///     </para>
+    ///     <para>
+    ///         <strong>Stated scope limitation.</strong> The modern persona-based, cloud-synced
+    ///         comments that current PowerPoint writes are deliberately <em>not</em> read:
+    ///         <c>DocumentFormat.OpenXml 3.5.1</c> exposes no part or property for them, so there is
+    ///         no supported way to reach them, and reaching into the package by raw relationship
+    ///         would be guessing at an unversioned grammar. A deck whose comments are all modern
+    ///         therefore reports none. This is a stated boundary of what this reader covers, recorded
+    ///         here and in the unit design document rather than left as a silent gap.
+    ///     </para>
+    ///     <para>
+    ///         A comment with no text is dropped, because it says nothing. Read-only over the part.
+    ///     </para>
+    /// </remarks>
+    private static IReadOnlyList<PowerPointCommentModel> ReadComments(
+        SlidePart slidePart, IReadOnlyDictionary<uint, string> authorNames)
+    {
+        var comments = new List<PowerPointCommentModel>();
+        var list = slidePart.SlideCommentsPart?.CommentList;
+        if (list is null)
+        {
+            return comments;
+        }
+
+        foreach (var comment in list.Elements<P.Comment>())
+        {
+            var text = comment.Text?.InnerText;
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                continue;
+            }
+
+            string? author = null;
+            if (comment.AuthorId?.Value is { } authorId && authorNames.TryGetValue(authorId, out var name))
+            {
+                author = name;
+            }
+
+            comments.Add(new PowerPointCommentModel(author, text));
+        }
+
+        return comments;
     }
 
     /// <summary>
@@ -352,11 +443,34 @@ internal sealed record PowerPointDeckModel(
 ///     part shown on several slides appears in each slide's list, recording every reference. Empty
 ///     when the slide shows no picture.
 /// </param>
+/// <param name="Comments">
+///     The reviewer comments attached to the slide, in the order the deck declares them. Empty when
+///     the slide carries none, and empty for a deck whose comments are all modern persona comments,
+///     which this reader states plainly it does not read. A comment is commentary <em>about</em> the
+///     deck rather than part of it, so it travels to Core as a review comment and never into
+///     <c>content.md</c>.
+/// </param>
 /// <remarks>Immutable and thread-safe.</remarks>
 internal sealed record PowerPointSlideModel(
     int Ordinal, string? Title, IReadOnlyList<string> TextLines, string? Notes,
-    IReadOnlyList<PowerPointSlideImageRef> Images)
+    IReadOnlyList<PowerPointSlideImageRef> Images, IReadOnlyList<PowerPointCommentModel> Comments)
 {
+    /// <summary>
+    ///     Initializes a slide model that carries no reviewer comments, for a hand-built model.
+    /// </summary>
+    /// <param name="ordinal">The slide's 1-based position.</param>
+    /// <param name="title">The slide title, or <see langword="null"/>.</param>
+    /// <param name="textLines">The slide's body text lines.</param>
+    /// <param name="notes">The speaker notes, or <see langword="null"/>.</param>
+    /// <param name="images">The images this slide references.</param>
+    /// <remarks>A convenience for tests that do not exercise reviewer comments; comments default to empty.</remarks>
+    public PowerPointSlideModel(
+        int ordinal, string? title, IReadOnlyList<string> textLines, string? notes,
+        IReadOnlyList<PowerPointSlideImageRef> images)
+        : this(ordinal, title, textLines, notes, images, [])
+    {
+    }
+
     /// <summary>
     ///     Initializes a slide model that references no images inline, for a hand-built model.
     /// </summary>
@@ -366,10 +480,21 @@ internal sealed record PowerPointSlideModel(
     /// <param name="notes">The speaker notes, or <see langword="null"/>.</param>
     /// <remarks>A convenience for tests that do not exercise inline image links; images default to empty.</remarks>
     public PowerPointSlideModel(int ordinal, string? title, IReadOnlyList<string> textLines, string? notes)
-        : this(ordinal, title, textLines, notes, [])
+        : this(ordinal, title, textLines, notes, [], [])
     {
     }
 }
+
+/// <summary>
+///     One reviewer comment attached to a slide: who wrote it and what it says.
+/// </summary>
+/// <param name="Author">
+///     The comment's author as the deck's comment-author list names them, or
+///     <see langword="null"/> when the deck names nobody for it, so no attribution is invented.
+/// </param>
+/// <param name="Text">The comment's text, taken whole so a long remark is never clipped.</param>
+/// <remarks>Immutable and thread-safe.</remarks>
+internal sealed record PowerPointCommentModel(string? Author, string Text);
 
 /// <summary>
 ///     One image occurrence on a slide: the package-part reference that keys the written-path map,

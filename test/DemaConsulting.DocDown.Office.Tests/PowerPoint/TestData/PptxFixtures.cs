@@ -44,6 +44,34 @@ public static class PptxFixtures
     });
 
     /// <summary>
+    ///     Builds a single-slide deck carrying one legacy slide comment whose author the
+    ///     presentation's comment-author list names.
+    /// </summary>
+    /// <returns>The deck bytes.</returns>
+    public static byte[] DeckWithComment() => Build(presentationPart =>
+    {
+        AddCommentAuthors(presentationPart, [(0U, "Dana Reyes")]);
+        var slidePart = AddSlide(presentationPart, 256U, "Overview", ["First bullet"], notes: null);
+        AddComments(slidePart, [(0U, "Tighten this claim before the review board sees it.")]);
+    });
+
+    /// <summary>
+    ///     Builds a two-slide deck with a comment on each slide by a different author, so
+    ///     comment-to-slide attribution can be proven rather than assumed from a single-slide case.
+    /// </summary>
+    /// <returns>The deck bytes.</returns>
+    public static byte[] DeckWithCommentsOnTwoSlides() => Build(presentationPart =>
+    {
+        AddCommentAuthors(presentationPart, [(0U, "Dana Reyes"), (1U, "Sam Whitfield")]);
+
+        var first = AddSlide(presentationPart, 256U, "Overview", ["First bullet"], notes: null);
+        AddComments(first, [(0U, "Opening is too broad.")]);
+
+        var second = AddSlide(presentationPart, 257U, "Details", ["Detail line"], notes: null);
+        AddComments(second, [(1U, "Cite the source for this figure.")]);
+    });
+
+    /// <summary>
     ///     Builds a single-slide deck carrying one embedded PNG picture with an authored description,
     ///     so the image reader and the sink-write pipeline can be exercised end to end.
     /// </summary>
@@ -165,7 +193,8 @@ public static class PptxFixtures
     /// <param name="title">The slide title.</param>
     /// <param name="body">The body text lines.</param>
     /// <param name="notes">The speaker notes, or <see langword="null"/> for none.</param>
-    private static void AddSlide(
+    /// <returns>The slide part, so a caller may attach a comments part to it.</returns>
+    private static SlidePart AddSlide(
         PresentationPart presentationPart, uint slideId, string title, IReadOnlyList<string> body, string? notes)
     {
         var slidePart = presentationPart.AddNewPart<SlidePart>();
@@ -188,6 +217,68 @@ public static class PptxFixtures
 
         var slideIdList = presentationPart.Presentation!.SlideIdList!;
         slideIdList.AppendChild(new P.SlideId { Id = slideId, RelationshipId = presentationPart.GetIdOfPart(slidePart) });
+        return slidePart;
+    }
+
+    /// <summary>
+    ///     Attaches the presentation's comment-author list, naming the people slide comments cite.
+    /// </summary>
+    /// <param name="presentationPart">The presentation part.</param>
+    /// <param name="authors">Each author as the identifier a comment cites and the display name.</param>
+    /// <remarks>
+    ///     A slide comment carries only an author identifier, so without this part no comment could be
+    ///     attributed; writing it here is what makes the author-resolution path real rather than
+    ///     assumed.
+    /// </remarks>
+    private static void AddCommentAuthors(
+        PresentationPart presentationPart, IReadOnlyList<(uint Id, string Name)> authors)
+    {
+        var authorList = new P.CommentAuthorList();
+        foreach (var (id, name) in authors)
+        {
+            authorList.AppendChild(new P.CommentAuthor
+            {
+                Id = id,
+                Name = name,
+                Initials = name[..1],
+                LastIndex = 1U,
+                ColorIndex = 0U
+            });
+        }
+
+        var part = presentationPart.AddNewPart<CommentAuthorsPart>();
+        part.CommentAuthorList = authorList;
+    }
+
+    /// <summary>
+    ///     Attaches a legacy slide-comments part to a slide.
+    /// </summary>
+    /// <param name="slidePart">The slide part to attach the comments to.</param>
+    /// <param name="comments">Each comment as its author identifier and text.</param>
+    /// <remarks>
+    ///     The position element is written because the comment schema requires it before the text,
+    ///     even though nothing downstream reads where on the slide the remark was pinned.
+    /// </remarks>
+    private static void AddComments(
+        SlidePart slidePart, IReadOnlyList<(uint AuthorId, string Text)> comments)
+    {
+        var commentList = new P.CommentList();
+        var index = 1U;
+        foreach (var (authorId, text) in comments)
+        {
+            commentList.AppendChild(new P.Comment
+            {
+                AuthorId = authorId,
+                Index = index,
+                DateTime = new DateTimeValue(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
+                Position = new P.Position { X = 100L, Y = 100L },
+                Text = new P.Text(text)
+            });
+            index++;
+        }
+
+        var part = slidePart.AddNewPart<SlideCommentsPart>();
+        part.CommentList = commentList;
     }
 
     /// <summary>

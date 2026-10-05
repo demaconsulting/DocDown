@@ -36,6 +36,64 @@ public class PowerPointContentEmitterTests
     }
 
     /// <summary>
+    ///     Proves each slide comment reaches the sink as a review comment located by the slide's
+    ///     1-based ordinal, and that none of its text reaches the content flow.
+    /// </summary>
+    /// <remarks>
+    ///     A reviewer's remark is commentary about the deck, not part of it; asserting both halves
+    ///     together is what makes that separation falsifiable.
+    /// </remarks>
+    [Fact]
+    public async Task PowerPointContentEmitter_Emit_SlideComments_ReportsSlideQualifiedReviewComments()
+    {
+        var model = new PowerPointDeckModel(
+        [
+            new PowerPointSlideModel(1, "Overview", ["First bullet"], null, [],
+                [new PowerPointCommentModel("Dana Reyes", "Opening is too broad.")]),
+            new PowerPointSlideModel(2, "Details", ["Detail line"], null, [],
+                [new PowerPointCommentModel(null, "Cite the source for this figure.")])
+        ]);
+        var sink = new RecordingSink();
+
+        await PowerPointContentEmitter.EmitAsync(
+            sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
+
+        Assert.Collection(
+            sink.ReviewComments,
+            first =>
+            {
+                Assert.Equal("Dana Reyes", first.Author);
+                Assert.Equal("Opening is too broad.", first.Body);
+                Assert.Equal("Slide 1", first.Location);
+            },
+            second =>
+            {
+                Assert.Null(second.Author);
+                Assert.Equal("Cite the source for this figure.", second.Body);
+                Assert.Equal("Slide 2", second.Location);
+            });
+
+        var content = Assert.Single(sink.ContentWrites);
+        Assert.DoesNotContain("Opening is too broad", content, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves a deck carrying no comments reports none, so the dedicated artifact is written only
+    ///     where there is something to put in it.
+    /// </summary>
+    [Fact]
+    public async Task PowerPointContentEmitter_Emit_DeckWithoutComments_ReportsNoReviewComments()
+    {
+        var model = new PowerPointDeckModel([new PowerPointSlideModel(1, "Overview", ["Body"], null)]);
+        var sink = new RecordingSink();
+
+        await PowerPointContentEmitter.EmitAsync(
+            sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
+
+        Assert.Empty(sink.ReviewComments);
+    }
+
+    /// <summary>
     ///     Proves the deck's structure is reported as content features, including the speaker notes
     ///     that no rendered slide image can supply.
     /// </summary>
