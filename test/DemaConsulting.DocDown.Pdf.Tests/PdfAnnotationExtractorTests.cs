@@ -223,6 +223,32 @@ public class PdfAnnotationExtractorTests
     }
 
     /// <summary>
+    ///     Proves damaged annotation structures on one page cost only that page's comments.
+    /// </summary>
+    /// <remarks>
+    ///     Containment is the point: a single broken annotation reference must not cost a reader the
+    ///     comments on every other page, still less the document's text. PdfPig's lenient parser
+    ///     absorbs this particular damage and simply reports no annotations for the page, so no note
+    ///     is due here — the note exists for damage severe enough to fault the parser mid-walk, which
+    ///     no fixture buildable here could provoke.
+    /// </remarks>
+    [Fact]
+    public void PdfAnnotationExtractor_Extract_DamagedAnnotationReference_KeepsOtherPagesComments()
+    {
+        // Arrange: a two-page document whose first page's /Annots points at a non-existent object
+        var sink = new RecordingSink();
+
+        // Act: read its annotations
+        var comments = Extract(PdfFixtures.WithUnreadableAnnotations(), sink);
+
+        // Assert: the intact page's remark survives and nothing is invented for the damaged one
+        var survivor = Assert.Single(comments);
+        Assert.Equal("This page survived.", survivor.Body);
+        Assert.Equal("Erin Checker", survivor.Author);
+        Assert.Equal(2, survivor.PageNumber);
+    }
+
+    /// <summary>
     ///     Proves the extractor rejects a missing page list rather than reporting an empty result.
     /// </summary>
     [Fact]

@@ -84,6 +84,23 @@ sections:
               request and place content in the output that the caller did not ask for.
             tests:
               - PdfDocumentExtractor_ExtractAsync_PageRange_ExtractsOnlyTheRequestedPages
+              - PdfDocumentExtractor_ExtractAsync_PageRange_RestrictsReviewComments
+
+          - id: DocDownPdf-PdfDocumentExtractor-ReportsReviewComments
+            title: >-
+              PdfDocumentExtractor shall report each annotation found on the selected pages as a
+              review comment located by its 1-based page number.
+            justification: |
+              Reviewer commentary describes the document rather than belonging to it, so it travels
+              to Core through the review-comment channel instead of being written into the content.
+              The location wording belongs here rather than in the annotation extractor because how a
+              comment's position is phrased is a presentation decision; driving the comments from the
+              same page selection as the content is what makes it impossible for a comment to arrive
+              from a page the output does not contain.
+            tests:
+              - PdfDocumentExtractor_ExtractAsync_AnnotatedDocument_ReportsReviewComments
+              - PdfDocumentExtractor_ExtractAsync_PageRange_RestrictsReviewComments
+              - PdfDocumentExtractor_ExtractAsync_DocumentWithoutAnnotations_ReportsNoReviewComments
 
           - id: DocDownPdf-PdfDocumentExtractor-ReportsContentInventory
             title: >-

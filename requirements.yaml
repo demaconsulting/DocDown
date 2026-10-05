@@ -30,6 +30,7 @@ includes:
   - docs/reqstream/docdown-pdf/pdf-document-extractor.yaml
   - docs/reqstream/docdown-pdf/pdf-text-extractor.yaml
   - docs/reqstream/docdown-pdf/pdf-image-extractor.yaml
+  - docs/reqstream/docdown-pdf/pdf-annotation-extractor.yaml
   - docs/reqstream/docdown-pdf/pdf-doc-down-builder-extensions.yaml
   - docs/reqstream/docdown-pdf-rendering.yaml
   - docs/reqstream/docdown-pdf-rendering/platform-requirements.yaml

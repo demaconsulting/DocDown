@@ -1,0 +1,126 @@
+---
+# Software Unit Requirements for PdfAnnotationExtractor
+#
+# PdfAnnotationExtractor reads the reviewer commentary a PDF carries as annotations and hands each
+# remark back with its author, its text, and the page it sits on, so the commentary reaches the
+# review-comments artifact instead of being lost or mixed into the document's own content.
+
+sections:
+  - title: DocDownPdf Requirements
+    sections:
+      - title: PdfAnnotationExtractor Requirements
+        requirements:
+          - id: DocDownPdf-PdfAnnotationExtractor-ExtractsAnnotationText
+            title: >-
+              PdfAnnotationExtractor shall report the text of each commentary annotation as the body
+              of a review comment.
+            justification: |
+              A reviewer's remark is the whole point of the annotation. Reporting the annotation
+              without its words would record that someone commented while discarding what they said,
+              which is of no use to anyone reading the extraction.
+            tests:
+              - PdfAnnotationExtractor_Extract_NamedAnnotation_ReportsBodyAuthorAndPage
+
+          - id: DocDownPdf-PdfAnnotationExtractor-ResolvesAuthor
+            title: >-
+              PdfAnnotationExtractor shall report the author recorded in an annotation's title entry,
+              accepting that entry as either a literal or a hexadecimal string.
+            justification: |
+              Attribution is what turns a list of remarks into a review a reader can follow. PDF
+              permits a string to be written in either form and real documents use both, so a reader
+              that handled only one would silently drop attributions that are present in the file.
+            tests:
+              - PdfAnnotationExtractor_Extract_NamedAnnotation_ReportsBodyAuthorAndPage
+              - PdfAnnotationExtractor_Extract_HexadecimalAuthorString_ReportsDecodedAuthor
+
+          - id: DocDownPdf-PdfAnnotationExtractor-ReportsAbsentAuthorAsUnattributed
+            title: >-
+              PdfAnnotationExtractor shall report no author for an annotation that records none,
+              rather than substituting a placeholder name.
+            justification: |
+              "The document did not say who wrote this" and "someone called Unknown wrote this" are
+              different claims, and only the first is true. Inventing the second would put an
+              assertion in the output that the document never made, which is exactly the kind of
+              fabrication the extraction must not commit.
+            tests:
+              - PdfAnnotationExtractor_Extract_AnnotationWithoutTitleEntry_ReportsNullAuthor
+
+          - id: DocDownPdf-PdfAnnotationExtractor-ReportsPageNumber
+            title: >-
+              PdfAnnotationExtractor shall report the 1-based number of the page each annotation sits
+              on.
+            justification: |
+              A remark is about a place in the document, and a reader who cannot find that place
+              cannot act on the remark. The page is the honest unit of position for a PDF annotation,
+              because its rectangle locates it on the sheet rather than within the prose.
+            tests:
+              - PdfAnnotationExtractor_Extract_MultiPageDocument_AttributesCommentsToTheirPages
+
+          - id: DocDownPdf-PdfAnnotationExtractor-AppliesCommentaryTypeList
+            title: >-
+              PdfAnnotationExtractor shall report only annotations whose type appears in its
+              documented commentary list, which comprises Text, FreeText, and Popup together with the
+              markup types Highlight, Underline, Squiggly, StrikeOut, Line, Square, Circle, Polygon,
+              PolyLine, Stamp, Caret, Ink, and FileAttachment.
+            justification: |
+              Most PDF annotation types carry no human remark at all: a Link is navigation, a Widget
+              is a form control, and PrinterMark, TrapNet, and Watermark are production artifacts.
+              Treating every annotation as a comment would fill the review artifact with machinery
+              and bury the remarks a reviewer actually wrote. Naming the included types explicitly —
+              rather than excluding a few known-bad ones — means a new or unrecognized annotation type
+              is kept out by default instead of being admitted by accident. The list is the set of PDF
+              markup annotations (ISO 32000-1 Section 12.5.6.2), which is what a PDF reader itself
+              shows in its comments pane, plus Popup, which is where a reader stores a remark's text.
+            tests:
+              - PdfAnnotationExtractor_Extract_LinkAnnotationWithContent_IsExcludedByType
+              - PdfAnnotationExtractor_Extract_HighlightWithContent_IsIncluded
+
+          - id: DocDownPdf-PdfAnnotationExtractor-SkipsEmptyAnnotations
+            title: >-
+              PdfAnnotationExtractor shall report no comment for an annotation whose text is empty or
+              blank, whatever its type.
+            justification: |
+              A highlight drawn with no remark attached is a reading aid rather than a comment, and a
+              popup with no text of its own is merely the window that displays its parent's remark.
+              Emitting either would invent a comment nobody wrote and, in the popup's case, duplicate
+              one that was. This rule is what lets the markup types be included safely: it separates a
+              mark that carries a remark from one that is only a mark.
+            tests:
+              - PdfAnnotationExtractor_Extract_HighlightWithoutContent_IsExcluded
+              - PdfAnnotationExtractor_Extract_EmptyPopup_IsExcluded
+
+          - id: DocDownPdf-PdfAnnotationExtractor-PreservesDocumentOrder
+            title: >-
+              PdfAnnotationExtractor shall report comments in page order and, within a page, in the
+              order the document lists its annotations.
+            justification: |
+              The review artifact renders comments in the order they are reported, and a reader
+              scanning it expects to travel through the document rather than to jump about it.
+            tests:
+              - PdfAnnotationExtractor_Extract_MultiPageDocument_PreservesDocumentOrder
+
+          - id: DocDownPdf-PdfAnnotationExtractor-ReportsNothingWhenAbsent
+            title: >-
+              PdfAnnotationExtractor shall report no comments and no note for a document whose pages
+              carry no commentary annotations.
+            justification: |
+              A document nobody commented on has nothing incomplete about it. Notes are reserved for
+              steps that were attempted and could not finish, so raising one here would describe an
+              ordinary absence as a shortfall.
+            tests:
+              - PdfAnnotationExtractor_Extract_DocumentWithoutAnnotations_ReportsNothing
+              - PdfAnnotationExtractor_Extract_ReadableAnnotations_RaisesNoNote
+
+          - id: DocDownPdf-PdfAnnotationExtractor-ContainsUnreadableAnnotations
+            title: >-
+              PdfAnnotationExtractor shall contain a failure to read one page's annotations to that
+              page, extracting the remaining pages and recording a plain note naming the pages
+              affected.
+            justification: |
+              A single damaged annotation dictionary must not cost a reader the text, the images, or
+              the other pages' comments of a document that was otherwise perfectly readable, so the
+              failure is confined to its page. Confining it silently would be worse than failing,
+              because the output would look complete while missing a reviewer's words; the note is
+              what keeps the loss visible.
+            tests:
+              - PdfAnnotationExtractor_Extract_DamagedAnnotationReference_KeepsOtherPagesComments

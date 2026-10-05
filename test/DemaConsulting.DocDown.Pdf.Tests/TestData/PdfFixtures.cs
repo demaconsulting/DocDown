@@ -426,6 +426,40 @@ public static class PdfFixtures
     }
 
     /// <summary>
+    ///     Assembles a two-page PDF whose first page's annotation structures are damaged.
+    /// </summary>
+    /// <returns>The bytes of the document.</returns>
+    /// <remarks>
+    ///     The first page's <c>/Annots</c> entry points at an object that does not exist, which is
+    ///     the shape a truncated or partially overwritten file leaves behind; the second page carries
+    ///     an ordinary reviewer note. The damage is confined to one page on purpose: that is what
+    ///     makes it possible to show a broken comment costs the reader only that page's comments
+    ///     rather than the document's text or the comments on any other page.
+    /// </remarks>
+    public static byte[] WithUnreadableAnnotations()
+    {
+        var firstPageText = "BT /F1 18 Tf 72 700 Td (Damaged annotations page.) Tj ET\n"u8.ToArray();
+        var secondPageText = "BT /F1 18 Tf 72 700 Td (Intact annotations page.) Tj ET\n"u8.ToArray();
+
+        var body = new List<(string Header, byte[]? Stream)>
+        {
+            ("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n", null),
+            ("2 0 obj\n<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>\nendobj\n", null),
+            ("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R "
+             + "/Resources << /Font << /F1 8 0 R >> >> /Annots [99 0 R] >>\nendobj\n", null),
+            ("4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 7 0 R "
+             + "/Resources << /Font << /F1 8 0 R >> >> /Annots [5 0 R] >>\nendobj\n", null),
+            ("5 0 obj\n<< /Type /Annot /Subtype /Text /Rect [100 700 120 720] /T (Erin Checker) "
+             + "/Contents (This page survived.) >>\nendobj\n", null),
+            ($"6 0 obj\n<< /Length {firstPageText.Length.ToString(CultureInfo.InvariantCulture)} >>\nstream\n", firstPageText),
+            ($"7 0 obj\n<< /Length {secondPageText.Length.ToString(CultureInfo.InvariantCulture)} >>\nstream\n", secondPageText),
+            ("8 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n", null)
+        };
+
+        return Assemble(body);
+    }
+
+    /// <summary>
     ///     Assembles a PDF from pre-formatted objects, computing the cross-reference offsets.
     /// </summary>
     /// <param name="body">Each object's header text and optional stream payload, in object order.</param>

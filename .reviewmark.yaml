@@ -470,6 +470,19 @@ reviews:
       - "src/DemaConsulting.DocDown.Pdf/PdfImageExtractor.cs"               # unit source
       - "test/DemaConsulting.DocDown.Pdf.Tests/PdfImageExtractorTests.cs"   # unit tests
 
+  # DocDownPdf-PdfAnnotationExtractor Unit Review (one per unit)
+  - id: DocDownPdf-PdfAnnotationExtractor
+    title: Review that DocDown.Pdf PdfAnnotationExtractor Implementation is Correct
+    context:
+      - "docs/design/docdown-pdf.md"
+      - "docs/reqstream/docdown-pdf.yaml"
+    paths:
+      - "docs/reqstream/docdown-pdf/pdf-annotation-extractor.yaml"          # unit requirements
+      - "docs/design/docdown-pdf/pdf-annotation-extractor.md"               # unit design
+      - "docs/verification/docdown-pdf/pdf-annotation-extractor.md"         # unit verification
+      - "src/DemaConsulting.DocDown.Pdf/PdfAnnotationExtractor.cs"          # unit source
+      - "test/DemaConsulting.DocDown.Pdf.Tests/PdfAnnotationExtractorTests.cs"  # unit tests
+
   # DocDownPdf-PdfDocDownBuilderExtensions Unit Review (one per unit)
   - id: DocDownPdf-PdfDocDownBuilderExtensions
     title: Review that DocDown.Pdf PdfDocDownBuilderExtensions Implementation is Correct
