@@ -55,6 +55,12 @@ namespace DocDown.Word.Markdown;
 ///     <see langword="null"/> when not captured (for example a hand-built test model). Carried on the
 ///     model so the emitter can report it once through the sink for <c>metadata.json</c>.
 /// </param>
+/// <param name="CommentsWithUnreadableContent">
+///     The number of comments dropped because their only content was a picture or ink and they
+///     carried no text this backend could render. A reviewer did write something there, so the
+///     emitter states the shortfall as an extraction note rather than letting those remarks vanish
+///     without trace; a wholly empty comment is not counted here, because nothing was lost.
+/// </param>
 /// <remarks>
 ///     The counts live on the model rather than being recomputed because only the reader, walking
 ///     the document once, can observe them; the emitter turns them into inventory counts and notes.
@@ -74,7 +80,8 @@ internal sealed record WordDocumentModel(
     int HeaderFooterPartsPageFurniture,
     int EmptyTablesSkipped,
     int ChartsFound = 0,
-    DocumentMetadata? Metadata = null);
+    DocumentMetadata? Metadata = null,
+    int CommentsWithUnreadableContent = 0);
 
 /// <summary>
 ///     One surviving header or footer, rendered as a labeled subsection of <c>## Document Control</c>.

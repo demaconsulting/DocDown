@@ -411,6 +411,61 @@ public static class DocxFixtures
     });
 
     /// <summary>
+    ///     Builds a document carrying a schema-valid comment with no runs alongside a normal
+    ///     author-attributed comment on the same document.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>
+    ///     An empty <c>w:comment</c> is what Word leaves behind when a reviewer inserts a comment
+    ///     and types nothing, or when every run in a comment is removed as a tracked deletion. It is
+    ///     paired with a real comment here so a test can prove the empty one costs nothing: the
+    ///     document still extracts and the real remark still reaches the review-comments artifact.
+    /// </remarks>
+    public static byte[] DocumentWithEmptyAndRealComments() => BuildDocx((document, mainPart) =>
+    {
+        var body = new W.Body();
+        body.AppendChild(StyledParagraph("Findings", "Heading1"));
+        body.AppendChild(RangeCommentedParagraph("1", "Body text that must survive extraction."));
+        body.AppendChild(PointCommentedParagraph("2", "A second paragraph."));
+        SetBody(mainPart, body);
+
+        var commentsPart = mainPart.AddNewPart<WordprocessingCommentsPart>();
+        var comments = new W.Comments();
+        comments.AppendChild(Comment("1", "Reviewer", "Please clarify this section."));
+        comments.AppendChild(new W.Comment { Id = "2", Author = "Silent Reviewer" });
+        commentsPart.Comments = comments;
+
+        SetProperties(document, "Partly Commented Report", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document whose only comment carries a picture and no text at all.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>
+    ///     A reviewer who pastes a screenshot into a comment and types nothing leaves exactly this
+    ///     shape. The remark is real but carries no words this backend can render, which is the
+    ///     narrow case the extraction note exists for — distinct from a comment nobody ever typed
+    ///     into, where nothing was lost.
+    /// </remarks>
+    public static byte[] DocumentWithImageOnlyComment() => BuildDocx((document, mainPart) =>
+    {
+        var body = new W.Body();
+        body.AppendChild(StyledParagraph("Review", "Heading1"));
+        body.AppendChild(RangeCommentedParagraph("1", "The passage the screenshot annotates."));
+        SetBody(mainPart, body);
+
+        var commentsPart = mainPart.AddNewPart<WordprocessingCommentsPart>();
+        var comments = new W.Comments();
+        var comment = new W.Comment { Id = "1", Author = "Reviewer" };
+        comment.AppendChild(ImageParagraph(mainPart, "comment-screenshot"));
+        comments.AppendChild(comment);
+        commentsPart.Comments = comments;
+
+        SetProperties(document, "Picture Comment Report", "DocDown Test Suite");
+    });
+
+    /// <summary>
     ///     Builds a paragraph whose text run is bracketed by a comment range and closed by the
     ///     comment's reference marker.
     /// </summary>

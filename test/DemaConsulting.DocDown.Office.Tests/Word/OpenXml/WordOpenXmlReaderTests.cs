@@ -130,6 +130,46 @@ public class WordOpenXmlReaderTests
     }
 
     /// <summary>
+    ///     Proves a comment carrying no runs never enters the model, while a real comment in the
+    ///     same document is unaffected.
+    /// </summary>
+    /// <remarks>
+    ///     The model-level invariant every backend upholds is that a comment without text never
+    ///     reaches it, so the one place downstream that can report a comment never has to decide
+    ///     what an empty remark means. Asserting the surviving comment too keeps the guard from
+    ///     being satisfied by dropping everything.
+    /// </remarks>
+    [Fact]
+    public void WordOpenXmlReader_Read_EmptyComment_IsDroppedAndRealCommentSurvives()
+    {
+        var model = Read(DocxFixtures.DocumentWithEmptyAndRealComments());
+
+        var comment = Assert.Single(model.Comments);
+        Assert.Equal("Reviewer", comment.Author);
+
+        // Nothing was lost, so nothing is counted as unreadable
+        Assert.Equal(0, model.CommentsWithUnreadableContent);
+    }
+
+    /// <summary>
+    ///     Proves a comment whose only content is a picture is dropped but counted, so the shortfall
+    ///     can be reported rather than passing in silence.
+    /// </summary>
+    /// <remarks>
+    ///     This is the case that separates "nothing was there" from "something was there that could
+    ///     not be rendered": the reviewer did leave a remark, so its absence from the artifact is an
+    ///     incomplete extraction step rather than a fact about the document.
+    /// </remarks>
+    [Fact]
+    public void WordOpenXmlReader_Read_ImageOnlyComment_IsDroppedAndCounted()
+    {
+        var model = Read(DocxFixtures.DocumentWithImageOnlyComment());
+
+        Assert.Empty(model.Comments);
+        Assert.Equal(1, model.CommentsWithUnreadableContent);
+    }
+
+    /// <summary>
     ///     Proves a comment anchored over a run with range markers resolves a location hint naming
     ///     the nearest preceding heading and quoting the anchored text.
     /// </summary>

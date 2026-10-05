@@ -56,6 +56,14 @@ internal sealed class WordOpenXmlReader
     /// <summary>The number of empty tables skipped.</summary>
     private int _emptyTables;
 
+    /// <summary>The number of comments dropped because their only content was a picture or ink.</summary>
+    /// <remarks>
+    ///     Counted during <see cref="BuildComments"/> so the emitter can state the shortfall as an
+    ///     extraction note. Only a comment that carried something this backend could not render is
+    ///     counted; a comment that was simply never typed into is not a shortfall.
+    /// </remarks>
+    private int _commentsWithUnreadableContent;
+
     /// <summary>The text of the nearest preceding heading in the body walk, for image naming context.</summary>
     /// <remarks>
     ///     Threaded through the body walk so a drawing can offer its section heading as a low-confidence
@@ -110,6 +118,7 @@ internal sealed class WordOpenXmlReader
         _footnoteBodies.Clear();
         _trackedChanges = 0;
         _emptyTables = 0;
+        _commentsWithUnreadableContent = 0;
         _currentHeading = null;
         _commentAnchors.Clear();
         _openCommentRanges.Clear();
@@ -156,7 +165,8 @@ internal sealed class WordOpenXmlReader
                 document.PackageProperties.LastPrinted,
                 document.PackageProperties.Version,
                 document.PackageProperties.Language,
-                document.PackageProperties.Identifier)));
+                document.PackageProperties.Identifier)),
+            CommentsWithUnreadableContent: _commentsWithUnreadableContent);
     }
 
     /// <summary>
@@ -1091,7 +1101,23 @@ internal sealed class WordOpenXmlReader
     /// </summary>
     /// <param name="mainPart">The main document part.</param>
     /// <returns>The comments, author-attributed and location-hinted, in document order.</returns>
-    /// <remarks>Read-only.</remarks>
+    /// <remarks>
+    ///     <para>
+    ///         A comment with no text is dropped, because it says nothing — the same rule the Excel,
+    ///         PowerPoint, and PDF readers apply, so the model-level invariant "no comment without
+    ///         text" holds for every format. A schema-valid <c>w:comment</c> carrying no runs arises
+    ///         in practice from a reviewer inserting a comment without typing and from a comment
+    ///         whose runs are all tracked deletions, and admitting one would produce a review-comment
+    ///         entry attributing an empty remark to a named person.
+    ///     </para>
+    ///     <para>
+    ///         A dropped comment whose only content was a picture or ink is counted in
+    ///         <see cref="_commentsWithUnreadableContent"/> instead of passing silently: the reviewer
+    ///         did leave a remark there, so the emitter states that shortfall as an extraction note.
+    ///         A wholly empty comment is not counted, because nothing was lost and a note would
+    ///         assert a shortfall that did not occur. Read-only.
+    ///     </para>
+    /// </remarks>
     private List<WordComment> BuildComments(MainDocumentPart mainPart)
     {
         var comments = new List<WordComment>();
@@ -1127,6 +1153,18 @@ internal sealed class WordOpenXmlReader
             var location = comment.Id?.Value is { } commentId && locations.TryGetValue(commentId, out var hint)
                 ? hint
                 : null;
+
+            // A comment that reduces to nothing says nothing; one whose only content was a picture
+            // or ink did carry a remark this backend cannot render, so that loss is counted
+            if (string.IsNullOrWhiteSpace(WordMarkdownWriter.RenderPlainText(inlines)))
+            {
+                if (images.Count > 0)
+                {
+                    _commentsWithUnreadableContent++;
+                }
+
+                continue;
+            }
 
             comments.Add(new WordComment(NullIfBlank(comment.Author?.Value), inlines, location));
         }

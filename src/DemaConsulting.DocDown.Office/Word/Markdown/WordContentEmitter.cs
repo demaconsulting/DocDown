@@ -82,17 +82,38 @@ internal static class WordContentEmitter
     ///     </para>
     ///     <para>
     ///         A comment whose anchor markers the document does not carry has no location to state,
-    ///         so <see cref="UnknownLocation"/> is used rather than inventing a position. Side effect:
-    ///         records review comments on the sink.
+    ///         so <see cref="UnknownLocation"/> is used rather than inventing a position.
+    ///     </para>
+    ///     <para>
+    ///         The body is reported as the document records it — literal text, not markdown. Core
+    ///         carries it verbatim into <c>manifest.json</c>, whose documented contract is exactly
+    ///         "the comment text as the document records it", and
+    ///         <see cref="ReviewCommentsWriter"/> escapes it where markdown is written. Reporting an
+    ///         escaped body here would put rendering artifacts into the machine-readable manifest
+    ///         and would make Word the only backend that does so.
+    ///     </para>
+    ///     <para>
+    ///         A comment whose text is blank is skipped rather than reported. The reader already
+    ///         drops those, so this is the second of two layers: it is the only unit that calls
+    ///         <see cref="IExtractionSink.ReportReviewComment"/> for Word, and that method rejects a
+    ///         blank body by contract. Honoring the invariant here keeps a malformed comment from
+    ///         turning a perfectly readable document into a failed extraction. Side effect: records
+    ///         review comments on the sink.
     ///     </para>
     /// </remarks>
     private static void ReportReviewComments(IExtractionSink sink, WordDocumentModel model)
     {
         foreach (var comment in model.Comments)
         {
+            var body = WordMarkdownWriter.RenderPlainText(comment.Content);
+            if (string.IsNullOrWhiteSpace(body))
+            {
+                continue;
+            }
+
             sink.ReportReviewComment(new DocumentComment(
                 comment.Author,
-                WordMarkdownWriter.RenderInlines(comment.Content),
+                body,
                 comment.Location ?? UnknownLocation));
         }
     }
@@ -322,6 +343,33 @@ internal static class WordContentEmitter
         }
 
         ReportFlattenedTableStructureNote(sink, model);
+
+        // A comment whose only content is a picture or ink carried a remark this backend cannot
+        // render; say so rather than letting the reviewer's words leave no trace
+        if (model.CommentsWithUnreadableContent > 0)
+        {
+            ReportImageOnlyCommentsNote(sink, model.CommentsWithUnreadableContent);
+        }
+    }
+
+    /// <summary>
+    ///     Reports that some comments carried only a picture or ink and therefore no readable text.
+    /// </summary>
+    /// <param name="sink">The sink to report through.</param>
+    /// <param name="count">The number of such comments; always greater than zero.</param>
+    /// <remarks>
+    ///     This is the narrow case a note exists for: the reviewer did leave a remark, the extractor
+    ///     attempted to read it, and what it found cannot be rendered as comment text. A comment that
+    ///     was simply never typed into is not reported, because nothing was lost there. Side effect:
+    ///     records on the sink.
+    /// </remarks>
+    private static void ReportImageOnlyCommentsNote(IExtractionSink sink, int count)
+    {
+        var counted = count.ToString(CultureInfo.InvariantCulture);
+        var noun = count == 1 ? "comment carries" : "comments carry";
+        var possessive = count == 1 ? "its content does" : "their content does";
+        sink.ReportNote(new ExtractionNote(
+            $"{counted} {noun} only a picture or ink and no text, so {possessive} not appear in review-comments.md."));
     }
 
     /// <summary>
