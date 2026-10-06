@@ -131,6 +131,34 @@ public class ReviewCommentsWriterTests
     }
 
     /// <summary>
+    ///     Proves a multi-line author or location stays within its single markdown entry, not only a
+    ///     multi-line body.
+    /// </summary>
+    /// <remarks>
+    ///     A document-provided author or a Word heading can itself carry a line break, which would
+    ///     otherwise split one comment across multiple markdown lines just as surely as a multi-line
+    ///     body would.
+    /// </remarks>
+    [Fact]
+    public async Task ReviewCommentsWriter_WriteAsync_MultiLineAuthorAndLocation_KeepsEntryOnOneLine()
+    {
+        // Arrange: a sink holding a comment whose author and location both span lines
+        using var temp = new TempScratch();
+        var sink = NewSink(temp);
+        sink.ReportReviewComment(new DocumentComment("Ada\nLovelace", "Clarify this.", "\u00a7Overview\r\n\u2014 part two"));
+
+        // Act: finalize the review-comments document
+        await ReviewCommentsWriter.WriteAsync(sink, Ct);
+        var document = await ReadReviewCommentsAsync(sink);
+
+        // Assert: the entry stays on one line, with the author and location flattened like the body
+        Assert.Contains(
+            "- **Ada Lovelace** (\u00a7Overview \u2014 part two): Clarify this.\n",
+            document,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves markdown-significant characters in a body, author, or location are escaped where
     ///     the markdown is written, while what the extractor reported stays exactly as the document
     ///     recorded it.

@@ -68,7 +68,7 @@ distinguishable from a missed read. Evidence for
 **Test**: `PowerPointOpenXmlReader_Read_DeckWithComment_ReadsCommentWithResolvedAuthor`
 
 Proves a slide's legacy comments part reaches the model with the comment text and the author name
-resolved through the presentation''s comment-author list rather than the bare numeric identifier the
+resolved through the presentation's comment-author list rather than the bare numeric identifier the
 comment itself carries. Evidence for
 `DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ResolvesCommentAuthors`.
 

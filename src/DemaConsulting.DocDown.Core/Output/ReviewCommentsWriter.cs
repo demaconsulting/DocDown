@@ -113,8 +113,8 @@ public static class ReviewCommentsWriter
     private static void AppendEntry(StringBuilder builder, DocumentComment comment)
     {
         var author = string.IsNullOrWhiteSpace(comment.Author) ? UnattributedAuthor : comment.Author;
-        builder.Append("- **").Append(EscapeInline(author)).Append("** (")
-            .Append(EscapeInline(comment.Location)).Append("): ")
+        builder.Append("- **").Append(EscapeInline(Flatten(author))).Append("** (")
+            .Append(EscapeInline(Flatten(comment.Location))).Append("): ")
             .Append(EscapeInline(Flatten(comment.Body))).Append('\n');
     }
 
@@ -183,19 +183,21 @@ public static class ReviewCommentsWriter
     }
 
     /// <summary>
-    ///     Flattens a comment body onto a single line.
+    ///     Flattens a display field onto a single line.
     /// </summary>
-    /// <param name="body">The comment body as the extractor reported it.</param>
-    /// <returns>The body with its line breaks replaced by single spaces.</returns>
+    /// <param name="text">The author, location, or body text as the extractor reported it.</param>
+    /// <returns>The text with its line breaks replaced by single spaces.</returns>
     /// <remarks>
-    ///     A multi-line body would otherwise break out of its list entry and read as separate
-    ///     document text, so the line breaks (not the words) are normalized away; nothing is
-    ///     truncated or summarized. Pure.
+    ///     Applied to all three display fields, not only the body: a document-provided author or a
+    ///     Word heading can itself contain a line break, which would otherwise split one comment
+    ///     across multiple markdown lines and break the one-entry-per-comment format just as
+    ///     surely as a multi-line body would. Line breaks (not the words) are normalized away;
+    ///     nothing is truncated or summarized. Pure.
     /// </remarks>
-    private static string Flatten(string body)
+    private static string Flatten(string text)
     {
-        // Normalize CRLF first so a Windows-authored body does not collapse into a double space
-        var flattened = body.Replace("\r\n", " ", StringComparison.Ordinal)
+        // Normalize CRLF first so a Windows-authored value does not collapse into a double space
+        var flattened = text.Replace("\r\n", " ", StringComparison.Ordinal)
             .Replace('\r', ' ')
             .Replace('\n', ' ');
         return flattened.Trim();
