@@ -83,6 +83,15 @@ Proves a body spanning lines in both line-ending conventions is flattened onto o
 words intact, so the comment cannot be misread as document text and the file stays one entry per line.
 Evidence for `DocDownCore-Output-ReviewCommentsWriter-EntryFormat`.
 
+##### A padded body survives flattening unchanged
+
+**Test**: `ReviewCommentsWriter_WriteAsync_PaddedBody_PreservesLeadingAndTrailingSpaces`
+
+Proves flattening a body's line breaks does not also trim its leading or trailing spaces: a backend's
+verbatim-body contract (such as a PDF annotation's padded `/Contents` entry) is only honored
+end-to-end if this writer does not quietly take back whitespace the extractor deliberately preserved.
+Evidence for `DocDownCore-Output-ReviewCommentsWriter-EntryFormat`.
+
 ##### Markdown characters are escaped in the file but not in the record
 
 **Test**: `ReviewCommentsWriter_WriteAsync_MarkdownCharacters_EscapedInFileButNotInRecord`

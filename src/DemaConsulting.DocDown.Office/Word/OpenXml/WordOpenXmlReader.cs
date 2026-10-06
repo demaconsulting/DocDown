@@ -1309,21 +1309,25 @@ internal sealed class WordOpenXmlReader
         public string? Heading { get; }
 
         /// <summary>
-        ///     Appends bracketed run text, stopping once enough has been captured to detect overflow.
+        ///     Appends bracketed run text, truncating to the bound so a single large run or
+        ///     overlapping comment ranges cannot grow the accumulator past the stated limit.
         /// </summary>
         /// <param name="text">The literal run text to append.</param>
         /// <remarks>
-        ///     One character beyond the limit is kept so <see cref="Snippet"/> can tell a snippet that
-        ///     fits from one that was truncated. Side effect: appends to the accumulated text.
+        ///     One character beyond <see cref="SnippetMaxLength"/> is kept so <see cref="Snippet"/>
+        ///     can tell a snippet that fits from one that was truncated; only the characters up to
+        ///     that lookahead limit are ever appended, regardless of how long <paramref name="text"/>
+        ///     is. Side effect: appends to the accumulated text.
         /// </remarks>
         public void AppendText(string text)
         {
-            if (_text.Length > SnippetMaxLength)
+            var capacity = SnippetMaxLength + 1 - _text.Length;
+            if (capacity <= 0)
             {
                 return;
             }
 
-            _text.Append(text);
+            _text.Append(text.Length <= capacity ? text : text[..capacity]);
         }
 
         /// <summary>

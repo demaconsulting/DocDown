@@ -69,7 +69,10 @@ differ in a stated way.
   distinct reason: neither restructures the list, but an unescaped `&amp;` would render as a bare
   `&` and an unescaped `~~old~~` struck through, either of which silently alters a reviewer's words.
 - **`Flatten`** — replaces a body's line breaks with single spaces so a multi-line comment cannot
-  break out of its list entry and read as document text. Nothing is truncated or summarized.
+  break out of its list entry and read as document text; applied to the author and location too, for
+  the same reason. Nothing else is altered: leading or trailing spaces an extractor reported as part
+  of a verbatim body survive unchanged, because trimming them here would silently take back the
+  fidelity the extractor's own contract promised.
 
 #### Error Handling
 

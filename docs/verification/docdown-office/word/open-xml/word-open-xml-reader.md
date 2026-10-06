@@ -118,6 +118,18 @@ A reader that resolved anchors by position rather than by id, or that invented a
 unanchored comment, fails here. Evidence for
 `DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation`.
 
+#### The anchor snippet accumulator never grows past its stated bound
+
+**Test**: `WordOpenXmlReader_CommentAnchorAppendText_BoundsAccumulatorRegardlessOfRunSize`
+
+Proves the private `CommentAnchor.AppendText` truncates to `SnippetMaxLength` plus one lookahead
+character on every call, so neither a single run far longer than the bound nor several runs appended
+across calls can grow the accumulator past it. The final rendered `Location` already re-truncates to
+the same bound regardless, so this invariant is otherwise unobservable from the public surface; the
+test reaches the private type through reflection, following this codebase's existing precedent for
+asserting an internal bound the public API cannot exercise directly. Evidence for
+`DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation`.
+
 #### A comment carrying no text is dropped, and a picture-only comment is counted
 
 **Tests**: `WordOpenXmlReader_Read_EmptyComment_IsDroppedAndRealCommentSurvives`,

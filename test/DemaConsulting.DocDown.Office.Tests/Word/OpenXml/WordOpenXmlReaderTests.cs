@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Text;
 using DemaConsulting.DocDown.Office.Tests.Word.TestData;
 using DocDown.Word.Markdown;
 using DocDown.Word.OpenXml;
@@ -208,6 +210,39 @@ public class WordOpenXmlReaderTests
 
         // No anchor markers at all: no location is claimed
         Assert.Null(model.Comments[2].Location);
+    }
+
+    /// <summary>
+    ///     Proves the anchor's bounded snippet accumulator cannot be grown past its stated limit by a
+    ///     single large run, or by several runs appended across calls.
+    /// </summary>
+    /// <remarks>
+    ///     The accumulator is a private implementation detail with no behavior-preserving way to
+    ///     observe the bug from the public <see cref="WordDocumentModel.Comments"/> surface, because
+    ///     <c>Snippet()</c> re-truncates to the same bound on render regardless of how much the
+    ///     accumulator over-grew internally. The bound itself — not only the final rendered text — is
+    ///     what the requirement states, so this test reaches the private
+    ///     <c>WordOpenXmlReader.CommentAnchor</c> type through reflection, following this codebase's
+    ///     existing precedent for asserting an internal invariant that the public surface cannot
+    ///     exercise directly.
+    /// </remarks>
+    [Fact]
+    public void WordOpenXmlReader_CommentAnchorAppendText_BoundsAccumulatorRegardlessOfRunSize()
+    {
+        // Arrange: construct the private CommentAnchor type via reflection
+        var anchorType = typeof(WordOpenXmlReader).GetNestedType("CommentAnchor", BindingFlags.NonPublic)!;
+        var constructor = anchorType.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Single();
+        var anchor = constructor.Invoke([null]);
+        var appendText = anchorType.GetMethod("AppendText", BindingFlags.Instance | BindingFlags.Public)!;
+        var textField = anchorType.GetField("_text", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        // Act: a single run far longer than the bound, then a second run that would extend it further
+        appendText.Invoke(anchor, [new string('x', 500)]);
+        appendText.Invoke(anchor, [new string('y', 50)]);
+
+        // Assert: the accumulator never exceeds SnippetMaxLength (60) plus the one lookahead character
+        var accumulated = (StringBuilder)textField.GetValue(anchor)!;
+        Assert.Equal(61, accumulated.Length);
     }
 
     /// <summary>

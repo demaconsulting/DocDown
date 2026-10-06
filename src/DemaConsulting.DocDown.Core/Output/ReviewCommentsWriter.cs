@@ -192,15 +192,16 @@ public static class ReviewCommentsWriter
     ///     Word heading can itself contain a line break, which would otherwise split one comment
     ///     across multiple markdown lines and break the one-entry-per-comment format just as
     ///     surely as a multi-line body would. Line breaks (not the words) are normalized away;
-    ///     nothing is truncated or summarized. Pure.
+    ///     nothing else is altered, truncated, or summarized — a body an extractor reported with
+    ///     deliberate leading or trailing spaces (verbatim, per its own contract) keeps them here,
+    ///     because trimming would silently take back the very fidelity the extractor promised. Pure.
     /// </remarks>
     private static string Flatten(string text)
     {
         // Normalize CRLF first so a Windows-authored value does not collapse into a double space
-        var flattened = text.Replace("\r\n", " ", StringComparison.Ordinal)
+        return text.Replace("\r\n", " ", StringComparison.Ordinal)
             .Replace('\r', ' ')
             .Replace('\n', ' ');
-        return flattened.Trim();
     }
 }
 

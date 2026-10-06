@@ -131,6 +131,35 @@ public class ReviewCommentsWriterTests
     }
 
     /// <summary>
+    ///     Proves a body with leading or trailing spaces reaches the file unchanged, because
+    ///     flattening normalizes line breaks and must not also trim significant whitespace an
+    ///     extractor reported verbatim.
+    /// </summary>
+    /// <remarks>
+    ///     A backend's verbatim-body contract (for example, a PDF annotation's padded
+    ///     <c>/Contents</c> entry) is only honored end-to-end if this writer does not quietly
+    ///     take back whitespace the extractor deliberately preserved.
+    /// </remarks>
+    [Fact]
+    public async Task ReviewCommentsWriter_WriteAsync_PaddedBody_PreservesLeadingAndTrailingSpaces()
+    {
+        // Arrange: a sink holding a comment whose body carries deliberate leading/trailing spaces
+        using var temp = new TempScratch();
+        var sink = NewSink(temp);
+        sink.ReportReviewComment(new DocumentComment("Ada", "  padded on both sides  ", "Page 1"));
+
+        // Act: finalize the review-comments document
+        await ReviewCommentsWriter.WriteAsync(sink, Ct);
+        var document = await ReadReviewCommentsAsync(sink);
+
+        // Assert: the padding survives exactly as reported, not trimmed away
+        Assert.Contains(
+            "- **Ada** (Page 1):   padded on both sides  \n",
+            document,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves a multi-line author or location stays within its single markdown entry, not only a
     ///     multi-line body.
     /// </summary>
