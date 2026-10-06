@@ -465,6 +465,39 @@ public static class PdfFixtures
     }
 
     /// <summary>
+    ///     Assembles a single-page PDF whose one annotation's <c>/Contents</c> carries leading and
+    ///     trailing spaces.
+    /// </summary>
+    /// <returns>The bytes of the document.</returns>
+    /// <remarks>
+    ///     Proves the extractor reports a comment's body exactly as the document records it: the
+    ///     blankness check must reject a whitespace-only body without trimming a body that is merely
+    ///     padded, because <c>manifest.json</c> promises the text verbatim, the same promise every
+    ///     other backend keeps.
+    /// </remarks>
+    public static byte[] WithPaddedAnnotationBody()
+    {
+        var pageText = "BT /F1 18 Tf 72 700 Td (Page with a padded remark.) Tj ET\n"u8.ToArray();
+
+        var body = new List<(string Header, byte[]? Stream)>
+        {
+            ("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n", null),
+            ("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n", null),
+            ("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R "
+             + "/Resources << /Font << /F1 6 0 R >> >> /Annots [4 0 R] >>\nendobj\n", null),
+
+            // A remark padded with leading and trailing spaces, which must survive untrimmed
+            ("4 0 obj\n<< /Type /Annot /Subtype /Text /Rect [100 700 120 720] /T (Pat Reviewer) "
+             + "/Contents (  Leave the spacing exactly as typed.  ) >>\nendobj\n", null),
+
+            ($"5 0 obj\n<< /Length {pageText.Length.ToString(CultureInfo.InvariantCulture)} >>\nstream\n", pageText),
+            ("6 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n", null)
+        };
+
+        return Assemble(body);
+    }
+
+    /// <summary>
     ///     Assembles a two-page PDF whose first page's annotation structures are damaged.
     /// </summary>
     /// <returns>The bytes of the document.</returns>

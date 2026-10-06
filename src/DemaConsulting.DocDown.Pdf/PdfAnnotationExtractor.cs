@@ -177,11 +177,9 @@ internal static class PdfAnnotationExtractor
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (TryReadAnnotations(page, out var annotations))
+            if (TryReadPageComments(page, out var pageComments))
             {
-                comments.AddRange(annotations
-                    .Select(annotation => ToReviewComment(annotation, page.Number))
-                    .OfType<PdfReviewAnnotation>());
+                comments.AddRange(pageComments);
             }
             else
             {
@@ -194,34 +192,40 @@ internal static class PdfAnnotationExtractor
     }
 
     /// <summary>
-    ///     Reads one page's annotations, reporting failure as data rather than as an exception.
+    ///     Reads and converts one page's annotations, reporting failure as data rather than as an
+    ///     exception.
     /// </summary>
     /// <param name="page">The page to read.</param>
-    /// <param name="annotations">The page's annotations when the read succeeded; otherwise empty.</param>
+    /// <param name="comments">The page's reviewer comments when the read succeeded; otherwise empty.</param>
     /// <returns>
-    ///     <see langword="true"/> when the page's annotations were read; <see langword="false"/> when
-    ///     the document's annotation structures defeated the parser.
+    ///     <see langword="true"/> when the page's annotations were read and converted;
+    ///     <see langword="false"/> when the document's annotation structures defeated the parser.
     /// </returns>
     /// <remarks>
-    ///     The annotations of a page are enumerated lazily, so a malformed annotation dictionary
-    ///     surfaces part-way through the walk rather than at the call. Materializing the sequence here
-    ///     puts the whole read inside the guard, which is what makes the failure attributable to one
-    ///     page. Containment matters because an unguarded fault would turn a PDF whose text and images
+    ///     The annotations of a page are enumerated lazily, and so is this method's own conversion
+    ///     step, so a malformed annotation dictionary can surface either while the sequence is walked
+    ///     or while <see cref="ToReviewComment"/>/<see cref="ReadAuthor"/> inspect one annotation's
+    ///     type, content, or <c>/T</c> entry. Both are therefore materialized inside the same guard,
+    ///     which is what makes the failure attributable to one page rather than escaping past it.
+    ///     Containment matters because an unguarded fault would turn a PDF whose text and images
     ///     extracted perfectly into an unreadable document on account of a single damaged comment —
     ///     losing far more than the comment was worth. Reads only.
     /// </remarks>
-    private static bool TryReadAnnotations(Page page, out IReadOnlyList<Annotation> annotations)
+    private static bool TryReadPageComments(Page page, out IReadOnlyList<PdfReviewAnnotation> comments)
     {
         try
         {
-            annotations = page.GetAnnotations().ToList();
+            comments = page.GetAnnotations()
+                .Select(annotation => ToReviewComment(annotation, page.Number))
+                .OfType<PdfReviewAnnotation>()
+                .ToList();
             return true;
         }
 #pragma warning disable CA1031 // Any parser fault here is reported as a note, never allowed to abort an otherwise good extraction
         catch (Exception)
 #pragma warning restore CA1031
         {
-            annotations = [];
+            comments = [];
             return false;
         }
     }
@@ -233,19 +237,20 @@ internal static class PdfAnnotationExtractor
     /// <param name="pageNumber">The 1-based number of the page the annotation sits on.</param>
     /// <returns>
     ///     The comment when the annotation's type is in the commentary table and its content carries
-    ///     text; otherwise <see langword="null"/>.
+    ///     non-whitespace text; otherwise <see langword="null"/>.
     /// </returns>
     /// <remarks>
     ///     Both halves of the test are needed and neither subsumes the other: the table keeps
     ///     navigation and form machinery out even when it carries text, and the content test keeps
-    ///     bare highlights and empty popup windows out even though their types are included. Judging
-    ///     and converting together rather than in two passes is what lets the trimmed body be tested
-    ///     and then used, so the body of a returned comment is non-blank by construction. Pure.
+    ///     bare highlights and empty popup windows out even though their types are included. The body
+    ///     is checked for blankness but not trimmed: <c>manifest.json</c> promises the text as the
+    ///     document records it, the same promise every other backend keeps, so leading or trailing
+    ///     spaces a reviewer actually typed are kept rather than silently dropped. Pure.
     /// </remarks>
     private static PdfReviewAnnotation? ToReviewComment(Annotation annotation, int pageNumber)
     {
-        var body = annotation.Content?.Trim();
-        return CommentaryAnnotationTypes.Contains(annotation.Type) && !string.IsNullOrEmpty(body)
+        var body = annotation.Content;
+        return CommentaryAnnotationTypes.Contains(annotation.Type) && !string.IsNullOrWhiteSpace(body)
             ? new PdfReviewAnnotation(pageNumber, ReadAuthor(annotation), body)
             : null;
     }
@@ -323,7 +328,7 @@ internal static class PdfAnnotationExtractor
 /// </summary>
 /// <param name="PageNumber">The 1-based page the annotation sits on.</param>
 /// <param name="Author">The name the annotation records, or <see langword="null"/> when it records none.</param>
-/// <param name="Body">The remark's text, trimmed and never blank.</param>
+/// <param name="Body">The remark's text, verbatim as the document records it, and never blank.</param>
 /// <remarks>
 ///     Carries the page number rather than a formatted location so the caller owns the wording of the
 ///     location hint, which is a presentation decision shared across formats rather than a PDF one.

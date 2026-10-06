@@ -58,6 +58,15 @@ and the page it sits on. Evidence for `DocDownPdf-PdfAnnotationExtractor-Extract
 `DocDownPdf-PdfAnnotationExtractor-ResolvesAuthor`, and
 `DocDownPdf-PdfAnnotationExtractor-ReportsPageNumber`.
 
+#### A padded body is reported verbatim rather than trimmed
+
+**Test**: `PdfAnnotationExtractor_Extract_PaddedBody_ReportsBodyVerbatim`
+
+Proves a remark's leading and trailing spaces survive into the result unchanged: the blankness check
+rejects a whitespace-only body without trimming a body that is merely padded, so `manifest.json`
+carries the text exactly as the document records it, the same promise every other backend keeps.
+Evidence for `DocDownPdf-PdfAnnotationExtractor-ExtractsAnnotationText`.
+
 #### An annotation with no author yields no author
 
 **Test**: `PdfAnnotationExtractor_Extract_AnnotationWithoutTitleEntry_ReportsNullAuthor`
@@ -138,7 +147,10 @@ absence is not an incomplete step. Evidence for
 **Test**: `PdfAnnotationExtractor_Extract_DamagedAnnotationReference_KeepsOtherPagesComments`
 
 Proves a page whose `/Annots` entry points at a non-existent object does not cost the reader the
-comments on other pages, nor the document's text. Evidence for
+comments on other pages, nor the document's text. The same guard also covers the conversion step
+(judging each annotation's type, content, and author) rather than only the enumeration of a page's
+annotations, so a fault raised while converting one annotation is contained exactly like a fault
+raised while reading the page's annotation list. Evidence for
 `DocDownPdf-PdfAnnotationExtractor-ContainsUnreadableAnnotations`.
 
 **Coverage limitation, stated plainly.** This scenario verifies the containment half of that

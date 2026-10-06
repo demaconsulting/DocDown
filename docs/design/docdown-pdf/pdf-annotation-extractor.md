@@ -22,7 +22,8 @@ collected results live for the duration of one call, so the unit is safe for con
 - **`MaxNamedPages`** (private `const int`) - bounds how many page numbers the unreadable-annotations
   note names; the count it states is exact even when the list is truncated.
 - **`PdfReviewAnnotation`** (`internal sealed record`) - one remark: its 1-based `PageNumber`, its
-  `Author` (null when the document names none), and its `Body` (trimmed and never blank).
+  `Author` (null when the document names none), and its `Body` (verbatim as the document records it,
+  and never blank).
 
 `PdfReviewAnnotation` carries the page number rather than a formatted location string because how a
 comment's position is phrased is a presentation decision shared across formats, and so belongs to the
@@ -36,12 +37,15 @@ caller rather than to this unit.
   the order the document lists its annotations. Document order is preserved because
   `review-comments.md` renders comments as reported and a reader scanning it expects to travel
   through the document rather than to jump about it. Preconditions: all arguments non-null.
-- **`TryReadAnnotations`** (private) - materializes one page's annotations inside a guard, reporting
-  failure as data rather than as an exception. PdfPig enumerates annotations lazily, so a malformed
-  dictionary surfaces part-way through the walk rather than at the call; materializing here puts the
-  whole read inside the guard, which is what makes a failure attributable to a single page.
-- **`ToReviewComment`** (private) - judges and converts in one step, so the trimmed body can be
-  tested and then used and a returned comment's body is non-blank by construction.
+- **`TryReadPageComments`** (private) - reads and converts one page's annotations inside a single
+  guard, reporting failure as data rather than as an exception. PdfPig enumerates annotations
+  lazily, and so does the conversion step, so a malformed annotation dictionary can surface either
+  while the sequence is walked or while judging and converting one annotation's type, content, or
+  `/T` entry; materializing both inside the same guard is what makes a failure attributable to a
+  single page rather than escaping past it.
+- **`ToReviewComment`** (private) - judges and converts in one step, so a returned comment's body is
+  non-blank by construction. The body is checked for blankness but never trimmed: `manifest.json`
+  promises the text as the document records it, the same promise every other backend keeps.
 - **`ReadAuthor`** (private) - resolves the author from the annotation dictionary. See *Author
   resolution* below.
 - **`ReportUnreadableAnnotationsNote`** (private) - emits one plain note naming the pages whose
@@ -106,11 +110,12 @@ the output that the document never made.
 Null arguments are rejected with `ArgumentNullException` as caller errors. Cancellation is observed
 per page and propagates.
 
-Annotation reading is contained per page. A page whose annotations defeat the parser is counted and
-named in a plain `ExtractionNote`, and the walk continues; it never aborts an extraction whose text
-and images were perfectly readable, because losing a whole document on account of one damaged comment
-would cost far more than the comment was worth. Containing the loss silently would be worse than
-failing, so the note is what keeps the loss visible.
+Annotation reading and conversion are contained per page. A page whose annotations defeat the parser,
+or whose annotation judging/conversion faults on a malformed dictionary, is counted and named in a
+plain `ExtractionNote`, and the walk continues; it never aborts an extraction whose text and images
+were perfectly readable, because losing a whole document on account of one damaged comment would cost
+far more than the comment was worth. Containing the loss silently would be worse than failing, so the
+note is what keeps the loss visible.
 
 Deliberate exclusions raise no note. Notes are reserved for steps that were attempted and could not
 complete; a `Link` that is not a comment and a document that carries no annotations are both ordinary

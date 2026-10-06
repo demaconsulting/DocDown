@@ -78,6 +78,28 @@ public class PdfAnnotationExtractorTests
     }
 
     /// <summary>
+    ///     Proves a body padded with leading and trailing spaces reaches the result verbatim.
+    /// </summary>
+    /// <remarks>
+    ///     The blankness check must reject only a whitespace-only body, never trim a body that is
+    ///     merely padded: <c>manifest.json</c> promises the comment text as the document records it,
+    ///     the same promise every other backend keeps.
+    /// </remarks>
+    [Fact]
+    public void PdfAnnotationExtractor_Extract_PaddedBody_ReportsBodyVerbatim()
+    {
+        // Arrange: a document whose one annotation's /Contents carries leading and trailing spaces
+        var sink = new RecordingSink();
+
+        // Act: read its annotations
+        var comments = Extract(PdfFixtures.WithPaddedAnnotationBody(), sink);
+
+        // Assert: the spacing survives exactly as the document recorded it
+        var padded = Assert.Single(comments);
+        Assert.Equal("  Leave the spacing exactly as typed.  ", padded.Body);
+    }
+
+    /// <summary>
     ///     Proves a non-commentary annotation is excluded even though it carries text.
     /// </summary>
     /// <remarks>
