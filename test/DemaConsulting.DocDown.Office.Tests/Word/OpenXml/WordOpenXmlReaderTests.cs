@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Text;
 using DemaConsulting.DocDown.Office.Tests.Word.TestData;
 using DocDown.Word.Markdown;
 using DocDown.Word.OpenXml;
@@ -127,6 +129,120 @@ public class WordOpenXmlReaderTests
         var comment = Assert.Single(model.Comments);
         Assert.Equal("Reviewer", comment.Author);
         Assert.Contains("clarify", string.Concat(comment.Content.Select(inline => inline.Text)), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves a comment carrying no runs never enters the model, while a real comment in the
+    ///     same document is unaffected.
+    /// </summary>
+    /// <remarks>
+    ///     The model-level invariant every backend upholds is that a comment without text never
+    ///     reaches it, so the one place downstream that can report a comment never has to decide
+    ///     what an empty remark means. Asserting the surviving comment too keeps the guard from
+    ///     being satisfied by dropping everything.
+    /// </remarks>
+    [Fact]
+    public void WordOpenXmlReader_Read_EmptyComment_IsDroppedAndRealCommentSurvives()
+    {
+        var model = Read(DocxFixtures.DocumentWithEmptyAndRealComments());
+
+        var comment = Assert.Single(model.Comments);
+        Assert.Equal("Reviewer", comment.Author);
+
+        // Nothing was lost, so nothing is counted as unreadable
+        Assert.Equal(0, model.CommentsWithUnreadableContent);
+    }
+
+    /// <summary>
+    ///     Proves a comment whose only content is a picture is dropped but counted, so the shortfall
+    ///     can be reported rather than passing in silence.
+    /// </summary>
+    /// <remarks>
+    ///     This is the case that separates "nothing was there" from "something was there that could
+    ///     not be rendered": the reviewer did leave a remark, so its absence from the artifact is an
+    ///     incomplete extraction step rather than a fact about the document.
+    /// </remarks>
+    [Fact]
+    public void WordOpenXmlReader_Read_ImageOnlyComment_IsDroppedAndCounted()
+    {
+        var model = Read(DocxFixtures.DocumentWithImageOnlyComment());
+
+        Assert.Empty(model.Comments);
+        Assert.Equal(1, model.CommentsWithUnreadableContent);
+    }
+
+    /// <summary>
+    ///     Proves a comment anchored over a run with range markers resolves a location hint naming
+    ///     the nearest preceding heading and quoting the anchored text.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_AnchoredComment_LocationNamesHeadingAndSnippet()
+    {
+        var model = Read(DocxFixtures.DocumentWithComment());
+
+        var comment = Assert.Single(model.Comments);
+        Assert.Equal("§Overview — \"Body with a comment anchor.\"", comment.Location);
+    }
+
+    /// <summary>
+    ///     Proves each comment's location resolves from its own anchor, and that a comment the
+    ///     document anchors nowhere degrades to no location rather than borrowing another's.
+    /// </summary>
+    /// <remarks>
+    ///     The three comments in the fixture are anchored three different ways — a bracketed range,
+    ///     a bare reference point, and no markers at all — so a reader that resolved anchors by
+    ///     position rather than by id, or that invented a location for the unanchored comment, fails
+    ///     here.
+    /// </remarks>
+    [Fact]
+    public void WordOpenXmlReader_Read_MultipleComments_LocationsResolveIndependently()
+    {
+        var model = Read(DocxFixtures.DocumentWithAnchoredComments());
+
+        Assert.Equal(3, model.Comments.Count);
+
+        // A bracketed range yields the heading and an ellipsized snippet of the anchored run
+        Assert.StartsWith("§Scope — \"The quick brown fox", model.Comments[0].Location, StringComparison.Ordinal);
+        Assert.EndsWith("…\"", model.Comments[0].Location, StringComparison.Ordinal);
+
+        // A bare reference point brackets no text, so the hint degrades to the heading alone
+        Assert.Equal("§Limitations", model.Comments[1].Location);
+
+        // No anchor markers at all: no location is claimed
+        Assert.Null(model.Comments[2].Location);
+    }
+
+    /// <summary>
+    ///     Proves the anchor's bounded snippet accumulator cannot be grown past its stated limit by a
+    ///     single large run, or by several runs appended across calls.
+    /// </summary>
+    /// <remarks>
+    ///     The accumulator is a private implementation detail with no behavior-preserving way to
+    ///     observe the bug from the public <see cref="WordDocumentModel.Comments"/> surface, because
+    ///     <c>Snippet()</c> re-truncates to the same bound on render regardless of how much the
+    ///     accumulator over-grew internally. The bound itself — not only the final rendered text — is
+    ///     what the requirement states, so this test reaches the private
+    ///     <c>WordOpenXmlReader.CommentAnchor</c> type through reflection, following this codebase's
+    ///     existing precedent for asserting an internal invariant that the public surface cannot
+    ///     exercise directly.
+    /// </remarks>
+    [Fact]
+    public void WordOpenXmlReader_CommentAnchorAppendText_BoundsAccumulatorRegardlessOfRunSize()
+    {
+        // Arrange: construct the private CommentAnchor type via reflection
+        var anchorType = typeof(WordOpenXmlReader).GetNestedType("CommentAnchor", BindingFlags.NonPublic)!;
+        var constructor = anchorType.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Single();
+        var anchor = constructor.Invoke([null]);
+        var appendText = anchorType.GetMethod("AppendText", BindingFlags.Instance | BindingFlags.Public)!;
+        var textField = anchorType.GetField("_text", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        // Act: a single run far longer than the bound, then a second run that would extend it further
+        appendText.Invoke(anchor, [new string('x', 500)]);
+        appendText.Invoke(anchor, [new string('y', 50)]);
+
+        // Assert: the accumulator never exceeds SnippetMaxLength (60) plus the one lookahead character
+        var accumulated = (StringBuilder)textField.GetValue(anchor)!;
+        Assert.Equal(61, accumulated.Length);
     }
 
     /// <summary>

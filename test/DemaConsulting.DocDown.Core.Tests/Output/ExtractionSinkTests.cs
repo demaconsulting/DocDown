@@ -226,6 +226,72 @@ public class ExtractionSinkTests
     }
 
     /// <summary>
+    ///     Proves reported review comments are retained in report order for later serialization.
+    /// </summary>
+    [Fact]
+    public void ExtractionSink_ReportReviewComment_Reported_RetainedInReportOrder()
+    {
+        // Arrange: a sink over a prepared scratch folder
+        using var temp = new TempScratch();
+        var sink = NewSink(temp, new ExtractionOptions());
+
+        // Act: report two reviewer comments in a deliberate order
+        sink.ReportReviewComment(new DocumentComment("Ada", "First remark.", "Page 1"));
+        sink.ReportReviewComment(new DocumentComment(null, "Second remark.", "Page 2"));
+
+        // Assert: both are retained verbatim, in the order reported
+        Assert.Equal(2, sink.ReviewComments.Count);
+        Assert.Equal("Ada", sink.ReviewComments[0].Author);
+        Assert.Equal("First remark.", sink.ReviewComments[0].Body);
+        Assert.Null(sink.ReviewComments[1].Author);
+        Assert.Equal("Page 2", sink.ReviewComments[1].Location);
+    }
+
+    /// <summary>
+    ///     Proves a review comment with no body is rejected as a caller error.
+    /// </summary>
+    [Fact]
+    public void ExtractionSink_ReportReviewComment_BlankBody_ThrowsArgumentException()
+    {
+        // Arrange: a sink over a prepared scratch folder
+        using var temp = new TempScratch();
+        var sink = NewSink(temp, new ExtractionOptions());
+
+        // Act / Assert: a comment with nothing to say is a caller error, not an empty entry
+        Assert.Throws<ArgumentException>(
+            () => sink.ReportReviewComment(new DocumentComment("Ada", " ", "Page 1")));
+    }
+
+    /// <summary>
+    ///     Proves a review comment with no location is rejected as a caller error.
+    /// </summary>
+    [Fact]
+    public void ExtractionSink_ReportReviewComment_BlankLocation_ThrowsArgumentException()
+    {
+        // Arrange: a sink over a prepared scratch folder
+        using var temp = new TempScratch();
+        var sink = NewSink(temp, new ExtractionOptions());
+
+        // Act / Assert: the backend composes the location phrase, so a blank one is a backend defect
+        Assert.Throws<ArgumentException>(
+            () => sink.ReportReviewComment(new DocumentComment("Ada", "A remark.", " ")));
+    }
+
+    /// <summary>
+    ///     Proves a null review comment is rejected as a caller error.
+    /// </summary>
+    [Fact]
+    public void ExtractionSink_ReportReviewComment_NullComment_ThrowsArgumentNullException()
+    {
+        // Arrange: a sink over a prepared scratch folder
+        using var temp = new TempScratch();
+        var sink = NewSink(temp, new ExtractionOptions());
+
+        // Act / Assert: the missing comment is refused at the boundary
+        Assert.Throws<ArgumentNullException>(() => sink.ReportReviewComment(null!));
+    }
+
+    /// <summary>
     ///     Proves blank note text is rejected as a caller error.
     /// </summary>
     [Fact]

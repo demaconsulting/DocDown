@@ -1,7 +1,9 @@
+using System.Globalization;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using D = DocumentFormat.OpenXml.Drawing;
 using S = DocumentFormat.OpenXml.Spreadsheet;
+using Tc = DocumentFormat.OpenXml.Office2019.Excel.ThreadedComments;
 using Xdr = DocumentFormat.OpenXml.Drawing.Spreadsheet;
 
 namespace DemaConsulting.DocDown.Office.Tests.Excel.TestData;
@@ -68,6 +70,136 @@ public static class XlsxFixtures
     {
         var sheets = new S.Sheets();
         AddSheet(workbookPart, sheets, "Blank", 1U, []);
+        workbookPart.Workbook!.AppendChild(sheets);
+    });
+
+    /// <summary>
+    ///     Builds a workbook whose single worksheet carries one legacy cell comment and no threaded
+    ///     comment, representing a workbook authored before threaded comments existed.
+    /// </summary>
+    /// <returns>The workbook bytes.</returns>
+    public static byte[] LegacyCommentWorkbook() => Build(workbookPart =>
+    {
+        var sheets = new S.Sheets();
+        var worksheetPart = AddSheet(workbookPart, sheets, "Sheet1", 1U,
+        [
+            InlineStringCell("B7", "40 psi")
+        ]);
+
+        AddLegacyComments(worksheetPart, ["Dana Reyes"], [("B7", 0U, "Confirm this against the test report.")]);
+
+        workbookPart.Workbook!.AppendChild(sheets);
+    });
+
+    /// <summary>
+    ///     Builds a workbook whose single worksheet carries one threaded comment and no legacy
+    ///     comment at all, representing the threaded part read in isolation.
+    /// </summary>
+    /// <returns>The workbook bytes.</returns>
+    public static byte[] ThreadedCommentWorkbook() => Build(workbookPart =>
+    {
+        var sheets = new S.Sheets();
+        var worksheetPart = AddSheet(workbookPart, sheets, "Sheet1", 1U,
+        [
+            InlineStringCell("C3", "12 kg")
+        ]);
+
+        AddPersons(workbookPart, [("{AAAA}", "Morgan Patel")]);
+        AddThreadedComments(worksheetPart, [("C3", "{AAAA}", "This mass excludes the bracket.")]);
+
+        workbookPart.Workbook!.AppendChild(sheets);
+    });
+
+    /// <summary>
+    ///     Builds a workbook whose single worksheet carries a threaded comment and the
+    ///     backward-compatibility legacy comment Excel writes beside it on the same cell, so the
+    ///     deduplication rule can be exercised.
+    /// </summary>
+    /// <returns>The workbook bytes.</returns>
+    /// <remarks>
+    ///     The legacy entry stands in for the placeholder a spreadsheet application writes so older
+    ///     readers still see something on the cell. Its text is deliberately different from the
+    ///     threaded text, so a test can tell which of the two the reader kept.
+    /// </remarks>
+    public static byte[] ThreadedAndLegacyCommentWorkbook() => Build(workbookPart =>
+    {
+        var sheets = new S.Sheets();
+        var worksheetPart = AddSheet(workbookPart, sheets, "Sheet1", 1U,
+        [
+            InlineStringCell("D5", "Pending")
+        ]);
+
+        AddLegacyComments(worksheetPart, ["Morgan Patel"], [("D5", 0U, "Comment placeholder for older readers.")]);
+        AddPersons(workbookPart, [("{AAAA}", "Morgan Patel")]);
+        AddThreadedComments(worksheetPart, [("D5", "{AAAA}", "Threaded remark that supersedes the placeholder.")]);
+
+        workbookPart.Workbook!.AppendChild(sheets);
+    });
+
+    /// <summary>
+    ///     Builds a workbook whose single worksheet carries a multi-reply threaded conversation on one
+    ///     cell — with its backward-compatibility legacy entry — a plain legacy comment on an earlier
+    ///     cell, and a second cell commented only in the threaded part.
+    /// </summary>
+    /// <returns>The workbook bytes.</returns>
+    /// <remarks>
+    ///     This fixture exists to pin the two halves of the ordering rule that a single-comment
+    ///     workbook cannot show. The conversation on <c>B2</c> runs to three turns so a reader can see
+    ///     whether replies keep the order they were written in; <c>A1</c> is legacy-only and sits
+    ///     before it so the legacy part's cell order is what the walk follows; and <c>Z9</c> is
+    ///     threaded-only, placed on a cell that sorts last, so it can only arrive at the end by being
+    ///     appended rather than by luck of the sheet layout. Each author is distinct so attribution
+    ///     and ordering can be asserted together.
+    /// </remarks>
+    public static byte[] ThreadedReplyOrderingWorkbook() => Build(workbookPart =>
+    {
+        var sheets = new S.Sheets();
+        var worksheetPart = AddSheet(workbookPart, sheets, "Sheet1", 1U,
+        [
+            InlineStringCell("A1", "Inlet"),
+            InlineStringCell("B2", "Pending"),
+            InlineStringCell("Z9", "Tail")
+        ]);
+
+        AddLegacyComments(
+            worksheetPart,
+            ["Dana Reyes", "Morgan Patel"],
+            [
+                ("A1", 0U, "Inlet value is provisional."),
+                ("B2", 1U, "Comment placeholder for older readers.")
+            ]);
+
+        AddPersons(
+            workbookPart,
+            [("{AAAA}", "Morgan Patel"), ("{BBBB}", "Sam Whitfield"), ("{CCCC}", "Dana Reyes")]);
+
+        AddThreadedComments(
+            worksheetPart,
+            [
+                ("B2", "{AAAA}", "This mass excludes the bracket."),
+                ("B2", "{BBBB}", "Agreed - add the bracket to the next revision."),
+                ("B2", "{CCCC}", "Revision issued, closing this."),
+                ("Z9", "{BBBB}", "This trailing cell was never reviewed.")
+            ]);
+
+        workbookPart.Workbook!.AppendChild(sheets);
+    });
+
+    /// <summary>
+    ///     Builds a two-sheet workbook with a comment on each sheet, so comment-to-sheet attribution
+    ///     can be proven rather than assumed from a single-sheet case.
+    /// </summary>
+    /// <returns>The workbook bytes.</returns>
+    public static byte[] MultiSheetCommentWorkbook() => Build(workbookPart =>
+    {
+        var sheets = new S.Sheets();
+
+        var firstPart = AddSheet(workbookPart, sheets, "Inputs", 1U, [InlineStringCell("A1", "Inlet")]);
+        AddLegacyComments(firstPart, ["Dana Reyes"], [("A1", 0U, "Inlet value is provisional.")]);
+
+        var secondPart = AddSheet(workbookPart, sheets, "Results", 2U, [InlineStringCell("B2", "Pass")]);
+        AddLegacyComments(secondPart, ["Sam Whitfield"], [("B2", 0U, "Rerun after the firmware update.")]);
+
         workbookPart.Workbook!.AppendChild(sheets);
     });
 
@@ -323,7 +455,8 @@ public static class XlsxFixtures
     /// <param name="name">The worksheet name.</param>
     /// <param name="sheetId">The worksheet identifier.</param>
     /// <param name="cells">The cells to place in the worksheet's single row.</param>
-    private static void AddSheet(
+    /// <returns>The worksheet part, so a caller may attach comment parts to it.</returns>
+    private static WorksheetPart AddSheet(
         WorkbookPart workbookPart, S.Sheets sheets, string name, uint sheetId, IReadOnlyList<S.Cell> cells)
     {
         var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
@@ -345,6 +478,105 @@ public static class XlsxFixtures
             SheetId = sheetId,
             Name = name
         });
+
+        return worksheetPart;
+    }
+
+    /// <summary>
+    ///     Attaches a legacy comments part to a worksheet, with its own author list.
+    /// </summary>
+    /// <param name="worksheetPart">The worksheet part to attach the comments to.</param>
+    /// <param name="authors">The author names, in the order a comment's author index addresses them.</param>
+    /// <param name="comments">Each comment as its cell reference, author index, and text.</param>
+    /// <remarks>
+    ///     A legacy comment names its author by index into the part's own author list, so the list is
+    ///     written here exactly as a spreadsheet application writes it, which is what lets the reader's
+    ///     index resolution be exercised rather than bypassed.
+    /// </remarks>
+    private static void AddLegacyComments(
+        WorksheetPart worksheetPart,
+        IReadOnlyList<string> authors,
+        IReadOnlyList<(string Reference, uint AuthorId, string Text)> comments)
+    {
+        var authorList = new S.Authors();
+        foreach (var author in authors)
+        {
+            authorList.AppendChild(new S.Author(author));
+        }
+
+        var commentList = new S.CommentList();
+        foreach (var (reference, authorId, text) in comments)
+        {
+            var commentText = new S.CommentText();
+            var run = new S.Run();
+            run.AppendChild(new S.Text(text));
+            commentText.AppendChild(run);
+            commentList.AppendChild(new S.Comment
+            {
+                Reference = reference,
+                AuthorId = authorId,
+                CommentText = commentText
+            });
+        }
+
+        var part = worksheetPart.AddNewPart<WorksheetCommentsPart>();
+        part.Comments = new S.Comments(authorList, commentList);
+    }
+
+    /// <summary>
+    ///     Attaches a person part to the workbook, naming the people threaded comments cite.
+    /// </summary>
+    /// <param name="workbookPart">The workbook part.</param>
+    /// <param name="persons">Each person as the identifier a threaded comment cites and the display name.</param>
+    /// <remarks>
+    ///     A threaded comment carries only a person identifier, so without this part no threaded
+    ///     comment could be attributed; writing it here is what makes the author-resolution path real.
+    /// </remarks>
+    private static void AddPersons(
+        WorkbookPart workbookPart, IReadOnlyList<(string Id, string DisplayName)> persons)
+    {
+        var personList = new Tc.PersonList();
+        foreach (var (id, displayName) in persons)
+        {
+            personList.AppendChild(new Tc.Person
+            {
+                Id = id,
+                DisplayName = displayName,
+                UserId = displayName,
+                ProviderId = "None"
+            });
+        }
+
+        var part = workbookPart.AddNewPart<WorkbookPersonPart>();
+        part.PersonList = personList;
+    }
+
+    /// <summary>
+    ///     Attaches a threaded comments part to a worksheet.
+    /// </summary>
+    /// <param name="worksheetPart">The worksheet part to attach the comments to.</param>
+    /// <param name="comments">Each comment as its cell reference, person identifier, and text.</param>
+    private static void AddThreadedComments(
+        WorksheetPart worksheetPart,
+        IReadOnlyList<(string Reference, string PersonId, string Text)> comments)
+    {
+        var threadedComments = new Tc.ThreadedComments();
+        var index = 0;
+        foreach (var (reference, personId, text) in comments)
+        {
+            threadedComments.AppendChild(new Tc.ThreadedComment
+            {
+                Ref = reference,
+                PersonId = personId,
+                Id = $"{{00000000-0000-0000-0000-{index.ToString("D12", CultureInfo.InvariantCulture)}}}",
+                DT = new DateTimeValue(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
+                ThreadedCommentText = new Tc.ThreadedCommentText(text)
+            });
+            index++;
+        }
+
+        var part = worksheetPart.AddNewPart<WorksheetThreadedCommentsPart>();
+        part.ThreadedComments = threadedComments;
     }
 
     /// <summary>

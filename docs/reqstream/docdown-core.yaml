@@ -111,6 +111,23 @@ sections:
         tests:
           - DocDownCore_Extract_TextDocument_ProducesContractLayout
 
+      - id: DocDownCore-ReviewCommentsFile
+        title: >-
+          The library shall write the reviewer comments a document carries as Markdown, and only
+          when the document carries them.
+        tags: [system]
+        justification: |
+          Reviewer commentary is editorial conversation about a document, not the document's own
+          content, and a consumer acting on a review needs it without having to separate it from
+          the text again. Writing it only when it exists keeps the absence of a file an honest
+          statement that the document carried no review, rather than an empty artifact a consumer
+          must interpret.
+        children:
+          - DocDownCore-Output-ReviewComments
+        tests:
+          - DocDownEngine_ExtractAsync_BackendReportsReviewComments_WritesAndClaimsArtifact
+          - DocDownEngine_ExtractAsync_NoReviewComments_WritesNoArtifactAndClaimsNone
+
       - id: DocDownCore-ImageFolder
         title: >-
           The library shall write embedded images as deduplicated resources and record their

@@ -36,6 +36,7 @@ Layout
   manifest.json        machine-readable form of this summary
   metadata.json        what the document asserts about itself
   content.md           PRESENT
+  review-comments.md   not present - none were written
   images/              not present - none were written
   pages/               PRESENT - 2 rendered
 

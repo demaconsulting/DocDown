@@ -17,6 +17,7 @@ input-files:
   - docs/verification/docdown-core/output/scratch-folder.md
   - docs/verification/docdown-core/output/extraction-sink.md
   - docs/verification/docdown-core/output/content-writer.md
+  - docs/verification/docdown-core/output/review-comments-writer.md
   - docs/verification/docdown-core/output/summary-writer.md
   - docs/verification/docdown-core/output/manifest-writer.md
   - docs/verification/docdown-core/output/image-text-selector.md

@@ -122,19 +122,64 @@ public class WordMarkdownWriterTests
     }
 
     /// <summary>
-    ///     Proves comments render into a comments section attributed to the author.
+    ///     Proves comments present on the model are not rendered into the content flow.
     /// </summary>
+    /// <remarks>
+    ///     A reviewer's remark is commentary about the document rather than part of it, and
+    ///     interleaving it into <c>content.md</c> left a consumer unable to tell the author's words
+    ///     from a reviewer's. The comments still travel on the model — the emitter reports them to
+    ///     Core as review comments — so this asserts the writer's silence rather than the model's
+    ///     emptiness.
+    /// </remarks>
     [Fact]
-    public void WordMarkdownWriter_Write_Comments_RendersCommentsSection()
+    public void WordMarkdownWriter_Write_Comments_NotRenderedIntoContent()
     {
         var model = Model(
             [new WordBlock(WordBlockKind.Paragraph, [new WordInline("Body")])],
-            comments: [new WordComment("Reviewer", [new WordInline("Please clarify")])]);
+            comments: [new WordComment("Reviewer", [new WordInline("Please clarify")], "§Scope")]);
 
         var markdown = WordMarkdownWriter.Write(model, NoImages);
 
-        Assert.Contains("## Comments", markdown, StringComparison.Ordinal);
-        Assert.Contains("**Reviewer**: Please clarify", markdown, StringComparison.Ordinal);
+        Assert.Contains("Body", markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("## Comments", markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("Please clarify", markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("Reviewer", markdown, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves the literal renderer returns the text as the document records it, escaping nothing,
+    ///     and returns empty for an absent or empty run sequence.
+    /// </summary>
+    /// <remarks>
+    ///     The escaped and literal forms exist for two different consumers: <c>content.md</c>, which
+    ///     is markdown and needs escaping, and the review comments Core carries into
+    ///     <c>manifest.json</c>, whose contract is the text as the document records it. Asserting the
+    ///     markdown-significant characters pass through untouched is what keeps the two from being
+    ///     quietly collapsed back into one.
+    /// </remarks>
+    [Fact]
+    public void WordMarkdownWriter_RenderPlainText_MarkdownCharacters_AreNotEscaped()
+    {
+        var inlines = new[] { new WordInline("Flag *urgent* "), new WordInline("[see §4].") };
+
+        var text = WordMarkdownWriter.RenderPlainText(inlines);
+
+        Assert.Equal("Flag *urgent* [see §4].", text);
+        Assert.DoesNotContain("\\", text, StringComparison.Ordinal);
+
+        // The same runs rendered as markdown do escape, so the two forms are genuinely different
+        Assert.Contains("\\*", WordMarkdownWriter.RenderInlines(inlines), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves the literal renderer treats an absent or empty run sequence as empty text rather
+    ///     than throwing.
+    /// </summary>
+    [Fact]
+    public void WordMarkdownWriter_RenderPlainText_NullOrEmpty_ReturnsEmpty()
+    {
+        Assert.Equal(string.Empty, WordMarkdownWriter.RenderPlainText(null));
+        Assert.Equal(string.Empty, WordMarkdownWriter.RenderPlainText([]));
     }
 
     /// <summary>

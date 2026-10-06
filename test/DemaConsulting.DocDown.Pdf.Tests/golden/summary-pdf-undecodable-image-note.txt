@@ -35,13 +35,15 @@ Layout
   manifest.json        machine-readable form of this summary
   metadata.json        what the document asserts about itself
   content.md           PRESENT
+  review-comments.md   not present - none were written
   images/              PRESENT - 1 extracted
   pages/               not present - none were written
 
 What WAS extracted
 ------------------
   content.md   67 characters of text.
-               Contains 1 page, 0 headings, 0 paragraphs, and 1 inline image.
+               Contains 1 page, 0 headings, 0 paragraphs, 1 inline image, 0 comments, and 0 distinct comment
+               authors.
   images/      1 embedded image, 647 bytes total, from page 1.
                See manifest.json for the per-image inventory.
 

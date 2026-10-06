@@ -132,6 +132,77 @@ public class SummaryWriterTests
     }
 
     /// <summary>
+    ///     Proves the layout block announces review comments as present and counted when any exist.
+    /// </summary>
+    [Fact]
+    public async Task SummaryWriter_WriteAsync_WithReviewComments_AnnouncesArtifactAsPresentAndCounted()
+    {
+        // Arrange / Act: a produced run whose document carries two reviewer comments
+        using var temp = new TempScratch();
+        var summary = await RenderSummaryAsync(
+            temp,
+            async sink =>
+            {
+                await sink.WriteContentAsync("# Document\n\nText present.\n", CancellationToken.None);
+                sink.ReportReviewComment(new DocumentComment("Ada", "Clarify this.", "Page 1"));
+                sink.ReportReviewComment(new DocumentComment(null, "Agreed.", "Page 2"));
+            },
+            ExtractionOutcome.Produced,
+            SuccessExtractor(),
+            null);
+
+        // Assert: the layout line names the artifact and the number of comments behind it
+        Assert.Contains("  review-comments.md   PRESENT - 2 comments", summary, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves the layout line reads as prose when exactly one comment exists: "1 comment", not
+    ///     "1 comments".
+    /// </summary>
+    /// <remarks>
+    ///     The summary is read by people, and a single comment is by far the most common non-empty
+    ///     case, so the one count most readers will ever see is the one that must agree.
+    /// </remarks>
+    [Fact]
+    public async Task SummaryWriter_WriteAsync_WithOneReviewComment_UsesSingularNoun()
+    {
+        // Arrange / Act: a produced run whose document carries exactly one reviewer comment
+        using var temp = new TempScratch();
+        var summary = await RenderSummaryAsync(
+            temp,
+            async sink =>
+            {
+                await sink.WriteContentAsync("# Document\n\nText present.\n", CancellationToken.None);
+                sink.ReportReviewComment(new DocumentComment("Ada", "Clarify this.", "Page 1"));
+            },
+            ExtractionOutcome.Produced,
+            SuccessExtractor(),
+            null);
+
+        // Assert: the noun agrees with the count
+        Assert.Contains("  review-comments.md   PRESENT - 1 comment\n", summary, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves the layout block states the review-comments artifact is absent when none exist.
+    /// </summary>
+    [Fact]
+    public async Task SummaryWriter_WriteAsync_WithoutReviewComments_AnnouncesArtifactAsAbsent()
+    {
+        // Arrange / Act: a produced run whose document carries no reviewer comments
+        using var temp = new TempScratch();
+        var summary = await RenderSummaryAsync(
+            temp,
+            async sink => await sink.WriteContentAsync("# Document\n\nText present.\n", CancellationToken.None),
+            ExtractionOutcome.Produced,
+            SuccessExtractor(),
+            null);
+
+        // Assert: absence is stated rather than left to silence
+        Assert.Contains("  review-comments.md   not present - none were written", summary, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves an unreadable run reproduces the failure explanation verbatim and omits the selected backend.
     /// </summary>
     [Fact]
@@ -165,12 +236,13 @@ public class SummaryWriterTests
         await WriteText(sink);
         var report = BuildReport(temp, Options(), ExtractionOutcome.Produced, SuccessExtractor(), null, DefaultEnvironment());
         var content = await ContentWriter.WriteAsync(sink, "Document", Ct);
+        var reviewComments = await ReviewCommentsWriter.WriteAsync(sink, Ct);
 
         // Act: render twice into the same folder, snapshotting the first render
-        await SummaryWriter.WriteAsync(folder, sink, report, content, Ct);
+        await SummaryWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
         var firstSnapshot = Path.Combine(temp.Path, "first-summary.txt");
         File.Copy(Path.Combine(folder.AbsolutePath, "summary.txt"), firstSnapshot);
-        await SummaryWriter.WriteAsync(folder, sink, report, content, Ct);
+        await SummaryWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
 
         // Assert: the deterministic output is byte-identical
         ContractAssert.FileEquals(firstSnapshot, Path.Combine(folder.AbsolutePath, "summary.txt"));
@@ -299,9 +371,10 @@ public class SummaryWriterTests
             null,
             "DemaConsulting.DocDown.TestSupport");
         var content = await ContentWriter.WriteAsync(sink, "Document", Ct);
+        var reviewComments = await ReviewCommentsWriter.WriteAsync(sink, Ct);
 
         // Act: render the summary
-        await SummaryWriter.WriteAsync(folder, sink, report, content, Ct);
+        await SummaryWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
         var summary = await File.ReadAllTextAsync(Path.Combine(folder.AbsolutePath, "summary.txt"), Ct);
 
         // Assert: the banner is followed directly by the header block
@@ -415,7 +488,8 @@ public class SummaryWriterTests
         var content = outcome == ExtractionOutcome.Unreadable
             ? null
             : await ContentWriter.WriteAsync(sink, "Document", Ct);
-        await SummaryWriter.WriteAsync(folder, sink, report, content, Ct);
+        var reviewComments = await ReviewCommentsWriter.WriteAsync(sink, Ct);
+        await SummaryWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
         return await File.ReadAllTextAsync(Path.Combine(folder.AbsolutePath, "summary.txt"), Ct);
     }
 

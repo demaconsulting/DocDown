@@ -20,6 +20,10 @@ public sealed class ExtractionResult
     /// <param name="summaryPath">The path to <c>summary.txt</c>.</param>
     /// <param name="manifestPath">The path to <c>manifest.json</c>.</param>
     /// <param name="contentPath">The path to <c>content.md</c>, or <see langword="null"/> when none was written.</param>
+    /// <param name="reviewCommentsPath">
+    ///     The path to <c>review-comments.md</c>, or <see langword="null"/> when the document carried
+    ///     no reviewer comments and the artifact was therefore not written.
+    /// </param>
     /// <param name="imagePaths">The relative paths of extracted images.</param>
     /// <param name="pagePaths">The relative paths of rendered pages.</param>
     /// <param name="partPaths">The relative paths of split content parts.</param>
@@ -41,6 +45,7 @@ public sealed class ExtractionResult
         string summaryPath,
         string manifestPath,
         string? contentPath,
+        string? reviewCommentsPath,
         IReadOnlyList<string> imagePaths,
         IReadOnlyList<string> pagePaths,
         IReadOnlyList<string> partPaths,
@@ -66,6 +71,7 @@ public sealed class ExtractionResult
         SummaryPath = summaryPath;
         ManifestPath = manifestPath;
         ContentPath = contentPath;
+        ReviewCommentsPath = reviewCommentsPath;
         ImagePaths = imagePaths;
         PagePaths = pagePaths;
         PartPaths = partPaths;
@@ -95,6 +101,18 @@ public sealed class ExtractionResult
     /// <summary>Gets the path to <c>content.md</c>, or <see langword="null"/> when none was written.</summary>
     /// <remarks><see langword="null"/> when extraction could not produce any content.</remarks>
     public string? ContentPath { get; }
+
+    /// <summary>
+    ///     Gets the path to <c>review-comments.md</c>, or <see langword="null"/> when none was
+    ///     written.
+    /// </summary>
+    /// <remarks>
+    ///     <see langword="null"/> when the document carried no reviewer comments. The artifact is
+    ///     written only for a document that carries them, so a caller can treat this member as the
+    ///     answer to "was this document commented on?" without reading the file or the manifest.
+    ///     Relative to the scratch folder, matching <see cref="ContentPath"/>.
+    /// </remarks>
+    public string? ReviewCommentsPath { get; }
 
     /// <summary>Gets the relative paths of extracted images.</summary>
     /// <remarks>Forward-slash separated and relative to the scratch folder; empty when no images were written.</remarks>

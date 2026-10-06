@@ -20,7 +20,8 @@ deduplication, suppression, and reporting behavior observable without mocking th
 Per IEC 62304 §5.5.2, `ExtractionSink` passes when it allocates dense relative paths for images and
 parts, deduplicates identical image bytes, merges duplicate image referrers, names rendered page
 files by source page number, suppresses disabled images without writing them, records notes,
-metadata, environment facts, and looked-for zero-count features, and keeps hostile preferred names
+metadata, environment facts, and looked-for zero-count features, records reviewer comments in report
+order while refusing a comment with no body or no location, and keeps hostile preferred names
 contained within the scratch folder.
 
 #### Test Scenarios
@@ -52,6 +53,17 @@ contained within the scratch folder.
 
 **Tests**: `ExtractionSink_Reports_RecordedForLaterSerialization`,
 `ExtractionSink_ReportContentFeature_LookedForZero_IsReported`
+
+##### Reviewer comments are recorded and invalid ones refused
+
+**Tests**: `ExtractionSink_ReportReviewComment_Reported_RetainedInReportOrder`,
+`ExtractionSink_ReportReviewComment_BlankBody_ThrowsArgumentException`,
+`ExtractionSink_ReportReviewComment_BlankLocation_ThrowsArgumentException`,
+`ExtractionSink_ReportReviewComment_NullComment_ThrowsArgumentNullException`
+
+Proves reported comments are retained verbatim in the order the backend reported them, and that a
+comment with nothing to say or nowhere to point is refused at the boundary where the defective caller
+can still be identified rather than being rendered into a meaningless entry.
 
 ##### Hostile preferred names stay contained
 

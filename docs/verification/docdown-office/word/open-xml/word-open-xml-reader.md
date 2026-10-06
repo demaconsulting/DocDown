@@ -33,7 +33,9 @@ tables map into structured blocks; when a header carrying a revision and classif
 Document Control section; when a footer carrying only page-number fields is omitted from that
 section and counted on the model; when an identical header shared across sections is emitted once;
 when tracked changes render in the accepted view; when a password-protected container raises
-`WordExtractionException`; when a comment's author and text are collected; when title, author, and
+`WordExtractionException`; when a comment's author and text are collected; when a comment's anchor
+resolves into a location hint naming its heading and quoting its text, degrading gracefully when
+the document anchors it partially or not at all; when title, author, and
 producer page count are surfaced from document metadata; and when image naming text is chosen from
 authored sources, captions, object names, or nearby headings according to the documented order.
 
@@ -94,6 +96,52 @@ case-insensitively when given an OLE compound file rather than a Zip package. Ev
 
 Proves the model carries one comment whose `Author` is `Reviewer` and whose flattened content
 contains `clarify`. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-CollectsComments`.
+
+#### An anchored comment's location names its heading and quotes the anchored text
+
+**Test**: `WordOpenXmlReader_Read_AnchoredComment_LocationNamesHeadingAndSnippet`
+
+Proves a comment bracketed by `w:commentRangeStart` and `w:commentRangeEnd` over a run under the
+heading `Overview` resolves `Location` to exactly `§Overview — "Body with a comment anchor."`, so a
+reader given the comment away from the document can find the text it annotates. Evidence for
+`DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation`.
+
+#### Each comment's location resolves from its own anchor, or from none
+
+**Test**: `WordOpenXmlReader_Read_MultipleComments_LocationsResolveIndependently`
+
+Proves three comments anchored three different ways resolve independently: a bracketed range under
+`Scope` yields the heading plus an ellipsized snippet of the long anchored run; a bare
+`w:commentReference` point under `Limitations` brackets no text and degrades to `§Limitations`; and
+a comment the document anchors nowhere yields a null `Location` rather than borrowing a neighbour's.
+A reader that resolved anchors by position rather than by id, or that invented a location for the
+unanchored comment, fails here. Evidence for
+`DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation`.
+
+#### The anchor snippet accumulator never grows past its stated bound
+
+**Test**: `WordOpenXmlReader_CommentAnchorAppendText_BoundsAccumulatorRegardlessOfRunSize`
+
+Proves the private `CommentAnchor.AppendText` truncates to `SnippetMaxLength` plus one lookahead
+character on every call, so neither a single run far longer than the bound nor several runs appended
+across calls can grow the accumulator past it. The final rendered `Location` already re-truncates to
+the same bound regardless, so this invariant is otherwise unobservable from the public surface; the
+test reaches the private type through reflection, following this codebase's existing precedent for
+asserting an internal bound the public API cannot exercise directly. Evidence for
+`DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation`.
+
+#### A comment carrying no text is dropped, and a picture-only comment is counted
+
+**Tests**: `WordOpenXmlReader_Read_EmptyComment_IsDroppedAndRealCommentSurvives`,
+`WordOpenXmlReader_Read_ImageOnlyComment_IsDroppedAndCounted`
+
+Prove a schema-valid `w:comment` carrying no runs never enters the model while a real comment in the
+same document does, and that a comment whose only content is a drawing is likewise absent from
+`Comments` but counted in `CommentsWithUnreadableContent`. Asserting the surviving comment alongside
+the dropped one is what makes the guard falsifiable: a reader that dropped the whole comments part
+would pass a test that only checked for absence. The split between dropped-silently and
+dropped-and-counted is asserted directly, because a wholly empty comment lost nothing while a drawn
+remark did. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-DropsTextlessComments`.
 
 #### The title and author metadata are surfaced
 

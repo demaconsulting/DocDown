@@ -203,7 +203,8 @@ public class SummaryWriterGoldenTests
         var content = outcome == ExtractionOutcome.Unreadable
             ? null
             : await ContentWriter.WriteAsync(sink, "Document", Ct);
-        await SummaryWriter.WriteAsync(folder, sink, report, content, Ct);
+        var reviewComments = await ReviewCommentsWriter.WriteAsync(sink, Ct);
+        await SummaryWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
         return await File.ReadAllTextAsync(Path.Combine(folder.AbsolutePath, "summary.txt"), Ct);
     }
 

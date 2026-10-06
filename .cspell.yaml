@@ -20,6 +20,8 @@ words:
   - DEMA
   - Dema
   - docdown
+  - ellipsized
+  - ellipsizing
   - FileAssert
   - fileassert
   - multimodal
@@ -155,6 +157,18 @@ words:
   - ANTLR
   - VHDL
   - Vhdl
+
+  # PDF annotation dictionary keys as the PDF specification spells them: /Annot is an annotation
+  # object's type and /Annots is a page's annotation array. They appear verbatim in hand-assembled
+  # test fixtures and in the prose describing them. Specification tokens, not misspellings.
+  - Annot
+  - Annots
+
+  # 'Textless' describes a Word comment element that carries no text runs at all — a schema-valid
+  # but empty w:comment. The word names the condition the reader guards against precisely and
+  # appears in the requirement identifier for that guard. A regular English '-less' formation, not
+  # a misspelling.
+  - Textless
 
 # Ignore the raster and PDF payloads the PDF test fixtures build documents from. These are
 # generated binary data expressed as text so the repository stays free of committed binaries:

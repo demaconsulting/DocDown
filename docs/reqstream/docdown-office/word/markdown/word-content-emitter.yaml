@@ -2,8 +2,8 @@
 # Software Unit Requirements for WordContentEmitter
 #
 # WordContentEmitter is the single emission path: it writes the model's content, images, content
-# inventory, metadata, and extraction notes through the sink, so every output the model implies is
-# produced in one place.
+# inventory, reviewer comments, metadata, and extraction notes through the sink, so every output
+# the model implies is produced in one place.
 #
 # SUPERSEDED REQUIREMENT: DocDownWord-Markdown-WordContentEmitter-ReportsGapsAndDiagnostics
 # required emission through gap and diagnostic machinery. It is superseded (not satisfied) by
@@ -51,6 +51,51 @@ sections:
                 tests:
                   - WordContentEmitter_Emit_BodyWithComments_ReportsOutlineAndSucceeds
                   - WordOpenXmlExtractor_Extract_EmptyDocument_ProducesZeroCountTextInventory
+
+              - id: DocDownWord-Markdown-WordContentEmitter-ReportsReviewComments
+                title: >-
+                  WordContentEmitter shall report each of the document's comments to the sink as a
+                  review comment carrying its author, body, and location hint, rather than rendering
+                  it into the content.
+                justification: |
+                  A reviewer's remark is commentary about the document, not part of it, and
+                  interleaving the two left a consumer unable to tell the author's words from a
+                  reviewer's. Reporting comments to the sink routes them to the dedicated
+                  review-comments artifact, where the location hint is what lets a reader find the
+                  text each remark was attached to. A comment the document anchors nowhere is
+                  reported with a stated-unknown location rather than an invented one.
+
+                  The body is reported as the document records it, with no Markdown escaping
+                  applied. The comment reaches manifest.json as well as review-comments.md, and the
+                  manifest's contract is the reviewer's words verbatim; escaping here would leak
+                  backslashes into that record and would differ from what every other backend
+                  reports. Making the written file render correctly is ReviewCommentsWriter's job,
+                  at the point the Markdown is written.
+
+                  A comment whose body is blank after rendering is skipped rather than reported.
+                  The reader already drops these, so this is defense in depth at the only place this
+                  backend calls the sink: Core refuses a blank body, and a single empty comment
+                  reaching it would abort the extraction and cost the reader the document's text.
+                tests:
+                  - WordContentEmitter_Emit_BodyWithComments_ReportsReviewComments
+                  - WordContentEmitter_Emit_CommentWithoutLocation_ReportsLocationUnknown
+                  - WordContentEmitter_Emit_CommentWithMarkdownCharacters_ReportsBodyUnescaped
+                  - WordContentEmitter_Emit_BlankComment_IsSkippedWithoutThrowing
+                  - DocDownWord_Extract_DocxWithComment_WritesReviewCommentsNotContent
+                  - DocDownWord_Extract_DocxWithEmptyComment_StillProducesContentAndRealComment
+
+              - id: DocDownWord-Markdown-WordContentEmitter-ReportsImageOnlyCommentsNote
+                title: >-
+                  WordContentEmitter shall report comments whose only content is a picture or ink as
+                  a short extraction note.
+                justification: |
+                  A comment drawn rather than typed carries a remark this extractor cannot render,
+                  so it does not appear in review-comments.md. Saying nothing would leave the reader
+                  believing the document carries no such comment, which is the one conclusion the
+                  document contradicts. Stating the count as a note keeps the incomplete step
+                  visible without inventing text nobody wrote.
+                tests:
+                  - WordContentEmitter_Emit_ImageOnlyComments_ReportsNote
 
               - id: DocDownWord-Markdown-WordContentEmitter-ReportsChartNote
                 title: >-

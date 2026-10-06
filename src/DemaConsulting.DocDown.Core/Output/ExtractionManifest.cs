@@ -4,7 +4,7 @@ namespace DocDown.Core;
 ///     The root data-transfer object for <c>manifest.json</c>: the machine-readable twin of the
 ///     human-readable summary.
 /// </summary>
-/// <param name="SchemaVersion">The manifest schema version (for example <c>3.0</c>).</param>
+/// <param name="SchemaVersion">The manifest schema version (for example <c>3.1</c>).</param>
 /// <param name="Tool">Identifies the tool and package that produced the manifest.</param>
 /// <param name="ScratchFolder">The absolute scratch folder the extraction wrote to.</param>
 /// <param name="ExtractedAtUtc">The extraction timestamp in ISO-8601 UTC form.</param>
@@ -20,11 +20,24 @@ namespace DocDown.Core;
 /// <param name="Images">The extracted images.</param>
 /// <param name="Pages">The rendered pages.</param>
 /// <param name="Parts">The split content parts.</param>
+/// <param name="ReviewComments">
+///     The reviewer comments the document carries, in the order the extractor reported them — the
+///     machine-readable twin of <c>review-comments.md</c>. Empty when the document carries none, in
+///     which case no <c>review-comments.md</c> was written and
+///     <paramref name="ReviewCommentsPath"/> is <see langword="null"/>.
+/// </param>
 /// <param name="Notes">
 ///     Plain-language notes for any step DocDown attempted but could not complete. Empty when
 ///     nothing was left incomplete.
 /// </param>
 /// <param name="Failure">The structured failure, or <see langword="null"/> when the extraction produced output.</param>
+/// <param name="ReviewCommentsPath">
+///     The relative path of <c>review-comments.md</c>, or <see langword="null"/> when the document
+///     carried no reviewer comments and the artifact was therefore not written. Recorded as its own
+///     member — rather than inferred from <paramref name="ReviewComments"/> — because
+///     <c>ArtifactInventory</c> accounts for files by the paths a manifest claims, and a conditional
+///     artifact must be claimed explicitly or the reuse guard would treat it as a stray.
+/// </param>
 /// <remarks>
 ///     <para>
 ///         Every member of this graph is a <see langword="string"/>, a numeric type, a
@@ -52,8 +65,10 @@ public sealed record ExtractionManifest(
     IReadOnlyList<ManifestImage> Images,
     IReadOnlyList<ManifestPage> Pages,
     IReadOnlyList<ManifestPart> Parts,
+    IReadOnlyList<ManifestReviewComment> ReviewComments,
     IReadOnlyList<string> Notes,
-    ManifestFailure? Failure);
+    ManifestFailure? Failure,
+    string? ReviewCommentsPath);
 
 /// <summary>
 ///     Identifies the tool and package that produced a manifest.
@@ -214,6 +229,25 @@ public sealed record ManifestPage(string Path, int PageNumber, long SizeBytes);
 ///     navigated in order. Immutable and thread-safe.
 /// </remarks>
 public sealed record ManifestPart(string Path, string Kind, int Ordinal, string? Title, int? CharacterCount);
+
+/// <summary>
+///     One reviewer comment the document carries, as recorded in a manifest.
+/// </summary>
+/// <param name="Author">
+///     The name the document records for the comment's author, or <see langword="null"/> when the
+///     document records none.
+/// </param>
+/// <param name="Body">The comment text as the document records it.</param>
+/// <param name="Location">
+///     The human-readable display string naming where in the document the comment sits (for example
+///     <c>Sheet1!B7</c> or <c>Page 3</c>), composed by the backend that knows the format.
+/// </param>
+/// <remarks>
+///     The machine-readable twin of one entry of <c>review-comments.md</c>, so a consumer that reads
+///     only the manifest learns the same review — who said what, and where — without parsing the
+///     markdown. Immutable and thread-safe.
+/// </remarks>
+public sealed record ManifestReviewComment(string? Author, string Body, string Location);
 
 /// <summary>
 ///     A plain-language failure as recorded in a manifest.

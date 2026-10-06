@@ -71,6 +71,18 @@ public class WordGoldenTests
         AssertGoldenAsync("summary-word-openxml-document-control.txt", "engineering.docx", DocxFixtures.EngineeringStyleDocument());
 
     /// <summary>
+    ///     Proves the summary for a document carrying reviewer comments matches its golden.
+    /// </summary>
+    /// <remarks>
+    ///     This is the only Word golden whose source document carries comments, so it is the one that
+    ///     makes the conditional <c>review-comments.md</c> layout line a reviewable artifact rather
+    ///     than an assertion buried in a test.
+    /// </remarks>
+    [Fact]
+    public Task WordGolden_ReviewComments_MatchesCommittedGolden() =>
+        AssertGoldenAsync("summary-word-openxml-review-comments.txt", "commented.docx", DocxFixtures.DocumentWithComment());
+
+    /// <summary>
     ///     Extracts a fixture and asserts the normalized summary matches its committed golden.
     /// </summary>
     /// <param name="goldenName">The golden file name.</param>

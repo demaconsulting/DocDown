@@ -56,6 +56,14 @@ internal sealed class WordOpenXmlReader
     /// <summary>The number of empty tables skipped.</summary>
     private int _emptyTables;
 
+    /// <summary>The number of comments dropped because their only content was a picture or ink.</summary>
+    /// <remarks>
+    ///     Counted during <see cref="BuildComments"/> so the emitter can state the shortfall as an
+    ///     extraction note. Only a comment that carried something this backend could not render is
+    ///     counted; a comment that was simply never typed into is not a shortfall.
+    /// </remarks>
+    private int _commentsWithUnreadableContent;
+
     /// <summary>The text of the nearest preceding heading in the body walk, for image naming context.</summary>
     /// <remarks>
     ///     Threaded through the body walk so a drawing can offer its section heading as a low-confidence
@@ -63,6 +71,30 @@ internal sealed class WordOpenXmlReader
     ///     only a filename hint and an honestly-sourced manifest entry.
     /// </remarks>
     private string? _currentHeading;
+
+    /// <summary>The longest anchored-text snippet a comment location hint will quote.</summary>
+    /// <remarks>
+    ///     A location hint exists to let a reader find the commented passage, not to reproduce it, so
+    ///     the snippet is bounded. Sixty characters is long enough to be recognizable in a document
+    ///     and short enough that a draft carrying dozens of comments costs a trivial number of tokens.
+    /// </remarks>
+    private const int SnippetMaxLength = 60;
+
+    /// <summary>The anchor context captured for each comment id seen during the body walk.</summary>
+    /// <remarks>
+    ///     Keyed by the <c>w:id</c> that <c>w:commentRangeStart</c>, <c>w:commentRangeEnd</c>, and
+    ///     <c>w:commentReference</c> share with <c>w:comment</c> in the comments part. Built during the
+    ///     walk because only the walk knows which heading preceded the anchor and which text it
+    ///     bracketed; <see cref="BuildComments"/> reads it afterwards.
+    /// </remarks>
+    private readonly Dictionary<string, CommentAnchor> _commentAnchors = new(StringComparer.Ordinal);
+
+    /// <summary>The comment ids whose anchored range is currently open in the walk.</summary>
+    /// <remarks>
+    ///     Ranges may overlap and nest, so the open ids are held as a list rather than a stack and
+    ///     every open range receives the text of each run the walk passes through.
+    /// </remarks>
+    private readonly List<string> _openCommentRanges = [];
 
     /// <summary>
     ///     Reads a document stream into the model.
@@ -86,7 +118,10 @@ internal sealed class WordOpenXmlReader
         _footnoteBodies.Clear();
         _trackedChanges = 0;
         _emptyTables = 0;
+        _commentsWithUnreadableContent = 0;
         _currentHeading = null;
+        _commentAnchors.Clear();
+        _openCommentRanges.Clear();
 
         var body = mainPart.Document?.Body;
         var blocks = new List<WordBlock>();
@@ -130,7 +165,8 @@ internal sealed class WordOpenXmlReader
                 document.PackageProperties.LastPrinted,
                 document.PackageProperties.Version,
                 document.PackageProperties.Language,
-                document.PackageProperties.Identifier)));
+                document.PackageProperties.Identifier)),
+            CommentsWithUnreadableContent: _commentsWithUnreadableContent);
     }
 
     /// <summary>
@@ -286,6 +322,14 @@ internal sealed class WordOpenXmlReader
                     AppendSimpleField(simpleField, part, fields, inlines, images, stripFurniture, ref pageBreak, ref hadFurnitureField);
                     break;
 
+                case W.CommentRangeStart rangeStart:
+                    OpenCommentRange(rangeStart.Id?.Value);
+                    break;
+
+                case W.CommentRangeEnd rangeEnd:
+                    CloseCommentRange(rangeEnd.Id?.Value);
+                    break;
+
                 default:
                     break;
             }
@@ -330,6 +374,7 @@ internal sealed class WordOpenXmlReader
 
                 case W.Text runText when !SkipText(fields, stripFurniture):
                     text.Append(runText.Text);
+                    AppendAnchoredText(runText.Text);
                     break;
 
                 case W.TabChar when !SkipText(fields, stripFurniture):
@@ -355,6 +400,12 @@ internal sealed class WordOpenXmlReader
                 case W.FootnoteReference footnoteReference:
                     FlushText(text, bold, italic, inlines);
                     AppendFootnote(footnoteReference, part, inlines);
+                    break;
+
+                case W.CommentReference commentReference:
+                    // A point anchor: it carries no bracketed text, so it contributes the heading
+                    // context only, and never overwrites a snippet an open range already captured
+                    NoteCommentAnchor(commentReference.Id?.Value);
                     break;
 
                 default:
@@ -1049,8 +1100,24 @@ internal sealed class WordOpenXmlReader
     ///     Builds the comments list from the comments part.
     /// </summary>
     /// <param name="mainPart">The main document part.</param>
-    /// <returns>The comments, author-attributed, in document order.</returns>
-    /// <remarks>Read-only.</remarks>
+    /// <returns>The comments, author-attributed and location-hinted, in document order.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         A comment with no text is dropped, because it says nothing — the same rule the Excel,
+    ///         PowerPoint, and PDF readers apply, so the model-level invariant "no comment without
+    ///         text" holds for every format. A schema-valid <c>w:comment</c> carrying no runs arises
+    ///         in practice from a reviewer inserting a comment without typing and from a comment
+    ///         whose runs are all tracked deletions, and admitting one would produce a review-comment
+    ///         entry attributing an empty remark to a named person.
+    ///     </para>
+    ///     <para>
+    ///         A dropped comment whose only content was a picture or ink is counted in
+    ///         <see cref="_commentsWithUnreadableContent"/> instead of passing silently: the reviewer
+    ///         did leave a remark there, so the emitter states that shortfall as an extraction note.
+    ///         A wholly empty comment is not counted, because nothing was lost and a note would
+    ///         assert a shortfall that did not occur. Read-only.
+    ///     </para>
+    /// </remarks>
     private List<WordComment> BuildComments(MainDocumentPart mainPart)
     {
         var comments = new List<WordComment>();
@@ -1060,7 +1127,18 @@ internal sealed class WordOpenXmlReader
             return comments;
         }
 
-        foreach (var comment in part.Comments.Elements<W.Comment>())
+        var elements = part.Comments.Elements<W.Comment>().ToList();
+
+        // Resolve every location hint before walking any comment body: a body is walked through the
+        // same container walk the document uses, so resolving first keeps a marker that happens to
+        // sit inside one comment from being mistaken for a later comment's body anchor
+        var locations = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var id in elements.Select(element => element.Id?.Value).OfType<string>())
+        {
+            locations[id] = FormatCommentLocation(id);
+        }
+
+        foreach (var comment in elements)
         {
             var inlines = new List<WordInline>();
             var images = new List<WordImageRef>();
@@ -1072,10 +1150,208 @@ internal sealed class WordOpenXmlReader
                     stripFurniture: false, ref pageBreak, ref hadFurniture);
             }
 
-            comments.Add(new WordComment(NullIfBlank(comment.Author?.Value), inlines));
+            var location = comment.Id?.Value is { } commentId && locations.TryGetValue(commentId, out var hint)
+                ? hint
+                : null;
+
+            // A comment that reduces to nothing says nothing; one whose only content was a picture
+            // or ink did carry a remark this backend cannot render, so that loss is counted
+            if (string.IsNullOrWhiteSpace(WordMarkdownWriter.RenderPlainText(inlines)))
+            {
+                if (images.Count > 0)
+                {
+                    _commentsWithUnreadableContent++;
+                }
+
+                continue;
+            }
+
+            comments.Add(new WordComment(NullIfBlank(comment.Author?.Value), inlines, location));
         }
 
         return comments;
+    }
+
+    /// <summary>
+    ///     Opens an anchored comment range so subsequent run text is captured as its snippet.
+    /// </summary>
+    /// <param name="id">The comment id from <c>w:commentRangeStart/@w:id</c>, or <see langword="null"/> when absent.</param>
+    /// <remarks>
+    ///     The anchor records the nearest preceding heading at the moment the range opens, which is
+    ///     the section a reader would navigate to. Side effect: records the anchor and marks the
+    ///     range open.
+    /// </remarks>
+    private void OpenCommentRange(string? id)
+    {
+        if (id is null)
+        {
+            return;
+        }
+
+        NoteCommentAnchor(id);
+        if (!_openCommentRanges.Contains(id, StringComparer.Ordinal))
+        {
+            _openCommentRanges.Add(id);
+        }
+    }
+
+    /// <summary>
+    ///     Closes an anchored comment range so later run text no longer contributes to its snippet.
+    /// </summary>
+    /// <param name="id">The comment id from <c>w:commentRangeEnd/@w:id</c>, or <see langword="null"/> when absent.</param>
+    /// <remarks>
+    ///     An unmatched end marker is ignored rather than treated as an error: an edited document can
+    ///     carry one, and a location hint is advisory. Side effect: marks the range closed.
+    /// </remarks>
+    private void CloseCommentRange(string? id)
+    {
+        if (id is not null)
+        {
+            _openCommentRanges.Remove(id);
+        }
+    }
+
+    /// <summary>
+    ///     Records that a comment id was anchored here, capturing the nearest preceding heading.
+    /// </summary>
+    /// <param name="id">The comment id, or <see langword="null"/> when the marker carries none.</param>
+    /// <remarks>
+    ///     The first anchor seen for an id wins, so a range start followed by its reference marker
+    ///     keeps the heading the range opened under. Side effect: records the anchor.
+    /// </remarks>
+    private void NoteCommentAnchor(string? id)
+    {
+        if (id is null || _commentAnchors.ContainsKey(id))
+        {
+            return;
+        }
+
+        _commentAnchors[id] = new CommentAnchor(_currentHeading);
+    }
+
+    /// <summary>
+    ///     Appends run text to every currently open comment range's snippet.
+    /// </summary>
+    /// <param name="text">The literal run text the walk just consumed.</param>
+    /// <remarks>
+    ///     Each snippet stops growing once it is long enough to be recognizable, so a comment
+    ///     bracketing an entire section still costs only a short hint. Side effect: appends to the
+    ///     open anchors.
+    /// </remarks>
+    private void AppendAnchoredText(string text)
+    {
+        if (_openCommentRanges.Count == 0 || string.IsNullOrEmpty(text))
+        {
+            return;
+        }
+
+        foreach (var id in _openCommentRanges)
+        {
+            if (_commentAnchors.TryGetValue(id, out var anchor))
+            {
+                anchor.AppendText(text);
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Formats a comment's location hint from the anchor captured during the body walk.
+    /// </summary>
+    /// <param name="id">The comment id to resolve.</param>
+    /// <returns>
+    ///     <c>§{Heading} — "{Snippet}"</c> when both were captured, <c>§{Heading}</c> or
+    ///     <c>"{Snippet}"</c> when only one was, or <see langword="null"/> when the document carries
+    ///     no usable anchor for the id.
+    /// </returns>
+    /// <remarks>
+    ///     The hint degrades rather than inventing a position: a comment can exist with no anchor
+    ///     markers at all in an edited or malformed document, and claiming a location there would be
+    ///     a false provenance claim. Pure apart from reading the captured anchors.
+    /// </remarks>
+    private string? FormatCommentLocation(string id)
+    {
+        if (!_commentAnchors.TryGetValue(id, out var anchor))
+        {
+            return null;
+        }
+
+        var heading = NullIfBlank(anchor.Heading);
+        var snippet = anchor.Snippet();
+
+        return (heading, snippet) switch
+        {
+            (not null, not null) => $"§{heading} — \"{snippet}\"",
+            (not null, null) => $"§{heading}",
+            (null, not null) => $"\"{snippet}\"",
+            _ => null
+        };
+    }
+
+    /// <summary>
+    ///     The anchor context captured for one comment id during the body walk.
+    /// </summary>
+    /// <remarks>
+    ///     Holds the nearest preceding heading and a bounded accumulation of the bracketed run text.
+    ///     Mutable by design: the walk fills it in as it passes the anchored runs.
+    /// </remarks>
+    private sealed class CommentAnchor
+    {
+        /// <summary>The accumulated bracketed text, bounded by <see cref="SnippetMaxLength"/> plus a lookahead character.</summary>
+        private readonly StringBuilder _text = new();
+
+        /// <summary>
+        ///     Initializes a new anchor capturing the heading in force where the anchor was seen.
+        /// </summary>
+        /// <param name="heading">The nearest preceding heading text, or <see langword="null"/> when the anchor precedes every heading.</param>
+        public CommentAnchor(string? heading) => Heading = heading;
+
+        /// <summary>Gets the nearest preceding heading text, or <see langword="null"/> when there was none.</summary>
+        public string? Heading { get; }
+
+        /// <summary>
+        ///     Appends bracketed run text, truncating to the bound so a single large run or
+        ///     overlapping comment ranges cannot grow the accumulator past the stated limit.
+        /// </summary>
+        /// <param name="text">The literal run text to append.</param>
+        /// <remarks>
+        ///     One character beyond <see cref="SnippetMaxLength"/> is kept so <see cref="Snippet"/>
+        ///     can tell a snippet that fits from one that was truncated; only the characters up to
+        ///     that lookahead limit are ever appended, regardless of how long <paramref name="text"/>
+        ///     is. Side effect: appends to the accumulated text.
+        /// </remarks>
+        public void AppendText(string text)
+        {
+            var capacity = SnippetMaxLength + 1 - _text.Length;
+            if (capacity <= 0)
+            {
+                return;
+            }
+
+            _text.Append(text.Length <= capacity ? text : text[..capacity]);
+        }
+
+        /// <summary>
+        ///     Renders the captured text as a single-line, length-bounded snippet.
+        /// </summary>
+        /// <returns>The snippet, or <see langword="null"/> when no bracketed text was captured.</returns>
+        /// <remarks>
+        ///     Internal whitespace — including the line breaks a run can carry — is collapsed to single
+        ///     spaces so the hint stays on one line, and an over-long snippet is ellipsized rather than
+        ///     cut mid-stream without a signal. Pure.
+        /// </remarks>
+        public string? Snippet()
+        {
+            var collapsed = string.Join(' ', _text.ToString()
+                .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+            if (collapsed.Length == 0)
+            {
+                return null;
+            }
+
+            return collapsed.Length <= SnippetMaxLength
+                ? collapsed
+                : collapsed[..SnippetMaxLength].TrimEnd() + "…";
+        }
     }
 
     /// <summary>

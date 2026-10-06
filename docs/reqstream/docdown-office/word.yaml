@@ -283,14 +283,16 @@ sections:
 
       - id: DocDownWord-MarkdownRendering
         title: >-
-          The system shall render headings, lists, inline formatting, comments, and footnotes as
-          markdown, escaping content that would otherwise be interpreted as markup.
+          The system shall render headings, lists, inline formatting, and footnotes as markdown,
+          escaping content that would otherwise be interpreted as markup.
         tags: [system]
         justification: |
           The content document is markdown, so the structure a Word document carries has to be
           projected onto markdown's own vocabulary faithfully. Rendering heading levels, ordered and
-          bulleted lists, emphasis, links, comments, and footnotes while escaping markdown
-          metacharacters keeps the rendered content both readable and unambiguous.
+          bulleted lists, emphasis, links, and footnotes while escaping markdown metacharacters keeps
+          the rendered content both readable and unambiguous. Reviewer comments are deliberately not
+          part of this flow; they are reported separately so the author's words stay distinguishable
+          from commentary about them.
         children:
           - DocDownWord-Markdown-ModelRendering
         tests:

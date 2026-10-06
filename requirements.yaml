@@ -21,6 +21,7 @@ includes:
   - docs/reqstream/docdown-core/output/scratch-folder.yaml
   - docs/reqstream/docdown-core/output/extraction-sink.yaml
   - docs/reqstream/docdown-core/output/content-writer.yaml
+  - docs/reqstream/docdown-core/output/review-comments-writer.yaml
   - docs/reqstream/docdown-core/output/summary-writer.yaml
   - docs/reqstream/docdown-core/output/manifest-writer.yaml
   - docs/reqstream/docdown-core/output/image-text-selector.yaml
@@ -29,6 +30,7 @@ includes:
   - docs/reqstream/docdown-pdf/pdf-document-extractor.yaml
   - docs/reqstream/docdown-pdf/pdf-text-extractor.yaml
   - docs/reqstream/docdown-pdf/pdf-image-extractor.yaml
+  - docs/reqstream/docdown-pdf/pdf-annotation-extractor.yaml
   - docs/reqstream/docdown-pdf/pdf-doc-down-builder-extensions.yaml
   - docs/reqstream/docdown-pdf-rendering.yaml
   - docs/reqstream/docdown-pdf-rendering/platform-requirements.yaml

@@ -69,6 +69,70 @@ public class DocDownWordTests
     }
 
     /// <summary>
+    ///     Proves a document's reviewer comments reach the dedicated review-comments artifact with
+    ///     their location hints, and leave the extracted content untouched.
+    /// </summary>
+    /// <remarks>
+    ///     Comments used to be appended to <c>content.md</c> under a <c>## Comments</c> heading, which
+    ///     left a consumer unable to tell the author's words from a reviewer's. This drives the whole
+    ///     engine so the move is proven where it is observable: on disk.
+    /// </remarks>
+    [Fact]
+    public async Task DocDownWord_Extract_DocxWithComment_WritesReviewCommentsNotContent()
+    {
+        // Arrange / Act: extract a document whose single comment is anchored under a heading
+        using var temp = new TempScratch();
+        var (scratch, _) = await ExtractAsync(temp, "commented.docx", DocxFixtures.DocumentWithComment());
+
+        // Assert: the comment is in review-comments.md with its author and location hint
+        var reviewComments = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        Assert.Contains("**Reviewer**", reviewComments, StringComparison.Ordinal);
+        Assert.Contains("§Overview", reviewComments, StringComparison.Ordinal);
+        Assert.Contains("clarify", reviewComments, StringComparison.Ordinal);
+
+        // Assert: and nowhere in the extracted content
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        Assert.DoesNotContain("## Comments", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("clarify", content, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
+    ///     Proves a document carrying a comment with no text still extracts completely, and that the
+    ///     document's real comment still reaches the review-comments artifact.
+    /// </summary>
+    /// <remarks>
+    ///     This is the regression guard for a defect that destroyed whole extractions: an empty
+    ///     <c>w:comment</c> is schema-valid and arises whenever a reviewer inserts a comment and
+    ///     types nothing, but it reached Core as a blank-bodied review comment, Core rejected it by
+    ///     contract, and the fault propagated until the document was reported
+    ///     <see cref="ExtractionOutcome.Unreadable"/> with no <c>content.md</c> at all. A trivial
+    ///     unextractable item must never cost the content that extracted perfectly, so this drives
+    ///     the whole engine and asserts on what is on disk.
+    /// </remarks>
+    [Fact]
+    public async Task DocDownWord_Extract_DocxWithEmptyComment_StillProducesContentAndRealComment()
+    {
+        // Arrange / Act: extract a document whose two comments are one real remark and one empty one
+        using var temp = new TempScratch();
+        var (scratch, result) = await ExtractAsync(
+            temp, "partly-commented.docx", DocxFixtures.DocumentWithEmptyAndRealComments());
+
+        // Assert: the extraction produced output rather than failing on the empty comment
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.True(File.Exists(Path.Combine(scratch, "content.md")));
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        Assert.Contains("Body text that must survive extraction", content, StringComparison.Ordinal);
+
+        // Assert: the real comment still reached the artifact, and the empty one left no entry
+        var reviewComments = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        Assert.Contains("**Reviewer**", reviewComments, StringComparison.Ordinal);
+        Assert.Contains("clarify", reviewComments, StringComparison.Ordinal);
+        Assert.DoesNotContain("Silent Reviewer", reviewComments, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
     ///     Proves embedded images are written and linked from the content.
     /// </summary>
     [Fact]

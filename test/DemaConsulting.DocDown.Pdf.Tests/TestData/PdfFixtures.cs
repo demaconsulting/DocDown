@@ -350,6 +350,188 @@ public static class PdfFixtures
     }
 
     /// <summary>
+    ///     Assembles a two-page PDF carrying annotations that span every case the filter decides.
+    /// </summary>
+    /// <returns>The bytes of the annotated document.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         PdfPig's document writer cannot attach annotations to a page, so this fixture is
+    ///         assembled byte by byte like the encrypted and awkward-image ones — still entirely in
+    ///         code, so the repository stays text-only and no sample document of uncertain provenance
+    ///         is committed. The object layout is a plain catalog, two pages each with a short text
+    ///         stream so the document also has ordinary content, and one annotation dictionary per
+    ///         case.
+    ///     </para>
+    ///     <para>
+    ///         The annotations are chosen so that each exercises exactly one decision: a named
+    ///         commentary annotation, an unnamed one, one whose author is stored as a hexadecimal
+    ///         string, a <c>Link</c> that carries text but is not commentary, a <c>Highlight</c> with
+    ///         no remark, a <c>Highlight</c> with one, an empty <c>Popup</c>, and a second-page
+    ///         annotation that proves page attribution. Together they make the inclusion rule
+    ///         falsifiable rather than merely demonstrated.
+    ///     </para>
+    /// </remarks>
+    public static byte[] WithAnnotations()
+    {
+        var firstPageText = "BT /F1 18 Tf 72 700 Td (Annotated page one.) Tj ET\n"u8.ToArray();
+        var secondPageText = "BT /F1 18 Tf 72 700 Td (Annotated page two.) Tj ET\n"u8.ToArray();
+
+        var body = new List<(string Header, byte[]? Stream)>
+        {
+            ("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n", null),
+            ("2 0 obj\n<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>\nendobj\n", null),
+            ("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 13 0 R "
+             + "/Resources << /Font << /F1 15 0 R >> >> "
+             + "/Annots [5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R] >>\nendobj\n", null),
+            ("4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 14 0 R "
+             + "/Resources << /Font << /F1 15 0 R >> >> /Annots [12 0 R] >>\nendobj\n", null),
+
+            // A named sticky note: the ordinary case, author in a literal string
+            ("5 0 obj\n<< /Type /Annot /Subtype /Text /Rect [100 700 120 720] /T (Alice Reviewer) "
+             + "/Contents (Section 2 needs a citation.) >>\nendobj\n", null),
+
+            // The same kind of note with no /T entry at all: the author must come back absent
+            ("6 0 obj\n<< /Type /Annot /Subtype /Text /Rect [140 700 160 720] "
+             + "/Contents (Typo in the second paragraph.) >>\nendobj\n", null),
+
+            // An author stored as a hexadecimal string: "Bob Hex"
+            ("7 0 obj\n<< /Type /Annot /Subtype /Text /Rect [180 700 200 720] /T <426F6220486578> "
+             + "/Contents (Check the table alignment.) >>\nendobj\n", null),
+
+            // A link that carries text: excluded by type, which text alone would not achieve
+            ("8 0 obj\n<< /Type /Annot /Subtype /Link /Rect [220 700 320 720] /T (Alice Reviewer) "
+             + "/Contents (Jump to the appendix.) >>\nendobj\n", null),
+
+            // A bare highlight: an included type with no remark, excluded by the content rule
+            ("9 0 obj\n<< /Type /Annot /Subtype /Highlight /Rect [100 650 200 670] /T (Alice Reviewer) "
+             + "/Contents () >>\nendobj\n", null),
+
+            // A highlight with a remark attached: the case that must survive the content rule
+            ("10 0 obj\n<< /Type /Annot /Subtype /Highlight /Rect [100 600 200 620] /T (Carol Editor) "
+             + "/Contents (This claim needs evidence.) >>\nendobj\n", null),
+
+            // A popup window with no text of its own: excluded, so a parent's remark is not duplicated
+            ("11 0 obj\n<< /Type /Annot /Subtype /Popup /Rect [300 600 500 700] /Contents () >>\nendobj\n", null),
+
+            // The second page's remark, which proves comments are attributed to the right page
+            ("12 0 obj\n<< /Type /Annot /Subtype /FreeText /Rect [100 500 300 540] /T (Dave Approver) "
+             + "/Contents (Rewrite this conclusion.) >>\nendobj\n", null),
+
+            ($"13 0 obj\n<< /Length {firstPageText.Length.ToString(CultureInfo.InvariantCulture)} >>\nstream\n", firstPageText),
+            ($"14 0 obj\n<< /Length {secondPageText.Length.ToString(CultureInfo.InvariantCulture)} >>\nstream\n", secondPageText),
+            ("15 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n", null)
+        };
+
+        return Assemble(body);
+    }
+
+    /// <summary>
+    ///     Assembles a single-page PDF whose <c>Popup</c> annotation repeats the <c>/Contents</c> of
+    ///     the <c>Text</c> annotation it belongs to.
+    /// </summary>
+    /// <returns>The bytes of the document.</returns>
+    /// <remarks>
+    ///     Some producers copy a parent annotation's text into the popup window that displays it.
+    ///     The extractor judges each annotation on its own type and content, so both are kept and the
+    ///     remark appears twice. This fixture exists to characterize that — to make it a reviewable,
+    ///     asserted behavior rather than an untested corner — not to assert it is desirable.
+    ///     Deduplicating would require resolving the popup's <c>/Parent</c> indirect reference, and a
+    ///     text match would drop a reviewer who genuinely repeated themselves.
+    /// </remarks>
+    public static byte[] WithPopupDuplicatingParent()
+    {
+        var pageText = "BT /F1 18 Tf 72 700 Td (Page with a duplicating popup.) Tj ET\n"u8.ToArray();
+
+        var body = new List<(string Header, byte[]? Stream)>
+        {
+            ("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n", null),
+            ("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n", null),
+            ("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R "
+             + "/Resources << /Font << /F1 7 0 R >> >> /Annots [4 0 R 5 0 R] >>\nendobj\n", null),
+
+            // The parent sticky note, naming its popup
+            ("4 0 obj\n<< /Type /Annot /Subtype /Text /Rect [100 700 120 720] /T (Alice Reviewer) "
+             + "/Popup 5 0 R /Contents (Section 2 needs a citation.) >>\nendobj\n", null),
+
+            // The popup that displays it, carrying a copy of the same words and the same author
+            ("5 0 obj\n<< /Type /Annot /Subtype /Popup /Rect [300 600 500 700] /Parent 4 0 R "
+             + "/T (Alice Reviewer) /Contents (Section 2 needs a citation.) >>\nendobj\n", null),
+
+            ($"6 0 obj\n<< /Length {pageText.Length.ToString(CultureInfo.InvariantCulture)} >>\nstream\n", pageText),
+            ("7 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n", null)
+        };
+
+        return Assemble(body);
+    }
+
+    /// <summary>
+    ///     Assembles a single-page PDF whose one annotation's <c>/Contents</c> carries leading and
+    ///     trailing spaces.
+    /// </summary>
+    /// <returns>The bytes of the document.</returns>
+    /// <remarks>
+    ///     Proves the extractor reports a comment's body exactly as the document records it: the
+    ///     blankness check must reject a whitespace-only body without trimming a body that is merely
+    ///     padded, because <c>manifest.json</c> promises the text verbatim, the same promise every
+    ///     other backend keeps.
+    /// </remarks>
+    public static byte[] WithPaddedAnnotationBody()
+    {
+        var pageText = "BT /F1 18 Tf 72 700 Td (Page with a padded remark.) Tj ET\n"u8.ToArray();
+
+        var body = new List<(string Header, byte[]? Stream)>
+        {
+            ("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n", null),
+            ("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n", null),
+            ("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R "
+             + "/Resources << /Font << /F1 6 0 R >> >> /Annots [4 0 R] >>\nendobj\n", null),
+
+            // A remark padded with leading and trailing spaces, which must survive untrimmed
+            ("4 0 obj\n<< /Type /Annot /Subtype /Text /Rect [100 700 120 720] /T (Pat Reviewer) "
+             + "/Contents (  Leave the spacing exactly as typed.  ) >>\nendobj\n", null),
+
+            ($"5 0 obj\n<< /Length {pageText.Length.ToString(CultureInfo.InvariantCulture)} >>\nstream\n", pageText),
+            ("6 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n", null)
+        };
+
+        return Assemble(body);
+    }
+
+    /// <summary>
+    ///     Assembles a two-page PDF whose first page's annotation structures are damaged.
+    /// </summary>
+    /// <returns>The bytes of the document.</returns>
+    /// <remarks>
+    ///     The first page's <c>/Annots</c> entry points at an object that does not exist, which is
+    ///     the shape a truncated or partially overwritten file leaves behind; the second page carries
+    ///     an ordinary reviewer note. The damage is confined to one page on purpose: that is what
+    ///     makes it possible to show a broken comment costs the reader only that page's comments
+    ///     rather than the document's text or the comments on any other page.
+    /// </remarks>
+    public static byte[] WithUnreadableAnnotations()
+    {
+        var firstPageText = "BT /F1 18 Tf 72 700 Td (Damaged annotations page.) Tj ET\n"u8.ToArray();
+        var secondPageText = "BT /F1 18 Tf 72 700 Td (Intact annotations page.) Tj ET\n"u8.ToArray();
+
+        var body = new List<(string Header, byte[]? Stream)>
+        {
+            ("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n", null),
+            ("2 0 obj\n<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>\nendobj\n", null),
+            ("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R "
+             + "/Resources << /Font << /F1 8 0 R >> >> /Annots [99 0 R] >>\nendobj\n", null),
+            ("4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 7 0 R "
+             + "/Resources << /Font << /F1 8 0 R >> >> /Annots [5 0 R] >>\nendobj\n", null),
+            ("5 0 obj\n<< /Type /Annot /Subtype /Text /Rect [100 700 120 720] /T (Erin Checker) "
+             + "/Contents (This page survived.) >>\nendobj\n", null),
+            ($"6 0 obj\n<< /Length {firstPageText.Length.ToString(CultureInfo.InvariantCulture)} >>\nstream\n", firstPageText),
+            ($"7 0 obj\n<< /Length {secondPageText.Length.ToString(CultureInfo.InvariantCulture)} >>\nstream\n", secondPageText),
+            ("8 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n", null)
+        };
+
+        return Assemble(body);
+    }
+
+    /// <summary>
     ///     Assembles a PDF from pre-formatted objects, computing the cross-reference offsets.
     /// </summary>
     /// <param name="body">Each object's header text and optional stream payload, in object order.</param>

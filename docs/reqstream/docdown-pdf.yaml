@@ -129,6 +129,32 @@ sections:
           - DocDownPdf_Extract_FlateImage_IsLabeledDecodedToPng
           - DocDownPdf_Extract_Jpeg2000Image_WritesJp2Passthrough
 
+      - id: DocDownPdf-ReviewComments
+        title: >-
+          The system shall extract the reviewer commentary a PDF carries as annotations into the
+          review-comments artifact, attributed to its author and page.
+        tags: [system]
+        justification: |
+          A document under review carries two kinds of writing: what it says, and what people said
+          about it. A reader given only the first has no way to see the outstanding objections, and a
+          reader given both mixed together cannot tell which is which. Extracting the commentary into
+          its own artifact keeps the distinction the document itself makes, and carrying the author
+          and page with each remark is what lets a reader act on it.
+        children:
+          - DocDownPdf-PdfAnnotationExtractor-ExtractsAnnotationText
+          - DocDownPdf-PdfAnnotationExtractor-ResolvesAuthor
+          - DocDownPdf-PdfAnnotationExtractor-ReportsAbsentAuthorAsUnattributed
+          - DocDownPdf-PdfAnnotationExtractor-ReportsPageNumber
+          - DocDownPdf-PdfAnnotationExtractor-AppliesCommentaryTypeList
+          - DocDownPdf-PdfAnnotationExtractor-SkipsEmptyAnnotations
+          - DocDownPdf-PdfAnnotationExtractor-PreservesDocumentOrder
+          - DocDownPdf-PdfAnnotationExtractor-ReportsNothingWhenAbsent
+          - DocDownPdf-PdfAnnotationExtractor-ContainsUnreadableAnnotations
+          - DocDownPdf-PdfDocumentExtractor-ReportsReviewComments
+        tests:
+          - DocDownPdf_Extract_AnnotatedPdf_WritesReviewCommentsArtifact
+          - DocDownPdf_Extract_PdfWithoutAnnotations_WritesNoReviewCommentsArtifact
+
       - id: DocDownPdf-DocumentMetadata
         title: The system shall report the document title, author, and page count.
         tags: [system]

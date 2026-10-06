@@ -104,6 +104,100 @@ public class PdfDocumentExtractorTests
     }
 
     /// <summary>
+    ///     Proves annotations reach the sink as review comments located by page.
+    /// </summary>
+    /// <remarks>
+    ///     The wording of a comment's location belongs to this unit rather than to the annotation
+    ///     extractor, so it is asserted here: for a PDF the honest unit of position is the page,
+    ///     because an annotation's rectangle locates it on the sheet rather than within the prose.
+    /// </remarks>
+    [Fact]
+    public async Task PdfDocumentExtractor_ExtractAsync_AnnotatedDocument_ReportsReviewComments()
+    {
+        // Arrange: a recording sink over a two-page annotated document
+        var sink = new RecordingSink();
+
+        // Act: extract through the sink
+        await ExtractAsync(PdfFixtures.WithAnnotations(), sink);
+
+        // Assert: every reviewer remark arrived, each located by the page it was written on
+        Assert.Equal(5, sink.ReviewComments.Count);
+        var first = sink.ReviewComments[0];
+        Assert.Equal("Alice Reviewer", first.Author);
+        Assert.Equal("Section 2 needs a citation.", first.Body);
+        Assert.Equal("Page 1", first.Location);
+        Assert.Equal("Page 2", sink.ReviewComments[^1].Location);
+    }
+
+    /// <summary>
+    ///     Proves the content inventory names the document's reviewer comments and how many distinct
+    ///     people wrote them, counted from the same annotation walk that produced the comments.
+    /// </summary>
+    /// <remarks>
+    ///     Reviewer commentary leaves <c>content.md</c> entirely, so the inventory is the only place
+    ///     <c>summary.txt</c> says a PDF carries any at all; without it a reader paging through the
+    ///     summary cannot tell an annotated document from a clean one. The annotations are read once
+    ///     and shared between the inventory and the review comments, so the two can never disagree —
+    ///     which is what asserting both counts against the same extraction checks. The unattributed
+    ///     remark is excluded from the author count because the document names nobody for it.
+    /// </remarks>
+    [Fact]
+    public async Task PdfDocumentExtractor_ExtractAsync_AnnotatedDocument_InventoriesComments()
+    {
+        // Arrange: a recording sink over the two-page annotated document
+        var sink = new RecordingSink();
+
+        // Act: extract through the sink
+        await ExtractAsync(PdfFixtures.WithAnnotations(), sink);
+
+        // Assert: the inventory counts match the comments actually reported
+        Assert.Contains(sink.ContentFeatures, feature => feature is { Label: "comments", Count: 5, LookedFor: true });
+        Assert.Contains(
+            sink.ContentFeatures,
+            feature => feature is { Label: "distinct comment authors", Count: 4, LookedFor: true });
+        Assert.Equal(5, sink.ReviewComments.Count);
+    }
+
+    /// <summary>
+    ///     Proves a page range narrows reviewer comments along with the content.
+    /// </summary>
+    /// <remarks>
+    ///     Comments and content are driven from the same page selection, so a comment can never arrive
+    ///     from a page the output does not contain.
+    /// </remarks>
+    [Fact]
+    public async Task PdfDocumentExtractor_ExtractAsync_PageRange_RestrictsReviewComments()
+    {
+        // Arrange: the annotated document with only its second page requested
+        var sink = new RecordingSink();
+        var options = new ExtractionOptions { Pages = new PageRange(2, 2) };
+
+        // Act: extract the requested range
+        await ExtractAsync(PdfFixtures.WithAnnotations(), sink, options);
+
+        // Assert: only the second page's remark is reported
+        var only = Assert.Single(sink.ReviewComments);
+        Assert.Equal("Page 2", only.Location);
+        Assert.Equal("Rewrite this conclusion.", only.Body);
+    }
+
+    /// <summary>
+    ///     Proves a document with no annotations reports no review comments.
+    /// </summary>
+    [Fact]
+    public async Task PdfDocumentExtractor_ExtractAsync_DocumentWithoutAnnotations_ReportsNoReviewComments()
+    {
+        // Arrange: a recording sink over an ordinary text document
+        var sink = new RecordingSink();
+
+        // Act: extract through the sink
+        await ExtractAsync(PdfFixtures.SimpleText(), sink);
+
+        // Assert: nothing is reported, so Core has no reason to write a review-comments artifact
+        Assert.Empty(sink.ReviewComments);
+    }
+
+    /// <summary>
     ///     Proves a requested page range restricts what is extracted.
     /// </summary>
     [Fact]
@@ -165,6 +259,16 @@ public class PdfDocumentExtractorTests
             {
                 Assert.Equal("inline images", feature.Label);
                 Assert.Equal(1, feature.Count);
+            },
+            feature =>
+            {
+                Assert.Equal("comments", feature.Label);
+                Assert.Equal(0, feature.Count);
+            },
+            feature =>
+            {
+                Assert.Equal("distinct comment authors", feature.Label);
+                Assert.Equal(0, feature.Count);
             });
     }
 
@@ -208,6 +312,16 @@ public class PdfDocumentExtractorTests
             feature =>
             {
                 Assert.Equal("inline images", feature.Label);
+                Assert.Equal(0, feature.Count);
+            },
+            feature =>
+            {
+                Assert.Equal("comments", feature.Label);
+                Assert.Equal(0, feature.Count);
+            },
+            feature =>
+            {
+                Assert.Equal("distinct comment authors", feature.Label);
                 Assert.Equal(0, feature.Count);
             });
     }

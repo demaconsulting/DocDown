@@ -134,6 +134,39 @@ sections:
                   - PowerPointContentEmitter_Emit_Deck_ReportsContentFeaturesIncludingSpeakerNotes
                   - PowerPointContentEmitter_Emit_NoImages_ReportsZeroInlineImagesWithoutNote
 
+              - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-InventoriesComments
+                title: >-
+                  PowerPointContentEmitter shall report the deck's comment count and the number of
+                  distinct people who wrote them as content features that were looked for.
+                justification: |
+                  Reviewer commentary leaves content.md entirely and lands in its own artifact, so
+                  the inventory is the only place the summary says a deck carries any at all. A
+                  reader scanning the summary for what the deck holds would otherwise have to open
+                  review-comments.md to discover it exists. Marking both counts as looked for means a
+                  zero still states plainly that the extraction inspected them, which distinguishes
+                  a deck nobody commented on from a backend that never checked. The vocabulary
+                  matches what the Word backend already reports, so the same two lines mean the same
+                  thing across formats.
+                tests:
+                  - PowerPointContentEmitter_Emit_SlideComments_InventoriesCommentsAndAuthors
+
+              - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsModernCommentsNote
+                title: >-
+                  PowerPointContentEmitter shall report an extraction note naming the number of
+                  modern persona-based comments the deck carries and the number of slides carrying
+                  them, and shall report no such note when the deck carries none.
+                justification: |
+                  The reader counts these comments but does not read them, so without a note a deck
+                  whose comments are all modern reads exactly like a deck nobody ever commented on.
+                  That is an absence caused by a boundary of this extractor being reported as an
+                  absence in the document, which is the one thing this repository will not do. A note
+                  is the right carrier because this is the narrow attempted-and-incomplete case: the
+                  comments were found and counted, and deliberately not read. Nothing is reported for
+                  a deck carrying none, because there is no shortfall to state.
+                tests:
+                  - PowerPointContentEmitter_Emit_ModernComments_ReportsNoteNamingTheCounts
+                  - PowerPointContentEmitter_Emit_NoModernComments_ReportsNoNote
+
               - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesSingleFlow
                 title: >-
                   PowerPointContentEmitter shall write the deck as one content flow whose inline
@@ -144,3 +177,20 @@ sections:
                   links the flow carries must resolve from the scratch root where it is written.
                 tests:
                   - PowerPointContentEmitter_Emit_ImageLinks_ResolveOnDisk
+
+              - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsReviewComments
+                title: >-
+                  PowerPointContentEmitter shall report each slide comment as a review comment located
+                  by the slide's 1-based ordinal, and shall not write any comment text into the content
+                  flow.
+                justification: |
+                  A reviewer's remark is commentary about the deck rather than part of it, so placing it
+                  in the content flow would leave a consumer unable to tell a reviewer's words from the
+                  author's. Reporting it to the core instead collects every remark in one dedicated
+                  artifact. The location is written as `Slide {n}` because a deck's argument is
+                  sequential and the slide number is how a reader navigates back to it. A deck with no
+                  comments reports none, so the artifact is written only where there is something to put
+                  in it.
+                tests:
+                  - PowerPointContentEmitter_Emit_SlideComments_ReportsSlideQualifiedReviewComments
+                  - PowerPointContentEmitter_Emit_DeckWithoutComments_ReportsNoReviewComments

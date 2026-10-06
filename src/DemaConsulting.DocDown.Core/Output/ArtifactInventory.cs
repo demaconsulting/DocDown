@@ -34,10 +34,13 @@ internal static class ArtifactInventory
     ///     The fixed root-level artifacts every extraction writes, whatever the outcome.
     /// </summary>
     /// <remarks>
-    ///     These four are the only files permitted at the scratch root. They are not listed in the
-    ///     manifest's resource arrays — a manifest cannot list itself by hash — so they are
-    ///     accounted for here by the layout contract instead. Any other root-level file is
-    ///     unaccounted.
+    ///     These four are written unconditionally and are not listed in the manifest's resource
+    ///     arrays — a manifest cannot list itself by hash — so they are accounted for here by the
+    ///     layout contract instead. The one further file permitted at the scratch root,
+    ///     <c>review-comments.md</c>, is conditional on the document carrying reviewer comments and
+    ///     is therefore accounted for by the path the manifest claims
+    ///     (<see cref="ExtractionManifest.ReviewCommentsPath"/>) rather than by this fixed list. Any
+    ///     other root-level file is unaccounted.
     /// </remarks>
     internal static readonly string[] RootArtifacts = ["summary.txt", "manifest.json", "metadata.json", "content.md"];
 
@@ -46,15 +49,18 @@ internal static class ArtifactInventory
     /// </summary>
     /// <param name="manifest">The parsed manifest whose claims define the inventory.</param>
     /// <returns>
-    ///     The manifest's image, page, and part paths together with the four
-    ///     <see cref="RootArtifacts"/>, held in manifest (forward-slash) form and matched exactly.
+    ///     The manifest's image, page, and part paths and its review-comments path (when claimed),
+    ///     together with the four <see cref="RootArtifacts"/>, held in manifest (forward-slash) form
+    ///     and matched exactly.
     /// </returns>
     /// <remarks>
     ///     Each resource array is null-tolerant: a manifest that omits <c>images</c>,
     ///     <c>pages</c>, or <c>parts</c> contributes nothing from that array rather than failing,
-    ///     which matches how the deserializer materializes an absent array. Comparison is ordinal
-    ///     because manifest paths are written by this library in a single normalized form, so a
-    ///     case-insensitive match would accept a path the library never wrote. Pure.
+    ///     which matches how the deserializer materializes an absent array. The same tolerance
+    ///     covers <c>reviewCommentsPath</c>, which is absent both from a manifest written before the
+    ///     artifact existed and from any extraction of a document carrying no comments. Comparison is
+    ///     ordinal because manifest paths are written by this library in a single normalized form, so
+    ///     a case-insensitive match would accept a path the library never wrote. Pure.
     /// </remarks>
     internal static HashSet<string> AccountedRelativePaths(ExtractionManifest manifest)
     {
@@ -76,6 +82,12 @@ internal static class ArtifactInventory
         foreach (var part in manifest.Parts ?? [])
         {
             accounted.Add(part.Path);
+        }
+
+        // The conditional review-comments artifact is accounted for only when the manifest claims it
+        if (manifest.ReviewCommentsPath is { Length: > 0 } reviewCommentsPath)
+        {
+            accounted.Add(reviewCommentsPath);
         }
 
         // The four fixed root artifacts are accounted for by the layout contract

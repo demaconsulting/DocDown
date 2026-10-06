@@ -82,7 +82,72 @@ internal static class PowerPointContentEmitter
         // Report the plain-language notes for the images written above
         ReportImages(sink, imageResult);
 
+        // Reviewer remarks are commentary about the deck rather than part of it, so they leave
+        // content.md untouched and travel to Core as review comments
+        ReportReviewComments(sink, model);
+
         ReportContentFeatures(sink, model, notesCount, imagePaths);
+        ReportModernCommentsNote(sink, model);
+    }
+
+    /// <summary>
+    ///     Reports that the deck carries modern persona-based comments this extractor does not read.
+    /// </summary>
+    /// <param name="sink">The sink to report through.</param>
+    /// <param name="model">The deck model carrying the modern-comment counts.</param>
+    /// <remarks>
+    ///     Without this note a deck whose comments are all modern reads exactly like a deck nobody
+    ///     commented on, which states something about the document that is not true. The note is an
+    ///     attempted-and-incomplete step, which is what an <see cref="ExtractionNote"/> carries: the
+    ///     reader found the comments and counted them, and chose not to read them. Nothing is
+    ///     reported when the deck carries none. Side effect: records a note on the sink.
+    /// </remarks>
+    private static void ReportModernCommentsNote(IExtractionSink sink, PowerPointDeckModel model)
+    {
+        if (model.ModernCommentCount == 0)
+        {
+            return;
+        }
+
+        var commentCount = model.ModernCommentCount.ToString(CultureInfo.InvariantCulture);
+        var commentNoun = model.ModernCommentCount == 1 ? "comment" : "comments";
+        var slideCount = model.ModernCommentSlideCount.ToString(CultureInfo.InvariantCulture);
+        var slideNoun = model.ModernCommentSlideCount == 1 ? "slide" : "slides";
+        sink.ReportNote(new ExtractionNote(
+            $"The presentation carries {commentCount} modern (persona-based, cloud-synced) {commentNoun} on "
+            + $"{slideCount} {slideNoun}, which this extractor does not read, so {(model.ModernCommentCount == 1 ? "it does" : "they do")} "
+            + "not appear in review-comments.md."));
+    }
+
+    /// <summary>
+    ///     Reports the deck's slide comments through the sink as review comments.
+    /// </summary>
+    /// <param name="sink">The sink to report through.</param>
+    /// <param name="model">The deck model whose comments are reported.</param>
+    /// <remarks>
+    ///     <para>
+    ///         A reviewer's remark is commentary <em>about</em> the deck rather than part of it, so
+    ///         it never joins a slide's text, where a consumer could not tell a reviewer's words from
+    ///         the author's. Reporting each comment to Core instead collects them in one
+    ///         <c>review-comments.md</c> artifact.
+    ///     </para>
+    ///     <para>
+    ///         Each comment is located as <c>Slide {n}</c> using the slide's 1-based ordinal — the
+    ///         same position the content flow headings carry — because a deck's argument is
+    ///         sequential and the slide number is how a reader navigates back to it. Side effect:
+    ///         records review comments on the sink.
+    ///     </para>
+    /// </remarks>
+    private static void ReportReviewComments(IExtractionSink sink, PowerPointDeckModel model)
+    {
+        foreach (var slide in model.Slides)
+        {
+            var location = $"Slide {slide.Ordinal.ToString(CultureInfo.InvariantCulture)}";
+            foreach (var comment in slide.Comments)
+            {
+                sink.ReportReviewComment(new DocumentComment(comment.Author, comment.Text, location));
+            }
+        }
     }
 
     /// <summary>
@@ -115,6 +180,21 @@ internal static class PowerPointContentEmitter
         sink.ReportContentFeature(new ContentFeature(
             "inline images",
             model.Slides.Sum(slide => slide.Images.Count(image => imagePaths.ContainsKey(image.SourceRef)))));
+
+        // Reviewer commentary is the content least visible from a rendered deck and the most
+        // valuable in a draft, so it is inventoried by the same counts Word reports: how many
+        // remarks there are, and how many people wrote them
+        sink.ReportContentFeature(new ContentFeature(
+            "comments", model.Slides.Sum(slide => slide.Comments.Count), LookedFor: true));
+        sink.ReportContentFeature(new ContentFeature(
+            "distinct comment authors",
+            model.Slides.SelectMany(slide => slide.Comments)
+                .Select(comment => comment.Author)
+                .Where(author => author is not null)
+                .Distinct(StringComparer.Ordinal)
+                .Count(),
+            "distinct comment author",
+            LookedFor: true));
     }
 
     /// <summary>The empty path map used when images are suppressed, so content rendering emits no links.</summary>

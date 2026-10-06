@@ -15,7 +15,9 @@ throughout the repository.
   scratch folder), `manifest.json` (its machine-readable twin), `metadata.json`
   (what the document asserts about itself — creator, dates, and the like — with
   per-field provenance), `content.md` (the textual content as markdown, linking to
-  extracted images), and the `images/` and `pages/` resource folders. The output
+  extracted images), and the `images/` and `pages/` resource folders. A sixth
+  artifact, `review-comments.md`, is written conditionally — only when the source
+  document actually carries reviewer comments or annotations. The output
   layout is invariant; the extracted content is best-effort and environment-dependent,
   and whatever could not be extracted is reported explicitly with a reason rather
   than silently omitted.
@@ -41,19 +43,20 @@ throughout the repository.
 │   ├── DemaConsulting.DocDown.Core/
 │   ├── DemaConsulting.DocDown.Pdf/
 │   ├── DemaConsulting.DocDown.Pdf.Rendering/
-│   ├── DemaConsulting.DocDown.Word/
+│   ├── DemaConsulting.DocDown.Office/
 │   └── DemaConsulting.DocDown.Tool/
 └── test/
     ├── DemaConsulting.DocDown.Core.Tests/
     ├── DemaConsulting.DocDown.Pdf.Tests/
     ├── DemaConsulting.DocDown.Pdf.Rendering.Tests/
-    ├── DemaConsulting.DocDown.Word.Tests/
+    ├── DemaConsulting.DocDown.Office.Tests/
     ├── DemaConsulting.DocDown.Tool.Tests/
     └── DemaConsulting.DocDown.TestSupport/
 ```
 
-Additional libraries (`DocDown.Excel`, `DocDown.PowerPoint`, `DocDown.Visio`, `DocDown.Html`) are
+Additional libraries (`DocDown.Html`) are
 planned; each is added under `src/` with a matching `test/` project as it is implemented.
+Word, Excel, PowerPoint, and Visio support all live in `DocDown.Office`.
 
 # Language and Spelling (ALL Agents)
 

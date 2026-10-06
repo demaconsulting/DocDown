@@ -66,3 +66,61 @@ sections:
                   than a grid of blanks the emitter would have to strip.
                 tests:
                   - ExcelOpenXmlReader_Read_EmptySheet_YieldsSheetWithNoCells
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsLegacyComments
+                title: >-
+                  ExcelOpenXmlReader shall read each worksheet's legacy cell comments, resolving each
+                  comment's author through the comments part's own author list.
+                justification: |
+                  A legacy comment is the only form a workbook authored before threaded comments can
+                  carry, and it names its author only by index into a list the part itself holds, so the
+                  list is resolved first. An index naming no author yields no attribution rather than a
+                  guess, because inventing a reviewer's name is worse than stating none.
+                tests:
+                  - ExcelOpenXmlReader_Read_LegacyCommentWorkbook_ReadsCommentWithAuthor
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsThreadedComments
+                title: >-
+                  ExcelOpenXmlReader shall read each worksheet's modern threaded comments, resolving
+                  each comment's author through the workbook's person list.
+                justification: |
+                  A threaded comment carries only a person identifier, and the display names live once in
+                  the workbook's person part, so the names are loaded up front and each comment resolves
+                  through them. A reply order is preserved because a conversation read out of order
+                  misstates who answered whom, and an identifier the person list does not name yields no
+                  attribution rather than a raw identifier that would read as a name without being one.
+                tests:
+                  - ExcelOpenXmlReader_Read_ThreadedCommentWorkbook_ReadsCommentWithResolvedPerson
+                  - ExcelOpenXmlReader_Read_MultiReplyThread_KeepsEveryReplyInOrder
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-DeduplicatesThreadedAndLegacyComments
+                title: >-
+                  ExcelOpenXmlReader shall report a cell carrying both a threaded comment and a legacy
+                  comment once, keeping the threaded comment and suppressing the legacy entry.
+                justification: |
+                  A spreadsheet application writing a threaded comment also writes a legacy entry beside
+                  it so older readers still see something on the cell, so reporting both would show the
+                  same remark twice and read as two reviewers raising the same point. The threaded
+                  comment is kept because it is the authored one and the legacy entry is the
+                  backward-compatibility stand-in. The rule is positional rather than textual — a legacy
+                  comment is kept only where no threaded comment exists for that cell reference — because
+                  the placeholder wording varies by application version and locale and matching it would
+                  be guessing. A cell commented only in the threaded part has no place in the
+                  legacy part's sheet-ordered walk, so it is appended after the cells that do,
+                  keeping every remark present and every legacy-anchored position unchanged.
+                tests:
+                  - ExcelOpenXmlReader_Read_ThreadedAndLegacyOnSameCell_KeepsOnlyThreadedComment
+                  - ExcelOpenXmlReader_Read_ThreadedOnlyCell_IsAppendedAfterLegacyOrderedCells
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-AttributesCommentsToSheet
+                title: >-
+                  ExcelOpenXmlReader shall record each comment against the worksheet that carries it and
+                  the cell it annotates, and yield no comments for a workbook that has none.
+                justification: |
+                  A remark is only actionable if a reader can take it back to the cell it was made about,
+                  so the sheet and the A1 cell reference travel with the comment. A workbook with no
+                  comment parts yields no comments rather than an error, because having nothing to say is
+                  the ordinary case and not a fault.
+                tests:
+                  - ExcelOpenXmlReader_Read_MultiSheetCommentWorkbook_AttributesCommentsToOwningSheet
+                  - ExcelOpenXmlReader_Read_WorkbookWithoutComments_YieldsNoComments

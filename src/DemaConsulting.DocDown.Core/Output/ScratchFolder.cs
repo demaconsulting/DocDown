@@ -82,13 +82,17 @@ public sealed class ScratchFolder
     private const string DocDownPackagePrefix = "DemaConsulting.DocDown";
 
     /// <summary>
-    ///     The manifest schema version this library recognizes as its own output.
+    ///     The manifest schema versions this library recognizes as its own output.
     /// </summary>
     /// <remarks>
     ///     Pinned deliberately: a folder written by a future, unrecognized schema is not provably
-    ///     ours to delete, so it is refused rather than cleaned.
+    ///     ours to delete, so it is refused rather than cleaned. Every schema this library has
+    ///     emitted within the current major version is recognized, because the differences between
+    ///     them are additive — a <c>3.0</c> manifest still accounts for every file the run that
+    ///     wrote it produced — so refusing one would strand a folder this library demonstrably
+    ///     created.
     /// </remarks>
-    private const string SupportedManifestSchema = "3.0";
+    private static readonly string[] SupportedManifestSchemas = ["3.0", "3.1"];
 
     /// <summary>
     ///     The set of reserved device-name stems, compared case-insensitively.
@@ -815,8 +819,8 @@ public sealed class ScratchFolder
     ///         (1) <c>manifest.json</c> exists and is no larger than
     ///         <see cref="MaxManifestProbeBytes"/>; (2) it deserializes successfully through the
     ///         source-generated <see cref="DocDownJsonContext"/> — a truncated or corrupt file
-    ///         throws and is refused; (3) <c>schemaVersion</c> equals
-    ///         <see cref="SupportedManifestSchema"/> with an ordinal comparison; (4) <c>tool.name</c> equals
+    ///         throws and is refused; (3) <c>schemaVersion</c> is one of
+    ///         <see cref="SupportedManifestSchemas"/> with an ordinal comparison; (4) <c>tool.name</c> equals
     ///         <see cref="DocDownToolName"/> <em>exactly</em>, never as a substring;
     ///         (5) <c>tool.package</c> starts with <see cref="DocDownPackagePrefix"/>; and
     ///         (6) an <c>artifacts</c> ledger is present, which every real DocDown run writes.
@@ -854,7 +858,8 @@ public sealed class ScratchFolder
 
             // An alien JSON document deserializes with null members; require the DocDown identity exactly
             var isDocDown = manifest is not null
-                && string.Equals(manifest.SchemaVersion, SupportedManifestSchema, StringComparison.Ordinal)
+                && manifest.SchemaVersion is not null
+                && Array.IndexOf(SupportedManifestSchemas, manifest.SchemaVersion) >= 0
                 && manifest.Tool is not null
                 && string.Equals(manifest.Tool.Name, DocDownToolName, StringComparison.Ordinal)
                 && manifest.Tool.Package is not null

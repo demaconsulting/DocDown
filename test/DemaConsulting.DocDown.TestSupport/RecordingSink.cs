@@ -36,6 +36,9 @@ public sealed class RecordingSink : IExtractionSink
     /// <summary>The reported notes, in call order.</summary>
     private readonly List<ExtractionNote> _notes = [];
 
+    /// <summary>The reported reviewer comments, in call order.</summary>
+    private readonly List<DocumentComment> _reviewComments = [];
+
     /// <summary>The reported environment facts, in call order.</summary>
     private readonly List<EnvironmentFact> _environmentFacts = [];
 
@@ -72,6 +75,13 @@ public sealed class RecordingSink : IExtractionSink
     /// <summary>Gets the reported notes, in call order.</summary>
     /// <remarks>Preserves the order notes were emitted for order-sensitive assertions.</remarks>
     public IReadOnlyList<ExtractionNote> Notes => _notes;
+
+    /// <summary>Gets the reported reviewer comments, in call order.</summary>
+    /// <remarks>
+    ///     Preserves report order so a test can assert that an extractor reported a document's
+    ///     comments in the order it walked them, exactly as <c>review-comments.md</c> renders them.
+    /// </remarks>
+    public IReadOnlyList<DocumentComment> ReviewComments => _reviewComments;
 
     /// <summary>Gets the reported environment facts, in call order.</summary>
     /// <remarks>Preserves insertion order so provenance assertions read chronologically.</remarks>
@@ -166,6 +176,14 @@ public sealed class RecordingSink : IExtractionSink
         ArgumentNullException.ThrowIfNull(note);
         _notes.Add(note);
         _calls.Add(nameof(ReportNote));
+    }
+
+    /// <inheritdoc/>
+    public void ReportReviewComment(DocumentComment comment)
+    {
+        ArgumentNullException.ThrowIfNull(comment);
+        _reviewComments.Add(comment);
+        _calls.Add(nameof(ReportReviewComment));
     }
 
     /// <inheritdoc/>

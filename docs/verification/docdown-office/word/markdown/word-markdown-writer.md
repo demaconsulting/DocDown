@@ -37,7 +37,7 @@ renders as *n* hash marks; when an ordered item and a bulleted item render with 
 and the depth-appropriate indentation; when markdown metacharacters in text are escaped so they do
 not render as unintended formatting; when bold, italic, and hyperlink runs render as their markdown
 equivalents; when an image block resolves to a markdown image link whose target is the path the
-sink allocated; when comments render into a Comments section attributed to the author; when
+sink allocated; when comments on the model render nowhere in the content; when
 footnote references render inline and their content appears under a Footnotes section; and when the
 Document Control section sits after the title heading and before the body. Any block kind that
 renders as its underlying text, any escape omission, or a Document Control section placed elsewhere
@@ -69,6 +69,19 @@ Proves the run `a*b_c|d#e` renders as `a\*b\_c\|d\#e`, so literal text that happ
 markdown metacharacters does not surface as unintended formatting. Evidence for
 `DocDownWord-Markdown-WordMarkdownWriter-EscapesSpecialCharacters`.
 
+#### Plain-text rendering escapes nothing
+
+**Tests**: `WordMarkdownWriter_RenderPlainText_MarkdownCharacters_AreNotEscaped`,
+`WordMarkdownWriter_RenderPlainText_NullOrEmpty_ReturnsEmpty`
+
+Prove the same inline runs that `RenderInlines` escapes come back from `RenderPlainText` exactly as
+the document records them, and that a null or empty run sequence yields the empty string. The two
+renderings are asserted against the same markdown-significant input, which is what keeps the
+distinction real: one produces markdown for `content.md`, the other produces data for the review
+comments that travel to Core and from there into `manifest.json`. The empty case also pins the
+blankness test the reader and emitter both rely on to drop a comment that says nothing. Evidence for
+`DocDownWord-Markdown-WordMarkdownWriter-RendersPlainText`.
+
 #### Bold, italic, and hyperlink runs render as inline markdown
 
 **Test**: `WordMarkdownWriter_Write_BoldItalicAndLink_RenderInline`
@@ -96,13 +109,16 @@ Proves an image whose only text source is a nearby heading renders as `![image](
 a description the document never gave, so the alt text stays the neutral `image`. Evidence for
 `DocDownWord-Markdown-WordMarkdownWriter-NeutralAltForNonDescriptive`.
 
-#### Comments render under a Comments section
+#### Comments are not rendered into the content
 
-**Test**: `WordMarkdownWriter_Write_Comments_RendersCommentsSection`
+**Test**: `WordMarkdownWriter_Write_Comments_NotRenderedIntoContent`
 
-Proves a `## Comments` heading appears and the comment renders as `**Reviewer**: Please clarify`,
-so a reviewer's remarks are preserved distinctly from the body they annotate. Evidence for
-`DocDownWord-Markdown-WordMarkdownWriter-RendersComments`.
+Proves a model carrying a comment renders the body but no `## Comments` heading, no comment body,
+and no author name, so a consumer of `content.md` cannot mistake a reviewer's words for the
+author's. The comments still travel on the model — the emitter reports them to the core as review
+comments — so this asserts the writer's silence rather than the model's emptiness. This is a
+regression scenario guarding the removal of the rendered Comments section; the replacement behavior
+is verified under `WordContentEmitter`.
 
 #### Footnotes render as references and a Footnotes section
 

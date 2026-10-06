@@ -6,8 +6,9 @@
 
 `PdfDocumentExtractor` orchestrates one PDF extraction. It reports the managed parser context,
 buffers and opens the document, selects the pages to read, reports document information and PDF
-document metadata, delegates image and text work, writes content-inventory counts, and returns
-`ExtractionOutcome.Produced` when the extraction completes normally.
+document metadata, delegates image and text work, writes content-inventory counts, reports the
+reviewer commentary the selected pages carry, and returns `ExtractionOutcome.Produced` when the
+extraction completes normally.
 
 It does not judge the document. Ordinary absences, such as a scanned page with no glyphs or a PDF
 with no pages, are reported as factual counts rather than as failure-oriented machinery.
@@ -36,9 +37,9 @@ The instance is immutable after construction. All run-specific facts live in loc
 - **`ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context)`**
   - reports environment facts, buffers the source, opens the PDF, selects the requested pages,
   reports document information and document metadata, delegates image extraction and then text
-  rendering, writes the markdown, reports the content inventory, and returns
-  `ExtractionOutcome.Produced`. Preconditions: both arguments non-null. Postcondition: every output
-  artifact is routed through the sink.
+  rendering, writes the markdown, reports the content inventory, reports the reviewer comments the
+  selected pages carry, and returns `ExtractionOutcome.Produced`. Preconditions: both arguments
+  non-null. Postcondition: every output artifact is routed through the sink.
 - **`IEnumerable<SelfTestCase> GetSelfTestCases()`** - returns two cheap-to-enumerate cases: a
   parse round trip that reads the embedded probe document and rereads it in memory, and a
   page-rendering case that
@@ -51,7 +52,21 @@ The instance is immutable after construction. All run-specific facts live in loc
   count. Blank metadata values are normalized to absent rather than reported as empty strings.
 - **`ReportContentFeatures`** (private) - records the `pages`, `headings`, `paragraphs`, and, when
   honestly known, `inline images` content features from the same extraction pass that produced the
-  markdown and images.
+  markdown and images, together with `comments` and `distinct comment authors` counted from the
+  annotations already read. Reviewer commentary leaves `content.md` entirely for
+  `review-comments.md`, so the inventory is the only place the summary says a PDF carries any at
+  all; both counts are declared looked for, so a zero still states that the extraction inspected
+  them. The vocabulary matches what the Word, Excel, and PowerPoint backends report.
+- **`ReportReviewComments`** (private) - reports each remark `PdfAnnotationExtractor` read through
+  `IExtractionSink.ReportReviewComment`, formatting its
+  location as `Page {n}`. The location wording lives here rather than in the annotation extractor
+  because how a comment's position is phrased is a presentation decision; for a PDF the honest unit
+  of position is the page, since an annotation's rectangle locates it on the sheet rather than within
+  the prose. Driving comments and content from the same page selection is what makes it impossible
+  for a comment to arrive from a page the output does not contain. `ExtractAsync` calls
+  `PdfAnnotationExtractor.Extract` **once**, before the inventory, and passes that one result to
+  both this method and `ReportContentFeatures`, so the counts and the reported comments can never
+  describe two different walks of the same pages.
 
 ### Error Handling
 
@@ -65,10 +80,12 @@ The self-test cases are the exception to the throw-through rule. Each case conve
 
 ### Dependencies
 
-- **PdfImageExtractor** and **PdfTextExtractor** - the delegated unit work.
+- **PdfImageExtractor**, **PdfTextExtractor**, and **PdfAnnotationExtractor** - the delegated unit
+  work.
 - **PdfPig** (OTS) - document opening, page access, and the PDF document-information dictionary.
 - **DocDown.Core** - `IDocumentExtractor`, `ISelfValidating`, `IExtractionContext`,
-  `IExtractionSink`, `DocumentInfo`, `DocumentMetadata`, `ContentFeature`, and `PageRange`.
+  `IExtractionSink`, `DocumentInfo`, `DocumentMetadata`, `ContentFeature`, `DocumentComment`, and
+  `PageRange`.
 
 ### Callers
 

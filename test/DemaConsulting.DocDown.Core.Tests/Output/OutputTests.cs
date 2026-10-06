@@ -63,7 +63,7 @@ public class OutputTests
     ///     Proves the manifest parses and declares the new schema version.
     /// </summary>
     [Fact]
-    public async Task Output_ManifestContent_Written_ParsesWithSchemaVersionThreePointZero()
+    public async Task Output_ManifestContent_Written_ParsesWithSchemaVersionThreePointOne()
     {
         // Arrange: a scratch folder and a simple text write
         using var temp = new TempScratch();
@@ -75,7 +75,7 @@ public class OutputTests
         var root = document.RootElement;
 
         // Assert: the manifest uses the reduced schema and omits the removed artifacts block
-        Assert.Equal("3.0", root.GetProperty("schemaVersion").GetString());
+        Assert.Equal("3.1", root.GetProperty("schemaVersion").GetString());
         Assert.True(root.TryGetProperty("status", out _));
         Assert.True(root.TryGetProperty("notes", out _));
         Assert.False(root.TryGetProperty("artifacts", out _));
@@ -164,6 +164,36 @@ public class OutputTests
         Assert.Equal(
             "One embedded image could not be decoded and was skipped.",
             Assert.Single(manifest.RootElement.GetProperty("notes").EnumerateArray().ToList()).GetString());
+    }
+
+    /// <summary>
+    ///     Proves reported reviewer comments reach the conditional artifact, the summary, and the manifest.
+    /// </summary>
+    [Fact]
+    public async Task Output_ReviewComments_Reported_AppearInArtifactSummaryAndManifest()
+    {
+        // Arrange: a scratch folder and a write that reports one reviewer comment
+        using var temp = new TempScratch();
+        var scratch = Path.Combine(temp.Path, "out");
+
+        // Act: run the output pipeline
+        await RunPipelineAsync(temp, scratch, async sink =>
+        {
+            await sink.WriteContentAsync("# Document\n\nWith a reviewer comment.\n", CancellationToken.None);
+            sink.ReportReviewComment(new DocumentComment("Ada", "Clarify this paragraph.", "Page 1"));
+        });
+
+        // Assert: the artifact exists and both human- and machine-readable outputs account for it
+        var reviewComments = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        Assert.Contains("- **Ada** (Page 1): Clarify this paragraph.", reviewComments, StringComparison.Ordinal);
+        Assert.Contains("review-comments.md   PRESENT - 1 comment\n", summary, StringComparison.Ordinal);
+        Assert.Equal(
+            "Clarify this paragraph.",
+            Assert.Single(manifest.RootElement.GetProperty("reviewComments").EnumerateArray().ToList())
+                .GetProperty("body").GetString());
+        Assert.Equal("review-comments.md", manifest.RootElement.GetProperty("reviewCommentsPath").GetString());
     }
 
     /// <summary>
@@ -278,10 +308,11 @@ public class OutputTests
         // Let the scenario write through the sink, then finalize the standard artifacts
         await write(sink);
         var content = await ContentWriter.WriteAsync(sink, "Document", Ct);
+        var reviewComments = await ReviewCommentsWriter.WriteAsync(sink, Ct);
         var report = BuildReport(temp, options);
-        await ManifestWriter.WriteAsync(folder, sink, report, content, Ct);
+        await ManifestWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
         await MetadataWriter.WriteAsync(folder, sink, Ct);
-        await SummaryWriter.WriteAsync(folder, sink, report, content, Ct);
+        await SummaryWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
     }
 
     /// <summary>

@@ -22,7 +22,8 @@ absolute scratch path, names the selected backend, reports runtime and environme
 under `Could not read`, reproduces unreadable failure prose verbatim, remains byte-identical for the
 same content, opens with a format-sensitive gist when one is justified, outlines counted content
 features including looked-for zero counts, aggregates image reporting, omits a gist for an unknown
-format, and collapses unused available candidates into one counted summary line.
+format, collapses unused available candidates into one counted summary line, and states in the layout
+block whether `review-comments.md` was written and how many comments it records.
 
 #### Test Scenarios
 
@@ -71,6 +72,14 @@ format, and collapses unused available candidates into one counted summary line.
 ##### Images are summarized in aggregate
 
 **Test**: `SummaryWriter_WriteAsync_WithImages_SummarizesInAggregateAndExplainsTemplateImages`
+
+##### The layout block states whether review comments were written
+
+**Tests**: `SummaryWriter_WriteAsync_WithReviewComments_AnnouncesArtifactAsPresentAndCounted`,
+`SummaryWriter_WriteAsync_WithoutReviewComments_AnnouncesArtifactAsAbsent`
+
+Proves the one artifact whose presence varies with the document is reported in both directions, so a
+reader never has to infer from silence whether a review was absent or the extraction fell short.
 
 ##### Unused available candidates collapse into one counted line
 

@@ -84,19 +84,41 @@ sections:
               request and place content in the output that the caller did not ask for.
             tests:
               - PdfDocumentExtractor_ExtractAsync_PageRange_ExtractsOnlyTheRequestedPages
+              - PdfDocumentExtractor_ExtractAsync_PageRange_RestrictsReviewComments
+
+          - id: DocDownPdf-PdfDocumentExtractor-ReportsReviewComments
+            title: >-
+              PdfDocumentExtractor shall report each annotation found on the selected pages as a
+              review comment located by its 1-based page number.
+            justification: |
+              Reviewer commentary describes the document rather than belonging to it, so it travels
+              to Core through the review-comment channel instead of being written into the content.
+              The location wording belongs here rather than in the annotation extractor because how a
+              comment's position is phrased is a presentation decision; driving the comments from the
+              same page selection as the content is what makes it impossible for a comment to arrive
+              from a page the output does not contain.
+            tests:
+              - PdfDocumentExtractor_ExtractAsync_AnnotatedDocument_ReportsReviewComments
+              - PdfDocumentExtractor_ExtractAsync_PageRange_RestrictsReviewComments
+              - PdfDocumentExtractor_ExtractAsync_DocumentWithoutAnnotations_ReportsNoReviewComments
 
           - id: DocDownPdf-PdfDocumentExtractor-ReportsContentInventory
             title: >-
               PdfDocumentExtractor shall report content-inventory counts for selected pages,
-              headings, paragraphs, and inline images, including zero where it genuinely looked and
-              found none.
+              headings, paragraphs, inline images, comments, and distinct comment authors,
+              including zero where it genuinely looked and found none.
             justification: |
               The governing reporting principle is to say what was extracted and where, not to judge
               the document. Counts from the same extraction walk that produced the output keep empty
-              and text-free PDFs observable without reviving gaps or diagnostics.
+              and text-free PDFs observable without reviving gaps or diagnostics. Reviewer
+              commentary is counted here too, because it leaves content.md entirely for its own
+              artifact and the inventory is otherwise the only place the summary could say a PDF
+              carries any at all; the annotations are read once and that single result feeds both
+              the counts and the reported comments, so the two can never describe different walks.
             tests:
               - PdfDocumentExtractor_ExtractAsync_NoTextLayer_WritesImageBackedContentWithZeroTextCounts
               - PdfDocumentExtractor_ExtractAsync_ZeroPageDocument_ReportsZeroCountInventoryWithoutThrowing
+              - PdfDocumentExtractor_ExtractAsync_AnnotatedDocument_InventoriesComments
 
           - id: DocDownPdf-PdfDocumentExtractor-MapsParserFailures
             title: >-

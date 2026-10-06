@@ -24,7 +24,12 @@ used per document. The important state is:
   consumed while producing the accepted view.
 - **`_emptyTables`** — the count of authored tables that produced no visible cell content.
 - **`_currentHeading`** — the nearest preceding heading text, used as a low-confidence image naming
-  hint when the document offered no descriptive text.
+  hint when the document offered no descriptive text, and as the section half of a comment's
+  location hint.
+- **`_commentAnchors`** and **`_openCommentRanges`** — the per-read anchor table keyed by comment
+  id, and the stack of comment ranges currently bracketing run text.
+- **`SnippetMaxLength`** — the 60-character bound on a comment's quoted snippet, which keeps the
+  location hint a pointer into the document rather than a second copy of it.
 - **`OleCompoundFileSignature`** — the eight bytes `D0 CF 11 E0 A1 B1 1A E1` that front an OLE
   compound file. The reader checks these up front so it can raise a plain `WordExtractionException`
   for password-protected `.docx` containers.
@@ -37,7 +42,8 @@ used per document. The important state is:
 - **`WordDocumentModel Read(Stream docx)`** — validates the stream, checks the OLE signature, opens
   the package read-only through `WordprocessingDocument.Open()`, rebuilds numbering and footnote
   indices, walks every top-level body element via `AppendBodyElement()`, then builds document
-  control and comments. Returns a model carrying the body, document-control content, comments,
+  control and comments. Returns a model carrying the body, document-control content, comments with
+  their resolved location hints,
   footnotes, title and author from `docProps/core.xml`, producer page count from `docProps/app.xml`,
   metadata, and the counts observed during the walk.
 - **`AppendBodyElement()`** (private) — dispatches on the body element. A paragraph becomes a
@@ -46,7 +52,33 @@ used per document. The important state is:
   content survived.
 - **`AppendParagraph()`** and **`WalkContainer()`** (private) — the recursive workhorses. They
   collect styled text, hyperlinks, tracked changes, footnote references, page breaks, field
-  results, and drawings while preserving the accepted view of tracked changes.
+  results, and drawings while preserving the accepted view of tracked changes. They also track
+  comment anchors: `w:commentRangeStart` and `w:commentRangeEnd` open and close a bracketed range
+  by `w:id`, and a `w:commentReference` inside a run marks a point anchor for its id. While a range
+  is open, run text is appended to that comment's anchor snippet.
+- **`OpenCommentRange()`**, **`CloseCommentRange()`**, **`NoteCommentAnchor()`**, and
+  **`AppendAnchoredText()`** (private) — maintain the anchor table keyed by comment id. Each entry
+  records the value of `_currentHeading` at the moment the anchor was first seen, so a later
+  re-anchoring cannot overwrite the section a comment was attached to, and accumulates anchored run
+  text up to one character past the snippet bound so truncation stays detectable.
+- **`FormatCommentLocation()`** and the nested **`CommentAnchor`** type (private) — turn an anchor
+  into the display hint. The snippet collapses whitespace runs to single spaces and is ellipsized
+  at 60 characters. The hint is `§{Heading} — "{Snippet}"` when both parts are available, degrades
+  to `§{Heading}` or `"{Snippet}"` when only one is, and is `null` when the document anchored the
+  comment nowhere.
+- **`BuildComments()`** (private) — resolves every comment's location hint from the anchor table
+  *before* rendering any comment body, because rendering a body walks it through the same container
+  walk and any markers it contains must not pollute a later comment's anchor. Each `w:comment` is
+  then paired with its author, rendered inlines, and resolved location. A comment whose inlines
+  reduce to no text is **dropped**, because it says nothing — the same rule the Excel, PowerPoint,
+  and PDF readers apply, so the model-level invariant "no comment without text" holds for every
+  format. A schema-valid `w:comment` carrying no runs arises in practice from a reviewer inserting a
+  comment without typing and from a comment whose runs are all tracked deletions, and admitting one
+  would both attribute an empty remark to a named person and, because Core rejects a blank comment
+  body by contract, abort the entire extraction. A dropped comment whose only content was a picture
+  or ink is counted in `CommentsWithUnreadableContent` rather than passing silently, because the
+  reviewer did leave a remark this backend cannot render; a wholly empty comment is not counted,
+  because nothing was lost and a note would assert a shortfall that did not occur.
 - **`CollectImage()`**, **`GatherImageTextCandidates()`**, and **`FindAdjacentCaption()`**
   (private) — choose each image's naming and description text. They prefer authored descriptions
   and titles, then caption text, then object names, then the nearest heading, and they

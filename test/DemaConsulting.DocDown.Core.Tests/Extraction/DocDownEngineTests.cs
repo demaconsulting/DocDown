@@ -50,6 +50,75 @@ public class DocDownEngineTests
     }
 
     /// <summary>
+    ///     Proves a document carrying reviewer comments produces the conditional artifact and claims it.
+    /// </summary>
+    [Fact]
+    public async Task DocDownEngine_ExtractAsync_BackendReportsReviewComments_WritesAndClaimsArtifact()
+    {
+        // Arrange: a backend that reports two reviewer comments alongside the document content
+        using var temp = new TempScratch();
+        var scratch = Path.Combine(temp.Path, "out");
+        var commenting = new StubExtractor
+        {
+            Id = "text",
+            SupportedFormats = [DocumentFormat.Text],
+            ExtractBehavior = async (_, context) =>
+            {
+                await context.Sink.WriteContentAsync("# ok\n", context.CancellationToken);
+                context.Sink.ReportReviewComment(new DocumentComment("Ada", "Clarify this.", "Page 1"));
+                context.Sink.ReportReviewComment(new DocumentComment(null, "Agreed.", "Page 2"));
+                return ExtractionOutcome.Produced;
+            }
+        };
+        var engine = BuildEngine(commenting);
+
+        // Act: run the engine over the commented document
+        var result = await engine.ExtractAsync(
+            temp.CreateFile("document.txt", "hello world"), scratch, FixedOptions(), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+
+        // Assert: the artifact is claimed, present on disk, and announced in the summary layout
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Equal("review-comments.md", result.ReviewCommentsPath);
+        Assert.True(File.Exists(Path.Combine(scratch, "review-comments.md")));
+        Assert.Contains("review-comments.md", summary, StringComparison.Ordinal);
+        Assert.Contains("2 comments", summary, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves a document carrying no reviewer comments produces no artifact and claims none.
+    /// </summary>
+    [Fact]
+    public async Task DocDownEngine_ExtractAsync_NoReviewComments_WritesNoArtifactAndClaimsNone()
+    {
+        // Arrange: an ordinary backend that reports no reviewer comments
+        using var temp = new TempScratch();
+        var scratch = Path.Combine(temp.Path, "out");
+        var plain = new StubExtractor
+        {
+            Id = "text",
+            SupportedFormats = [DocumentFormat.Text],
+            ExtractBehavior = async (_, context) =>
+            {
+                await context.Sink.WriteContentAsync("# ok\n", context.CancellationToken);
+                return ExtractionOutcome.Produced;
+            }
+        };
+        var engine = BuildEngine(plain);
+
+        // Act: run the engine over the uncommented document
+        var result = await engine.ExtractAsync(
+            temp.CreateFile("document.txt", "hello world"), scratch, FixedOptions(), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+
+        // Assert: absence is reported as absence rather than as an empty artifact
+        Assert.Null(result.ReviewCommentsPath);
+        Assert.False(File.Exists(Path.Combine(scratch, "review-comments.md")));
+        Assert.Contains("review-comments.md", summary, StringComparison.Ordinal);
+        Assert.Contains("not present", summary, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves a page-rendering request against a paginated format without a renderer records a
     ///     plain note while still producing the layout.
     /// </summary>

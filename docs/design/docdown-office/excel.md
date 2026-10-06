@@ -114,10 +114,11 @@ The package's build output contains no `runtimes/` folder and no native `.dll`, 
    workbook.
 3. `ExcelOpenXmlExtractor` buffers the source, opens the package read-only, and hands the stream to
    `ExcelOpenXmlReader.Read`, which produces an `ExcelWorkbookModel` in workbook order: worksheets,
-   cells, merged ranges, images, charts, shape text, and workbook metadata.
+   cells, merged ranges, images, charts, shape text, reviewer comments, and workbook metadata.
 4. `ExcelContentEmitter.EmitAsync` writes embedded images first so worksheets can link them inline,
    writes one `Sheet` part per worksheet and one `Chart` part per chart, reports document info and
-   metadata, reports content inventory counts from the model, and records short notes only for
+   metadata, reports each cell comment to Core as a review comment, reports content inventory counts
+   from the model, and records short notes only for
    chart-read or image-write attempts it could not complete.
 5. The extractor returns `ExtractionOutcome.Produced` when workbook reading and emission complete. If
    the source cannot be opened as a workbook or carries no workbook part, the exception propagates to
@@ -148,6 +149,14 @@ extraction a faithful data container rather than a flattened dump:
   write, the emitter records a short note stating what happened. Images are written in whatever format
   the document stored them in, so a vector image written successfully is emitted silently in its source
   encoding.
+- **Reviewer comments are not content.** A cell comment is commentary *about* the workbook rather
+  than a value it carries, so it is never written into a sheet part. The reader reads both comment
+  grammars — the legacy comments part and the modern threaded comments parts — resolves each
+  author, and deduplicates a cell carrying both by preferring the threaded comment and keeping a
+  legacy comment only where no threaded comment exists for that cell reference. The emitter reports
+  each surviving remark to Core as a `DocumentComment` located `SheetName!CellRef`, for example
+  `Sheet1!B7`, and Core writes the dedicated `review-comments.md` artifact. See *ExcelOpenXmlReader
+  Design* for why the deduplication rule is positional rather than text-matched.
 - **Page rendering.** A page-rendering request is answered with silence and an environment fact naming
   the non-applicability, because a workbook has no page grid to render.
 

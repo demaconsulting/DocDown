@@ -1,9 +1,10 @@
 package DocDownPdf {
     doc
     /*
-     * DocDown.Pdf is a .NET library that extracts text, embedded images, and document
-     * metadata from PDF documents into the DocDown output contract. It is 100% managed
-     * and ships no native assets, so it deliberately provides no page rendering.
+     * DocDown.Pdf is a .NET library that extracts text, embedded images, document
+     * metadata, and reviewer annotations from PDF documents into the DocDown output
+     * contract. It is 100% managed and ships no native assets, so it deliberately
+     * provides no page rendering.
      */
 
     part def DocDownPdfSystem {
@@ -17,6 +18,7 @@ package DocDownPdf {
         part pdfDocumentExtractor : PdfDocumentExtractor;
         part pdfTextExtractor : PdfTextExtractor;
         part pdfImageExtractor : PdfImageExtractor;
+        part pdfAnnotationExtractor : PdfAnnotationExtractor;
         part pdfDocDownBuilderExtensions : PdfDocDownBuilderExtensions;
     }
 }

@@ -37,6 +37,19 @@ sections:
                 tests:
                   - ScratchFolder_Prepare_CopiedGenuineManifestAmongUserFiles_RefusesAndPreservesContents
 
+              - id: DocDownCore-Output-ScratchFolder-AdditiveSchemaAccepted
+                title: >-
+                  ScratchFolder shall recognize a prior run written under any manifest schema
+                  version this library has produced, and shall account for the artifacts that
+                  version declares.
+                justification: |
+                  The reuse guard is itself a manifest consumer, and the schema policy raises the
+                  minor version only for additive changes. Pinning the guard to a single exact
+                  version would strand folders this very library wrote, forcing a user to delete
+                  by hand output that DocDown produced and can prove it produced.
+                tests:
+                  - ScratchFolder_Prepare_PriorRunWithReviewComments_IsRecognizedAndCleaned
+
               - id: DocDownCore-Output-ScratchFolder-InventoryScopedDeletion
                 title: >-
                   ScratchFolder shall delete only manifest-accounted files and refuse when any file

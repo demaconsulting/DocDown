@@ -42,7 +42,9 @@ extraction steps that could not be completed.
 - **`AppendEnvironment`** — renders the runtime plus grouped environment facts, collapsing unused
   available candidates into a counted line pointing at `manifest.json`.
 - **`AppendDocumentMetadata`** — inlines author and modified date, then points at `metadata.json`.
-- **`AppendLayout`** — lists the fixed artifact names and resource-folder presence facts.
+- **`AppendLayout`** — lists the fixed artifact names and resource-folder presence facts, including
+  the conditional `review-comments.md` line, which states either `PRESENT - N comments` or
+  `not present - none were written` so its absence is never left to silence.
 - **`AppendWhatWasExtracted`** — reports content character count and inventory, aggregate image
   summary, rendered page count, and part count.
 - **`AppendNotes`** — renders the `Could not read` section from recorded `ExtractionNote` values.

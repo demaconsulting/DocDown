@@ -77,6 +77,13 @@ public sealed class ExtractionSink : IExtractionSink
     /// <remarks>Each note is one plain-language fact about a step the extraction could not complete.</remarks>
     private readonly List<ExtractionNote> _notes = [];
 
+    /// <summary>The recorded reviewer comments in report order.</summary>
+    /// <remarks>
+    ///     Never re-sorted, so the review reads in the order the backend walked the document —
+    ///     the same discipline applied to <see cref="_parts"/>.
+    /// </remarks>
+    private readonly List<DocumentComment> _reviewComments = [];
+
     /// <summary>The recorded environment facts in emission order.</summary>
     /// <remarks>Never re-sorted, so environment provenance reads in the order it was contributed.</remarks>
     private readonly List<EnvironmentFact> _environmentFacts = [];
@@ -338,6 +345,24 @@ public sealed class ExtractionSink : IExtractionSink
     }
 
     /// <inheritdoc />
+    public void ReportReviewComment(DocumentComment comment)
+    {
+        // Record the comment verbatim and in report order; Core neither re-attributes nor re-locates it
+        ArgumentNullException.ThrowIfNull(comment);
+        if (string.IsNullOrWhiteSpace(comment.Body))
+        {
+            throw new ArgumentException("The comment body must not be blank.", nameof(comment));
+        }
+
+        if (string.IsNullOrWhiteSpace(comment.Location))
+        {
+            throw new ArgumentException("The comment location must not be blank.", nameof(comment));
+        }
+
+        _reviewComments.Add(comment);
+    }
+
+    /// <inheritdoc />
     public void ReportEnvironmentFact(EnvironmentFact fact)
     {
         // Append in insertion order; environment provenance is deliberately never re-sorted
@@ -418,6 +443,14 @@ public sealed class ExtractionSink : IExtractionSink
     /// <summary>Gets the recorded notes in emission order.</summary>
     /// <remarks>Consumed by the writers for the summary's notes section and the manifest's <c>notes</c> array.</remarks>
     internal IReadOnlyList<ExtractionNote> Notes => _notes;
+
+    /// <summary>Gets the recorded reviewer comments in report order.</summary>
+    /// <remarks>
+    ///     Consumed by <see cref="ReviewCommentsWriter"/> for <c>review-comments.md</c> and by the
+    ///     manifest's <c>reviewComments</c> array, so the artifact and the manifest describe the same
+    ///     review in the same order.
+    /// </remarks>
+    internal IReadOnlyList<DocumentComment> ReviewComments => _reviewComments;
 
     /// <summary>Gets the recorded environment facts in emission order.</summary>
     /// <remarks>Consumed by the writers for the manifest and summary environment blocks.</remarks>
@@ -900,6 +933,23 @@ public interface IExtractionSink
     ///     <see cref="ReportContentFeature"/> at a count of zero, never here.
     /// </remarks>
     void ReportNote(ExtractionNote note);
+
+    /// <summary>
+    ///     Reports one reviewer comment or annotation the document carries, for the dedicated
+    ///     <c>review-comments.md</c> artifact.
+    /// </summary>
+    /// <param name="comment">The comment to record. Must not be null.</param>
+    /// <remarks>
+    ///     Reviewer commentary is editorial conversation about the document rather than the
+    ///     document's own content, so a backend reports it here instead of writing it into
+    ///     <c>content.md</c>. The backend composes the comment's
+    ///     <see cref="DocumentComment.Location"/> display string itself, because only it knows how a
+    ///     comment is located in its format; Core carries author, body, and location verbatim and in
+    ///     report order. This is a statement about the document, never a note: a document with no
+    ///     comments is described by the absence of the artifact (and, when the backend looked, by a
+    ///     zero-count content feature), never by <see cref="ReportNote"/>.
+    /// </remarks>
+    void ReportReviewComment(DocumentComment comment);
 
     /// <summary>
     ///     Reports an environment fact contributed by the extractor.

@@ -26,12 +26,23 @@ public static class ManifestWriter
 {
     /// <summary>The manifest schema version this writer emits.</summary>
     /// <remarks>
-    ///     Constant so the version is stated once; consumers pin it. Raised to <c>3.0</c> when the
-    ///     integrity digests, the environment block, and the requested-options echo were removed,
-    ///     because a consumer pinned to <c>2.0</c> would otherwise meet a manifest missing fields
-    ///     that schema promised.
+    ///     <para>
+    ///         Constant so the version is stated once; consumers pin it. The version is a promise
+    ///         about what a consumer will find: the <strong>major</strong> part is raised when a
+    ///         field a previous schema promised is removed or changes meaning, because a consumer
+    ///         pinned to the old version would otherwise meet a manifest missing something it relies
+    ///         on; the <strong>minor</strong> part is raised when fields are only added, because a
+    ///         consumer pinned to the earlier minor version still finds everything that version
+    ///         promised and may ignore the rest.
+    ///     </para>
+    ///     <para>
+    ///         Raised to <c>3.0</c> when the integrity digests, the environment block, and the
+    ///         requested-options echo were removed. Raised to <c>3.1</c> when the
+    ///         <c>reviewComments</c> array and the <c>reviewCommentsPath</c> member were added, which
+    ///         takes nothing away from a <c>3.0</c> consumer.
+    ///     </para>
     /// </remarks>
-    private const string SchemaVersion = "3.0";
+    private const string SchemaVersion = "3.1";
 
     /// <summary>The fixed relative name of the manifest file.</summary>
     /// <remarks>Part of the invariant output contract; never varies.</remarks>
@@ -44,6 +55,9 @@ public static class ManifestWriter
     /// <param name="sink">The sink holding the recorded content. Must not be null.</param>
     /// <param name="report">The engine-side facts describing the extraction. Must not be null.</param>
     /// <param name="content">The content-write result, or <see langword="null"/> when no content was written.</param>
+    /// <param name="reviewComments">
+    ///     The review-comments write result, or <see langword="null"/> when the writer did not run.
+    /// </param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>A task that completes when the manifest has been written.</returns>
     /// <exception cref="ArgumentNullException">Thrown when any required argument is <see langword="null"/>.</exception>
@@ -54,7 +68,8 @@ public static class ManifestWriter
     /// </remarks>
     public static async ValueTask WriteAsync(
         ScratchFolder folder, ExtractionSink sink, ExtractionReport report,
-        ContentWriteResult? content, CancellationToken cancellationToken)
+        ContentWriteResult? content, ReviewCommentsWriteResult? reviewComments,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(folder);
         ArgumentNullException.ThrowIfNull(sink);
@@ -65,7 +80,7 @@ public static class ManifestWriter
         _ = content;
 
         // Assemble the immutable DTO graph from the recorded state and the engine-side facts
-        var manifest = BuildManifest(folder, sink, report);
+        var manifest = BuildManifest(folder, sink, report, reviewComments);
 
         // Serialize via the source-generated context, then normalize endings and append a trailing newline
         var json = JsonSerializer.Serialize(manifest, DocDownJsonContext.Default.ExtractionManifest);
@@ -79,13 +94,18 @@ public static class ManifestWriter
     /// <param name="folder">The scratch folder, whose absolute path is recorded.</param>
     /// <param name="sink">The sink holding the recorded content.</param>
     /// <param name="report">The engine-side facts describing the extraction.</param>
+    /// <param name="reviewComments">
+    ///     The review-comments write result, or <see langword="null"/> when the writer did not run.
+    /// </param>
     /// <returns>The populated <see cref="ExtractionManifest"/>.</returns>
     /// <remarks>
     ///     Kept separate from serialization so the mapping (including every enum-to-string projection)
     ///     is expressed once and can be reasoned about independently of JSON formatting. Pure and
     ///     side-effect free.
     /// </remarks>
-    private static ExtractionManifest BuildManifest(ScratchFolder folder, ExtractionSink sink, ExtractionReport report) => new(
+    private static ExtractionManifest BuildManifest(
+        ScratchFolder folder, ExtractionSink sink, ExtractionReport report,
+        ReviewCommentsWriteResult? reviewComments) => new(
         SchemaVersion,
         new ManifestTool("DocDown", "DemaConsulting.DocDown.Core"),
         folder.AbsolutePath,
@@ -98,8 +118,10 @@ public static class ManifestWriter
         BuildImages(sink.Images),
         BuildPages(sink.Pages),
         BuildParts(sink.Parts),
+        BuildReviewComments(sink.ReviewComments),
         BuildNotes(sink.Notes),
-        BuildFailure(report.Failure));
+        BuildFailure(report.Failure),
+        reviewComments?.Path);
 
     /// <summary>Builds the manifest source block from the report.</summary>
     /// <param name="report">The engine-side facts.</param>
@@ -207,6 +229,26 @@ public static class ManifestWriter
         return list;
     }
 
+    /// <summary>Builds the manifest review-comment list from the recorded comments.</summary>
+    /// <param name="comments">The recorded reviewer comments in report order.</param>
+    /// <returns>The manifest review-comment DTOs in the same order.</returns>
+    /// <remarks>
+    ///     Order is preserved rather than sorted by author or location, because the backend reported
+    ///     the comments in the order it walked the document and <c>review-comments.md</c> renders the
+    ///     same order. Pure.
+    /// </remarks>
+    private static IReadOnlyList<ManifestReviewComment> BuildReviewComments(IReadOnlyList<DocumentComment> comments)
+    {
+        // Emit in report order so the manifest and review-comments.md describe the same review
+        var list = new List<ManifestReviewComment>(comments.Count);
+        foreach (var comment in comments)
+        {
+            list.Add(new ManifestReviewComment(comment.Author, comment.Body, comment.Location));
+        }
+
+        return list;
+    }
+
     /// <summary>Builds the manifest notes list from the recorded notes.</summary>
     /// <param name="notes">The recorded notes in emission order.</param>
     /// <returns>The note messages in emission order.</returns>
@@ -307,9 +349,11 @@ public sealed record ExtractionReport(
 ///     <para>
 ///         Source-generated serialization metadata is used instead of runtime reflection so
 ///         <c>manifest.json</c> can be produced in a trimmed, AOT-compiled, or single-file
-///         published application without losing type metadata. Registering only
-///         <see cref="ExtractionManifest"/> is sufficient because the generator walks the entire
-///         reachable graph of nested records from that root.
+///         published application without losing type metadata. Registering
+///         <see cref="ExtractionManifest"/> is sufficient for the nested graph, because the generator
+///         walks every record reachable from that root; <see cref="ManifestReviewComment"/> is
+///         registered explicitly as well so the conditional review-comments entry is a stated part of
+///         the serialized contract rather than one that happens to be reachable.
 ///     </para>
 ///     <para>
 ///         The options mirror the manifest contract: camelCase property names, indented output
@@ -329,6 +373,7 @@ public sealed record ExtractionReport(
     WriteIndented = true,
     DefaultIgnoreCondition = JsonIgnoreCondition.Never)]
 [JsonSerializable(typeof(ExtractionManifest))]
+[JsonSerializable(typeof(ManifestReviewComment))]
 internal sealed partial class DocDownJsonContext : JsonSerializerContext;
 
 /// <summary>

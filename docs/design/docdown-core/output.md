@@ -18,12 +18,14 @@ properties:
   deliberate zero for a looked-for feature; notes describe only attempted extraction steps that could
   not be completed.
 
-The subsystem contains six documented units:
+The subsystem contains seven documented units:
 
 - **ScratchFolder** — owns the output directory and enforces path safety. See _ScratchFolder Design_.
 - **ExtractionSink** — concrete `IExtractionSink`; allocates paths, writes images and pages, buffers
   content and parts, and records notes and content features. See _ExtractionSink Design_.
 - **ContentWriter** — finalizes `content.md` and any `parts/` files. See _ContentWriter Design_.
+- **ReviewCommentsWriter** — finalizes `review-comments.md`, and only when the document carries
+  reviewer comments. See _ReviewCommentsWriter Design_.
 - **SummaryWriter** — serializes the human-readable `summary.txt`. See _SummaryWriter Design_.
 - **ManifestWriter** — serializes `manifest.json`. See _ManifestWriter Design_.
 - **ImageTextSelector** — shared image-text ranking policy used by backends when they derive image
@@ -39,11 +41,13 @@ The subsystem exposes:
 
 - **`IExtractionSink`** — the write-only surface handed to a backend: `AddImageAsync`,
   `AddPageAsync`, `WriteContentAsync`, `AddContentPartAsync`, `ReportDocumentInfo`,
-  `ReportDocumentMetadata`, `ReportContentFeature`, `ReportNote`, and `ReportEnvironmentFact`.
+  `ReportDocumentMetadata`, `ReportContentFeature`, `ReportNote`, `ReportReviewComment`, and
+  `ReportEnvironmentFact`.
 - **`ScratchFolder`** — `Prepare`, `Combine`, `EnsureSubfolder`, `SafePathCombine`, `Slugify`,
   `IsReservedDeviceName`, and `ValidateTotalPathLength`.
 
-The engine drives `ContentWriter`, `MetadataWriter`, `ManifestWriter`, and `SummaryWriter`; extractors
+The engine drives `ContentWriter`, `ReviewCommentsWriter`, `MetadataWriter`, `ManifestWriter`, and
+`SummaryWriter`; extractors
 touch only `IExtractionSink`.
 
 ### Design
@@ -58,10 +62,12 @@ content key, allocates page and part paths in Core, and records the extractor's 
 self-reported metadata, content features, notes, and environment facts.
 
 `ContentWriter` decides the shape of `content.md`: a single flow, or an index over part files.
-`MetadataWriter` always writes `metadata.json`, omitting blank metadata fields while
-preserving authored values and their provenance. `ManifestWriter` emits schema version `3.0`, which
+`ReviewCommentsWriter` writes `review-comments.md` only when the document carries reviewer comments,
+so the file's absence states that no review was found rather than an empty file asserting an empty
+review. `MetadataWriter` always writes `metadata.json`, omitting blank metadata fields while
+preserving authored values and their provenance. `ManifestWriter` emits schema version `3.1`, which
 records the tool, scratch folder, source, selected extractor, document metadata,
-content features, image/page/part inventories, notes, and any unreadable failure.
+content features, image/page/part inventories, reviewer comments, notes, and any unreadable failure.
 `SummaryWriter` emits the fixed plain-text sections: title and gist, header, optional failure,
 backend, environment, document metadata, layout, what was extracted, and the `Could not read` notes
 block.

@@ -36,12 +36,43 @@ folder:
 - **`content.md`** — the textual content as markdown, linking to the extracted images.
 - **`images/` and `pages/`** — extracted image resources and optional rendered page images.
 
+A sixth artifact is written **conditionally**:
+
+- **`review-comments.md`** — the reviewer commentary the document carries, written only when the
+  document actually carries reviewer comments or annotations.
+
+The conditionality is deliberate and is itself part of the contract. Reviewer commentary is
+editorial conversation *about* a document rather than the document's own content, so interleaving it
+into `content.md` would force every consumer to filter one out of the other. An *empty*
+`review-comments.md`, meanwhile, would assert that a review took place and produced nothing — a
+different claim from the document never having been commented on. The absence of comments is
+therefore reported as the absence of the file, and, because silence is not an answer, as an explicit
+`not present - none were written` line in the `summary.txt` layout block and a null
+`reviewCommentsPath` in `manifest.json`. A consumer can test for the file rather than parse it to
+learn the same thing.
+
+Each comment records its author (or states that the document records none), its body, and a
+**location**: one precomputed, human-readable display string naming where in the document the comment
+sits. It is deliberately not a structured address, because the in-scope formats locate a comment in
+genuinely different terms, and any shared structure would be mostly-null fields that each consumer
+would have to re-render anyway. The backend that knows the format composes the phrase once, in its
+own vocabulary:
+
+| Format | `Location` convention | Example |
+| --- | --- | --- |
+| Word | enclosing heading plus the commented-on words | `§Overview — "the system…"` |
+| Excel | sheet and cell reference | `Sheet1!B7` |
+| PowerPoint | slide ordinal | `Slide 4` |
+| PDF | page ordinal | `Page 12` |
+
 Three principles constrain every design decision in this document:
 
 - **The output layout is invariant; an extraction is either produced or unreadable.** What can be
   extracted legitimately varies with the operating system and the installed applications. A
   consumer may therefore rely on the *shape* of produced output without treating the result as a
-  quality grade.
+  quality grade. The one artifact whose *presence* varies, `review-comments.md`, varies with the
+  document rather than with the environment, and its presence or absence is stated explicitly in
+  both `summary.txt` and `manifest.json` — so the invariant a consumer relies on is preserved.
 - **Reporting is factual and limited.** The content inventory counts what the extractor looked for,
   including deliberate zeros, and notes record only steps DocDown attempted but could not
   complete.

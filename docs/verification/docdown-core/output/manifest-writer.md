@@ -17,17 +17,27 @@ exact schema it emits, so the real file is the verification target.
 
 #### Acceptance Criteria
 
-Per IEC 62304 §5.5.2, `ManifestWriter` passes when it declares schema version 3.0, records the tool,
-selected backend, scratch path, and status, emits notes in order, records the reduced extractor shape,
-omits the removed top-level keys, the environment block, the requested-options echo, and every
-integrity digest, writes deterministic no-BOM JSON, projects image transforms to the manifest
-vocabulary, and records per-image referrers, template flags, and descriptions.
+Per IEC 62304 §5.5.2, `ManifestWriter` passes when it declares schema version 3.1, records the tool,
+selected backend, scratch path, and status, emits notes in order, serializes the recorded reviewer
+comments and claims the review-comments artifact only when one was written, records the reduced
+extractor shape, omits the removed top-level keys, the environment block, the requested-options echo,
+and every integrity digest, writes deterministic no-BOM JSON, projects image transforms to the
+manifest vocabulary, and records per-image referrers, template flags, and descriptions.
 
 #### Test Scenarios
 
-##### The schema version is declared as 3.0
+##### The schema version is declared as 3.1
 
-**Test**: `ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionThreePointZero`
+**Test**: `ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionThreePointOne`
+
+##### Reviewer comments are serialized and the artifact path is claimed honestly
+
+**Tests**: `ManifestWriter_WriteAsync_NoReviewComments_SerializesEmptyArrayAndNullPath`,
+`ManifestWriter_WriteAsync_ReviewCommentsReported_SerializesCommentsInOrderAndClaimsPath`
+
+Proves the `reviewComments` array is always present — so a consumer never has to distinguish "no
+comments" from "field missing" — while `reviewCommentsPath` is claimed only when a file exists behind
+it.
 
 ##### A produced run records tool, backend, scratch folder, and status
 

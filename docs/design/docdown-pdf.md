@@ -3,25 +3,30 @@
 ![DocDown.Pdf Structure](DocDownPdfView.svg)
 
 `DocDown.Pdf` is the managed PDF extraction backend for DocDown. It reads document metadata, page
-text, and embedded images from a PDF and writes the extracted facts through `IExtractionSink`. Its
-reporting model is intentionally narrow: DocDown reports what it extracted and where. Ordinary
-document absences become content-inventory counts, and attempted steps that could not complete
-become short factual notes.
+text, embedded images, and reviewer annotations from a PDF and writes the extracted facts through
+`IExtractionSink`. Its reporting model is intentionally narrow: DocDown reports what it extracted
+and where. Ordinary document absences become content-inventory counts, and attempted steps that
+could not complete become short factual notes.
 
 ## Architecture
 
-The system is flat: it has no subsystems. Four units divide the work.
+The system is flat: it has no subsystems. Five units divide the work.
 
 - **PdfDocumentExtractor** is the backend the engine selects and invokes. It reports parser and
   page-rendering environment facts, buffers the source, opens the document, selects pages, reports
   document metadata, delegates image and text extraction, writes the markdown content, reports the
-  content inventory, and returns `ExtractionOutcome.Produced` on normal completion. Parser faults
-  propagate to Core, which converts them to `ExtractionOutcome.Unreadable`.
+  content inventory, reports the reviewer comments the selected pages carry, and returns
+  `ExtractionOutcome.Produced` on normal completion. Parser faults propagate to Core, which converts
+  them to `ExtractionOutcome.Unreadable`.
 - **PdfTextExtractor** turns positioned glyphs into markdown in reading order, emits page markers,
   places image links under the page they came from, and counts the headings and paragraphs it wrote.
 - **PdfImageExtractor** writes embedded images through the sink, chooses whether each image is
   passed through or decoded to PNG, counts every image found before any decision is taken, and
   emits plain notes for undecodable images, size-limit skips, and PNG requests it could not honor.
+- **PdfAnnotationExtractor** reads the reviewer commentary a PDF carries as annotations, applies a
+  documented list of annotation types that count as commentary, skips annotations carrying no text,
+  resolves each remark's author from the annotation dictionary, and returns the author, body, and
+  1-based page of every remark in document order.
 - **PdfDocDownBuilderExtensions** is the registration seam. The single `AddPdf` call adds this
   backend to a `DocDownBuilder`.
 
@@ -74,7 +79,9 @@ separate `DocDown.Pdf.Rendering` package.
 - **Provenance segregation.** `PdfImageExtractor` chooses the bytes, media type, and transform hint
   together so the manifest cannot describe an image differently from how it was produced.
 - **Failure containment.** Encrypted and malformed PDFs propagate as parser faults for Core to
-  convert into unreadable outcomes with the standard output layout still written.
+  convert into unreadable outcomes with the standard output layout still written. Annotation reading
+  is the one exception: it is guarded per page, so a damaged comment cannot cost a reader a document
+  whose text and images were perfectly readable.
 - **Count-from-source reporting.** Content inventory counts come from the same extraction walk that
   produced the markdown and images, so zero counts describe what was actually looked for rather than
   what a later heuristic inferred.
@@ -91,9 +98,11 @@ separate `DocDown.Pdf.Rendering` package.
    emits a plain note when an attempted image step could not complete.
 5. `PdfTextExtractor` renders the selected pages to markdown, emits page markers, places image
    links, and returns the heading and paragraph counts from the same rendering pass.
-6. `PdfDocumentExtractor` writes the markdown, reports the content inventory, and returns
-   `ExtractionOutcome.Produced`.
-7. If the parser faults while opening or reading the document, Core converts that fault into
+6. `PdfDocumentExtractor` writes the markdown and reports the content inventory.
+7. It asks `PdfAnnotationExtractor` to read the same selected pages' annotations, reports each
+   remark as a review comment located by its page, and returns `ExtractionOutcome.Produced`. Core
+   writes `review-comments.md` only when at least one remark was reported.
+8. If the parser faults while opening or reading the document, Core converts that fault into
    `ExtractionOutcome.Unreadable` and writes the standard summary and manifest layout.
 
 ## Design Constraints
@@ -111,3 +120,6 @@ separate `DocDown.Pdf.Rendering` package.
 - **Notes are reserved for incomplete steps.** A note is emitted only when DocDown attempted a step
   and could not complete it. An image written successfully as `.jp2` is counted as extracted and
   carries no extra note.
+- **Commentary is separated from content.** Reviewer annotations are reported through the
+  review-comment channel and never written into `content.md`. A remark describes the document rather
+  than belonging to it, and a reader who cannot tell the two apart cannot trust either.

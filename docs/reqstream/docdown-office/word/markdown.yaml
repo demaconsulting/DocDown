@@ -13,7 +13,7 @@ sections:
           - id: DocDownWord-Markdown-ModelRendering
             title: >-
               The subsystem shall render the document model — headings, lists, inline formatting,
-              images, comments, footnotes, and Document Control — to a markdown flow.
+              images, footnotes, and Document Control — to a markdown flow.
             justification: |
               The content document is markdown, so every structural element the model carries has to
               be projected onto markdown's own vocabulary. Owning that projection in one renderer
@@ -25,8 +25,8 @@ sections:
               - DocDownWord-Markdown-WordMarkdownWriter-RendersInlineFormatting
               - DocDownWord-Markdown-WordMarkdownWriter-RendersImageLink
               - DocDownWord-Markdown-WordMarkdownWriter-NeutralAltForNonDescriptive
-              - DocDownWord-Markdown-WordMarkdownWriter-RendersComments
               - DocDownWord-Markdown-WordMarkdownWriter-RendersFootnotes
+              - DocDownWord-Markdown-WordMarkdownWriter-RendersPlainText
               - DocDownWord-Markdown-WordMarkdownWriter-PlacesDocumentControl
             tests:
               - WordMarkdownWriter_Write_Headings_RendersHashLevels
@@ -52,8 +52,8 @@ sections:
           - id: DocDownWord-Markdown-ModelEmission
             title: >-
               The subsystem shall emit a document model's content, images, content inventory,
-              metadata, and extraction notes through one path that is independent of how the model
-              was read.
+              reviewer comments, metadata, and extraction notes through one path that is
+              independent of how the model was read.
             justification: |
               Reading a document and rendering what was read are separate concerns. Holding every
               emission decision in one path, driven only by the model, is what makes each mapping
@@ -62,6 +62,8 @@ sections:
             children:
               - DocDownWord-Markdown-WordContentEmitter-EmitsModelContent
               - DocDownWord-Markdown-WordContentEmitter-ReportsContentInventory
+              - DocDownWord-Markdown-WordContentEmitter-ReportsReviewComments
+              - DocDownWord-Markdown-WordContentEmitter-ReportsImageOnlyCommentsNote
               - DocDownWord-Markdown-WordContentEmitter-ReportsChartNote
               - DocDownWord-Markdown-WordContentEmitter-ReportsFlattenedTableNote
             tests:

@@ -17,7 +17,7 @@ serialized object uses only strings, numbers, booleans, nulls, and lists.
 
 #### On-disk format
 
-`manifest.json` is emitted with schema version `3.0`, `
+`manifest.json` is emitted with schema version `3.1`, `
 ` line endings, and UTF-8 without a byte
 order mark. The top-level shape contains:
 
@@ -33,25 +33,31 @@ order mark. The top-level shape contains:
 - `images`
 - `pages`
 - `parts`
+- `reviewComments`
+- `reviewCommentsPath`
 - `notes`
 - `failure`
 
-The file contains only the schema 3.0 top-level fields listed above. Schema 3.0 dropped the
+The file contains only the schema 3.1 top-level fields listed above. Schema 3.0 dropped the
 `environment` block, the `requestedOptions` echo, and every SHA-256 digest, because the manifest
 describes the document that was extracted rather than the machine that ran the extraction or the
 arguments the caller supplied; `summary.txt` keeps its Environment section. The selected extractor
 shape is limited to identifier, display name, owning package, and priority. Notes are emitted as
-plain strings in emission order.
+plain strings in emission order. Schema 3.1 added `reviewComments` and `reviewCommentsPath`; the
+minor version was raised rather than the major one because the change is purely additive, so a
+consumer pinned to 3.0 still finds everything 3.0 promised. The `reviewComments` array is always
+serialized, possibly empty, while `reviewCommentsPath` is null unless the conditional artifact was
+actually written.
 
 #### Key Methods
 
 - **`WriteAsync(ScratchFolder folder, ExtractionSink sink, ExtractionReport report,
-  ContentWriteResult? content, CancellationToken cancellationToken)`** — builds the DTO graph and
-  writes the serialized JSON.
+  ContentWriteResult? content, ReviewCommentsWriteResult? reviewComments,
+  CancellationToken cancellationToken)`** — builds the DTO graph and writes the serialized JSON.
 - **`BuildManifest`** — maps the report and sink state to the immutable DTO graph.
 - **`BuildSource`**, **`BuildExtractor`**, **`BuildDocument`**, **`BuildContentFeatures`**,
-  **`BuildImages`**, **`BuildPages`**, **`BuildParts`**, **`BuildNotes`**, and **`BuildFailure`**
-  — focused mapping helpers.
+  **`BuildImages`**, **`BuildPages`**, **`BuildParts`**, **`BuildReviewComments`**, **`BuildNotes`**,
+  and **`BuildFailure`** — focused mapping helpers.
 - **`FormatTimestamp`**, **`OutcomeString`**, **`BasisString`**, and **`TransformString`** —
   projection helpers for stable schema strings.
 
@@ -71,4 +77,5 @@ a consumer as undocumented output.
 
 #### Callers
 
-`DocDownEngine` calls `ManifestWriter` after `ContentWriter` and before `MetadataWriter`.
+`DocDownEngine` calls `ManifestWriter` after `ContentWriter` and `ReviewCommentsWriter`, and before
+`MetadataWriter`.

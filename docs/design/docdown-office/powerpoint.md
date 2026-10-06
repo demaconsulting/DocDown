@@ -91,6 +91,18 @@ interop assembly.
   emission path by delegation, so a deck's content is not reimplemented in two places.
 - **Speaker notes are always read from the file.** The Open XML reader reads the notes body's text for
   each slide, so the narration that never appears in a slide image is recovered directly from the deck.
+- **Reviewer comments are not content, and only the legacy grammar is read.** A slide comment is
+  commentary *about* the deck rather than part of it, so it is never written into the content flow;
+  the emitter reports it to Core as a `DocumentComment` located `Slide {n}` and Core writes the
+  dedicated `review-comments.md` artifact. Authors are resolved through the presentation's
+  comment-author list. **The modern persona-based, cloud-synced comments that current PowerPoint
+  writes are a stated scope limitation: they are deliberately not read. This is a scope choice, not
+  a tooling limit — `DocumentFormat.OpenXml 3.5.1` does expose the part and its grammar; what could
+  not be validated here is the modern author model, and attributing a reviewer's words on unverified
+  reasoning is a worse outcome than stating the boundary.** A deck whose comments are all modern is
+  not silently reported as having no comments at all: the reader counts those comments and the
+  emitter states the unread count as a note. See *PowerPointOpenXmlReader Design* for the full
+  statement of that boundary.
 - **Two reporting forms only.** The system uses content inventory for what was looked for and found,
   including counted zeros, and plain notes only when an attempted step could not be completed. It does
   not classify ordinary document content as acceptable or unacceptable.
@@ -112,10 +124,12 @@ interop assembly.
    and that rendered pages are not provided by that extractor. It buffers the source and calls
    `PowerPointOpenXmlReader.Read`.
 3. `PowerPointOpenXmlReader.Read` produces a `PowerPointDeckModel`: slides in presentation order,
-   each with its title, body text lines, speaker notes, and inline image references, plus deduplicated
+   each with its title, body text lines, speaker notes, inline image references, and legacy reviewer
+   comments, plus deduplicated
    embedded images and document metadata.
 4. `PowerPointContentEmitter.EmitAsync` writes embedded images, writes the deck content, reports
-   document information and metadata, and reports the content inventory. A deck with no slides becomes
+   document information and metadata, reports each slide comment to Core as a review comment, and
+   reports the content inventory. A deck with no slides becomes
    an empty content file plus zero-count inventory. Image steps that exceed a caller size limit
    become short plain notes.
 5. When the COM backend runs, it delegates steps 2-4 to the managed backend against a composing sink,

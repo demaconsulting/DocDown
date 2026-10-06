@@ -15,7 +15,10 @@ namespace DocDown.Word.Markdown;
 ///     every header and footer was page furniture. Each subsection carries its own block sequence,
 ///     so a header holding a table or a logo flows through the same writer as the body.
 /// </param>
-/// <param name="Comments">The document's comments, author-attributed, rendered into a <c>## Comments</c> section.</param>
+/// <param name="Comments">
+///     The document's comments, author-attributed and location-hinted, reported to Core as review
+///     comments for <c>review-comments.md</c> rather than rendered into <c>content.md</c>.
+/// </param>
 /// <param name="Footnotes">The footnote and endnote bodies, referenced from the body as <c>[^n]</c> and rendered in a <c>## Footnotes</c> section.</param>
 /// <param name="Title">The document title from <c>docProps/core.xml</c>, or <see langword="null"/> when blank or absent.</param>
 /// <param name="Author">The document author from <c>docProps/core.xml</c>, or <see langword="null"/> when blank or absent.</param>
@@ -52,6 +55,12 @@ namespace DocDown.Word.Markdown;
 ///     <see langword="null"/> when not captured (for example a hand-built test model). Carried on the
 ///     model so the emitter can report it once through the sink for <c>metadata.json</c>.
 /// </param>
+/// <param name="CommentsWithUnreadableContent">
+///     The number of comments dropped because their only content was a picture or ink and they
+///     carried no text this backend could render. A reviewer did write something there, so the
+///     emitter states the shortfall as an extraction note rather than letting those remarks vanish
+///     without trace; a wholly empty comment is not counted here, because nothing was lost.
+/// </param>
 /// <remarks>
 ///     The counts live on the model rather than being recomputed because only the reader, walking
 ///     the document once, can observe them; the emitter turns them into inventory counts and notes.
@@ -71,7 +80,8 @@ internal sealed record WordDocumentModel(
     int HeaderFooterPartsPageFurniture,
     int EmptyTablesSkipped,
     int ChartsFound = 0,
-    DocumentMetadata? Metadata = null);
+    DocumentMetadata? Metadata = null,
+    int CommentsWithUnreadableContent = 0);
 
 /// <summary>
 ///     One surviving header or footer, rendered as a labeled subsection of <c>## Document Control</c>.
@@ -89,8 +99,14 @@ internal sealed record WordDocumentControlSection(string Label, IReadOnlyList<Wo
 /// </summary>
 /// <param name="Author">The comment author, or <see langword="null"/> when the document records none.</param>
 /// <param name="Content">The comment's inline content.</param>
+/// <param name="Location">
+///     A human-readable hint naming where the comment is anchored — the nearest preceding heading
+///     and a short quoted snippet of the anchored text — or <see langword="null"/> when the document
+///     carries no usable anchor markers for it. Advisory only: it is never invented, so a comment
+///     whose anchor is missing simply has none.
+/// </param>
 /// <remarks>Immutable and thread-safe.</remarks>
-internal sealed record WordComment(string? Author, IReadOnlyList<WordInline> Content);
+internal sealed record WordComment(string? Author, IReadOnlyList<WordInline> Content, string? Location = null);
 
 /// <summary>
 ///     A single block in the backend-neutral document model.

@@ -1,6 +1,6 @@
 package DocDownPdf {
     part def PdfDocumentExtractor {
-        doc /* Orchestrates a PDF extraction: availability, metadata, delegation, the content inventory, and notes. */
+        doc /* Orchestrates a PDF extraction: availability, metadata, delegation, the content inventory including the comment and comment-author counts taken from a single annotation pass shared with the review comments, and notes. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Pdf/PdfDocumentExtractor.cs */
         comment testRef /* Test: test/DemaConsulting.DocDown.Pdf.Tests/PdfDocumentExtractorTests.cs */

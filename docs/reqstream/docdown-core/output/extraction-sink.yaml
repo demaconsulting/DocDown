@@ -65,6 +65,22 @@ sections:
                   document or reconstructing extractor decisions.
                 tests:
                   - ExtractionSink_Reports_RecordedForLaterSerialization
+
+              - id: DocDownCore-Output-ExtractionSink-RecordsReviewComments
+                title: >-
+                  ExtractionSink shall record reported reviewer comments in report order and reject
+                  a comment that carries no body or no location.
+                justification: |
+                  The review-comments writer consumes the sink's recorded comments rather than
+                  re-reading the document, so the sink must preserve the backend's ordering. A
+                  comment with nothing to say, or with nowhere to point, cannot be rendered into an
+                  honest entry, so it is refused at the boundary where the defective caller can
+                  still be identified.
+                tests:
+                  - ExtractionSink_ReportReviewComment_Reported_RetainedInReportOrder
+                  - ExtractionSink_ReportReviewComment_BlankBody_ThrowsArgumentException
+                  - ExtractionSink_ReportReviewComment_BlankLocation_ThrowsArgumentException
+                  - ExtractionSink_ReportReviewComment_NullComment_ThrowsArgumentNullException
                   - ExtractionSink_ReportContentFeature_RepeatedLabels_AccumulateAndDropZeroCounts
                   - ExtractionSink_ReportContentFeature_LookedForZero_IsReported
 

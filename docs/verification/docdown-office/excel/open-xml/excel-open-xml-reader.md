@@ -65,3 +65,64 @@ Proves the worksheets come out in workbook order, each carrying its tab name. Ev
 
 Proves a worksheet with no populated cells yields a sheet with no cells rather than a grid of blanks.
 Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlReader-DropsEmptyCells`.
+
+#### A legacy-only comment is read with its author
+
+**Test**: `ExcelOpenXmlReader_Read_LegacyCommentWorkbook_ReadsCommentWithAuthor`
+
+Proves a worksheet whose only comment lives in the legacy comments part reaches the model with its cell
+reference, its text, and the author name resolved through that part's own author list. Evidence for
+`DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsLegacyComments`.
+
+#### A threaded-only comment is read with its person resolved
+
+**Test**: `ExcelOpenXmlReader_Read_ThreadedCommentWorkbook_ReadsCommentWithResolvedPerson`
+
+Proves a worksheet whose only comment lives in a threaded comments part reaches the model with its cell
+reference, its text, and the display name resolved through the workbook's person part rather than the raw
+person identifier. Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsThreadedComments`.
+
+#### A cell carrying both grammars reports the threaded remark once
+
+**Test**: `ExcelOpenXmlReader_Read_ThreadedAndLegacyOnSameCell_KeepsOnlyThreadedComment`
+
+Proves the deduplication rule. The fixture places a threaded comment and a legacy backward-compatibility
+entry on the same cell, with deliberately different text so the surviving one is identifiable. Exactly one
+comment reaches the model, and it is the threaded one. This is what stops a reader from seeing one remark
+twice and taking it as two reviewers raising the same point. Evidence for
+`DocDownExcel-OpenXml-ExcelOpenXmlReader-DeduplicatesThreadedAndLegacyComments`.
+
+#### Comments stay with the worksheet that carries them
+
+**Test**: `ExcelOpenXmlReader_Read_MultiSheetCommentWorkbook_AttributesCommentsToOwningSheet`
+
+Proves a two-sheet workbook with a different comment and author on each sheet reports each remark against
+the sheet and cell that carries it, so attribution is proven rather than assumed from a single-sheet case.
+Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlReader-AttributesCommentsToSheet`.
+
+#### A workbook with no comment parts yields no comments
+
+**Test**: `ExcelOpenXmlReader_Read_WorkbookWithoutComments_YieldsNoComments`
+
+Proves the ordinary case — a workbook nobody reviewed — yields sheets with no comments rather than an
+error. Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlReader-AttributesCommentsToSheet`.
+
+#### A multi-reply thread keeps every reply, in order
+
+**Test**: `ExcelOpenXmlReader_Read_MultiReplyThread_KeepsEveryReplyInOrder`
+
+Proves a cell whose threaded conversation carries three turns yields all three, with their authors,
+in the order they were written. A rule that kept only a thread's first turn would discard the replies
+that usually carry the resolution, and a single-comment fixture cannot tell the two behaviors apart;
+reply order is asserted because a conversation read out of sequence reverses who answered whom.
+Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsThreadedComments`.
+
+#### A threaded-only cell is appended after the legacy-ordered cells
+
+**Test**: `ExcelOpenXmlReader_Read_ThreadedOnlyCell_IsAppendedAfterLegacyOrderedCells`
+
+Proves a cell commented only in the threaded part appears after the cells the legacy part orders,
+and that a cell carrying both keeps the position its legacy entry held. The whole reference sequence
+is pinned rather than only the trailing cell, because the fixture's threaded-only cell sorts last
+anyway and an assertion on it alone could pass by luck. Evidence for
+`DocDownExcel-OpenXml-ExcelOpenXmlReader-DeduplicatesThreadedAndLegacyComments`.
