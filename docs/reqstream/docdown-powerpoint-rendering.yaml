@@ -132,6 +132,21 @@ sections:
         tests:
           - PowerPointPageRenderingExtractor_ExtractAsync_SlideCountFaults_ReportsNoteAndKeepsDelegatedContent
 
+      - id: DocDownPowerPointRendering-EmptySelectionReportedAsNote
+        title: >-
+          The system shall report, as a single plain note, when page rendering was requested and a
+          renderer was available but no slide was selected to render.
+        tags: [system]
+        justification: |
+          Core cannot reliably distinguish this package's own empty-outcome explanation from an
+          unrelated note already recorded elsewhere in the same extraction (for example, during the
+          delegated managed backend's earlier content phase), so this package records the note itself
+          from its own selected-slide count rather than relying on Core to infer it.
+        children:
+          - DocDownPowerPointRendering-PowerPointPageRenderingExtractor-ReportsEmptySelectionAsNote
+        tests:
+          - PowerPointPageRenderingExtractor_ExtractAsync_PageRangeSelectsNoSlide_ReportsEmptyPagesNote
+
       - id: DocDownPowerPointRendering-HonorsDpi
         title: The system shall render slides at the requested dots-per-inch.
         tags: [system]

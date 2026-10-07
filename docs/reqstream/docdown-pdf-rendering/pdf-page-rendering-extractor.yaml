@@ -78,6 +78,22 @@ sections:
             tests:
               - PdfPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsNoteWithoutThrowing
 
+          - id: DocDownPdfRendering-PdfPageRenderingExtractor-ReportsEmptySelectionAsNote
+            title: >-
+              PdfPageRenderingExtractor shall report the plain note "Page rendering was requested and
+              a renderer was available, but no pages were produced." itself whenever page rendering
+              was requested and no page was selected to render.
+            justification: |
+              Core cannot distinguish this backend's own empty-outcome explanation from an unrelated
+              note the delegated managed backend may already have recorded during the earlier,
+              separate extraction phase (for example, an embedded-image fault), so it no longer
+              attempts to infer or suppress a generic note on this backend's behalf. Recording the
+              note from the backend's own selected-page count, which is immune to any unrelated note
+              recorded elsewhere, is what keeps the empty-pages outcome explained exactly once without
+              relying on sink history.
+            tests:
+              - PdfPageRenderingExtractor_ExtractAsync_PageRangeSelectsNoPage_ReportsEmptyPagesNote
+
           - id: DocDownPdfRendering-PdfPageRenderingExtractor-ContributesSelfTests
             title: >-
               PdfPageRenderingExtractor shall contribute a render round-trip self-test case named

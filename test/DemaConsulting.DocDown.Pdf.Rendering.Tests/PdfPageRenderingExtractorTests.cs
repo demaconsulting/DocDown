@@ -142,6 +142,39 @@ public class PdfPageRenderingExtractorTests
     }
 
     /// <summary>
+    ///     Proves this backend records its own "no pages were produced" note when the requested
+    ///     page range selects no page, without relying on Core.
+    /// </summary>
+    /// <remarks>
+    ///     This note is recorded entirely from this backend's own local knowledge (the selected
+    ///     page count), never from counting unrelated notes elsewhere in the sink, so it cannot be
+    ///     wrongly suppressed by a note the delegated base backend records for an unrelated reason.
+    /// </remarks>
+    [Fact]
+    public async Task PdfPageRenderingExtractor_ExtractAsync_PageRangeSelectsNoPage_ReportsEmptyPagesNote()
+    {
+        // Arrange: the generated document has one page; request a range beyond it
+        using var temp = new TempScratch();
+        var engine = new DocDownBuilder().AddPdfRendering().Build();
+        var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
+        var scratch = Path.Combine(temp.Path, "out");
+        var options = RenderOptions();
+        options.Pages = new PageRange(5, 6);
+
+        // Act
+        var result = await engine.ExtractAsync(input, scratch, options, Ct);
+
+        // Assert: a single note explains the empty outcome and no page file was written
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        var note = Assert.Single(result.Notes);
+        Assert.Equal(
+            "Page rendering was requested and a renderer was available, but no pages were produced.",
+            note.Message);
+        Assert.Empty(result.PagePaths);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
     ///     Proves the extractor contributes a render round-trip self-test that always passes.
     /// </summary>
     [Fact]

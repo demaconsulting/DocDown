@@ -25,21 +25,6 @@ sections:
                   - DocDownEngine_ExtractAsync_NonPaginatedFormat_RenderRequest_SucceedsSilently
                   - DocDownEngine_ExtractAsync_PaginatedFormat_RenderRequestUnavailable_RecordsNote
 
-              - id: DocDownCore-Extraction-DocDownEngine-SuppressesDuplicateEmptyPagesNote
-                title: >-
-                  DocDownEngine shall add its generic "no pages produced" note only when the selected
-                  backend recorded no note of its own, so a backend that already explained an
-                  empty-pages outcome is not duplicated.
-                justification: |
-                  A page-capable backend that produces zero pages has usually already recorded why
-                  (such as a page-count fault), and the engine cannot tell a good reason from a silent
-                  bug except by checking whether the backend said anything at all. Adding the generic
-                  note only in that backend's silence keeps every empty-pages outcome explained by
-                  exactly one note instead of two restating the same fact.
-                tests:
-                  - DocDownEngine_ExtractAsync_RendererProducesNoPagesAndNoNote_AddsGenericFallbackNote
-                  - DocDownEngine_ExtractAsync_RendererProducesNoPagesWithOwnNote_SuppressesGenericFallbackNote
-
               - id: DocDownCore-Extraction-DocDownEngine-ReviewCommentsFinalized
                 title: >-
                   DocDownEngine shall finalize the review-comments artifact and report its path on

@@ -148,6 +148,39 @@ public class PowerPointPageRenderingExtractorTests
     }
 
     /// <summary>
+    ///     Proves this backend records its own "no pages were produced" note when the requested
+    ///     page range selects no slide, without relying on Core.
+    /// </summary>
+    /// <remarks>
+    ///     This note is recorded entirely from this backend's own local knowledge (the selected
+    ///     slide count), never from counting unrelated notes elsewhere in the sink, so it cannot be
+    ///     wrongly suppressed by a note the delegated base backend records for an unrelated reason.
+    /// </remarks>
+    [Fact]
+    public async Task PowerPointPageRenderingExtractor_ExtractAsync_PageRangeSelectsNoSlide_ReportsEmptyPagesNote()
+    {
+        // Arrange: the embedded probe has two slides; request a range beyond both
+        using var temp = new TempScratch();
+        var engine = new DocDownBuilder().AddPowerPointRendering().Build();
+        var input = WriteFixture(temp, "probe.pptx", PptxRenderingFixtures.Probe());
+        var scratch = Path.Combine(temp.Path, "out");
+        var options = RenderOptions();
+        options.Pages = new PageRange(5, 6);
+
+        // Act
+        var result = await engine.ExtractAsync(input, scratch, options, Ct);
+
+        // Assert: a single note explains the empty outcome and no page file was written
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        var note = Assert.Single(result.Notes);
+        Assert.Equal(
+            "Page rendering was requested and a renderer was available, but no pages were produced.",
+            note.Message);
+        Assert.Empty(result.PagePaths);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
     ///     Proves a slide-count fault costs only the rendered pages, not the whole extraction.
     /// </summary>
     [Fact]
@@ -167,7 +200,7 @@ public class PowerPointPageRenderingExtractorTests
         var result = await engine.ExtractAsync(input, scratch, RenderOptions(), Ct);
 
         // Assert: the delegated managed content stands and only the slides are reported lost, as a
-        // single note - Core's generic "no pages produced" fallback must not duplicate this one
+        // single note; this backend's own "no pages produced" note must not duplicate this one
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Null(result.Failure);
         var note = Assert.Single(result.Notes);

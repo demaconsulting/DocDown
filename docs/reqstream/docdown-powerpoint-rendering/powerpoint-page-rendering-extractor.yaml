@@ -82,6 +82,22 @@ sections:
             tests:
               - PowerPointPageRenderingExtractor_ExtractAsync_SlideCountFaults_ReportsNoteAndKeepsDelegatedContent
 
+          - id: DocDownPowerPointRendering-PowerPointPageRenderingExtractor-ReportsEmptySelectionAsNote
+            title: >-
+              PowerPointPageRenderingExtractor shall report the plain note "Page rendering was
+              requested and a renderer was available, but no pages were produced." itself whenever
+              page rendering was requested and no slide was selected to render.
+            justification: |
+              Core cannot distinguish this backend's own empty-outcome explanation from an unrelated
+              note the delegated managed backend may already have recorded during the earlier,
+              separate extraction phase (for example, a modern-comments note), so it no longer
+              attempts to infer or suppress a generic note on this backend's behalf. Recording the
+              note from the backend's own selected-slide count, which is immune to any unrelated note
+              recorded elsewhere, is what keeps the empty-pages outcome explained exactly once without
+              relying on sink history.
+            tests:
+              - PowerPointPageRenderingExtractor_ExtractAsync_PageRangeSelectsNoSlide_ReportsEmptyPagesNote
+
           - id: DocDownPowerPointRendering-PowerPointPageRenderingExtractor-ContributesSelfTests
             title: >-
               PowerPointPageRenderingExtractor shall contribute a render round-trip self-test case named

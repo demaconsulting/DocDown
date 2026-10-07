@@ -73,7 +73,6 @@ sections:
             children:
               - DocDownCore-Extraction-DocDownEngine-PipelineOrder
               - DocDownCore-Extraction-DocDownEngine-RenderRequestApplicability
-              - DocDownCore-Extraction-DocDownEngine-SuppressesDuplicateEmptyPagesNote
               - DocDownCore-Extraction-DocDownEngine-FailureArtifacts
               - DocDownCore-Extraction-DocDownEngine-Cancellation
               - DocDownCore-Extraction-DocDownEngine-RejectNullArguments

@@ -9,6 +9,7 @@ using DocDown.Excel;
 using DocDown.Pdf;
 using DocDown.Pdf.Rendering;
 using DocDown.PowerPoint;
+using DocDown.PowerPoint.Rendering;
 using DocDown.Visio;
 using DocDown.Word;
 
@@ -90,18 +91,21 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
     }
 
     /// <summary>
-    ///     Proves the default engine registers exactly the PDF, Word, Visio, PowerPoint, and Excel
-    ///     backends through the explicit builder seams, with no reflection.
+    ///     Proves the default engine registers exactly the PDF, PDF rendering, Word, Visio,
+    ///     PowerPoint, Excel, and PowerPoint rendering backends through the explicit builder seams,
+    ///     with no reflection.
     /// </summary>
     [Fact]
     public void DocDownTool_Build_DefaultEngine_RegistersBackendsExplicitly()
     {
         // Arrange & Act: the same one-liner the tool uses to build its engine
-        var engine = new DocDownBuilder().AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().Build();
+        var engine = new DocDownBuilder()
+            .AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().AddPowerPointRendering()
+            .Build();
         var backends = engine.GetBackends();
 
         // Assert: every backend package's extractors are registered explicitly
-        Assert.Equal(7, backends.Count);
+        Assert.Equal(8, backends.Count);
         Assert.Contains(backends, backend => backend.Descriptor.Id == "pdf");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "pdf-rendering");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "word-openxml");
@@ -109,6 +113,7 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         Assert.Contains(backends, backend => backend.Descriptor.Id == "visio-com");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "powerpoint-openxml");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "excel-openxml");
+        Assert.Contains(backends, backend => backend.Descriptor.Id == "powerpoint-rendering");
     }
 
     /// <summary>

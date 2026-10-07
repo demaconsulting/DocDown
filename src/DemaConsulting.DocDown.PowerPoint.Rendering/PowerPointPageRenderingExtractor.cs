@@ -232,7 +232,11 @@ public sealed class PowerPointPageRenderingExtractor : IDocumentExtractor, ISelf
     /// <remarks>
     ///     Renders each selected slide independently so one unrenderable slide records a note
     ///     rather than aborting the whole extraction. Cancellation propagates; every other fault is
-    ///     caught per slide and recorded as a note naming that slide. Side effect: writes pages and
+    ///     caught per slide and recorded as a note naming that slide. When no slide was selected to
+    ///     render — an empty deck or a page range matching nothing — this backend records that
+    ///     outcome itself rather than relying on Core to infer it, because Core cannot tell this
+    ///     backend's own note apart from an unrelated one the delegated base backend may have
+    ///     already recorded (for example an embedded-image fault). Side effect: writes pages and
     ///     notes on the sink.
     /// </remarks>
     private async ValueTask RenderSlidesAsync(
@@ -256,6 +260,16 @@ public sealed class PowerPointPageRenderingExtractor : IDocumentExtractor, ISelf
             // stand. Only the rendered slides are lost, and that is reported as a plain note
             // rather than collapsing an otherwise good extraction into an unreadable one.
             sink.ReportNote(new ExtractionNote("Slides could not be counted, so no slide images were rendered."));
+            return;
+        }
+
+        if (pageNumbers.Count == 0)
+        {
+            // No slide was selected to render (an empty deck, or a page range matching nothing):
+            // state that plainly ourselves, since Core cannot distinguish this from a note the
+            // delegated base backend already recorded for an unrelated reason.
+            sink.ReportNote(new ExtractionNote(
+                "Page rendering was requested and a renderer was available, but no pages were produced."));
             return;
         }
 

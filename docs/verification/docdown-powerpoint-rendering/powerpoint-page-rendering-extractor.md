@@ -34,8 +34,9 @@ public identity stays stable; when it unconditionally reports rendered-page supp
 throwing; when a render delegates the managed aspects and writes valid slide PNGs; when rasterization
 is skipped and no note is recorded for a plain (non-rendering) request even as the sole registered
 backend; when a per-slide render fault or a slide-count fault each become a plain note without an
-exception reaching the caller; when a null render function is rejected at construction; and when it
-contributes a distinctly named render round-trip case that always passes.
+exception reaching the caller; when page rendering is requested but no slide is selected to render,
+yielding the single note explaining that outcome itself; when a null render function is rejected at
+construction; and when it contributes a distinctly named render round-trip case that always passes.
 
 ### Test Scenarios
 
@@ -90,6 +91,16 @@ Proves a fault reading the slide count is recorded as the single note
 `Slides could not be counted, so no slide images were rendered.` while the delegated managed content
 is still written, so one failed step does not discard output the delegate already produced. Evidence
 for `DocDownPowerPointRendering-PowerPointPageRenderingExtractor-ReportsSlideCountFailureAsNote`.
+
+#### An empty slide selection is reported by this backend, not Core
+
+**Test**: `PowerPointPageRenderingExtractor_ExtractAsync_PageRangeSelectsNoSlide_ReportsEmptyPagesNote`
+
+Proves a page range beyond the presentation's slide count selects zero slides and this backend
+itself records the single note "Page rendering was requested and a renderer was available, but no
+pages were produced.", independent of any note the delegated managed backend may have already
+recorded. Evidence for
+`DocDownPowerPointRendering-PowerPointPageRenderingExtractor-ReportsEmptySelectionAsNote`.
 
 #### A null render function is rejected at construction
 

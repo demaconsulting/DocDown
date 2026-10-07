@@ -56,7 +56,13 @@ If the delegated managed extraction reports `Unreadable`, this unit returns `Unr
 and does not attempt slide rendering. A slide-count fault is caught separately: the sink already has
 the delegated content, so it is reported as the single note
 `Slides could not be counted, so no slide images were rendered.` and the extraction still returns
-`Produced`. During rendering, cancellation propagates; every other per-slide rasterization fault —
+`Produced`. When the slide count succeeds but selects zero slides to render — an empty presentation,
+or a page range matching nothing — this unit reports that outcome itself, as the single note "Page
+rendering was requested and a renderer was available, but no pages were produced.", rather than
+relying on Core to infer it: Core cannot tell this unit's own explanation apart from an unrelated
+note the delegated managed backend may already have recorded during its earlier content phase, so
+this unit records the note from its own selected-slide count instead. During rendering, cancellation
+propagates; every other per-slide rasterization fault —
 `InvalidDataException`, `ArgumentOutOfRangeException`, `OutOfMemoryException`, and a final
 catch-all covering any other exception CanvasNet.Pptx throws (including its own
 `PptxUnsupportedFeatureException`, caught generically rather than named here so this unit does not
