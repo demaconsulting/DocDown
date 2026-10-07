@@ -41,6 +41,9 @@ public static class Png
         return true;
     }
 
+    /// <summary>The ASCII chunk-type bytes of the mandatory first PNG chunk, "IHDR".</summary>
+    private static readonly byte[] IhdrType = [0x49, 0x48, 0x44, 0x52];
+
     /// <summary>
     ///     Reads the pixel dimensions from a PNG's IHDR chunk.
     /// </summary>
@@ -48,13 +51,20 @@ public static class Png
     /// <returns>The width and height in pixels.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="bytes"/> is not a PNG with a readable IHDR.</exception>
     /// <remarks>
-    ///     The IHDR chunk immediately follows the signature, and its width and height are the first
-    ///     two big-endian 32-bit integers of the chunk data (at byte offsets 16 and 20). Pure.
+    ///     The IHDR chunk immediately follows the signature and must be the first chunk in a
+    ///     conforming PNG: a 4-byte big-endian length (always 13 for IHDR), the 4-byte ASCII chunk
+    ///     type "IHDR", then the chunk data whose width and height are the first two big-endian
+    ///     32-bit integers (at byte offsets 16 and 20). Both are checked before the dimensions are
+    ///     read, so a malformed or truncated buffer fails loudly rather than yielding garbage
+    ///     dimensions that could still pass a plausible-size assertion. Pure.
     /// </remarks>
     public static (int Width, int Height) ReadDimensions(byte[] bytes)
     {
         ArgumentNullException.ThrowIfNull(bytes);
-        if (!HasSignature(bytes) || bytes.Length < 24)
+        if (!HasSignature(bytes) ||
+            bytes.Length < 24 ||
+            ReadBigEndianInt32(bytes, 8) != 13 ||
+            !bytes.AsSpan(12, 4).SequenceEqual(IhdrType))
         {
             throw new ArgumentException("The buffer is not a PNG with a readable IHDR chunk.", nameof(bytes));
         }

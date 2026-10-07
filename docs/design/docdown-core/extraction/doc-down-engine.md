@@ -54,8 +54,10 @@ concurrent extractions targeting different scratch folders.
   stating that pages were requested but not rendered.
 - If page rendering does not apply to the selected format, the request is honored with silence.
 
-A renderer that was available but produced zero page images also yields a note. These are facts about
-the extraction, not a third outcome state.
+A renderer that was available but produced zero page images also yields a note — unless the backend
+itself already recorded a note during its run (for example, explaining a page-count fault), in which
+case the engine omits its generic note so the empty-pages outcome is explained exactly once rather
+than twice in different words. These are facts about the extraction, not a third outcome state.
 
 #### Error Handling
 

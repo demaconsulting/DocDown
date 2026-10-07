@@ -27,10 +27,14 @@ depending on CanvasNet.Pptx actually failing.
 
 - **`ExtractAsync(DocumentSource, IExtractionContext)`** — buffers the source once; delegates the
   managed aspects to a `PowerPointOpenXmlExtractor` with `RenderPages` forced off via a
-  `DelegatedExtractionContext`; records the `pages.renderer` environment fact; rasterizes the
-  requested slides, isolating each slide's faults; and returns `Produced` unless the delegated
-  managed extractor reports `Unreadable`. Precondition: `source` and `context` non-null.
-  Postcondition: every selected slide is either written or named in a plain note.
+  `DelegatedExtractionContext`; records the `pages.renderer` environment fact; and, only when
+  `options.RenderPages` is `true`, rasterizes the requested slides, isolating each slide's faults.
+  The guard matters because selection may hand this backend a non-rendering request when it is the
+  only registered candidate for `.pptx` (a host that calls `AddPowerPointRendering()` without the
+  managed backend), and rasterization must not run uninvited in that case. Returns `Produced`
+  unless the delegated managed extractor reports `Unreadable`. Precondition: `source` and `context`
+  non-null. Postcondition: when rendering was requested, every selected slide is either written or
+  named in a plain note; when it was not, no slide is rasterized.
 - **`ProbeAvailability()`** — unconditionally returns `ExtractorAvailability.Available(
   providesRenderedPages: true)`, since CanvasNet.Pptx is a fully-managed dependency resolved at
   restore time with nothing to probe for at run time. Never rasterizes.

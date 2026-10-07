@@ -33,6 +33,19 @@ sections:
             tests:
               - PowerPointPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs
 
+          - id: DocDownPowerPointRendering-PowerPointPageRenderingExtractor-SkipsRasterizationWhenNotRequested
+            title: >-
+              PowerPointPageRenderingExtractor shall not rasterize any slide when page rendering was
+              not requested, even when it is the only registered backend for the format.
+            justification: |
+              Selection may hand this backend a plain extraction request when a host registers it
+              without the managed backend, since it is then the sole candidate regardless of what was
+              requested. Guarding rasterization on the request itself, rather than trusting selection
+              to only ever invoke this unit for a rendering request, is what keeps a plain extraction
+              free of rasterization cost in every registration shape.
+            tests:
+              - PowerPointPageRenderingExtractor_ExtractAsync_RenderNotRequested_WritesNoPages
+
           - id: DocDownPowerPointRendering-PowerPointPageRenderingExtractor-WritesRenderedPages
             title: >-
               PowerPointPageRenderingExtractor shall write a valid PNG image for each rendered slide through

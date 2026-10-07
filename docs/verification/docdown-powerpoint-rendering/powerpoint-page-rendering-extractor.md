@@ -31,10 +31,11 @@ CanvasNet.Pptx fault.
 
 Per IEC 62304 §5.5.2, a `PowerPointPageRenderingExtractor` unit test run passes when the backend's
 public identity stays stable; when it unconditionally reports rendered-page support without
-throwing; when a render delegates the managed aspects and writes valid slide PNGs; when a per-slide
-render fault or a slide-count fault each become a plain note without an exception reaching the
-caller; when a null render function is rejected at construction; and when it contributes a
-distinctly named render round-trip case that always passes.
+throwing; when a render delegates the managed aspects and writes valid slide PNGs; when rasterization
+is skipped and no note is recorded for a plain (non-rendering) request even as the sole registered
+backend; when a per-slide render fault or a slide-count fault each become a plain note without an
+exception reaching the caller; when a null render function is rejected at construction; and when it
+contributes a distinctly named render round-trip case that always passes.
 
 ### Test Scenarios
 
@@ -63,6 +64,15 @@ run. Evidence for `DocDownPowerPointRendering-PowerPointPageRenderingExtractor-D
 and `DocDownPowerPointRendering-PowerPointPageRenderingExtractor-WritesRenderedPages` (the latter also
 evidenced by the system scenario
 `DocDownPowerPointRendering_Render_ProbePresentation_ProducesValidPngPages`).
+
+#### Rasterization is skipped when rendering was not requested
+
+**Test**: `PowerPointPageRenderingExtractor_ExtractAsync_RenderNotRequested_WritesNoPages`
+
+Proves that, even when this backend is the only one registered for `.pptx`, a plain (non-rendering)
+request writes no `pages/` content and records no note, so selection handing this backend a
+non-rendering request never costs a rasterization pass. Evidence for
+`DocDownPowerPointRendering-PowerPointPageRenderingExtractor-SkipsRasterizationWhenNotRequested`.
 
 #### A per-slide fault becomes a note without throwing
 

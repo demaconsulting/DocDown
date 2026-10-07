@@ -87,6 +87,36 @@ public class PowerPointPageRenderingExtractorTests
     }
 
     /// <summary>
+    ///     Proves rendering is skipped, at no rasterization cost, when the host registers only this
+    ///     backend yet does not request page rendering.
+    /// </summary>
+    /// <remarks>
+    ///     When only this backend is registered for <c>.pptx</c>, it is the sole selection
+    ///     candidate even with a plain (non-rendering) request, so it must guard its own rendering
+    ///     work internally rather than assume selection only ever hands it a rendering request.
+    /// </remarks>
+    [Fact]
+    public async Task PowerPointPageRenderingExtractor_ExtractAsync_RenderNotRequested_WritesNoPages()
+    {
+        // Arrange: only the rendering backend is registered, and rendering is not requested
+        using var temp = new TempScratch();
+        var engine = new DocDownBuilder().AddPowerPointRendering().Build();
+        var input = WriteFixture(temp, "probe.pptx", PptxRenderingFixtures.Probe());
+        var scratch = Path.Combine(temp.Path, "out");
+
+        // Act
+        var result = await engine.ExtractAsync(input, scratch, new ExtractionOptions { RenderPages = false }, Ct);
+
+        // Assert: plain extraction succeeds, but no pages folder content is written
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Equal("powerpoint-rendering", result.SelectedExtractor?.Id);
+        Assert.Empty(result.Notes);
+        Assert.Empty(result.PagePaths);
+        Assert.True(File.Exists(Path.Combine(scratch, "content.md")));
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
     ///     Proves a slide whose rasterization faults becomes a recorded note, not an exception.
     /// </summary>
     [Fact]
@@ -136,15 +166,12 @@ public class PowerPointPageRenderingExtractorTests
         // Act: the count runs before the per-slide loop, so its fault must still be isolated
         var result = await engine.ExtractAsync(input, scratch, RenderOptions(), Ct);
 
-        // Assert: the delegated managed content stands and only the slides are reported lost
+        // Assert: the delegated managed content stands and only the slides are reported lost, as a
+        // single note - Core's generic "no pages produced" fallback must not duplicate this one
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Null(result.Failure);
-        Assert.Contains(
-            result.Notes,
-            note => string.Equals(
-                "Slides could not be counted, so no slide images were rendered.",
-                note.Message,
-                StringComparison.Ordinal));
+        var note = Assert.Single(result.Notes);
+        Assert.Equal("Slides could not be counted, so no slide images were rendered.", note.Message);
         Assert.Empty(result.PagePaths);
         ContractAssert.LayoutPresent(scratch);
     }

@@ -20,9 +20,10 @@ failure containment, and result assembly.
 
 Per IEC 62304 §5.5.2, `DocDownEngine` passes when it runs the documented pipeline order, never gives a
 backend the scratch path, clones options before use, returns only `Produced` or `Unreadable`, records
-render-request notes correctly, finalizes the conditional review-comments artifact and reports its
-path only when one was written, contains backend faults, reports registered candidates, exposes the
-two Core self-test cases, propagates cancellation, and rejects null or empty required arguments.
+render-request notes correctly without duplicating a backend's own empty-pages explanation, finalizes
+the conditional review-comments artifact and reports its path only when one was written, contains
+backend faults, reports registered candidates, exposes the two Core self-test cases, propagates
+cancellation, and rejects null or empty required arguments.
 
 #### Test Scenarios
 
@@ -33,6 +34,14 @@ two Core self-test cases, propagates cancellation, and rejects null or empty req
 ##### A paginated render request with no renderer records a note
 
 **Test**: `DocDownEngine_ExtractAsync_PaginatedFormat_RenderRequestUnavailable_RecordsNote`
+
+##### A renderer available but producing no pages gets Core's generic fallback note
+
+**Test**: `DocDownEngine_ExtractAsync_RendererProducesNoPagesAndNoNote_AddsGenericFallbackNote`
+
+##### A backend's own empty-pages note suppresses Core's generic duplicate
+
+**Test**: `DocDownEngine_ExtractAsync_RendererProducesNoPagesWithOwnNote_SuppressesGenericFallbackNote`
 
 ##### The review-comments artifact is finalized and claimed honestly
 

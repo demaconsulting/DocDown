@@ -32,11 +32,11 @@ public static class PowerPointRenderingDocDownBuilderExtensions
     ///     <see cref="DocDownBuilder.Build"/>: a host that configures a builder but never builds an
     ///     engine pays nothing, and each built engine gets its own extractor instance. Register this
     ///     alongside the managed PowerPoint backend (<c>AddOffice().AddPowerPointRendering()</c>, or
-    ///     <c>AddPowerPoint().AddPowerPointRendering()</c>): the rendering backend is chosen only
-    ///     when page rendering is requested and no higher-priority renderer (such as the COM
-    ///     automation backend on Windows) is available, and the managed backend serves every other
-    ///     extraction. Returning the builder keeps the call chainable. Side effect: mutates
-    ///     <paramref name="builder"/>'s registration list.
+    ///     <c>AddPowerPoint().AddPowerPointRendering()</c>): the rendering backend is chosen when
+    ///     page rendering is requested, since it is the only backend for <c>.pptx</c> that provides
+    ///     rendered pages, and the managed backend serves every other extraction. Returning the
+    ///     builder keeps the call chainable. Side effect: mutates <paramref name="builder"/>'s
+    ///     registration list.
     /// </remarks>
     /// <example>
     ///     <code language="csharp">

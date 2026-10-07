@@ -517,6 +517,87 @@ public class DocDownEngineTests
     }
 
     /// <summary>
+    ///     Proves Core adds its generic "renderer was available, but no pages were produced" note
+    ///     when a page-capable backend produces zero pages and reports no note of its own.
+    /// </summary>
+    [Fact]
+    public async Task DocDownEngine_ExtractAsync_RendererProducesNoPagesAndNoNote_AddsGenericFallbackNote()
+    {
+        // Arrange: a page-capable backend that writes content but neither a page nor a note
+        using var temp = new TempScratch();
+        var extractor = new StubExtractor
+        {
+            Id = "text",
+            SupportedFormats = [DocumentFormat.Text],
+            ProvidesRenderedPages = true,
+            ExtractBehavior = async (_, context) =>
+            {
+                await context.Sink.WriteContentAsync("# no pages\n", context.CancellationToken);
+                return ExtractionOutcome.Produced;
+            }
+        };
+        var engine = BuildEngine(extractor);
+        var options = FixedOptions();
+        options.RenderPages = true;
+
+        // Act
+        var result = await engine.ExtractAsync(
+            temp.CreateFile("document.txt", "hello world"),
+            Path.Combine(temp.Path, "out"),
+            options,
+            Ct);
+
+        // Assert: Core's generic note fills the silence the backend left
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        var note = Assert.Single(result.Notes);
+        Assert.Equal(
+            "Page rendering was requested and a renderer was available, but no pages were produced.",
+            note.Message);
+    }
+
+    /// <summary>
+    ///     Proves Core suppresses its generic fallback note when a page-capable backend already
+    ///     recorded its own note explaining why it produced zero pages.
+    /// </summary>
+    /// <remarks>
+    ///     Without this suppression the two notes would duplicate the same fact in different words,
+    ///     contradicting a backend's documented "single note" contract for this outcome.
+    /// </remarks>
+    [Fact]
+    public async Task DocDownEngine_ExtractAsync_RendererProducesNoPagesWithOwnNote_SuppressesGenericFallbackNote()
+    {
+        // Arrange: a page-capable backend that explains its own zero-page outcome
+        using var temp = new TempScratch();
+        var extractor = new StubExtractor
+        {
+            Id = "text",
+            SupportedFormats = [DocumentFormat.Text],
+            ProvidesRenderedPages = true,
+            ExtractBehavior = async (_, context) =>
+            {
+                await context.Sink.WriteContentAsync("# no pages\n", context.CancellationToken);
+                context.Sink.ReportNote(new ExtractionNote("Pages could not be counted, so none were rendered."));
+                return ExtractionOutcome.Produced;
+            }
+        };
+        var engine = BuildEngine(extractor);
+        var options = FixedOptions();
+        options.RenderPages = true;
+
+        // Act
+        var result = await engine.ExtractAsync(
+            temp.CreateFile("document.txt", "hello world"),
+            Path.Combine(temp.Path, "out"),
+            options,
+            Ct);
+
+        // Assert: only the backend's own note is present; Core did not add its generic duplicate
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        var note = Assert.Single(result.Notes);
+        Assert.Equal("Pages could not be counted, so none were rendered.", note.Message);
+    }
+
+    /// <summary>
     ///     Builds an engine from the given extractors.
     /// </summary>
     /// <param name="extractors">The extractors to register.</param>

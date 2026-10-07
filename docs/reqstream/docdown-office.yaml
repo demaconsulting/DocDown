@@ -20,7 +20,7 @@ sections:
           as a single file cannot silently drop a backend and an auditor can read the registration
           rather than infer it. One call covers the common case - this host reads Microsoft Office
           documents - and the per-format calls remain for a host that reads only one format and
-          should not carry six backends to do it.
+          should not carry five backends to do it.
         tests:
           - AddOffice_OnBuilder_RegistersEveryOfficeBackend
           - AddOffice_ReturnsSameBuilderForChaining
@@ -32,7 +32,7 @@ sections:
           environment, and shall keep a delegated run's output consistent with what it produced.
         tags: [system]
         justification: |
-          One of the six backends this package ships - Visio's - drives a Microsoft Office
+          One of the five backends this package ships - Visio's - drives a Microsoft Office
           application over COM, and cannot run where that application is absent - which is every
           CI runner and most Linux and macOS hosts. The system must therefore answer whether such
           a backend is usable before it is selected, and must do so without launching the

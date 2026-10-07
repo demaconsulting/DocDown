@@ -178,8 +178,15 @@ public sealed class PowerPointPageRenderingExtractor : IDocumentExtractor, ISelf
             "DocDown.PowerPoint", "pages.renderer", "CanvasNet.Pptx (managed)", Available: true));
 
         // Rasterize the requested slides; per-slide faults become notes rather than exceptions
-        // that abort the extraction
-        await RenderSlidesAsync(bytes, sink, options, cancellationToken).ConfigureAwait(false);
+        // that abort the extraction. Skipped when rendering was not requested, so a host that
+        // registers only this backend (without the managed backend) still gets plain extraction
+        // at no rasterization cost - selection may hand this backend a non-rendering request when
+        // it is the sole candidate for the format.
+        if (options.RenderPages)
+        {
+            await RenderSlidesAsync(bytes, sink, options, cancellationToken).ConfigureAwait(false);
+        }
+
         return ExtractionOutcome.Produced;
     }
 
