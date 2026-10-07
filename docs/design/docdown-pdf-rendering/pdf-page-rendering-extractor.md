@@ -27,10 +27,13 @@ rendering-suppressed options clone.
 
 - **`ExtractAsync(DocumentSource, IExtractionContext)`** — buffers the source once; delegates the
   managed aspects to a `PdfDocumentExtractor` with `RenderPages` forced off; records the
-  `pages.renderer` environment fact; rasterizes the requested pages, isolating each page's faults;
-  and returns `Produced` unless the delegated managed extractor reports `Unreadable`. Precondition:
-  `source` and `context` non-null. Postcondition: every selected page is either written or named in
-  a plain note.
+  `pages.renderer` environment fact; and, only when `options.RenderPages` is `true`, rasterizes the
+  requested pages, isolating each page's faults. The guard matters because selection may hand this
+  backend a non-rendering request when it is the only registered candidate for `.pdf` (a host that
+  calls `AddPdfRendering()` without the managed backend), and rasterization must not run uninvited
+  in that case. Returns `Produced` unless the delegated managed extractor reports `Unreadable`.
+  Precondition: `source` and `context` non-null. Postcondition: when rendering was requested, every
+  selected page is either written or named in a plain note; when it was not, no page is rasterized.
 - **`ProbeAvailability()`** — unconditionally returns `ExtractorAvailability.Available(
   providesRenderedPages: true)`, since CanvasNet.Pdf is a fully-managed dependency resolved at
   restore time with nothing to probe for at run time. Never rasterizes.

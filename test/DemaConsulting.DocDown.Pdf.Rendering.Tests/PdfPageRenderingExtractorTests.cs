@@ -82,6 +82,36 @@ public class PdfPageRenderingExtractorTests
     }
 
     /// <summary>
+    ///     Proves rendering is skipped, at no rasterization cost, when the host registers only this
+    ///     backend yet does not request page rendering.
+    /// </summary>
+    /// <remarks>
+    ///     When only this backend is registered for <c>.pdf</c>, it is the sole selection candidate
+    ///     even with a plain (non-rendering) request, so it must guard its own rendering work
+    ///     internally rather than assume selection only ever hands it a rendering request.
+    /// </remarks>
+    [Fact]
+    public async Task PdfPageRenderingExtractor_ExtractAsync_RenderNotRequested_WritesNoPages()
+    {
+        // Arrange: only the rendering backend is registered, and rendering is not requested
+        using var temp = new TempScratch();
+        var engine = new DocDownBuilder().AddPdfRendering().Build();
+        var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
+        var scratch = Path.Combine(temp.Path, "out");
+
+        // Act
+        var result = await engine.ExtractAsync(input, scratch, new ExtractionOptions { RenderPages = false }, Ct);
+
+        // Assert: plain extraction succeeds, but no pages folder content is written
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Equal("pdf-rendering", result.SelectedExtractor?.Id);
+        Assert.Empty(result.Notes);
+        Assert.Empty(result.PagePaths);
+        Assert.True(File.Exists(Path.Combine(scratch, "content.md")));
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
     ///     Proves a page whose rasterization faults becomes a recorded note, not an exception.
     /// </summary>
     [Fact]

@@ -29,11 +29,12 @@ depending on a genuine rasterization fault.
 
 Per IEC 62304 §5.5.2, a `PdfPageRenderingExtractor` unit test run passes when the backend's public
 identity stays stable; when it unconditionally reports rendered-page support without throwing; when a
-render delegates the managed aspects and writes a valid page PNG; when a per-page render fault or a
-page-count fault each become a plain note without an exception reaching the caller; when page
-rendering is requested but no page is selected to render, yielding the single note explaining that
-outcome itself; when a null render function is rejected at construction; and when it contributes a
-distinctly named render round-trip case that always passes.
+render delegates the managed aspects and writes a valid page PNG; when rasterization is skipped
+entirely when page rendering was not requested; when a per-page render fault or a page-count fault
+each become a plain note without an exception reaching the caller; when page rendering is requested
+but no page is selected to render, yielding the single note explaining that outcome itself; when a
+null render function is rejected at construction; and when it contributes a distinctly named render
+round-trip case that always passes.
 
 ### Test Scenarios
 
@@ -61,6 +62,15 @@ its own rasterization, in one run. Evidence for
 `DocDownPdfRendering-PdfPageRenderingExtractor-DelegatesManagedAspects` and
 `DocDownPdfRendering-PdfPageRenderingExtractor-WritesRenderedPages` (the latter also evidenced by the
 system scenario `DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages`).
+
+#### Rasterization is skipped when rendering was not requested
+
+**Test**: `PdfPageRenderingExtractor_ExtractAsync_RenderNotRequested_WritesNoPages`
+
+Proves that, even when this backend is the only one registered for `.pdf`, a plain (non-rendering)
+request writes no `pages/` content and records no note, so selection handing this backend a
+non-rendering request never costs a rasterization pass. Evidence for
+`DocDownPdfRendering-PdfPageRenderingExtractor-SkipsRasterizationWhenNotRequested`.
 
 #### A per-page fault becomes a note without throwing
 
