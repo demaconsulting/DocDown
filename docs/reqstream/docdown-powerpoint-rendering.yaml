@@ -82,6 +82,8 @@ sections:
           A plain extraction should pay nothing for rendered-page work it did not ask for. When
           rendering is not requested the lighter managed backend must win, so rasterization is never
           touched.
+        children:
+          - DocDownPowerPointRendering-PowerPointPageRenderingExtractor-SkipsRasterizationWhenNotRequested
         tests:
           - DocDownPowerPointRendering_Select_PagesNotRequested_BaseBackendWins
 
