@@ -2,39 +2,30 @@
 # Software Unit Requirements for PowerPointDocDownBuilderExtensions
 #
 # PowerPointDocDownBuilderExtensions is the one visible edge from a host to this package: the explicit,
-# reflection-free call that adds the PowerPoint backends to a DocDown builder. It is a direct unit of
+# reflection-free call that adds the PowerPoint backend to a DocDown builder. It is a direct unit of
 # the DocDown.PowerPoint system.
+#
+# SUPERSEDED REQUIREMENT: DocDownPowerPoint-PowerPointDocDownBuilderExtensions-OrdersManagedAboveCom
+# required the managed backend to register at a higher selection priority than a COM automation
+# backend. That requirement is superseded (not satisfied) because this package no longer registers a
+# COM backend at all — there is nothing left to outrank.
 
 sections:
   - title: DocDownPowerPoint Requirements
     sections:
       - title: PowerPointDocDownBuilderExtensions Requirements
         requirements:
-          - id: DocDownPowerPoint-PowerPointDocDownBuilderExtensions-RegistersBothBackends
+          - id: DocDownPowerPoint-PowerPointDocDownBuilderExtensions-RegistersManagedBackend
             title: >-
-              PowerPointDocDownBuilderExtensions shall add both the managed Open XML backend and the COM
-              automation backend to the builder it is called on.
+              PowerPointDocDownBuilderExtensions shall add the managed Open XML backend to the builder
+              it is called on.
             justification: |
-              A host that asks for PowerPoint support wants a deck's content handled deterministically on
-              every platform and its slides rendered where Microsoft PowerPoint is present. Adding both
-              backends as deferred factories from a single call is what gives the resulting engine that
-              reach: the managed backend is the guaranteed content path, and the COM backend adds the
-              render when the environment can supply it.
+              A host that asks for PowerPoint support wants a deck's content handled deterministically
+              on every platform. Adding the managed backend as a deferred factory from a single call is
+              what gives the resulting engine that reach: the managed backend is the guaranteed content
+              path, with no platform-specific dependency.
             tests:
-              - AddPowerPoint_RegistersOpenXmlAndComBackends
-
-          - id: DocDownPowerPoint-PowerPointDocDownBuilderExtensions-OrdersManagedAboveCom
-            title: >-
-              PowerPointDocDownBuilderExtensions shall register the managed backend at a higher selection
-              priority than the COM backend.
-            justification: |
-              Talking to Microsoft PowerPoint is expensive and environment-dependent, so it must be
-              reached only when rendering is actually requested. Giving the managed backend the higher
-              priority is what makes it the chosen reader for every extraction that does not ask for
-              rendered pages, leaving the COM backend selected only when its rendering is the reason to
-              pay that cost.
-            tests:
-              - AddPowerPoint_ManagedBackend_HasHigherPriorityThanCom
+              - AddPowerPoint_RegistersOpenXmlBackend
 
           - id: DocDownPowerPoint-PowerPointDocDownBuilderExtensions-ReturnsBuilderForChaining
             title: PowerPointDocDownBuilderExtensions shall return the builder it was called on.

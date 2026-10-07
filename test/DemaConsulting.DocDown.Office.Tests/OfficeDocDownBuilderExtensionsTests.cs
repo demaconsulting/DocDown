@@ -26,7 +26,6 @@ public class OfficeDocDownBuilderExtensionsTests
         string[] expected =
         [
             "excel-openxml",
-            "powerpoint-com",
             "powerpoint-openxml",
             "visio-com",
             "visio-openxml",

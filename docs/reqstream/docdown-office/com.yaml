@@ -1,9 +1,9 @@
 ---
 # Software Subsystem Requirements for DocDownOffice Com
 #
-# The Com subsystem holds what the PowerPoint and Visio COM automation backends share: the
-# availability probe that decides whether an automation backend can run at all, and the two types
-# that keep a delegated managed run's output honest when the COM backend adds rendering to it.
+# The Com subsystem holds what Visio's COM automation backend uses: the availability probe that
+# decides whether an automation backend can run at all, and the two types that keep a delegated
+# managed run's output honest when the COM backend adds rendering to it.
 
 sections:
   - title: DocDownOffice Requirements
@@ -22,8 +22,6 @@ sections:
               or rather, one the reader cannot act on, which is why the reasons state a fact about
               the environment instead of instructing an installation.
             tests:
-              - PowerPointComAvailability_Probe_NeverThrowsAndNeverInstructsInstallation
-              - PowerPointComAvailability_Probe_OffWindows_IsUnavailable
               - VisioComAvailability_Probe_NeverInstructsInstallation
               - VisioComAvailability_Probe_OffWindows_IsUnavailable
 
@@ -40,5 +38,4 @@ sections:
               anything the reader needs. The fact key is supplied by the caller because each managed
               backend names its own.
             tests:
-              - PowerPointComExtractor_Extract_ViaStub_SuppressesContradictoryPageRenderingFact
               - VisioComExtractor_Extract_ViaStub_SuppressesContradictoryPageRenderingFact

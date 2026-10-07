@@ -37,6 +37,11 @@ depending on CanvasNet.Pptx actually failing.
 - **Descriptor members (`Id`, `DisplayName`, `SupportedFormats`, and `Priority`)** — expose the
   stable identity (`"powerpoint-rendering"`, `"PowerPoint slides (CanvasNet.Pptx)"`, `[Pptx]`,
   priority `5`) selection and reporting use when this backend participates in an extraction.
+  The engine's selection step first narrows candidates to those that provide rendered pages
+  whenever rendering is requested, so this backend's priority only decides ordering against other
+  page-rendering-capable candidates; against the managed `PowerPointOpenXmlExtractor`'s priority
+  `10` when rendering is not requested, the managed backend wins, which is correct because this
+  backend's extra rasterization cost is unwanted in that case.
 - **`GetSelfTestCases()`** — contributes one case, `powerpoint-rendering.renderRoundTrip`, named
   distinctly from the managed backend's own self-test cases so existing case-name assertions stay
   valid.
@@ -48,9 +53,11 @@ and does not attempt slide rendering. A slide-count fault is caught separately: 
 the delegated content, so it is reported as the single note
 `Slides could not be counted, so no slide images were rendered.` and the extraction still returns
 `Produced`. During rendering, cancellation propagates; every other per-slide rasterization fault —
-including `PptxUnsupportedFeatureException`, `InvalidDataException`, `ArgumentOutOfRangeException`,
-and `OutOfMemoryException` — is caught in place, reported as `Slide N could not be rasterized.`, and
-the run continues. No render fault reaches the caller as an exception.
+`InvalidDataException`, `ArgumentOutOfRangeException`, `OutOfMemoryException`, and a final
+catch-all covering any other exception CanvasNet.Pptx throws (including its own
+`PptxUnsupportedFeatureException`, caught generically rather than named here so this unit does not
+need its own reference to that CanvasNet.Pptx type) — is caught in place, reported as `Slide N could
+not be rasterized.`, and the run continues. No render fault reaches the caller as an exception.
 
 ### Dependencies
 

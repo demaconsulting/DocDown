@@ -1,5 +1,4 @@
 using System.Globalization;
-using DemaConsulting.CanvasNet.Pptx;
 using DocDown.Core;
 using DocDown.PowerPoint.OpenXml;
 using CoreFormat = DocDown.Core.DocumentFormat;
@@ -127,6 +126,13 @@ public sealed class PowerPointPageRenderingExtractor : IDocumentExtractor, ISelf
     public IReadOnlyCollection<CoreFormat> SupportedFormats => [CoreFormat.Pptx];
 
     /// <inheritdoc />
+    /// <remarks>
+    ///     Ranks below <c>PowerPointOpenXmlExtractor</c>'s priority of 10, so the managed Open XML
+    ///     backend still wins when page rendering was not requested. When rendering is requested,
+    ///     <see cref="ExtractorSelector"/> first filters candidates to those that provide rendered
+    ///     pages; this is the only such backend for <see cref="CoreFormat.Pptx"/>, so it always wins
+    ///     once rendering is requested regardless of this priority value.
+    /// </remarks>
     public int Priority => 5;
 
     /// <inheritdoc />
@@ -259,11 +265,6 @@ public sealed class PowerPointPageRenderingExtractor : IDocumentExtractor, ISelf
             {
                 // Cancellation is a caller decision, not a render fault; let it propagate
                 throw;
-            }
-            catch (PptxUnsupportedFeatureException)
-            {
-                ReportPageFailure(sink, pageNumber);
-                continue;
             }
             catch (InvalidDataException)
             {

@@ -391,14 +391,13 @@ internal static class PowerPointOpenXmlReader
 }
 
 /// <summary>
-///     The exception the PowerPoint reader or COM adapter raises for a deck it cannot open or
-///     interpret, so Core can convert it into a structured failure rather than letting a raw fault
-///     reach the caller.
+///     The exception the PowerPoint reader raises for a deck it cannot open or interpret, so Core
+///     can convert it into a structured failure rather than letting a raw fault reach the caller.
 /// </summary>
 /// <remarks>
-///     Raised for a missing presentation part, a package the Open XML SDK cannot open (an encrypted
-///     or malformed <c>.pptx</c>), or a COM automation failure. Core catches it and writes a
-///     structured failure with the full output layout still present.
+///     Raised for a missing presentation part, or a package the Open XML SDK cannot open (an
+///     encrypted or malformed <c>.pptx</c>). Core catches it and writes a structured failure with
+///     the full output layout still present.
 /// </remarks>
 public sealed class PowerPointExtractionException : Exception
 {

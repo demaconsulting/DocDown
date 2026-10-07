@@ -14,13 +14,16 @@ sections:
         requirements:
           - id: DocDown-OTS-CanvasNetCharts
             title: >-
-              CanvasNet.Charts shall rasterize an embedded chart as part of a slide render through a
-              fully managed API, with no native asset in its dependency graph.
+              CanvasNet.Charts shall resolve as a fully managed dependency of CanvasNet.Pptx, with no
+              native asset in its dependency graph.
             justification: |
               A PowerPoint slide can embed a chart, and CanvasNet.Pptx delegates that rasterization to
-              CanvasNet.Charts. DocDown.PowerPoint.Rendering never calls CanvasNet.Charts directly, but
-              its presence and portability are part of the dependency graph this package's rendered-page
-              capability relies on, so it is traced as its own OTS item rather than assumed.
+              CanvasNet.Charts. DocDown.PowerPoint.Rendering never calls CanvasNet.Charts directly and
+              carries no chart-bearing test fixture, so this item is scoped to what this package's own
+              test suite can actually evidence: that the dependency resolves, is fully managed, and the
+              package graph as a whole still produces a valid rendered page. Chart-rasterization
+              correctness itself is CanvasNet.Pptx/CanvasNet.Charts's own concern, verified in their own
+              repository, not re-proven here.
             tags: [ots]
             tests:
               - DocDownPowerPointRendering_Render_ProbePresentation_ProducesValidPngPages

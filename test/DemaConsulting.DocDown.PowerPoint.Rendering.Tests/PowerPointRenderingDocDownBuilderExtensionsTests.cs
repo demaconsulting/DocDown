@@ -125,6 +125,31 @@ public class PowerPointRenderingDocDownBuilderExtensionsTests
                 break;
         }
 
-        return types;
+        return types.SelectMany(Expand);
+    }
+
+    /// <summary>
+    ///     Expands a type into itself plus its generic arguments and element type.
+    /// </summary>
+    /// <param name="type">The type to expand.</param>
+    /// <returns>The type and every type nested inside it.</returns>
+    /// <remarks>
+    ///     A forbidden type hidden inside a generic argument (<c>IReadOnlyList&lt;CanvasNetType&gt;</c>)
+    ///     or an array element (<c>CanvasNetType[]</c>) would otherwise escape detection, since the
+    ///     top-level type would only ever be the generic/array type itself. Mirrors the managed PDF
+    ///     rendering package's own equivalent helper. Pure.
+    /// </remarks>
+    private static IEnumerable<Type> Expand(Type type)
+    {
+        yield return type;
+        foreach (var argument in type.GetGenericArguments())
+        {
+            yield return argument;
+        }
+
+        if (type.HasElementType && type.GetElementType() is { } element)
+        {
+            yield return element;
+        }
     }
 }

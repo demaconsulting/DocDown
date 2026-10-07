@@ -19,11 +19,10 @@ public sealed record ValidationRun(int ExitCode, string Log, string ResultsPath)
 ///     <para>
 ///         These are the only validation runs in the suite that go through the real command line over
 ///         the shipped engine, which on Windows means genuinely launching Microsoft Visio and
-///         Microsoft PowerPoint and rasterizing a page in each. That is the point of them: the COM
-///         render cases must actually run and pass here, not be skipped or tolerated. Everything the
-///         <c>Validation</c> unit can be asked on its own — the header, the results-file shapes, the
-///         exit code — is proven in <c>ValidationTests</c> over a managed engine that starts no
-///         application at all.
+///         rasterizing a page. That is the point of it: the COM render case must actually run and
+///         pass here, not be skipped or tolerated. Everything the <c>Validation</c> unit can be
+///         asked on its own — the header, the results-file shapes, the exit code — is proven in
+///         <c>ValidationTests</c> over a managed engine that starts no application at all.
 ///     </para>
 ///     <para>
 ///         Two runs are kept rather than one because each proves a distinct path from the command

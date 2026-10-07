@@ -121,10 +121,6 @@ package DocDownOffice {
         expose PowerPointOpenXml;
     }
 
-    view PowerPointComView {
-        expose PowerPointCom;
-    }
-
     view VisioView {
         expose Visio;
     }

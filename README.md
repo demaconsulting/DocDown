@@ -22,7 +22,7 @@ Three words appear throughout this README and the user guide, and they are not i
 
 - **Backend** — the component that reads one document format, or renders its pages. `docdown
   --list-backends` prints them, `summary.txt` names the one that ran in its *Backend* section, and a
-  single format may be served by more than one, such as PowerPoint's managed backend and its
+  single format may be served by more than one, such as Visio's managed backend and its
   automation backend. This is the primary term.
 - **Format package** — the NuGet package that ships one or more backends for a format, such as
   `DemaConsulting.DocDown.Office`. You install format packages; you select backends.
@@ -180,7 +180,7 @@ renderer was registered. Notes are not failures, and a produced extraction with 
 | PDF | `.pdf` | `DocDown.Pdf` | Yes | With `DocDown.Pdf.Rendering` |
 | Word | `.docx` | `DocDown.Office` | Yes | No |
 | Excel | `.xlsx` | `DocDown.Office` | Yes | Not applicable; not paginated |
-| PowerPoint | `.pptx` | `DocDown.Office` | Yes | With `DocDown.PowerPoint.Rendering`, or Windows with PowerPoint |
+| PowerPoint | `.pptx` | `DocDown.Office` | Yes | With `DocDown.PowerPoint.Rendering` |
 | Visio | `.vsdx`, `.vsdm` | `DocDown.Office` | Yes | Windows, with Visio |
 
 Not supported today:

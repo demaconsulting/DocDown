@@ -143,10 +143,9 @@ words:
   - renderable
   - misdetection
   # Office formats pass (DocDown.Visio, DocDown.PowerPoint, DocDown.Excel): the macro-enabled Visio
-  # drawing extension and its IANA media-type token, the PowerPoint host process name, and the Visio
+  # drawing extension and its IANA media-type token, and the Visio
   # automation ProgID/method tokens. All genuine technical or product names, not misspellings.
   - vsdm
-  - POWERPNT
   - macroenabled
   - OpenEx
   - InvisibleApp

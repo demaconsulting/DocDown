@@ -101,14 +101,13 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         var backends = engine.GetBackends();
 
         // Assert: every backend package's extractors are registered explicitly
-        Assert.Equal(8, backends.Count);
+        Assert.Equal(7, backends.Count);
         Assert.Contains(backends, backend => backend.Descriptor.Id == "pdf");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "pdf-rendering");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "word-openxml");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "visio-openxml");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "visio-com");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "powerpoint-openxml");
-        Assert.Contains(backends, backend => backend.Descriptor.Id == "powerpoint-com");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "excel-openxml");
     }
 
@@ -230,15 +229,15 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
     }
 
     /// <summary>
-    ///     Proves the Visio and PowerPoint COM render cases actually execute and pass where the
-    ///     application is installed.
+    ///     Proves the Visio COM render case actually executes and passes where the application is
+    ///     installed.
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         These two cases are the only place the COM boundary — activation, read-only open,
-    ///         export, and session teardown — is exercised anywhere, so a machine that has Office
-    ///         must prove it works rather than accept a skip. A skip here would mean the suite had
-    ///         quietly stopped testing the thing these cases exist for.
+    ///         This case is the only place the COM boundary — activation, read-only open, export,
+    ///         and session teardown — is exercised anywhere, so a machine that has Office must prove
+    ///         it works rather than accept a skip. A skip here would mean the suite had quietly
+    ///         stopped testing the thing this case exists for.
     ///     </para>
     ///     <para>
     ///         Where the application is absent the case is legitimately not executed, which is the
@@ -259,9 +258,8 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         bool Available(string id) =>
             backends.Any(b => b.Descriptor.Id == id && b.Availability.IsAvailable);
 
-        // Assert: each COM render case ran, and passed wherever its application is present
+        // Assert: the COM render case ran, and passed wherever its application is present
         AssertComRenderCase(parsed, "visio.com.render", Available("visio-com"));
-        AssertComRenderCase(parsed, "powerpoint.com.render", Available("powerpoint-com"));
     }
 
     /// <summary>

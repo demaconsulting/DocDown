@@ -5,9 +5,8 @@ PowerPoint extraction package.
 
 ## Verification Approach
 
-`DocDown.PowerPoint` is verified through system-level integration tests in `DocDownPowerPointTests.cs`,
-unit tests per unit in `DemaConsulting.DocDown.Office.Tests`, and release-time self-tests for the
-real COM automation boundary.
+`DocDown.PowerPoint` is verified through system-level integration tests in `DocDownPowerPointTests.cs`
+and unit tests per unit in `DemaConsulting.DocDown.Office.Tests`.
 
 ### Every extraction test reconciles against the filesystem
 
@@ -19,16 +18,12 @@ way, so the structured unreadable layout is verified alongside successful modern
 Beyond the layout, each scenario asserts the extraction outcome, the inventory counts written into
 `summary.txt` and `manifest.json`, and the exact set of notes the run recorded.
 
-### Two backends, one reader, one emitter
+### One reader, one emitter
 
-The package ships two backends. The managed Open XML backend reads a deck into the reader-neutral
+The package ships one backend. The managed Open XML backend reads a deck into the reader-neutral
 model and drives the content emitter, so every mapping decision is made in exactly one place and can
-be proved from a hand-built model with no deck behind it. The COM backend reuses that same content
-path by delegation and adds a rendered image of each slide; everything it does apart from talking to
-Microsoft PowerPoint is exercised cross-platform by injecting a stub `IPowerPointAutomation`, so
-delegation, rendering, per-slide fault isolation, and rendering-fact reconciliation are all proved in
-CI. The real COM adapter is the one boundary CI cannot reach; its correctness in a deployed
-environment is proven by release-time self-tests.
+be proved from a hand-built model with no deck behind it. Rendered slide images are a separate,
+opt-in concern provided by `DocDown.PowerPoint.Rendering` and verified there.
 
 ### Speaker-notes inventory is the headline reporting property
 
@@ -41,21 +36,12 @@ the zero and records no note, and
 reaches both `summary.txt` and `manifest.json` end to end, with the run still a clean `Produced`
 result.
 
-### Rendering is captured when available and noted honestly when not
-
-The COM backend renders every slide through the injected stub and adds one page per slide; a slide the
-renderer cannot produce becomes a one-sentence `ExtractionNote` while the remaining slides still
-render. The availability probe is proved to report unavailable off Windows with a declarative reason
-that never instructs an installation, so a machine without PowerPoint produces an honest selection
-outcome rather than a broken render.
-
 ### Test fixtures are generated; the self-test probe is committed
 
-Every deck the suite uses is built at test time by the Open XML SDK writer in `TestData/PptxFixtures.cs`,
-and the rendering path is driven by `TestData/StubPowerPointAutomation.cs`. The legacy `.ppt`
-scenario writes a placeholder byte sequence whose extension drives format detection, because the
-selection path never opens the file: no registered backend supports the format. No fixture is
-committed.
+Every deck the suite uses is built at test time by the Open XML SDK writer in `TestData/PptxFixtures.cs`.
+The legacy `.ppt` scenario writes a placeholder byte sequence whose extension drives format detection,
+because the selection path never opens the file: no registered backend supports the format. No
+fixture is committed.
 The one committed binary is the backend's self-test probe: a real deck authored in Microsoft
 PowerPoint, embedded in the package so the self-test reads what that application emits.
 The suite's own fixtures stay generated. No `.pptx` or
@@ -70,9 +56,8 @@ image name, and rendered payload in the fixtures is synthetic.
 - **Inputs**: PresentationML decks generated at test time by the Open XML SDK writer, plus a short
   byte sequence for the legacy `.ppt` refusal scenario; no committed binary fixtures and no network
   access
-- **Mocking**: none for the managed integration scenarios; the COM backend is driven through an
-  injected stub `IPowerPointAutomation` so the whole rendering path is exercised with no Microsoft
-  Office present
+- **Mocking**: none; the managed integration scenarios exercise the real Open XML SDK against
+  generated decks
 - **Determinism**: a fixed timestamp is injected so repeated runs are byte-comparable
 - **Isolation**: each test owns its temporary folder and cleans it on dispose
 
@@ -90,10 +75,6 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
   presentation order.
 - The content inventory reports the looked-for document structure honestly, including
   `0 sets of speaker notes` for a notes-less deck.
-- The rendering backend renders every slide when the stub adapter succeeds, and records a plain note
-  naming a slide the renderer could not produce while continuing with the remaining slides.
-- The COM run's composed report is internally consistent: the delegated backend's "rendering not
-  provided" fact is suppressed and the authoritative renderer fact is present.
 - The legacy binary `.ppt` format is refused with an `Unreadable` result carrying a plain explanation
   that states DocDown does not support legacy binary Office formats, never an installation
   instruction.
@@ -102,21 +83,19 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 
 Each scenario corresponds to one system requirement and names the real test method that evidences it.
 
-### The default engine registers both PowerPoint backends
+### The default engine registers the managed PowerPoint backend
 
-**Test**: `AddPowerPoint_RegistersOpenXmlAndComBackends`
+**Test**: `AddPowerPoint_RegistersOpenXmlBackend`
 
-Proves the one-liner the host uses to add PowerPoint support registers both the managed Open XML
-backend and the COM automation backend on the resulting engine. Evidence for
-`DocDownPowerPoint-Registration`.
+Proves the one-liner the host uses to add PowerPoint support registers exactly the managed Open XML
+backend on the resulting engine. Evidence for `DocDownPowerPoint-Registration`.
 
 ### Backend selection stays explicit and observable
 
-**Tests**: `PowerPointOpenXmlExtractor_Descriptor_MatchesContract`,
-`PowerPointComExtractor_Descriptor_MatchesContract`
+**Test**: `PowerPointOpenXmlExtractor_Descriptor_MatchesContract`
 
-Prove the managed and COM extractors expose distinct backend identities, stable priorities, and
-page-rendering applicability through the selection surface the engine reads. Evidence for
+Proves the managed extractor exposes a stable backend identity, priority, and page-rendering
+applicability through the selection surface the engine reads. Evidence for
 `DocDownPowerPoint-BackendSelectionSurface`.
 
 ### The Open XML backend is selected and produces the contract layout
@@ -164,26 +143,14 @@ manifest's `contentFeatures`, records no note, and still succeeds. Evidence for
 Proves the slides come out in presentation order with their 1-based ordinals and their titles.
 Evidence for `DocDownPowerPoint-SlideOrder`.
 
-### Slides render when PowerPoint is available
+### The managed backend states plainly that it renders no pages
 
-**Test**: `PowerPointComExtractor_Extract_ViaStub_WritesNotesAndRendersEverySlide`
+**Test**: `PowerPointOpenXmlExtractor_Descriptor_MatchesContract`
 
-Proves the COM backend delegates the guaranteed content and adds one rendered page per slide through
-the automation seam, disposing the session. Evidence for `DocDownPowerPoint-PageRendering`.
-
-### A slide that cannot be rendered becomes a plain note
-
-**Test**: `PowerPointComExtractor_Extract_SlideRenderFails_ReportsNote`
-
-Proves a slide that fails to render is named in a one-sentence note while the remaining slides still
-render. Evidence for `DocDownPowerPoint-SlideRenderNotes`.
-
-### Rendering availability is honest and instructs no installation
-
-**Test**: `PowerPointComAvailability_Probe_NeverThrowsAndNeverInstructsInstallation`
-
-Proves the availability probe is cheap, never throws, and never instructs an installation. Evidence
-for `DocDownPowerPoint-RenderingAvailability`.
+Proves the managed backend's descriptor and environment facts state plainly, on every extraction,
+that it provides no rendered pages rather than ever fabricating one. Rendered slide images are a
+separate, opt-in concern delivered entirely by `DocDown.PowerPoint.Rendering`. Evidence for
+`DocDownPowerPoint-PageRendering`.
 
 ### Embedded images are written and linked from the slide
 

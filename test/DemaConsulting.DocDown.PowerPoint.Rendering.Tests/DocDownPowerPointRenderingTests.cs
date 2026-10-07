@@ -19,12 +19,12 @@ namespace DemaConsulting.DocDown.PowerPoint.Rendering.Tests;
 ///         verified against the same contract a host consumes.
 ///     </para>
 ///     <para>
-///         Selection is exercised both ways: with page rendering requested the rendering backend
-///         must win over both the managed Open XML backend and the COM backend (its priority is
-///         higher than either), and with it not requested the managed Open XML backend must win
-///         (its priority is higher than the rendering backend's, and the COM backend is unavailable
-///         off Windows or without PowerPoint installed). Rendering is always available, since
-///         CanvasNet.Pptx is a fully-managed library with no native stack that could be absent.
+///         Selection is a simple two-backend contest: with page rendering requested, this rendering
+///         backend (priority 5) is the only backend for <c>.pptx</c> that provides rendered pages, so
+///         it always wins. With pages not requested, the managed Open XML backend wins instead,
+///         since its priority, 10, outranks the rendering backend's, 5. Rendering through
+///         CanvasNet.Pptx is always available, since it is a fully-managed library with no native
+///         stack that could be absent.
 ///     </para>
 /// </remarks>
 public class DocDownPowerPointRenderingTests
@@ -90,12 +90,22 @@ public class DocDownPowerPointRenderingTests
         ContractAssert.LayoutPresent(first);
         ContractAssert.LayoutPresent(second);
 
-        // Assert: the rendered slide bytes are identical across the two runs
-        ContractAssert.FileEquals(Path.Combine(first, "pages", "page0001.png"), Path.Combine(second, "pages", "page0001.png"));
+        // Assert: every rendered slide's bytes are identical across the two runs, not just the first
+        var firstPages = Directory.GetFiles(Path.Combine(first, "pages"), "*.png")
+            .Select(Path.GetFileName).OrderBy(name => name, StringComparer.Ordinal).ToList();
+        var secondPages = Directory.GetFiles(Path.Combine(second, "pages"), "*.png")
+            .Select(Path.GetFileName).OrderBy(name => name, StringComparer.Ordinal).ToList();
+        Assert.Equal(firstPages, secondPages);
+        Assert.NotEmpty(firstPages);
+        foreach (var page in firstPages)
+        {
+            ContractAssert.FileEquals(Path.Combine(first, "pages", page!), Path.Combine(second, "pages", page!));
+        }
     }
 
     /// <summary>
-    ///     Proves the rendering backend is selected when page rendering is requested.
+    ///     Proves the rendering backend is selected when page rendering is requested, since it is
+    ///     the only page-renderer registered for <c>.pptx</c>.
     /// </summary>
     [Fact]
     public async Task DocDownPowerPointRendering_Select_PagesRequested_RenderingBackendWins()
@@ -109,9 +119,8 @@ public class DocDownPowerPointRenderingTests
         // Act: request rendered pages
         var result = await engine.ExtractAsync(input, scratch, RenderingOptions(), Ct);
 
-        // Assert: the rendering backend won (its priority, 5, outranks both the COM backend's, 0,
-        // and the managed Open XML backend's, 10, is not among renderer candidates), pages were
-        // produced, and nothing was left incomplete
+        // Assert: the rendering backend won — it is the only backend for .pptx that provides
+        // rendered pages — and pages were produced with nothing left incomplete
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Equal("powerpoint-rendering", result.SelectedExtractor?.Id);
         Assert.NotEmpty(result.PagePaths);
@@ -134,8 +143,8 @@ public class DocDownPowerPointRenderingTests
         // Act: extract without requesting rendered pages
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
-        // Assert: the managed Open XML backend won — its priority, 10, outranks both the rendering
-        // backend's, 5, and the COM backend's, 0 — and produced no pages
+        // Assert: the managed Open XML backend won — its priority, 10, outranks the rendering
+        // backend's, 5 — and produced no pages
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Equal("powerpoint-openxml", result.SelectedExtractor?.Id);
         Assert.Empty(result.PagePaths);

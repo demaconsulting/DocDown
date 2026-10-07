@@ -4,16 +4,16 @@
 
 ### Overview
 
-The Com subsystem holds what the PowerPoint and Visio COM automation backends share. It exists
-because those two backends do the same three things in the same way, and did them in two copies until
-the duplication was removed: they probe whether their application can be reached, they delegate
-content extraction to their managed counterpart, and they reconcile that delegate's output with the
-rendering they then perform.
+The Com subsystem holds what Visio's COM automation backend uses. It was shared with PowerPoint's
+own COM backend until that backend was removed in favor of a fully-managed rendering package; these
+types remain because Visio's COM backend still probes whether its application can be reached,
+delegates content extraction to its managed counterpart, and reconciles that delegate's output with
+the rendering it then performs.
 
 ### Interfaces
 
-Every type here is internal. The subsystem's consumers are the two COM extractors in their own
-format subsystems; nothing outside `DemaConsulting.DocDown.Office` can reach these types.
+Every type here is internal. The subsystem's consumer is the Visio COM extractor in its own format
+subsystem; nothing outside `DemaConsulting.DocDown.Office` can reach these types.
 
 ### Design
 
@@ -26,11 +26,10 @@ Three types, none of which touches a COM interface itself.
 - **DelegatedExtractionContext** — the context a COM backend hands its managed counterpart: page
   rendering switched off, output routed through the composing sink.
 
-The COM calls themselves live in each format's own `Com` subsystem, in its automation adapter and
-dispatch helper. Those are not shared, because they diverge in ways that matter: Visio is driven
-through `Visio.InvisibleApp` and PowerPoint through `PowerPoint.Application`, the process names
-differ, and each needs a different value converter. Collapsing them would produce one type with four
-knobs, which trades one kind of complexity for a worse one.
+The COM calls themselves live in Visio's own `Com` subsystem, in its automation adapter and dispatch
+helper. Those are not shared, because the COM boundary is driven through `Visio.InvisibleApp` with
+its own process name and value converter, and collapsing a single-backend concern into this shared
+subsystem would add complexity these types do not need.
 
 #### Why the delegate's honesty needs composing
 
@@ -40,9 +39,7 @@ the COM backend rendered the pages sitting beside it in the same output folder.
 
 `ComposingDelegatedSink` suppresses exactly that one fact, and only when it is reported unavailable.
 Every other fact, note, image, and content part passes through untouched. The fact's key is supplied
-by the caller rather than hard-coded, because each managed backend names its own — the PowerPoint
-backend reports `powerpoint.pageRendering` and the Visio backend `visio.pageRendering`. That single
-string was the only difference between what were once two copies of this class.
+by the caller rather than hard-coded, because the Visio backend reports `visio.pageRendering`.
 
 #### Risk control measures
 

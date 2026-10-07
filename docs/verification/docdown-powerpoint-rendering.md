@@ -77,7 +77,8 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
   `Slide N could not be rasterized.` and still returns `Produced`; a forced slide-count fault emits
   the single note `Slides could not be counted, so no slide images were rendered.` and keeps the
   delegated managed content.
-- The rendering backend is selected whenever page rendering is requested, and never when it is not.
+- A page-renderer (this backend) is selected whenever page rendering is requested, and it is not
+  selected when it is not.
 - The availability probe is cheap, non-throwing, and unconditionally reports rendered-page support.
 - Each of the six platform requirements is satisfied by a source-filtered result from the matching
   operating system or runtime; a result from another platform does not count.
@@ -93,10 +94,10 @@ these same scenarios; the exact tests are named in their OTS verification docume
 
 **Test**: `DocDownPowerPointRendering_Render_ProbePresentation_ProducesValidPngPages`
 
-Proves the central promise: with both backends registered and rendering requested, the rendering
-backend is selected and every `pages/pageNNNN.png` is a valid PNG of plausible dimensions for the
-requested DPI. Evidence for `DocDownPowerPointRendering-RendersSlidesToPng`, and the anchor for the
-platform requirements.
+Proves the central promise: with both backends registered and rendering requested, this backend is
+selected and every `pages/pageNNNN.png` is a valid PNG of plausible dimensions for the requested DPI.
+Evidence for `DocDownPowerPointRendering-RendersSlidesToPng`, and the anchor for the platform
+requirements.
 
 ### Repeated rendering is byte-identical
 
@@ -110,9 +111,9 @@ images, so a consumer can diff two extractions meaningfully. Evidence for
 
 **Test**: `DocDownPowerPointRendering_Select_PagesRequested_RenderingBackendWins`
 
-Proves selection prefers the rendering backend when page rendering is requested, that slides are
-produced, and that a clean render completes without notes. Evidence for
-`DocDownPowerPointRendering-SelectedWhenPagesRequested`.
+Proves selection prefers the rendering backend over the non-rendering managed backend when page
+rendering is requested, that slides are produced, and that a clean render completes without notes.
+Evidence for `DocDownPowerPointRendering-SelectedWhenPagesRequested`.
 
 ### The managed backend wins when pages are not requested
 

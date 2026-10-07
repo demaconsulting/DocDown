@@ -1,15 +1,14 @@
 ## Com Subsystem Verification Design
 
 This document describes the verification strategy for the Com subsystem of `DocDown.Office`: the
-availability probe and the composition helpers the PowerPoint and Visio automation backends share.
+availability probe and the composition helpers Visio's automation backend uses.
 
 ### Verification Approach
 
 The subsystem is verified through the unit tests in
-`DemaConsulting.DocDown.Office.Tests/PowerPoint/Com` and
 `DemaConsulting.DocDown.Office.Tests/Visio/Com`, running on xUnit v3 across net8.0, net9.0, and
-net10.0. Because the shared types are reached through each backend's own named entry point, they are
-verified through those entry points rather than directly.
+net10.0. Because the shared types are reached through Visio's own named entry point, they are
+verified through that entry point rather than directly.
 
 #### The probe is verified where the application is absent, not only where it is present
 
@@ -18,8 +17,8 @@ the path that matters most, because it is what a user without Office will hit. T
 probe returns a result rather than throwing, and that off Windows the result is unavailable and names
 the operating system.
 
-That the *available* path works is proven functionally instead, by the COM render self-tests passing
-on a machine where Visio and PowerPoint are installed.
+That the *available* path works is proven functionally instead, by the COM render self-test passing
+on a machine where Visio is installed.
 
 #### Reasons are checked for what they must not say
 
@@ -56,16 +55,14 @@ including the runners with no Office at all, and isolates it from whether a real
 
 #### The probe answers without throwing and without instructing an installation
 
-**Tests**: `PowerPointComAvailability_Probe_NeverThrowsAndNeverInstructsInstallation`,
-`VisioComAvailability_Probe_NeverInstructsInstallation`
+**Tests**: `VisioComAvailability_Probe_NeverInstructsInstallation`
 
 Calls the probe and asserts it returned rather than threw, and that the reason, when unavailable,
 contains no instruction to install. Evidence for `DocDownOffice-Com-Availability`.
 
 #### Off Windows the probe reports unavailable
 
-**Tests**: `PowerPointComAvailability_Probe_OffWindows_IsUnavailable`,
-`VisioComAvailability_Probe_OffWindows_IsUnavailable`
+**Tests**: `VisioComAvailability_Probe_OffWindows_IsUnavailable`
 
 Asserts that on a non-Windows platform the result is unavailable and its reason names the operating
 system, so the reader learns why rather than only that. Evidence for
@@ -73,8 +70,7 @@ system, so the reader learns why rather than only that. Evidence for
 
 #### The delegate's rendering statement does not contradict the rendering
 
-**Tests**: `PowerPointComExtractor_Extract_ViaStub_SuppressesContradictoryPageRenderingFact`,
-`VisioComExtractor_Extract_ViaStub_SuppressesContradictoryPageRenderingFact`
+**Tests**: `VisioComExtractor_Extract_ViaStub_SuppressesContradictoryPageRenderingFact`
 
 Drives a COM extractor through the stub adapter and asserts the managed delegate's
 `<backend>.pageRendering` unavailable fact does not appear in the output, while the rendering fact
