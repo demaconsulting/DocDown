@@ -81,8 +81,8 @@
          rendering packages share the DemaConsulting.CanvasNet dependency, and two different exact
          pins for the same package would make DemaConsulting.DocDown.Tool (which references both
          rendering packages) unrestorable with an NU1107 version conflict. -->
-    <PackageReference Include="DemaConsulting.CanvasNet.Pdf" Version="[0.1.0-beta.9]" />
-    <PackageReference Include="DemaConsulting.CanvasNet" Version="[0.1.0-beta.9]" />
+    <PackageReference Include="DemaConsulting.CanvasNet.Pdf" Version="[0.1.0-beta.10]" />
+    <PackageReference Include="DemaConsulting.CanvasNet" Version="[0.1.0-beta.10]" />
   </ItemGroup>
 
   <!-- Build Tool Dependencies -->

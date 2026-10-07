@@ -75,14 +75,13 @@
          DemaConsulting.CanvasNet.Charts supplies the chart-rendering support CanvasNet.Pptx uses
          for embedded chart content. All three are pinned to the exact same prerelease (beta)
          version for the same reason DocDown.Pdf.Rendering pins CanvasNet.Pdf/CanvasNet: a floating
-         reference to a prerelease package could silently substitute an incompatible API, and this
-         is the first and only published version of CanvasNet.Pptx and CanvasNet.Charts at the time
-         this package was written. None of the three carries a native asset for any runtime
-         identifier — see docs/design/ots/canvasnetpptx.md and docs/design/ots/canvasnetcharts.md
-         for the rationale. -->
-    <PackageReference Include="DemaConsulting.CanvasNet.Pptx" Version="[0.1.0-beta.9]" />
-    <PackageReference Include="DemaConsulting.CanvasNet.Charts" Version="[0.1.0-beta.9]" />
-    <PackageReference Include="DemaConsulting.CanvasNet" Version="[0.1.0-beta.9]" />
+         reference to a prerelease package could silently substitute an incompatible API. None of
+         the three carries a native asset for any runtime identifier — see
+         docs/design/ots/canvasnetpptx.md and docs/design/ots/canvasnetcharts.md for the
+         rationale. -->
+    <PackageReference Include="DemaConsulting.CanvasNet.Pptx" Version="[0.1.0-beta.10]" />
+    <PackageReference Include="DemaConsulting.CanvasNet.Charts" Version="[0.1.0-beta.10]" />
+    <PackageReference Include="DemaConsulting.CanvasNet" Version="[0.1.0-beta.10]" />
   </ItemGroup>
 
   <!-- Build Tool Dependencies -->
