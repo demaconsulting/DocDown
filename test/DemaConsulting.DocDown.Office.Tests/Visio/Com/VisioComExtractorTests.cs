@@ -169,6 +169,30 @@ public class VisioComExtractorTests
     }
 
     /// <summary>
+    ///     Proves a drawing with no foreground pages to export is reported by this backend itself,
+    ///     not silently finished with no explanation. Core cannot tell this unit's own empty-render
+    ///     explanation apart from an unrelated note recorded elsewhere in the same extraction, so this
+    ///     unit must report it from its own exported-page count.
+    /// </summary>
+    [Fact]
+    public async Task VisioComExtractor_Extract_NoForegroundPages_ReportsEmptyPagesNote()
+    {
+        using var temp = new TempScratch();
+        var input = WriteFixture(temp, "wash.vsdx", VsdxFixtures.WashSystem());
+        var extractor = new VisioComExtractor(() => new StubVisioAutomation([]));
+        var sink = new RecordingSink();
+
+        var outcome = await extractor.ExtractAsync(DocumentSource.FromFile(input), new CapturingContext(sink, Ct));
+
+        Assert.Equal(ExtractionOutcome.Produced, outcome);
+        Assert.Empty(sink.Pages);
+        var note = Assert.Single(sink.Notes);
+        Assert.Equal(
+            "Page rendering was requested and a renderer was available, but no pages were produced.",
+            note.Message);
+    }
+
+    /// <summary>
     ///     Proves the backend contributes both release-time cases: the availability probe and the
     ///     end-to-end render that actually drives Microsoft Visio.
     /// </summary>

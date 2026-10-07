@@ -27,9 +27,10 @@ proved separately by release-time self-tests.
 Per IEC 62304 §5.5.2, a `VisioComExtractor` unit test run passes when the extractor identifies the
 modern Visio drawing formats, participates in selection below the managed backend, delegates the
 managed content path, renders every page through the seam at the caller's requested resolution,
-records a plain note for any page it could not render while continuing, suppresses the delegated
-backend's `visio.pageRendering` fact while emitting the authoritative renderer fact, and probes
-unavailable without throwing or instructing an installation.
+records a plain note for any page it could not render while continuing, reports its own explanatory
+note when the session exports no foreground pages at all, suppresses the delegated backend's
+`visio.pageRendering` fact while emitting the authoritative renderer fact, and probes unavailable
+without throwing or instructing an installation.
 
 ### Test Scenarios
 
@@ -70,6 +71,15 @@ Proves the caller's render resolution is passed through to the automation seam. 
 
 Proves a page that fails to render is recorded as a plain note while the remaining pages still
 render. Evidence for `DocDownVisio-Com-VisioComExtractor-ReportsPageRenderFailureNotes`.
+
+#### An empty page export is reported by this backend, not Core
+
+**Test**: `VisioComExtractor_Extract_NoForegroundPages_ReportsEmptyPagesNote`
+
+Proves a drawing with no foreground pages to export is not finished silently: the backend itself
+records the single note "Page rendering was requested and a renderer was available, but no pages
+were produced.", independent of any note the delegated managed backend may have already recorded.
+Evidence for `DocDownVisio-Com-VisioComExtractor-ReportsEmptySelectionAsNote`.
 
 #### The probe is honest and instructs no installation
 

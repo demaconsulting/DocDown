@@ -90,6 +90,22 @@ sections:
                 tests:
                   - VisioComExtractor_Extract_PageRenderFails_ReportsNote
 
+              - id: DocDownVisio-Com-VisioComExtractor-ReportsEmptySelectionAsNote
+                title: >-
+                  VisioComExtractor shall report the plain note "Page rendering was requested and a
+                  renderer was available, but no pages were produced." itself whenever page rendering
+                  was requested and the automation seam exported no foreground pages.
+                justification: |
+                  Core cannot distinguish this backend's own empty-outcome explanation from an
+                  unrelated note the delegated managed backend may already have recorded during its
+                  earlier content phase, so it no longer attempts to infer or suppress a generic note
+                  on this backend's behalf. Recording the note from the backend's own exported-page
+                  count, which is immune to any unrelated note recorded elsewhere, is what keeps the
+                  empty-pages outcome explained exactly once without relying on sink history — a
+                  drawing with no foreground pages must still be an explained, not silent, outcome.
+                tests:
+                  - VisioComExtractor_Extract_NoForegroundPages_ReportsEmptyPagesNote
+
               - id: DocDownVisio-Com-VisioComExtractor-ProbesHonestly
                 title: >-
                   VisioComExtractor shall probe unavailable without throwing where no automation

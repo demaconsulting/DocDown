@@ -31,8 +31,12 @@ state.
   records `pages.renderer`, renders every foreground page through `RenderPagesAsync`, and returns
   `Produced` on normal completion.
 - **`RenderPagesAsync`** (private) — materializes the buffered bytes to the source file or a
-  temporary path, opens one automation session, renders every page, adds each successful page's
-  PNG, and turns any per-page failure into a plain note. Temporary files are deleted on every path.
+  temporary path, opens one automation session, and renders every page. When the session returns no
+  page at all — a drawing with no foreground pages to export — this method reports that outcome
+  itself as a single note rather than relying on Core to infer it, since Core cannot tell this
+  unit's own explanation apart from an unrelated note recorded elsewhere in the same extraction.
+  Otherwise it adds each successful page's PNG and turns any per-page failure into a plain note.
+  Temporary files are deleted on every path.
 - **`MaterializePath`** / **`TryDelete`** (private) — prefer the existing source file, otherwise
   write and later delete a temporary `.vsdx` or `.vsdm` copy.
 - **`ReportPageFailure`** (private) — records the one-sentence note for a page that could not be

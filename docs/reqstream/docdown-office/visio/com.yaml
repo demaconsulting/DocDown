@@ -29,6 +29,7 @@ sections:
               - DocDownVisio-Com-VisioComExtractor-ReconcilesRenderingFacts
               - DocDownVisio-Com-VisioComExtractor-RendersEveryPage
               - DocDownVisio-Com-VisioComExtractor-ReportsPageRenderFailureNotes
+              - DocDownVisio-Com-VisioComExtractor-ReportsEmptySelectionAsNote
               - DocDownVisio-Com-VisioComExtractor-ProbesHonestly
             tests:
               - VisioComExtractor_Extract_ViaStub_WritesTopologyAndRendersEveryPage
