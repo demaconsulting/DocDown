@@ -379,9 +379,10 @@ tests:
         count: 1
         zip:
           files:
-            # Every backend reachable from the tool, including the PDF page-rendering
-            # backend (now CanvasNet.Pdf), is fully managed and runtime-identifier
-            # agnostic, so the published package must carry nothing under runtimes/.
+            # Every backend reachable from the tool, including the PDF and PowerPoint
+            # page-rendering backends (CanvasNet.Pdf and CanvasNet.Pptx), is fully
+            # managed and runtime-identifier agnostic, so the published package must
+            # carry nothing under runtimes/.
             - pattern: "**/runtimes/**"
               max: 0
 
@@ -398,6 +399,28 @@ tests:
         zip:
           files:
             # A consumer restoring these packages gets libraries deployable anywhere the
+            # runtime is, with no native stack to resolve at all.
+            - pattern: "runtimes/**"
+              max: 0
+            - pattern: "**/*.so"
+              max: 0
+            - pattern: "**/*.dylib"
+              max: 0
+            - pattern: "lib/**/*.dll"
+              min: 1
+
+  - name: DocDownPowerPointRendering_Package_ContainsNoNativeAssets
+    description: "The PowerPoint rendering package is fully managed and runtime-identifier agnostic"
+    tags: [packages]
+    files:
+      # DocDown.PowerPoint.Rendering ships no native asset: it depends on CanvasNet.Pptx,
+      # CanvasNet, and CanvasNet.Charts, all fully managed libraries with no native
+      # binaries. This mirrors the equivalent Pdf.Rendering assertion above.
+      - pattern: "packages/DemaConsulting.DocDown.PowerPoint.Rendering.*.nupkg"
+        count: 1
+        zip:
+          files:
+            # A consumer restoring this package gets a library deployable anywhere the
             # runtime is, with no native stack to resolve at all.
             - pattern: "runtimes/**"
               max: 0

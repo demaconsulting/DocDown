@@ -1,0 +1,82 @@
+---
+# Software Unit Requirements for PowerPointPageRenderingExtractor
+#
+# PowerPointPageRenderingExtractor is the superset backend: it is unconditionally available with
+# rendered-page support, delegates the managed aspects to the base PowerPoint backend, rasterizes
+# the requested slides, and reports every per-slide failure as a plain note.
+
+sections:
+  - title: DocDownPowerPointRendering Requirements
+    sections:
+      - title: PowerPointPageRenderingExtractor Requirements
+        requirements:
+          - id: DocDownPowerPointRendering-PowerPointPageRenderingExtractor-ReportsUnconditionalAvailability
+            title: >-
+              PowerPointPageRenderingExtractor shall unconditionally report itself available with
+              rendered-page support.
+            justification: |
+              CanvasNet.Pptx is fully managed and carries no runtime-identifier-specific asset, so there
+              is no environment in which this backend cannot rasterize. Reporting availability
+              unconditionally, rather than through a probe that could report otherwise, is what lets
+              Core choose this backend without an environment-dependent guess.
+            tests:
+              - PowerPointPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReportsUnconditionallyAvailable
+
+          - id: DocDownPowerPointRendering-PowerPointPageRenderingExtractor-DelegatesManagedAspects
+            title: >-
+              PowerPointPageRenderingExtractor shall obtain text, embedded images, and document metadata by
+              delegating to the managed PowerPoint backend with rendering suppressed.
+            justification: |
+              Re-implementing the managed aspects would duplicate faithful, well-tested behavior and
+              risk divergence. Delegating with rendering suppressed reuses one source of truth and
+              keeps this unit focused on rasterization alone.
+            tests:
+              - PowerPointPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs
+
+          - id: DocDownPowerPointRendering-PowerPointPageRenderingExtractor-WritesRenderedPages
+            title: >-
+              PowerPointPageRenderingExtractor shall write a valid PNG image for each rendered slide through
+              the sink.
+            justification: |
+              The rendered slide is the artifact this package adds. Writing it through the sink, named
+              by its slide number, is what makes the mapping from output file to source slide
+              unambiguous and the image a real, decodable PNG.
+            tests:
+              - PowerPointPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs
+              - DocDownPowerPointRendering_Render_ProbePresentation_ProducesValidPngPages
+
+          - id: DocDownPowerPointRendering-PowerPointPageRenderingExtractor-ReportsSlideFailuresAsNotes
+            title: >-
+              PowerPointPageRenderingExtractor shall report a per-slide rasterization failure as the plain
+              note `Slide N could not be rasterized.`, continue with the remaining slides, and not
+              throw to the caller.
+            justification: |
+              One unrenderable slide must not abort a whole extraction or reach the caller as an
+              exception. Catching each slide's fault, naming the slide in a short factual note, and
+              continuing is what keeps the run honest and alive without adding any extra judgement.
+            tests:
+              - PowerPointPageRenderingExtractor_ExtractAsync_SlideRenderFaults_ReportsNoteWithoutThrowing
+
+          - id: DocDownPowerPointRendering-PowerPointPageRenderingExtractor-ReportsSlideCountFailureAsNote
+            title: >-
+              PowerPointPageRenderingExtractor shall report a slide-count failure as the single plain note
+              `Slides could not be counted, so no slide images were rendered.`, keep the delegated
+              managed content, and not throw to the caller.
+            justification: |
+              A slide-count fault happens before any slide-specific rasterization is attempted. Losing
+              only the rendered slides, while keeping the managed content the delegate already wrote,
+              is what keeps an otherwise good extraction from collapsing into an unreadable one.
+            tests:
+              - PowerPointPageRenderingExtractor_ExtractAsync_SlideCountFaults_ReportsNoteAndKeepsDelegatedContent
+
+          - id: DocDownPowerPointRendering-PowerPointPageRenderingExtractor-ContributesSelfTests
+            title: >-
+              PowerPointPageRenderingExtractor shall contribute a render round-trip self-test case named
+              distinctly from the managed backend's cases, which passes in every environment.
+            justification: |
+              An operator needs to confirm rendering genuinely works wherever DocDown is deployed. A
+              distinctly named case that renders the embedded presentation and always passes — because
+              CanvasNet.Pptx carries no environment-dependent failure mode — provides that confirmation
+              without colliding with the managed backend's own case names.
+            tests:
+              - PowerPointPageRenderingExtractor_GetSelfTestCases_AnyEnvironment_PassesRenderCase

@@ -113,6 +113,10 @@ words:
   - canvasnetpdf
   - RGBA
   - desynchronize
+  # DocDown.PowerPoint.Rendering addition: lowercase filename tokens for the CanvasNet.Pptx and
+  # CanvasNet.Charts OTS items used in reqstream/design/verification file paths.
+  - canvasnetpptx
+  - canvasnetcharts
   # Increment 6 (DocDown.Word): Open XML field-instruction keywords used for structural furniture
   # detection, the backend identifier token, and descriptive vocabulary introduced by the mapping.
   - openxml

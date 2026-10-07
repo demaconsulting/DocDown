@@ -85,11 +85,17 @@ input-files:
   - docs/verification/docdown-office/visio/open-xml/visio-open-xml-extractor.md
   - docs/verification/docdown-office/visio/open-xml/visio-package-reader.md
   - docs/verification/docdown-office/visio/open-xml/visio-image-reader.md
+  - docs/verification/docdown-powerpoint-rendering.md
+  - docs/verification/docdown-powerpoint-rendering/powerpoint-page-rendering-extractor.md
+  - docs/verification/docdown-powerpoint-rendering/slide-renderer.md
+  - docs/verification/docdown-powerpoint-rendering/powerpoint-rendering-doc-down-builder-extensions.md
   - docs/verification/ots.md
   - docs/verification/ots/apimark.md
   - docs/verification/ots/buildmark.md
   - docs/verification/ots/canvasnet.md
   - docs/verification/ots/canvasnetpdf.md
+  - docs/verification/ots/canvasnetpptx.md
+  - docs/verification/ots/canvasnetcharts.md
   - docs/verification/ots/fileassert.md
   - docs/verification/ots/openxml.md
   - docs/verification/ots/pandoc.md

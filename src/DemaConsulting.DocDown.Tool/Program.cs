@@ -3,6 +3,7 @@ using DocDown.Core;
 using DocDown.Office;
 using DocDown.Pdf;
 using DocDown.Pdf.Rendering;
+using DocDown.PowerPoint.Rendering;
 using DocDown.Tool.Cli;
 using DocDown.Tool.SelfTest;
 
@@ -21,10 +22,11 @@ namespace DocDown.Tool;
 ///     </para>
 ///     <para>
 ///         Extractors are registered explicitly through
-///         <c>new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().Build()</c>, with no reflection
-///         or assembly scanning, which is what keeps single-file publishing viable. Every backend,
-///         including the optional rendering backend, is fully managed and runtime-identifier
-///         agnostic; trimming and AOT are still left off as unverified for this dependency graph.
+///         <c>new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().AddPowerPointRendering().Build()</c>,
+///         with no reflection or assembly scanning, which is what keeps single-file publishing
+///         viable. Every backend, including the optional PDF and PowerPoint rendering backends, is
+///         fully managed and runtime-identifier agnostic; trimming and AOT are still left off as
+///         unverified for this dependency graph.
 ///     </para>
 /// </remarks>
 internal static class Program
@@ -224,11 +226,13 @@ internal static class Program
     /// <returns>A configured engine.</returns>
     /// <remarks>
     ///     Registration is explicit and reflection-free, which keeps single-file publish viable. The
-    ///     managed PDF, PDF rendering, Word, Visio, PowerPoint, and Excel backends serve every
-    ///     extraction; the optional Visio and PowerPoint COM backends are chosen only when page
-    ///     rendering is requested and their environment (Microsoft Visio or PowerPoint) is available,
-    ///     degrading through the engine's own path otherwise.
+    ///     managed PDF, PDF rendering, Word, Visio, PowerPoint, Excel, and PowerPoint rendering
+    ///     backends serve every extraction; the optional Visio and PowerPoint COM backends are
+    ///     chosen only when page rendering is requested and their environment (Microsoft Visio or
+    ///     PowerPoint) is available, with the fully-managed PowerPoint rendering backend chosen
+    ///     instead whenever page rendering was requested but COM is not available, degrading
+    ///     through the engine's own path otherwise.
     /// </remarks>
     private static DocDownEngine BuildEngine() =>
-        new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().Build();
+        new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().AddPowerPointRendering().Build();
 }

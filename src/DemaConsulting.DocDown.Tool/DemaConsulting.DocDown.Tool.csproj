@@ -122,6 +122,10 @@
          agnostic: the PowerPoint and Visio COM backends reach Microsoft Office through late-bound
          IDispatch with no interop assembly, so none adds a native asset. -->
     <ProjectReference Include="..\DemaConsulting.DocDown.Office\DemaConsulting.DocDown.Office.csproj" />
+    <!-- The optional PowerPoint slide-rendering backend. It depends on the fully-managed
+         DemaConsulting.CanvasNet.Pptx/DemaConsulting.CanvasNet/DemaConsulting.CanvasNet.Charts
+         packages, so it adds no native asset and does not affect the tool's publish story. -->
+    <ProjectReference Include="..\DemaConsulting.DocDown.PowerPoint.Rendering\DemaConsulting.DocDown.PowerPoint.Rendering.csproj" />
     <!-- The Word backend package. It is 100% managed and runtime-identifier agnostic, so it adds no
          native asset and does not affect the tool's publish story. -->
     
