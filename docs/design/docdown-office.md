@@ -29,14 +29,14 @@ The system has four format subsystems and one shared subsystem.
   Design*.
 - **Excel** — a managed Open XML SDK backend for `.xlsx`, including cached chart data and drawing
   annotations. See the *DocDown.Office Excel Subsystem Design*.
-- **PowerPoint** — a managed Open XML SDK backend for `.pptx`, and a COM automation backend that
-  renders slide images where Microsoft PowerPoint is installed. See the *DocDown.Office PowerPoint
-  Subsystem Design*.
+- **PowerPoint** — a managed Open XML SDK backend for `.pptx`. Page rendering is served by the
+  separate, fully-managed `DocDown.PowerPoint.Rendering` package rather than by a COM backend. See
+  the *DocDown.Office PowerPoint Subsystem Design*.
 - **Visio** — a managed Open Packaging backend for `.vsdx` and `.vsdm`, and a COM automation backend
   that renders page images where Microsoft Visio is installed. See the *DocDown.Office Visio
   Subsystem Design*.
-- **Com** — the two helpers the PowerPoint and Visio COM backends share, and the availability probe
-  all COM backends use. See the *DocDown.Office Com Subsystem Design*.
+- **Com** — the two helpers Visio's COM automation backend uses, including the availability probe
+  that backend uses. See the *DocDown.Office Com Subsystem Design*.
 
 Legacy binary formats — `.doc`, `.xls`, `.ppt` — are not supported and are reported as unreadable
 rather than routed to a backend that cannot read them.
@@ -57,9 +57,9 @@ reference it without the SDK's types entering its compilation.
   Visio part is not WordprocessingML, SpreadsheetML, or PresentationML and the SDK models none of
   them.
 
-No native asset ships in this package. The COM backends reach Microsoft Office through late-bound
+No native asset ships in this package. The COM backend reaches Microsoft Office through late-bound
 `IDispatch` with no interop assembly, so the package stays runtime-identifier agnostic even though
-two of its backends only function on Windows.
+one of its backends only functions on Windows.
 
 ## Risk Control Measures
 
@@ -87,5 +87,5 @@ just happened.
   score, or classify that content.
 - An absence the reader looked for is reported as a count, including zero. It is never reported as a
   verdict about the document.
-- COM automation is Windows-only and single-instance, so the backends own the application process
-  they start and terminate it if it stops responding.
+- COM automation is Windows-only and single-instance, so the backend owns the application process
+  it starts and terminates it if it stops responding.

@@ -34,6 +34,14 @@ two Core self-test cases, propagates cancellation, and rejects null or empty req
 
 **Test**: `DocDownEngine_ExtractAsync_PaginatedFormat_RenderRequestUnavailable_RecordsNote`
 
+##### A renderer available but producing no pages is not Core's concern
+
+**Test**: `DocDownEngine_ExtractAsync_RendererProducesNoPagesAndNoNote_AddsNoGenericFallbackNote`
+
+Proves Core no longer adds any note of its own when a backend selects zero pages to render; that
+responsibility now belongs entirely to the rendering backend, which has local knowledge the engine
+does not.
+
 ##### The review-comments artifact is finalized and claimed honestly
 
 **Tests**: `DocDownEngine_ExtractAsync_BackendReportsReviewComments_WritesAndClaimsArtifact`,

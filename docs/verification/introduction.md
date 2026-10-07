@@ -108,15 +108,10 @@ constituent software items, specifically:
     - **ExcelChartReader (Unit)** — Recovers each chart's cached data series
     - **ExcelDrawingTextReader (Unit)** — Recovers the text of the drawing shapes over a worksheet
 - **DocDown.PowerPoint (System)** — Slide text, slide-title, speaker-notes, slide-order, embedded-image,
-  and document-metadata extraction, plus a rendered image of each slide when Microsoft PowerPoint is
-  available; three subsystems (Com, Markdown, OpenXml) and one direct unit
+  and document-metadata extraction; rendered slide images are a separate, opt-in concern delivered by
+  the `DocDown.PowerPoint.Rendering` system; two subsystems (Markdown, OpenXml) and one direct unit
   - **PowerPointDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
-    PowerPoint backends
-  - **Com (Subsystem)** — The rendering seam, active where Microsoft PowerPoint is installed
-    - **PowerPointComExtractor (Unit)** — Delegates content to the managed backend and adds a rendered
-      image of each slide over late-bound COM
-    - **PowerPointComAvailability (Unit)** — The cheap, side-effect-free rendering-availability probe
-    - **PowerPointAutomation (Unit)** — The real COM automation adapter, proven by release-time self-tests
+    PowerPoint backend
   - **Markdown (Subsystem)** — The projection of the deck model onto markdown
     - **PowerPointContentEmitter (Unit)** — The model-to-sink emission path: per-slide title,
       text, speaker notes, inventory counts, and notes

@@ -82,6 +82,36 @@ public class PdfPageRenderingExtractorTests
     }
 
     /// <summary>
+    ///     Proves rendering is skipped, at no rasterization cost, when the host registers only this
+    ///     backend yet does not request page rendering.
+    /// </summary>
+    /// <remarks>
+    ///     When only this backend is registered for <c>.pdf</c>, it is the sole selection candidate
+    ///     even with a plain (non-rendering) request, so it must guard its own rendering work
+    ///     internally rather than assume selection only ever hands it a rendering request.
+    /// </remarks>
+    [Fact]
+    public async Task PdfPageRenderingExtractor_ExtractAsync_RenderNotRequested_WritesNoPages()
+    {
+        // Arrange: only the rendering backend is registered, and rendering is not requested
+        using var temp = new TempScratch();
+        var engine = new DocDownBuilder().AddPdfRendering().Build();
+        var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
+        var scratch = Path.Combine(temp.Path, "out");
+
+        // Act
+        var result = await engine.ExtractAsync(input, scratch, new ExtractionOptions { RenderPages = false }, Ct);
+
+        // Assert: plain extraction succeeds, but no pages folder content is written
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Equal("pdf-rendering", result.SelectedExtractor?.Id);
+        Assert.Empty(result.Notes);
+        Assert.Empty(result.PagePaths);
+        Assert.True(File.Exists(Path.Combine(scratch, "content.md")));
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
     ///     Proves a page whose rasterization faults becomes a recorded note, not an exception.
     /// </summary>
     [Fact]
@@ -137,6 +167,39 @@ public class PdfPageRenderingExtractorTests
                 "Pages could not be counted, so no page images were rendered.",
                 note.Message,
                 StringComparison.Ordinal));
+        Assert.Empty(result.PagePaths);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
+    ///     Proves this backend records its own "no pages were produced" note when the requested
+    ///     page range selects no page, without relying on Core.
+    /// </summary>
+    /// <remarks>
+    ///     This note is recorded entirely from this backend's own local knowledge (the selected
+    ///     page count), never from counting unrelated notes elsewhere in the sink, so it cannot be
+    ///     wrongly suppressed by a note the delegated base backend records for an unrelated reason.
+    /// </remarks>
+    [Fact]
+    public async Task PdfPageRenderingExtractor_ExtractAsync_PageRangeSelectsNoPage_ReportsEmptyPagesNote()
+    {
+        // Arrange: the generated document has one page; request a range beyond it
+        using var temp = new TempScratch();
+        var engine = new DocDownBuilder().AddPdfRendering().Build();
+        var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
+        var scratch = Path.Combine(temp.Path, "out");
+        var options = RenderOptions();
+        options.Pages = new PageRange(5, 6);
+
+        // Act
+        var result = await engine.ExtractAsync(input, scratch, options, Ct);
+
+        // Assert: a single note explains the empty outcome and no page file was written
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        var note = Assert.Single(result.Notes);
+        Assert.Equal(
+            "Page rendering was requested and a renderer was available, but no pages were produced.",
+            note.Message);
         Assert.Empty(result.PagePaths);
         ContractAssert.LayoutPresent(scratch);
     }

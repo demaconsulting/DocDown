@@ -165,7 +165,10 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <remarks>
     ///     Renders every page in one session; a page that cannot be exported becomes a plain note
-    ///     while the run continues.
+    ///     while the run continues. When the drawing has no foreground pages to export, this unit
+    ///     reports that outcome itself rather than relying on Core to infer it: Core cannot tell this
+    ///     unit's own explanation apart from an unrelated note recorded elsewhere in the same
+    ///     extraction, so this unit records the note from its own exported-page count instead.
     /// </remarks>
     private static async ValueTask RenderPagesAsync(
         byte[] bytes, DocumentSource source, Func<IVisioAutomation> factory,
@@ -178,6 +181,13 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
             using (var automation = factory())
             {
                 pages = automation.Render(path, options.PageRenderDpi);
+            }
+
+            if (pages.Count == 0)
+            {
+                sink.ReportNote(new ExtractionNote(
+                    "Page rendering was requested and a renderer was available, but no pages were produced."));
+                return;
             }
 
             foreach (var page in pages)

@@ -1,0 +1,67 @@
+---
+# System-Level Platform Requirements for DocDown.PowerPoint.Rendering
+#
+# These requirements specify the platforms and frameworks the package must support.
+# CanvasNet.Pptx is fully managed and carries no runtime-identifier-specific asset, so the
+# platform evidence is the same end-to-end render test run on each operating system and
+# framework in the CI matrix, which produces a real PNG on every one of them.
+#
+# Test links can include a source filter prefix (e.g. "windows@", "ubuntu@", "net8.0@") to restrict
+# which test results count as evidence for a requirement. This is critical for platform and framework
+# requirements - removing these filters invalidates the evidence-based proof.
+
+sections:
+  - title: DocDownPowerPointRendering Requirements
+    requirements:
+      - id: DocDownPowerPointRendering-Platform-Windows
+        title: The package shall build and render pages on Windows platforms.
+        tags: [system]
+        justification: |
+          Windows is a major DEMA Consulting development platform, and CanvasNet.Pptx must open a
+          document and rasterize a slide there.
+        tests:
+          - "windows@DocDownPowerPointRendering_Render_ProbePresentation_ProducesValidPngPages"
+
+      - id: DocDownPowerPointRendering-Platform-Linux
+        title: The package shall build and render pages on Linux platforms.
+        tags: [system]
+        justification: |
+          Linux is the primary CI/CD and container target, and CanvasNet.Pptx must open a document and
+          rasterize a slide there.
+        tests:
+          - "ubuntu@DocDownPowerPointRendering_Render_ProbePresentation_ProducesValidPngPages"
+
+      - id: DocDownPowerPointRendering-Platform-MacOS
+        title: The package shall build and render pages on macOS platforms.
+        tags: [system]
+        justification: |
+          macOS support serves developers on Apple platforms, and CanvasNet.Pptx must open a document
+          and rasterize a slide there.
+        tests:
+          - "macos@DocDownPowerPointRendering_Render_ProbePresentation_ProducesValidPngPages"
+
+      - id: DocDownPowerPointRendering-Platform-Net8
+        title: The package shall support the .NET 8 runtime.
+        tags: [system]
+        justification: |
+          .NET 8 is an LTS release, and CanvasNet.Pptx ships a real net8.0 asset the package must render on.
+        tests:
+          - "net8.0@DocDownPowerPointRendering_Render_ProbePresentation_ProducesValidPngPages"
+
+      - id: DocDownPowerPointRendering-Platform-Net9
+        title: The package shall support the .NET 9 runtime.
+        tags: [system]
+        justification: |
+          .NET 9 support enables users to leverage the latest .NET features, and CanvasNet.Pptx ships a
+          real net9.0 asset the package must render on.
+        tests:
+          - "net9.0@DocDownPowerPointRendering_Render_ProbePresentation_ProducesValidPngPages"
+
+      - id: DocDownPowerPointRendering-Platform-Net10
+        title: The package shall support the .NET 10 runtime.
+        tags: [system]
+        justification: |
+          .NET 10 support keeps the package current, and CanvasNet.Pptx ships a real net10.0 asset the
+          package must render on — matching this repository's target frameworks exactly.
+        tests:
+          - "net10.0@DocDownPowerPointRendering_Render_ProbePresentation_ProducesValidPngPages"

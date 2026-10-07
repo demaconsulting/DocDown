@@ -1,0 +1,141 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- NuGet Package Configuration -->
+    <PackageId>DemaConsulting.DocDown.PowerPoint.Rendering</PackageId>
+    <Version>0.0.0</Version>
+    <Authors>DEMA Consulting</Authors>
+    <Company>DEMA Consulting</Company>
+    <Description>Optional PowerPoint slide rendering (rasterization) for DEMA Consulting DocDown</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/demaconsulting/DocDown</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/demaconsulting/DocDown</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>Icon.png</PackageIcon>
+    <PackageTags>docdown;powerpoint;rendering;dotnet-library</PackageTags>
+    <Copyright>Copyright DEMA Consulting</Copyright>
+    <Title>DocDown.PowerPoint.Rendering</Title>
+    <Product>DemaConsulting.DocDown.PowerPoint.Rendering</Product>
+
+    <!-- This package rasterizes PowerPoint slides through DemaConsulting.CanvasNet.Pptx, a
+         fully-managed rasterizer: its dependencies are DemaConsulting.CanvasNet, whose only
+         dependency is System.Numerics.Tensors, and DemaConsulting.CanvasNet.Charts, which it uses
+         to render embedded chart content. No native stack and no runtimes/<rid>/native asset
+         appears anywhere in this package's dependency graph, so it is runtime-identifier agnostic
+         through and through — a framework-dependent reference and a self-contained single-file
+         publish both work on every runtime identifier with no per-RID publish step. See
+         docs/design/docdown-powerpoint-rendering.md for the design constraints this implies. -->
+
+    <!-- Symbol Package Configuration -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <!-- Code Quality Configuration -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+
+    <!-- API Documentation Configuration -->
+    <!-- ApiMark writes the gradual-disclosure Markdown API reference into the project's api/
+         folder after every build, and ApiMarkPackDocs places that folder inside the produced
+         NuGet package so consumers (and AI agents) get the API reference with the package. The
+         api/ folder is build output: it is git-ignored and excluded from markdownlint and cspell. -->
+    <ApiMarkPackDocs>true</ApiMarkPackDocs>
+    <!-- ApiMarkOutputDir is left at ApiMark's default, $(MSBuildProjectDirectory)\api, unless a
+         harness supplies ApiMarkOutputRoot. The packaging tests run 'dotnet pack' on this project
+         concurrently from several processes; because the generator writes into the project
+         directory, they would race on the same api/ files exactly as they once raced on the shared
+         obj/Release nuspec. Passing -p:ApiMarkOutputRoot=(unique folder) gives each pack its own
+         tree, and the per-project subfolder keeps a referenced project's reference out of this
+         project's package. Ordinary builds set nothing and keep the default location. -->
+    <ApiMarkOutputDir Condition="'$(ApiMarkOutputRoot)' != ''">$(ApiMarkOutputRoot)\$(MSBuildProjectName)\api</ApiMarkOutputDir>
+
+    <!-- SBOM Configuration -->
+    <GenerateSBOM>true</GenerateSBOM>
+    <SBOMPackageName>$(PackageId)</SBOMPackageName>
+    <SBOMPackageVersion>$(Version)</SBOMPackageVersion>
+    <SBOMPackageSupplier>Organization: $(Company)</SBOMPackageSupplier>
+  </PropertyGroup>
+
+  <!-- Runtime Dependencies -->
+  <ItemGroup>
+    <!-- DemaConsulting.CanvasNet.Pptx is the fully-managed PowerPoint slide rasterizer this
+         package is built on; DemaConsulting.CanvasNet supplies the Surface pixel buffer it
+         rasterizes into and the PngCodec that encodes a Surface to PNG bytes;
+         DemaConsulting.CanvasNet.Charts supplies the chart-rendering support CanvasNet.Pptx uses
+         for embedded chart content. All three are pinned to the exact same prerelease (beta)
+         version for the same reason DocDown.Pdf.Rendering pins CanvasNet.Pdf/CanvasNet: a floating
+         reference to a prerelease package could silently substitute an incompatible API. None of
+         the three carries a native asset for any runtime identifier — see
+         docs/design/ots/canvasnetpptx.md and docs/design/ots/canvasnetcharts.md for the
+         rationale. -->
+    <PackageReference Include="DemaConsulting.CanvasNet.Pptx" Version="[0.1.0-beta.10]" />
+    <PackageReference Include="DemaConsulting.CanvasNet.Charts" Version="[0.1.0-beta.10]" />
+    <PackageReference Include="DemaConsulting.CanvasNet" Version="[0.1.0-beta.10]" />
+  </ItemGroup>
+
+  <!-- Build Tool Dependencies -->
+  <ItemGroup>
+    <!-- ApiMark runs as an MSBuild task after Build; it contributes no runtime assets, so
+         PrivateAssets="All" keeps it out of this package's dependency graph. The version is
+         pinned exactly, as PdfPig and DocumentFormat.OpenXml are, for restore determinism. -->
+    <PackageReference Include="DemaConsulting.ApiMark.MSBuild" Version="[0.5.3]" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Sbom.Targets" Version="4.1.13" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.401" PrivateAssets="All" />
+  </ItemGroup>
+
+  <!-- Code Analysis Dependencies -->
+  <ItemGroup>
+    <!-- Analyzer packages use child-element form to configure both PrivateAssets and IncludeAssets:
+         - PrivateAssets="all" prevents these build-time analyzers from becoming transitive dependencies
+           in packages that consume this library.
+         - IncludeAssets lists all asset types (including 'analyzers' and 'buildtransitive') to ensure
+           Roslyn analyzers and MSBuild targets are fully activated during the build. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.401">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.35.0.4138">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DemaConsulting.DocDown.PowerPoint.Rendering.Tests" />
+  </ItemGroup>
+
+  <!-- Project References -->
+  <ItemGroup>
+    <!-- Core supplies the extractor contract and output sink. DocDown.Office supplies the managed
+         Open XML PowerPoint extractor this package delegates to with rendering suppressed, so the
+         rendering backend is a full superset without re-implementing the managed path. -->
+    <ProjectReference Include="..\DemaConsulting.DocDown.Core\DemaConsulting.DocDown.Core.csproj" />
+    <ProjectReference Include="..\DemaConsulting.DocDown.Office\DemaConsulting.DocDown.Office.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\Icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  <!-- The self-test probe document. It is a real PowerPoint file, authored in the application
+       whose format it exercises and scrubbed of author metadata, embedded so the backend's
+       self-test reads what the application actually emits rather than a document DocDown
+       synthesized for itself to read. The same probe.pptx bytes as
+       DemaConsulting.DocDown.Office's own copy, kept here as this package's own embedded resource
+       because self-test probes are not shared across packages. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\probe.pptx" />
+  </ItemGroup>
+
+</Project>

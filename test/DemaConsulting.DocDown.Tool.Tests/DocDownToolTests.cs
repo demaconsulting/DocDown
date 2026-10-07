@@ -9,6 +9,7 @@ using DocDown.Excel;
 using DocDown.Pdf;
 using DocDown.Pdf.Rendering;
 using DocDown.PowerPoint;
+using DocDown.PowerPoint.Rendering;
 using DocDown.Visio;
 using DocDown.Word;
 
@@ -90,14 +91,17 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
     }
 
     /// <summary>
-    ///     Proves the default engine registers exactly the PDF, Word, Visio, PowerPoint, and Excel
-    ///     backends through the explicit builder seams, with no reflection.
+    ///     Proves the default engine registers exactly the PDF, PDF rendering, Word, Visio,
+    ///     PowerPoint, Excel, and PowerPoint rendering backends through the explicit builder seams,
+    ///     with no reflection.
     /// </summary>
     [Fact]
     public void DocDownTool_Build_DefaultEngine_RegistersBackendsExplicitly()
     {
         // Arrange & Act: the same one-liner the tool uses to build its engine
-        var engine = new DocDownBuilder().AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().Build();
+        var engine = new DocDownBuilder()
+            .AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().AddPowerPointRendering()
+            .Build();
         var backends = engine.GetBackends();
 
         // Assert: every backend package's extractors are registered explicitly
@@ -108,8 +112,8 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         Assert.Contains(backends, backend => backend.Descriptor.Id == "visio-openxml");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "visio-com");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "powerpoint-openxml");
-        Assert.Contains(backends, backend => backend.Descriptor.Id == "powerpoint-com");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "excel-openxml");
+        Assert.Contains(backends, backend => backend.Descriptor.Id == "powerpoint-rendering");
     }
 
     /// <summary>
@@ -230,15 +234,15 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
     }
 
     /// <summary>
-    ///     Proves the Visio and PowerPoint COM render cases actually execute and pass where the
-    ///     application is installed.
+    ///     Proves the Visio COM render case actually executes and passes where the application is
+    ///     installed.
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         These two cases are the only place the COM boundary — activation, read-only open,
-    ///         export, and session teardown — is exercised anywhere, so a machine that has Office
-    ///         must prove it works rather than accept a skip. A skip here would mean the suite had
-    ///         quietly stopped testing the thing these cases exist for.
+    ///         This case is the only place the COM boundary — activation, read-only open, export,
+    ///         and session teardown — is exercised anywhere, so a machine that has Office must prove
+    ///         it works rather than accept a skip. A skip here would mean the suite had quietly
+    ///         stopped testing the thing this case exists for.
     ///     </para>
     ///     <para>
     ///         Where the application is absent the case is legitimately not executed, which is the
@@ -259,9 +263,8 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         bool Available(string id) =>
             backends.Any(b => b.Descriptor.Id == id && b.Availability.IsAvailable);
 
-        // Assert: each COM render case ran, and passed wherever its application is present
+        // Assert: the COM render case ran, and passed wherever its application is present
         AssertComRenderCase(parsed, "visio.com.render", Available("visio-com"));
-        AssertComRenderCase(parsed, "powerpoint.com.render", Available("powerpoint-com"));
     }
 
     /// <summary>

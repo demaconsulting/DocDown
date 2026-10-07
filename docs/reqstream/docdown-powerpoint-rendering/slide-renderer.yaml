@@ -1,0 +1,50 @@
+---
+# Software Unit Requirements for SlideRenderer
+#
+# SlideRenderer is the single rasterization seam: it opens a CanvasNet.Pptx document per call,
+# rasterizes one slide to a PNG, and reads the slide count, with no instance or shared mutable
+# state between calls.
+
+sections:
+  - title: DocDownPowerPointRendering Requirements
+    sections:
+      - title: SlideRenderer Requirements
+        requirements:
+          - id: DocDownPowerPointRendering-SlideRenderer-RendersSlideToPng
+            title: SlideRenderer shall rasterize one slide of a PPTX to valid PNG bytes at a requested DPI.
+            justification: |
+              This unit is the only place CanvasNet.Pptx is called, so the promise that a slide becomes
+              a real, decodable PNG at the requested resolution lives here. Everything upstream
+              depends on this producing genuine image bytes rather than an opaque buffer.
+            tests:
+              - SlideRenderer_Render_SingleSlide_ReturnsValidPng
+              - SlideRenderer_Render_HigherDpi_ProducesLargerImage
+
+          - id: DocDownPowerPointRendering-SlideRenderer-GetsSlideCount
+            title: SlideRenderer shall report the number of slides in a PPTX presentation.
+            justification: |
+              The extractor needs the slide count to honor a requested page range without rasterizing
+              slides outside it, and this unit is the one place that opens the document, so it is the
+              natural place to answer the question.
+            tests:
+              - SlideRenderer_GetSlideCount_ProbePresentation_ReturnsSlideCount
+
+          - id: DocDownPowerPointRendering-SlideRenderer-ConcurrentCallsDoNotInterfere
+            title: SlideRenderer shall produce correct output when called concurrently from multiple threads.
+            justification: |
+              Several slides, possibly from different presentations, can be rendered in the same run.
+              Each call opens its own `PptxDocument` and `Surface` with no shared mutable state in
+              this unit, so concurrent calls must all succeed without corrupting one another's
+              output.
+            tests:
+              - SlideRenderer_Render_ConcurrentCalls_AllProduceValidPng
+
+          - id: DocDownPowerPointRendering-SlideRenderer-RejectsNullDocument
+            title: SlideRenderer shall reject a missing document at the point of the call.
+            justification: |
+              Failing where the mistake was made names the offending caller. A null document is a
+              programming error, not a render fault, so it is rejected up front rather than carried
+              into the rasterization call.
+            tests:
+              - SlideRenderer_Render_NullPptx_Throws
+              - SlideRenderer_GetSlideCount_NullPptx_Throws

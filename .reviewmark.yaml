@@ -591,6 +591,101 @@ reviews:
       - "src/DemaConsulting.DocDown.Pdf.Rendering/PdfRenderingDocDownBuilderExtensions.cs"      # unit source
       - "test/DemaConsulting.DocDown.Pdf.Rendering.Tests/PdfRenderingDocDownBuilderExtensionsTests.cs"  # unit tests
 
+  # === DocDownPowerPointRendering review-sets ===
+  # DocDown.PowerPoint.Rendering is the optional slide-rendering system. It is flat - three units, no
+  # subsystems - so its unit sets are direct units carrying two context entries (system design +
+  # system requirements), never the four-entry unit-under-subsystem shape. Every .cs path is listed
+  # explicitly, never by glob.
+
+  # DocDownPowerPointRendering-Architecture Review (one per system)
+  - id: DocDownPowerPointRendering-Architecture
+    title: Review that DocDown.PowerPoint.Rendering Architecture Satisfies Requirements
+    context:
+      - "README.md"
+      - "docs/user_guide/**/*.md"
+    paths:
+      - "docs/reqstream/docdown-powerpoint-rendering.yaml"                        # system requirements
+      - "docs/design/introduction.md"                                             # design introduction
+      - "docs/design/docdown-powerpoint-rendering.md"                            # system design
+      - "docs/verification/introduction.md"                                       # verification introduction
+      - "docs/verification/docdown-powerpoint-rendering.md"                      # system verification
+      - "test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/DocDownPowerPointRenderingTests.cs"  # integration
+      - "test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/PowerPointRenderingGoldenTests.cs"   # golden tests
+      - "test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/TestData/PptxRenderingFixtures.cs"  # test fixtures
+      - "test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/TestData/Png.cs"  # test PNG inspector
+      - "src/DemaConsulting.DocDown.PowerPoint.Rendering/NamespaceDoc.cs"         # namespace documentation
+
+  # DocDownPowerPointRendering-Design Review (one per system)
+  - id: DocDownPowerPointRendering-Design
+    title: Review that DocDown.PowerPoint.Rendering Design is Consistent and Complete
+    context:
+      - "docs/reqstream/docdown-powerpoint-rendering.yaml"
+    paths:
+      - "docs/reqstream/docdown-powerpoint-rendering/platform-requirements.yaml"  # platform requirements
+      - "docs/design/introduction.md"                                             # design introduction
+      - "docs/design/docdown-powerpoint-rendering.md"                            # system design
+      - "docs/design/docdown-powerpoint-rendering/**/*.md"                        # all system design documents
+      - "docs/design/ots.md"                                                      # OTS overview
+
+  # DocDownPowerPointRendering-Verification Review (one per system)
+  - id: DocDownPowerPointRendering-Verification
+    title: Review that DocDown.PowerPoint.Rendering Verification is Consistent and Complete
+    context:
+      - "docs/reqstream/docdown-powerpoint-rendering.yaml"
+    paths:
+      - "docs/verification/introduction.md"                                       # verification introduction
+      - "docs/verification/docdown-powerpoint-rendering.md"                      # system verification
+      - "docs/verification/docdown-powerpoint-rendering/**/*.md"                  # all verification documents
+      - "docs/verification/ots.md"                                                # OTS overview
+
+  # DocDownPowerPointRendering-AllRequirements Review (one per system)
+  - id: DocDownPowerPointRendering-AllRequirements
+    title: Review that All DocDown.PowerPoint.Rendering Requirements are Complete
+    context:
+      - "docs/design/docdown-powerpoint-rendering.md"
+      - "docs/reqstream/docdown-powerpoint-rendering.yaml"
+    paths:
+      - "docs/reqstream/docdown-powerpoint-rendering/**/*.yaml"                   # unit requirements
+
+  # DocDownPowerPointRendering-PowerPointPageRenderingExtractor Unit Review (one per unit)
+  - id: DocDownPowerPointRendering-PowerPointPageRenderingExtractor
+    title: Review that DocDown.PowerPoint.Rendering PowerPointPageRenderingExtractor Implementation is Correct
+    context:
+      - "docs/design/docdown-powerpoint-rendering.md"
+      - "docs/reqstream/docdown-powerpoint-rendering.yaml"
+    paths:
+      - "docs/reqstream/docdown-powerpoint-rendering/powerpoint-page-rendering-extractor.yaml"   # unit requirements
+      - "docs/design/docdown-powerpoint-rendering/powerpoint-page-rendering-extractor.md"        # unit design
+      - "docs/verification/docdown-powerpoint-rendering/powerpoint-page-rendering-extractor.md"  # unit verification
+      - "src/DemaConsulting.DocDown.PowerPoint.Rendering/PowerPointPageRenderingExtractor.cs"    # unit source
+      - "test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/PowerPointPageRenderingExtractorTests.cs"  # unit tests
+
+  # DocDownPowerPointRendering-SlideRenderer Unit Review (one per unit)
+  - id: DocDownPowerPointRendering-SlideRenderer
+    title: Review that DocDown.PowerPoint.Rendering SlideRenderer Implementation is Correct
+    context:
+      - "docs/design/docdown-powerpoint-rendering.md"
+      - "docs/reqstream/docdown-powerpoint-rendering.yaml"
+    paths:
+      - "docs/reqstream/docdown-powerpoint-rendering/slide-renderer.yaml"          # unit requirements
+      - "docs/design/docdown-powerpoint-rendering/slide-renderer.md"               # unit design
+      - "docs/verification/docdown-powerpoint-rendering/slide-renderer.md"         # unit verification
+      - "src/DemaConsulting.DocDown.PowerPoint.Rendering/SlideRenderer.cs"         # unit source
+      - "test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/SlideRendererTests.cs"  # unit tests
+
+  # DocDownPowerPointRendering-PowerPointRenderingDocDownBuilderExtensions Unit Review (one per unit)
+  - id: DocDownPowerPointRendering-PowerPointRenderingDocDownBuilderExtensions
+    title: Review that PowerPointRenderingDocDownBuilderExtensions Implementation is Correct
+    context:
+      - "docs/design/docdown-powerpoint-rendering.md"
+      - "docs/reqstream/docdown-powerpoint-rendering.yaml"
+    paths:
+      - "docs/reqstream/docdown-powerpoint-rendering/powerpoint-rendering-doc-down-builder-extensions.yaml"  # unit req
+      - "docs/design/docdown-powerpoint-rendering/powerpoint-rendering-doc-down-builder-extensions.md"      # design
+      - "docs/verification/docdown-powerpoint-rendering/powerpoint-rendering-doc-down-builder-extensions.md"  # verif
+      - "src/DemaConsulting.DocDown.PowerPoint.Rendering/PowerPointRenderingDocDownBuilderExtensions.cs"     # source
+      - "test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/PowerPointRenderingDocDownBuilderExtensionsTests.cs"
+
   # === DocDownTool review-sets ===
   # DocDownTool is the docdown command-line tool. It has two subsystems (Cli, SelfTest) and one
   # direct unit (Program). System sets follow the DocDownPdf shape; subsystem and unit-under-subsystem
@@ -1172,17 +1267,15 @@ reviews:
       - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelDrawingTextReader.cs"    # unit source
 
   # === DocDownPowerPoint review-sets ===
-  # DocDownPowerPoint is the PowerPoint extraction system. Unlike DocDownWord and DocDownExcel it has three
-  # subsystems (Com, Markdown, OpenXml) and one direct unit (PowerPointDocDownBuilderExtensions). System
+  # DocDownPowerPoint is the PowerPoint extraction system. Unlike DocDownWord and DocDownExcel it has two
+  # subsystems (Markdown, OpenXml) and one direct unit (PowerPointDocDownBuilderExtensions). System
   # sets follow the DocDownWord shape; subsystem and unit-under-subsystem sets follow the DocDownExcel
   # shape, with the unit-under-subsystem sets carrying the four context entries the Context Files table
   # requires. Every .cs path is listed explicitly, never by glob, so a future unit source file cannot be
   # silently absorbed. Each subsystem documents its supporting-type .cs files inline, so those files are
-  # reviewed in the subsystem set (D8): Com holds the automation seam interface, the composing sink, the
-  # delegated context, and the COM dispatch plumbing; Markdown holds the diagnostic-code type; OpenXml
-  # holds the deck model and the shared exception. PowerPointAutomation (the real COM adapter, proven by
-  # release-time self-tests) and PowerPointOpenXmlImageReader have no dedicated test class; their source is
-  # covered in their unit sets. The new PowerPoint test project carries no golden directory and no non-.cs
+  # reviewed in the subsystem set (D8): Markdown holds the diagnostic-code type; OpenXml holds the deck
+  # model and the shared exception. PowerPointOpenXmlImageReader has no dedicated test class; its source
+  # is covered in its unit set. The PowerPoint test project carries no golden directory and no non-.cs
   # data beyond .csproj, so — unlike Word — no golden entries are required.
 
   # DocDownPowerPoint-Architecture Review (one per system)
@@ -1198,9 +1291,7 @@ reviews:
       - "docs/verification/introduction.md"                                            # verification introduction
       - "docs/verification/docdown-office/powerpoint.md"                                      # system verification
       - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/DocDownPowerPointTests.cs"       # integration tests
-      - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/TestData/CapturingContext.cs"    # test support
       - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/TestData/PptxFixtures.cs"        # generated test fixtures
-      - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/TestData/StubPowerPointAutomation.cs"  # rendering stub
       - "src/DemaConsulting.DocDown.Office/PowerPoint/NamespaceDoc.cs"                        # namespace documentation
 
   # DocDownPowerPoint-Design Review (one per system)
@@ -1248,23 +1339,6 @@ reviews:
       - "src/DemaConsulting.DocDown.Office/PowerPoint/PowerPointDocDownBuilderExtensions.cs"     # unit source
       - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/PowerPointDocDownBuilderExtensionsTests.cs"  # unit tests
 
-  # DocDownPowerPoint-Com Subsystem Review (one per subsystem)
-  # D8: the subsystem's inline supporting-type source files — the automation seam interface, the composing
-  # sink, the delegated context, and the COM dispatch plumbing — are reviewed here; unit source files are
-  # excluded (Hierarchical Scope). Explicit list to prevent silent absorption.
-  - id: DocDownPowerPoint-Com
-    title: Review that DocDown.PowerPoint Com Satisfies Subsystem Requirements
-    context:
-      - "docs/design/docdown-office/powerpoint.md"
-      - "docs/reqstream/docdown-office/powerpoint.yaml"
-    paths:
-      - "docs/reqstream/docdown-office/powerpoint/com.yaml"                                   # subsystem requirements
-      - "docs/design/docdown-office/powerpoint/com.md"                                        # subsystem design
-      - "docs/verification/docdown-office/powerpoint/com.md"                                  # subsystem verification
-      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/IPowerPointAutomation.cs"           # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/PowerPointComDispatch.cs"           # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/NamespaceDoc.cs"                    # namespace documentation
-
   # DocDownPowerPoint-Markdown Subsystem Review (one per subsystem)
   # D8: the subsystem's inline supporting-type source file — the diagnostic-code type — and its pinning
   # test are reviewed here; unit source files are excluded (Hierarchical Scope).
@@ -1292,52 +1366,6 @@ reviews:
       - "docs/design/docdown-office/powerpoint/open-xml.md"                                   # subsystem design
       - "docs/verification/docdown-office/powerpoint/open-xml.md"                             # subsystem verification
       - "src/DemaConsulting.DocDown.Office/PowerPoint/OpenXml/NamespaceDoc.cs"                # namespace documentation
-
-  # DocDownPowerPoint-Com-PowerPointComExtractor Unit Review (unit under subsystem, four context entries)
-  - id: DocDownPowerPoint-Com-PowerPointComExtractor
-    title: Review that DocDown.PowerPoint Com PowerPointComExtractor Implementation is Correct
-    context:
-      - "docs/design/docdown-office/powerpoint.md"
-      - "docs/reqstream/docdown-office/powerpoint.yaml"
-      - "docs/design/docdown-office/powerpoint/com.md"
-      - "docs/reqstream/docdown-office/powerpoint/com.yaml"
-    paths:
-      - "docs/reqstream/docdown-office/powerpoint/com/powerpoint-com-extractor.yaml"          # unit requirements
-      - "docs/design/docdown-office/powerpoint/com/powerpoint-com-extractor.md"               # unit design
-      - "docs/verification/docdown-office/powerpoint/com/powerpoint-com-extractor.md"         # unit verification
-      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/PowerPointComExtractor.cs"          # unit source
-      - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/Com/PowerPointComExtractorTests.cs"  # unit tests
-
-  # DocDownPowerPoint-Com-PowerPointComAvailability Unit Review (unit under subsystem, four context entries)
-  - id: DocDownPowerPoint-Com-PowerPointComAvailability
-    title: Review that DocDown.PowerPoint Com PowerPointComAvailability Implementation is Correct
-    context:
-      - "docs/design/docdown-office/powerpoint.md"
-      - "docs/reqstream/docdown-office/powerpoint.yaml"
-      - "docs/design/docdown-office/powerpoint/com.md"
-      - "docs/reqstream/docdown-office/powerpoint/com.yaml"
-    paths:
-      - "docs/reqstream/docdown-office/powerpoint/com/powerpoint-com-availability.yaml"       # unit requirements
-      - "docs/design/docdown-office/powerpoint/com/powerpoint-com-availability.md"            # unit design
-      - "docs/verification/docdown-office/powerpoint/com/powerpoint-com-availability.md"      # unit verification
-      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/PowerPointComAvailability.cs"       # unit source
-      - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/Com/PowerPointComAvailabilityTests.cs"  # unit tests
-
-  # DocDownPowerPoint-Com-PowerPointAutomation Unit Review (unit under subsystem, four context entries)
-  # No dedicated test class: the real COM adapter is the single untestable boundary, proven by release-time
-  # self-tests; its observable seam contract is exercised through the COM extractor unit tests.
-  - id: DocDownPowerPoint-Com-PowerPointAutomation
-    title: Review that DocDown.PowerPoint Com PowerPointAutomation Implementation is Correct
-    context:
-      - "docs/design/docdown-office/powerpoint.md"
-      - "docs/reqstream/docdown-office/powerpoint.yaml"
-      - "docs/design/docdown-office/powerpoint/com.md"
-      - "docs/reqstream/docdown-office/powerpoint/com.yaml"
-    paths:
-      - "docs/reqstream/docdown-office/powerpoint/com/powerpoint-automation.yaml"             # unit requirements
-      - "docs/design/docdown-office/powerpoint/com/powerpoint-automation.md"                  # unit design
-      - "docs/verification/docdown-office/powerpoint/com/powerpoint-automation.md"            # unit verification
-      - "src/DemaConsulting.DocDown.Office/PowerPoint/Com/PowerPointAutomation.cs"            # unit source
 
   # DocDownPowerPoint-Markdown-PowerPointContentEmitter Unit Review (unit under subsystem, four context entries)
   - id: DocDownPowerPoint-Markdown-PowerPointContentEmitter
@@ -1708,6 +1736,22 @@ reviews:
       - "docs/reqstream/ots/canvasnetpdf.yaml"                             # OTS requirements
       - "docs/design/ots/canvasnetpdf.md"                                  # OTS integration design
       - "docs/verification/ots/canvasnetpdf.md"                           # OTS verification
+
+  # OTS-CanvasNetPptx Review (one per OTS item)
+  - id: OTS-CanvasNetPptx
+    title: Review that CanvasNet.Pptx Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/canvasnetpptx.yaml"                            # OTS requirements
+      - "docs/design/ots/canvasnetpptx.md"                                 # OTS integration design
+      - "docs/verification/ots/canvasnetpptx.md"                          # OTS verification
+
+  # OTS-CanvasNetCharts Review (one per OTS item)
+  - id: OTS-CanvasNetCharts
+    title: Review that CanvasNet.Charts Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/canvasnetcharts.yaml"                          # OTS requirements
+      - "docs/design/ots/canvasnetcharts.md"                               # OTS integration design
+      - "docs/verification/ots/canvasnetcharts.md"                        # OTS verification
 
   # OTS-CanvasNet Review (one per OTS item)
   - id: OTS-CanvasNet

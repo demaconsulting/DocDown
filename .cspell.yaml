@@ -113,6 +113,10 @@ words:
   - canvasnetpdf
   - RGBA
   - desynchronize
+  # DocDown.PowerPoint.Rendering addition: lowercase filename tokens for the CanvasNet.Pptx and
+  # CanvasNet.Charts OTS items used in reqstream/design/verification file paths.
+  - canvasnetpptx
+  - canvasnetcharts
   # Increment 6 (DocDown.Word): Open XML field-instruction keywords used for structural furniture
   # detection, the backend identifier token, and descriptive vocabulary introduced by the mapping.
   - openxml
@@ -139,10 +143,9 @@ words:
   - renderable
   - misdetection
   # Office formats pass (DocDown.Visio, DocDown.PowerPoint, DocDown.Excel): the macro-enabled Visio
-  # drawing extension and its IANA media-type token, the PowerPoint host process name, and the Visio
+  # drawing extension and its IANA media-type token, and the Visio
   # automation ProgID/method tokens. All genuine technical or product names, not misspellings.
   - vsdm
-  - POWERPNT
   - macroenabled
   - OpenEx
   - InvisibleApp

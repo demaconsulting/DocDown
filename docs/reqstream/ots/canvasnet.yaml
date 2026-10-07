@@ -1,12 +1,13 @@
 ---
 # CanvasNet OTS Software Requirements
 #
-# Requirements for CanvasNet, the fully-managed canvas and codec library DocDown.Pdf.Rendering
-# references directly for PNG encoding. Like PdfPig and CanvasNet.Pdf, it is a runtime library
-# shipped to consumers rather than a build-time tool, so its evidence comes from the rendering
-# tests that exercise it transitively - the exact tests are named here rather than claimed
-# broadly. It is recorded as its own OTS item, distinct from CanvasNet.Pdf, because this package
-# references it directly (PngCodec.Save) rather than only transitively through CanvasNet.Pdf.
+# Requirements for CanvasNet, the fully-managed canvas and codec library both DocDown.Pdf.Rendering
+# and DocDown.PowerPoint.Rendering reference directly for PNG encoding. Like PdfPig, CanvasNet.Pdf,
+# and CanvasNet.Pptx, it is a runtime library shipped to consumers rather than a build-time tool, so
+# its evidence comes from the rendering tests that exercise it transitively - the exact tests are
+# named here rather than claimed broadly. It is recorded as its own OTS item, distinct from
+# CanvasNet.Pdf and CanvasNet.Pptx, because both packages reference it directly (PngCodec.Save)
+# rather than only transitively.
 
 sections:
   - title: OTS Software Requirements
@@ -17,12 +18,15 @@ sections:
             title: >-
               CanvasNet shall encode a rasterized page surface as PNG bytes through a managed API.
             justification: |
-              DocDown.Pdf.Rendering's rendered-pages capability ends with a PNG file, and CanvasNet's
-              `PngCodec.Save` is the one call that turns the `Surface` CanvasNet.Pdf rasterizes into
-              those bytes. The capability is only as truthful as CanvasNet's ability to encode a
-              surface faithfully.
+              Both DocDown.Pdf.Rendering's and DocDown.PowerPoint.Rendering's rendered-pages
+              capabilities end with a PNG file, and CanvasNet's `PngCodec.Save` is the one call that
+              turns the `Surface` CanvasNet.Pdf or CanvasNet.Pptx rasterizes into those bytes. The
+              capability is only as truthful as CanvasNet's ability to encode a surface faithfully.
             tags: [ots]
             tests:
               - PageRenderer_Render_SinglePage_ReturnsValidPng
               - PdfPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs
               - DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages
+              - SlideRenderer_Render_SingleSlide_ReturnsValidPng
+              - PowerPointPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs
+              - DocDownPowerPointRendering_Render_ProbePresentation_ProducesValidPngPages

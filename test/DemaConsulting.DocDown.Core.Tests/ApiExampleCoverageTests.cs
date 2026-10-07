@@ -65,7 +65,10 @@ public class ApiExampleCoverageTests
 
         // Assert: the full registration menu is covered, so the check cannot pass vacuously
         Assert.Equal(
-            ["AddExcel", "AddOffice", "AddPdf", "AddPdfRendering", "AddPowerPoint", "AddVisio", "AddWord"],
+            [
+                "AddExcel", "AddOffice", "AddPdf", "AddPdfRendering", "AddPowerPoint", "AddPowerPointRendering",
+                "AddVisio", "AddWord"
+            ],
             registrations.Order().ToArray());
 
         // Assert: the two Core entry points a consumer starts from carry examples too

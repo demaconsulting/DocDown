@@ -73,10 +73,6 @@ includes:
   - docs/reqstream/docdown-office/powerpoint.yaml
   - docs/reqstream/docdown-office/powerpoint/platform-requirements.yaml
   - docs/reqstream/docdown-office/powerpoint/powerpoint-doc-down-builder-extensions.yaml
-  - docs/reqstream/docdown-office/powerpoint/com.yaml
-  - docs/reqstream/docdown-office/powerpoint/com/powerpoint-com-extractor.yaml
-  - docs/reqstream/docdown-office/powerpoint/com/powerpoint-com-availability.yaml
-  - docs/reqstream/docdown-office/powerpoint/com/powerpoint-automation.yaml
   - docs/reqstream/docdown-office/powerpoint/markdown.yaml
   - docs/reqstream/docdown-office/powerpoint/markdown/powerpoint-content-emitter.yaml
   - docs/reqstream/docdown-office/powerpoint/open-xml.yaml
@@ -97,10 +93,17 @@ includes:
   - docs/reqstream/docdown-office/visio/open-xml/visio-open-xml-extractor.yaml
   - docs/reqstream/docdown-office/visio/open-xml/visio-package-reader.yaml
   - docs/reqstream/docdown-office/visio/open-xml/visio-image-reader.yaml
+  - docs/reqstream/docdown-powerpoint-rendering.yaml
+  - docs/reqstream/docdown-powerpoint-rendering/platform-requirements.yaml
+  - docs/reqstream/docdown-powerpoint-rendering/powerpoint-page-rendering-extractor.yaml
+  - docs/reqstream/docdown-powerpoint-rendering/slide-renderer.yaml
+  - docs/reqstream/docdown-powerpoint-rendering/powerpoint-rendering-doc-down-builder-extensions.yaml
   - docs/reqstream/ots/apimark.yaml
   - docs/reqstream/ots/xunit.yaml
   - docs/reqstream/ots/pdfpig.yaml
   - docs/reqstream/ots/canvasnetpdf.yaml
+  - docs/reqstream/ots/canvasnetpptx.yaml
+  - docs/reqstream/ots/canvasnetcharts.yaml
   - docs/reqstream/ots/canvasnet.yaml
   - docs/reqstream/ots/testresults.yaml
   - docs/reqstream/ots/reqstream.yaml

@@ -4,8 +4,8 @@ package DocDownOffice {
      * DocDown.Office is the Microsoft Office extraction package: a separately distributed backend that
      * reads Word documents, Excel workbooks, PowerPoint presentations, and Visio drawings into the
      * DocDown output contract. It has five subsystems — four format subsystems (Word, Excel,
-     * PowerPoint, Visio) and Com, which holds the availability probe and composition helpers the COM
-     * automation backends share — and one direct unit (OfficeDocDownBuilderExtensions).
+     * PowerPoint, Visio) and Com, which holds the availability probe and composition helpers Visio's
+     * COM automation backend uses — and one direct unit (OfficeDocDownBuilderExtensions).
      *
      * The four formats were four packages once. They share a dependency, a release cadence, and an
      * audience, so splitting them cost a consumer four references to keep in step and bought nothing.

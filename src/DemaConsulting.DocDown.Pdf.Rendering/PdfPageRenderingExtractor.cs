@@ -168,8 +168,15 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
             "DocDown.Pdf.Rendering", "pages.renderer", "CanvasNet.Pdf (managed)", Available: true));
 
         // Rasterize the requested pages; per-page faults become notes rather than exceptions that
-        // abort the extraction
-        await RenderPagesAsync(bytes, sink, options, cancellationToken).ConfigureAwait(false);
+        // abort the extraction. Skipped when rendering was not requested, so a host that registers
+        // only this backend (without the managed backend) still gets plain extraction at no
+        // rasterization cost - selection may hand this backend a non-rendering request when it is
+        // the sole candidate for the format.
+        if (options.RenderPages)
+        {
+            await RenderPagesAsync(bytes, sink, options, cancellationToken).ConfigureAwait(false);
+        }
+
         return ExtractionOutcome.Produced;
     }
 
@@ -214,8 +221,11 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     /// <remarks>
     ///     Renders each selected page independently so one unrenderable page records a note rather
     ///     than aborting the whole extraction. Cancellation propagates; every other fault is caught
-    ///     per page and recorded as a note naming that page. Side effect: writes pages and notes on
-    ///     the sink.
+    ///     per page and recorded as a note naming that page. When no page was selected to render — an
+    ///     empty document, or a page range matching nothing — this backend records that outcome
+    ///     itself rather than relying on Core to infer it, because Core cannot tell this backend's
+    ///     own note apart from an unrelated one the delegated base backend may have already recorded
+    ///     (for example an embedded-image fault). Side effect: writes pages and notes on the sink.
     /// </remarks>
     private async ValueTask RenderPagesAsync(
         byte[] bytes, IExtractionSink sink, ExtractionOptions options, CancellationToken cancellationToken)
@@ -238,6 +248,16 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
             // stand. Only the rendered pages are lost, and that is reported as a plain note rather
             // than collapsing an otherwise good extraction into an unreadable one.
             sink.ReportNote(new ExtractionNote("Pages could not be counted, so no page images were rendered."));
+            return;
+        }
+
+        if (pageNumbers.Count == 0)
+        {
+            // No page was selected to render (an empty document, or a page range matching
+            // nothing): state that plainly ourselves, since Core cannot distinguish this from a
+            // note the delegated base backend already recorded for an unrelated reason.
+            sink.ReportNote(new ExtractionNote(
+                "Page rendering was requested and a renderer was available, but no pages were produced."));
             return;
         }
 

@@ -1,6 +1,6 @@
 package DocDownOffice {
     part def PowerPointDocDownBuilderExtensions {
-        doc /* The reflection-free registration seam: AddPowerPoint registers both the managed Open XML backend and the COM automation backend on a DocDownBuilder. */
+        doc /* The reflection-free registration seam: AddPowerPoint registers the managed Open XML backend on a DocDownBuilder. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Office/PowerPoint/PowerPointDocDownBuilderExtensions.cs */
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/PowerPoint/PowerPointDocDownBuilderExtensionsTests.cs */

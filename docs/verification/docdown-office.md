@@ -46,7 +46,7 @@ inside it. What is inside it is answered by the self-tests that extract it.
 
 ## Acceptance Criteria
 
-- `AddOffice()` registers exactly the six backends the package ships.
+- `AddOffice()` registers exactly the five backends the package ships.
 - `AddOffice()` returns the same builder, so registration chains.
 - A null builder is rejected rather than silently ignored.
 - `AddExcel()` alone registers exactly one backend.
@@ -60,7 +60,7 @@ inside it. What is inside it is answered by the self-tests that extract it.
 **Test**: `AddOffice_OnBuilder_RegistersEveryOfficeBackend`
 
 Builds an engine through `AddOffice()` and asserts the set of extractor identifiers is
-exactly `excel-openxml`, `powerpoint-com`, `powerpoint-openxml`, `visio-com`, `visio-openxml`, and
+exactly `excel-openxml`, `powerpoint-openxml`, `visio-com`, `visio-openxml`, and
 `word-openxml`. The identifiers are sorted before comparison, so this fixes membership, not
 registration order. Evidence for `DocDownOffice-Registration`.
 

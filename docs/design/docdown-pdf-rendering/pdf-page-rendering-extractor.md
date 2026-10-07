@@ -27,10 +27,13 @@ rendering-suppressed options clone.
 
 - **`ExtractAsync(DocumentSource, IExtractionContext)`** — buffers the source once; delegates the
   managed aspects to a `PdfDocumentExtractor` with `RenderPages` forced off; records the
-  `pages.renderer` environment fact; rasterizes the requested pages, isolating each page's faults;
-  and returns `Produced` unless the delegated managed extractor reports `Unreadable`. Precondition:
-  `source` and `context` non-null. Postcondition: every selected page is either written or named in
-  a plain note.
+  `pages.renderer` environment fact; and, only when `options.RenderPages` is `true`, rasterizes the
+  requested pages, isolating each page's faults. The guard matters because selection may hand this
+  backend a non-rendering request when it is the only registered candidate for `.pdf` (a host that
+  calls `AddPdfRendering()` without the managed backend), and rasterization must not run uninvited
+  in that case. Returns `Produced` unless the delegated managed extractor reports `Unreadable`.
+  Precondition: `source` and `context` non-null. Postcondition: when rendering was requested, every
+  selected page is either written or named in a plain note; when it was not, no page is rasterized.
 - **`ProbeAvailability()`** — unconditionally returns `ExtractorAvailability.Available(
   providesRenderedPages: true)`, since CanvasNet.Pdf is a fully-managed dependency resolved at
   restore time with nothing to probe for at run time. Never rasterizes.
@@ -43,9 +46,15 @@ rendering-suppressed options clone.
 ### Error Handling
 
 If the delegated managed extraction reports `Unreadable`, this unit returns `Unreadable` unchanged
-and does not attempt page rendering. During rendering, cancellation propagates; every other
-per-page rasterization fault is caught in place, reported as `Page N could not be rasterized.`, and
-the run continues. No render fault reaches the caller as an exception.
+and does not attempt page rendering. When page rendering was requested but no page was selected to
+render — an empty document, or a page range matching nothing — this unit reports that outcome
+itself, as the single note "Page rendering was requested and a renderer was available, but no pages
+were produced.", rather than relying on Core to infer it: Core cannot tell this unit's own
+explanation apart from an unrelated note the delegated managed backend may already have recorded
+during its earlier content phase, so this unit records the note from its own selected-page count
+instead. During rendering, cancellation propagates; every other per-page rasterization fault is
+caught in place, reported as `Page N could not be rasterized.`, and the run continues. No render
+fault reaches the caller as an exception.
 
 ### Dependencies
 

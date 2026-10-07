@@ -76,9 +76,13 @@
          could silently substitute an incompatible API. Unlike the PDFtoImage/PDFium/SkiaSharp stack
          this package previously depended on, CanvasNet and CanvasNet.Pdf carry no native asset for
          any runtime identifier — see docs/design/ots/canvasnet.md and
-         docs/design/ots/canvasnetpdf.md for the rationale. -->
-    <PackageReference Include="DemaConsulting.CanvasNet.Pdf" Version="[0.1.0-beta.8]" />
-    <PackageReference Include="DemaConsulting.CanvasNet" Version="[0.1.0-beta.8]" />
+         docs/design/ots/canvasnetpdf.md for the rationale. Pinned to the same exact beta as
+         DocDown.PowerPoint.Rendering's CanvasNet/CanvasNet.Pptx/CanvasNet.Charts references: both
+         rendering packages share the DemaConsulting.CanvasNet dependency, and two different exact
+         pins for the same package would make DemaConsulting.DocDown.Tool (which references both
+         rendering packages) unrestorable with an NU1107 version conflict. -->
+    <PackageReference Include="DemaConsulting.CanvasNet.Pdf" Version="[0.1.0-beta.10]" />
+    <PackageReference Include="DemaConsulting.CanvasNet" Version="[0.1.0-beta.10]" />
   </ItemGroup>
 
   <!-- Build Tool Dependencies -->

@@ -55,10 +55,10 @@ internal static class CliHarness
     /// <returns>The proposed exit code and the captured log content.</returns>
     /// <remarks>
     ///     <c>--validate</c> drives every registered backend's self-test cases, including the Visio
-    ///     and PowerPoint COM renders, and Office automation is single-instance. Nothing here guards
-    ///     against a concurrent run, because nothing in the suite runs concurrently: parallelism is
-    ///     off in <c>test/xunit.runner.json</c>, and <c>build.ps1</c> runs the target frameworks and
-    ///     the test projects one at a time. Each render therefore simply runs and passes.
+    ///     COM render, and Office automation is single-instance. Nothing here guards against a
+    ///     concurrent run, because nothing in the suite runs concurrently: parallelism is off in
+    ///     <c>test/xunit.runner.json</c>, and <c>build.ps1</c> runs the target frameworks and the
+    ///     test projects one at a time. Each render therefore simply runs and passes.
     /// </remarks>
     public static (int ExitCode, string Log) RunValidation(params string[] args) => Run(args);
     /// <summary>

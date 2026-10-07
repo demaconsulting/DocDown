@@ -29,9 +29,11 @@ depending on a genuine rasterization fault.
 
 Per IEC 62304 §5.5.2, a `PdfPageRenderingExtractor` unit test run passes when the backend's public
 identity stays stable; when it unconditionally reports rendered-page support without throwing; when a
-render delegates the managed aspects and writes a valid page PNG; when a per-page render fault or a
-page-count fault each become a plain note without an exception reaching the caller; when a null
-render function is rejected at construction; and when it contributes a distinctly named render
+render delegates the managed aspects and writes a valid page PNG; when rasterization is skipped
+entirely when page rendering was not requested; when a per-page render fault or a page-count fault
+each become a plain note without an exception reaching the caller; when page rendering is requested
+but no page is selected to render, yielding the single note explaining that outcome itself; when a
+null render function is rejected at construction; and when it contributes a distinctly named render
 round-trip case that always passes.
 
 ### Test Scenarios
@@ -61,6 +63,15 @@ its own rasterization, in one run. Evidence for
 `DocDownPdfRendering-PdfPageRenderingExtractor-WritesRenderedPages` (the latter also evidenced by the
 system scenario `DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages`).
 
+#### Rasterization is skipped when rendering was not requested
+
+**Test**: `PdfPageRenderingExtractor_ExtractAsync_RenderNotRequested_WritesNoPages`
+
+Proves that, even when this backend is the only one registered for `.pdf`, a plain (non-rendering)
+request writes no `pages/` content and records no note, so selection handing this backend a
+non-rendering request never costs a rasterization pass. Evidence for
+`DocDownPdfRendering-PdfPageRenderingExtractor-SkipsRasterizationWhenNotRequested`.
+
 #### A per-page fault becomes a note without throwing
 
 **Test**: `PdfPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsNoteWithoutThrowing`
@@ -75,6 +86,15 @@ produces no page, still returns `Produced`, and does not throw. Evidence for
 
 Proves a fault reading the page count is recorded as a note while the delegated managed content is
 still written, so one failed step does not discard output the delegate already produced.
+
+#### An empty page selection is reported by this backend, not Core
+
+**Test**: `PdfPageRenderingExtractor_ExtractAsync_PageRangeSelectsNoPage_ReportsEmptyPagesNote`
+
+Proves a page range beyond the document's page count selects zero pages and this backend itself
+records the single note "Page rendering was requested and a renderer was available, but no pages
+were produced.", independent of any note the delegated managed backend may have already recorded.
+Evidence for `DocDownPdfRendering-PdfPageRenderingExtractor-ReportsEmptySelectionAsNote`.
 
 #### A null render function is rejected at construction
 

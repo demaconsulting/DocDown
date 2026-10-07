@@ -54,8 +54,14 @@ concurrent extractions targeting different scratch folders.
   stating that pages were requested but not rendered.
 - If page rendering does not apply to the selected format, the request is honored with silence.
 
-A renderer that was available but produced zero page images also yields a note. These are facts about
-the extraction, not a third outcome state.
+A page-rendering backend that produces zero page images is responsible for explaining that outcome
+itself, using only its own local knowledge (for example, the page or slide count it selected to
+render). The engine does not attempt to infer or suppress such a note from the backend's reported
+note count: a backend's extraction phase may legitimately record unrelated notes before rendering
+even starts (for example, a delegated base extractor's own content notes), and the engine cannot
+tell those apart from a note that actually explains the empty-pages outcome. Leaving this
+responsibility to the backend, which has perfect local knowledge, avoids both missing and duplicated
+notes. These are facts about the extraction, not a third outcome state.
 
 #### Error Handling
 

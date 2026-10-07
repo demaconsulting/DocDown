@@ -9,6 +9,7 @@ package DocDownCore {
         expose DocDownOffice;
         expose DocDownPdf;
         expose DocDownPdfRendering;
+        expose DocDownPowerPointRendering;
         expose DocDownTool;
     }
 
@@ -43,6 +44,14 @@ package DocDownPdf {
 package DocDownPdfRendering {
     view DocDownPdfRenderingView {
         expose DocDownPdfRenderingSystem;
+    }
+}
+
+// DocDownPowerPointRendering is the optional slide-rendering system. It is flat - it has no
+// subsystems - so it needs only the one system view, which already shows every unit.
+package DocDownPowerPointRendering {
+    view DocDownPowerPointRenderingView {
+        expose DocDownPowerPointRenderingSystem;
     }
 }
 
@@ -110,10 +119,6 @@ package DocDownOffice {
 
     view PowerPointOpenXmlView {
         expose PowerPointOpenXml;
-    }
-
-    view PowerPointComView {
-        expose PowerPointCom;
     }
 
     view VisioView {

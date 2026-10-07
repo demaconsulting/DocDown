@@ -54,6 +54,19 @@ sections:
             tests:
               - PdfPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs
 
+          - id: DocDownPdfRendering-PdfPageRenderingExtractor-SkipsRasterizationWhenNotRequested
+            title: >-
+              PdfPageRenderingExtractor shall not rasterize any page when page rendering was not
+              requested, even when it is the only registered backend for the format.
+            justification: |
+              Selection may hand this backend a plain extraction request when a host registers it
+              without the managed backend, since it is then the sole candidate regardless of what was
+              requested. Guarding rasterization on the request itself, rather than trusting selection
+              to only ever invoke this unit for a rendering request, is what keeps a plain extraction
+              free of rasterization cost in every registration shape.
+            tests:
+              - PdfPageRenderingExtractor_ExtractAsync_RenderNotRequested_WritesNoPages
+
           - id: DocDownPdfRendering-PdfPageRenderingExtractor-WritesRenderedPages
             title: >-
               PdfPageRenderingExtractor shall write a valid PNG image for each rendered page through
@@ -77,6 +90,22 @@ sections:
               continuing is what keeps the run honest and alive without adding any extra judgement.
             tests:
               - PdfPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsNoteWithoutThrowing
+
+          - id: DocDownPdfRendering-PdfPageRenderingExtractor-ReportsEmptySelectionAsNote
+            title: >-
+              PdfPageRenderingExtractor shall report the plain note "Page rendering was requested and
+              a renderer was available, but no pages were produced." itself whenever page rendering
+              was requested and no page was selected to render.
+            justification: |
+              Core cannot distinguish this backend's own empty-outcome explanation from an unrelated
+              note the delegated managed backend may already have recorded during the earlier,
+              separate extraction phase (for example, an embedded-image fault), so it no longer
+              attempts to infer or suppress a generic note on this backend's behalf. Recording the
+              note from the backend's own selected-page count, which is immune to any unrelated note
+              recorded elsewhere, is what keeps the empty-pages outcome explained exactly once without
+              relying on sink history.
+            tests:
+              - PdfPageRenderingExtractor_ExtractAsync_PageRangeSelectsNoPage_ReportsEmptyPagesNote
 
           - id: DocDownPdfRendering-PdfPageRenderingExtractor-ContributesSelfTests
             title: >-

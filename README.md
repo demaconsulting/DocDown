@@ -22,7 +22,7 @@ Three words appear throughout this README and the user guide, and they are not i
 
 - **Backend** — the component that reads one document format, or renders its pages. `docdown
   --list-backends` prints them, `summary.txt` names the one that ran in its *Backend* section, and a
-  single format may be served by more than one, such as PowerPoint's managed backend and its
+  single format may be served by more than one, such as Visio's managed backend and its
   automation backend. This is the primary term.
 - **Format package** — the NuGet package that ships one or more backends for a format, such as
   `DemaConsulting.DocDown.Office`. You install format packages; you select backends.
@@ -41,15 +41,16 @@ Core directly — you reference it yourself only when you are writing a backend 
 | PDF `.pdf` | `DocDown.Pdf` | `DocDown.Pdf.Rendering` for page images | Fully managed; every platform |
 | Word `.docx` | `DocDown.Office` | — | Managed; every platform |
 | Excel `.xlsx` | `DocDown.Office` | — | Managed; a workbook is not paginated |
-| PowerPoint `.pptx` | `DocDown.Office` | — | Slide images need Windows and PowerPoint |
+| PowerPoint `.pptx` | `DocDown.Office` | `DocDown.PowerPoint.Rendering` for slide images | Fully managed |
 | Visio `.vsdx`, `.vsdm` | `DocDown.Office` | — | Page images need Windows and Visio |
 | Any format, from a shell | `DocDown.Tool` | — | Global or local tool manifest install |
 | Your own backend | `DocDown.Core` | — | Abstractions only; extracts nothing itself |
 
 ```bash
-dotnet add package DemaConsulting.DocDown.Pdf            # .pdf
-dotnet add package DemaConsulting.DocDown.Pdf.Rendering  # optional: rasterize PDF pages
-dotnet add package DemaConsulting.DocDown.Office         # .docx, .xlsx, .pptx, .vsdx, .vsdm
+dotnet add package DemaConsulting.DocDown.Pdf                  # .pdf
+dotnet add package DemaConsulting.DocDown.Pdf.Rendering        # optional: rasterize PDF pages
+dotnet add package DemaConsulting.DocDown.Office                # .docx, .xlsx, .pptx, .vsdx, .vsdm
+dotnet add package DemaConsulting.DocDown.PowerPoint.Rendering  # optional: rasterize PowerPoint slides
 ```
 
 The four Microsoft Office formats ship in one package. They share a dependency, a release cadence,
@@ -65,11 +66,11 @@ dotnet tool install -g DemaConsulting.DocDown.Tool          # global
 dotnet tool install --local DemaConsulting.DocDown.Tool     # local tool manifest
 ```
 
-The tool requires a **.NET 10 runtime**. Every backend it carries, including PDF page rendering, is
-fully managed and runtime-identifier agnostic, so the same package installs and runs on every
-supported platform. The libraries have no platform restriction either: they target .NET 8, 9, and
-10 and are platform-neutral, including the optional PDF page renderer, so referencing them does not
-constrain your project to the tool's runtime.
+The tool requires a **.NET 10 runtime**. Every backend it carries, including PDF page rendering and
+PowerPoint slide rendering, is fully managed and runtime-identifier agnostic, so the same package
+installs and runs on every supported platform. The libraries have no platform restriction either:
+they target .NET 8, 9, and 10 and are platform-neutral, including the optional PDF and PowerPoint
+page renderers, so referencing them does not constrain your project to the tool's runtime.
 
 ## Quick Start
 
@@ -179,7 +180,7 @@ renderer was registered. Notes are not failures, and a produced extraction with 
 | PDF | `.pdf` | `DocDown.Pdf` | Yes | With `DocDown.Pdf.Rendering` |
 | Word | `.docx` | `DocDown.Office` | Yes | No |
 | Excel | `.xlsx` | `DocDown.Office` | Yes | Not applicable; not paginated |
-| PowerPoint | `.pptx` | `DocDown.Office` | Yes | Windows, with PowerPoint |
+| PowerPoint | `.pptx` | `DocDown.Office` | Yes | With `DocDown.PowerPoint.Rendering` |
 | Visio | `.vsdx`, `.vsdm` | `DocDown.Office` | Yes | Windows, with Visio |
 
 Not supported today:
@@ -284,16 +285,18 @@ using DocDown.Excel;
 using DocDown.Pdf;
 using DocDown.Pdf.Rendering;
 using DocDown.PowerPoint;
+using DocDown.PowerPoint.Rendering;
 using DocDown.Visio;
 using DocDown.Word;
 
 var engine = new DocDownBuilder()
-    .AddPdf()          // .pdf  - text, embedded images, metadata
-    .AddPdfRendering() // .pdf  - page images (fully managed)
-    .AddWord()         // .docx - text, tables, images; no page images
-    .AddExcel()        // .xlsx - cells, formulas, charts; workbooks are never rendered
-    .AddPowerPoint()   // .pptx - slide text and notes; slide images need PowerPoint
-    .AddVisio()        // .vsdx, .vsdm - shape text and connections; page images need Visio
+    .AddPdf()                 // .pdf  - text, embedded images, metadata
+    .AddPdfRendering()        // .pdf  - page images (fully managed)
+    .AddWord()                // .docx - text, tables, images; no page images
+    .AddExcel()               // .xlsx - cells, formulas, charts; workbooks are never rendered
+    .AddPowerPoint()          // .pptx - slide text and notes
+    .AddPowerPointRendering() // .pptx - slide images (fully managed)
+    .AddVisio()               // .vsdx, .vsdm - shape text and connections; page images need Visio
     .Build();
 
 var options = new ExtractionOptions { RenderPages = true };
@@ -307,10 +310,11 @@ Console.WriteLine($"Content:  {result.ContentPath}");
 Console.WriteLine($"Images:   {result.ImagePaths.Count}, Pages: {result.PagePaths.Count}");
 ```
 
-Register only the formats you need — each call is one visible edge to one package. Slide and page
-images are produced by driving Microsoft Office over COM, so they are Windows-only and require that
-application to be installed. Without it the managed backend still extracts the text, and
-`summary.txt` records that pages were not rendered.
+Register only the formats you need — each call is one visible edge to one package. PDF and
+PowerPoint page images are produced by a fully-managed rasterizer with no platform restriction.
+Visio page images are produced by driving Microsoft Visio over COM, so they are Windows-only and
+require that application to be installed; without it the managed backend still extracts the text,
+and `summary.txt` records that pages were not rendered.
 
 Selection stays deterministic: DocDown detects the format, keeps the backends that match it and are
 available, prefers a page renderer when pages were requested and one is available, then breaks ties
@@ -392,8 +396,9 @@ package you installed.
   `content.md` at each slide that shows them
 - **Visio Extraction**: Page names, shape text, connector topology, and embedded images linked from
   `content.md` under the page that shows them
-- **Optional Page Rendering**: PDF pages, PowerPoint slides, and Visio pages can be rasterized when
-  the matching renderer is available and pages were requested
+- **Optional Page Rendering**: PDF pages and PowerPoint slides are rasterized by fully-managed
+  renderers with no platform restriction when pages were requested; Visio pages can be rasterized
+  when a COM-based renderer is available
 - **Per-Field Metadata Provenance**: `metadata.json` records where each metadata value came from
 - **Reflection-Free Registration**: Explicit backend registration, suitable for single-file
   publishing
@@ -413,18 +418,18 @@ package you installed.
 
 ## Project Status
 
-Five packages are implemented and under active development: `DemaConsulting.DocDown.Core`, the
-shared abstractions and output contract; the two format packages and the one rendering add-on
+Six packages are implemented and under active development: `DemaConsulting.DocDown.Core`, the
+shared abstractions and output contract; the two format packages and the two rendering add-ons
 listed in the package table above; and `DemaConsulting.DocDown.Tool`, the `docdown` command-line
 tool. `DocDown.Html` is planned and not yet available.
 
-`DocDown.Pdf` is fully managed and ships no native assets, so it does not render pages by itself.
-When pages are requested without the rendering package, extraction still produces the layout and a
-note says page rendering was not completed. the PowerPoint and Visio backends extract on
-every platform through managed backends and additionally rasterize slides and pages to PNG on
-Windows when the corresponding Microsoft Office application is installed; without it, the managed
-content is still produced and, when page rendering was requested, a note records that the request
-could not be completed.
+`DocDown.Pdf` and the PowerPoint backend in `DocDown.Office` are fully managed and ship no native
+assets, so neither renders pages by itself. When pages are requested without the matching rendering
+package, extraction still produces the layout and a note says page rendering was not completed. The
+Visio backend extracts on every platform through a managed backend and additionally rasterizes
+pages to PNG on Windows when Microsoft Visio is installed; without it, the managed content is still
+produced and, when page rendering was requested, a note records that the request could not be
+completed.
 
 ## Contributing
 

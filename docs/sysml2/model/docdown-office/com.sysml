@@ -1,8 +1,8 @@
 package DocDownOffice {
     part def OfficeCom {
-        doc /* The helpers the COM automation backends share: the availability probe, and the composition that keeps a delegated run's rendering statement honest. */
+        doc /* The helpers Visio's COM automation backend uses: the availability probe, and the composition that keeps a delegated run's rendering statement honest. */
 
-        comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/PowerPoint/Com/PowerPointComAvailabilityTests.cs */
+        comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Visio/Com/VisioComAvailabilityTests.cs */
         comment designRef /* Design: docs/design/docdown-office/com.md */
         comment verificationRef /* Verification: docs/verification/docdown-office/com.md */
         comment reqRef /* Requirements: docs/reqstream/docdown-office/com.yaml */
@@ -16,7 +16,7 @@ package DocDownOffice {
         doc /* Probes whether a named Office application's COM automation can run here, without launching it. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Office/Com/OfficeComAvailability.cs */
-        comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/PowerPoint/Com/PowerPointComAvailabilityTests.cs */
+        comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Visio/Com/VisioComAvailabilityTests.cs */
         comment designRef /* Design: docs/design/docdown-office/com.md */
         comment verificationRef /* Verification: docs/verification/docdown-office/com.md */
         comment reqRef /* Requirements: docs/reqstream/docdown-office/com.yaml */

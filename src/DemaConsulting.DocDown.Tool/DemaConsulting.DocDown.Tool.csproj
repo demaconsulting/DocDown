@@ -119,19 +119,13 @@
          and does not affect the tool's publish story. -->
     <ProjectReference Include="..\DemaConsulting.DocDown.Pdf.Rendering\DemaConsulting.DocDown.Pdf.Rendering.csproj" />
     <!-- The Word, Excel, PowerPoint, and Visio backends. All are managed and runtime-identifier
-         agnostic: the PowerPoint and Visio COM backends reach Microsoft Office through late-bound
-         IDispatch with no interop assembly, so none adds a native asset. -->
+         agnostic: the Visio COM backend reaches Microsoft Office through late-bound IDispatch with
+         no interop assembly, so it adds no native asset either. -->
     <ProjectReference Include="..\DemaConsulting.DocDown.Office\DemaConsulting.DocDown.Office.csproj" />
-    <!-- The Word backend package. It is 100% managed and runtime-identifier agnostic, so it adds no
-         native asset and does not affect the tool's publish story. -->
-    
-    <!-- The Visio, PowerPoint, and Excel backend packages. Each is 100% managed and
-         runtime-identifier agnostic (the Visio and PowerPoint COM backends reach Microsoft Office
-         through late-bound IDispatch with no interop assembly), so none adds a native asset or
-         affects the tool's publish story. -->
-    
-    
-    
+    <!-- The optional PowerPoint slide-rendering backend. It depends on the fully-managed
+         DemaConsulting.CanvasNet.Pptx/DemaConsulting.CanvasNet/DemaConsulting.CanvasNet.Charts
+         packages, so it adds no native asset and does not affect the tool's publish story. -->
+    <ProjectReference Include="..\DemaConsulting.DocDown.PowerPoint.Rendering\DemaConsulting.DocDown.PowerPoint.Rendering.csproj" />
   </ItemGroup>
 
   <ItemGroup>

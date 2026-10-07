@@ -355,7 +355,7 @@ public sealed class DocDownEngine
             return await WriteFailureAsync(folder, sink, inputs, selected, failure, cancellationToken).ConfigureAwait(false);
         }
 
-        // Step 8: record the notes Core knows about that the backend cannot report itself
+        // Step 8: record the notes Core knows about that the backend cannot report itself.
         EmitCoreDerivedNotes(sink, inputs.Options, selected, providesRenderedPages, inputs.Detection);
 
         // Step 9: finalize content and any review comments, then serialize the manifest and summary
@@ -511,9 +511,16 @@ public sealed class DocDownEngine
     /// <param name="detection">The detected format, named in a note about an absent renderer.</param>
     /// <remarks>
     ///     Encodes the facts the engine knows that the backend does not: that embedded images were
-    ///     suppressed by the caller, that page rendering was requested but no renderer was available
-    ///     for a paginated format, or that a renderer ran but produced no pages. Each is a fact about
-    ///     the extraction, not a grade of the document. Side effect: records on the sink.
+    ///     suppressed by the caller, or that page rendering was requested but no renderer was
+    ///     available for a paginated format. Each is a fact about the extraction, not a grade of the
+    ///     document. Core deliberately does <em>not</em> also report a generic "renderer ran but
+    ///     produced no pages" note here: Core cannot tell a backend's own, unrelated note (for
+    ///     example an embedded-image fault recorded by a delegated base extractor) apart from one
+    ///     that actually explains an empty-pages outcome, so guessing from a note count would risk
+    ///     either duplicating or wrongly suppressing the explanation. A rendering backend that
+    ///     provides pages is therefore responsible for recording its own "no pages were produced"
+    ///     note when that is not already explained by a more specific fault note it raised itself.
+    ///     Side effect: records on the sink.
     /// </remarks>
     private static void EmitCoreDerivedNotes(
         ExtractionSink sink, ExtractionOptions options, ExtractorDescriptor selected,
@@ -527,19 +534,11 @@ public sealed class DocDownEngine
         }
 
         // Page rendering applies only to a paginated format; a non-paginated one honors the request with silence
-        if (options.RenderPages && selected.PageRenderingApplicable)
+        if (options.RenderPages && selected.PageRenderingApplicable && !providesRenderedPages)
         {
-            if (!providesRenderedPages)
-            {
-                sink.ReportNote(new ExtractionNote(
-                    $"Page rendering was requested, but no page renderer is available for the '{detection.Format.Id}' "
-                    + "format in this environment; pages were not rendered."));
-            }
-            else if (sink.Pages.Count == 0)
-            {
-                sink.ReportNote(new ExtractionNote(
-                    "Page rendering was requested and a renderer was available, but no pages were produced."));
-            }
+            sink.ReportNote(new ExtractionNote(
+                $"Page rendering was requested, but no page renderer is available for the '{detection.Format.Id}' "
+                + "format in this environment; pages were not rendered."));
         }
     }
 

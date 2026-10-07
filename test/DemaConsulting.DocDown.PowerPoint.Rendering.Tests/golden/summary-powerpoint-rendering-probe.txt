@@ -1,0 +1,54 @@
+DocDown Extraction Summary
+==========================
+
+A 2-slide PowerPoint presentation titled "DocDown self test"; extracted 117 characters of text and 2 rendered
+page images.
+
+Scratch folder  : <scratch-folder>
+Source document : <source-document>
+Detected format : pptx (application/vnd.openxmlformats-officedocument.presentationml.presentation) - detected by file extension
+Extracted (UTC) : <timestamp>
+Status          : PRODUCED  - the standard output layout was written.
+
+All paths below are relative to the scratch folder shown above.
+
+Backend
+-------
+  Selected  : powerpoint-rendering - PowerPoint slides (CanvasNet.Pptx)
+
+Environment
+-----------
+  Operating system   : <operating-system>
+  Runtime            : <runtime>
+  Runtime identifier : <runtime-identifier>
+  DocDown.PowerPoint:
+    powerpoint.backend       : Open XML SDK (managed) (available)
+    powerpoint.pageRendering : not provided by this extractor (NOT available)
+    pages.renderer           : CanvasNet.Pptx (managed) (available)
+
+Document metadata
+-----------------
+  Author          : DocDown
+  Modified (UTC)  : 2026-09-14T05:28:45Z
+  See metadata.json for the document's full self-reported metadata.
+
+Layout
+------
+  summary.txt          this file
+  manifest.json        machine-readable form of this summary
+  metadata.json        what the document asserts about itself
+  content.md           PRESENT
+  review-comments.md   not present - none were written
+  images/              not present - none were written
+  pages/               PRESENT - 2 rendered
+
+What WAS extracted
+------------------
+  content.md   117 characters of text.
+               Contains 2 slides, 2 slide titles, 0 sets of speaker notes, 0 comments, and 0 distinct comment
+               authors.
+  pages/       2 rendered pages.
+
+Could not read
+--------------
+  Nothing was left incomplete.
