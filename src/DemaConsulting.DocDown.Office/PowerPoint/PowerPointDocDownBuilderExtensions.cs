@@ -33,8 +33,10 @@ public static class PowerPointDocDownBuilderExtensions
     /// <remarks>
     ///     Registers a factory rather than an instance so construction is deferred to
     ///     <see cref="DocDownBuilder.Build"/>. The managed backend (priority 10) serves every
-    ///     extraction and always records a plain-language note when a requested slide render
-    ///     cannot be completed, since it never renders slides itself. Side effect: mutates
+    ///     extraction and never renders slides itself; when page rendering is requested and no
+    ///     rendering-capable backend is registered alongside it, Core itself records a
+    ///     plain-language note explaining that pages were not rendered, since this backend neither
+    ///     claims to provide rendered pages nor reports one. Side effect: mutates
     ///     <paramref name="builder"/>'s registration list.
     /// </remarks>
     /// <example>

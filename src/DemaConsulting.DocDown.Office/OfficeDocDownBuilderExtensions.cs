@@ -18,7 +18,7 @@ namespace DocDown.Office;
 ///     <para>
 ///         The per-format methods remain available for a host that wants only some of them — a
 ///         service that only ever sees spreadsheets can call <c>AddExcel</c> alone and register one
-///         backend rather than six.
+///         backend rather than five.
 ///     </para>
 ///     <para>
 ///         Deliberately free of any Open XML SDK type, so a host can reference the registration
@@ -36,10 +36,10 @@ public static class OfficeDocDownBuilderExtensions
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="builder"/> is <see langword="null"/>.</exception>
     /// <remarks>
     ///     Equivalent to calling <c>AddWord</c>, <c>AddExcel</c>, <c>AddPowerPoint</c>, and
-    ///     <c>AddVisio</c> in turn. PowerPoint and Visio each register two backends: a managed Open
-    ///     XML reader that works everywhere, and a COM automation backend that renders pages and is
-    ///     selected only where Microsoft Office is installed. Side effect: mutates
-    ///     <paramref name="builder"/>'s registration list.
+    ///     <c>AddVisio</c> in turn. Word, Excel, and PowerPoint each register one managed Open XML
+    ///     backend; Visio registers two backends: a managed Open XML reader that works everywhere,
+    ///     and a COM automation backend that renders pages and is selected only where Microsoft
+    ///     Visio is installed. Side effect: mutates <paramref name="builder"/>'s registration list.
     /// </remarks>
     /// <example>
     ///     <code language="csharp">
@@ -51,7 +51,7 @@ public static class OfficeDocDownBuilderExtensions
     ///         .AddOffice() // .docx, .xlsx, .pptx, .vsdx, .vsdm
     ///         .Build();
     ///
-    ///     Console.WriteLine(engine.Extractors.Count); // 6 — four managed readers and two COM backends
+    ///     Console.WriteLine(engine.Extractors.Count); // 5 — three managed readers and two Visio backends
     ///     </code>
     /// </example>
     public static DocDownBuilder AddOffice(this DocDownBuilder builder)

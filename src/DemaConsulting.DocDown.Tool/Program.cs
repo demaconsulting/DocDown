@@ -24,8 +24,11 @@ namespace DocDown.Tool;
 ///         Extractors are registered explicitly through
 ///         <c>new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().AddPowerPointRendering().Build()</c>,
 ///         with no reflection or assembly scanning, which is what keeps single-file publishing
-///         viable. Every backend, including the optional PDF and PowerPoint rendering backends, is
-///         fully managed and runtime-identifier agnostic; trimming and AOT are still left off as
+///         viable. Every backend except <c>AddOffice</c>'s Visio COM backend — including the
+///         optional PDF and PowerPoint rendering backends — is fully managed and
+///         runtime-identifier agnostic; the Visio COM backend reaches Microsoft Office through
+///         late-bound IDispatch with no interop assembly, so it too adds no native asset, but it is
+///         selected only where Visio is installed. Trimming and AOT are still left off as
 ///         unverified for this dependency graph.
 ///     </para>
 /// </remarks>
