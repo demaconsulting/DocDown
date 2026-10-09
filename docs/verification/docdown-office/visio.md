@@ -19,16 +19,12 @@ scenario, so the full-layout claim on an unreadable result is machine-checked al
 successful ones. Each scenario additionally asserts the extraction outcome, the inventory counts
 written into `summary.txt` and `manifest.json`, and the exact set of notes the run recorded.
 
-### Two backends, one reader, one emitter
+### One reader, one emitter
 
-The package ships two backends. The managed Open Packaging backend reads a drawing into the
+The package ships one backend. The managed Open Packaging backend reads a drawing into the
 reader-neutral model and drives the content emitter, so every mapping decision is made in exactly
-one place and can be proved from a hand-built model with no drawing behind it. The COM backend
-reuses that same content path by delegation and adds rendered pages; everything it does apart from
-talking to Microsoft Visio is exercised cross-platform by injecting a stub `IVisioAutomation`, so
-content delegation, rendering-fact reconciliation, render-resolution pass-through, per-page note
-reporting, and probe behavior are all proved in CI. The real COM adapter is the one boundary CI
-cannot reach; its correctness in a deployed environment is proven by release-time self-tests.
+one place and can be proved from a hand-built model with no drawing behind it. Rendered page images
+are a separate, opt-in concern provided by `DemaConsulting.DocDown.Visio.Rendering` and verified there.
 
 ### The directed topology is the headline property under test
 
@@ -44,22 +40,19 @@ extracted from the file itself, and multi-line shape text is proved to survive i
 The current reporting model is also covered. `VisioContentEmitter` reports looked-for counts for
 pages, labeled shapes, and connections, including zero, so an empty drawing is proved as an
 inventory fact rather than an extraction shortfall. When DocDown attempted an additional step and
-could not complete it, the suite proves a short note is recorded instead: one note when a render was
-requested without an available renderer, one note when a single page could not be rendered through
-and COM.
-No Visio-specific legacy reporting terms remain.
+could not complete it, the suite proves a short note is recorded instead, such as when a render was
+requested without an available renderer registered alongside this backend.
 
 ### Test fixtures are generated; the self-test probe is committed
 
 Every drawing the suite's tests use is built at test time by the in-memory Visio package builder in
-`TestData/VsdxFixtures.cs`, and the rendering path is driven by `TestData/StubVisioAutomation.cs`.
-The legacy `.vsd` scenario writes a placeholder byte sequence whose extension drives format
-detection, because the selection path never opens the file: no registered backend supports the
-format. No test fixture is committed.
+`TestData/VsdxFixtures.cs`. The legacy `.vsd` scenario writes a placeholder byte sequence whose
+extension drives format detection, because the selection path never opens the file: no registered
+backend supports the format. No test fixture is committed.
 The one committed binary is the backend's self-test probe: a real drawing authored in Microsoft
 Visio, embedded in the package so the self-test reads what that application emits.
 The suite's own fixtures stay generated, so every page
-name, shape name, master name, image payload, and rendered payload in the fixtures is synthetic.
+name, shape name, master name, and image payload in the fixtures is synthetic.
 
 ## Test Environment
 
@@ -69,9 +62,7 @@ name, shape name, master name, image payload, and rendered payload in the fixtur
 - **Inputs**: Visio Open Packaging drawings generated at test time by `VisioPackageBuilder` (test project), plus a
   short byte sequence for the legacy `.vsd` refusal scenario; no committed binary fixtures and no
   network access
-- **Mocking**: none for the managed integration scenarios — every test drives the real engine and
-  the real Open Packaging backend; the COM backend is driven through an injected stub
-  `IVisioAutomation` so the whole rendering path is exercised with no Microsoft Office present
+- **Mocking**: none; every test drives the real engine and the real Open Packaging backend
 - **Determinism**: a fixed timestamp is injected so repeated runs are byte-comparable
 - **Isolation**: each test owns its temporary folder and cleans it on dispose
 
@@ -87,10 +78,8 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
   standard output layout still present.
 - Every page's name, shape text, and directed connector topology reach the output, extracted from
   the file itself, with no Visio installation present.
-- The rendering backend renders every page when the stub adapter succeeds and records a plain note
-  for any page it could not render while continuing with the remaining pages.
-- A render requested without an available renderer records a plain note while the managed content
-  still reaches the output.
+- A render requested without a rendering-capable backend registered alongside this one records a
+  plain note while the managed content still reaches the output.
 - Embedded images are written and linked in the encoding the drawing stored them in, which is
   recorded as a plain note while the source bytes are preserved.
 - The legacy binary `.vsd` format is refused with an unreadable result whose explanation states that
@@ -104,13 +93,12 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 Each scenario corresponds to one system requirement and names the real test method that evidences
 it. Platform requirements are covered by the source-filtered runs of the selection scenario.
 
-### The default engine registers both Visio backends
+### The default engine registers the managed Visio backend
 
-**Test**: `AddVisio_RegistersOpenXmlAndComBackends`
+**Test**: `AddVisio_RegistersOpenXmlBackend`
 
-Proves the one-liner the host uses to add Visio support registers both the managed Open Packaging
-backend and the COM automation backend on the resulting engine. Evidence for
-`DocDownVisio-Registration`.
+Proves the one-liner the host uses to add Visio support registers exactly the managed Open Packaging
+backend on the resulting engine. Evidence for `DocDownVisio-Registration`.
 
 ### The Open Packaging backend is selected and produces the contract layout
 
@@ -143,34 +131,13 @@ Proves the text of every shape that carries text is read from the file. Evidence
 Proves the directed connector topology is recovered with no Visio present and rendered as a readable
 `source -> target` edge list under the page name. Evidence for `DocDownVisio-Topology`.
 
-### Pages render when Visio is available
-
-**Test**: `VisioComExtractor_Extract_ViaStub_WritesTopologyAndRendersEveryPage`
-
-Proves the COM backend delegates the guaranteed content and adds one rendered page per page through
-the automation seam, disposing the session. Evidence for `DocDownVisio-PageRendering`.
-
-### A render requested without Visio records a plain note
+### A render requested without a rendering backend records a plain note
 
 **Test**: `DocDownVisio_Extract_RenderRequestedWithoutVisio_RecordsNoteButKeepsTopology`
 
-Proves that on a host without an available Visio renderer, a render request records a plain note
+Proves that with only the managed backend registered, a render request records a plain note
 while the directed topology is still delivered in full. Evidence for
 `DocDownVisio-RenderingRequestNote`.
-
-### A page that cannot be rendered records a plain note
-
-**Test**: `VisioComExtractor_Extract_PageRenderFails_ReportsNote`
-
-Proves a page that fails to render is reported with a one-sentence note while the remaining pages
-still render. Evidence for `DocDownVisio-Com-VisioComExtractor-ReportsPageRenderFailureNotes`.
-
-### Rendering availability is honest and instructs no installation
-
-**Test**: `VisioComAvailability_Probe_NeverInstructsInstallation`
-
-Proves the availability probe never instructs an installation. When Microsoft Visio is available,
-the same result reports rendered-page support. Evidence for `DocDownVisio-RenderingAvailability`.
 
 ### Embedded images are written into the output layout
 

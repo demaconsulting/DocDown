@@ -1,0 +1,222 @@
+---
+# Software System Requirements for DemaConsulting.DocDown.Visio.Rendering
+#
+# These requirements describe the externally visible behavior of the optional Visio page-rendering
+# package from the perspective of a host that registers it, without specifying implementation
+# details. Each decomposes into unit requirements linked below via children, and is proven by
+# system-level tests. The OTS requirements for the rasterization stack (CanvasNet.Vsdx, CanvasNet)
+# are linked as children so the package's dependence on them is traced rather than assumed. Unlike
+# DemaConsulting.DocDown.PowerPoint.Rendering, CanvasNet.Vsdx carries no CanvasNet.Charts-equivalent
+# dependency, since Visio drawings have no embedded chart content to render.
+
+sections:
+  - title: DocDownVisioRendering Requirements
+    requirements:
+      - id: DocDownVisioRendering-Registration
+        title: >-
+          The system shall register its page-rendering extractor through a single extension method
+          without reflection or assembly scanning.
+        tags: [system]
+        justification: |
+          A host must be able to read its own dependency graph off its own code. One explicit call
+          keeps that edge visible and reviewable, and keeps single-file publishing viable because no
+          backend is discovered by scanning.
+        children:
+          - DocDownVisioRendering-VisioRenderingDocDownBuilderExtensions-RegistersExtractor
+          - DocDownVisioRendering-VisioRenderingDocDownBuilderExtensions-ReflectionFree
+          - DocDownVisioRendering-VisioRenderingDocDownBuilderExtensions-ReturnsBuilderForChaining
+          - DocDownVisioRendering-VisioRenderingDocDownBuilderExtensions-RejectsNullBuilder
+          - DocDownVisioRendering-VisioRenderingDocDownBuilderExtensions-NoCanvasNetTypeOnSurface
+        tests:
+          - AddVisioRendering_OnBuilder_RegistersRenderingExtractor
+
+      - id: DocDownVisioRendering-ReportsRenderedPagesAvailability
+        title: >-
+          The system shall unconditionally report itself available with rendered-page support.
+        tags: [system]
+        justification: |
+          Page rendering is backed by CanvasNet.Vsdx, a fully managed library that carries no
+          runtime-identifier-specific asset, so there is no environment in which this backend cannot
+          rasterize. Reporting rendered-page support unconditionally lets Core choose this backend
+          before any document is opened, with nothing to probe.
+        children:
+          - DocDownVisioRendering-VisioPageRenderingExtractor-ReportsUnconditionalAvailability
+        tests:
+          - VisioPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReportsUnconditionallyAvailable
+
+      - id: DocDownVisioRendering-RendersPagesToPng
+        title: The system shall render requested pages to PNG images in the pages folder.
+        tags: [system]
+        justification: |
+          Rendered page images are the reason this package exists: a visually dense drawing carries
+          information no text extractor can recover, and a faithful page raster is what a
+          multimodal consumer needs. The output must be a real, decodable image, not merely a file.
+        children:
+          - DocDownVisioRendering-VisioPageRenderingExtractor-WritesRenderedPages
+          - DocDownVisioRendering-PageRenderer-RendersPageToPng
+          - DocDownVisioRendering-PageRenderer-RejectsNullDocument
+          - DocDown-OTS-CanvasNetVsdx
+          - DocDown-OTS-CanvasNet
+        tests:
+          - DocDownVisioRendering_Render_ProbeDrawing_ProducesValidPngPages
+          - VisioPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePng
+
+      - id: DocDownVisioRendering-SelectedWhenPagesRequested
+        title: >-
+          The system shall be selected over the managed Visio backend when page rendering is
+          requested.
+        tags: [system]
+        justification: |
+          A caller who asks for rendered pages must get them, since this backend is always available
+          to provide them. Because both backends serve the Visio format, selection must prefer the
+          backend that produces page images over the lighter managed backend that does not.
+        tests:
+          - DocDownVisioRendering_Select_PagesRequested_RenderingBackendWins
+
+      - id: DocDownVisioRendering-BaseSelectedWhenNotRequested
+        title: >-
+          The system shall not be selected over the managed Visio backend when page rendering is
+          not requested.
+        tags: [system]
+        justification: |
+          A plain extraction should pay nothing for rendered-page work it did not ask for. When
+          rendering is not requested the lighter managed backend must win, so rasterization is never
+          touched.
+        children:
+          - DocDownVisioRendering-VisioPageRenderingExtractor-SkipsRasterizationWhenNotRequested
+        tests:
+          - DocDownVisioRendering_Select_PagesNotRequested_BaseBackendWins
+
+      - id: DocDownVisioRendering-ProbeCheapAndSafe
+        title: >-
+          The system shall report its availability cheaply and without throwing, never rasterizing in
+          the probe.
+        tags: [system]
+        justification: |
+          Availability is consulted on every engine build, including for plain extractions that never
+          render. A probe that rasterized, opened a document, or threw would tax every extraction and
+          could abort selection, so it must be a cheap, non-throwing check — trivially so, since it
+          now returns a constant.
+        children:
+          - DocDownVisioRendering-VisioPageRenderingExtractor-ReportsUnconditionalAvailability
+        tests:
+          - VisioPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReportsUnconditionallyAvailable
+
+      - id: DocDownVisioRendering-PerPageFailureReportedAsNote
+        title: >-
+          The system shall report any per-page rasterization failure as a plain one-sentence note
+          naming the page, continue with the remaining pages, and still complete normally.
+        tags: [system]
+        justification: |
+          Rendering can fail on one page — an unsupported drawing feature or an out-of-memory at a
+          high DPI — while the rest succeed. Recording only the factual note that the attempted page
+          could not be rasterized keeps the run alive and keeps the report aligned with DocDown's
+          reduced output model: report what was attempted and what was produced, without adding an
+          acceptability judgement.
+        children:
+          - DocDownVisioRendering-VisioPageRenderingExtractor-ReportsPageFailuresAsNotes
+        tests:
+          - VisioPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsNoteWithoutThrowing
+
+      - id: DocDownVisioRendering-PageCountFailureReportedAsNote
+        title: >-
+          The system shall report a page-count failure as a single plain note, keep the delegated
+          managed content, and skip page rendering entirely.
+        tags: [system]
+        justification: |
+          A page-count fault happens before any page-specific rasterization is attempted, so it is
+          reported once rather than once per page, and the managed text/image/metadata content the
+          delegate already wrote is not discarded.
+        children:
+          - DocDownVisioRendering-VisioPageRenderingExtractor-ReportsPageCountFailureAsNote
+        tests:
+          - VisioPageRenderingExtractor_ExtractAsync_PageCountFaults_ReportsNoteAndKeepsDelegatedContent
+
+      - id: DocDownVisioRendering-EmptySelectionReportedAsNote
+        title: >-
+          The system shall report, as a single plain note, when page rendering was requested and a
+          renderer was available but no page was selected to render.
+        tags: [system]
+        justification: |
+          Core cannot reliably distinguish this package's own empty-outcome explanation from an
+          unrelated note already recorded elsewhere in the same extraction (for example, during the
+          delegated managed backend's earlier content phase), so this package records the note itself
+          from its own selected-page count rather than relying on Core to infer it.
+        children:
+          - DocDownVisioRendering-VisioPageRenderingExtractor-ReportsEmptySelectionAsNote
+        tests:
+          - VisioPageRenderingExtractor_ExtractAsync_PageRangeSelectsNoPage_ReportsEmptyPagesNote
+
+      - id: DocDownVisioRendering-HonorsDpi
+        title: The system shall render pages at the requested dots-per-inch.
+        tags: [system]
+        justification: |
+          The DPI trades output fidelity against file size, and a caller that sets it expects the
+          raster to change accordingly. Ignoring it would make the option meaningless and the output
+          unpredictable.
+        tests:
+          - DocDownVisioRendering_Render_HigherDpi_ProducesLargerPage
+
+      - id: DocDownVisioRendering-HonorsPageRange
+        title: The system shall rasterize only the pages within a requested page range.
+        tags: [system]
+        justification: |
+          A caller working with a large drawing needs a bounded slice, and rasterization is the most
+          expensive step. Rendering pages outside the requested range would waste the most time and
+          contradict the request.
+        children:
+          - DocDownVisioRendering-PageRenderer-GetsPageCount
+        tests:
+          - DocDownVisioRendering_Render_PageRange_RestrictsRenderedPages
+
+      - id: DocDownVisioRendering-ManagedInputsDelegated
+        title: >-
+          The system shall produce the shape text, topology, embedded images, and document metadata
+          by delegating to the managed Visio backend rather than re-implementing them.
+        tags: [system]
+        justification: |
+          The managed backend already extracts shape text, topology, images, and metadata faithfully.
+          Delegating to it — with rendering suppressed on the delegate — keeps a single source of
+          truth for those aspects and confines this package to the one thing it adds, rasterization.
+        children:
+          - DocDownVisioRendering-VisioPageRenderingExtractor-DelegatesManagedAspects
+        tests:
+          - VisioPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePng
+
+      - id: DocDownVisioRendering-ConcurrentRendersDoNotInterfere
+        title: The system shall produce correct output when rendering concurrently from multiple threads.
+        tags: [system]
+        justification: |
+          Several pages, possibly from different drawings, can be rendered in the same run. Each
+          render opens its own document and surface with no shared mutable state in this package, so
+          concurrent renders must all succeed without corrupting one another's output.
+        children:
+          - DocDownVisioRendering-PageRenderer-ConcurrentCallsDoNotInterfere
+        tests:
+          - PageRenderer_Render_ConcurrentCalls_AllProduceValidPng
+
+      - id: DocDownVisioRendering-Determinism
+        title: >-
+          The system shall produce byte-identical rendered pages across repeated renders of the
+          same drawing in the same environment.
+        tags: [system]
+        justification: |
+          Reproducible output is what lets a consumer diff two extractions and conclude the drawing
+          changed. Without it every re-render looks like a change and the diff becomes useless as a
+          signal.
+        tests:
+          - DocDownVisioRendering_Render_Deterministic_ProducesByteIdenticalPages
+
+      - id: DocDownVisioRendering-SelfValidation
+        title: >-
+          The system shall contribute a self-validation case that proves rendering genuinely
+          rasterizes in the deployed environment.
+        tags: [system]
+        justification: |
+          Declared availability is not proof of behavior; only a real render is. A contributed case
+          that rasterizes the embedded drawing lets an operator confirm rendering works, and passes
+          unconditionally since CanvasNet.Vsdx carries no environment-dependent failure mode.
+        children:
+          - DocDownVisioRendering-VisioPageRenderingExtractor-ContributesSelfTests
+        tests:
+          - VisioPageRenderingExtractor_GetSelfTestCases_AnyEnvironment_PassesRenderCase

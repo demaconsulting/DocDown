@@ -4,27 +4,37 @@
 # These requirements describe the externally visible behavior of the Visio extraction package
 # from the perspective of a host that registers it, without specifying implementation details.
 # Each decomposes into subsystem and unit requirements linked below via children, and is proven
-# by the Visio test suite. DemaConsulting.DocDown.Visio has three subsystems (Com, Markdown, OpenXml) and one
+# by the Visio test suite. DemaConsulting.DocDown.Visio has two subsystems (Markdown, OpenXml) and one
 # direct unit (VisioDocDownBuilderExtensions).
 #
 # A Visio drawing is an engineering schematic, so these requirements are traced forward from the
 # package intent: recover each page name, the text of the shapes that carry text, and the
-# directed connections between shapes from the file itself, with no Visio installation present,
-# and add a rendered image of each page when Microsoft Visio is available. DocDown reports what
-# it extracted and where. The reporting surface here is therefore limited to looked-for content
-# inventory and short plain notes describing a step DocDown attempted but could not complete.
-# Legacy binary `.vsd` drawings remain unsupported and are refused plainly.
+# directed connections between shapes from the file itself, with no Visio installation present.
+# DocDown reports what it extracted and where. The reporting surface here is therefore limited to
+# looked-for content inventory and short plain notes describing a step DocDown attempted but
+# could not complete. Legacy binary `.vsd` drawings remain unsupported and are refused plainly.
 #
 # SUPERSEDED REQUIREMENT: DocDownVisio-RenderingUnavailableGap required a counted pages gap when
 # rendering was requested but no renderer was available. That requirement treated an
 # environment-specific shortfall as a degradation model concern. The current reporting model uses
-# a short plain note for attempted-but-unfinished steps, so the behavior is superseded by
+# a short plain note for attempted-but-unfinished steps, so the behavior was superseded by
 # DocDownVisio-RenderingRequestNote.
 #
+# SUPERSEDED REQUIREMENT: DocDownVisio-RenderingRequestNote required this system to keep the
+# extracted content and record its own plain note when page rendering was requested but no
+# renderer backend was registered alongside it. That requirement is superseded (not satisfied)
+# with no replacement here, because Core now records that generic note itself whenever page
+# rendering was requested and no registered backend provides it, independent of format; this
+# system's own backend simply states plainly, through
+# DocDownVisio-OpenXml-VisioOpenXmlExtractor-ProbesUnconditionally, that it provides no rendered
+# pages.
+#
 # SUPERSEDED REQUIREMENT: DocDownVisio-PageRenderFidelity required a counted gap and diagnostic
-# when an individual page could not be rendered. The COM backend now records a one-sentence note
-# for the page and continues, so the requirement is superseded by
-# DocDownVisio-Com-VisioComExtractor-ReportsPageRenderFailureNotes.
+# when an individual page could not be rendered. That requirement is superseded (not satisfied)
+# with no replacement here, because this system no longer renders pages itself at all: rendering,
+# and the honesty of its per-page failures, is now entirely
+# DemaConsulting.DocDown.Visio.Rendering's concern, governed by
+# docs/reqstream/docdown-visio-rendering.yaml.
 #
 # SUPERSEDED REQUIREMENT: DocDownVisio-VectorImages required extra commentary for EMF and WMF
 # images. Vector images are now written as embedded images without extra commentary unless a
@@ -38,33 +48,44 @@
 # SUPERSEDED REQUIREMENT: DocDownVisio-DeclaredCapabilities described the retired capability-set
 # selection model. Selection now relies on supported formats, page-rendering applicability, and
 # availability, so the observable behavior is superseded by
-# DocDownVisio-OpenXml-VisioOpenXmlExtractor-ParticipatesInSelection,
-# DocDownVisio-OpenXml-VisioOpenXmlExtractor-ProbesUnconditionally,
-# DocDownVisio-Com-VisioComExtractor-ParticipatesInSelection, and
-# DocDownVisio-RenderingAvailability.
+# DocDownVisio-OpenXml-VisioOpenXmlExtractor-ParticipatesInSelection and
+# DocDownVisio-OpenXml-VisioOpenXmlExtractor-ProbesUnconditionally.
+#
+# SUPERSEDED REQUIREMENT: DocDownVisio-PageRendering required this system to render each page to
+# an image when Microsoft Visio is available, through its own COM automation backend. That
+# requirement is superseded (not satisfied) by DocDownVisio-PageRenderingNotProvided, because this
+# system's own backend never renders pages at all now: rendered page images are a separate,
+# opt-in concern delivered entirely by the DemaConsulting.DocDown.Visio.Rendering package.
+#
+# SUPERSEDED REQUIREMENT: DocDownVisio-RenderingAvailability required this system to report its
+# own rendering backend as unavailable, with a declarative reason that instructs no installation,
+# where Microsoft Visio could not be reached. That requirement is superseded (not satisfied)
+# because this system's own backend never renders pages at all now, so rendering availability
+# honesty is entirely DemaConsulting.DocDown.Visio.Rendering's concern, governed by
+# docs/reqstream/docdown-visio-rendering.yaml.
 
 sections:
   - title: DocDownVisio Requirements
     requirements:
       - id: DocDownVisio-Registration
         title: >-
-          The system shall register its Visio backends through an explicit extension method without
-          reflection or assembly scanning.
+          The system shall register its managed Visio backend through an explicit extension method
+          without reflection or assembly scanning.
         tags: [system]
         justification: |
           A host must be able to read its own dependency graph off its own code. Registration that
           happens because a package is present on disk makes the set of active backends a deployment
           accident rather than a decision, which cannot be audited; one explicit call keeps the edge
-          from host to backend visible and reviewable. Visio registers two backends — a guaranteed
-          managed content backend and an environment-dependent rendering backend — so the single call
-          must add both without hiding either.
+          from host to backend visible and reviewable. Rendered page images are a separate, opt-in
+          concern registered through the DemaConsulting.DocDown.Visio.Rendering package's own
+          `AddVisioRendering`, so this system's single call registers only the managed content
+          backend.
         children:
-          - DocDownVisio-VisioDocDownBuilderExtensions-RegistersBothBackends
-          - DocDownVisio-VisioDocDownBuilderExtensions-OrdersManagedAboveCom
+          - DocDownVisio-VisioDocDownBuilderExtensions-RegistersManagedBackend
           - DocDownVisio-VisioDocDownBuilderExtensions-ReturnsBuilderForChaining
           - DocDownVisio-VisioDocDownBuilderExtensions-RejectsNullBuilder
         tests:
-          - AddVisio_RegistersOpenXmlAndComBackends
+          - AddVisio_RegistersOpenXmlBackend
 
       - id: DocDownVisio-Extraction
         title: >-
@@ -164,49 +185,22 @@ sections:
         tests:
           - DocDownVisio_Extract_Vsdx_SelectsOpenXml
 
-      - id: DocDownVisio-PageRendering
-        title: The system shall render each page to an image when Microsoft Visio is available.
+      - id: DocDownVisio-PageRenderingNotProvided
+        title: >-
+          The system's own backend shall never render a page to an image itself, and shall always
+          state plainly that rendered pages are not provided.
         tags: [system]
         justification: |
           Spatial arrangement — layout, grouping, and relative position — is itself engineering
-          meaning and cannot be fully recovered from the file's XML, so the rendered appearance of
-          each page is captured when an environment can supply it. Rendering is therefore added by
-          the COM backend while the managed backend continues to supply the guaranteed content path.
+          meaning, but this system's content path is the guaranteed, deterministic read of a
+          drawing's file-level content and never opens an external application. Rendered page
+          images are a separate, opt-in concern delivered entirely by the
+          DemaConsulting.DocDown.Visio.Rendering package; this system's own backend states plainly,
+          on every extraction, that it provides no rendered pages rather than ever fabricating one.
         children:
-          - DocDownVisio-Com-Rendering
-          - DocDownVisio-Com-Automation
+          - DocDownVisio-OpenXml-VisioOpenXmlExtractor-ProbesUnconditionally
         tests:
-          - VisioComExtractor_Extract_ViaStub_WritesTopologyAndRendersEveryPage
-
-      - id: DocDownVisio-RenderingRequestNote
-        title: >-
-          The system shall keep the extracted content and record a plain note when page rendering was
-          requested but no renderer is available in the current environment.
-        tags: [system]
-        justification: |
-          Rendering is an attempted step that a better environment may be able to complete, so its
-          absence must be reported plainly and briefly rather than inferred from a missing `pages/`
-          folder. The note lets a caller distinguish "rendering was requested but unavailable here"
-          from "rendering was never attempted", while the guaranteed content still reaches the
-          output.
-        tests:
-          - DocDownVisio_Extract_RenderRequestedWithoutVisio_RecordsNoteButKeepsTopology
-
-      - id: DocDownVisio-RenderingAvailability
-        title: >-
-          The system shall report the rendering backend as unavailable, with a declarative reason
-          that instructs no installation, where Microsoft Visio cannot be reached.
-        tags: [system]
-        justification: |
-          Rendering is environment-dependent, so honesty must be enforced at selection: off Windows
-          or without Microsoft Visio registered, the COM backend must report unavailable rather than
-          be selected and fail. The reason states a fact about the environment the reader cannot act
-          on — it never instructs an installation — matching the library-wide convention.
-        children:
-          - DocDownVisio-Com-Availability
-          - DocDownVisio-Com-VisioComExtractor-ProbesHonestly
-        tests:
-          - VisioComAvailability_Probe_NeverInstructsInstallation
+          - VisioOpenXmlExtractor_ProbeAvailability_AlwaysAvailable
 
       - id: DocDownVisio-EmbeddedImages
         title: >-
@@ -247,12 +241,13 @@ sections:
         title: The system shall contribute self-validation cases describing its own extraction behavior.
         tags: [system]
         justification: |
-          An operator needs to confirm the backends actually work where they are deployed, not merely
-          that they are present. The managed backend contributes a round-trip case that reads back the
+          An operator needs to confirm the backend actually works where it is deployed, not merely
+          that it is present. The managed backend contributes a round-trip case that reads back the
           embedded probe drawing — two labeled shapes joined by a glued connector — and confirms the
           connection resolved — proving
-          the topology path is genuinely functional — plus an honest skip for the page-rendering case
-          that belongs to the COM backend.
+          the topology path is genuinely functional — plus an honest skip for the page-rendering case,
+          since rendered pages are this system's own backend's one declared absence, not something it
+          provides.
         children:
           - DocDownVisio-OpenXml-VisioOpenXmlExtractor-ContributesSelfTests
         tests:

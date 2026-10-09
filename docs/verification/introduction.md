@@ -122,15 +122,11 @@ constituent software items, specifically:
     - **PowerPointOpenXmlReader (Unit)** — Turns the presentation package into the backend-neutral model
     - **PowerPointOpenXmlImageReader (Unit)** — Yields each embedded image's bytes and slide association
 - **DemaConsulting.DocDown.Visio (System)** — Page-name, shape-text, and directed-connector-topology extraction, plus
-  embedded-image and document-metadata extraction and a rendered image of each page when Microsoft Visio
-  is available; three subsystems (Com, Markdown, OpenXml) and one direct unit
+  embedded-image and document-metadata extraction; rendered page images are a separate, opt-in
+  concern delivered by the `DemaConsulting.DocDown.Visio.Rendering` system; two subsystems (Markdown, OpenXml)
+  and one direct unit
   - **VisioDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
-    Visio backends
-  - **Com (Subsystem)** — The rendering seam, active where Microsoft Visio is installed
-    - **VisioComExtractor (Unit)** — Delegates content to the managed backend and adds a rendered
-      image of each page over late-bound COM
-    - **VisioComAvailability (Unit)** — The cheap, side-effect-free rendering-availability probe
-    - **VisioAutomation (Unit)** — The real COM automation adapter, proven by release-time self-tests
+    Visio backend
   - **Markdown (Subsystem)** — The projection of the drawing model onto markdown
     - **VisioContentEmitter (Unit)** — The model-to-sink emission path: per-page name, shape
       text, directed topology, inventory counts, and notes

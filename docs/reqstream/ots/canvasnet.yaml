@@ -1,13 +1,14 @@
 ---
 # CanvasNet OTS Software Requirements
 #
-# Requirements for CanvasNet, the fully-managed canvas and codec library both DemaConsulting.DocDown.Pdf.Rendering
-# and DemaConsulting.DocDown.PowerPoint.Rendering reference directly for PNG encoding. Like PdfPig, CanvasNet.Pdf,
-# and CanvasNet.Pptx, it is a runtime library shipped to consumers rather than a build-time tool, so
-# its evidence comes from the rendering tests that exercise it transitively - the exact tests are
-# named here rather than claimed broadly. It is recorded as its own OTS item, distinct from
-# CanvasNet.Pdf and CanvasNet.Pptx, because both packages reference it directly (PngCodec.Save)
-# rather than only transitively.
+# Requirements for CanvasNet, the fully-managed canvas and codec library DemaConsulting.DocDown.Pdf.Rendering,
+# DemaConsulting.DocDown.PowerPoint.Rendering, and DemaConsulting.DocDown.Visio.Rendering all reference
+# directly for PNG encoding. Like PdfPig, CanvasNet.Pdf, CanvasNet.Pptx, and CanvasNet.Vsdx, it is a
+# runtime library shipped to consumers rather than a build-time tool, so its evidence comes from the
+# rendering tests that exercise it transitively - the exact tests are named here rather than claimed
+# broadly. It is recorded as its own OTS item, distinct from CanvasNet.Pdf, CanvasNet.Pptx, and
+# CanvasNet.Vsdx, because all three packages reference it directly (PngCodec.Save) rather than only
+# transitively.
 
 sections:
   - title: OTS Software Requirements
@@ -18,10 +19,11 @@ sections:
             title: >-
               CanvasNet shall encode a rasterized page surface as PNG bytes through a managed API.
             justification: |
-              Both DemaConsulting.DocDown.Pdf.Rendering's and DemaConsulting.DocDown.PowerPoint.Rendering's
-              rendered-pages capabilities end with a PNG file, and CanvasNet's `PngCodec.Save` is the one call that
-              turns the `Surface` CanvasNet.Pdf or CanvasNet.Pptx rasterizes into those bytes. The
-              capability is only as truthful as CanvasNet's ability to encode a surface faithfully.
+              DemaConsulting.DocDown.Pdf.Rendering's, DemaConsulting.DocDown.PowerPoint.Rendering's, and
+              DemaConsulting.DocDown.Visio.Rendering's rendered-pages capabilities all end with a PNG file, and
+              CanvasNet's `PngCodec.Save` is the one call that turns the `Surface` CanvasNet.Pdf,
+              CanvasNet.Pptx, or CanvasNet.Vsdx rasterizes into those bytes. The capability is only
+              as truthful as CanvasNet's ability to encode a surface faithfully.
             tags: [ots]
             tests:
               - PageRenderer_Render_SinglePage_ReturnsValidPng
@@ -30,3 +32,5 @@ sections:
               - SlideRenderer_Render_SingleSlide_ReturnsValidPng
               - PowerPointPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs
               - DocDownPowerPointRendering_Render_ProbePresentation_ProducesValidPngPages
+              - VisioPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePng
+              - DocDownVisioRendering_Render_ProbeDrawing_ProducesValidPngPages

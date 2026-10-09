@@ -51,6 +51,6 @@ extraction.
 
 ### Callers
 
-`VisioOpenXmlExtractor.ExtractAsync` calls `EmitAsync` after reading the model, and the COM backend
-reaches it through the same delegated managed extraction, so a drawing's content reads identically
-whether or not it was rendered.
+`VisioOpenXmlExtractor.ExtractAsync` calls `EmitAsync` after reading the model, and
+`DemaConsulting.DocDown.Visio.Rendering`'s rendering backend reaches it through the same delegated
+managed extraction, so a drawing's content reads identically whether or not it was rendered.

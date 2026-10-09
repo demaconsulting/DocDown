@@ -137,7 +137,7 @@ items, specifically:
     - **SelfTestAdapter (Unit)** — Maps Core's dependency-free self-test records into the TestResults
       model
 - **DemaConsulting.DocDown.Office (System)** — Word, Excel, PowerPoint, and Visio extraction; four format
-  subsystems and one shared subsystem
+  subsystems
   - **Word (Subsystem)** — Word text, real tables, embedded images, reviewer comments, footnotes,
     document-control content, and document metadata, through the managed Open XML SDK
   - **Excel (Subsystem)** — Worksheet cell values recorded verbatim, the formulas behind computed
@@ -146,9 +146,8 @@ items, specifically:
     and metadata through a managed backend; slide images are a separate, opt-in concern provided by
     the `DemaConsulting.DocDown.PowerPoint.Rendering` system
   - **Visio (Subsystem)** — Page names, shape text, and directed-connector topology through a
-    managed Open Packaging backend; page images through a COM automation backend
-  - **Com (Subsystem)** — The COM availability probe and the composition helpers the Visio
-    automation backend uses
+    managed Open Packaging backend; page images are a separate, opt-in concern provided by the
+    `DemaConsulting.DocDown.Visio.Rendering` system
 
 The following OTS items are also covered:
 
@@ -234,25 +233,21 @@ runtime dependencies.
 
 DemaConsulting.DocDown.Office is the fifth system: the Microsoft Office extraction backends, and the second family of
 formats after PDF. It is one package holding four format subsystems — Word, Excel, PowerPoint and
-Visio — plus Com, the helpers the COM backends share. Those four were four packages once. They share a
+Visio. Those four were four packages once. They share a
 dependency, a release cadence and an audience, and splitting them bought a consumer nothing but four
-references to keep in step, while producing duplication the compiler could not see: two
-byte-equivalent copies of the COM composition helpers, and two identical availability probes. The
+references to keep in step. The
 namespaces did not move, so `DemaConsulting.DocDown.Word` and its siblings still hold the same types.
 
 Word and Excel are fully managed and read `.docx` and `.xlsx` on every platform with no native
 dependency. PowerPoint is also fully managed: it reads `.pptx` text, structure, images and metadata
 anywhere with no native dependency, and slide rendering is a separate, opt-in concern handled by the
-`DemaConsulting.DocDown.PowerPoint.Rendering` system rather than by a COM backend in this package. Visio ships two
-backends: a managed reader that extracts text, structure, images and metadata anywhere, and a COM
-automation backend that additionally renders page images where Microsoft Office is installed. The
-Visio COM backend probes its own availability cheaply and reports itself unavailable off Windows or
-where the application is not registered, so the managed backend serves the format instead and a
-rendering request made where the application is absent is recorded as a note rather than silently
-omitted. The package depends on DemaConsulting.DocDown.Core, the Open XML SDK and System.IO.Packaging; it ships no
-native asset, because the COM backend reaches Office through late-bound IDispatch with no interop
-assembly. The legacy binary formats — `.doc`, `.xls`, `.ppt` and `.vsd` — are not supported by
-DocDown at all.
+`DemaConsulting.DocDown.PowerPoint.Rendering` system rather than by a backend in this package. Visio
+is fully managed as well: it reads `.vsdx`/`.vsdm` text, structure, images and metadata anywhere with
+no native dependency, and page rendering is a separate, opt-in concern handled by the
+`DemaConsulting.DocDown.Visio.Rendering` system rather than by a backend in this package. The package
+depends on DemaConsulting.DocDown.Core, the Open XML SDK and System.IO.Packaging; it ships no
+native asset, so it stays runtime-identifier agnostic end to end. The legacy binary formats — `.doc`,
+`.xls`, `.ppt` and `.vsd` — are not supported by DocDown at all.
 
 ## Folder Layout
 
@@ -295,11 +290,6 @@ DemaConsulting.DocDown.Core/
 
 DemaConsulting.DocDown.Office/
 ├── OfficeDocDownBuilderExtensions.cs — Unit: registers every Office backend in one call
-├── Com/
-│   ├── ComposingDelegatedSink.cs        — Internal: reconciles the delegated backend's rendering facts
-│   ├── DelegatedExtractionContext.cs    — Internal: the render-suppressed context for the delegated managed run
-│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
-│   ├── OfficeComAvailability.cs         — Internal: probes whether an Office application's COM automation can run here
 ├── Excel/
 │   ├── ExcelDocDownBuilderExtensions.cs — Unit: the reflection-free AddExcel registration seam
 │   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
@@ -329,13 +319,6 @@ DemaConsulting.DocDown.Office/
 ├── Visio/
 │   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
 │   ├── VisioDocDownBuilderExtensions.cs — Unit: the reflection-free AddVisio registration seam
-├── Visio/Com/
-│   ├── IVisioAutomation.cs              — Interface: the render seam and its per-page result type
-│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
-│   ├── VisioAutomation.cs               — Unit: the real COM automation adapter (Windows-only)
-│   ├── VisioComAvailability.cs          — Unit: the cheap, side-effect-free rendering-availability probe
-│   ├── VisioComDispatch.cs              — Internal: the low-level IDispatch plumbing and teardown
-│   ├── VisioComExtractor.cs             — Unit: the full-superset backend that delegates content and renders pages
 ├── Visio/Markdown/
 │   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
 │   ├── VisioContentEmitter.cs           — Unit: the model-to-sink emission path, per-page content, inventory, and notes

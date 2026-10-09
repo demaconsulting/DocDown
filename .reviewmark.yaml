@@ -691,6 +691,103 @@ reviews:
       - "src/DemaConsulting.DocDown.PowerPoint.Rendering/PowerPointRenderingDocDownBuilderExtensions.cs"     # source
       - "test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/PowerPointRenderingDocDownBuilderExtensionsTests.cs"
 
+  # === DocDownVisioRendering review-sets ===
+  # DemaConsulting.DocDown.Visio.Rendering is the optional page-rendering system. It is flat - three units, no
+  # subsystems - so its unit sets are direct units carrying two context entries (system design +
+  # system requirements), never the four-entry unit-under-subsystem shape. Every .cs path is listed
+  # explicitly, never by glob.
+
+  # DocDownVisioRendering-Architecture Review (one per system)
+  - id: DocDownVisioRendering-Architecture
+    title: Review that DemaConsulting.DocDown.Visio.Rendering Architecture Satisfies Requirements
+    context:
+      - "README.md"
+      - "docs/user_guide/**/*.md"
+    paths:
+      - "docs/reqstream/docdown-visio-rendering.yaml"                             # system requirements
+      - "docs/design/introduction.md"                                             # design introduction
+      - "docs/design/docdown-visio-rendering.md"                                 # system design
+      - "docs/verification/introduction.md"                                       # verification introduction
+      - "docs/verification/docdown-visio-rendering.md"                           # system verification
+      - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/DocDownVisioRenderingTests.cs"  # integration
+      - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/VisioRenderingGoldenTests.cs"   # golden tests
+      - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/TestData/VsdxRenderingFixtures.cs"  # test fixtures
+      - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/TestData/Png.cs"        # test PNG inspector
+      - "src/DemaConsulting.DocDown.Visio.Rendering/NamespaceDoc.cs"              # namespace documentation
+
+  # DocDownVisioRendering-Design Review (one per system)
+  - id: DocDownVisioRendering-Design
+    title: Review that DemaConsulting.DocDown.Visio.Rendering Design is Consistent and Complete
+    context:
+      - "docs/reqstream/docdown-visio-rendering.yaml"
+    paths:
+      - "docs/reqstream/docdown-visio-rendering/platform-requirements.yaml"       # platform requirements
+      - "docs/design/introduction.md"                                             # design introduction
+      - "docs/design/docdown-visio-rendering.md"                                 # system design
+      - "docs/design/docdown-visio-rendering/**/*.md"                            # all system design documents
+      - "docs/design/ots.md"                                                      # OTS overview
+
+  # DocDownVisioRendering-Verification Review (one per system)
+  - id: DocDownVisioRendering-Verification
+    title: Review that DemaConsulting.DocDown.Visio.Rendering Verification is Consistent and Complete
+    context:
+      - "docs/reqstream/docdown-visio-rendering.yaml"
+    paths:
+      - "docs/verification/introduction.md"                                       # verification introduction
+      - "docs/verification/docdown-visio-rendering.md"                           # system verification
+      - "docs/verification/docdown-visio-rendering/**/*.md"                      # all verification documents
+      - "docs/verification/ots.md"                                                # OTS overview
+
+  # DocDownVisioRendering-AllRequirements Review (one per system)
+  - id: DocDownVisioRendering-AllRequirements
+    title: Review that All DemaConsulting.DocDown.Visio.Rendering Requirements are Complete
+    context:
+      - "docs/design/docdown-visio-rendering.md"
+      - "docs/reqstream/docdown-visio-rendering.yaml"
+    paths:
+      - "docs/reqstream/docdown-visio-rendering/**/*.yaml"                        # unit requirements
+
+  # DocDownVisioRendering-VisioPageRenderingExtractor Unit Review (one per unit)
+  - id: DocDownVisioRendering-VisioPageRenderingExtractor
+    title: >-
+      Review that DemaConsulting.DocDown.Visio.Rendering VisioPageRenderingExtractor
+      Implementation is Correct
+    context:
+      - "docs/design/docdown-visio-rendering.md"
+      - "docs/reqstream/docdown-visio-rendering.yaml"
+    paths:
+      - "docs/reqstream/docdown-visio-rendering/visio-page-rendering-extractor.yaml"   # unit requirements
+      - "docs/design/docdown-visio-rendering/visio-page-rendering-extractor.md"        # unit design
+      - "docs/verification/docdown-visio-rendering/visio-page-rendering-extractor.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Visio.Rendering/VisioPageRenderingExtractor.cs"    # unit source
+      - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/VisioPageRenderingExtractorTests.cs"  # unit tests
+
+  # DocDownVisioRendering-PageRenderer Unit Review (one per unit)
+  - id: DocDownVisioRendering-PageRenderer
+    title: Review that DemaConsulting.DocDown.Visio.Rendering PageRenderer Implementation is Correct
+    context:
+      - "docs/design/docdown-visio-rendering.md"
+      - "docs/reqstream/docdown-visio-rendering.yaml"
+    paths:
+      - "docs/reqstream/docdown-visio-rendering/page-renderer.yaml"      # unit requirements
+      - "docs/design/docdown-visio-rendering/page-renderer.md"           # unit design
+      - "docs/verification/docdown-visio-rendering/page-renderer.md"    # unit verification
+      - "src/DemaConsulting.DocDown.Visio.Rendering/PageRenderer.cs"    # unit source
+      - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/PageRendererTests.cs"  # unit tests
+
+  # DocDownVisioRendering-VisioRenderingDocDownBuilderExtensions Unit Review (one per unit)
+  - id: DocDownVisioRendering-VisioRenderingDocDownBuilderExtensions
+    title: Review that VisioRenderingDocDownBuilderExtensions Implementation is Correct
+    context:
+      - "docs/design/docdown-visio-rendering.md"
+      - "docs/reqstream/docdown-visio-rendering.yaml"
+    paths:
+      - "docs/reqstream/docdown-visio-rendering/visio-rendering-doc-down-builder-extensions.yaml"  # unit req
+      - "docs/design/docdown-visio-rendering/visio-rendering-doc-down-builder-extensions.md"      # design
+      - "docs/verification/docdown-visio-rendering/visio-rendering-doc-down-builder-extensions.md"  # verif
+      - "src/DemaConsulting.DocDown.Visio.Rendering/VisioRenderingDocDownBuilderExtensions.cs"     # source
+      - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/VisioRenderingDocDownBuilderExtensionsTests.cs"
+
   # === DocDownTool review-sets ===
   # DocDownTool is the docdown command-line tool. It has two subsystems (Cli, SelfTest) and one
   # direct unit (Program). System sets follow the DocDownPdf shape; subsystem and unit-under-subsystem
@@ -1434,18 +1531,16 @@ reviews:
       - "src/DemaConsulting.DocDown.Office/PowerPoint/OpenXml/PowerPointOpenXmlImageReader.cs"      # unit source
 
   # === DocDownVisio review-sets ===
-  # DocDownVisio is the Visio extraction system. Like DocDownPowerPoint it has three subsystems (Com,
-  # Markdown, OpenXml) and one direct unit (VisioDocDownBuilderExtensions). System sets follow the
-  # DocDownWord shape; subsystem and unit-under-subsystem sets follow the DocDownExcel shape, with the
-  # unit-under-subsystem sets carrying the four context entries the Context Files table requires. Every
-  # .cs path is listed explicitly, never by glob, so a future unit source file cannot be silently
-  # absorbed. Each subsystem documents its supporting-type .cs files inline, so those files are reviewed
-  # in the subsystem set (D8): Com holds the automation seam interface, the composing sink, the delegated
-  # context, and the COM dispatch plumbing; Markdown holds the diagnostic-code type; OpenXml holds the
-  # drawing model, the shared exception, and the in-memory package synthesizer used by the self-test and
-  # fixtures. VisioAutomation (the real COM adapter, proven by release-time self-tests) has no dedicated
-  # test class; its source is covered in its unit set. The new Visio test project carries no golden
-  # directory and no non-.cs data beyond .csproj, so — unlike Word — no golden entries are required.
+  # DocDownVisio is the Visio extraction system. It has two subsystems (Markdown, OpenXml) and one
+  # direct unit (VisioDocDownBuilderExtensions). System sets follow the DocDownWord shape; subsystem
+  # and unit-under-subsystem sets follow the DocDownExcel shape, with the unit-under-subsystem sets
+  # carrying the four context entries the Context Files table requires. Every .cs path is listed
+  # explicitly, never by glob, so a future unit source file cannot be silently absorbed. Each subsystem
+  # documents its supporting-type .cs files inline, so those files are reviewed in the subsystem set
+  # (D8): Markdown holds the diagnostic-code type; OpenXml holds the drawing model, the shared
+  # exception, and the in-memory package synthesizer used by the self-test and fixtures. The Visio test
+  # project carries no golden directory and no non-.cs data beyond .csproj, so — unlike Word — no
+  # golden entries are required.
 
   # DocDownVisio-Architecture Review (one per system)
   - id: DocDownVisio-Architecture
@@ -1460,9 +1555,7 @@ reviews:
       - "docs/verification/introduction.md"                                      # verification introduction
       - "docs/verification/docdown-office/visio.md"                                     # system verification
       - "test/DemaConsulting.DocDown.Office.Tests/Visio/DocDownVisioTests.cs"           # integration tests
-      - "test/DemaConsulting.DocDown.Office.Tests/Visio/TestData/CapturingContext.cs"   # test support
       - "test/DemaConsulting.DocDown.Office.Tests/Visio/TestData/VsdxFixtures.cs"       # generated test fixtures
-      - "test/DemaConsulting.DocDown.Office.Tests/Visio/TestData/StubVisioAutomation.cs"  # rendering stub
       - "src/DemaConsulting.DocDown.Office/Visio/NamespaceDoc.cs"                       # namespace documentation
 
   # DocDownVisio-Design Review (one per system)
@@ -1510,23 +1603,6 @@ reviews:
       - "src/DemaConsulting.DocDown.Office/Visio/VisioDocDownBuilderExtensions.cs"     # unit source
       - "test/DemaConsulting.DocDown.Office.Tests/Visio/VisioDocDownBuilderExtensionsTests.cs"  # unit tests
 
-  # DocDownVisio-Com Subsystem Review (one per subsystem)
-  # D8: the subsystem's inline supporting-type source files — the automation seam interface, the composing
-  # sink, the delegated context, and the COM dispatch plumbing — are reviewed here; unit source files are
-  # excluded (Hierarchical Scope). Explicit list to prevent silent absorption.
-  - id: DocDownVisio-Com
-    title: Review that DemaConsulting.DocDown.Visio Com Satisfies Subsystem Requirements
-    context:
-      - "docs/design/docdown-office/visio.md"
-      - "docs/reqstream/docdown-office/visio.yaml"
-    paths:
-      - "docs/reqstream/docdown-office/visio/com.yaml"                                 # subsystem requirements
-      - "docs/design/docdown-office/visio/com.md"                                      # subsystem design
-      - "docs/verification/docdown-office/visio/com.md"                                # subsystem verification
-      - "src/DemaConsulting.DocDown.Office/Visio/Com/IVisioAutomation.cs"              # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/Visio/Com/VisioComDispatch.cs"              # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Office/Visio/Com/NamespaceDoc.cs"                  # namespace documentation
-
   # DocDownVisio-Markdown Subsystem Review (one per subsystem)
   # D8: the subsystem's inline supporting-type source file — the diagnostic-code type — and its pinning
   # test are reviewed here; unit source files are excluded (Hierarchical Scope).
@@ -1556,52 +1632,6 @@ reviews:
       - "docs/verification/docdown-office/visio/open-xml.md"                           # subsystem verification
       - "src/DemaConsulting.DocDown.Office/Visio/OpenXml/NamespaceDoc.cs"              # namespace documentation
       - "test/DemaConsulting.DocDown.Office.Tests/Visio/TestData/VisioPackageBuilder.cs"  # test harness
-
-  # DocDownVisio-Com-VisioComExtractor Unit Review (unit under subsystem, four context entries)
-  - id: DocDownVisio-Com-VisioComExtractor
-    title: Review that DemaConsulting.DocDown.Visio Com VisioComExtractor Implementation is Correct
-    context:
-      - "docs/design/docdown-office/visio.md"
-      - "docs/reqstream/docdown-office/visio.yaml"
-      - "docs/design/docdown-office/visio/com.md"
-      - "docs/reqstream/docdown-office/visio/com.yaml"
-    paths:
-      - "docs/reqstream/docdown-office/visio/com/visio-com-extractor.yaml"             # unit requirements
-      - "docs/design/docdown-office/visio/com/visio-com-extractor.md"                  # unit design
-      - "docs/verification/docdown-office/visio/com/visio-com-extractor.md"            # unit verification
-      - "src/DemaConsulting.DocDown.Office/Visio/Com/VisioComExtractor.cs"             # unit source
-      - "test/DemaConsulting.DocDown.Office.Tests/Visio/Com/VisioComExtractorTests.cs"  # unit tests
-
-  # DocDownVisio-Com-VisioComAvailability Unit Review (unit under subsystem, four context entries)
-  - id: DocDownVisio-Com-VisioComAvailability
-    title: Review that DemaConsulting.DocDown.Visio Com VisioComAvailability Implementation is Correct
-    context:
-      - "docs/design/docdown-office/visio.md"
-      - "docs/reqstream/docdown-office/visio.yaml"
-      - "docs/design/docdown-office/visio/com.md"
-      - "docs/reqstream/docdown-office/visio/com.yaml"
-    paths:
-      - "docs/reqstream/docdown-office/visio/com/visio-com-availability.yaml"          # unit requirements
-      - "docs/design/docdown-office/visio/com/visio-com-availability.md"               # unit design
-      - "docs/verification/docdown-office/visio/com/visio-com-availability.md"         # unit verification
-      - "src/DemaConsulting.DocDown.Office/Visio/Com/VisioComAvailability.cs"          # unit source
-      - "test/DemaConsulting.DocDown.Office.Tests/Visio/Com/VisioComAvailabilityTests.cs"  # unit tests
-
-  # DocDownVisio-Com-VisioAutomation Unit Review (unit under subsystem, four context entries)
-  # No dedicated test class: the real COM adapter is the single untestable boundary, proven by release-time
-  # self-tests; its observable seam contract is exercised through the COM extractor unit tests.
-  - id: DocDownVisio-Com-VisioAutomation
-    title: Review that DemaConsulting.DocDown.Visio Com VisioAutomation Implementation is Correct
-    context:
-      - "docs/design/docdown-office/visio.md"
-      - "docs/reqstream/docdown-office/visio.yaml"
-      - "docs/design/docdown-office/visio/com.md"
-      - "docs/reqstream/docdown-office/visio/com.yaml"
-    paths:
-      - "docs/reqstream/docdown-office/visio/com/visio-automation.yaml"                # unit requirements
-      - "docs/design/docdown-office/visio/com/visio-automation.md"                     # unit design
-      - "docs/verification/docdown-office/visio/com/visio-automation.md"               # unit verification
-      - "src/DemaConsulting.DocDown.Office/Visio/Com/VisioAutomation.cs"               # unit source
 
   # DocDownVisio-Markdown-VisioContentEmitter Unit Review (unit under subsystem, four context entries)
   - id: DocDownVisio-Markdown-VisioContentEmitter

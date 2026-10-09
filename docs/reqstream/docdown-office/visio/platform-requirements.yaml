@@ -4,9 +4,9 @@
 # These requirements specify the platforms and frameworks the package must support. DemaConsulting.DocDown.Visio's
 # managed Open Packaging backend is 100% managed and runtime-identifier agnostic, so its platform
 # evidence is the end-to-end extraction test, which selects the managed backend and produces the full
-# output contract and so passes on every runtime the package targets. The COM rendering backend is
-# environment-dependent and self-disables where Microsoft Visio is absent, so it never gates the
-# platform proof.
+# output contract and so passes on every runtime the package targets. Rendered page images are a
+# separate, opt-in concern delivered entirely by the DemaConsulting.DocDown.Visio.Rendering package,
+# which carries its own platform requirements and never gates this package's platform proof.
 #
 # Test links can include a source filter prefix (e.g. "windows@", "ubuntu@", "net8.0@") to restrict
 # which test results count as evidence for a requirement. This is critical for platform and framework
@@ -28,8 +28,7 @@ sections:
         tags: [system]
         justification: |
           Windows is a major DEMA Consulting development platform, and the managed Open Packaging backend
-          must read a drawing and produce the full output contract there. Windows is also the only
-          platform where the COM rendering backend can run.
+          must read a drawing and produce the full output contract there.
         tests:
           - "windows@DocDownVisio_Extract_Vsdx_SelectsOpenXml"
 

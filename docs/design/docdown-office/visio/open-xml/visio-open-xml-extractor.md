@@ -17,7 +17,9 @@ contribute self-tests that describe its own behavior.
 environment there, so one instance can be registered once and reused across concurrent extractions.
 
 - **`Id`** — `visio-openxml`. **`DisplayName`** — `Visio (Open Packaging)`.
-- **`SupportedFormats`** — `Vsdx` and `Vsdm`. **`Priority`** — `10`, above the COM backend.
+- **`SupportedFormats`** — `Vsdx` and `Vsdm`. **`Priority`** — `10`, above the rendering backend in
+  `DemaConsulting.DocDown.Visio.Rendering` (priority `5`), so this unit wins whenever rendering is not
+  requested.
 - **`PageRenderingApplicable`** — `true`, because Visio drawings are paginated even though this
   managed backend does not render them.
 
@@ -32,8 +34,8 @@ environment there, so one instance can be registered once and reused across conc
 - **`GetSelfTestCases()` / `RunParseRoundTrip`** — contribute a `visio.openxml.parseRoundTrip`
   self-test that reads the embedded probe drawing — two labeled shapes joined by a glued connector —
   and proves the connection resolves, and a
-  `visio.pageRendering` case that reports skipped with a reason because rendering belongs to the COM
-  backend.
+  `visio.pageRendering` case that reports skipped with a reason because this unit does not render
+  pages itself (rendering is a separate concern served by `DemaConsulting.DocDown.Visio.Rendering`).
 - **`ReadSourceAsync`** (private) — buffers the source fully so the reader has a seekable stream.
 
 ### Error Handling
@@ -56,5 +58,5 @@ throwing at its caller.
 
 The engine resolves and invokes this unit for every ordinary `.vsdx` or `.vsdm` extraction.
 `VisioDocDownBuilderExtensions.AddVisio` constructs it through a factory when a host builds an
-engine, and `VisioComExtractor` constructs one to delegate the managed aspects of a rendering
-extraction.
+engine, and `DemaConsulting.DocDown.Visio.Rendering`'s `VisioPageRenderingExtractor` constructs one
+to delegate the managed aspects of a rendering extraction.

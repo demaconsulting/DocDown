@@ -117,6 +117,9 @@ words:
   # CanvasNet.Charts OTS items used in reqstream/design/verification file paths.
   - canvasnetpptx
   - canvasnetcharts
+  # DemaConsulting.DocDown.Visio.Rendering addition: the lowercase filename token for the CanvasNet.Vsdx
+  # OTS item used in reqstream/design/verification file paths.
+  - canvasnetvsdx
   # Increment 6 (DemaConsulting.DocDown.Word): Open XML field-instruction keywords used for structural furniture
   # detection, the backend identifier token, and descriptive vocabulary introduced by the mapping.
   - openxml
