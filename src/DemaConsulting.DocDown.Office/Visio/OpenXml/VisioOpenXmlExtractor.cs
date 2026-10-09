@@ -19,7 +19,8 @@ namespace DemaConsulting.DocDown.Visio.OpenXml;
 ///         package directly with <see cref="System.IO.Packaging"/> — and it deliberately stops at the
 ///         logical document structure: page names, shape text, connector topology, embedded images,
 ///         and document metadata. The spatial arrangement that only a render can recover is delivered
-///         by the separate COM backend when Microsoft Visio is available.
+///         by the separate, fully-managed <c>DemaConsulting.DocDown.Visio.Rendering</c> package
+///         (<c>AddVisioRendering</c>).
 ///     </para>
 ///     <para>
 ///         Because nothing about this backend is environment-dependent, <see cref="ProbeAvailability"/>
@@ -107,7 +108,7 @@ public sealed class VisioOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     [
         new SelfTestCase("visio.openxml.parseRoundTrip", Id, RunParseRoundTrip),
         new SelfTestCase("visio.pageRendering", Id, static _ => SelfTestResult.Skipped(
-            "This extractor does not render pages; page rendering needs the COM backend."))
+            "This extractor does not render pages; page rendering needs DemaConsulting.DocDown.Visio.Rendering."))
     ];
 
     /// <summary>
