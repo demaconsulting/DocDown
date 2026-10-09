@@ -2,7 +2,6 @@ using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.Office.Tests.Visio.TestData;
 using DemaConsulting.DocDown.TestSupport;
 using DemaConsulting.DocDown.Visio;
-using DemaConsulting.DocDown.Visio.Com;
 
 namespace DemaConsulting.DocDown.Office.Tests.Visio;
 
@@ -104,20 +103,13 @@ public class DocDownVisioTests
     }
 
     /// <summary>
-    ///     Proves that when page rendering is requested on a host without a Visio renderer, DocDown
-    ///     still produces the layout and records the missing renderer as a plain note while keeping
-    ///     the topology content.
+    ///     Proves that when page rendering is requested with only the managed backend registered,
+    ///     DocDown still produces the layout and records the missing renderer as a plain note while
+    ///     keeping the topology content.
     /// </summary>
     [Fact]
     public async Task DocDownVisio_Extract_RenderRequestedWithoutVisio_RecordsNoteButKeepsTopology()
     {
-        if (new VisioComExtractor().ProbeAvailability().IsAvailable)
-        {
-            // On a machine with Visio available the COM backend will render pages, so this scenario
-            // is only meaningful where the managed backend remains the selected path.
-            return;
-        }
-
         using var temp = new TempScratch();
         var options = FixedOptions();
         options.RenderPages = true;

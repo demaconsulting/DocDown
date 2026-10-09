@@ -27,7 +27,6 @@ public class OfficeDocDownBuilderExtensionsTests
         [
             "excel-openxml",
             "powerpoint-openxml",
-            "visio-com",
             "visio-openxml",
             "word-openxml"
         ];

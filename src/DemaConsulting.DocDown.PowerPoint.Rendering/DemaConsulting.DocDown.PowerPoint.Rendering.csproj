@@ -79,9 +79,9 @@
          the three carries a native asset for any runtime identifier — see
          docs/design/ots/canvasnetpptx.md and docs/design/ots/canvasnetcharts.md for the
          rationale. -->
-    <PackageReference Include="DemaConsulting.CanvasNet.Pptx" Version="[0.1.0-beta.10]" />
-    <PackageReference Include="DemaConsulting.CanvasNet.Charts" Version="[0.1.0-beta.10]" />
-    <PackageReference Include="DemaConsulting.CanvasNet" Version="[0.1.0-beta.10]" />
+    <PackageReference Include="DemaConsulting.CanvasNet.Pptx" Version="[0.1.0-beta.11]" />
+    <PackageReference Include="DemaConsulting.CanvasNet.Charts" Version="[0.1.0-beta.11]" />
+    <PackageReference Include="DemaConsulting.CanvasNet" Version="[0.1.0-beta.11]" />
   </ItemGroup>
 
   <!-- Build Tool Dependencies -->

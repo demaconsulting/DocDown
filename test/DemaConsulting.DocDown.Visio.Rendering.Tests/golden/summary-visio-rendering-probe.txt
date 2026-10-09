@@ -1,0 +1,52 @@
+DocDown Extraction Summary
+==========================
+
+A 1-page Visio drawing titled "DocDown self test"; extracted 96 characters of text and 1 rendered page image.
+
+Scratch folder  : <scratch-folder>
+Source document : <source-document>
+Detected format : vsdx (application/vnd.ms-visio.drawing) - detected by file extension
+Extracted (UTC) : <timestamp>
+Status          : PRODUCED  - the standard output layout was written.
+
+All paths below are relative to the scratch folder shown above.
+
+Backend
+-------
+  Selected  : visio-rendering - Visio pages (CanvasNet.Vsdx)
+
+Environment
+-----------
+  Operating system   : <operating-system>
+  Runtime            : <runtime>
+  Runtime identifier : <runtime-identifier>
+  DemaConsulting.DocDown.Visio:
+    visio.backend       : System.IO.Packaging (managed) (available)
+    visio.pageRendering : not provided by this extractor (NOT available)
+    pages.renderer      : CanvasNet.Vsdx (managed) (available)
+
+Document metadata
+-----------------
+  Author          : DocDown
+  Modified (UTC)  : 2026-09-14T05:28:47Z
+  See metadata.json for the document's full self-reported metadata.
+
+Layout
+------
+  summary.txt          this file
+  manifest.json        machine-readable form of this summary
+  metadata.json        what the document asserts about itself
+  content.md           PRESENT
+  review-comments.md   not present - none were written
+  images/              not present - none were written
+  pages/               PRESENT - 1 rendered
+
+What WAS extracted
+------------------
+  content.md   96 characters of text.
+               Contains 1 page, 2 labeled shapes, and 1 connection.
+  pages/       1 rendered page.
+
+Could not read
+--------------
+  Nothing was left incomplete.

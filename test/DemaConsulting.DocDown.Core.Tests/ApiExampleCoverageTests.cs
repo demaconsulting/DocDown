@@ -67,7 +67,7 @@ public class ApiExampleCoverageTests
         Assert.Equal(
             [
                 "AddExcel", "AddOffice", "AddPdf", "AddPdfRendering", "AddPowerPoint", "AddPowerPointRendering",
-                "AddVisio", "AddWord"
+                "AddVisio", "AddVisioRendering", "AddWord"
             ],
             registrations.Order().ToArray());
 

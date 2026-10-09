@@ -45,6 +45,7 @@ throughout the repository.
 │   ├── DemaConsulting.DocDown.Pdf.Rendering/
 │   ├── DemaConsulting.DocDown.Office/
 │   ├── DemaConsulting.DocDown.PowerPoint.Rendering/
+│   ├── DemaConsulting.DocDown.Visio.Rendering/
 │   └── DemaConsulting.DocDown.Tool/
 └── test/
     ├── DemaConsulting.DocDown.Core.Tests/
@@ -52,6 +53,7 @@ throughout the repository.
     ├── DemaConsulting.DocDown.Pdf.Rendering.Tests/
     ├── DemaConsulting.DocDown.Office.Tests/
     ├── DemaConsulting.DocDown.PowerPoint.Rendering.Tests/
+    ├── DemaConsulting.DocDown.Visio.Rendering.Tests/
     ├── DemaConsulting.DocDown.Tool.Tests/
     └── DemaConsulting.DocDown.TestSupport/
 ```
