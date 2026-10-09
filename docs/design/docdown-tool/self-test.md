@@ -1,6 +1,6 @@
 ## SelfTest Subsystem
 
-![DocDown.Tool Structure](DocDownToolView.svg)
+![DemaConsulting.DocDown.Tool Structure](DocDownToolView.svg)
 
 The SelfTest subsystem drives the `--validate` command. It exercises the tool's own functionality and
 the union of self-test cases every registered backend contributes, reports the outcome legibly, and
@@ -49,9 +49,9 @@ knowing anything about the results model.
 
 ## Dependencies
 
-- **DocDown.Core** — `DocDownBuilder`, `DocDownEngine`, and the self-test seam (`SelfTestCase`,
+- **DemaConsulting.DocDown.Core** — `DocDownBuilder`, `DocDownEngine`, and the self-test seam (`SelfTestCase`,
   `SelfTestResult`, `SelfTestStatus`, `SelfTestContext`).
-- **DocDown.Pdf**, **DocDown.Pdf.Rendering**, **DocDown.Word**, **DocDown.Visio**,
-  **DocDown.PowerPoint**, and **DocDown.Excel** — the same backend registration seams the tool uses
-  for extraction, so validation exercises the shipped configuration.
+- **DemaConsulting.DocDown.Pdf**, **DemaConsulting.DocDown.Pdf.Rendering**, **DemaConsulting.DocDown.Word**,
+  **DemaConsulting.DocDown.Visio**, **DemaConsulting.DocDown.PowerPoint**, and **DemaConsulting.DocDown.Excel** —
+  the same backend registration seams the tool uses for extraction, so validation exercises the shipped configuration.
 - **DemaConsulting.TestResults** (OTS) — the results model and serializers, referenced only here.

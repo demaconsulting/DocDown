@@ -1,5 +1,5 @@
-using DocDown.Core;
-using DocDown.Visio;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Visio;
 
 namespace DemaConsulting.DocDown.Office.Tests.Visio;
 

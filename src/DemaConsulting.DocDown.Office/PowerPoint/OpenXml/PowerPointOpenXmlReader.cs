@@ -1,12 +1,12 @@
 using System.Text;
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using D = DocumentFormat.OpenXml.Drawing;
 using O21 = DocumentFormat.OpenXml.Office2021.PowerPoint.Comment;
 using P = DocumentFormat.OpenXml.Presentation;
 
-namespace DocDown.PowerPoint.OpenXml;
+namespace DemaConsulting.DocDown.PowerPoint.OpenXml;
 
 /// <summary>
 ///     Reads a presentation package into the backend-neutral <see cref="PowerPointDeckModel"/>,

@@ -1,9 +1,9 @@
-using DocDown.Core;
-using DocDown.Pdf;
-using DocDown.Pdf.Rendering;
-using DocDown.Tool;
-using DocDown.Tool.Cli;
-using DocDown.Tool.SelfTest;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Pdf;
+using DemaConsulting.DocDown.Pdf.Rendering;
+using DemaConsulting.DocDown.Tool;
+using DemaConsulting.DocDown.Tool.Cli;
+using DemaConsulting.DocDown.Tool.SelfTest;
 
 namespace DemaConsulting.DocDown.Tool.Tests;
 

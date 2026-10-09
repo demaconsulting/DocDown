@@ -1,5 +1,5 @@
 using System.Reflection;
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
 namespace DemaConsulting.DocDown.Core.Tests.Extraction;
 
@@ -28,9 +28,9 @@ public class SelfTestProbeTests
         var assembly = typeof(SelfTestProbeTests).Assembly;
 
         var exception = Assert.Throws<InvalidOperationException>(
-            () => SelfTestProbe.Load(assembly, "DocDown.NoSuchProbe.bin"));
+            () => SelfTestProbe.Load(assembly, "DemaConsulting.DocDown.NoSuchProbe.bin"));
 
-        Assert.Contains("DocDown.NoSuchProbe.bin", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("DemaConsulting.DocDown.NoSuchProbe.bin", exception.Message, StringComparison.Ordinal);
     }
 
     /// <summary>

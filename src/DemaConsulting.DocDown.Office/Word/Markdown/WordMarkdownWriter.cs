@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace DocDown.Word.Markdown;
+namespace DemaConsulting.DocDown.Word.Markdown;
 
 /// <summary>
 ///     Renders a <see cref="WordDocumentModel"/> — or any block sequence within it — to a single

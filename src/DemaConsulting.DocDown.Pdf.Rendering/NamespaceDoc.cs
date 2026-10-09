@@ -1,4 +1,4 @@
-namespace DocDown.Pdf.Rendering;
+namespace DemaConsulting.DocDown.Pdf.Rendering;
 
 /// <summary>
 /// Optional PDF page rasterization. Registered with <c>AddPdfRendering</c> alongside

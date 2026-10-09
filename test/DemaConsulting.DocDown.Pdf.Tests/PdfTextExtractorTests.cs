@@ -29,7 +29,7 @@ public class PdfTextExtractorTests
         var pages = document.GetPages().ToList();
 
         // Act: render the page
-        var result = global::DocDown.Pdf.PdfTextExtractor.Extract(pages, "Simple", [], Ct);
+        var result = global::DemaConsulting.DocDown.Pdf.PdfTextExtractor.Extract(pages, "Simple", [], Ct);
 
         // Assert: both lines are present and the upper one comes first, as a reader would read them
         Assert.True(result.ParagraphCount > 0);
@@ -56,7 +56,7 @@ public class PdfTextExtractorTests
         var rawPageText = pages[0].Text;
 
         // Act: render the page through the structured pipeline
-        var result = global::DocDown.Pdf.PdfTextExtractor.Extract(pages, null, [], Ct);
+        var result = global::DemaConsulting.DocDown.Pdf.PdfTextExtractor.Extract(pages, null, [], Ct);
 
         // Assert: the output is not the raw concatenation, yet carries the same words
         Assert.NotEqual(rawPageText, result.Markdown);
@@ -79,7 +79,7 @@ public class PdfTextExtractorTests
         var pages = document.GetPages().ToList();
 
         // Act: render every page
-        var result = global::DocDown.Pdf.PdfTextExtractor.Extract(pages, null, [], Ct);
+        var result = global::DemaConsulting.DocDown.Pdf.PdfTextExtractor.Extract(pages, null, [], Ct);
 
         // Assert: each page contributes its own marker, in order
         Assert.Contains("<!-- docdown:page 1 -->", result.Markdown, StringComparison.Ordinal);
@@ -100,7 +100,7 @@ public class PdfTextExtractorTests
         var pages = document.GetPages().ToList();
 
         // Act: render with the title supplied
-        var result = global::DocDown.Pdf.PdfTextExtractor.Extract(pages, "Quarterly Report", [], Ct);
+        var result = global::DemaConsulting.DocDown.Pdf.PdfTextExtractor.Extract(pages, "Quarterly Report", [], Ct);
 
         // Assert: the title is the document's first heading, so content.md is self-identifying
         Assert.StartsWith("# Quarterly Report", result.Markdown, StringComparison.Ordinal);
@@ -115,10 +115,10 @@ public class PdfTextExtractorTests
         // Arrange: a two-page document and one image attributed to the second page
         using var document = PdfFixtures.Open(PdfFixtures.MultiPage(2));
         var pages = document.GetPages().ToList();
-        var images = new[] { new global::DocDown.Pdf.PdfExtractedImage(2, "images/0001-figure.png", "page 2 image 1") };
+        var images = new[] { new global::DemaConsulting.DocDown.Pdf.PdfExtractedImage(2, "images/0001-figure.png", "page 2 image 1") };
 
         // Act: render with the image supplied
-        var result = global::DocDown.Pdf.PdfTextExtractor.Extract(pages, null, images, Ct);
+        var result = global::DemaConsulting.DocDown.Pdf.PdfTextExtractor.Extract(pages, null, images, Ct);
 
         // Assert: the link uses the path the sink allocated, and sits after its own page's marker
         Assert.Contains("![page 2 image 1](images/0001-figure.png)", result.Markdown, StringComparison.Ordinal);
@@ -138,7 +138,7 @@ public class PdfTextExtractorTests
         var pages = document.GetPages().ToList();
 
         // Act: render the page
-        var result = global::DocDown.Pdf.PdfTextExtractor.Extract(pages, null, [], Ct);
+        var result = global::DemaConsulting.DocDown.Pdf.PdfTextExtractor.Extract(pages, null, [], Ct);
 
         // Assert: the absence of a text layer becomes empty text output with zero counts
         Assert.Equal(0, result.HeadingCount);
@@ -163,7 +163,7 @@ public class PdfTextExtractorTests
         Assert.Empty(pages[0].GetMarkedContents());
 
         // Act: render without a document title, so any heading present must have been inferred
-        var result = global::DocDown.Pdf.PdfTextExtractor.Extract(pages, null, [], Ct);
+        var result = global::DemaConsulting.DocDown.Pdf.PdfTextExtractor.Extract(pages, null, [], Ct);
 
         // Assert: the text is present but no heading was invented for it
         Assert.Contains("Introduction", result.Markdown, StringComparison.Ordinal);
@@ -180,7 +180,7 @@ public class PdfTextExtractorTests
         var pages = Array.Empty<Page>();
 
         // Act: render nothing
-        var result = global::DocDown.Pdf.PdfTextExtractor.Extract(pages, null, [], Ct);
+        var result = global::DemaConsulting.DocDown.Pdf.PdfTextExtractor.Extract(pages, null, [], Ct);
 
         // Assert: the result is empty and honest rather than an exception
         Assert.Equal(0, result.HeadingCount);
@@ -196,6 +196,6 @@ public class PdfTextExtractorTests
     {
         // Act + Assert: the pages are the unit's only input and are mandatory
         Assert.Throws<ArgumentNullException>(
-            () => global::DocDown.Pdf.PdfTextExtractor.Extract(null!, null, [], Ct));
+            () => global::DemaConsulting.DocDown.Pdf.PdfTextExtractor.Extract(null!, null, [], Ct));
     }
 }

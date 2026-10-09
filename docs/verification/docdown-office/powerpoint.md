@@ -1,11 +1,11 @@
-# DocDown.PowerPoint Verification Design
+# DemaConsulting.DocDown.PowerPoint Verification Design
 
-This document describes the system-level verification strategy for `DocDown.PowerPoint`, the
+This document describes the system-level verification strategy for `DemaConsulting.DocDown.PowerPoint`, the
 PowerPoint extraction package.
 
 ## Verification Approach
 
-`DocDown.PowerPoint` is verified through system-level integration tests in `DocDownPowerPointTests.cs`
+`DemaConsulting.DocDown.PowerPoint` is verified through system-level integration tests in `DocDownPowerPointTests.cs`
 and unit tests per unit in `DemaConsulting.DocDown.Office.Tests`.
 
 ### Every extraction test reconciles against the filesystem
@@ -23,7 +23,7 @@ Beyond the layout, each scenario asserts the extraction outcome, the inventory c
 The package ships one backend. The managed Open XML backend reads a deck into the reader-neutral
 model and drives the content emitter, so every mapping decision is made in exactly one place and can
 be proved from a hand-built model with no deck behind it. Rendered slide images are a separate,
-opt-in concern provided by `DocDown.PowerPoint.Rendering` and verified there.
+opt-in concern provided by `DemaConsulting.DocDown.PowerPoint.Rendering` and verified there.
 
 ### Speaker-notes inventory is the headline reporting property
 
@@ -149,7 +149,7 @@ Evidence for `DocDownPowerPoint-SlideOrder`.
 
 Proves the managed backend's descriptor and environment facts state plainly, on every extraction,
 that it provides no rendered pages rather than ever fabricating one. Rendered slide images are a
-separate, opt-in concern delivered entirely by `DocDown.PowerPoint.Rendering`. Evidence for
+separate, opt-in concern delivered entirely by `DemaConsulting.DocDown.PowerPoint.Rendering`. Evidence for
 `DocDownPowerPoint-PageRendering`.
 
 ### Embedded images are written and linked from the slide

@@ -1,5 +1,5 @@
-using DocDown.Core;
-using DocDown.Tool.Cli;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Tool.Cli;
 
 namespace DemaConsulting.DocDown.Tool.Tests.Cli;
 

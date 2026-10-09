@@ -1,11 +1,11 @@
-# DocDown.Tool Verification Design
+# DemaConsulting.DocDown.Tool Verification Design
 
-This document describes the system-level verification strategy for `DocDown.Tool`, the `docdown`
+This document describes the system-level verification strategy for `DemaConsulting.DocDown.Tool`, the `docdown`
 command-line tool.
 
 ## Verification Approach
 
-`DocDown.Tool` is verified through system-level integration tests in `DocDownToolTests.cs` and unit
+`DemaConsulting.DocDown.Tool` is verified through system-level integration tests in `DocDownToolTests.cs` and unit
 tests per unit, all in `DemaConsulting.DocDown.Tool.Tests`, running on xUnit v3 against net10.0. The
 tool is packaged for that single framework, so the test project targets it alone; the
 multi-framework matrix continues to apply to every library, where it carries meaning for consumers.

@@ -1,8 +1,8 @@
+using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.Office.Tests.Visio.TestData;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
-using DocDown.Visio.Com;
-using CoreFormat = DocDown.Core.DocumentFormat;
+using DemaConsulting.DocDown.Visio.Com;
+using CoreFormat = DemaConsulting.DocDown.Core.DocumentFormat;
 
 namespace DemaConsulting.DocDown.Office.Tests.Visio.Com;
 

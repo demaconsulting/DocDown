@@ -1,11 +1,11 @@
 using System.Globalization;
 using System.Runtime.Versioning;
-using DocDown.Core;
-using DocDown.Office.Com;
-using DocDown.Visio.OpenXml;
-using CoreFormat = DocDown.Core.DocumentFormat;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Office.Com;
+using DemaConsulting.DocDown.Visio.OpenXml;
+using CoreFormat = DemaConsulting.DocDown.Core.DocumentFormat;
 
-namespace DocDown.Visio.Com;
+namespace DemaConsulting.DocDown.Visio.Com;
 
 /// <summary>
 ///     The Visio COM automation backend: a composing extractor that produces page names, shape text,
@@ -131,7 +131,7 @@ public sealed class VisioComExtractor : IDocumentExtractor, ISelfValidating
 
         // Record the authoritative rendering fact, complementing the managed backend's own fact
         sink.ReportEnvironmentFact(new EnvironmentFact(
-            "DocDown.Visio", "pages.renderer", "Microsoft Visio (COM automation)", Available: true));
+            "DemaConsulting.DocDown.Visio", "pages.renderer", "Microsoft Visio (COM automation)", Available: true));
 
         var factory = _automationFactory
             ?? throw new VisioExtractionException("The Visio COM automation adapter is not available in this build.");

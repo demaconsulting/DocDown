@@ -1,6 +1,6 @@
 ## PdfRenderingDocDownBuilderExtensions
 
-![DocDown.Pdf.Rendering Structure](DocDownPdfRenderingView.svg)
+![DemaConsulting.DocDown.Pdf.Rendering Structure](DocDownPdfRenderingView.svg)
 
 ### Purpose
 
@@ -38,7 +38,7 @@ and constructs nothing.
 
 ### Dependencies
 
-- **DocDown.Core** — `DocDownBuilder`.
+- **DemaConsulting.DocDown.Core** — `DocDownBuilder`.
 - **PdfPageRenderingExtractor** — the backend this unit registers. See *PdfPageRenderingExtractor
   Design*.
 

@@ -1,16 +1,16 @@
-# DocDown.PowerPoint.Rendering System Design
+# DemaConsulting.DocDown.PowerPoint.Rendering System Design
 
-![DocDown.PowerPoint.Rendering Structure](DocDownPowerPointRenderingView.svg)
+![DemaConsulting.DocDown.PowerPoint.Rendering Structure](DocDownPowerPointRenderingView.svg)
 
-`DocDown.PowerPoint.Rendering` is the optional slide-rendering backend for the DocDown output
+`DemaConsulting.DocDown.PowerPoint.Rendering` is the optional slide-rendering backend for the DocDown output
 contract. It produces the same text, embedded images, and document metadata the managed PowerPoint
 backend produces, and adds the one thing that backend cannot: raster images of the slides
 themselves. It is a separately distributed, opt-in NuGet package that a host registers explicitly
-alongside `DocDown.Core` and `DocDown.Office`.
+alongside `DemaConsulting.DocDown.Core` and `DemaConsulting.DocDown.Office`.
 
 It rasterizes through `DemaConsulting.CanvasNet.Pptx`/`DemaConsulting.CanvasNet`, a fully-managed
 rendering stack with no native binaries. Slide rendering is still a separate package from
-`DocDown.Office` because it is a distinct architectural concern — rasterization versus parsing — and
+`DemaConsulting.DocDown.Office` because it is a distinct architectural concern — rasterization versus parsing — and
 an additional dependency a consumer who only needs text and metadata should not have to carry, not
 because of any native-binary consequence; both packages are fully managed and
 runtime-identifier agnostic.
@@ -76,7 +76,7 @@ it. The note stays limited to that extraction fact itself.
 | `IDocumentExtractor` | Inbound, from the engine | .NET interface | See the probe obligations below |
 | `ISelfValidating` | Inbound, from the engine | .NET interface | Enumeration must be cheap |
 | `IExtractionSink` | Outbound, to Core | .NET interface | The only output channel |
-| `PowerPointOpenXmlExtractor` | Outbound, to DocDown.Office | .NET class | Delegated to with rendering suppressed |
+| `PowerPointOpenXmlExtractor` | Outbound, to DemaConsulting.DocDown.Office | .NET class | Rendering suppressed |
 | `DocDownBuilder` | Inbound, from a host | .NET extension method | `AddPowerPointRendering` is the whole surface |
 | Source document | Inbound | PPTX byte stream | Not guaranteed seekable; buffered once |
 
@@ -97,8 +97,8 @@ machine-enforced by a reflection test over the package's exported types.
 
 ## Dependencies
 
-- **DocDown.Core** — the extraction contract, the sink, the options, and the output layout.
-- **DocDown.Office** — the managed text/embedded-image/metadata extractor this package delegates to
+- **DemaConsulting.DocDown.Core** — the extraction contract, the sink, the options, and the output layout.
+- **DemaConsulting.DocDown.Office** — the managed text/embedded-image/metadata extractor this package delegates to
   (`PowerPointOpenXmlExtractor`). This is a project reference; it adds no native asset.
 - **CanvasNet.Pptx** (OTS) — the fully-managed PPTX rasterization API: `PptxDocument.Open`,
   `SlideCount`, and `Render` produce a `Surface`. Confined to `SlideRenderer` and absent from the
@@ -110,7 +110,7 @@ machine-enforced by a reflection test over the package's exported types.
 - **CanvasNet** (OTS) — the fully-managed 2D canvas/codec library CanvasNet.Pptx builds on; this
   package references it directly for `PngCodec.Save`, which encodes the rendered `Surface` to PNG
   bytes. See *CanvasNet* under the OTS integration design.
-- **Open XML SDK** — reached only through the `DocDown.Office` project reference, for the delegated
+- **Open XML SDK** — reached only through the `DemaConsulting.DocDown.Office` project reference, for the delegated
   managed extraction. No type in this package names it.
 
 ## Risk Control Measures
@@ -118,8 +118,8 @@ machine-enforced by a reflection test over the package's exported types.
 - **Rasterizer containment.** CanvasNet.Pptx, CanvasNet.Charts, and CanvasNet types appear in exactly
   one file (`SlideRenderer.cs`) and in no public signature. A reflection test fails the build if any
   of them reaches the exported surface, so the rasterizer stays confined and replaceable.
-- **Portability of the whole package graph.** `DocDown.Core`, `DocDown.Office`,
-  `DocDown.PowerPoint.Rendering`, and `DocDown.Tool` are all fully managed and free of
+- **Portability of the whole package graph.** `DemaConsulting.DocDown.Core`, `DemaConsulting.DocDown.Office`,
+  `DemaConsulting.DocDown.PowerPoint.Rendering`, and `DemaConsulting.DocDown.Tool` are all fully managed and free of
   runtime-identifier-specific dependencies. That this package ships no native asset is asserted
   against its produced `.nupkg` file, not merely its build output.
 - **Per-slide fault isolation.** Each slide is rasterized independently. An unsupported slide feature

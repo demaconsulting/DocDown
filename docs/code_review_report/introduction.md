@@ -1,12 +1,12 @@
 # Introduction
 
-This document contains the review report for the DocDown.Core project.
+This document contains the review report for the DemaConsulting.DocDown.Core project.
 
 ## Purpose
 
 This review report provides evidence that each review-set is current — the review
 evidence matches the current file fingerprints. It confirms that all formal reviews
-conducted for DocDown.Core remain valid for the current state of the
+conducted for DemaConsulting.DocDown.Core remain valid for the current state of the
 reviewed files.
 
 ## Scope
@@ -27,7 +27,7 @@ review-sets are current and no reviewed file has changed since its review was co
 
 This document is intended for:
 
-- Software developers working on DocDown.Core
+- Software developers working on DemaConsulting.DocDown.Core
 - Quality assurance teams validating review currency
 - Project stakeholders reviewing compliance status
 - Auditors verifying that all reviews remain valid for the current release

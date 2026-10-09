@@ -1,6 +1,6 @@
 ## PdfImageExtractor
 
-![DocDown.Pdf Structure](DocDownPdfView.svg)
+![DemaConsulting.DocDown.Pdf Structure](DocDownPdfView.svg)
 
 ### Purpose
 
@@ -76,7 +76,7 @@ Cancellation is observed per page and propagates.
 
 - **PdfPig** (OTS) - `Page.GetImages`, `IPdfImage.RawBytes`, `IPdfImage.TryGetPng`, and the image
   dictionary used to identify the effective filter.
-- **DocDown.Core** - `IExtractionSink`, `ImageHint`, `ImageTransform`, `ExtractionOptions`,
+- **DemaConsulting.DocDown.Core** - `IExtractionSink`, `ImageHint`, `ImageTransform`, `ExtractionOptions`,
   and `ExtractionNote`.
 
 ### Callers

@@ -1,11 +1,11 @@
-# DocDown.Excel System Design
+# DemaConsulting.DocDown.Excel System Design
 
-![DocDown.Excel Structure](ExcelView.svg)
+![DemaConsulting.DocDown.Excel Structure](ExcelView.svg)
 
-`DocDown.Excel` is the Excel extraction system for the DocDown output contract. It reads a workbook's
+`DemaConsulting.DocDown.Excel` is the Excel extraction system for the DocDown output contract. It reads a workbook's
 worksheet cell values, formulas, charts, drawing annotations, embedded images, and metadata, and writes
 those artifacts through the `IExtractionSink` the engine supplies. It is a separately distributed NuGet
-package that a host registers explicitly alongside `DocDown.Core`, and it ships one managed Open XML
+package that a host registers explicitly alongside `DemaConsulting.DocDown.Core`, and it ships one managed Open XML
 backend for `.xlsx` workbooks. Legacy binary `.xls` workbooks are not extracted; they end as a
 structured `Unreadable` result with a plain explanation that the format is unsupported.
 
@@ -39,7 +39,7 @@ The system has two subsystems and one direct unit:
 
 Not rendering Excel is a positive design decision, not missing work. A workbook has no page grid;
 rasterizing one would impose an arbitrary layout the data does not have, clip long prose at artificial
-boundaries, and substitute a picture of a number for the number itself. `DocDown.Excel` therefore ships
+boundaries, and substitute a picture of a number for the number itself. `DemaConsulting.DocDown.Excel` therefore ships
 no renderer. The extractor reports `PageRenderingApplicable` as `false`, records an environment fact
 stating that page rendering does not apply to a non-paginated workbook, and otherwise stays silent when
 a caller requests rendered pages.
@@ -71,8 +71,8 @@ The constraints each interface carries, stated in full:
 
 ## Dependencies
 
-- **DocDown.Core** — the extraction contract, sink, options, output layout, and structured unreadable
-  result. See the *DocDown.Core System Design*.
+- **DemaConsulting.DocDown.Core** — the extraction contract, sink, options, output layout, and structured unreadable
+  result. See the *DemaConsulting.DocDown.Core System Design*.
 - **DocumentFormat.OpenXml** (OTS) — the managed Open XML SDK the package is built on. See the
   *DocumentFormat.OpenXml* OTS design.
 - **System.IO.Packaging** (OTS, transitive) — the OPC container reader underneath the SDK that opens

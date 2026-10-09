@@ -2,8 +2,8 @@
 
 ### Purpose
 
-`DemaConsulting.CanvasNet` is the managed canvas and codec library both `DocDown.Pdf.Rendering` and
-`DocDown.PowerPoint.Rendering` use to encode a rasterized page or slide as PNG. It provides a
+`DemaConsulting.CanvasNet` is the managed canvas and codec library both `DemaConsulting.DocDown.Pdf.Rendering` and
+`DemaConsulting.DocDown.PowerPoint.Rendering` use to encode a rasterized page or slide as PNG. It provides a
 mutable, span-based 32-bit RGBA pixel buffer (`Surface`) and codecs for common image formats; these
 packages use only the `Surface` type `CanvasNet.Pdf`/`CanvasNet.Pptx` return and the `PngCodec` they
 save through. It was chosen because it is fully managed with no native asset, MIT-licensed and
@@ -20,7 +20,7 @@ exact version. The governing rule is *one OTS item per independently-sourced com
 `DocumentFormat.OpenXml` and its `Framework` companion — which are one component with an
 implementation seam, never referenced independently — `CanvasNet` is a general-purpose, standalone
 canvas and codec library with its own purpose (bitmap I/O for BMP, PNG, TIFF, JPEG, and GIF) that
-`DocDown.Pdf.Rendering` and `DocDown.PowerPoint.Rendering` each reference **directly** for
+`DemaConsulting.DocDown.Pdf.Rendering` and `DemaConsulting.DocDown.PowerPoint.Rendering` each reference **directly** for
 `PngCodec.Save`, not merely transitively through `CanvasNet.Pdf` or `CanvasNet.Pptx`. Packages that
 are each referenced directly, for genuinely different features, are recorded as separate items even
 when they ship from the same maintainer in lockstep.
@@ -39,26 +39,27 @@ compositing API, because these packages only ever encode a page or slide `Canvas
 
 ### Integration Pattern
 
-`CanvasNet` is referenced as a real runtime dependency of both the `DocDown.Pdf.Rendering` and
-`DocDown.PowerPoint.Rendering` packages. Its usage is confined to `PageRenderer` and `SlideRenderer`
+`CanvasNet` is referenced as a real runtime dependency of both the `DemaConsulting.DocDown.Pdf.Rendering` and
+`DemaConsulting.DocDown.PowerPoint.Rendering` packages. Its usage is confined to `PageRenderer` and `SlideRenderer`
 respectively: one call to `PngCodec.Save` per rendered page or slide, with no retained configuration
 and no process-level state of either package's own.
 
 **Version pinning.** The package reference is pinned to an exact version range rather than a floating
-minimum, for the same reproducibility reason `DocDown.Pdf` pins PdfPig, and additionally because
+minimum, for the same reproducibility reason `DemaConsulting.DocDown.Pdf` pins PdfPig, and additionally because
 `CanvasNet.Pdf`/`CanvasNet.Pptx`'s own `Surface` and `CanvasNet`'s `PngCodec` must agree on the same
 pixel-buffer layout — a floating reference on any of these packages independently could desynchronize
 the set.
 
 **Containment as a risk control.** `CanvasNet` types appear in exactly one source file per package —
-`PageRenderer.cs` in `DocDown.Pdf.Rendering`, `SlideRenderer.cs` in `DocDown.PowerPoint.Rendering` —
+`PageRenderer.cs` in `DemaConsulting.DocDown.Pdf.Rendering`,
+`SlideRenderer.cs` in `DemaConsulting.DocDown.PowerPoint.Rendering` —
 and in no public signature of either package. A reflection test over each package's exported types
 fails the build if `Surface`, `PngCodec`, or any other `CanvasNet` type reaches the public surface,
 so a host can reference the registration seam without those types entering its own compilation.
 
 **Native assets.** None. `CanvasNet` is fully managed: its own only dependency is
-`System.Numerics.Tensors`, and neither ships a `runtimes/` asset. Neither `DocDown.Pdf.Rendering`'s
-nor `DocDown.PowerPoint.Rendering`'s published output contains a native binary of any kind.
+`System.Numerics.Tensors`, and neither ships a `runtimes/` asset. Neither `DemaConsulting.DocDown.Pdf.Rendering`'s
+nor `DemaConsulting.DocDown.PowerPoint.Rendering`'s published output contains a native binary of any kind.
 
 ### Licensing
 

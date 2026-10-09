@@ -20,7 +20,7 @@ Environment
   Operating system   : <operating-system>
   Runtime            : <runtime>
   Runtime identifier : <runtime-identifier>
-  DocDown.Word:
+  DemaConsulting.DocDown.Word:
     word.backend       : Open XML SDK (managed) (available)
     word.pageRendering : not provided by this extractor (NOT available)
 

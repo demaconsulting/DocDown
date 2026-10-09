@@ -71,7 +71,7 @@
 
   <!-- Project References -->
   <ItemGroup>
-    <!-- PdfPig arrives transitively through the DocDown.Pdf reference; the fixtures use its
+    <!-- PdfPig arrives transitively through the DemaConsulting.DocDown.Pdf reference; the fixtures use its
          PdfDocumentBuilder to synthesize every test document at run time, so no binary PDF is ever
          committed to the repository. The Rendering reference brings the fully-managed
          DemaConsulting.CanvasNet.Pdf/DemaConsulting.CanvasNet rasterization stack into the test

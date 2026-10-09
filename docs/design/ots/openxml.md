@@ -2,7 +2,7 @@
 
 ### Purpose
 
-`DocumentFormat.OpenXml` is the managed Open XML SDK `DocDown.Word` is built on. It was chosen
+`DocumentFormat.OpenXml` is the managed Open XML SDK `DemaConsulting.DocDown.Word` is built on. It was chosen
 because it is 100% managed with no native assets, MIT-licensed, and compatible with this
 repository's MIT license, and because it is the canonical reader for the `.docx` package format —
 authoritative for both the OPC container it opens and the Wordprocessing schema its DOM projects.
@@ -63,7 +63,7 @@ with a serialized copy of it.
 ### Integration Pattern
 
 **Runtime dependency, transitive to consumers.** OpenXml is a real runtime dependency of the
-`DocDown.Word` package and flows to consumers, and it is confined to the OpenXml subsystem —
+`DemaConsulting.DocDown.Word` package and flows to consumers, and it is confined to the OpenXml subsystem —
 `WordOpenXmlExtractor`, `WordOpenXmlReader`, and `WordOpenXmlImageReader` are the only files that
 name an SDK type. `WordDocDownBuilderExtensions` deliberately carries no SDK type on its public
 surface, so a host referencing the registration seam does not pull the SDK's types into its own
@@ -83,12 +83,12 @@ reproducibility pin.
 `System.IO.Packaging` is a distinct OTS item because it is a separately-shipped .NET runtime
 component with its own OS-conditional version resolution — see *System.IO.Packaging*.
 
-**Native assets.** None. The `DocDown.Word` build output contains no `runtimes/` folder and no
+**Native assets.** None. The `DemaConsulting.DocDown.Word` build output contains no `runtimes/` folder and no
 `.dll`, `.so`, or `.dylib` native binary. A `dotnet list package --include-transitive` for
-`DocDown.Word` resolves exactly `DocumentFormat.OpenXml [3.5.1]` → `DocumentFormat.OpenXml.Framework
+`DemaConsulting.DocDown.Word` resolves exactly `DocumentFormat.OpenXml [3.5.1]` → `DocumentFormat.OpenXml.Framework
 3.5.1` → `System.IO.Packaging` with nothing else.
 
-**Evidence.** The SDK's behavior is exercised transitively by the `DocDown.Word` extraction
+**Evidence.** The SDK's behavior is exercised transitively by the `DemaConsulting.DocDown.Word` extraction
 tests — there is no dedicated OTS test project, and coverage is not overclaimed. The extraction
 tests that most directly exercise the SDK are `DocDownWord_Extract_GeneratedDocx_ProducesContractLayout`
 (end-to-end open, read, extract), `WordOpenXmlReader_Read_HeadingsListsAndTables_ProducesStructuredBlocks`

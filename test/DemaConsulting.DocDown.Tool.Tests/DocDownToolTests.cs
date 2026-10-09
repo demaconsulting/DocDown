@@ -1,17 +1,17 @@
 using System.IO.Compression;
 using System.Text.Json;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Excel;
+using DemaConsulting.DocDown.Pdf;
+using DemaConsulting.DocDown.Pdf.Rendering;
+using DemaConsulting.DocDown.PowerPoint;
+using DemaConsulting.DocDown.PowerPoint.Rendering;
 using DemaConsulting.DocDown.TestSupport;
 using DemaConsulting.DocDown.Tool.Tests.TestData;
+using DemaConsulting.DocDown.Visio;
+using DemaConsulting.DocDown.Word;
 using DemaConsulting.TestResults;
 using DemaConsulting.TestResults.IO;
-using DocDown.Core;
-using DocDown.Excel;
-using DocDown.Pdf;
-using DocDown.Pdf.Rendering;
-using DocDown.PowerPoint;
-using DocDown.PowerPoint.Rendering;
-using DocDown.Visio;
-using DocDown.Word;
 
 namespace DemaConsulting.DocDown.Tool.Tests;
 
@@ -87,7 +87,7 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         Assert.Contains("The source document 'missing.pdf' could not be read.", log, StringComparison.Ordinal);
         Assert.Contains("Detected format:", log, StringComparison.Ordinal);
         Assert.DoesNotContain("Extraction failed.", log, StringComparison.Ordinal);
-        Assert.DoesNotContain("at DocDown.", log, StringComparison.Ordinal);
+        Assert.DoesNotContain("at DemaConsulting.DocDown.", log, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -358,7 +358,7 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         int exit;
         try
         {
-            exit = global::DocDown.Tool.Program.Main(["--bogus-argument"]);
+            exit = global::DemaConsulting.DocDown.Tool.Program.Main(["--bogus-argument"]);
         }
         finally
         {

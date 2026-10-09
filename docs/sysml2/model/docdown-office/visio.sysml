@@ -1,7 +1,7 @@
 package DocDownOffice {
     doc
     /*
-     * DocDown.Visio is the Visio extraction package: a separately distributed backend that reads a
+     * DemaConsulting.DocDown.Visio is the Visio extraction package: a separately distributed backend that reads a
      * drawing's page names, shape text, and — above all — the directed connector topology into the
      * DocDown output contract, plus its embedded images and metadata, and — when Microsoft Visio is
      * available — a rendered image of each page. A Visio drawing is an engineering schematic whose
@@ -12,7 +12,7 @@ package DocDownOffice {
      */
 
     part def Visio {
-        doc /* The DocDown.Visio system as a whole. */
+        doc /* The DemaConsulting.DocDown.Visio system as a whole. */
 
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Visio/DocDownVisioTests.cs */
         comment designRef /* Design: docs/design/docdown-office/visio.md */

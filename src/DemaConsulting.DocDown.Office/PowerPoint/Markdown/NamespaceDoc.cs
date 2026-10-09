@@ -1,4 +1,4 @@
-namespace DocDown.PowerPoint.Markdown;
+namespace DemaConsulting.DocDown.PowerPoint.Markdown;
 
 /// <summary>
 /// The internal markdown emission for PowerPoint extraction: turns a read deck model into

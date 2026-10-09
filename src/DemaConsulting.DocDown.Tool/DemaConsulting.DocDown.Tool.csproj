@@ -77,7 +77,7 @@
   <ItemGroup>
     <!-- DemaConsulting.TestResults enters the dependency graph only here, in the tool: the SelfTest
          subsystem adapts Core's dependency-free self-test records into this package's TestResults
-         object model and serializes them to TRX or JUnit. DocDown.Core and DocDown.Pdf remain free
+         object model and serializes them to TRX or JUnit. DemaConsulting.DocDown.Core and DemaConsulting.DocDown.Pdf remain free
          of it, so Core keeps its zero-runtime-NuGet-dependency posture. The package is MIT-licensed
          and has no transitive runtime dependencies of its own. -->
     <PackageReference Include="DemaConsulting.TestResults" Version="1.10.0" />

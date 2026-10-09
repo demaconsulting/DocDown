@@ -1,8 +1,8 @@
-using DocDown.Core;
-using DocDown.Word.Markdown;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Word.Markdown;
 using DocumentFormat.OpenXml.Packaging;
 
-namespace DocDown.Word.OpenXml;
+namespace DemaConsulting.DocDown.Word.OpenXml;
 
 /// <summary>
 ///     Resolves the embedded images of a Word document to their bytes and provenance.

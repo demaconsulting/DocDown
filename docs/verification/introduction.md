@@ -8,8 +8,9 @@ folder, in a predictable layout designed to be fed to multimodal AI agents.
 
 The purpose of this document is to serve as the verification design entry point and document how
 requirements will be tested across all software items in this repository, covering the
-DocDown.Core, DocDown.Pdf, DocDown.Pdf.Rendering, DocDown.Tool, DocDown.Word, DocDown.Excel,
-DocDown.PowerPoint, and DocDown.Visio systems. This
+DemaConsulting.DocDown.Core, DemaConsulting.DocDown.Pdf, DemaConsulting.DocDown.Pdf.Rendering,
+DemaConsulting.DocDown.Tool, DemaConsulting.DocDown.Word, DemaConsulting.DocDown.Excel,
+DemaConsulting.DocDown.PowerPoint, and DemaConsulting.DocDown.Visio systems. This
 documentation enables formal review by mapping every requirement to named test scenarios, supports
 compliance auditing by providing clear traceability from requirements through verification design
 to tests, and ensures test completeness can be assessed without reading implementation code.
@@ -26,7 +27,7 @@ This document is intended for:
 This document covers the verification design for the DocDown systems and their
 constituent software items, specifically:
 
-- **DocDown.Core (System)** — Shared abstractions and the implementation of the output contract,
+- **DemaConsulting.DocDown.Core (System)** — Shared abstractions and the implementation of the output contract,
   organized into three subsystems
 - **Detection (Subsystem)** — Identifies a document's format and the evidence behind the
   identification
@@ -48,7 +49,7 @@ constituent software items, specifically:
   - **SummaryWriter (Unit)** — Serializes the human-readable `summary.txt`
   - **ManifestWriter (Unit)** — Serializes `manifest.json` from the recorded output, inventory,
     and notes
-- **DocDown.Pdf (System)** — PDF text, embedded-image, and document-metadata extraction; flat, with
+- **DemaConsulting.DocDown.Pdf (System)** — PDF text, embedded-image, and document-metadata extraction; flat, with
   no subsystems
   - **PdfDocumentExtractor (Unit)** — The backend the engine selects: availability, metadata,
     delegation, the content inventory, and notes
@@ -57,7 +58,7 @@ constituent software items, specifically:
   - **PdfImageExtractor (Unit)** — Writes the embedded images, labeling how each was produced and
     accounting for every one it could not deliver
   - **PdfDocDownBuilderExtensions (Unit)** — The reflection-free registration seam
-- **DocDown.Pdf.Rendering (System)** — Optional PDF page rendering (rasterization); flat, with no
+- **DemaConsulting.DocDown.Pdf.Rendering (System)** — Optional PDF page rendering (rasterization); flat, with no
   subsystems, and fully managed like the rest of DocDown
   - **PdfPageRenderingExtractor (Unit)** — The page-rendering backend selected when rendering is
     requested: delegates the managed aspects, rasterizes pages, and records notes for
@@ -66,7 +67,7 @@ constituent software items, specifically:
     and rasterizes one page to a PNG
   - **PdfRenderingDocDownBuilderExtensions (Unit)** — The reflection-free registration seam, free of
     any CanvasNet type
-- **DocDown.Tool (System)** — The `docdown` command-line tool; two subsystems and one direct unit
+- **DemaConsulting.DocDown.Tool (System)** — The `docdown` command-line tool; two subsystems and one direct unit
   - **Program (Unit, direct)** — The entry point: priority-ordered dispatch, banner and help,
     explicit engine registration, extraction and reporting, and the auxiliary commands
   - **Cli (Subsystem)** — Command-line parsing, validation, option mapping, and output routing
@@ -76,7 +77,7 @@ constituent software items, specifically:
       the backend self-test union, and TRX/JUnit output
     - **SelfTestAdapter (Unit)** — Maps Core's dependency-free self-test records into the TestResults
       model
-- **DocDown.Word (System)** — Word text, real tables, embedded-image, document-control, and
+- **DemaConsulting.DocDown.Word (System)** — Word text, real tables, embedded-image, document-control, and
   document-metadata extraction; two subsystems and one direct unit
   - **WordDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
     Word backend
@@ -91,7 +92,7 @@ constituent software items, specifically:
     - **WordOpenXmlReader (Unit)** — Turns the Open XML DOM into the backend-neutral model
     - **WordOpenXmlImageReader (Unit)** — Yields each embedded image's bytes with passthrough
       provenance
-- **DocDown.Excel (System)** — Workbook worksheet, cell-value (verbatim), formula, chart, drawing
+- **DemaConsulting.DocDown.Excel (System)** — Workbook worksheet, cell-value (verbatim), formula, chart, drawing
   annotation, embedded-image, and document-metadata extraction; deliberately never renders; two
   subsystems and one direct unit
   - **ExcelDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
@@ -107,9 +108,9 @@ constituent software items, specifically:
     - **ExcelOpenXmlImageReader (Unit)** — Yields each embedded image's bytes and worksheet association
     - **ExcelChartReader (Unit)** — Recovers each chart's cached data series
     - **ExcelDrawingTextReader (Unit)** — Recovers the text of the drawing shapes over a worksheet
-- **DocDown.PowerPoint (System)** — Slide text, slide-title, speaker-notes, slide-order, embedded-image,
+- **DemaConsulting.DocDown.PowerPoint (System)** — Slide text, slide-title, speaker-notes, slide-order, embedded-image,
   and document-metadata extraction; rendered slide images are a separate, opt-in concern delivered by
-  the `DocDown.PowerPoint.Rendering` system; two subsystems (Markdown, OpenXml) and one direct unit
+  the `DemaConsulting.DocDown.PowerPoint.Rendering` system; two subsystems (Markdown, OpenXml) and one direct unit
   - **PowerPointDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
     PowerPoint backend
   - **Markdown (Subsystem)** — The projection of the deck model onto markdown
@@ -120,7 +121,7 @@ constituent software items, specifically:
       including the not-provided rendering fact
     - **PowerPointOpenXmlReader (Unit)** — Turns the presentation package into the backend-neutral model
     - **PowerPointOpenXmlImageReader (Unit)** — Yields each embedded image's bytes and slide association
-- **DocDown.Visio (System)** — Page-name, shape-text, and directed-connector-topology extraction, plus
+- **DemaConsulting.DocDown.Visio (System)** — Page-name, shape-text, and directed-connector-topology extraction, plus
   embedded-image and document-metadata extraction and a rendered image of each page when Microsoft Visio
   is available; three subsystems (Com, Markdown, OpenXml) and one direct unit
   - **VisioDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
@@ -152,14 +153,14 @@ The following OTS items are also covered:
 
 - **BuildMark** — build-notes documentation tool
 - **CanvasNet** — fully-managed canvas and codec library, verified by transitive evidence from the
-  DocDown.Pdf.Rendering render tests rather than from a pipeline stage
+  DemaConsulting.DocDown.Pdf.Rendering render tests rather than from a pipeline stage
 - **CanvasNet.Pdf** — fully-managed PDF rasterization API, verified by transitive evidence from the
-  DocDown.Pdf.Rendering render tests rather than from a pipeline stage
+  DemaConsulting.DocDown.Pdf.Rendering render tests rather than from a pipeline stage
 - **FileAssert** — document assertion tool
 - **Open XML SDK** — managed WordprocessingML reader/writer, verified by transitive evidence from the
-  DocDown.Word extraction tests rather than from a pipeline stage
+  DemaConsulting.DocDown.Word extraction tests rather than from a pipeline stage
 - **Pandoc** — Markdown-to-HTML conversion tool
-- **PdfPig** — managed PDF parser, verified by transitive evidence from the DocDown.Pdf test suites
+- **PdfPig** — managed PDF parser, verified by transitive evidence from the DemaConsulting.DocDown.Pdf test suites
   rather than from a pipeline stage
 - **ReqStream** — requirements traceability tool
 - **ReviewMark** — file review enforcement tool
@@ -167,9 +168,9 @@ The following OTS items are also covered:
 - **SonarMark** — SonarCloud quality report tool
 - **SysML2Tools** — architecture model lint and diagram rendering tool
 - **System.IO.Packaging** — managed OPC container reader, verified by transitive evidence from the
-  DocDown.Word extraction tests
+  DemaConsulting.DocDown.Word extraction tests
 - **TestResults** — test-results serialization library, verified by transitive evidence from the
-  DocDown.Tool `--validate` tests
+  DemaConsulting.DocDown.Tool `--validate` tests
 - **VersionMark** — tool-version documentation tool
 - **WeasyPrint** — HTML-to-PDF conversion tool
 - **xUnit** — unit-testing framework

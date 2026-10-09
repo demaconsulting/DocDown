@@ -1,11 +1,11 @@
-# DocDown.Visio Verification Design
+# DemaConsulting.DocDown.Visio Verification Design
 
-This document describes the system-level verification strategy for `DocDown.Visio`, the Visio
+This document describes the system-level verification strategy for `DemaConsulting.DocDown.Visio`, the Visio
 extraction package.
 
 ## Verification Approach
 
-`DocDown.Visio` is verified through system-level integration tests in `DocDownVisioTests.cs` and
+`DemaConsulting.DocDown.Visio` is verified through system-level integration tests in `DocDownVisioTests.cs` and
 unit tests per unit, all in `DemaConsulting.DocDown.Office.Tests`, running on xUnit v3 across
 net8.0, net9.0, and net10.0.
 

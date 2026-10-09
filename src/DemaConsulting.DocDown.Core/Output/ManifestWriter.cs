@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     Serializes <c>manifest.json</c>, the machine-readable twin of the summary: the invariant
@@ -429,8 +429,8 @@ public enum EnvironmentFactOrigin
 ///     A single environment observation contributed to the extraction record.
 /// </summary>
 /// <param name="Source">
-///     The contributing component that reported the fact (for example <c>DocDown.Pdf</c> or
-///     <c>DocDown.Pdf.Rendering</c>). Required so the summary can group facts by their origin,
+///     The contributing component that reported the fact (for example <c>DemaConsulting.DocDown.Pdf</c> or
+///     <c>DemaConsulting.DocDown.Pdf.Rendering</c>). Required so the summary can group facts by their origin,
 ///     which keeps a component's honest statement (such as a capability it does not offer) from
 ///     reading as a whole-run failure in a multi-backend environment.
 /// </param>

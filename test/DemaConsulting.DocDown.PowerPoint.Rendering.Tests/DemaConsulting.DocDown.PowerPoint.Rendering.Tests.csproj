@@ -75,7 +75,7 @@
          DemaConsulting.CanvasNet.Pptx/DemaConsulting.CanvasNet/DemaConsulting.CanvasNet.Charts
          rasterization stack into the test host, which is what lets the end-to-end render tests
          produce a real PNG. The embedded probe.pptx fixture the rendering package carries is a real
-         file authored in Microsoft PowerPoint, loaded through DocDown.Core's SelfTestProbe helper
+         file authored in Microsoft PowerPoint, loaded through DemaConsulting.DocDown.Core's SelfTestProbe helper
          rather than duplicated as a second binary in this test project. -->
     <ProjectReference Include="..\..\src\DemaConsulting.DocDown.PowerPoint.Rendering\DemaConsulting.DocDown.PowerPoint.Rendering.csproj" />
     <ProjectReference Include="..\..\src\DemaConsulting.DocDown.Office\DemaConsulting.DocDown.Office.csproj" />

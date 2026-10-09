@@ -1,8 +1,8 @@
-using DocDown.Core;
-using DocDown.Visio.Markdown;
-using CoreFormat = DocDown.Core.DocumentFormat;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Visio.Markdown;
+using CoreFormat = DemaConsulting.DocDown.Core.DocumentFormat;
 
-namespace DocDown.Visio.OpenXml;
+namespace DemaConsulting.DocDown.Visio.OpenXml;
 
 /// <summary>
 ///     The Visio Open Packaging backend: extracts every page's name, shape text, and — the headline
@@ -81,9 +81,9 @@ public sealed class VisioOpenXmlExtractor : IDocumentExtractor, ISelfValidating
 
         // Record what parsed this document, and state plainly that page rendering is not on offer here
         sink.ReportEnvironmentFact(new EnvironmentFact(
-            "DocDown.Visio", "visio.backend", "System.IO.Packaging (managed)", Available: true));
+            "DemaConsulting.DocDown.Visio", "visio.backend", "System.IO.Packaging (managed)", Available: true));
         sink.ReportEnvironmentFact(new EnvironmentFact(
-            "DocDown.Visio", "visio.pageRendering", "not provided by this extractor", Available: false));
+            "DemaConsulting.DocDown.Visio", "visio.pageRendering", "not provided by this extractor", Available: false));
 
         // Buffer the source: the package reader must seek, and a stream source is not guaranteed seekable
         var bytes = await ReadSourceAsync(source, cancellationToken).ConfigureAwait(false);

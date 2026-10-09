@@ -1,9 +1,9 @@
 using System.Globalization;
-using DocDown.Core;
-using DocDown.PowerPoint.OpenXml;
-using CoreFormat = DocDown.Core.DocumentFormat;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.PowerPoint.OpenXml;
+using CoreFormat = DemaConsulting.DocDown.Core.DocumentFormat;
 
-namespace DocDown.PowerPoint.Rendering;
+namespace DemaConsulting.DocDown.PowerPoint.Rendering;
 
 /// <summary>
 ///     The PowerPoint slide-rendering backend: a full superset extractor that produces text,
@@ -24,7 +24,7 @@ namespace DocDown.PowerPoint.Rendering;
 ///         <see cref="ProbeAvailability"/> is unconditional: slide rendering through CanvasNet.Pptx
 ///         is a fully-managed capability with no native stack to probe for, so this backend always
 ///         reports itself available and states that it provides rendered pages here. This mirrors
-///         <c>DocDown.Pdf.Rendering</c>'s own <c>PdfPageRenderingExtractor.ProbeAvailability</c>,
+///         <c>DemaConsulting.DocDown.Pdf.Rendering</c>'s own <c>PdfPageRenderingExtractor.ProbeAvailability</c>,
 ///         which is likewise unconditional for the same reason.
 ///     </para>
 ///     <para>
@@ -175,7 +175,7 @@ public sealed class PowerPointPageRenderingExtractor : IDocumentExtractor, ISelf
         // Record the authoritative rendering fact under a distinct key, complementing (not
         // contradicting) the base backend's own powerpoint.pageRendering fact
         sink.ReportEnvironmentFact(new EnvironmentFact(
-            "DocDown.PowerPoint", "pages.renderer", "CanvasNet.Pptx (managed)", Available: true));
+            "DemaConsulting.DocDown.PowerPoint", "pages.renderer", "CanvasNet.Pptx (managed)", Available: true));
 
         // Rasterize the requested slides; per-slide faults become notes rather than exceptions
         // that abort the extraction. Skipped when rendering was not requested, so a host that

@@ -1,6 +1,6 @@
+using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.Pdf.Tests.TestData;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
 
 namespace DemaConsulting.DocDown.Pdf.Tests;
 
@@ -266,7 +266,7 @@ public class PdfImageExtractorTests
 
         // Act + Assert: the sink is the unit's only output channel and is mandatory
         await Assert.ThrowsAsync<ArgumentNullException>(
-            async () => await global::DocDown.Pdf.PdfImageExtractor.ExtractAsync(
+            async () => await global::DemaConsulting.DocDown.Pdf.PdfImageExtractor.ExtractAsync(
                 pages, null!, new ExtractionOptions(), Ct));
     }
 
@@ -286,12 +286,12 @@ public class PdfImageExtractorTests
     /// <param name="options">The options to extract with, or <see langword="null"/> for the defaults.</param>
     /// <returns>The extraction result.</returns>
     /// <remarks>Opens the fixture and hands its pages straight to the unit, keeping the test unit-scoped.</remarks>
-    private static async ValueTask<global::DocDown.Pdf.PdfImageResult> ExtractAsync(
+    private static async ValueTask<global::DemaConsulting.DocDown.Pdf.PdfImageResult> ExtractAsync(
         byte[] bytes, RecordingSink sink, ExtractionOptions? options = null)
     {
         using var document = PdfFixtures.Open(bytes);
         var pages = document.GetPages().ToList();
-        return await global::DocDown.Pdf.PdfImageExtractor.ExtractAsync(
+        return await global::DemaConsulting.DocDown.Pdf.PdfImageExtractor.ExtractAsync(
             pages, sink, options ?? new ExtractionOptions(), Ct);
     }
 }

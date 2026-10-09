@@ -1,7 +1,7 @@
-using DocDown.Core;
-using DocDown.PowerPoint.OpenXml;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.PowerPoint.OpenXml;
 
-namespace DocDown.PowerPoint;
+namespace DemaConsulting.DocDown.PowerPoint;
 
 /// <summary>
 ///     The registration seam that adds PowerPoint extraction to a <see cref="DocDownBuilder"/>.
@@ -18,7 +18,7 @@ namespace DocDown.PowerPoint;
 ///         The managed backend carries no native asset: it is pure Open XML, so one call registers
 ///         the complete PowerPoint capability with no platform-specific dependency. Rendered slide
 ///         images are a separate, opt-in concern provided by the
-///         <c>DocDown.PowerPoint.Rendering</c> package. All members are static and thread-safe; the
+///         <c>DemaConsulting.DocDown.PowerPoint.Rendering</c> package. All members are static and thread-safe; the
 ///         builder they mutate is not.
 ///     </para>
 /// </remarks>
@@ -42,11 +42,11 @@ public static class PowerPointDocDownBuilderExtensions
     /// <example>
     ///     <code language="csharp">
     ///     using System;
-    ///     using DocDown.Core;
-    ///     using DocDown.PowerPoint;
+    ///     using DemaConsulting.DocDown.Core;
+    ///     using DemaConsulting.DocDown.PowerPoint;
     ///
     ///     var engine = new DocDownBuilder()
-    ///         .AddPowerPoint() // .pptx - slide text and notes; slide images need DocDown.PowerPoint.Rendering
+    ///         .AddPowerPoint() // .pptx - slide text and notes; slide images need DemaConsulting.DocDown.PowerPoint.Rendering
     ///         .Build();
     ///
     ///     Console.WriteLine(engine.Extractors.Count); // 1 — the Open XML backend

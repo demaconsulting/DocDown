@@ -1,4 +1,4 @@
-namespace DocDown.Visio.Com;
+namespace DemaConsulting.DocDown.Visio.Com;
 
 /// <summary>
 ///     The narrow seam through which the COM backend reaches Microsoft Visio to render pages,

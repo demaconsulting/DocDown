@@ -1,6 +1,6 @@
 ## ExcelOpenXmlExtractor
 
-![DocDown.Excel Structure](ExcelView.svg)
+![DemaConsulting.DocDown.Excel Structure](ExcelView.svg)
 
 ### Purpose
 
@@ -63,7 +63,7 @@ exception to this rule: a case reports every fault as data rather than throwing.
 
 ### Dependencies
 
-- **DocDown.Core** — `IDocumentExtractor`, `ISelfValidating`, `IExtractionSink`, `IExtractionContext`,
+- **DemaConsulting.DocDown.Core** — `IDocumentExtractor`, `ISelfValidating`, `IExtractionSink`, `IExtractionContext`,
   `DocumentSource`, `ExtractionOptions`, `ExtractorAvailability`, `ExtractionOutcome`, `SelfTestCase`,
   `SelfTestResult`, `DocumentFormat` (as `CoreFormat`), `EnvironmentFact`.
 - **DocumentFormat.OpenXml** (OTS) — the managed reader this backend is built on.

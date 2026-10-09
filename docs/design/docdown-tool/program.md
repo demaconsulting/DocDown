@@ -1,10 +1,10 @@
 ## Program
 
-![DocDown.Tool Structure](DocDownToolView.svg)
+![DemaConsulting.DocDown.Tool Structure](DocDownToolView.svg)
 
 ### Purpose
 
-`Program` is the tool's entry point and the direct unit of the `DocDown.Tool` system. Its
+`Program` is the tool's entry point and the direct unit of the `DemaConsulting.DocDown.Tool` system. Its
 responsibility is orchestration: read the parsed context, dispatch in a fixed priority order, print
 the banner and help, build the engine through the explicit registration seam, run an extraction and
 report its outcome, expose the `--list-backends` auxiliary command, and translate expected argument
@@ -52,10 +52,10 @@ defect is surfaced rather than swallowed.
 
 - **Context** — the parsed arguments and the output routing. See *Context Design*.
 - **Validation** — the `--validate` driver. See *Validation Design*.
-- **DocDown.Core** — `DocDownBuilder`, `DocDownEngine`, `ExtractionOptions`, `ExtractionResult`,
+- **DemaConsulting.DocDown.Core** — `DocDownBuilder`, `DocDownEngine`, `ExtractionOptions`, `ExtractionResult`,
   `ExtractionOutcome`, and `ExtractorCandidate`.
-- **DocDown.Pdf**, **DocDown.Pdf.Rendering**, **DocDown.Word**, **DocDown.Visio**,
-  **DocDown.PowerPoint**, and **DocDown.Excel** — the explicit backend registration seams.
+- **DemaConsulting.DocDown.Pdf**, **DemaConsulting.DocDown.Pdf.Rendering**, **DemaConsulting.DocDown.Word**, **DemaConsulting.DocDown.Visio**,
+  **DemaConsulting.DocDown.PowerPoint**, and **DemaConsulting.DocDown.Excel** — the explicit backend registration seams.
 
 ### Callers
 

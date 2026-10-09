@@ -1,8 +1,8 @@
 using System.Text.Json;
+using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.Office.Tests.PowerPoint.TestData;
+using DemaConsulting.DocDown.PowerPoint;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
-using DocDown.PowerPoint;
 
 namespace DemaConsulting.DocDown.Office.Tests.PowerPoint;
 

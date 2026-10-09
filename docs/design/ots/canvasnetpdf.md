@@ -2,7 +2,7 @@
 
 ### Purpose
 
-`DemaConsulting.CanvasNet.Pdf` is the managed PDF rasterization API `DocDown.Pdf.Rendering` is built
+`DemaConsulting.CanvasNet.Pdf` is the managed PDF rasterization API `DemaConsulting.DocDown.Pdf.Rendering` is built
 on. It was chosen because it turns a PDF page into pixel data through a small managed API, is fully
 managed with no native asset, ships real `net8.0`, `net9.0`, and `net10.0` assets matching this
 repository's target frameworks exactly, and is MIT licensed, compatible with this repository's MIT
@@ -25,13 +25,13 @@ No other `CanvasNet.Pdf` surface is used, and no type from it is named anywhere 
 
 ### Integration Pattern
 
-`CanvasNet.Pdf` is referenced as a real runtime dependency of the `DocDown.Pdf.Rendering` package and
-flows to consumers, like PdfPig for `DocDown.Pdf`. Its usage is confined to `PageRenderer`: a
+`CanvasNet.Pdf` is referenced as a real runtime dependency of the `DemaConsulting.DocDown.Pdf.Rendering` package and
+flows to consumers, like PdfPig for `DemaConsulting.DocDown.Pdf`. Its usage is confined to `PageRenderer`: a
 stateless, per-call open-render-dispose sequence with no retained configuration and no process-level
 state of this package's own.
 
 **Version pinning.** The package reference is pinned to an exact version range rather than a floating
-minimum, for the same reason `DocDown.Pdf` pins PdfPig and additionally because
+minimum, for the same reason `DemaConsulting.DocDown.Pdf` pins PdfPig and additionally because
 this is a pre-1.0, beta-labeled release whose API has not yet committed to semantic-versioning
 stability — a floating reference could pick up a breaking change between builds.
 
@@ -49,7 +49,7 @@ exported types fails the build if any `CanvasNet.Pdf` type reaches the public su
 reference the registration seam without those types entering its own compilation.
 
 **Native assets.** None. Unlike the native-carrying package this one replaces, `CanvasNet.Pdf` and its
-one dependency, `CanvasNet`, are fully managed. `DocDown.Pdf.Rendering`'s published output contains no
+one dependency, `CanvasNet`, are fully managed. `DemaConsulting.DocDown.Pdf.Rendering`'s published output contains no
 `runtimes/` folder and no `.dll`, `.so`, or `.dylib` native binary, and the package declares no
 `<RuntimeIdentifier>`.
 

@@ -1,10 +1,10 @@
 ## Com Subsystem
 
-![DocDown.Visio Structure](VisioView.svg)
+![DemaConsulting.DocDown.Visio Structure](VisioView.svg)
 
 ### Overview
 
-The Com subsystem is the rendering seam of `DocDown.Visio`, active only where Microsoft Visio is
+The Com subsystem is the rendering seam of `DemaConsulting.DocDown.Visio`, active only where Microsoft Visio is
 available. It captures the rendered appearance of each page by driving Microsoft Visio over late-bound
 IDispatch. Rather than re-implement the guaranteed content path, its extractor runs the managed
 backend against the same sink with rendering suppressed and adds only the rendered pages the managed
@@ -46,7 +46,7 @@ or reporting policy of its own.
 - **`IVisioAutomation`** and **`VisioRenderedPage`** — the rendering seam and its one-result-per-page
   contract.
 - **`ComposingDelegatedSink`** and **`DelegatedExtractionContext`** — not owned by this
-  subsystem. They live in the shared `DocDown.Office.Com` namespace, because Visio and PowerPoint
+  subsystem. They live in the shared `DemaConsulting.DocDown.Office.Com` namespace, because Visio and PowerPoint
   needed byte-equivalent copies of both. The sink suppresses the delegated managed backend's
   `visio.pageRendering` unavailable fact so it does not contradict the rendering this run performed; the fact
   key is a constructor argument, which was the only real difference between the two former copies.

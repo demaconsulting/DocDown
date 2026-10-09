@@ -1,9 +1,9 @@
-# DocDown.Office System Design
+# DemaConsulting.DocDown.Office System Design
 
-`DocDown.Office` is the Microsoft Office extraction system for the DocDown output contract. It reads
+`DemaConsulting.DocDown.Office` is the Microsoft Office extraction system for the DocDown output contract. It reads
 Word documents, Excel workbooks, PowerPoint presentations, and Visio drawings, and writes what it
 finds through the `IExtractionSink` the engine supplies. It is a separately distributed NuGet package
-that a host registers explicitly alongside `DocDown.Core`.
+that a host registers explicitly alongside `DemaConsulting.DocDown.Core`.
 
 ## Why one package
 
@@ -17,26 +17,27 @@ byte-equivalent copies of the COM composition helpers, and two identical COM ava
 ever sees spreadsheets can call `AddExcel()` and register one backend rather than six. That
 granularity costs nothing to keep and would be real capability to lose.
 
-The namespaces did not move. `DocDown.Word`, `DocDown.Excel`, `DocDown.PowerPoint`, and
-`DocDown.Visio` still exist and still hold the same types. One assembly containing four namespaces is
+The namespaces did not move. `DemaConsulting.DocDown.Word`, `DemaConsulting.DocDown.Excel`,
+`DemaConsulting.DocDown.PowerPoint`, and
+`DemaConsulting.DocDown.Visio` still exist and still hold the same types. One assembly containing four namespaces is
 ordinary; renaming them would have been churn that served the packaging rather than the caller.
 
 ## Architecture
 
 The system has four format subsystems and one shared subsystem.
 
-- **Word** — a managed Open XML SDK backend for `.docx`. See the *DocDown.Office Word Subsystem
+- **Word** — a managed Open XML SDK backend for `.docx`. See the *DemaConsulting.DocDown.Office Word Subsystem
   Design*.
 - **Excel** — a managed Open XML SDK backend for `.xlsx`, including cached chart data and drawing
-  annotations. See the *DocDown.Office Excel Subsystem Design*.
+  annotations. See the *DemaConsulting.DocDown.Office Excel Subsystem Design*.
 - **PowerPoint** — a managed Open XML SDK backend for `.pptx`. Page rendering is served by the
-  separate, fully-managed `DocDown.PowerPoint.Rendering` package rather than by a COM backend. See
-  the *DocDown.Office PowerPoint Subsystem Design*.
+  separate, fully-managed `DemaConsulting.DocDown.PowerPoint.Rendering` package rather than by a COM backend. See
+  the *DemaConsulting.DocDown.Office PowerPoint Subsystem Design*.
 - **Visio** — a managed Open Packaging backend for `.vsdx` and `.vsdm`, and a COM automation backend
-  that renders page images where Microsoft Visio is installed. See the *DocDown.Office Visio
+  that renders page images where Microsoft Visio is installed. See the *DemaConsulting.DocDown.Office Visio
   Subsystem Design*.
 - **Com** — the two helpers Visio's COM automation backend uses, including the availability probe
-  that backend uses. See the *DocDown.Office Com Subsystem Design*.
+  that backend uses. See the *DemaConsulting.DocDown.Office Com Subsystem Design*.
 
 Legacy binary formats — `.doc`, `.xls`, `.ppt` — are not supported and are reported as unreadable
 rather than routed to a backend that cannot read them.
@@ -50,7 +51,7 @@ reference it without the SDK's types entering its compilation.
 
 ## Dependencies
 
-- **DocDown.Core** — the output contract, the extractor abstractions, and the writers.
+- **DemaConsulting.DocDown.Core** — the output contract, the extractor abstractions, and the writers.
 - **DocumentFormat.OpenXml** (OTS) — the managed Open XML SDK the Word, Excel, and PowerPoint readers
   are built on.
 - **System.IO.Packaging** (OTS) — the OPC package reader the Visio backend uses directly, because a

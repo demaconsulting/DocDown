@@ -1,10 +1,10 @@
 ## OpenXml Subsystem
 
-![DocDown.Visio Structure](VisioView.svg)
+![DemaConsulting.DocDown.Visio Structure](VisioView.svg)
 
 ### Overview
 
-The OpenXml subsystem is the guaranteed managed content path of `DocDown.Visio`. It is the
+The OpenXml subsystem is the guaranteed managed content path of `DemaConsulting.DocDown.Visio`. It is the
 extractor the engine selects for ordinary Visio extraction, the package reader that turns a Visio
 Open Packaging container into the backend-neutral drawing model, and the image reader that resolves
 embedded image bytes and page association. Because `DocumentFormat.OpenXml` has no Visio types, the

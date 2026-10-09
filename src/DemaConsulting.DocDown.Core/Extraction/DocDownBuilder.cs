@@ -1,4 +1,4 @@
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     A fluent builder that collects extractor registrations and default options and produces a
@@ -31,8 +31,8 @@ namespace DocDown.Core;
 ///     <code language="csharp">
 ///     using System;
 ///     using System.Threading;
-///     using DocDown.Core;
-///     using DocDown.Word;
+///     using DemaConsulting.DocDown.Core;
+///     using DemaConsulting.DocDown.Word;
 ///
 ///     // Register only the backends this application needs; nothing else is discovered.
 ///     var engine = new DocDownBuilder()
@@ -67,13 +67,13 @@ namespace DocDown.Core;
 ///     need — each line states what it buys:
 ///     <code language="csharp">
 ///     using System;
-///     using DocDown.Core;
-///     using DocDown.Excel;
-///     using DocDown.Pdf;
-///     using DocDown.Pdf.Rendering;
-///     using DocDown.PowerPoint;
-///     using DocDown.Visio;
-///     using DocDown.Word;
+///     using DemaConsulting.DocDown.Core;
+///     using DemaConsulting.DocDown.Excel;
+///     using DemaConsulting.DocDown.Pdf;
+///     using DemaConsulting.DocDown.Pdf.Rendering;
+///     using DemaConsulting.DocDown.PowerPoint;
+///     using DemaConsulting.DocDown.Visio;
+///     using DemaConsulting.DocDown.Word;
 ///
 ///     var engine = new DocDownBuilder()
 ///         .AddPdf()          // .pdf  - text, embedded images, metadata

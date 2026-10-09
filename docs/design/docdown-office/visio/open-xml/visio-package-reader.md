@@ -1,6 +1,6 @@
 ## VisioPackageReader
 
-![DocDown.Visio Structure](VisioView.svg)
+![DemaConsulting.DocDown.Visio Structure](VisioView.svg)
 
 ### Purpose
 
@@ -44,7 +44,7 @@ than throwing.
 
 ### Dependencies
 
-- **DocDown.Core** — `DocumentMetadata`, mapped from the OPC core properties.
+- **DemaConsulting.DocDown.Core** — `DocumentMetadata`, mapped from the OPC core properties.
 - **System.IO.Packaging** — the OPC container reader.
 - **System.Xml** — the `XDocument` reader for pages, shapes, connectors, and masters.
 - **VisioDocumentModel** — the model records it populates.

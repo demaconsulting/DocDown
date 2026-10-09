@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
-namespace DocDown.Office.Com;
+namespace DemaConsulting.DocDown.Office.Com;
 
 /// <summary>
 ///     Probes whether a Microsoft Office COM automation backend can run in the current environment.

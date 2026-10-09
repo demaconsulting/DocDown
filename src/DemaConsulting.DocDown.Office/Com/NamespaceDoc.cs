@@ -1,4 +1,4 @@
-namespace DocDown.Office.Com;
+namespace DemaConsulting.DocDown.Office.Com;
 
 /// <summary>
 ///     Helpers shared by the COM automation backends.

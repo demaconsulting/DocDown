@@ -1,11 +1,11 @@
 using System.Text.Json;
+using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
 
 namespace DemaConsulting.DocDown.Core.Tests;
 
 /// <summary>
-///     System-level integration tests for the DocDown.Core extraction system, driven end to end
+///     System-level integration tests for the DemaConsulting.DocDown.Core extraction system, driven end to end
 ///     through <see cref="DocDownEngine"/> with synthetic stub backends.
 /// </summary>
 public class DocDownCoreTests

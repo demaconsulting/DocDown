@@ -1,10 +1,10 @@
 ## Markdown Subsystem
 
-![DocDown.Word Structure](WordView.svg)
+![DemaConsulting.DocDown.Word Structure](WordView.svg)
 
 ### Overview
 
-The Markdown subsystem is the reader-neutral core of `DocDown.Word`. It defines the block
+The Markdown subsystem is the reader-neutral core of `DemaConsulting.DocDown.Word`. It defines the block
 vocabulary the reader populates, the writer that turns that vocabulary into a markdown flow, the
 table writer that expresses `w:tbl` structure as a GitHub-flavored-markdown table, and the emitter
 that writes content, images, content inventory, metadata, and extraction notes through the sink.

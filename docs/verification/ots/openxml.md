@@ -5,24 +5,24 @@ Requirements for this OTS item are defined in the Open XML SDK OTS Software Requ
 
 ### Required Functionality
 
-The Open XML SDK is the managed WordprocessingML reader and writer `DocDown.Word` is built on. It
+The Open XML SDK is the managed WordprocessingML reader and writer `DemaConsulting.DocDown.Word` is built on. It
 must open a `.docx` package without native binaries, expose the document's styled paragraphs,
 lists, real tables, comments, footnotes, headers, and footers, enumerate embedded image parts with
 their stored bytes and content type, and build documents suitable for use as test fixtures.
 
 ### Verification Approach
 
-**The Open XML SDK is verified by transitive evidence from the `DocDown.Word` test suite.** Per
+**The Open XML SDK is verified by transitive evidence from the `DemaConsulting.DocDown.Word` test suite.** Per
 the software-items standard, a dedicated OTS test project is required only *if no other
 verification evidence is available*. That is not the case here: the SDK is a runtime library on
-the critical path of every `DocDown.Word` extraction, not a build-time tool whose correct operation
+the critical path of every `DemaConsulting.DocDown.Word` extraction, not a build-time tool whose correct operation
 must be inferred from a pipeline completing. The extraction and unit tests named in the scenarios
 below — those in `DocDownWordTests`, `WordOpenXmlExtractorTests`, `WordOpenXmlReaderTests`, and
 `WordOpenXmlImageReaderTests` — each open a real generated document end to end, on three target
 frameworks, in every CI matrix combination.
 
 The evidence is limited to the tests named below. The claim is transitive, not comprehensive:
-each scenario proves the SDK delivers what `DocDown.Word` promises on top of it, not that every
+each scenario proves the SDK delivers what `DemaConsulting.DocDown.Word` promises on top of it, not that every
 part of the SDK is exercised. Tests that reflect only over public surface — for example, the
 `WordDocDownBuilderExtensions_*` scenarios that inspect a builder's descriptor list without
 opening a document — reach no SDK code and are not claimed here.
@@ -31,12 +31,12 @@ A dedicated `test/OtsSoftwareTests/` project would therefore re-test, against sy
 the same library paths the extraction suite already exercises against the documents this package
 actually has to handle — and it would do so at one remove from the behavior that matters, since
 what the repository needs to know is not that the SDK works in isolation but that it delivers what
-`DocDown.Word` promises on top of it. The extraction suite answers that question directly. No
+`DemaConsulting.DocDown.Word` promises on top of it. The extraction suite answers that question directly. No
 such project is created.
 
 ### Test Environment
 
-The evidence is produced by the standard `DocDown.Word` test run: xUnit v3 under the .NET SDK,
+The evidence is produced by the standard `DemaConsulting.DocDown.Word` test run: xUnit v3 under the .NET SDK,
 targeting net8.0, net9.0, and net10.0, across the CI operating-system matrix. Every fixture is a
 WordprocessingML document generated at test time by the SDK's own writer, so the evidence depends
 on no committed binary and no network access.

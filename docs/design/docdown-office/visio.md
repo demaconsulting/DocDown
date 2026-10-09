@@ -1,8 +1,8 @@
-# DocDown.Visio System Design
+# DemaConsulting.DocDown.Visio System Design
 
-![DocDown.Visio Structure](VisioView.svg)
+![DemaConsulting.DocDown.Visio Structure](VisioView.svg)
 
-`DocDown.Visio` is the Visio extraction system for the DocDown output contract. It reads each page
+`DemaConsulting.DocDown.Visio` is the Visio extraction system for the DocDown output contract. It reads each page
 name, the text of the shapes that carry text, the directed connections between shapes, embedded
 images, and metadata from modern `.vsdx` and `.vsdm` drawings. When Microsoft Visio is available,
 it also renders each page to a PNG. Every artifact is written through `IExtractionSink`, and the
@@ -76,8 +76,8 @@ The interfaces carry the following constraints:
 
 ## Dependencies
 
-- **DocDown.Core** — the extraction contract, sink, options, and output layout. See the
-  *DocDown.Core System Design*.
+- **DemaConsulting.DocDown.Core** — the extraction contract, sink, options, and output layout. See the
+  *DemaConsulting.DocDown.Core System Design*.
 - **System.IO.Packaging** (OTS) — the managed OPC container reader the OpenXml subsystem uses
   directly because `DocumentFormat.OpenXml` has no Visio types.
 - **Microsoft Visio** (installed application, optional, Windows-only) — reached by the COM backend

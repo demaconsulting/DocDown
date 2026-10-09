@@ -1,4 +1,4 @@
-namespace DocDown.Word.Markdown;
+namespace DemaConsulting.DocDown.Word.Markdown;
 
 /// <summary>
 /// The internal document model and markdown mapping for Word extraction: blocks, inlines, lists

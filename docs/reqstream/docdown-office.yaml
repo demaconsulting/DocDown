@@ -1,7 +1,7 @@
 ---
 # Software System Requirements for DocDownOffice
 #
-# DocDown.Office is the Microsoft Office extraction package. It reads Word documents, Excel
+# DemaConsulting.DocDown.Office is the Microsoft Office extraction package. It reads Word documents, Excel
 # workbooks, PowerPoint presentations, and Visio drawings into the DocDown output contract. These
 # requirements state what the system as a whole must do; the per-format behavior decomposes into the
 # Word, Excel, PowerPoint, and Visio subsystems, and the behavior Visio's COM automation backend

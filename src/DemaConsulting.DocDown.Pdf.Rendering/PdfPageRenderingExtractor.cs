@@ -1,7 +1,7 @@
 using System.Globalization;
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
-namespace DocDown.Pdf.Rendering;
+namespace DemaConsulting.DocDown.Pdf.Rendering;
 
 /// <summary>
 ///     The PDF page-rendering backend: a full superset extractor that produces text, embedded
@@ -22,7 +22,7 @@ namespace DocDown.Pdf.Rendering;
 ///         <see cref="ProbeAvailability"/> is unconditional: page rendering through CanvasNet.Pdf is
 ///         a fully-managed capability with no native stack to probe for, so this backend always
 ///         reports itself available and states that it provides rendered pages here. This mirrors
-///         <c>DocDown.Pdf</c>'s own <c>PdfDocumentExtractor.ProbeAvailability</c>, which is likewise
+///         <c>DemaConsulting.DocDown.Pdf</c>'s own <c>PdfDocumentExtractor.ProbeAvailability</c>, which is likewise
 ///         unconditional for the same reason.
 ///     </para>
 ///     <para>
@@ -165,7 +165,7 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
         // Record the authoritative rendering fact under a distinct key, complementing (not
         // contradicting) the base backend's own pdf.pageRendering fact
         sink.ReportEnvironmentFact(new EnvironmentFact(
-            "DocDown.Pdf.Rendering", "pages.renderer", "CanvasNet.Pdf (managed)", Available: true));
+            "DemaConsulting.DocDown.Pdf.Rendering", "pages.renderer", "CanvasNet.Pdf (managed)", Available: true));
 
         // Rasterize the requested pages; per-page faults become notes rather than exceptions that
         // abort the extraction. Skipped when rendering was not requested, so a host that registers

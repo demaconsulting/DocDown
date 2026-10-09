@@ -19,7 +19,7 @@
     <PackageIcon>Icon.png</PackageIcon>
     <PackageTags>docdown;dotnet-library</PackageTags>
     <Copyright>Copyright DEMA Consulting</Copyright>
-    <Title>DocDown.Core</Title>
+    <Title>DemaConsulting.DocDown.Core</Title>
     <Product>DemaConsulting.DocDown.Core</Product>
 
     <!-- Symbol Package Configuration -->

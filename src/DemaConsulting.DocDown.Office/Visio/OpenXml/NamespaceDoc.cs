@@ -1,4 +1,4 @@
-namespace DocDown.Visio.OpenXml;
+namespace DemaConsulting.DocDown.Visio.OpenXml;
 
 /// <summary>
 /// Open Packaging extraction for <c>.vsdx</c> and <c>.vsdm</c>. Reads every page name, the text

@@ -1,7 +1,7 @@
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Excel;
 using DemaConsulting.DocDown.Office.Tests.Excel.TestData;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
-using DocDown.Excel;
 
 namespace DemaConsulting.DocDown.Office.Tests.Excel;
 

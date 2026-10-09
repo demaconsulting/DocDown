@@ -1,12 +1,12 @@
 ## PdfDocDownBuilderExtensions
 
-![DocDown.Pdf Structure](DocDownPdfView.svg)
+![DemaConsulting.DocDown.Pdf Structure](DocDownPdfView.svg)
 
 ### Purpose
 
 `PdfDocDownBuilderExtensions` is the registration seam: the single explicit call that adds the
 managed PDF backend to a `DocDownBuilder`. Its single responsibility is to make a host's decision to
-use `DocDown.Pdf` visible in the host's own code.
+use `DemaConsulting.DocDown.Pdf` visible in the host's own code.
 
 ### Data Model
 
@@ -32,7 +32,7 @@ arises: registration performs no I/O, opens no document, and resolves no reflect
 
 ### Dependencies
 
-- **DocDown.Core** - `DocDownBuilder`.
+- **DemaConsulting.DocDown.Core** - `DocDownBuilder`.
 - **PdfDocumentExtractor** - the backend this unit registers. See *PdfDocumentExtractor Design*.
 
 ### Callers

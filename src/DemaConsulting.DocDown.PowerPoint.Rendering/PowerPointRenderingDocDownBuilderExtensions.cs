@@ -1,6 +1,6 @@
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
-namespace DocDown.PowerPoint.Rendering;
+namespace DemaConsulting.DocDown.PowerPoint.Rendering;
 
 /// <summary>
 ///     The registration seam that adds optional PowerPoint slide rendering to a
@@ -42,9 +42,9 @@ public static class PowerPointRenderingDocDownBuilderExtensions
     ///     <code language="csharp">
     ///     using System;
     ///     using System.Threading;
-    ///     using DocDown.Core;
-    ///     using DocDown.PowerPoint;
-    ///     using DocDown.PowerPoint.Rendering;
+    ///     using DemaConsulting.DocDown.Core;
+    ///     using DemaConsulting.DocDown.PowerPoint;
+    ///     using DemaConsulting.DocDown.PowerPoint.Rendering;
     ///
     ///     var engine = new DocDownBuilder()
     ///         .AddPowerPoint()           // .pptx - slide text and notes

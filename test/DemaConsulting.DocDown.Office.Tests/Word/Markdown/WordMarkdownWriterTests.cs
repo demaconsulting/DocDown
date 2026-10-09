@@ -1,4 +1,4 @@
-using DocDown.Word.Markdown;
+using DemaConsulting.DocDown.Word.Markdown;
 
 namespace DemaConsulting.DocDown.Office.Tests.Word.Markdown;
 

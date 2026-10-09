@@ -1,6 +1,6 @@
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
-namespace DocDown.Word.Markdown;
+namespace DemaConsulting.DocDown.Word.Markdown;
 
 
 /// <summary>

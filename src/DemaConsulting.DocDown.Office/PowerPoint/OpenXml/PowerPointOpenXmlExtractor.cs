@@ -1,12 +1,12 @@
-using DocDown.Core;
-using DocDown.PowerPoint.Markdown;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.PowerPoint.Markdown;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
-using CoreFormat = DocDown.Core.DocumentFormat;
+using CoreFormat = DemaConsulting.DocDown.Core.DocumentFormat;
 using D = DocumentFormat.OpenXml.Drawing;
 using P = DocumentFormat.OpenXml.Presentation;
 
-namespace DocDown.PowerPoint.OpenXml;
+namespace DemaConsulting.DocDown.PowerPoint.OpenXml;
 
 /// <summary>
 ///     The PowerPoint Open XML backend: extracts every slide's text, title, and — above all —
@@ -80,9 +80,9 @@ public sealed class PowerPointOpenXmlExtractor : IDocumentExtractor, ISelfValida
 
         // Record what parsed this document, and state plainly that page rendering is not on offer here
         sink.ReportEnvironmentFact(new EnvironmentFact(
-            "DocDown.PowerPoint", "powerpoint.backend", "Open XML SDK (managed)", Available: true));
+            "DemaConsulting.DocDown.PowerPoint", "powerpoint.backend", "Open XML SDK (managed)", Available: true));
         sink.ReportEnvironmentFact(new EnvironmentFact(
-            "DocDown.PowerPoint", "powerpoint.pageRendering", "not provided by this extractor", Available: false));
+            "DemaConsulting.DocDown.PowerPoint", "powerpoint.pageRendering", "not provided by this extractor", Available: false));
 
         // Buffer the source: the package reader must seek, and a stream source is not guaranteed seekable
         var bytes = await ReadSourceAsync(source, cancellationToken).ConfigureAwait(false);

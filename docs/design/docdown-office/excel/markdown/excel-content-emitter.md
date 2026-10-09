@@ -1,6 +1,6 @@
 ## ExcelContentEmitter
 
-![DocDown.Excel Structure](ExcelView.svg)
+![DemaConsulting.DocDown.Excel Structure](ExcelView.svg)
 
 ### Purpose
 
@@ -60,7 +60,7 @@ content, a note, or an unreadable result upstream in the reader or Core.
 
 ### Dependencies
 
-- **DocDown.Core** — `IExtractionSink`, `ExtractionOptions`, `ContentPart`, `ContentPartKind`,
+- **DemaConsulting.DocDown.Core** — `IExtractionSink`, `ExtractionOptions`, `ContentPart`, `ContentPartKind`,
   `ExtractionNote`, `DocumentInfo`, `ContentFeature`, `EmbeddedImageWriter`, and `EmbeddedImageWriteResult`.
 - **ExcelWorkbookModel** and the chart model — the read model it renders. See *ExcelOpenXmlReader
   Design*.

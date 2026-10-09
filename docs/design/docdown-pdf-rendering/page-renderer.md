@@ -1,6 +1,6 @@
 ## PageRenderer
 
-![DocDown.Pdf.Rendering Structure](DocDownPdfRenderingView.svg)
+![DemaConsulting.DocDown.Pdf.Rendering Structure](DocDownPdfRenderingView.svg)
 
 ### Purpose
 

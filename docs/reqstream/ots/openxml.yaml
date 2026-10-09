@@ -2,8 +2,8 @@
 # Open XML SDK OTS Software Requirements
 #
 # Requirements for the DocumentFormat.OpenXml SDK, the managed Open XML reader/writer
-# DocDown.Word is built on. Like PdfPig, it is a runtime library shipped to consumers rather
-# than a build-time tool, so its evidence comes from the DocDown.Word extraction tests that
+# DemaConsulting.DocDown.Word is built on. Like PdfPig, it is a runtime library shipped to consumers rather
+# than a build-time tool, so its evidence comes from the DemaConsulting.DocDown.Word extraction tests that
 # exercise it transitively. It is treated as one OTS item — the SDK and its Framework
 # companion are a single independently-sourced component under one MIT license from one
 # maintainer — where pdfium and SkiaSharp were separate items because each is independently
@@ -19,7 +19,7 @@ sections:
               The Open XML SDK shall read a WordprocessingML document's structure, exposing styled
               paragraphs, tables, fields, headers, and footers.
             justification: |
-              This is the use DocDown.Word makes of the SDK: it is the reader the package is built on,
+              This is the use DemaConsulting.DocDown.Word makes of the SDK: it is the reader the package is built on,
               and the structure it exposes is what the whole structured extraction is built from. Its
               evidence is named tests that read a generated document, not a broad claim of coverage.
             tags: [ots]

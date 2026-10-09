@@ -2,7 +2,7 @@
 # System.IO.Packaging OTS Software Requirements
 #
 # Requirements for System.IO.Packaging, the Open Packaging Conventions (OPC) container
-# implementation. DocDown.Office references it directly and calls it directly: VisioPackageReader
+# implementation. DemaConsulting.DocDown.Office references it directly and calls it directly: VisioPackageReader
 # opens a .vsdx with Package.Open and resolves its parts and relationships without the Open XML SDK,
 # which does not handle Visio drawings. The SDK also sits on it for the Word, Excel and PowerPoint
 # formats, but that use is transitive; the evidence below is the direct use.

@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     Rewrites the root-relative resource links an extractor emits (<c>images/…</c>, <c>pages/…</c>)

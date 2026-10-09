@@ -1,6 +1,6 @@
 ## PdfTextExtractor
 
-![DocDown.Pdf Structure](DocDownPdfView.svg)
+![DemaConsulting.DocDown.Pdf Structure](DocDownPdfView.svg)
 
 ### Purpose
 

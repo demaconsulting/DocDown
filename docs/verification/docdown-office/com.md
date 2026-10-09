@@ -1,6 +1,6 @@
 ## Com Subsystem Verification Design
 
-This document describes the verification strategy for the Com subsystem of `DocDown.Office`: the
+This document describes the verification strategy for the Com subsystem of `DemaConsulting.DocDown.Office`: the
 availability probe and the composition helpers Visio's automation backend uses.
 
 ### Verification Approach

@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.Versioning;
 
-namespace DocDown.Visio.Com;
+namespace DemaConsulting.DocDown.Visio.Com;
 
 /// <summary>
 ///     The real Visio COM automation adapter: the single unit that talks to Microsoft Visio over

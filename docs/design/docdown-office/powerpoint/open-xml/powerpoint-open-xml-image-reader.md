@@ -1,6 +1,6 @@
 ## PowerPointOpenXmlImageReader
 
-![DocDown.PowerPoint Structure](PowerPointView.svg)
+![DemaConsulting.DocDown.PowerPoint Structure](PowerPointView.svg)
 
 ### Purpose
 
@@ -50,7 +50,7 @@ fabricated entry.
 
 ### Dependencies
 
-- **DocDown.Core** — `EmbeddedImage`, `ImageTextCandidate`, `ImageTextSource`, and the image-collection
+- **DemaConsulting.DocDown.Core** — `EmbeddedImage`, `ImageTextCandidate`, `ImageTextSource`, and the image-collection
   model types.
 - **DocumentFormat.OpenXml** (OTS) — `PresentationPart`, `SlidePart`, `NotesSlidePart`, `SlideMasterPart`,
   `SlideLayoutPart`, `ImagePart`, `OpenXmlPartContainer`, and the Drawing and Presentation picture types.

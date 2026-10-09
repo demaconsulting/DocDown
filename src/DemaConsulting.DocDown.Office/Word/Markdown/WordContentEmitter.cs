@@ -1,7 +1,7 @@
 using System.Globalization;
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
-namespace DocDown.Word.Markdown;
+namespace DemaConsulting.DocDown.Word.Markdown;
 
 /// <summary>
 ///     Emits a rendered <see cref="WordDocumentModel"/> through the extraction sink, reporting the

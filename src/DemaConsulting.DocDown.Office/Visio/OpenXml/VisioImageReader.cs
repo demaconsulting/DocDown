@@ -1,7 +1,7 @@
 using System.IO.Packaging;
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
-namespace DocDown.Visio.OpenXml;
+namespace DemaConsulting.DocDown.Visio.OpenXml;
 
 /// <summary>
 ///     Resolves the embedded images of a Visio drawing to their bytes and provenance, directly from

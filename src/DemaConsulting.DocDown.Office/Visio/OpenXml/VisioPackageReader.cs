@@ -1,8 +1,8 @@
 using System.IO.Packaging;
 using System.Xml.Linq;
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
-namespace DocDown.Visio.OpenXml;
+namespace DemaConsulting.DocDown.Visio.OpenXml;
 
 /// <summary>
 ///     Reads a Visio drawing's Open Packaging container directly with <see cref="System.IO.Packaging"/>

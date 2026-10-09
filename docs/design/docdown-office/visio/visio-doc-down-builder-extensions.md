@@ -1,6 +1,6 @@
 ## VisioDocDownBuilderExtensions
 
-![DocDown.Visio Structure](VisioView.svg)
+![DemaConsulting.DocDown.Visio Structure](VisioView.svg)
 
 ### Purpose
 
@@ -32,7 +32,7 @@ later at build time against configuration the host wrote correctly.
 
 ### Dependencies
 
-- **DocDown.Core** — `DocDownBuilder` and its `AddExtractor` registration method.
+- **DemaConsulting.DocDown.Core** — `DocDownBuilder` and its `AddExtractor` registration method.
 - **VisioOpenXmlExtractor** — the managed backend the first factory produces.
 - **VisioComExtractor** — the COM backend the second factory produces.
 

@@ -1,6 +1,6 @@
 ## WordOpenXmlImageReader
 
-![DocDown.Word Structure](WordView.svg)
+![DemaConsulting.DocDown.Word Structure](WordView.svg)
 
 ### Purpose
 
@@ -51,7 +51,7 @@ document contains them.
 
 ### Dependencies
 
-- **DocDown.Core** — `ImageHint` and `ImageTransform`.
+- **DemaConsulting.DocDown.Core** — `ImageHint` and `ImageTransform`.
 - **DocumentFormat.OpenXml** (OTS) — `WordprocessingDocument`, `OpenXmlPartContainer`, `ImagePart`,
   and `MainDocumentPart`. See the *DocumentFormat.OpenXml* OTS design.
 - **`WordImageRef`** — the record returned by `Resolve()`.

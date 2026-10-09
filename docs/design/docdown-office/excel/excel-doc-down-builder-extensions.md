@@ -1,6 +1,6 @@
 ## ExcelDocDownBuilderExtensions
 
-![DocDown.Excel Structure](ExcelView.svg)
+![DemaConsulting.DocDown.Excel Structure](ExcelView.svg)
 
 ### Purpose
 
@@ -16,7 +16,7 @@ or lost.
 ### Data Model
 
 `ExcelDocDownBuilderExtensions` is a `public static class` with no state. It carries no Open XML SDK type
-on its public surface — the `using DocDown.Excel.OpenXml;` directive references only this package's own
+on its public surface — the `using DemaConsulting.DocDown.Excel.OpenXml;` directive references only this package's own
 extractor type — so a host can reference the surface it configures without the SDK's types entering its
 own compilation. Its member is thread-safe; the builder it mutates is not.
 
@@ -44,10 +44,10 @@ constructs nothing.
 
 ### Dependencies
 
-- **DocDown.Core** — `DocDownBuilder`.
+- **DemaConsulting.DocDown.Core** — `DocDownBuilder`.
 - **ExcelOpenXmlExtractor** — the backend registered. See *ExcelOpenXmlExtractor Design*.
 
 ### Callers
 
-A host application, once, when configuring an engine. `DocDown.Tool` calls `AddExcel` alongside its other
+A host application, once, when configuring an engine. `DemaConsulting.DocDown.Tool` calls `AddExcel` alongside its other
 extractor registrations. Nothing inside this package calls it.

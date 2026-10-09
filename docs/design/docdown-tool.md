@@ -1,9 +1,9 @@
-# DocDown.Tool System Design
+# DemaConsulting.DocDown.Tool System Design
 
-![DocDown.Tool Structure](DocDownToolView.svg)
+![DemaConsulting.DocDown.Tool Structure](DocDownToolView.svg)
 
-`DocDown.Tool` is the `docdown` command-line tool. It is the first executable in the family: a thin,
-honest shell over `DocDown.Core` and the registered extraction backends that turns a document into
+`DemaConsulting.DocDown.Tool` is the `docdown` command-line tool. It is the first executable in the family: a thin,
+honest shell over `DemaConsulting.DocDown.Core` and the registered extraction backends that turns a document into
 the DocDown output layout from a terminal or a pipeline, and that validates itself on demand. It is
 distributed as a RID-agnostic .NET tool invoked by the command name `docdown`.
 
@@ -57,22 +57,22 @@ here, on the tool side of the boundary. Neither Core nor the extraction backends
 
 ## Dependencies
 
-- **DocDown.Core** — the engine, extraction options and results, the backend inventory surface, and
-  the self-test seam. See the *DocDown.Core System Design*.
-- **DocDown.Pdf** — the managed PDF extraction backend, added through `AddPdf`. See the
-  *DocDown.Pdf System Design*.
-- **DocDown.Pdf.Rendering** — the optional page-rendering backend, added through
+- **DemaConsulting.DocDown.Core** — the engine, extraction options and results, the backend inventory surface, and
+  the self-test seam. See the *DemaConsulting.DocDown.Core System Design*.
+- **DemaConsulting.DocDown.Pdf** — the managed PDF extraction backend, added through `AddPdf`. See the
+  *DemaConsulting.DocDown.Pdf System Design*.
+- **DemaConsulting.DocDown.Pdf.Rendering** — the optional page-rendering backend, added through
   `AddPdfRendering`. It depends on the fully-managed `DemaConsulting.CanvasNet.Pdf`/
   `DemaConsulting.CanvasNet` packages and carries no native assets. See the
-  *DocDown.Pdf.Rendering System Design*.
-- **DocDown.Word** — the Word extraction backend, added through `AddWord`. See the
-  *DocDown.Word System Design*.
-- **DocDown.Visio** — the Visio extraction backends, added through `AddVisio`. See the
-  *DocDown.Visio System Design*.
-- **DocDown.PowerPoint** — the PowerPoint extraction backends, added through `AddPowerPoint`. See
-  the *DocDown.PowerPoint System Design*.
-- **DocDown.Excel** — the Excel extraction backend, added through `AddExcel`. See the
-  *DocDown.Excel System Design*.
+  *DemaConsulting.DocDown.Pdf.Rendering System Design*.
+- **DemaConsulting.DocDown.Word** — the Word extraction backend, added through `AddWord`. See the
+  *DemaConsulting.DocDown.Word System Design*.
+- **DemaConsulting.DocDown.Visio** — the Visio extraction backends, added through `AddVisio`. See the
+  *DemaConsulting.DocDown.Visio System Design*.
+- **DemaConsulting.DocDown.PowerPoint** — the PowerPoint extraction backends, added through `AddPowerPoint`. See
+  the *DemaConsulting.DocDown.PowerPoint System Design*.
+- **DemaConsulting.DocDown.Excel** — the Excel extraction backend, added through `AddExcel`. See the
+  *DemaConsulting.DocDown.Excel System Design*.
 - **DemaConsulting.TestResults** (OTS) — the test-results object model and the TRX/JUnit
   serializers, referenced only by this tool. See *TestResults* under the OTS integration design.
 

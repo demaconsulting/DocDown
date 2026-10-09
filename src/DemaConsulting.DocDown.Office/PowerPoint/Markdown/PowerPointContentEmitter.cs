@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text;
-using DocDown.Core;
-using DocDown.PowerPoint.OpenXml;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.PowerPoint.OpenXml;
 
-namespace DocDown.PowerPoint.Markdown;
+namespace DemaConsulting.DocDown.PowerPoint.Markdown;
 
 /// <summary>
 ///     Emits a read <see cref="PowerPointDeckModel"/> through the extraction sink: per-slide content

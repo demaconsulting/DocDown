@@ -7,7 +7,7 @@ using UglyToad.PdfPig.DocumentLayoutAnalysis.ReadingOrderDetector;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
 
-namespace DocDown.Pdf;
+namespace DemaConsulting.DocDown.Pdf;
 
 /// <summary>
 ///     Turns the glyphs of a PDF page into markdown paragraphs in reading order, inferring headings

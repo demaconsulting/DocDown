@@ -32,7 +32,7 @@ suites answer the question directly, so no such project is created.
 
 ### Test Environment
 
-The evidence is produced by the standard `DocDown.Office` test run: xUnit v3 under the .NET SDK,
+The evidence is produced by the standard `DemaConsulting.DocDown.Office` test run: xUnit v3 under the .NET SDK,
 targeting net8.0, net9.0, and net10.0, across the CI operating-system matrix. Every fixture is an
 OPC package generated at test time, so the evidence depends on no network access.
 

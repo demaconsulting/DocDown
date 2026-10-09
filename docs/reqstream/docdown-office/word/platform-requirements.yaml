@@ -1,8 +1,8 @@
 ---
-# System-Level Platform Requirements for DocDown.Word
+# System-Level Platform Requirements for DemaConsulting.DocDown.Word
 #
 # These requirements specify the platforms and frameworks the package must support.
-# DocDown.Word is 100% managed and runtime-identifier agnostic, so its platform evidence is
+# DemaConsulting.DocDown.Word is 100% managed and runtime-identifier agnostic, so its platform evidence is
 # the end-to-end extraction test, which produces the full output contract and so passes on
 # every runtime the package targets.
 #

@@ -1,9 +1,9 @@
 using System.Globalization;
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 
-namespace DocDown.Pdf;
+namespace DemaConsulting.DocDown.Pdf;
 
 /// <summary>
 ///     The PDF backend: extracts text, embedded images, and document metadata from a PDF into the
@@ -86,9 +86,9 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
 
         // Record what parsed this document, and state plainly that page rendering is not on offer
         // here, so the environment block explains the capability shortfall rather than omitting it
-        sink.ReportEnvironmentFact(new EnvironmentFact("DocDown.Pdf", "pdf.parser", "PdfPig (managed)", Available: true));
+        sink.ReportEnvironmentFact(new EnvironmentFact("DemaConsulting.DocDown.Pdf", "pdf.parser", "PdfPig (managed)", Available: true));
         sink.ReportEnvironmentFact(new EnvironmentFact(
-            "DocDown.Pdf", "pdf.pageRendering", "not provided by this extractor", Available: false));
+            "DemaConsulting.DocDown.Pdf", "pdf.pageRendering", "not provided by this extractor", Available: false));
 
         // Buffer the source: a stream source is not guaranteed seekable, and the parser needs to seek
         var bytes = await ReadSourceAsync(source, cancellationToken).ConfigureAwait(false);

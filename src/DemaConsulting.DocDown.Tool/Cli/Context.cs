@@ -1,6 +1,6 @@
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
-namespace DocDown.Tool.Cli;
+namespace DemaConsulting.DocDown.Tool.Cli;
 
 /// <summary>
 ///     Owns the parsed command-line arguments and every channel the tool writes to: standard

@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text;
-using DocDown.Core;
-using DocDown.Visio.OpenXml;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Visio.OpenXml;
 
-namespace DocDown.Visio.Markdown;
+namespace DemaConsulting.DocDown.Visio.Markdown;
 
 /// <summary>
 ///     Emits a read <see cref="VisioDocumentModel"/> through the extraction sink: per-page content in

@@ -1,6 +1,6 @@
 ### PowerPointContentEmitter
 
-![DocDown.PowerPoint Structure](PowerPointView.svg)
+![DemaConsulting.DocDown.PowerPoint Structure](PowerPointView.svg)
 
 ### Purpose
 
@@ -71,7 +71,7 @@ upstream in the reader or Core.
 
 ### Dependencies
 
-- **DocDown.Core** — `IExtractionSink`, `ExtractionOptions`,
+- **DemaConsulting.DocDown.Core** — `IExtractionSink`, `ExtractionOptions`,
   `DocumentInfo`, `ContentFeature`, `EmbeddedImageWriter`, and `ExtractionNote`.
 - **PowerPointDeckModel** — the read model it renders. See *PowerPointOpenXmlReader Design*.
 

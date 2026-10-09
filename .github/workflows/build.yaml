@@ -641,7 +641,7 @@ jobs:
           dotnet sarifmark
           --sarif artifacts/csharp.sarif
           --report docs/code_quality/generated/codeql-quality.md
-          --heading "DocDown.Core CodeQL Analysis"
+          --heading "DemaConsulting.DocDown.Core CodeQL Analysis"
           --report-depth 1
 
       - name: Display CodeQL Quality Report

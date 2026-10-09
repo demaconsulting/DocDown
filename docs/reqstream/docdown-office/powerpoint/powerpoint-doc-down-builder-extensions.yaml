@@ -3,7 +3,7 @@
 #
 # PowerPointDocDownBuilderExtensions is the one visible edge from a host to this package: the explicit,
 # reflection-free call that adds the PowerPoint backend to a DocDown builder. It is a direct unit of
-# the DocDown.PowerPoint system.
+# the DemaConsulting.DocDown.PowerPoint system.
 #
 # SUPERSEDED REQUIREMENT: DocDownPowerPoint-PowerPointDocDownBuilderExtensions-OrdersManagedAboveCom
 # required the managed backend to register at a higher selection priority than a COM automation

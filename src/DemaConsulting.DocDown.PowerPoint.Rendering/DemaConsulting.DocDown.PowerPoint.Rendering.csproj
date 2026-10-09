@@ -19,7 +19,7 @@
     <PackageIcon>Icon.png</PackageIcon>
     <PackageTags>docdown;powerpoint;rendering;dotnet-library</PackageTags>
     <Copyright>Copyright DEMA Consulting</Copyright>
-    <Title>DocDown.PowerPoint.Rendering</Title>
+    <Title>DemaConsulting.DocDown.PowerPoint.Rendering</Title>
     <Product>DemaConsulting.DocDown.PowerPoint.Rendering</Product>
 
     <!-- This package rasterizes PowerPoint slides through DemaConsulting.CanvasNet.Pptx, a
@@ -74,7 +74,7 @@
          rasterizes into and the PngCodec that encodes a Surface to PNG bytes;
          DemaConsulting.CanvasNet.Charts supplies the chart-rendering support CanvasNet.Pptx uses
          for embedded chart content. All three are pinned to the exact same prerelease (beta)
-         version for the same reason DocDown.Pdf.Rendering pins CanvasNet.Pdf/CanvasNet: a floating
+         version for the same reason DemaConsulting.DocDown.Pdf.Rendering pins CanvasNet.Pdf/CanvasNet: a floating
          reference to a prerelease package could silently substitute an incompatible API. None of
          the three carries a native asset for any runtime identifier — see
          docs/design/ots/canvasnetpptx.md and docs/design/ots/canvasnetcharts.md for the
@@ -117,7 +117,7 @@
 
   <!-- Project References -->
   <ItemGroup>
-    <!-- Core supplies the extractor contract and output sink. DocDown.Office supplies the managed
+    <!-- Core supplies the extractor contract and output sink. DemaConsulting.DocDown.Office supplies the managed
          Open XML PowerPoint extractor this package delegates to with rendering suppressed, so the
          rendering backend is a full superset without re-implementing the managed path. -->
     <ProjectReference Include="..\DemaConsulting.DocDown.Core\DemaConsulting.DocDown.Core.csproj" />

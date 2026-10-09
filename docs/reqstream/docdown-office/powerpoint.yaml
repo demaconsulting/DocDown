@@ -1,11 +1,11 @@
 ---
-# Software System Requirements for DocDown.PowerPoint
+# Software System Requirements for DemaConsulting.DocDown.PowerPoint
 #
 # These requirements describe the externally visible behavior of the PowerPoint extraction package
 # from the perspective of a host that registers it, without specifying implementation details. Each
 # decomposes into subsystem and unit requirements linked below via children, and is proven by
 # system-level tests or the closest package-level evidence available in
-# DemaConsulting.DocDown.Office.Tests. DocDown.PowerPoint has two subsystems (Markdown, OpenXml) and
+# DemaConsulting.DocDown.Office.Tests. DemaConsulting.DocDown.PowerPoint has two subsystems (Markdown, OpenXml) and
 # one direct unit (PowerPointDocDownBuilderExtensions).
 #
 # A slide is a visual composition, but a deck also carries content that no render can supply. These

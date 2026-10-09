@@ -1,10 +1,10 @@
 ## Markdown Subsystem
 
-![DocDown.Visio Structure](VisioView.svg)
+![DemaConsulting.DocDown.Visio Structure](VisioView.svg)
 
 ### Overview
 
-The Markdown subsystem is the reader-neutral projection of `DocDown.Visio`. It turns the
+The Markdown subsystem is the reader-neutral projection of `DemaConsulting.DocDown.Visio`. It turns the
 backend-neutral drawing model into DocDown content: per-page headings, informative shape text,
 directed topology, inline image links, looked-for content inventory, document info, metadata, and
 plain notes for attempted steps DocDown could not complete. Its shape labeler decides how topology

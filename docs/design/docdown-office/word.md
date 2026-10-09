@@ -1,12 +1,12 @@
-# DocDown.Word System Design
+# DemaConsulting.DocDown.Word System Design
 
-![DocDown.Word Structure](WordView.svg)
+![DemaConsulting.DocDown.Word Structure](WordView.svg)
 
-`DocDown.Word` is the Word extraction system for the DocDown output contract. It reads a Word
+`DemaConsulting.DocDown.Word` is the Word extraction system for the DocDown output contract. It reads a Word
 document's text, real tables, embedded images, reviewer comments, footnotes, document-control
 content, and document metadata, then writes them through the `IExtractionSink` the engine supplies.
 It is a separately distributed NuGet package that a host registers explicitly alongside
-`DocDown.Core`, and it ships one backend: a managed Open XML SDK backend for `.docx`. Legacy binary
+`DemaConsulting.DocDown.Core`, and it ships one backend: a managed Open XML SDK backend for `.docx`. Legacy binary
 `.doc` documents are not supported and are reported as unreadable rather than routed to a backend
 that cannot read them.
 
@@ -26,7 +26,7 @@ The system has two subsystems and one direct unit:
   resolves each embedded image part, and `WordExtractionException`, the one exception type this
   package raises intentionally.
 
-`DocDown.Word` deliberately has no second backend. The package is fully managed, deployable
+`DemaConsulting.DocDown.Word` deliberately has no second backend. The package is fully managed, deployable
 anywhere the .NET runtime is, and keeps its extraction behavior in one reader and one emitter
 instead of splitting it across environment-specific implementations.
 
@@ -65,8 +65,8 @@ The constraints each interface carries, stated in full:
 
 ## Dependencies
 
-- **DocDown.Core** — the extraction contract, the sink, the options, the content inventory, the
-  extraction-note shape, and the output layout. See the *DocDown.Core System Design*.
+- **DemaConsulting.DocDown.Core** — the extraction contract, the sink, the options, the content inventory, the
+  extraction-note shape, and the output layout. See the *DemaConsulting.DocDown.Core System Design*.
 - **DocumentFormat.OpenXml** (OTS) — the managed Open XML SDK the package is built on, pinned to
   `[3.5.1]` for restore determinism and SBOM reproducibility. See the
   *DocumentFormat.OpenXml* OTS design.

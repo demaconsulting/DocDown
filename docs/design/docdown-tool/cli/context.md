@@ -1,6 +1,6 @@
 ### Context
 
-![DocDown.Tool Structure](DocDownToolView.svg)
+![DemaConsulting.DocDown.Tool Structure](DocDownToolView.svg)
 
 #### Purpose
 
@@ -53,7 +53,7 @@ non-zero exit. `Dispose` closes the log writer.
 
 #### Dependencies
 
-- **DocDown.Core** — `ExtractionOptions` and the option value types the flags map onto: `PageRange`,
+- **DemaConsulting.DocDown.Core** — `ExtractionOptions` and the option value types the flags map onto: `PageRange`,
   and `ScratchFolderMode`.
 
 #### Callers

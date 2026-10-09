@@ -1,10 +1,10 @@
 ## Markdown Subsystem
 
-![DocDown.Excel Structure](ExcelView.svg)
+![DemaConsulting.DocDown.Excel Structure](ExcelView.svg)
 
 ### Overview
 
-The Markdown subsystem is the reader-neutral projection of `DocDown.Excel`. It defines how the
+The Markdown subsystem is the reader-neutral projection of `DemaConsulting.DocDown.Excel`. It defines how the
 backend-neutral `ExcelWorkbookModel` becomes the output contract: the content emitter that walks the
 model through the extraction sink — one content part per worksheet and one per chart — and the chart
 writer that renders a chart's cached series as a table of categories against series values. Every

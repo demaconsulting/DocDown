@@ -1,6 +1,6 @@
 ## Com Subsystem
 
-![DocDown.Office Com Structure](OfficeComView.svg)
+![DemaConsulting.DocDown.Office Com Structure](OfficeComView.svg)
 
 ### Overview
 

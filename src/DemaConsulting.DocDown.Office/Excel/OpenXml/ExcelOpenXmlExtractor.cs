@@ -1,11 +1,11 @@
-using DocDown.Core;
-using DocDown.Excel.Markdown;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Excel.Markdown;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
-using CoreFormat = DocDown.Core.DocumentFormat;
+using CoreFormat = DemaConsulting.DocDown.Core.DocumentFormat;
 
-namespace DocDown.Excel.OpenXml;
+namespace DemaConsulting.DocDown.Excel.OpenXml;
 
 /// <summary>
 ///     The Excel Open XML backend: extracts every worksheet's cell values, formulas, and addressing
@@ -90,9 +90,9 @@ public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
 
         // Record what parsed this document, and state plainly that a workbook is non-paginated
         sink.ReportEnvironmentFact(new EnvironmentFact(
-            "DocDown.Excel", "excel.backend", "Open XML SDK (managed)", Available: true));
+            "DemaConsulting.DocDown.Excel", "excel.backend", "Open XML SDK (managed)", Available: true));
         sink.ReportEnvironmentFact(new EnvironmentFact(
-            "DocDown.Excel", "excel.pageRendering", "not applicable to a non-paginated workbook", Available: false));
+            "DemaConsulting.DocDown.Excel", "excel.pageRendering", "not applicable to a non-paginated workbook", Available: false));
 
         // Buffer the source: the package reader must seek, and a stream source is not guaranteed seekable
         var bytes = await ReadSourceAsync(source, cancellationToken).ConfigureAwait(false);

@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     Reads a backend's embedded self-test probe document.

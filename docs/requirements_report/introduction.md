@@ -1,12 +1,12 @@
 # Introduction
 
-This document contains the requirements traceability matrix for the DocDown.Core project.
+This document contains the requirements traceability matrix for the DemaConsulting.DocDown.Core project.
 
 ## Purpose
 
 The trace matrix provides traceability between requirements and test cases, ensuring that
 all requirements are validated through appropriate testing. This demonstrates that the
-DocDown.Core meets its specified requirements.
+DemaConsulting.DocDown.Core meets its specified requirements.
 
 ## Scope
 
@@ -21,7 +21,7 @@ This traceability matrix covers:
 
 This document is intended for:
 
-- Software developers working on DocDown.Core
+- Software developers working on DemaConsulting.DocDown.Core
 - Quality assurance teams validating requirements coverage
 - Project stakeholders reviewing test coverage
 - Auditors verifying requirements traceability

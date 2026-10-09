@@ -1,10 +1,10 @@
-using DocDown.Core;
-using DocDown.Excel;
-using DocDown.PowerPoint;
-using DocDown.Visio;
-using DocDown.Word;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Excel;
+using DemaConsulting.DocDown.PowerPoint;
+using DemaConsulting.DocDown.Visio;
+using DemaConsulting.DocDown.Word;
 
-namespace DocDown.Office;
+namespace DemaConsulting.DocDown.Office;
 
 /// <summary>
 ///     The registration seam that adds every Microsoft Office backend to a <see cref="DocDownBuilder"/>.
@@ -44,8 +44,8 @@ public static class OfficeDocDownBuilderExtensions
     /// <example>
     ///     <code language="csharp">
     ///     using System;
-    ///     using DocDown.Core;
-    ///     using DocDown.Office;
+    ///     using DemaConsulting.DocDown.Core;
+    ///     using DemaConsulting.DocDown.Office;
     ///
     ///     var engine = new DocDownBuilder()
     ///         .AddOffice() // .docx, .xlsx, .pptx, .vsdx, .vsdm

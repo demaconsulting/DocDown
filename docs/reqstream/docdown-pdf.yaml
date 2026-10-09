@@ -1,5 +1,5 @@
 ---
-# Software System Requirements for DocDown.Pdf
+# Software System Requirements for DemaConsulting.DocDown.Pdf
 #
 # These requirements describe the externally visible behavior of the managed PDF extraction package
 # from the perspective of a host that registers it.
@@ -267,12 +267,13 @@ sections:
 
       - id: DocDownPdf-ManagedOnly
         title: >-
-          The DocDown.Pdf package shall ship no native assets and no runtime-identifier-specific
+          The DemaConsulting.DocDown.Pdf package shall ship no native assets and no runtime-identifier-specific
           dependencies.
         tags: [system]
         justification: |
-          This is scoped to the DocDown.Pdf package, not merely as a formality: DocDown.Pdf.Rendering,
-          the package that adds page rasterization, is also fully managed, since CanvasNet.Pdf and
+          This is scoped to the DemaConsulting.DocDown.Pdf package, not merely as a formality:
+          DemaConsulting.DocDown.Pdf.Rendering, the package that adds page rasterization, is also
+          fully managed, since CanvasNet.Pdf and
           CanvasNet carry no native asset. Keeping the parser free of any runtime dependency at all is
           what keeps it the smallest possible surface for a consumer who only needs text, images, and
           metadata, independent of whether the rendering package ships native assets.

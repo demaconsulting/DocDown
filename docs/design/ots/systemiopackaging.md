@@ -3,7 +3,7 @@
 ### Purpose
 
 `System.IO.Packaging` is the OPC (Open Packaging Conventions) container reader — the Zip-based
-package format that Office documents physically are. `DocDown.Office` uses it in two ways. The Visio
+package format that Office documents physically are. `DemaConsulting.DocDown.Office` uses it in two ways. The Visio
 backend calls it **directly**, opening a `.vsdx` with `Package.Open` and resolving each part it needs
 by relationship, because the Open XML SDK does not read Visio drawings. The Word, Excel and
 PowerPoint backends reach the same library **transitively** through the SDK, which projects a
@@ -42,7 +42,7 @@ keeps memory scaling with the document rather than with a serialized copy of it.
 
 ### Integration Pattern
 
-**Direct runtime dependency.** `DocDown.Office` declares `System.IO.Packaging` as an explicit
+**Direct runtime dependency.** `DemaConsulting.DocDown.Office` declares `System.IO.Packaging` as an explicit
 package reference because its own source names the type. It would also arrive transitively through
 `DocumentFormat.OpenXml` → `DocumentFormat.OpenXml.Framework` → `System.IO.Packaging`, but a library
 whose code calls an API declares that API rather than inheriting it by accident.

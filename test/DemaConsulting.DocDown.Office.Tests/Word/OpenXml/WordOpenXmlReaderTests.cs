@@ -1,8 +1,8 @@
 using System.Reflection;
 using System.Text;
 using DemaConsulting.DocDown.Office.Tests.Word.TestData;
-using DocDown.Word.Markdown;
-using DocDown.Word.OpenXml;
+using DemaConsulting.DocDown.Word.Markdown;
+using DemaConsulting.DocDown.Word.OpenXml;
 
 namespace DemaConsulting.DocDown.Office.Tests.Word.OpenXml;
 

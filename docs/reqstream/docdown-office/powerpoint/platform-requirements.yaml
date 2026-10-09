@@ -1,7 +1,7 @@
 ---
-# System-Level Platform Requirements for DocDown.PowerPoint
+# System-Level Platform Requirements for DemaConsulting.DocDown.PowerPoint
 #
-# These requirements specify the platforms and frameworks the package must support. DocDown.PowerPoint's
+# These requirements specify the platforms and frameworks the package must support. DemaConsulting.DocDown.PowerPoint's
 # managed Open XML backend is 100% managed and runtime-identifier agnostic, so its platform evidence is
 # the end-to-end extraction test, which selects the managed backend and produces the full output
 # contract and so passes on every runtime the package targets.

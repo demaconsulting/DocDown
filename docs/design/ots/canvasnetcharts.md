@@ -3,7 +3,7 @@
 ### Purpose
 
 `DemaConsulting.CanvasNet.Charts` is the managed chart-rendering library `CanvasNet.Pptx` uses
-internally to rasterize an embedded chart on a slide. `DocDown.PowerPoint.Rendering` does not call
+internally to rasterize an embedded chart on a slide. `DemaConsulting.DocDown.PowerPoint.Rendering` does not call
 it directly or name any of its types; it is referenced only so the dependency resolves at restore
 and publish time for the `CanvasNet.Pptx` version this package pins. It was chosen — indirectly, as
 part of adopting `CanvasNet.Pptx` — because it is fully managed with no native asset and MIT
@@ -11,13 +11,13 @@ licensed, compatible with this repository's MIT license.
 
 ### Features Used
 
-None directly. `DocDown.PowerPoint.Rendering` references `CanvasNet.Charts` as a package reference
+None directly. `DemaConsulting.DocDown.PowerPoint.Rendering` references `CanvasNet.Charts` as a package reference
 only to pin its version alongside `CanvasNet.Pptx` and `CanvasNet`; no member of `CanvasNet.Charts`
 is called from this package's code. `CanvasNet.Pptx` uses it internally when a slide embeds a chart.
 
 ### Integration Pattern
 
-`CanvasNet.Charts` is referenced as a real runtime dependency of the `DocDown.PowerPoint.Rendering`
+`CanvasNet.Charts` is referenced as a real runtime dependency of the `DemaConsulting.DocDown.PowerPoint.Rendering`
 package so the three CanvasNet packages (`CanvasNet`, `CanvasNet.Pptx`, `CanvasNet.Charts`) resolve
 to the same pinned version at restore time, rather than letting NuGet pick a potentially mismatched
 transitive version of `CanvasNet.Charts` through `CanvasNet.Pptx` alone.
@@ -33,7 +33,7 @@ that fails the build on a `CanvasNet.Pptx` or `CanvasNet` type reaching the publ
 covers `CanvasNet.Charts`.
 
 **Native assets.** None. `CanvasNet.Charts` is fully managed, matching `CanvasNet.Pptx` and
-`CanvasNet`. `DocDown.PowerPoint.Rendering`'s published output contains no native binary of any
+`CanvasNet`. `DemaConsulting.DocDown.PowerPoint.Rendering`'s published output contains no native binary of any
 kind.
 
 ### Licensing

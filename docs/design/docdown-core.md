@@ -1,12 +1,12 @@
 # System Design
 
-This document provides the system-level design for DocDown.Core.
+This document provides the system-level design for DemaConsulting.DocDown.Core.
 
-![DocDown.Core Structure](DocDownCoreView.svg)
+![DemaConsulting.DocDown.Core Structure](DocDownCoreView.svg)
 
 ## Architecture
 
-DocDown.Core is the shared foundation of the DocDown family. It detects a document format,
+DemaConsulting.DocDown.Core is the shared foundation of the DocDown family. It detects a document format,
 selects one registered extractor for that format, and writes a predictable scratch-folder record
 showing what was extracted, where it was written, and which attempted steps could not be completed.
 The system makes no acceptability judgment about document content.
@@ -57,7 +57,7 @@ host did not register does not participate in selection.
 
 ## External Interfaces
 
-DocDown.Core exposes a managed .NET API only. Its principal public interfaces are:
+DemaConsulting.DocDown.Core exposes a managed .NET API only. Its principal public interfaces are:
 
 - **`DocDownBuilder.AddExtractor` / `ConfigureDefaults` / `Build`** — host configuration and engine
   construction.
@@ -75,7 +75,7 @@ DocDown.Core exposes a managed .NET API only. Its principal public interfaces ar
 
 ## Dependencies
 
-DocDown.Core has no runtime NuGet dependencies. It is implemented against the .NET Base Class
+DemaConsulting.DocDown.Core has no runtime NuGet dependencies. It is implemented against the .NET Base Class
 Library, with `System.Text.Json` used through a source-generated context for manifest serialization.
 This keeps the library small, trim-safe, and easy for downstream tools to consume.
 
@@ -85,7 +85,7 @@ surface.
 
 ## Risk Control Measures
 
-N/A - DocDown.Core is an information-extraction library and has no safety-control partitioning
+N/A - DemaConsulting.DocDown.Core is an information-extraction library and has no safety-control partitioning
 requirement under IEC 62304 §5.3.3.
 
 The system treats untrusted document content as a security concern. File names, section titles, and

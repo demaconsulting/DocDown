@@ -3,7 +3,7 @@
 ### Purpose
 
 xUnit v3 (`xunit.v3` and `xunit.runner.visualstudio`) is used as the unit-testing framework for
-the DocDown.Core. It was chosen as the standard, widely supported .NET test framework
+the DemaConsulting.DocDown.Core. It was chosen as the standard, widely supported .NET test framework
 that discovers and executes `[Fact]`/`[Theory]` test methods and produces TRX results consumable
 by downstream tooling.
 

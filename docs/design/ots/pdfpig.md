@@ -2,7 +2,7 @@
 
 ### Purpose
 
-PdfPig is the managed PDF parser `DocDown.Pdf` is built on. It was chosen because it is 100% managed
+PdfPig is the managed PDF parser `DemaConsulting.DocDown.Pdf` is built on. It was chosen because it is 100% managed
 with no native assets and no transitive dependencies on the frameworks this repository targets, which
 is the single property that lets the PDF package be deployed anywhere the .NET runtime is, without a
 per-platform build and without a native binary to locate at run time. It is Apache-2.0 licensed,
@@ -38,11 +38,11 @@ a JPEG XObject's stored bytes are already a JPEG file and are written through un
 which many viewers and image libraries cannot read. Encodings whose stored bytes are not a file at
 all — JBIG2 in particular — are enumerated, counted, and named in a plain note instead of being
 written as bytes a consumer cannot open, which is the behavior the output contract requires
-regardless of which encodings can be decoded, and which the `DocDown.Pdf` tests exercise directly.
+regardless of which encodings can be decoded, and which the `DemaConsulting.DocDown.Pdf` tests exercise directly.
 
 ### Integration Pattern
 
-PdfPig is referenced as a real runtime dependency of the `DocDown.Pdf` package and flows to
+PdfPig is referenced as a real runtime dependency of the `DemaConsulting.DocDown.Pdf` package and flows to
 consumers, unlike every other OTS item in this repository, which are build-time or
 quality-pipeline tools. Its usage is a stateless open-read-dispose sequence per extraction: a
 document is opened from a buffered byte array, read, and disposed within a single `ExtractAsync`
@@ -55,16 +55,16 @@ a minor version. A floating reference would let a restore silently substitute an
 
 **Framework resolution.** PdfPig publishes library assets for `net462`, `net471`, `net6.0`, `net8.0`,
 `net9.0`, `netstandard2.0`, and `netstandard2.1`. There is **no `net10.0` asset**: net10.0 consumers
-of `DocDown.Pdf` resolve PdfPig's `net9.0` asset through normal framework compatibility. This is
-recorded here and again in the `DocDown.Pdf` system design's Design Constraints, because it is a fact
+of `DemaConsulting.DocDown.Pdf` resolve PdfPig's `net9.0` asset through normal framework compatibility. This is
+recorded here and again in the `DemaConsulting.DocDown.Pdf` system design's Design Constraints, because it is a fact
 a reader of either document needs.
 
 **Containment as a risk control.** PdfPig types appear in exactly three source files —
 `PdfDocumentExtractor.cs`, `PdfTextExtractor.cs`, and `PdfImageExtractor.cs` — and in no public
 signature of the package. A reflection test over the package's exported types fails the build if any
 PdfPig type reaches the public surface. This bounds the review surface of a parser upgrade and keeps
-the parser's pre-1.0 API churn from becoming a breaking change for consumers of `DocDown.Pdf`.
+the parser's pre-1.0 API churn from becoming a breaking change for consumers of `DemaConsulting.DocDown.Pdf`.
 
 **Native assets.** PdfPig's package contains no `runtimes/` folder and no unmanaged binary. The
-absence is asserted by a test over the `DocDown.Pdf` build output rather than assumed from the
+absence is asserted by a test over the `DemaConsulting.DocDown.Pdf` build output rather than assumed from the
 dependency's documentation.

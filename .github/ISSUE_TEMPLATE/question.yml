@@ -1,6 +1,6 @@
 ---
 name: ❓ Question / Help
-description: Ask a usage question or get help with the DocDown.Core
+description: Ask a usage question or get help with the DemaConsulting.DocDown.Core
 title: "[Question]: "
 labels: ["question"]
 assignees: []
@@ -45,7 +45,7 @@ body:
     id: version
     attributes:
       label: Library Version
-      description: What version of the DocDown.Core are you using?
+      description: What version of the DemaConsulting.DocDown.Core are you using?
       placeholder: e.g., 1.0.0
     validations:
       required: true

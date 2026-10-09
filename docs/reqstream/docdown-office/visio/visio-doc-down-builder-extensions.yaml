@@ -3,7 +3,7 @@
 #
 # VisioDocDownBuilderExtensions is the one visible edge from a host to this package: the explicit,
 # reflection-free call that adds the Visio backends to a DocDown builder. It is a direct unit of the
-# DocDown.Visio system.
+# DemaConsulting.DocDown.Visio system.
 
 sections:
   - title: DocDownVisio Requirements

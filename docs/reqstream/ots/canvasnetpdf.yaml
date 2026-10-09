@@ -1,7 +1,7 @@
 ---
 # CanvasNet.Pdf OTS Software Requirements
 #
-# Requirements for the CanvasNet.Pdf managed PDF rasterization API that DocDown.Pdf.Rendering is
+# Requirements for the CanvasNet.Pdf managed PDF rasterization API that DemaConsulting.DocDown.Pdf.Rendering is
 # built on. Like PdfPig, CanvasNet.Pdf is a runtime library shipped to consumers rather than a
 # build-time tool, so its evidence comes from the rendering tests that exercise it
 # transitively - the exact tests are named here rather than claimed broadly.
@@ -16,7 +16,7 @@ sections:
               CanvasNet.Pdf shall rasterize a PDF page to an in-memory surface at a requested DPI
               through a fully managed API.
             justification: |
-              DocDown.Pdf.Rendering's rendered-pages capability is delivered entirely through
+              DemaConsulting.DocDown.Pdf.Rendering's rendered-pages capability is delivered entirely through
               CanvasNet.Pdf's managed `PdfDocument.Open`/`GetPageInfo`/`Render` surface, with no
               native asset anywhere in its dependency graph. The capability is only as truthful as
               CanvasNet.Pdf's ability to turn a page and a DPI into pixel data.

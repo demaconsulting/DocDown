@@ -1,4 +1,4 @@
-namespace DocDown.Visio.Com;
+namespace DemaConsulting.DocDown.Visio.Com;
 
 /// <summary>
 /// Page rendering by automating an installed Microsoft Visio over COM. Delegates page names,

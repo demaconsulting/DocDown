@@ -1,10 +1,10 @@
 using System.Text.Json;
+using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.Office.Tests.Word.TestData;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
-using DocDown.Word;
-using DocDown.Word.OpenXml;
-using CoreFormat = DocDown.Core.DocumentFormat;
+using DemaConsulting.DocDown.Word;
+using DemaConsulting.DocDown.Word.OpenXml;
+using CoreFormat = DemaConsulting.DocDown.Core.DocumentFormat;
 
 namespace DemaConsulting.DocDown.Office.Tests.Word.OpenXml;
 

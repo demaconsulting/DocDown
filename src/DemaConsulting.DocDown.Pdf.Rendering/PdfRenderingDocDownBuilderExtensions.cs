@@ -1,6 +1,6 @@
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
-namespace DocDown.Pdf.Rendering;
+namespace DemaConsulting.DocDown.Pdf.Rendering;
 
 /// <summary>
 ///     The registration seam that adds optional PDF page rendering to a <see cref="DocDownBuilder"/>.
@@ -39,9 +39,9 @@ public static class PdfRenderingDocDownBuilderExtensions
     ///     <code language="csharp">
     ///     using System;
     ///     using System.Threading;
-    ///     using DocDown.Core;
-    ///     using DocDown.Pdf;
-    ///     using DocDown.Pdf.Rendering;
+    ///     using DemaConsulting.DocDown.Core;
+    ///     using DemaConsulting.DocDown.Pdf;
+    ///     using DemaConsulting.DocDown.Pdf.Rendering;
     ///
     ///     var engine = new DocDownBuilder()
     ///         .AddPdf()          // .pdf  - text, embedded images, metadata

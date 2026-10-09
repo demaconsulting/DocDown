@@ -56,9 +56,9 @@ throughout the repository.
     └── DemaConsulting.DocDown.TestSupport/
 ```
 
-Additional libraries (`DocDown.Html`) are
+Additional libraries (`DemaConsulting.DocDown.Html`) are
 planned; each is added under `src/` with a matching `test/` project as it is implemented.
-Word, Excel, PowerPoint, and Visio support all live in `DocDown.Office`.
+Word, Excel, PowerPoint, and Visio support all live in `DemaConsulting.DocDown.Office`.
 
 # Language and Spelling (ALL Agents)
 

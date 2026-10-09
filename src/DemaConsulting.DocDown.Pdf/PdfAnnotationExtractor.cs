@@ -1,10 +1,10 @@
 using System.Globalization;
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 using UglyToad.PdfPig.Annotations;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Tokens;
 
-namespace DocDown.Pdf;
+namespace DemaConsulting.DocDown.Pdf;
 
 /// <summary>
 ///     Reads the reviewer commentary a PDF carries as annotations, so those remarks reach the

@@ -1,8 +1,8 @@
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.PowerPoint.Rendering;
 using DemaConsulting.DocDown.PowerPoint.Rendering.Tests.TestData;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
-using DocDown.PowerPoint.Rendering;
-using CoreFormat = DocDown.Core.DocumentFormat;
+using CoreFormat = DemaConsulting.DocDown.Core.DocumentFormat;
 
 namespace DemaConsulting.DocDown.PowerPoint.Rendering.Tests;
 

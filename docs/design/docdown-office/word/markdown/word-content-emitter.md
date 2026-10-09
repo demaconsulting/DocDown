@@ -1,6 +1,6 @@
 ## WordContentEmitter
 
-![DocDown.Word Structure](WordView.svg)
+![DemaConsulting.DocDown.Word Structure](WordView.svg)
 
 ### Purpose
 
@@ -80,7 +80,7 @@ becomes a zero-count inventory entry. The unit performs no filesystem I/O of its
 
 ### Dependencies
 
-- **DocDown.Core** — `IExtractionSink`, `ExtractionOptions`, `DocumentInfo`, `ContentFeature`,
+- **DemaConsulting.DocDown.Core** — `IExtractionSink`, `ExtractionOptions`, `DocumentInfo`, `ContentFeature`,
   `ImageHint`, `ImageTransform`, `ContentPart`, `ContentPartKind`, `DocumentComment`, and
   `ExtractionNote`.
 - **`WordDocumentModel`, `WordBlock`, `WordImageRef`, `WordTableModel`, and

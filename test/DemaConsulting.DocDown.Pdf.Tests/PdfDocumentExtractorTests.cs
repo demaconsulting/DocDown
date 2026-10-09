@@ -1,7 +1,7 @@
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Pdf;
 using DemaConsulting.DocDown.Pdf.Tests.TestData;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
-using DocDown.Pdf;
 
 namespace DemaConsulting.DocDown.Pdf.Tests;
 
@@ -96,11 +96,11 @@ public class PdfDocumentExtractorTests
         await ExtractAsync(PdfFixtures.SimpleText(), sink);
 
         // Assert: the environment names what parsed the document and that rendering is not on offer,
-        // both attributed to the DocDown.Pdf component that reported them
-        Assert.Contains(sink.EnvironmentFacts, fact => fact.Key == "pdf.parser" && fact.Available == true && fact.Source == "DocDown.Pdf");
+        // both attributed to the DemaConsulting.DocDown.Pdf component that reported them
+        Assert.Contains(sink.EnvironmentFacts, fact => fact.Key == "pdf.parser" && fact.Available == true && fact.Source == "DemaConsulting.DocDown.Pdf");
         var rendering = Assert.Single(sink.EnvironmentFacts, fact => fact.Key == "pdf.pageRendering");
         Assert.False(rendering.Available);
-        Assert.Equal("DocDown.Pdf", rendering.Source);
+        Assert.Equal("DemaConsulting.DocDown.Pdf", rendering.Source);
     }
 
     /// <summary>

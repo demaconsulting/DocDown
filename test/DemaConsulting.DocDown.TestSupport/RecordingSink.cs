@@ -1,5 +1,5 @@
 using System.Globalization;
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
 namespace DemaConsulting.DocDown.TestSupport;
 

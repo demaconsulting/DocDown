@@ -3,7 +3,7 @@
 #
 # Program is the tool's entry point. It reads the parsed context, dispatches in priority order,
 # prints the banner and help, runs an extraction and reports its outcome, and maps expected
-# faults to a clean non-zero exit. Program is a direct unit of the DocDown.Tool system.
+# faults to a clean non-zero exit. Program is a direct unit of the DemaConsulting.DocDown.Tool system.
 #
 # SUPERSEDED REQUIREMENT: DocDownTool-Program-ListBackends required each listed backend to report
 # capabilities. The reduced CLI surface now reports only identifier and display name, formats,

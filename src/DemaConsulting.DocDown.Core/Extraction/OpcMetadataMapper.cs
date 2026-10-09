@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     A backend-neutral snapshot of an Open Packaging Conventions core-property bag, decoupling the

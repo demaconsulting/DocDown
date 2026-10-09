@@ -1,7 +1,7 @@
-using DocDown.Core;
-using DocDown.Office.Com;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Office.Com;
 
-namespace DocDown.Visio.Com;
+namespace DemaConsulting.DocDown.Visio.Com;
 
 /// <summary>
 ///     Probes whether the Microsoft Visio COM automation backend can run in the current environment.

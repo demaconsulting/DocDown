@@ -36,15 +36,15 @@ Install one format package per format you actually read. Each format package bri
 `DemaConsulting.DocDown.Core` with it as a transitive dependency, so ordinary use never references
 Core directly — you reference it yourself only when you are writing a backend of your own.
 
-| Format | Package (all prefixed `DemaConsulting.`) | Optional extra | Platform note |
+| Format | Package (all prefixed `DemaConsulting.DocDown.`) | Optional extra | Platform note |
 | --- | --- | --- | --- |
-| PDF `.pdf` | `DocDown.Pdf` | `DocDown.Pdf.Rendering` for page images | Fully managed; every platform |
-| Word `.docx` | `DocDown.Office` | — | Managed; every platform |
-| Excel `.xlsx` | `DocDown.Office` | — | Managed; a workbook is not paginated |
-| PowerPoint `.pptx` | `DocDown.Office` | `DocDown.PowerPoint.Rendering` for slide images | Fully managed |
-| Visio `.vsdx`, `.vsdm` | `DocDown.Office` | — | Page images need Windows and Visio |
-| Any format, from a shell | `DocDown.Tool` | — | Global or local tool manifest install |
-| Your own backend | `DocDown.Core` | — | Abstractions only; extracts nothing itself |
+| PDF `.pdf` | `Pdf` | `Pdf.Rendering` for page images | Fully managed; every platform |
+| Word `.docx` | `Office` | — | Managed; every platform |
+| Excel `.xlsx` | `Office` | — | Managed; a workbook is not paginated |
+| PowerPoint `.pptx` | `Office` | `PowerPoint.Rendering` for slide images | Fully managed |
+| Visio `.vsdx`, `.vsdm` | `Office` | — | Page images need Windows and Visio |
+| Any format, from a shell | `Tool` | — | Global or local tool manifest install |
+| Your own backend | `DemaConsulting.DocDown.Core` | — | Abstractions only; extracts nothing itself |
 
 ```bash
 dotnet add package DemaConsulting.DocDown.Pdf                  # .pdf
@@ -82,8 +82,8 @@ registration is explicit and reflection-free, which is what keeps single-file pu
 ```csharp
 using System;
 using System.Threading;
-using DocDown.Core;
-using DocDown.Word;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Word;
 
 var engine = new DocDownBuilder()
     .AddWord() // .docx - text, tables, images; no page images
@@ -177,18 +177,18 @@ renderer was registered. Notes are not failures, and a produced extraction with 
 
 | Format | Extensions | Package | Text, tables, images | Page images |
 | --- | --- | --- | --- | --- |
-| PDF | `.pdf` | `DocDown.Pdf` | Yes | With `DocDown.Pdf.Rendering` |
-| Word | `.docx` | `DocDown.Office` | Yes | No |
-| Excel | `.xlsx` | `DocDown.Office` | Yes | Not applicable; not paginated |
-| PowerPoint | `.pptx` | `DocDown.Office` | Yes | With `DocDown.PowerPoint.Rendering` |
-| Visio | `.vsdx`, `.vsdm` | `DocDown.Office` | Yes | Windows, with Visio |
+| PDF | `.pdf` | `DemaConsulting.DocDown.Pdf` | Yes | With `DemaConsulting.DocDown.Pdf.Rendering` |
+| Word | `.docx` | `DemaConsulting.DocDown.Office` | Yes | No |
+| Excel | `.xlsx` | `DemaConsulting.DocDown.Office` | Yes | Not applicable; not paginated |
+| PowerPoint | `.pptx` | `DemaConsulting.DocDown.Office` | Yes | With `DemaConsulting.DocDown.PowerPoint.Rendering` |
+| Visio | `.vsdx`, `.vsdm` | `DemaConsulting.DocDown.Office` | Yes | Windows, with Visio |
 
 Not supported today:
 
 | Format | Extensions | What happens |
 | --- | --- | --- |
 | Legacy binary Office | `.doc`, `.xls`, `.ppt`, `.vsd` | Recognized, then refused as unsupported (`Unreadable`) |
-| HTML | `.html`, `.htm` | Recognized; `DocDown.Html` is planned and not yet available |
+| HTML | `.html`, `.htm` | Recognized; `DemaConsulting.DocDown.Html` is planned and not yet available |
 | Anything else | — | Reported as an unrecognized format rather than guessed at |
 
 ## The Output Contract
@@ -280,14 +280,14 @@ buys, so delete the lines you do not need:
 ```csharp
 using System;
 using System.Threading;
-using DocDown.Core;
-using DocDown.Excel;
-using DocDown.Pdf;
-using DocDown.Pdf.Rendering;
-using DocDown.PowerPoint;
-using DocDown.PowerPoint.Rendering;
-using DocDown.Visio;
-using DocDown.Word;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Excel;
+using DemaConsulting.DocDown.Pdf;
+using DemaConsulting.DocDown.Pdf.Rendering;
+using DemaConsulting.DocDown.PowerPoint;
+using DemaConsulting.DocDown.PowerPoint.Rendering;
+using DemaConsulting.DocDown.Visio;
+using DemaConsulting.DocDown.Word;
 
 var engine = new DocDownBuilder()
     .AddPdf()                 // .pdf  - text, embedded images, metadata
@@ -421,9 +421,10 @@ package you installed.
 Six packages are implemented and under active development: `DemaConsulting.DocDown.Core`, the
 shared abstractions and output contract; the two format packages and the two rendering add-ons
 listed in the package table above; and `DemaConsulting.DocDown.Tool`, the `docdown` command-line
-tool. `DocDown.Html` is planned and not yet available.
+tool. `DemaConsulting.DocDown.Html` is planned and not yet available.
 
-`DocDown.Pdf` and the PowerPoint backend in `DocDown.Office` are fully managed and ship no native
+`DemaConsulting.DocDown.Pdf` and the PowerPoint backend in `DemaConsulting.DocDown.Office` are fully
+managed and ship no native
 assets, so neither renders pages by itself. When pages are requested without the matching rendering
 package, extraction still produces the layout and a note says page rendering was not completed. The
 Visio backend extracts on every platform through a managed backend and additionally rasterizes

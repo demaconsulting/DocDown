@@ -1,5 +1,5 @@
 ---
-# System-Level Platform Requirements for DocDown.Pdf.Rendering
+# System-Level Platform Requirements for DemaConsulting.DocDown.Pdf.Rendering
 #
 # These requirements specify the platforms and frameworks the package must support.
 # CanvasNet.Pdf is fully managed and carries no runtime-identifier-specific asset, so the

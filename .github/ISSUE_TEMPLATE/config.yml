@@ -3,7 +3,7 @@ blank_issues_enabled: false
 contact_links:
   - name: 📚 Documentation
     url: https://github.com/demaconsulting/DocDown
-    about: Read the documentation for DocDown.Core
+    about: Read the documentation for DemaConsulting.DocDown.Core
   - name: 💬 Discussions
     url: https://github.com/demaconsulting/DocDown/discussions
     about: Ask questions and discuss with the community

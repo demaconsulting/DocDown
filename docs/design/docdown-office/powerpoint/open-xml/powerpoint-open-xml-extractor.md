@@ -1,6 +1,6 @@
 ### PowerPointOpenXmlExtractor
 
-![DocDown.PowerPoint Structure](PowerPointView.svg)
+![DemaConsulting.DocDown.PowerPoint Structure](PowerPointView.svg)
 
 ### Purpose
 
@@ -63,7 +63,7 @@ rule: a case reports every fault as a failed result rather than throwing.
 
 ### Dependencies
 
-- **DocDown.Core** — `IDocumentExtractor`, `ISelfValidating`, `IExtractionSink`,
+- **DemaConsulting.DocDown.Core** — `IDocumentExtractor`, `ISelfValidating`, `IExtractionSink`,
   `IExtractionContext`, `DocumentSource`, `ExtractionOptions`, `ExtractorAvailability`,
   `ExtractionOutcome`, `SelfTestCase`, `SelfTestResult`, `DocumentFormat`, and `EnvironmentFact`.
 - **DocumentFormat.OpenXml** (OTS) — the managed reader this backend is built on.

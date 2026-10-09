@@ -1,4 +1,4 @@
-namespace DocDown.Word.OpenXml;
+namespace DemaConsulting.DocDown.Word.OpenXml;
 
 /// <summary>
 /// Open XML extraction for <c>.docx</c>. Reads the document body, styles, real table grids,

@@ -1,6 +1,6 @@
 ## PdfDocumentExtractor
 
-![DocDown.Pdf Structure](DocDownPdfView.svg)
+![DemaConsulting.DocDown.Pdf Structure](DocDownPdfView.svg)
 
 ### Purpose
 
@@ -83,7 +83,7 @@ The self-test cases are the exception to the throw-through rule. Each case conve
 - **PdfImageExtractor**, **PdfTextExtractor**, and **PdfAnnotationExtractor** - the delegated unit
   work.
 - **PdfPig** (OTS) - document opening, page access, and the PDF document-information dictionary.
-- **DocDown.Core** - `IDocumentExtractor`, `ISelfValidating`, `IExtractionContext`,
+- **DemaConsulting.DocDown.Core** - `IDocumentExtractor`, `ISelfValidating`, `IExtractionContext`,
   `IExtractionSink`, `DocumentInfo`, `DocumentMetadata`, `ContentFeature`, `DocumentComment`, and
   `PageRange`.
 

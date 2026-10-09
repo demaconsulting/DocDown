@@ -1,6 +1,6 @@
 ## VisioComAvailability
 
-![DocDown.Visio Structure](VisioView.svg)
+![DemaConsulting.DocDown.Visio Structure](VisioView.svg)
 
 ### Purpose
 
@@ -32,7 +32,7 @@ instruction.
 
 ### Dependencies
 
-- **DocDown.Core** — `ExtractorAvailability`.
+- **DemaConsulting.DocDown.Core** — `ExtractorAvailability`.
 - **System.Runtime.InteropServices** / **System.Runtime.Versioning** — the OS description and the
   Windows-only guard on the registry read.
 

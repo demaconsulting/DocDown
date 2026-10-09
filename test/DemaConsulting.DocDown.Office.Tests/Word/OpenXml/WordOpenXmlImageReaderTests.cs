@@ -1,7 +1,7 @@
+using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.Office.Tests.Word.TestData;
-using DocDown.Core;
-using DocDown.Word.Markdown;
-using DocDown.Word.OpenXml;
+using DemaConsulting.DocDown.Word.Markdown;
+using DemaConsulting.DocDown.Word.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 
 namespace DemaConsulting.DocDown.Office.Tests.Word.OpenXml;

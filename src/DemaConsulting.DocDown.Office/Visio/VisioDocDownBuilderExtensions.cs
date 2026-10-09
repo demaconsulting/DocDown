@@ -1,8 +1,8 @@
-using DocDown.Core;
-using DocDown.Visio.Com;
-using DocDown.Visio.OpenXml;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Visio.Com;
+using DemaConsulting.DocDown.Visio.OpenXml;
 
-namespace DocDown.Visio;
+namespace DemaConsulting.DocDown.Visio;
 
 /// <summary>
 ///     The registration seam that adds Visio extraction to a <see cref="DocDownBuilder"/>.
@@ -43,8 +43,8 @@ public static class VisioDocDownBuilderExtensions
     /// <example>
     ///     <code language="csharp">
     ///     using System;
-    ///     using DocDown.Core;
-    ///     using DocDown.Visio;
+    ///     using DemaConsulting.DocDown.Core;
+    ///     using DemaConsulting.DocDown.Visio;
     ///
     ///     var engine = new DocDownBuilder()
     ///         .AddVisio() // .vsdx, .vsdm - shape text and connections; page images need Visio

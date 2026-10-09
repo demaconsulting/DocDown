@@ -1,6 +1,6 @@
 ## VisioOpenXmlExtractor
 
-![DocDown.Visio Structure](VisioView.svg)
+![DemaConsulting.DocDown.Visio Structure](VisioView.svg)
 
 ### Purpose
 
@@ -45,7 +45,7 @@ throwing at its caller.
 
 ### Dependencies
 
-- **DocDown.Core** — the extractor and self-validation contracts, sink, options,
+- **DemaConsulting.DocDown.Core** — the extractor and self-validation contracts, sink, options,
   `DocumentSource`, `EnvironmentFact`, and outcome and self-test types.
 - **VisioPackageReader** — reads the drawing into the model.
 - **VisioContentEmitter** — emits the model through the sink.

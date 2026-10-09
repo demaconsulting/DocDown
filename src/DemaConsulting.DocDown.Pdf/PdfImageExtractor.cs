@@ -1,9 +1,9 @@
 using System.Globalization;
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Tokens;
 
-namespace DocDown.Pdf;
+namespace DemaConsulting.DocDown.Pdf;
 
 /// <summary>
 ///     Extracts the embedded images of a PDF through the sink, choosing an encoding per image and

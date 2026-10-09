@@ -1,6 +1,6 @@
 using System.Reflection;
-using DocDown.Core;
-using DocDown.Pdf;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Pdf;
 
 namespace DemaConsulting.DocDown.Pdf.Tests;
 

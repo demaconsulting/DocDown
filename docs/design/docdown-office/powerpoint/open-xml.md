@@ -1,6 +1,6 @@
 ## OpenXml Subsystem
 
-![DocDown.PowerPoint Structure](PowerPointView.svg)
+![DemaConsulting.DocDown.PowerPoint Structure](PowerPointView.svg)
 
 ### Overview
 

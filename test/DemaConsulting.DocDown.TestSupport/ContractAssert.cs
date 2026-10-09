@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.Json;
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
 namespace DemaConsulting.DocDown.TestSupport;
 

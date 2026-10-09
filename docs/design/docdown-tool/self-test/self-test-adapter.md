@@ -1,6 +1,6 @@
 ### SelfTestAdapter
 
-![DocDown.Tool Structure](DocDownToolView.svg)
+![DemaConsulting.DocDown.Tool Structure](DocDownToolView.svg)
 
 #### Purpose
 
@@ -34,7 +34,7 @@ is no I/O and no other failure mode.
 
 #### Dependencies
 
-- **DocDown.Core** — `SelfTestCase`, `SelfTestResult`, and `SelfTestStatus`.
+- **DemaConsulting.DocDown.Core** — `SelfTestCase`, `SelfTestResult`, and `SelfTestStatus`.
 - **DemaConsulting.TestResults** — `TestResult` and `TestOutcome`.
 
 #### Callers

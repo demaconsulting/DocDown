@@ -1,11 +1,11 @@
-# DocDown.Office Verification Design
+# DemaConsulting.DocDown.Office Verification Design
 
-This document describes the system-level verification strategy for `DocDown.Office`, the Microsoft
+This document describes the system-level verification strategy for `DemaConsulting.DocDown.Office`, the Microsoft
 Office extraction package.
 
 ## Verification Approach
 
-`DocDown.Office` is verified through the per-format system tests described in the Word, Excel,
+`DemaConsulting.DocDown.Office` is verified through the per-format system tests described in the Word, Excel,
 PowerPoint, and Visio subsystem verification documents, plus the system-level tests in
 `DemaConsulting.DocDown.Office.Tests`, running on xUnit v3 across net8.0, net9.0, and net10.0.
 

@@ -4,9 +4,9 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using DocDown.Visio.OpenXml;
+using DemaConsulting.DocDown.Visio.OpenXml;
 
-namespace DocDown.Visio.Com;
+namespace DemaConsulting.DocDown.Visio.Com;
 
 /// <summary>
 ///     The mechanical late-bound COM plumbing the Visio automation adapter is built on: IDispatch

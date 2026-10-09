@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     The public facade that orchestrates one extraction end to end: scratch preparation, source
@@ -92,8 +92,8 @@ public sealed class DocDownEngine
     ///     <code language="csharp">
     ///     using System;
     ///     using System.Threading;
-    ///     using DocDown.Core;
-    ///     using DocDown.Pdf;
+    ///     using DemaConsulting.DocDown.Core;
+    ///     using DemaConsulting.DocDown.Pdf;
     ///
     ///     var engine = new DocDownBuilder()
     ///         .AddPdf() // .pdf - text, embedded images, metadata

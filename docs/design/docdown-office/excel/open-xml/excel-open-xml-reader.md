@@ -1,6 +1,6 @@
 ## ExcelOpenXmlReader
 
-![DocDown.Excel Structure](ExcelView.svg)
+![DemaConsulting.DocDown.Excel Structure](ExcelView.svg)
 
 ### Purpose
 
@@ -88,7 +88,7 @@ rejected with `ArgumentNullException`.
 
 ### Dependencies
 
-- **DocDown.Core** — `DocumentMetadata` and the OPC metadata mapping helpers.
+- **DemaConsulting.DocDown.Core** — `DocumentMetadata` and the OPC metadata mapping helpers.
 - **DocumentFormat.OpenXml** (OTS) — `SpreadsheetDocument`, the spreadsheet element types, and the package
   parts.
 - **ExcelOpenXmlImageReader**, **ExcelChartReader**, **ExcelDrawingTextReader** — the three focused

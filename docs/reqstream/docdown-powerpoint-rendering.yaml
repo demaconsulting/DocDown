@@ -1,5 +1,5 @@
 ---
-# Software System Requirements for DocDown.PowerPoint.Rendering
+# Software System Requirements for DemaConsulting.DocDown.PowerPoint.Rendering
 #
 # These requirements describe the externally visible behavior of the optional PowerPoint
 # slide-rendering package from the perspective of a host that registers it, without

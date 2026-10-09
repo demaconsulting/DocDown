@@ -1,7 +1,7 @@
-# Contributing to DocDown.Core
+# Contributing to DemaConsulting.DocDown.Core
 
-Thank you for your interest in contributing to DocDown.Core! We welcome contributions from the community and
-appreciate your help in making this project better.
+Thank you for your interest in contributing to DemaConsulting.DocDown.Core! We welcome
+contributions from the community and appreciate your help in making this project better.
 
 ## Code of Conduct
 
@@ -18,7 +18,7 @@ If you find a bug, please create an issue on GitHub with the following informati
 - **Steps to Reproduce**: Detailed steps to reproduce the issue
 - **Expected Behavior**: What you expected to happen
 - **Actual Behavior**: What actually happened
-- **Environment**: Operating system, .NET version, DocDown.Core version
+- **Environment**: Operating system, .NET version, DemaConsulting.DocDown.Core version
 - **Logs**: Any relevant error messages or logs
 
 ### Suggesting Features
@@ -56,8 +56,8 @@ We follow a standard GitHub workflow for contributions:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/demaconsulting/DocDown.git
-   cd DocDown.Core
+   git clone https://github.com/demaconsulting/DemaConsulting.DocDown.git
+   cd DemaConsulting.DocDown.Core
    ```
 
 2. Restore dependencies:
@@ -260,7 +260,7 @@ When creating a pull request, include:
 
 ## Requirements Management
 
-DocDown.Core uses [DemaConsulting.ReqStream][reqstream] for requirements traceability:
+DemaConsulting.DocDown.Core uses [DemaConsulting.ReqStream][reqstream] for requirements traceability:
 
 - All requirements are defined in `requirements.yaml`
 - Each requirement should be linked to test cases
@@ -285,9 +285,9 @@ Releases are managed by project maintainers. The process includes:
 
 ## License
 
-By contributing to DocDown.Core, you agree that your contributions will be licensed under the MIT License.
+By contributing to DemaConsulting.DocDown.Core, you agree that your contributions will be licensed under the MIT License.
 
-Thank you for contributing to DocDown.Core!
+Thank you for contributing to DemaConsulting.DocDown.Core!
 
 [code-of-conduct]: https://github.com/demaconsulting/DocDown/blob/main/CODE_OF_CONDUCT.md
 [dotnet-download]: https://dotnet.microsoft.com/download

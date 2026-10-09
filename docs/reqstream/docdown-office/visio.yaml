@@ -1,10 +1,10 @@
 ---
-# Software System Requirements for DocDown.Visio
+# Software System Requirements for DemaConsulting.DocDown.Visio
 #
 # These requirements describe the externally visible behavior of the Visio extraction package
 # from the perspective of a host that registers it, without specifying implementation details.
 # Each decomposes into subsystem and unit requirements linked below via children, and is proven
-# by the Visio test suite. DocDown.Visio has three subsystems (Com, Markdown, OpenXml) and one
+# by the Visio test suite. DemaConsulting.DocDown.Visio has three subsystems (Com, Markdown, OpenXml) and one
 # direct unit (VisioDocDownBuilderExtensions).
 #
 # A Visio drawing is an engineering schematic, so these requirements are traced forward from the

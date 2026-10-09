@@ -8,8 +8,8 @@ house library for exactly this task — every other DEMA tool emits its self-val
 it — and because it is a lightweight, fully managed, MIT-licensed package with no transitive runtime
 dependencies, so it adds nothing to the tool's dependency graph beyond itself.
 
-It is the one runtime OTS dependency of `DocDown.Tool`, and it is referenced by no other package:
-`DocDown.Core` and `DocDown.Pdf` are free of it, which is what preserves Core's zero-runtime-NuGet
+It is the one runtime OTS dependency of `DemaConsulting.DocDown.Tool`, and it is referenced by no other package:
+`DemaConsulting.DocDown.Core` and `DemaConsulting.DocDown.Pdf` are free of it, which is what preserves Core's zero-runtime-NuGet
 -dependency posture. MIT is compatible with this repository's MIT license.
 
 ### Features Used
@@ -29,7 +29,7 @@ emitted file and confirm it is well-formed; the tool itself only serializes.
 
 ### Integration Pattern
 
-`DemaConsulting.TestResults` is referenced as a real runtime dependency of the `DocDown.Tool` package
+`DemaConsulting.TestResults` is referenced as a real runtime dependency of the `DemaConsulting.DocDown.Tool` package
 and would flow to a consumer that referenced the tool as a library — but the tool is a distributed
 executable, not a library others build on, so in practice the dependency stays inside the tool.
 Its usage is a stateless build-and-serialize sequence per `--validate` run: the `SelfTestAdapter`

@@ -1,5 +1,5 @@
 using System.IO.Packaging;
-using DocDown.Visio.OpenXml;
+using DemaConsulting.DocDown.Visio.OpenXml;
 
 namespace DemaConsulting.DocDown.Office.Tests.Visio.OpenXml;
 

@@ -1,6 +1,6 @@
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
-namespace DocDown.Office.Com;
+namespace DemaConsulting.DocDown.Office.Com;
 
 /// <summary>
 ///     A private <see cref="IExtractionContext"/> that reuses an outer context but substitutes a

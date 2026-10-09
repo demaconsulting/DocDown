@@ -1,10 +1,10 @@
 ## VisioContentEmitter
 
-![DocDown.Visio Structure](VisioView.svg)
+![DemaConsulting.DocDown.Visio Structure](VisioView.svg)
 
 ### Purpose
 
-`VisioContentEmitter` is the single emission path of `DocDown.Visio`. Its single responsibility is
+`VisioContentEmitter` is the single emission path of `DemaConsulting.DocDown.Visio`. Its single responsibility is
 to turn a read `VisioDocumentModel` into per-page content, looked-for content inventory, image
 links, document info, metadata, and plain notes, all written through the sink. The topology is the
 engineering content, so the emitter centers the output on readable directed connections.
@@ -44,7 +44,7 @@ extraction.
 
 ### Dependencies
 
-- **DocDown.Core** — the sink, options, content-part types, `DocumentInfo`, `ContentFeature`,
+- **DemaConsulting.DocDown.Core** — the sink, options, content-part types, `DocumentInfo`, `ContentFeature`,
   `EmbeddedImageWriter`, and `ExtractionNote`.
 - **VisioDocumentModel** — the model it projects.
 - **VisioShapeLabeler** — the endpoint-label decision and published convention.

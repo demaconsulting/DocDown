@@ -2,7 +2,7 @@
 # CanvasNet.Pptx OTS Software Requirements
 #
 # Requirements for the CanvasNet.Pptx managed PowerPoint rasterization API that
-# DocDown.PowerPoint.Rendering is built on. Like CanvasNet.Pdf, CanvasNet.Pptx is a runtime
+# DemaConsulting.DocDown.PowerPoint.Rendering is built on. Like CanvasNet.Pdf, CanvasNet.Pptx is a runtime
 # library shipped to consumers rather than a build-time tool, so its evidence comes from the
 # rendering tests that exercise it transitively - the exact tests are named here rather than
 # claimed broadly.
@@ -17,7 +17,7 @@ sections:
               CanvasNet.Pptx shall rasterize a PowerPoint slide to an in-memory surface at a
               requested DPI through a fully managed API.
             justification: |
-              DocDown.PowerPoint.Rendering's rendered-pages capability is delivered entirely through
+              DemaConsulting.DocDown.PowerPoint.Rendering's rendered-pages capability is delivered entirely through
               CanvasNet.Pptx's managed `PptxDocument.Open`/`SlideCount`/`Render` surface, with no
               native asset anywhere in its dependency graph. The capability is only as truthful as
               CanvasNet.Pptx's ability to turn a slide and a DPI into pixel data.

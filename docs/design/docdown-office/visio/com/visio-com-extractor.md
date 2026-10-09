@@ -1,6 +1,6 @@
 ## VisioComExtractor
 
-![DocDown.Visio Structure](VisioView.svg)
+![DemaConsulting.DocDown.Visio Structure](VisioView.svg)
 
 ### Purpose
 
@@ -70,7 +70,7 @@ availability probe has already excluded. Cancellation is observed between pages.
 
 ### Dependencies
 
-- **DocDown.Core** — the extractor and self-validation contracts, sink, options,
+- **DemaConsulting.DocDown.Core** — the extractor and self-validation contracts, sink, options,
   `DocumentSource`, `EnvironmentFact`, `ExtractionNote`, and outcome types.
 - **VisioOpenXmlExtractor** — the delegated managed content extraction.
 - **`IVisioAutomation` / `VisioAutomation`** — the rendering seam and its real adapter.

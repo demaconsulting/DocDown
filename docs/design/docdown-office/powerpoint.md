@@ -1,11 +1,11 @@
-# DocDown.PowerPoint System Design
+# DemaConsulting.DocDown.PowerPoint System Design
 
-![DocDown.PowerPoint Structure](PowerPointView.svg)
+![DemaConsulting.DocDown.PowerPoint Structure](PowerPointView.svg)
 
-`DocDown.PowerPoint` is the PowerPoint extraction system for the DocDown output contract. It reads a
+`DemaConsulting.DocDown.PowerPoint` is the PowerPoint extraction system for the DocDown output contract. It reads a
 modern `.pptx` deck's slide text, slide titles, speaker notes, slide order, embedded images, and deck
 metadata from the file itself. Rendered slide images are a separate, opt-in concern provided by the
-`DocDown.PowerPoint.Rendering` package; this system's own backend always states that it provides no
+`DemaConsulting.DocDown.PowerPoint.Rendering` package; this system's own backend always states that it provides no
 rendered pages. Reporting follows one rule throughout the system: DocDown reports what it extracted
 and where it wrote it. The content inventory states what was looked for, including counted zeros, and
 a short plain note is used only when DocDown attempted a step and could not complete it. Legacy
@@ -51,8 +51,8 @@ The constraints each interface carries are:
 
 ## Dependencies
 
-- **DocDown.Core** — the extraction contract, sink, output layout, content inventory, environment
-  facts, plain notes, and the `Produced` and `Unreadable` outcomes. See the *DocDown.Core System
+- **DemaConsulting.DocDown.Core** — the extraction contract, sink, output layout, content inventory, environment
+  facts, plain notes, and the `Produced` and `Unreadable` outcomes. See the *DemaConsulting.DocDown.Core System
   Design*.
 - **DocumentFormat.OpenXml** (OTS) — the managed Open XML SDK used to read `.pptx` packages. See the
   *DocumentFormat.OpenXml* OTS design; its correctness reaches this package through the PowerPoint
@@ -113,7 +113,7 @@ native renderer and no native interop assembly.
 - **The managed backend is fully managed.** This is what makes the guaranteed content path deployable
   anywhere the .NET runtime is available. It can read `.pptx` content everywhere but it does not render
   slide pages itself; rendered slide images are a separate, opt-in concern provided by the
-  `DocDown.PowerPoint.Rendering` package.
+  `DemaConsulting.DocDown.PowerPoint.Rendering` package.
 - **The whole deck is buffered into memory.** A stream source is not guaranteed seekable, and the SDK
   package reader must seek, so the backend buffers the document before opening it.
 - **Legacy binary `.ppt` is detected but not extracted.** The system gives a plain `Unreadable`

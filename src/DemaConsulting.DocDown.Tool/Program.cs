@@ -1,13 +1,13 @@
 using System.Reflection;
-using DocDown.Core;
-using DocDown.Office;
-using DocDown.Pdf;
-using DocDown.Pdf.Rendering;
-using DocDown.PowerPoint.Rendering;
-using DocDown.Tool.Cli;
-using DocDown.Tool.SelfTest;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Office;
+using DemaConsulting.DocDown.Pdf;
+using DemaConsulting.DocDown.Pdf.Rendering;
+using DemaConsulting.DocDown.PowerPoint.Rendering;
+using DemaConsulting.DocDown.Tool.Cli;
+using DemaConsulting.DocDown.Tool.SelfTest;
 
-namespace DocDown.Tool;
+namespace DemaConsulting.DocDown.Tool;
 
 /// <summary>
 ///     Entry point for the <c>docdown</c> command-line tool: priority-ordered dispatch, the banner

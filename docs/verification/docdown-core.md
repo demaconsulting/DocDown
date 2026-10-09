@@ -1,10 +1,10 @@
 # System Verification Design
 
-This document describes the system-level verification strategy for DocDown.Core.
+This document describes the system-level verification strategy for DemaConsulting.DocDown.Core.
 
 ## Verification Approach
 
-DocDown.Core is verified through end-to-end tests in `DocDownCoreTests.cs`, driven through the public
+DemaConsulting.DocDown.Core is verified through end-to-end tests in `DocDownCoreTests.cs`, driven through the public
 `DocDownEngine` with stub extractors from `DemaConsulting.DocDown.TestSupport`. Core ships no real
 format-specific backend of its own, so the stubs are the correct system-level seam: the engine,
 selection logic, and output writers all run for real while the tests control exactly what the backend

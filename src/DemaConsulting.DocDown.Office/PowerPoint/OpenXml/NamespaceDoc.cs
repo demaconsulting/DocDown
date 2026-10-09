@@ -1,4 +1,4 @@
-namespace DocDown.PowerPoint.OpenXml;
+namespace DemaConsulting.DocDown.PowerPoint.OpenXml;
 
 /// <summary>
 /// Open XML extraction for <c>.pptx</c>. Reads every slide's text, title and speaker notes in

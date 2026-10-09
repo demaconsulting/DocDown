@@ -1,6 +1,6 @@
 using System.Text;
+using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
 
 namespace DemaConsulting.DocDown.Core.Tests.Output;
 
@@ -228,12 +228,12 @@ public class SummaryWriterGoldenTests
             "test-rid",
             includeRenderer
                 ? [
-                    new EnvironmentFact("DocDown.Pdf", "pdf.parser", "PdfPig (managed)", true),
-                    new EnvironmentFact("DocDown.Pdf.Rendering", "pages.renderer", "CanvasNet.Pdf (managed)", true)
+                    new EnvironmentFact("DemaConsulting.DocDown.Pdf", "pdf.parser", "PdfPig (managed)", true),
+                    new EnvironmentFact("DemaConsulting.DocDown.Pdf.Rendering", "pages.renderer", "CanvasNet.Pdf (managed)", true)
                 ]
                 : [
-                    new EnvironmentFact("DocDown.Pdf", "pdf.parser", "PdfPig (managed)", true),
-                    new EnvironmentFact("DocDown.Pdf", "pdf.pageRendering", "not provided by this extractor", false)
+                    new EnvironmentFact("DemaConsulting.DocDown.Pdf", "pdf.parser", "PdfPig (managed)", true),
+                    new EnvironmentFact("DemaConsulting.DocDown.Pdf", "pdf.pageRendering", "not provided by this extractor", false)
                 ]);
 
     /// <summary>

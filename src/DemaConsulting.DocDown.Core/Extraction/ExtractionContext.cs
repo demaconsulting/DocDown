@@ -1,4 +1,4 @@
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     The concrete, immutable implementation of <see cref="IExtractionContext"/> that Core

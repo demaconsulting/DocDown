@@ -1,6 +1,6 @@
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
-namespace DocDown.Office.Com;
+namespace DemaConsulting.DocDown.Office.Com;
 
 /// <summary>
 ///     An <see cref="IExtractionSink"/> wrapper that composes the delegated managed backend's output
