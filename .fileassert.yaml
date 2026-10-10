@@ -430,3 +430,23 @@ tests:
               max: 0
             - pattern: "lib/**/*.dll"
               min: 1
+
+  - name: DocDownVisioRendering_Package_ContainsNoNativeAssets
+    description: "The Visio rendering package is fully managed and runtime-identifier agnostic"
+    tags: [packages]
+    files:
+      # DemaConsulting.DocDown.Visio.Rendering ships no native asset: it depends on CanvasNet.Vsdx
+      # and CanvasNet, both fully managed libraries with no native binaries. This mirrors the
+      # equivalent PowerPoint.Rendering assertion above.
+      - pattern: "packages/DemaConsulting.DocDown.Visio.Rendering.*.nupkg"
+        count: 1
+        zip:
+          files:
+            - pattern: "runtimes/**"
+              max: 0
+            - pattern: "**/*.so"
+              max: 0
+            - pattern: "**/*.dylib"
+              max: 0
+            - pattern: "lib/**/*.dll"
+              min: 1
