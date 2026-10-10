@@ -22,7 +22,7 @@ real, so the self-test union the driver runs is exactly the one the shipped tool
   managed engine still produces every case shape the accounting must handle: a passing round trip,
   an always-skipped page-rendering case, and a native-stack render.
 - **Isolation**: each test owns its captured log and results file, and starts no application, so
-  these tests create no contention and run fully in parallel
+  these tests share no state and run fully in parallel
 
 ### Acceptance Criteria
 

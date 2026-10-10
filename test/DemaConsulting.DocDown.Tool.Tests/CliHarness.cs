@@ -54,11 +54,9 @@ internal static class CliHarness
     /// <param name="args">The command-line arguments, which must include <c>--validate</c>.</param>
     /// <returns>The proposed exit code and the captured log content.</returns>
     /// <remarks>
-    ///     <c>--validate</c> drives every registered backend's self-test cases, including the Visio
-    ///     COM render, and Office automation is single-instance. Nothing here guards against a
-    ///     concurrent run, because nothing in the suite runs concurrently: parallelism is off in
-    ///     <c>test/xunit.runner.json</c>, and <c>build.ps1</c> runs the target frameworks and the
-    ///     test projects one at a time. Each render therefore simply runs and passes.
+    ///     <c>--validate</c> drives every registered backend's self-test cases, including the managed
+    ///     page renders. Every backend is fully managed, so no render depends on a single-instance
+    ///     application and runs may overlap freely.
     /// </remarks>
     public static (int ExitCode, string Log) RunValidation(params string[] args) => Run(args);
     /// <summary>
@@ -71,8 +69,7 @@ internal static class CliHarness
     ///     Lets a unit test of the <c>Validation</c> unit choose its own engine, which is the point:
     ///     the header, the results-file writing, the pass/skip/fail accounting and the exit code are
     ///     properties of the unit, not of which backends happen to be registered. Driving them over a
-    ///     small managed engine proves them without launching Microsoft Office, so these tests create
-    ///     no contention at all and need no gate.
+    ///     small managed engine proves them without launching any backend's rendering stack.
     /// </remarks>
     public static (int ExitCode, string Log) RunSelfValidation(DocDownEngine engine, params string[] args)
     {
