@@ -3,12 +3,15 @@
   <!--
     Repository-wide build settings.
 
-    The test suite drives Microsoft PowerPoint and Microsoft Visio over COM to render
-    slides and pages. Those applications are single-instance, so two test processes
-    cannot render at the same time. `dotnet test` runs a multi-target project's target
-    frameworks in parallel unless told otherwise, which put three processes in
-    contention and made the COM render self-tests fail intermittently while they
-    queued rather than while they rendered.
+    The test suite drives Microsoft PowerPoint over COM to render slides.
+    PowerPoint is single-instance, so two test processes cannot render at the
+    same time. `dotnet test` runs a multi-target project's target frameworks
+    in parallel unless told otherwise, which put multiple processes in
+    contention and made the COM render self-tests fail intermittently while
+    they queued rather than while they rendered. Visio page rendering now
+    uses the fully managed CanvasNet.Vsdx library (no COM), so it does not
+    contribute to this contention, but the suite stays serialized because
+    PowerPoint COM still does.
 
     TestTfmsInParallel is the SDK's own control for this; see
     Microsoft.TestPlatform.CrossTargeting.targets, which resolves it as

@@ -8,8 +8,9 @@
     remembered. It disables collection parallelism and pins the runner to one thread, so exactly one
     test executes at a time within an assembly.
 
-    Why: the tool's self-validation drives Microsoft Visio and Microsoft PowerPoint through COM
-    automation, which is single-instance. Two tests rendering at once tear each other's session down.
+    Why: the tool's self-validation drives Microsoft PowerPoint through COM automation, which is
+    single-instance. Two tests rendering at once tear each other's session down. Visio page
+    rendering is fully managed (CanvasNet.Vsdx, no COM) and does not contribute to this contention.
     Serializing the suite is slower, and is the accepted cost of a trustworthy one: the product is
     not asked to tolerate contention that only the harness ever created.
 

@@ -27,8 +27,9 @@ Write-Host "Running unit tests..."
 # no longer overlap themselves. Those runs are separate processes, so no in-assembly setting can
 # reach them; test/xunit.runner.json covers the in-assembly axis by disabling collection
 # parallelism and pinning the runner to a single thread.
-# Why: the tool's self-validation drives Microsoft Visio and PowerPoint through COM automation,
-# which is single-instance, so two renders at once tear each other's session down. Serializing the
+# Why: the tool's self-validation drives Microsoft PowerPoint through COM automation, which is
+# single-instance, so two renders at once tear each other's session down. Visio page rendering is
+# fully managed (CanvasNet.Vsdx, no COM) and does not contribute to this contention. Serializing the
 # suite costs wall-clock time and is the accepted trade: the alternative was making a user-facing
 # diagnostic tolerate contention that only this harness ever created.
 dotnet test --configuration Release --report-trx --max-parallel-test-modules 1
