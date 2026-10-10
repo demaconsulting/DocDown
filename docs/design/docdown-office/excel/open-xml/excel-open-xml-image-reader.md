@@ -1,6 +1,6 @@
 ## ExcelOpenXmlImageReader
 
-![DocDown.Excel Structure](ExcelView.svg)
+![DemaConsulting.DocDown.Excel Structure](ExcelView.svg)
 
 ### Purpose
 
@@ -41,7 +41,7 @@ thence to Core as a structured failure.
 
 ### Dependencies
 
-- **DocDown.Core** — `EmbeddedImage`, `ImageTextCandidate`, `ImageTextSource`.
+- **DemaConsulting.DocDown.Core** — `EmbeddedImage`, `ImageTextCandidate`, `ImageTextSource`.
 - **DocumentFormat.OpenXml** (OTS) — the packaging and spreadsheet-drawing types.
 
 ### Callers

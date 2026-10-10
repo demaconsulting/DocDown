@@ -1,10 +1,10 @@
 ## Markdown Subsystem
 
-![DocDown.PowerPoint Structure](PowerPointView.svg)
+![DemaConsulting.DocDown.PowerPoint Structure](PowerPointView.svg)
 
 ### Overview
 
-The Markdown subsystem is the reader-neutral projection of `DocDown.PowerPoint`. It defines how the
+The Markdown subsystem is the reader-neutral projection of `DemaConsulting.DocDown.PowerPoint`. It defines how the
 backend-neutral `PowerPointDeckModel` becomes the output contract: the content emitter writes one
 section per slide carrying its title, body text, and speaker notes; writes the deck's embedded images
 through the sink; reports the content inventory; and records short plain notes when an attempted image

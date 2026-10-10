@@ -1,5 +1,5 @@
+using DemaConsulting.DocDown.PowerPoint.Rendering;
 using DemaConsulting.DocDown.PowerPoint.Rendering.Tests.TestData;
-using DocDown.PowerPoint.Rendering;
 
 namespace DemaConsulting.DocDown.PowerPoint.Rendering.Tests;
 

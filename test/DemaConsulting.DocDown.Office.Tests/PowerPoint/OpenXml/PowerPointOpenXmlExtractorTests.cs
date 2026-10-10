@@ -1,6 +1,6 @@
-using DocDown.Core;
-using DocDown.PowerPoint.OpenXml;
-using CoreFormat = DocDown.Core.DocumentFormat;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.PowerPoint.OpenXml;
+using CoreFormat = DemaConsulting.DocDown.Core.DocumentFormat;
 
 namespace DemaConsulting.DocDown.Office.Tests.PowerPoint.OpenXml;
 

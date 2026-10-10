@@ -1,4 +1,4 @@
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     The complete, immutable result of an extraction: its outcome, the paths it produced, the

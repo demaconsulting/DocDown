@@ -1,4 +1,4 @@
-namespace DocDown.Excel.Markdown;
+namespace DemaConsulting.DocDown.Excel.Markdown;
 
 /// <summary>
 /// The internal markdown emission for Excel extraction: turns a read workbook model into one

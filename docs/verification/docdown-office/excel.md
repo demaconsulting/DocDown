@@ -1,11 +1,11 @@
-# DocDown.Excel Verification Design
+# DemaConsulting.DocDown.Excel Verification Design
 
-This document describes the system-level verification strategy for `DocDown.Excel`, the Excel extraction
+This document describes the system-level verification strategy for `DemaConsulting.DocDown.Excel`, the Excel extraction
 package.
 
 ## Verification Approach
 
-`DocDown.Excel` is verified through system-level integration tests in `DocDownExcelTests.cs` and unit
+`DemaConsulting.DocDown.Excel` is verified through system-level integration tests in `DocDownExcelTests.cs` and unit
 tests per unit, all in `DemaConsulting.DocDown.Office.Tests`, running on xUnit v3 across net8.0,
 net9.0, and net10.0.
 

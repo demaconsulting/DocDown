@@ -1,6 +1,6 @@
 ### Validation
 
-![DocDown.Tool Structure](DocDownToolView.svg)
+![DemaConsulting.DocDown.Tool Structure](DocDownToolView.svg)
 
 #### Purpose
 
@@ -49,10 +49,10 @@ driving the exit code to 1.
   property in the header.
 - **Context** — constructed for each in-process check.
 - **SelfTestAdapter** — maps each engine self-test result into the results model.
-- **DocDown.Core** — the engine and the self-test types.
-- **DocDown.Pdf**, **DocDown.Pdf.Rendering**, **DocDown.Word**, **DocDown.Visio**,
-  **DocDown.PowerPoint**, and **DocDown.Excel** — the explicit backend registration chain the driver
-  validates.
+- **DemaConsulting.DocDown.Core** — the engine and the self-test types.
+- **DemaConsulting.DocDown.Pdf**, **DemaConsulting.DocDown.Pdf.Rendering**, **DemaConsulting.DocDown.Word**,
+  **DemaConsulting.DocDown.Visio**, **DemaConsulting.DocDown.PowerPoint**, and **DemaConsulting.DocDown.Excel** —
+  the explicit backend registration chain the driver validates.
 - **DemaConsulting.TestResults** — the results collection and the `TrxSerializer` and
   `JUnitSerializer`.
 

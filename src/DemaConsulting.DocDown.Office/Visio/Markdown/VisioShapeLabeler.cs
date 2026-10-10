@@ -1,7 +1,7 @@
 using System.Globalization;
-using DocDown.Visio.OpenXml;
+using DemaConsulting.DocDown.Visio.OpenXml;
 
-namespace DocDown.Visio.Markdown;
+namespace DemaConsulting.DocDown.Visio.Markdown;
 
 /// <summary>
 ///     Where a rendered endpoint label came from, so a reader can tell an authored name from a

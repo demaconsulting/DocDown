@@ -1,4 +1,4 @@
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     The root data-transfer object for <c>manifest.json</c>: the machine-readable twin of the

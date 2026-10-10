@@ -1,10 +1,10 @@
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using D = DocumentFormat.OpenXml.Drawing;
 using P = DocumentFormat.OpenXml.Presentation;
 
-namespace DocDown.PowerPoint.OpenXml;
+namespace DemaConsulting.DocDown.PowerPoint.OpenXml;
 
 /// <summary>
 ///     Resolves the embedded images of a presentation to their bytes and provenance, across every

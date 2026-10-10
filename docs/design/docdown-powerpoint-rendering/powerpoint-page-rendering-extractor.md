@@ -1,6 +1,6 @@
 ## PowerPointPageRenderingExtractor
 
-![DocDown.PowerPoint.Rendering Structure](DocDownPowerPointRenderingView.svg)
+![DemaConsulting.DocDown.PowerPoint.Rendering Structure](DocDownPowerPointRenderingView.svg)
 
 ### Purpose
 
@@ -71,8 +71,8 @@ not be rasterized.`, and the run continues. No render fault reaches the caller a
 
 ### Dependencies
 
-- **DocDown.Core** — the extractor contract, the sink, the options, and the self-test types.
-- **DocDown.Office** — `PowerPointOpenXmlExtractor`, delegated to for the managed aspects.
+- **DemaConsulting.DocDown.Core** — the extractor contract, the sink, the options, and the self-test types.
+- **DemaConsulting.DocDown.Office** — `PowerPointOpenXmlExtractor`, delegated to for the managed aspects.
 - **SlideRenderer** — the rasterization seam. See *SlideRenderer Design*.
 
 ### Callers

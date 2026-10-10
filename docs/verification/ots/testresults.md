@@ -7,11 +7,11 @@ for this OTS item are defined in the TestResults OTS Software Requirements docum
 
 `DemaConsulting.TestResults` must model a test-results collection and serialize it to TRX and JUnit,
 and it must represent a not-executed outcome that is distinct from a failure. Those are the only
-capabilities `DocDown.Tool` relies on from it.
+capabilities `DemaConsulting.DocDown.Tool` relies on from it.
 
 ### Verification Approach
 
-**TestResults is verified by transitive evidence from the `DocDown.Tool` `--validate` tests, and by
+**TestResults is verified by transitive evidence from the `DemaConsulting.DocDown.Tool` `--validate` tests, and by
 the `SelfTestAdapter` unit tests at the boundary.** This is stated explicitly because it is a
 deliberate choice rather than an omission. Per the software-items standard, a dedicated OTS test
 project is required only *if no other verification evidence is available*. That is not the case here:
@@ -44,7 +44,7 @@ collection with a `Name`, holding `TestResult` values that carry `Name`, `ClassN
 `ComputerName`, `Duration`, `Outcome`, and `ErrorMessage`, serialized to TRX and JUnit and re-parsed.
 They do **not** exercise the serializers' full schema surface, the deserialization of files produced
 by other tools, or any outcome value beyond `Passed`, `Failed`, and `NotExecuted`. No claim is made
-about those; only the paths `DocDown.Tool` drives on every `--validate` run are evidenced.
+about those; only the paths `DemaConsulting.DocDown.Tool` drives on every `--validate` run are evidenced.
 
 ### A not-executed result is not evidence — recorded plainly
 
@@ -67,7 +67,7 @@ in the user guide.
 
 ### Test Environment
 
-The evidence is produced by the standard `DocDown.Tool` test run: xUnit v3 under the .NET SDK,
+The evidence is produced by the standard `DemaConsulting.DocDown.Tool` test run: xUnit v3 under the .NET SDK,
 targeting net10.0, across the CI operating-system matrix. `TestResults` enters the dependency graph
 only through the tool, which is packaged for that single framework, so net10.0 is the full extent of
 this dependency's exercised surface rather than a narrowing of it. Every results file is

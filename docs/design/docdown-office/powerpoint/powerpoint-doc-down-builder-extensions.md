@@ -1,6 +1,6 @@
 ## PowerPointDocDownBuilderExtensions
 
-![DocDown.PowerPoint Structure](PowerPointView.svg)
+![DemaConsulting.DocDown.PowerPoint Structure](PowerPointView.svg)
 
 ### Purpose
 
@@ -31,7 +31,7 @@ later at build time against configuration the host wrote correctly.
 
 ### Dependencies
 
-- **DocDown.Core** — `DocDownBuilder` and its `AddExtractor` registration method.
+- **DemaConsulting.DocDown.Core** — `DocDownBuilder` and its `AddExtractor` registration method.
 - **PowerPointOpenXmlExtractor** — the managed backend the factory produces.
 
 The method body names the extractor type, but only inside the static factory lambda, so the SDK types it

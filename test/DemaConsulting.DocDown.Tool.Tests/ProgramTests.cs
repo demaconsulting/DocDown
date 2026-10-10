@@ -1,6 +1,6 @@
 using DemaConsulting.DocDown.TestSupport;
 using DemaConsulting.DocDown.Tool.Tests.TestData;
-using ToolProgram = DocDown.Tool.Program;
+using ToolProgram = DemaConsulting.DocDown.Tool.Program;
 
 namespace DemaConsulting.DocDown.Tool.Tests;
 

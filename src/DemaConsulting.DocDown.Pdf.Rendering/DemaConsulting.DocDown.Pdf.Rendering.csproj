@@ -19,7 +19,7 @@
     <PackageIcon>Icon.png</PackageIcon>
     <PackageTags>docdown;pdf;rendering;dotnet-library</PackageTags>
     <Copyright>Copyright DEMA Consulting</Copyright>
-    <Title>DocDown.Pdf.Rendering</Title>
+    <Title>DemaConsulting.DocDown.Pdf.Rendering</Title>
     <Product>DemaConsulting.DocDown.Pdf.Rendering</Product>
 
     <!-- This package rasterizes PDF pages through DemaConsulting.CanvasNet.Pdf, a fully-managed
@@ -72,17 +72,17 @@
     <!-- DemaConsulting.CanvasNet.Pdf is the fully-managed PDF page rasterizer this package is built
          on; DemaConsulting.CanvasNet supplies the Surface pixel buffer it rasterizes into and the
          PngCodec that encodes a Surface to PNG bytes. Both are pinned to an exact version for the
-         same reason DocDown.Pdf pins PdfPig: a floating reference to a prerelease (beta) package
+         same reason DemaConsulting.DocDown.Pdf pins PdfPig: a floating reference to a prerelease (beta) package
          could silently substitute an incompatible API. Unlike the PDFtoImage/PDFium/SkiaSharp stack
          this package previously depended on, CanvasNet and CanvasNet.Pdf carry no native asset for
          any runtime identifier — see docs/design/ots/canvasnet.md and
          docs/design/ots/canvasnetpdf.md for the rationale. Pinned to the same exact beta as
-         DocDown.PowerPoint.Rendering's CanvasNet/CanvasNet.Pptx/CanvasNet.Charts references: both
+         DemaConsulting.DocDown.PowerPoint.Rendering's CanvasNet/CanvasNet.Pptx/CanvasNet.Charts references: both
          rendering packages share the DemaConsulting.CanvasNet dependency, and two different exact
          pins for the same package would make DemaConsulting.DocDown.Tool (which references both
          rendering packages) unrestorable with an NU1107 version conflict. -->
-    <PackageReference Include="DemaConsulting.CanvasNet.Pdf" Version="[0.1.0-beta.10]" />
-    <PackageReference Include="DemaConsulting.CanvasNet" Version="[0.1.0-beta.10]" />
+    <PackageReference Include="DemaConsulting.CanvasNet.Pdf" Version="[0.1.0-beta.11]" />
+    <PackageReference Include="DemaConsulting.CanvasNet" Version="[0.1.0-beta.11]" />
   </ItemGroup>
 
   <!-- Build Tool Dependencies -->
@@ -118,7 +118,7 @@
 
   <!-- Project References -->
   <ItemGroup>
-    <!-- Core supplies the extractor contract and output sink. DocDown.Pdf supplies the managed
+    <!-- Core supplies the extractor contract and output sink. DemaConsulting.DocDown.Pdf supplies the managed
          text/embedded-image/metadata extractor this package delegates to with rendering suppressed,
          so the rendering backend is a full superset without re-implementing the managed path. -->
     <ProjectReference Include="..\DemaConsulting.DocDown.Core\DemaConsulting.DocDown.Core.csproj" />

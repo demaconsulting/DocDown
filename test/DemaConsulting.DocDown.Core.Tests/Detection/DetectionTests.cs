@@ -1,5 +1,5 @@
 using System.Text;
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
 namespace DemaConsulting.DocDown.Core.Tests.Detection;
 

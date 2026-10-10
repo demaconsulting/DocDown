@@ -21,7 +21,7 @@ Environment
   Operating system   : <operating-system>
   Runtime            : <runtime>
   Runtime identifier : <runtime-identifier>
-  DocDown.PowerPoint:
+  DemaConsulting.DocDown.PowerPoint:
     powerpoint.backend       : Open XML SDK (managed) (available)
     powerpoint.pageRendering : not provided by this extractor (NOT available)
     pages.renderer           : CanvasNet.Pptx (managed) (available)

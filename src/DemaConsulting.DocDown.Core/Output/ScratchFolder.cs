@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     Owns the absolute output directory for one extraction and is the single gate through which

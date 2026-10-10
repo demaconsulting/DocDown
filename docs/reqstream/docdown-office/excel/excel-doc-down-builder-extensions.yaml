@@ -3,7 +3,7 @@
 #
 # ExcelDocDownBuilderExtensions is the one visible edge from a host to this package: the explicit,
 # reflection-free call that adds the Excel backend to a DocDown builder. It is a direct unit of the
-# DocDown.Excel system.
+# DemaConsulting.DocDown.Excel system.
 
 sections:
   - title: DocDownExcel Requirements

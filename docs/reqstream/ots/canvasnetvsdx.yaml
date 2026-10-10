@@ -1,0 +1,37 @@
+---
+# CanvasNet.Vsdx OTS Software Requirements
+#
+# Requirements for the CanvasNet.Vsdx managed Visio rasterization API that
+# DemaConsulting.DocDown.Visio.Rendering is built on. Like CanvasNet.Pdf and CanvasNet.Pptx,
+# CanvasNet.Vsdx is a runtime library shipped to consumers rather than a build-time tool, so its
+# evidence comes from the rendering tests that exercise it transitively - the exact tests are
+# named here rather than claimed broadly. Unlike CanvasNet.Pptx, CanvasNet.Vsdx carries no
+# CanvasNet.Charts-equivalent dependency, since Visio drawings have no embedded chart content to
+# render; DemaConsulting.DocDown.Visio.Rendering references only CanvasNet.Vsdx and CanvasNet.
+# CanvasNet.Vsdx's DPI parameter is also a documented API deviation from CanvasNet.Pptx: it is an
+# `int`, not a `float`, and DemaConsulting.DocDown.Visio.Rendering passes it through unchanged
+# rather than casting it.
+
+sections:
+  - title: OTS Software Requirements
+    sections:
+      - title: CanvasNet.Vsdx Requirements
+        requirements:
+          - id: DocDown-OTS-CanvasNetVsdx
+            title: >-
+              CanvasNet.Vsdx shall rasterize a Visio page to an in-memory surface at a requested
+              integer DPI through a fully managed API.
+            justification: |
+              DemaConsulting.DocDown.Visio.Rendering's rendered-pages capability is delivered
+              entirely through CanvasNet.Vsdx's managed `VsdxDocument.Open`/`PageCount`/`Render`
+              surface, with no native asset anywhere in its dependency graph. The capability is
+              only as truthful as CanvasNet.Vsdx's ability to turn a page and a DPI into pixel
+              data. The `Render` overload accepts DPI as an `int`, not a `float` as
+              CanvasNet.Pptx does; this package passes that value through unchanged rather than
+              casting it, so this requirement states the API as it actually is, not as the
+              PowerPoint rendering package's analogous dependency behaves.
+            tags: [ots]
+            tests:
+              - PageRenderer_Render_SinglePage_ReturnsValidPng
+              - VisioPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePng
+              - DocDownVisioRendering_Render_ProbeDrawing_ProducesValidPngPages

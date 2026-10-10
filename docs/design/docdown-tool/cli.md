@@ -1,6 +1,6 @@
 ## Cli Subsystem
 
-![DocDown.Tool Structure](DocDownToolView.svg)
+![DemaConsulting.DocDown.Tool Structure](DocDownToolView.svg)
 
 The Cli subsystem owns the command line. It parses and validates the arguments, projects the
 extraction flags onto the engine's options, and routes every line the tool emits to the console and
@@ -41,7 +41,7 @@ flushing.
 
 ## Dependencies
 
-- **DocDown.Core** — `ExtractionOptions` and the option value types (`PageRange`,
+- **DemaConsulting.DocDown.Core** — `ExtractionOptions` and the option value types (`PageRange`,
   and `ScratchFolderMode`) the flags map onto.
 
 There are no other dependencies; the subsystem performs no extraction and constructs no engine.

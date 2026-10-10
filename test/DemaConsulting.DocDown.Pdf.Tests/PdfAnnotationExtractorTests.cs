@@ -1,6 +1,6 @@
+using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.Pdf.Tests.TestData;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
 
 namespace DemaConsulting.DocDown.Pdf.Tests;
 
@@ -308,7 +308,7 @@ public class PdfAnnotationExtractorTests
 
         // Act and assert: the mistake is refused at the boundary
         Assert.Throws<ArgumentNullException>(() =>
-            global::DocDown.Pdf.PdfAnnotationExtractor.Extract(null!, sink, Ct));
+            global::DemaConsulting.DocDown.Pdf.PdfAnnotationExtractor.Extract(null!, sink, Ct));
     }
 
     /// <summary>
@@ -319,7 +319,7 @@ public class PdfAnnotationExtractorTests
     {
         // Act and assert: the mistake is refused at the boundary
         Assert.Throws<ArgumentNullException>(() =>
-            global::DocDown.Pdf.PdfAnnotationExtractor.Extract([], null!, Ct));
+            global::DemaConsulting.DocDown.Pdf.PdfAnnotationExtractor.Extract([], null!, Ct));
     }
 
     /// <summary>
@@ -332,10 +332,10 @@ public class PdfAnnotationExtractorTests
     ///     Opens the fixture and calls the unit directly rather than running the engine, which keeps
     ///     these scenarios scoped to the inclusion decision instead of to the pipeline around it.
     /// </remarks>
-    private static IReadOnlyList<global::DocDown.Pdf.PdfReviewAnnotation> Extract(byte[] bytes, RecordingSink sink)
+    private static IReadOnlyList<global::DemaConsulting.DocDown.Pdf.PdfReviewAnnotation> Extract(byte[] bytes, RecordingSink sink)
     {
         using var document = PdfFixtures.Open(bytes);
         var pages = document.GetPages().ToList();
-        return global::DocDown.Pdf.PdfAnnotationExtractor.Extract(pages, sink, Ct);
+        return global::DemaConsulting.DocDown.Pdf.PdfAnnotationExtractor.Extract(pages, sink, Ct);
     }
 }

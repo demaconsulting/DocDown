@@ -5,7 +5,7 @@ this OTS item are defined in the PdfPig OTS Software Requirements document.
 
 ### Required Functionality
 
-PdfPig is the managed PDF parser `DocDown.Pdf` is built on. It must parse PDF documents without
+PdfPig is the managed PDF parser `DemaConsulting.DocDown.Pdf` is built on. It must parse PDF documents without
 native binaries, expose glyphs with the position information needed to recover reading order,
 enumerate embedded images with their stored bytes and encodings and convert the decodable ones,
 expose document information and page count, signal encrypted and structurally invalid documents
@@ -13,12 +13,12 @@ rather than returning corrupt content, and build documents suitable for use as t
 
 ### Verification Approach
 
-**PdfPig is verified by transitive evidence from the `DocDown.Pdf` test suite.** This is stated
+**PdfPig is verified by transitive evidence from the `DemaConsulting.DocDown.Pdf` test suite.** This is stated
 explicitly because it is a deliberate choice rather than an omission. Per the software-items
 standard, a dedicated OTS test project is required only *if no other verification evidence is
 available*. That is not the case here: unlike every other OTS item in this repository, PdfPig is not
 a build-time tool invoked once per pipeline whose correct operation must be inferred from the
-pipeline completing. It is a runtime library on the critical path of every `DocDown.Pdf` extraction,
+pipeline completing. It is a runtime library on the critical path of every `DemaConsulting.DocDown.Pdf` extraction,
 and the extraction and unit tests named in the scenarios below — those in `PdfDocumentExtractorTests`,
 `PdfTextExtractorTests`, `PdfImageExtractorTests`, and the `DocDownPdf_Extract_*` tests in
 `DocDownPdfTests` — each parse a real PDF end to end, on three target frameworks, in every CI matrix
@@ -40,7 +40,7 @@ A dedicated `test/OtsSoftwareTests/` project would therefore re-test, against sy
 same library paths the extraction suite already exercises against the documents this package actually
 has to handle — and it would do so at one remove from the behavior that matters, since what the
 repository needs to know is not that the parser works in isolation but that it delivers what
-`DocDown.Pdf` promises on top of it. The extraction suite answers that question directly. No such
+`DemaConsulting.DocDown.Pdf` promises on top of it. The extraction suite answers that question directly. No such
 project is created.
 
 The mapping from each required feature to the tests that evidence it is given below and is recorded
@@ -48,7 +48,7 @@ in the requirement links themselves, so a reader can follow either direction.
 
 ### Test Environment
 
-The evidence is produced by the standard `DocDown.Pdf` test run: xUnit v3 under the .NET SDK,
+The evidence is produced by the standard `DemaConsulting.DocDown.Pdf` test run: xUnit v3 under the .NET SDK,
 targeting net8.0, net9.0, and net10.0, across the CI operating-system matrix. Every fixture is a PDF
 generated at test time, so the evidence depends on no committed binary and no network access.
 

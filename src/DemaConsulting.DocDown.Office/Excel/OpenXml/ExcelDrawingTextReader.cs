@@ -3,7 +3,7 @@ using DocumentFormat.OpenXml.Packaging;
 using D = DocumentFormat.OpenXml.Drawing;
 using Xdr = DocumentFormat.OpenXml.Drawing.Spreadsheet;
 
-namespace DocDown.Excel.OpenXml;
+namespace DemaConsulting.DocDown.Excel.OpenXml;
 
 /// <summary>
 ///     Reads the text carried by the drawing shapes floating over a worksheet — callouts, labels, and

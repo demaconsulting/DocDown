@@ -1,7 +1,7 @@
-using DocDown.Core;
-using DocDown.Word.OpenXml;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Word.OpenXml;
 
-namespace DocDown.Word;
+namespace DemaConsulting.DocDown.Word;
 
 /// <summary>
 ///     The registration seam that adds Word extraction to a <see cref="DocDownBuilder"/>.
@@ -37,8 +37,8 @@ public static class WordDocDownBuilderExtensions
     /// <example>
     ///     <code language="csharp">
     ///     using System;
-    ///     using DocDown.Core;
-    ///     using DocDown.Word;
+    ///     using DemaConsulting.DocDown.Core;
+    ///     using DemaConsulting.DocDown.Word;
     ///
     ///     var engine = new DocDownBuilder()
     ///         .AddWord() // .docx - text, tables, images; no page images

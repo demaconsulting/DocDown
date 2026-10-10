@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     Chooses the best available text to describe an image from a set of candidates, and reports

@@ -1,11 +1,11 @@
 using System.Globalization;
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using S = DocumentFormat.OpenXml.Spreadsheet;
 using Tc = DocumentFormat.OpenXml.Office2019.Excel.ThreadedComments;
 
-namespace DocDown.Excel.OpenXml;
+namespace DemaConsulting.DocDown.Excel.OpenXml;
 
 /// <summary>
 ///     Reads a spreadsheet package into the backend-neutral <see cref="ExcelWorkbookModel"/>,

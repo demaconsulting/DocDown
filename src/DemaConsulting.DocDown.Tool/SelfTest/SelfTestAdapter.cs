@@ -1,7 +1,7 @@
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 using TestResultsModel = DemaConsulting.TestResults;
 
-namespace DocDown.Tool.SelfTest;
+namespace DemaConsulting.DocDown.Tool.SelfTest;
 
 /// <summary>
 ///     Adapts Core's dependency-free self-test records into the

@@ -1,11 +1,11 @@
 # Introduction
 
-This document contains the build notes for the DocDown.Core project.
+This document contains the build notes for the DemaConsulting.DocDown.Core project.
 
 ## Purpose
 
 This report serves as a comprehensive record of changes and bug fixes for this
-release of DocDown.Core. It provides transparency about what has changed since the
+release of DemaConsulting.DocDown.Core. It provides transparency about what has changed since the
 previous version and helps users understand the improvements and fixes included
 in this build.
 
@@ -27,7 +27,7 @@ changes and improvements included in this release.
 
 This document is intended for:
 
-- Software developers working on DocDown.Core
+- Software developers working on DemaConsulting.DocDown.Core
 - Users evaluating what has changed in this release
 - Project stakeholders tracking progress
 - Contributors understanding recent changes

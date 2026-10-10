@@ -1,0 +1,68 @@
+---
+# System-Level Platform Requirements for DemaConsulting.DocDown.Visio.Rendering
+#
+# These requirements specify the platforms and frameworks the package must support.
+# CanvasNet.Vsdx is fully managed and carries no runtime-identifier-specific asset, so the
+# platform evidence is the same end-to-end render test run on each operating system and
+# framework in the CI matrix, which produces a real PNG on every one of them.
+#
+# Test links can include a source filter prefix (e.g. "windows@", "ubuntu@", "net8.0@") to restrict
+# which test results count as evidence for a requirement. This is critical for platform and framework
+# requirements - removing these filters invalidates the evidence-based proof.
+
+sections:
+  - title: DocDownVisioRendering Requirements
+    requirements:
+      - id: DocDownVisioRendering-Platform-Windows
+        title: The package shall build and render pages on Windows platforms.
+        tags: [system]
+        justification: |
+          Windows is a major DEMA Consulting development platform, and CanvasNet.Vsdx must open a
+          document and rasterize a page there.
+        tests:
+          - "windows@DocDownVisioRendering_Render_ProbeDrawing_ProducesValidPngPages"
+
+      - id: DocDownVisioRendering-Platform-Linux
+        title: The package shall build and render pages on Linux platforms.
+        tags: [system]
+        justification: |
+          Linux is the primary CI/CD and container target, and CanvasNet.Vsdx must open a document
+          and rasterize a page there.
+        tests:
+          - "ubuntu@DocDownVisioRendering_Render_ProbeDrawing_ProducesValidPngPages"
+
+      - id: DocDownVisioRendering-Platform-MacOS
+        title: The package shall build and render pages on macOS platforms.
+        tags: [system]
+        justification: |
+          macOS support serves developers on Apple platforms, and CanvasNet.Vsdx must open a
+          document and rasterize a page there.
+        tests:
+          - "macos@DocDownVisioRendering_Render_ProbeDrawing_ProducesValidPngPages"
+
+      - id: DocDownVisioRendering-Platform-Net8
+        title: The package shall support the .NET 8 runtime.
+        tags: [system]
+        justification: |
+          .NET 8 is an LTS release, and CanvasNet.Vsdx ships a real net8.0 asset the package must
+          render on.
+        tests:
+          - "net8.0@DocDownVisioRendering_Render_ProbeDrawing_ProducesValidPngPages"
+
+      - id: DocDownVisioRendering-Platform-Net9
+        title: The package shall support the .NET 9 runtime.
+        tags: [system]
+        justification: |
+          .NET 9 support enables users to leverage the latest .NET features, and CanvasNet.Vsdx
+          ships a real net9.0 asset the package must render on.
+        tests:
+          - "net9.0@DocDownVisioRendering_Render_ProbeDrawing_ProducesValidPngPages"
+
+      - id: DocDownVisioRendering-Platform-Net10
+        title: The package shall support the .NET 10 runtime.
+        tags: [system]
+        justification: |
+          .NET 10 support keeps the package current, and CanvasNet.Vsdx ships a real net10.0 asset
+          the package must render on — matching this repository's target frameworks exactly.
+        tests:
+          - "net10.0@DocDownVisioRendering_Render_ProbeDrawing_ProducesValidPngPages"

@@ -1,4 +1,4 @@
-namespace DocDown.PowerPoint.Rendering;
+namespace DemaConsulting.DocDown.PowerPoint.Rendering;
 
 /// <summary>
 /// Optional PowerPoint slide rasterization. Registered with <c>AddPowerPointRendering</c>

@@ -1,11 +1,11 @@
-# DocDown.Pdf Verification Design
+# DemaConsulting.DocDown.Pdf Verification Design
 
-This document describes the system-level verification strategy for `DocDown.Pdf`, the managed PDF
+This document describes the system-level verification strategy for `DemaConsulting.DocDown.Pdf`, the managed PDF
 extraction package.
 
 ## Verification Approach
 
-`DocDown.Pdf` is verified through system-level integration tests in `DocDownPdfTests.cs` and unit
+`DemaConsulting.DocDown.Pdf` is verified through system-level integration tests in `DocDownPdfTests.cs` and unit
 tests per unit, all in `DemaConsulting.DocDown.Pdf.Tests`, running on xUnit v3 across net8.0,
 net9.0, and net10.0.
 
@@ -50,7 +50,7 @@ for the determinism scenario, where repeated runs are expected to be identical.
 
 ## Acceptance Criteria
 
-Per IEC 62304 Section 5.7.2, a system-level `DocDown.Pdf` test run passes when:
+Per IEC 62304 Section 5.7.2, a system-level `DemaConsulting.DocDown.Pdf` test run passes when:
 
 - Normal extractions return `ExtractionOutcome.Produced`, parser faults return
   `ExtractionOutcome.Unreadable`, and no unexpected exception reaches the caller.

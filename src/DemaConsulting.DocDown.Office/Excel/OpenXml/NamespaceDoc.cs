@@ -1,4 +1,4 @@
-namespace DocDown.Excel.OpenXml;
+namespace DemaConsulting.DocDown.Excel.OpenXml;
 
 /// <summary>
 /// Open XML extraction for <c>.xlsx</c>. Reads every worksheet's cell values verbatim at full

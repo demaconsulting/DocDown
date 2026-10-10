@@ -1,4 +1,4 @@
-namespace DocDown.Visio.Markdown;
+namespace DemaConsulting.DocDown.Visio.Markdown;
 
 /// <summary>
 /// The internal markdown emission for Visio extraction: turns a read drawing model into per-page

@@ -1,6 +1,6 @@
 ## SlideRenderer
 
-![DocDown.PowerPoint.Rendering Structure](DocDownPowerPointRenderingView.svg)
+![DemaConsulting.DocDown.PowerPoint.Rendering Structure](DocDownPowerPointRenderingView.svg)
 
 ### Purpose
 

@@ -20,7 +20,7 @@ Environment
   Operating system   : <operating-system>
   Runtime            : <runtime>
   Runtime identifier : <runtime-identifier>
-  DocDown.Pdf:
+  DemaConsulting.DocDown.Pdf:
     pdf.parser        : PdfPig (managed) (available)
     pdf.pageRendering : not provided by this extractor (NOT available)
 

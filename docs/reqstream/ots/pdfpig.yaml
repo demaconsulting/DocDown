@@ -1,9 +1,9 @@
 ---
 # PdfPig OTS Software Requirements
 #
-# Requirements for the PdfPig managed PDF parser, which DocDown.Pdf is built on.
+# Requirements for the PdfPig managed PDF parser, which DemaConsulting.DocDown.Pdf is built on.
 # Unlike this repository's other OTS items, PdfPig is a runtime library shipped to
-# consumers rather than a build-time tool, so its evidence comes from the DocDown.Pdf
+# consumers rather than a build-time tool, so its evidence comes from the DemaConsulting.DocDown.Pdf
 # extraction tests that exercise it transitively.
 
 sections:
@@ -14,7 +14,7 @@ sections:
           - id: DocDown-OTS-PdfPig
             title: PdfPig shall parse PDF documents.
             justification: |
-              This is the use DocDown.Pdf makes of PdfPig: it is the parser the package is built on,
+              This is the use DemaConsulting.DocDown.Pdf makes of PdfPig: it is the parser the package is built on,
               and every capability below is a facet of it. The package's managed-only deployment
               promise is stated where it belongs, as DocDownPdf-ManagedOnly, which is a requirement
               on this repository rather than a demand on a third party; that requirement names this

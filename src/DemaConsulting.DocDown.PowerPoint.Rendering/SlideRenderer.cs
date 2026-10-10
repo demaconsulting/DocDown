@@ -1,7 +1,7 @@
 using DemaConsulting.CanvasNet.Codecs;
 using DemaConsulting.CanvasNet.Pptx;
 
-namespace DocDown.PowerPoint.Rendering;
+namespace DemaConsulting.DocDown.PowerPoint.Rendering;
 
 /// <summary>
 ///     The single rasterization seam of this package: it rasterizes one PowerPoint slide to a PNG
@@ -18,8 +18,8 @@ namespace DocDown.PowerPoint.Rendering;
 ///         <strong>No process-wide lock guards these calls.</strong> CanvasNet.Pptx is a
 ///         fully-managed library with no shared mutable per-call state: each call opens and
 ///         disposes its own <see cref="PptxDocument"/> instance. This mirrors
-///         <c>DocDown.Pdf.Rendering</c>'s own <c>PageRenderer</c>, and the repo's established
-///         pattern for a fully-managed backend more generally (see <c>DocDown.Pdf</c>'s
+///         <c>DemaConsulting.DocDown.Pdf.Rendering</c>'s own <c>PageRenderer</c>, and the repo's established
+///         pattern for a fully-managed backend more generally (see <c>DemaConsulting.DocDown.Pdf</c>'s
 ///         <c>PdfDocumentExtractor.ProbeAvailability</c>, which is likewise unconditional and
 ///         lock-free). The one shared mutable state in the dependency graph —
 ///         <c>SystemFontCatalog</c>'s lazily-built system-font directory scan and its

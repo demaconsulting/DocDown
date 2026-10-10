@@ -1,4 +1,4 @@
-using DocDown.Pdf;
+using DemaConsulting.DocDown.Pdf;
 
 namespace DemaConsulting.DocDown.Pdf.Tests;
 

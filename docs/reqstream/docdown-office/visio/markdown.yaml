@@ -28,8 +28,8 @@ sections:
               emission decision in one path, driven only by the model, is what makes each mapping
               decision testable from a hand-built model with no drawing behind it, and what keeps
               the output contract from acquiring a second, divergent implementation. The same path
-              serves the managed backend and the COM backend, so a drawing's content reads
-              identically whether or not it was rendered.
+              serves every caller, so a drawing's content reads identically on every run, whether
+              or not pages were rendered.
             children:
               - DocDownVisio-Markdown-VisioContentEmitter-WritesPageName
               - DocDownVisio-Markdown-VisioContentEmitter-WritesShapeText

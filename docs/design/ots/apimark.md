@@ -34,7 +34,7 @@ The reasoning, and the exposure it accepts:
 - **What is exposed is documentation, not runtime behavior.** ApiMark is a build-time tool with
   `PrivateAssets="All"`. It contributes no assembly, no native asset, and no dependency to any
   shipped package. A defect in ApiMark can produce wrong, ugly, or missing Markdown in the
-  packaged `api/` folder; it cannot change what `DocDown.Core` does at run time, cannot alter the
+  packaged `api/` folder; it cannot change what `DemaConsulting.DocDown.Core` does at run time, cannot alter the
   compiled output, and cannot reach a consumer's application code.
 - **The failure mode is loud, not silent.** The MSBuild task runs after `Build` and fails the
   build on error. A regression surfaces as a red build in CI, not as a quietly corrupt artifact.
@@ -93,7 +93,7 @@ projects — the libraries' `PrivateAssets="All"` stops build assets flowing acr
 `ProjectReference` — so the setting is declarative today; it is stated explicitly so the intent
 survives any later move of the reference into a shared props file.
 
-**Disabled for `DocDown.Tool`, on measured evidence.** The tool is packable, so it was a genuine
+**Disabled for `DemaConsulting.DocDown.Tool`, on measured evidence.** The tool is packable, so it was a genuine
 decision rather than a default. Every type in `DemaConsulting.DocDown.Tool` is `internal`, and
 running the generator directly against the Release build —
 `apimark dotnet --assembly DemaConsulting.DocDown.Tool.dll --xml-doc DemaConsulting.DocDown.Tool.xml
@@ -137,6 +137,7 @@ own `$(MSBuildProjectDirectory)\api` default applies unchanged. `NuGetPackHelper
 `-p:ApiMarkOutputRoot=<unique folder>` per invocation. The per-project subfolder is
 load-bearing: an MSBuild global property flows into referenced projects, and ApiMark *merges*
 into an existing output directory rather than clearing it, so a single shared folder would have
-put `DocDown.Core`'s type pages inside `DocDown.Pdf`'s package. The CI pipeline is unaffected —
+put `DemaConsulting.DocDown.Core`'s type pages inside `DemaConsulting.DocDown.Pdf`'s package. The
+CI pipeline is unaffected —
 it builds once and packs with `--no-build`, so generation runs exactly once per project and
 nothing races.

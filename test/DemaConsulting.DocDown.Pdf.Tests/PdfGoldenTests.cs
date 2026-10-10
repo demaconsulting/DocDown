@@ -1,8 +1,8 @@
 using System.Text;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Pdf;
 using DemaConsulting.DocDown.Pdf.Tests.TestData;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
-using DocDown.Pdf;
 
 namespace DemaConsulting.DocDown.Pdf.Tests;
 

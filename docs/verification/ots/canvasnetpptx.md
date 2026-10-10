@@ -5,13 +5,13 @@ Requirements for this OTS item are defined in the CanvasNet.Pptx OTS Software Re
 
 ### Required Functionality
 
-CanvasNet.Pptx is the managed rasterization API `DocDown.PowerPoint.Rendering` is built on. It must
+CanvasNet.Pptx is the managed rasterization API `DemaConsulting.DocDown.PowerPoint.Rendering` is built on. It must
 rasterize a PowerPoint slide to an in-memory surface at a requested DPI through a fully managed API,
 with no native asset and no runtime-identifier-specific resolution.
 
 ### Verification Approach
 
-**CanvasNet.Pptx is verified by transitive evidence from the `DocDown.PowerPoint.Rendering` test
+**CanvasNet.Pptx is verified by transitive evidence from the `DemaConsulting.DocDown.PowerPoint.Rendering` test
 suite.** This is stated explicitly because it is a deliberate choice rather than an omission. Per the
 software-items standard, a dedicated OTS test project is required only *if no other verification
 evidence is available*. That is not the case here: unlike the repository's build-time tools,
@@ -28,7 +28,7 @@ same library path the rendering suite already exercises against a real presentat
 
 ### Test Environment
 
-The evidence is produced by the standard `DocDown.PowerPoint.Rendering` test run: xUnit v3 under the
+The evidence is produced by the standard `DemaConsulting.DocDown.PowerPoint.Rendering` test run: xUnit v3 under the
 .NET SDK, targeting net8.0, net9.0, and net10.0, across the full CI operating-system matrix, since
 CanvasNet.Pptx is fully managed and runs identically on every platform in the matrix.
 

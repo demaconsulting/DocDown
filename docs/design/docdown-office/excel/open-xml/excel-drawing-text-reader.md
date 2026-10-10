@@ -1,6 +1,6 @@
 ## ExcelDrawingTextReader
 
-![DocDown.Excel Structure](ExcelView.svg)
+![DemaConsulting.DocDown.Excel Structure](ExcelView.svg)
 
 ### Purpose
 

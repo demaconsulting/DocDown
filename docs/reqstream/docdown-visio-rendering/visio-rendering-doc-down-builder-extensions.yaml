@@ -1,0 +1,64 @@
+---
+# Software Unit Requirements for VisioRenderingDocDownBuilderExtensions
+#
+# VisioRenderingDocDownBuilderExtensions is the one visible edge from a host to this package: the
+# explicit, reflection-free call that adds the rendering backend to a DocDown builder, carrying no
+# CanvasNet type on its public surface.
+
+sections:
+  - title: DocDownVisioRendering Requirements
+    sections:
+      - title: VisioRenderingDocDownBuilderExtensions Requirements
+        requirements:
+          - id: DocDownVisioRendering-VisioRenderingDocDownBuilderExtensions-RegistersExtractor
+            title: >-
+              VisioRenderingDocDownBuilderExtensions shall add exactly one page-rendering extractor
+              to the builder it is called on.
+            justification: |
+              A host builds an engine expecting the backends it asked for and no others. Adding
+              exactly one rendering extractor is what makes the resulting engine's behavior
+              predictable from the host's own code.
+            tests:
+              - AddVisioRendering_OnBuilder_RegistersRenderingExtractor
+
+          - id: DocDownVisioRendering-VisioRenderingDocDownBuilderExtensions-ReflectionFree
+            title: >-
+              VisioRenderingDocDownBuilderExtensions shall register the extractor without reflection
+              or assembly scanning.
+            justification: |
+              Registration by scanning makes the active backend set a property of what happens to be
+              on disk, which cannot be reviewed and defeats single-file publishing. A
+              reflection-free factory registration keeps the edge explicit and the publish path
+              viable.
+            tests:
+              - AddVisioRendering_OnBuilder_RegistersRenderingExtractor
+
+          - id: DocDownVisioRendering-VisioRenderingDocDownBuilderExtensions-ReturnsBuilderForChaining
+            title: VisioRenderingDocDownBuilderExtensions shall return the builder it was called on.
+            justification: |
+              A host that registers several backends should express that as one readable
+              configuration sequence — AddVisio().AddVisioRendering() — rather than as disconnected
+              statements.
+            tests:
+              - AddVisioRendering_OnBuilder_ReturnsSameBuilderForChaining
+
+          - id: DocDownVisioRendering-VisioRenderingDocDownBuilderExtensions-RejectsNullBuilder
+            title: >-
+              VisioRenderingDocDownBuilderExtensions shall reject a missing builder at the point of
+              the call.
+            justification: |
+              Failing where the mistake was made names the offending call site rather than deferring
+              the failure to build time against configuration the host wrote correctly.
+            tests:
+              - AddVisioRendering_NullBuilder_Throws
+
+          - id: DocDownVisioRendering-VisioRenderingDocDownBuilderExtensions-NoCanvasNetTypeOnSurface
+            title: >-
+              VisioRenderingDocDownBuilderExtensions and the package's public types shall expose no
+              CanvasNet.Vsdx or CanvasNet type on their public API surface.
+            justification: |
+              Keeping the rasterizer's types off the public surface lets a host reference the
+              registration seam without dragging CanvasNet's types into its own compilation, which
+              is the whole reason this is a separate, opt-in package.
+            tests:
+              - PublicApi_AllPublicMembers_ExposeNoCanvasNetTypes

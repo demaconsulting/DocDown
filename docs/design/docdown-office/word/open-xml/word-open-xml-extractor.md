@@ -1,6 +1,6 @@
 ## WordOpenXmlExtractor
 
-![DocDown.Word Structure](WordView.svg)
+![DemaConsulting.DocDown.Word Structure](WordView.svg)
 
 ### Purpose
 
@@ -61,7 +61,7 @@ self-test reports every fault as a result rather than throwing.
 
 ### Dependencies
 
-- **DocDown.Core** — `IDocumentExtractor`, `ISelfValidating`, `IExtractionContext`,
+- **DemaConsulting.DocDown.Core** — `IDocumentExtractor`, `ISelfValidating`, `IExtractionContext`,
   `DocumentSource`, `ExtractionOptions`, `ExtractorAvailability`, `ExtractionOutcome`,
   `SelfTestCase`, `SelfTestResult`, `EnvironmentFact`, and `DocumentFormat`.
 - **DocumentFormat.OpenXml** (OTS) — the managed reader this backend is built on, used by the

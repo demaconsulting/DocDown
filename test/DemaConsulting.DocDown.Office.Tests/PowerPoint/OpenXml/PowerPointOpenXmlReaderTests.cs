@@ -1,5 +1,5 @@
 using DemaConsulting.DocDown.Office.Tests.PowerPoint.TestData;
-using DocDown.PowerPoint.OpenXml;
+using DemaConsulting.DocDown.PowerPoint.OpenXml;
 
 namespace DemaConsulting.DocDown.Office.Tests.PowerPoint.OpenXml;
 

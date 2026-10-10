@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     Identifies a document's format from its file-name extension, falling back to a leading

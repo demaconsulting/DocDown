@@ -38,7 +38,6 @@ input-files:
   - docs/verification/docdown-tool/self-test/validation.md
   - docs/verification/docdown-tool/self-test/self-test-adapter.md
   - docs/verification/docdown-office.md
-  - docs/verification/docdown-office/com.md
   - docs/verification/docdown-office/word.md
   - docs/verification/docdown-office/word/word-doc-down-builder-extensions.md
   - docs/verification/docdown-office/word/markdown.md
@@ -70,10 +69,6 @@ input-files:
   - docs/verification/docdown-office/powerpoint/open-xml/powerpoint-open-xml-image-reader.md
   - docs/verification/docdown-office/visio.md
   - docs/verification/docdown-office/visio/visio-doc-down-builder-extensions.md
-  - docs/verification/docdown-office/visio/com.md
-  - docs/verification/docdown-office/visio/com/visio-com-extractor.md
-  - docs/verification/docdown-office/visio/com/visio-com-availability.md
-  - docs/verification/docdown-office/visio/com/visio-automation.md
   - docs/verification/docdown-office/visio/markdown.md
   - docs/verification/docdown-office/visio/markdown/visio-content-emitter.md
   - docs/verification/docdown-office/visio/markdown/visio-shape-labeler.md
@@ -85,6 +80,7 @@ input-files:
   - docs/verification/docdown-powerpoint-rendering/powerpoint-page-rendering-extractor.md
   - docs/verification/docdown-powerpoint-rendering/slide-renderer.md
   - docs/verification/docdown-powerpoint-rendering/powerpoint-rendering-doc-down-builder-extensions.md
+  - docs/verification/docdown-visio-rendering.md
   - docs/verification/ots.md
   - docs/verification/ots/apimark.md
   - docs/verification/ots/buildmark.md

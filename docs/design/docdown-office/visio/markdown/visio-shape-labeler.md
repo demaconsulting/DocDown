@@ -1,6 +1,6 @@
 ## VisioShapeLabeler
 
-![DocDown.Visio Structure](VisioView.svg)
+![DemaConsulting.DocDown.Visio Structure](VisioView.svg)
 
 ### Purpose
 

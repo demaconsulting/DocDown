@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     Chooses the extractor to run for a detected format: filter by format, keep only what is

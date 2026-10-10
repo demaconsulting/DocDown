@@ -1,4 +1,4 @@
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     The single, shared definition of what a manifest accounts for: the exact set of relative

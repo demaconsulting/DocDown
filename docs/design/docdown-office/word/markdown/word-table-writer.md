@@ -1,6 +1,6 @@
 ## WordTableWriter
 
-![DocDown.Word Structure](WordView.svg)
+![DemaConsulting.DocDown.Word Structure](WordView.svg)
 
 ### Purpose
 

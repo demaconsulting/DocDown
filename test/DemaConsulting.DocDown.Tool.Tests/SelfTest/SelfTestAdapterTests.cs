@@ -1,6 +1,6 @@
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Tool.SelfTest;
 using DemaConsulting.TestResults;
-using DocDown.Core;
-using DocDown.Tool.SelfTest;
 
 namespace DemaConsulting.DocDown.Tool.Tests.SelfTest;
 

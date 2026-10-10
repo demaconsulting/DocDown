@@ -1,13 +1,13 @@
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Office;
+using DemaConsulting.DocDown.PowerPoint.Rendering;
 using DemaConsulting.DocDown.PowerPoint.Rendering.Tests.TestData;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
-using DocDown.Office;
-using DocDown.PowerPoint.Rendering;
 
 namespace DemaConsulting.DocDown.PowerPoint.Rendering.Tests;
 
 /// <summary>
-///     System-level integration tests for the DocDown.PowerPoint.Rendering system, driven end to
+///     System-level integration tests for the DemaConsulting.DocDown.PowerPoint.Rendering system, driven end to
 ///     end through <see cref="DocDownEngine"/> against the embedded probe presentation and
 ///     rasterized by the real CanvasNet.Pptx-backed renderer.
 /// </summary>

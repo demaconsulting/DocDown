@@ -60,7 +60,7 @@
 
   <!-- Project References -->
   <ItemGroup>
-    <!-- The Open XML SDK and System.IO.Packaging arrive transitively through the DocDown.Office
+    <!-- The Open XML SDK and System.IO.Packaging arrive transitively through the DemaConsulting.DocDown.Office
          reference. The fixtures synthesize documents at test time so the readers can be driven
          through structures one committed document cannot cover; the committed probe documents in
          the library serve its self-tests, which is a different job. -->

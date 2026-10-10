@@ -61,7 +61,7 @@ document content — an absence of usable text is reported as `null`, never a gu
 
 - **`ImageTextSource`, `ImageTextConfidence`, `ImageTextCandidate`, `SelectedImageText`** — supporting
   types (D8) declared alongside the selector.
-- `System.Text` (`StringBuilder`) only — no runtime NuGet dependencies; `DocDown.Word` stays fully
+- `System.Text` (`StringBuilder`) only — no runtime NuGet dependencies; `DemaConsulting.DocDown.Word` stays fully
   managed by depending on this policy rather than any native code.
 
 #### Callers

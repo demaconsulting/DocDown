@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     Finalizes <c>content.md</c> and, when the layout calls for it, the per-part files under

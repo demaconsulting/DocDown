@@ -1,7 +1,7 @@
 using DemaConsulting.CanvasNet.Codecs;
 using DemaConsulting.CanvasNet.Pdf;
 
-namespace DocDown.Pdf.Rendering;
+namespace DemaConsulting.DocDown.Pdf.Rendering;
 
 /// <summary>
 ///     The single rasterization seam of this package: it rasterizes one PDF page to a PNG through
@@ -20,7 +20,7 @@ namespace DocDown.Pdf.Rendering;
 ///         shared mutable per-call state: each call opens and disposes its own
 ///         <see cref="PdfDocument"/> instance. This mirrors the repo's established pattern for a
 ///         fully-managed backend (see
-///         <c>DocDown.Pdf</c>'s <c>PdfDocumentExtractor.ProbeAvailability</c>, which is likewise
+///         <c>DemaConsulting.DocDown.Pdf</c>'s <c>PdfDocumentExtractor.ProbeAvailability</c>, which is likewise
 ///         unconditional and lock-free). The one shared mutable state in the dependency graph —
 ///         <c>SystemFontCatalog</c>'s lazily-built system-font directory scan and its bundled-fallback
 ///         font cache — is confirmed safe for concurrent use by design: the directory scan is a

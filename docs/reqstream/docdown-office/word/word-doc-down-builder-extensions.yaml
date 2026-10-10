@@ -3,7 +3,7 @@
 #
 # WordDocDownBuilderExtensions is the one visible edge from a host to this package: the
 # explicit, reflection-free call that adds the Word backend to a DocDown builder. It is a
-# direct unit of the DocDown.Word system.
+# direct unit of the DemaConsulting.DocDown.Word system.
 
 sections:
   - title: DocDownWord Requirements

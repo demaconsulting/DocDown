@@ -1,13 +1,14 @@
 using System.Reflection;
-using DocDown.Core;
-using DocDown.Office;
-using DocDown.Pdf;
-using DocDown.Pdf.Rendering;
-using DocDown.PowerPoint.Rendering;
-using DocDown.Tool.Cli;
-using DocDown.Tool.SelfTest;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Office;
+using DemaConsulting.DocDown.Pdf;
+using DemaConsulting.DocDown.Pdf.Rendering;
+using DemaConsulting.DocDown.PowerPoint.Rendering;
+using DemaConsulting.DocDown.Tool.Cli;
+using DemaConsulting.DocDown.Tool.SelfTest;
+using DemaConsulting.DocDown.Visio.Rendering;
 
-namespace DocDown.Tool;
+namespace DemaConsulting.DocDown.Tool;
 
 /// <summary>
 ///     Entry point for the <c>docdown</c> command-line tool: priority-ordered dispatch, the banner
@@ -22,14 +23,12 @@ namespace DocDown.Tool;
 ///     </para>
 ///     <para>
 ///         Extractors are registered explicitly through
-///         <c>new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().AddPowerPointRendering().Build()</c>,
+///         <c>new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().AddPowerPointRendering().AddVisioRendering().Build()</c>,
 ///         with no reflection or assembly scanning, which is what keeps single-file publishing
-///         viable. Every backend except <c>AddOffice</c>'s Visio COM backend — including the
-///         optional PDF and PowerPoint rendering backends — is fully managed and
-///         runtime-identifier agnostic; the Visio COM backend reaches Microsoft Office through
-///         late-bound IDispatch with no interop assembly, so it too adds no native asset, but it is
-///         selected only where Visio is installed. Trimming and AOT are still left off as
-///         unverified for this dependency graph.
+///         viable. Every backend is fully managed and runtime-identifier agnostic: the optional
+///         PDF, PowerPoint, and Visio rendering backends each depend only on fully-managed
+///         CanvasNet packages, so none of them adds a native asset. Trimming and AOT are still left
+///         off as unverified for this dependency graph.
 ///     </para>
 /// </remarks>
 internal static class Program
@@ -229,12 +228,12 @@ internal static class Program
     /// <returns>A configured engine.</returns>
     /// <remarks>
     ///     Registration is explicit and reflection-free, which keeps single-file publish viable. The
-    ///     managed PDF, PDF rendering, Word, Visio, PowerPoint, Excel, and PowerPoint-rendering
-    ///     backends serve every extraction. The optional Visio COM backend is chosen only when page
-    ///     rendering is requested and Microsoft Visio is available; PowerPoint page rendering is
-    ///     served solely by the fully-managed <c>powerpoint-rendering</c> backend, because no COM
-    ///     path exists for PowerPoint.
+    ///     managed PDF, Word, Excel, PowerPoint, and Visio Open XML/Open Packaging backends serve
+    ///     every extraction. Page rendering for PDF, PowerPoint, and Visio is each served solely by
+    ///     its own fully-managed rendering backend — <c>pdf-rendering</c>, <c>powerpoint-rendering</c>,
+    ///     and <c>visio-rendering</c> — since no COM path exists for any of the three formats.
     /// </remarks>
     private static DocDownEngine BuildEngine() =>
-        new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().AddPowerPointRendering().Build();
+        new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().AddPowerPointRendering().AddVisioRendering()
+            .Build();
 }

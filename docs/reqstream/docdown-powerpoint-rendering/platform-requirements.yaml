@@ -1,5 +1,5 @@
 ---
-# System-Level Platform Requirements for DocDown.PowerPoint.Rendering
+# System-Level Platform Requirements for DemaConsulting.DocDown.PowerPoint.Rendering
 #
 # These requirements specify the platforms and frameworks the package must support.
 # CanvasNet.Pptx is fully managed and carries no runtime-identifier-specific asset, so the

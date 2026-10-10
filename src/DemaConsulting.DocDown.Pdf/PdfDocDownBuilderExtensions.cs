@@ -1,6 +1,6 @@
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
-namespace DocDown.Pdf;
+namespace DemaConsulting.DocDown.Pdf;
 
 /// <summary>
 ///     The registration seam that adds PDF extraction to a <see cref="DocDownBuilder"/>.
@@ -36,8 +36,8 @@ public static class PdfDocDownBuilderExtensions
     /// <example>
     ///     <code language="csharp">
     ///     using System;
-    ///     using DocDown.Core;
-    ///     using DocDown.Pdf;
+    ///     using DemaConsulting.DocDown.Core;
+    ///     using DemaConsulting.DocDown.Pdf;
     ///
     ///     var engine = new DocDownBuilder()
     ///         .AddPdf() // .pdf - text, embedded images, metadata

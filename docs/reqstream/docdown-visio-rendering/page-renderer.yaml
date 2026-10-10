@@ -1,0 +1,49 @@
+---
+# Software Unit Requirements for PageRenderer
+#
+# PageRenderer is the single rasterization seam: it opens a CanvasNet.Vsdx document per call,
+# rasterizes one page to a PNG, and reads the page count, with no instance or shared mutable state
+# between calls.
+
+sections:
+  - title: DocDownVisioRendering Requirements
+    sections:
+      - title: PageRenderer Requirements
+        requirements:
+          - id: DocDownVisioRendering-PageRenderer-RendersPageToPng
+            title: PageRenderer shall rasterize one page of a VSDX to valid PNG bytes at a requested DPI.
+            justification: |
+              This unit is the only place CanvasNet.Vsdx is called, so the promise that a page
+              becomes a real, decodable PNG at the requested resolution lives here. Everything
+              upstream depends on this producing genuine image bytes rather than an opaque buffer.
+            tests:
+              - PageRenderer_Render_SinglePage_ReturnsValidPng
+              - PageRenderer_Render_HigherDpi_ProducesLargerImage
+
+          - id: DocDownVisioRendering-PageRenderer-GetsPageCount
+            title: PageRenderer shall report the number of pages in a Visio drawing.
+            justification: |
+              The extractor needs the page count to honor a requested page range without
+              rasterizing pages outside it, and this unit is the one place that opens the document,
+              so it is the natural place to answer the question.
+            tests:
+              - PageRenderer_GetPageCount_ProbeDrawing_ReturnsPageCount
+
+          - id: DocDownVisioRendering-PageRenderer-ConcurrentCallsDoNotInterfere
+            title: PageRenderer shall produce correct output when called concurrently from multiple threads.
+            justification: |
+              Several pages, possibly from different drawings, can be rendered in the same run. Each
+              call opens its own `VsdxDocument` and `Surface` with no shared mutable state in this
+              unit, so concurrent calls must all succeed without corrupting one another's output.
+            tests:
+              - PageRenderer_Render_ConcurrentCalls_AllProduceValidPng
+
+          - id: DocDownVisioRendering-PageRenderer-RejectsNullDocument
+            title: PageRenderer shall reject a missing document at the point of the call.
+            justification: |
+              Failing where the mistake was made names the offending caller. A null document is a
+              programming error, not a render fault, so it is rejected up front rather than carried
+              into the rasterization call.
+            tests:
+              - PageRenderer_Render_NullVsdx_Throws
+              - PageRenderer_GetPageCount_NullVsdx_Throws

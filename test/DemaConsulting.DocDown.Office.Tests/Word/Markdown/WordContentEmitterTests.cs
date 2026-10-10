@@ -1,6 +1,6 @@
+using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
-using DocDown.Word.Markdown;
+using DemaConsulting.DocDown.Word.Markdown;
 
 namespace DemaConsulting.DocDown.Office.Tests.Word.Markdown;
 

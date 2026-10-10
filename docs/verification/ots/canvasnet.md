@@ -5,14 +5,14 @@ for this OTS item are defined in the CanvasNet OTS Software Requirements documen
 
 ### Required Functionality
 
-CanvasNet is the managed canvas and codec library both `DocDown.Pdf.Rendering` and
-`DocDown.PowerPoint.Rendering` use to encode a rasterized page or slide surface as PNG through its
+CanvasNet is the managed canvas and codec library both `DemaConsulting.DocDown.Pdf.Rendering` and
+`DemaConsulting.DocDown.PowerPoint.Rendering` use to encode a rasterized page or slide surface as PNG through its
 `PngCodec.Save` API.
 
 ### Verification Approach
 
-**CanvasNet is verified by transitive evidence from the `DocDown.Pdf.Rendering` and
-`DocDown.PowerPoint.Rendering` test suites.** This is stated explicitly because it is a deliberate
+**CanvasNet is verified by transitive evidence from the `DemaConsulting.DocDown.Pdf.Rendering` and
+`DemaConsulting.DocDown.PowerPoint.Rendering` test suites.** This is stated explicitly because it is a deliberate
 choice rather than an omission. Per the software-items standard, a dedicated OTS test project is
 required only *if no other verification evidence is available*. That is not the case here: CanvasNet
 is a runtime library on the critical path of every rendered page and every rendered slide, and the
@@ -28,7 +28,7 @@ rendering suites already exercise against real documents.
 
 ### Test Environment
 
-The evidence is produced by the standard `DocDown.Pdf.Rendering` and `DocDown.PowerPoint.Rendering`
+The evidence is produced by the standard `DemaConsulting.DocDown.Pdf.Rendering` and `DemaConsulting.DocDown.PowerPoint.Rendering`
 test runs: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0, across the full CI
 operating-system matrix. Every PDF fixture is generated at test time; the PowerPoint fixture is the
 embedded `probe.pptx` resource. Neither depends on network access.

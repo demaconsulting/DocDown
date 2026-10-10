@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     Renders <c>metadata.json</c>, the root artifact carrying what a document asserts about

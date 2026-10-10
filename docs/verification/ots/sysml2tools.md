@@ -18,7 +18,7 @@ exercises the tool's built-in self-test suite against known-good and known-bad m
 and writes a TRX file consumed by `reqstream --enforce`.
 
 Second, `lint.ps1` runs `dotnet sysml2tools lint 'docs/sysml2/**/*.sysml'` against the actual
-DocDown.Core model and fails the build on any syntax or reference error. The build-docs
+DemaConsulting.DocDown.Core model and fails the build on any syntax or reference error. The build-docs
 job runs `dotnet sysml2tools render` to produce one SVG file per declared view under
 `docs/design/generated/`. FileAssert then directly asserts that each declared view's SVG file
 exists and is well-formed XML with an `<svg>` root element (`SysML2Tools_SoftwareStructureViewSvg`,
@@ -49,7 +49,7 @@ against a known-good model fixture as part of its built-in self-test suite.
 
 #### SysML2Tools_SoftwareStructureViewSvg
 
-**Scenario**: The build-docs CI job runs `dotnet sysml2tools render` against the real DocDown.Core
+**Scenario**: The build-docs CI job runs `dotnet sysml2tools render` against the real DemaConsulting.DocDown.Core
 model, then FileAssert checks the resulting file at
 `docs/design/generated/SoftwareStructureView.svg`.
 
@@ -60,7 +60,7 @@ named `svg`.
 
 #### SysML2Tools_DocDownCoreViewSvg
 
-**Scenario**: The build-docs CI job runs `dotnet sysml2tools render` against the real DocDown.Core
+**Scenario**: The build-docs CI job runs `dotnet sysml2tools render` against the real DemaConsulting.DocDown.Core
 model, then FileAssert checks the resulting file at
 `docs/design/generated/DocDownCoreView.svg`.
 

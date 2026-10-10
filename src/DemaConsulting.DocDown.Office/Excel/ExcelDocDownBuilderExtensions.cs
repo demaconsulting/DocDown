@@ -1,7 +1,7 @@
-using DocDown.Core;
-using DocDown.Excel.OpenXml;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Excel.OpenXml;
 
-namespace DocDown.Excel;
+namespace DemaConsulting.DocDown.Excel;
 
 /// <summary>
 ///     The registration seam that adds Excel extraction to a <see cref="DocDownBuilder"/>.
@@ -37,8 +37,8 @@ public static class ExcelDocDownBuilderExtensions
     /// <example>
     ///     <code language="csharp">
     ///     using System;
-    ///     using DocDown.Core;
-    ///     using DocDown.Excel;
+    ///     using DemaConsulting.DocDown.Core;
+    ///     using DemaConsulting.DocDown.Excel;
     ///
     ///     var engine = new DocDownBuilder()
     ///         .AddExcel() // .xlsx - cells, formulas, charts; workbooks are never rendered

@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     Renders <c>summary.txt</c>, the human- and LLM-readable account of what an extraction

@@ -1,11 +1,11 @@
-# DocDown.Word Verification Design
+# DemaConsulting.DocDown.Word Verification Design
 
-This document describes the system-level verification strategy for `DocDown.Word`, the Word
+This document describes the system-level verification strategy for `DemaConsulting.DocDown.Word`, the Word
 extraction package.
 
 ## Verification Approach
 
-`DocDown.Word` is verified through system-level integration tests in `DocDownWordTests.cs` and
+`DemaConsulting.DocDown.Word` is verified through system-level integration tests in `DocDownWordTests.cs` and
 `WordGoldenTests.cs`, and through subsystem and unit tests in `DemaConsulting.DocDown.Office.Tests`,
 running on xUnit v3 across net8.0, net9.0, and net10.0.
 

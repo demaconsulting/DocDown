@@ -1,11 +1,11 @@
-# DocDown.Pdf.Rendering Verification Design
+# DemaConsulting.DocDown.Pdf.Rendering Verification Design
 
-This document describes the system-level verification strategy for `DocDown.Pdf.Rendering`, the
+This document describes the system-level verification strategy for `DemaConsulting.DocDown.Pdf.Rendering`, the
 optional PDF page-rendering package.
 
 ## Verification Approach
 
-`DocDown.Pdf.Rendering` is verified through system-level integration tests in
+`DemaConsulting.DocDown.Pdf.Rendering` is verified through system-level integration tests in
 `DocDownPdfRenderingTests.cs` and focused unit tests per unit, all in
 `DemaConsulting.DocDown.Pdf.Rendering.Tests`, running on xUnit v3 across net8.0, net9.0, and net10.0.
 

@@ -1,16 +1,16 @@
-# DocDown.Pdf.Rendering System Design
+# DemaConsulting.DocDown.Pdf.Rendering System Design
 
-![DocDown.Pdf.Rendering Structure](DocDownPdfRenderingView.svg)
+![DemaConsulting.DocDown.Pdf.Rendering Structure](DocDownPdfRenderingView.svg)
 
-`DocDown.Pdf.Rendering` is the optional PDF page-rendering backend for the DocDown output contract.
+`DemaConsulting.DocDown.Pdf.Rendering` is the optional PDF page-rendering backend for the DocDown output contract.
 It produces the same text, embedded images, and document metadata the managed PDF backend produces,
 and adds the one thing that backend cannot: raster images of the pages themselves. It is a
 separately distributed, opt-in NuGet package that a host registers explicitly alongside
-`DocDown.Core` and `DocDown.Pdf`.
+`DemaConsulting.DocDown.Core` and `DemaConsulting.DocDown.Pdf`.
 
 It rasterizes through `DemaConsulting.CanvasNet.Pdf`/`DemaConsulting.CanvasNet`, a fully-managed PDF
 rendering stack with no native binaries. Page rendering is still a separate package from
-`DocDown.Pdf` because it is a distinct architectural concern — rasterization versus parsing — and an
+`DemaConsulting.DocDown.Pdf` because it is a distinct architectural concern — rasterization versus parsing — and an
 additional dependency a consumer who only needs text and metadata should not have to carry, not
 because of any native-binary consequence; both packages are fully managed and
 runtime-identifier agnostic.
@@ -75,7 +75,7 @@ The note stays limited to that extraction fact itself.
 | `IDocumentExtractor` | Inbound, from the engine | .NET interface | See the probe obligations below |
 | `ISelfValidating` | Inbound, from the engine | .NET interface | Enumeration must be cheap |
 | `IExtractionSink` | Outbound, to Core | .NET interface | The only output channel |
-| `PdfDocumentExtractor` | Outbound, to DocDown.Pdf | .NET class | Delegated to with rendering suppressed |
+| `PdfDocumentExtractor` | Outbound, to DemaConsulting.DocDown.Pdf | .NET class | Delegated to, rendering suppressed |
 | `DocDownBuilder` | Inbound, from a host | .NET extension method | `AddPdfRendering` is the whole surface |
 | Source document | Inbound | PDF byte stream | Not guaranteed seekable; buffered once |
 
@@ -96,8 +96,8 @@ machine-enforced by a reflection test over the package's exported types.
 
 ## Dependencies
 
-- **DocDown.Core** — the extraction contract, the sink, the options, and the output layout.
-- **DocDown.Pdf** — the managed text/embedded-image/metadata extractor this package delegates to.
+- **DemaConsulting.DocDown.Core** — the extraction contract, the sink, the options, and the output layout.
+- **DemaConsulting.DocDown.Pdf** — the managed text/embedded-image/metadata extractor this package delegates to.
   This is a project reference; it adds no native asset.
 - **CanvasNet.Pdf** (OTS) — the fully-managed PDF rasterization API: `PdfDocument.Open`,
   `GetPageInfo`, and `Render` produce a `Surface`. Confined to `PageRenderer` and absent from the
@@ -105,7 +105,7 @@ machine-enforced by a reflection test over the package's exported types.
 - **CanvasNet** (OTS) — the fully-managed 2D canvas/codec library CanvasNet.Pdf builds on; this
   package references it directly for `PngCodec.Save`, which encodes the rendered `Surface` to PNG
   bytes. See *CanvasNet* under the OTS integration design.
-- **PdfPig** — reached only through the `DocDown.Pdf` project reference, for the delegated managed
+- **PdfPig** — reached only through the `DemaConsulting.DocDown.Pdf` project reference, for the delegated managed
   extraction. No type in this package names it.
 
 ## Risk Control Measures
@@ -113,8 +113,8 @@ machine-enforced by a reflection test over the package's exported types.
 - **Rasterizer containment.** CanvasNet.Pdf and CanvasNet types appear in exactly one file
   (`PageRenderer.cs`) and in no public signature. A reflection test fails the build if either
   reaches the exported surface, so the rasterizer stays confined and replaceable.
-- **Portability of the whole package graph.** `DocDown.Core`, `DocDown.Pdf`, `DocDown.Pdf.Rendering`,
-  and `DocDown.Tool` are all fully managed and free of runtime-identifier-specific dependencies. That
+- **Portability of the whole package graph.** `DemaConsulting.DocDown.Core`, `DemaConsulting.DocDown.Pdf`, `DemaConsulting.DocDown.Pdf.Rendering`,
+  and `DemaConsulting.DocDown.Tool` are all fully managed and free of runtime-identifier-specific dependencies. That
   the PDF packages ship no native asset is asserted against their produced `.nupkg` files, not merely
   their build output.
 - **Per-page fault isolation.** Each page is rasterized independently. An unsupported page or an

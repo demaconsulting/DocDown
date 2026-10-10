@@ -1,5 +1,5 @@
-using DocDown.Core;
-using DocDown.PowerPoint;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.PowerPoint;
 
 namespace DemaConsulting.DocDown.Office.Tests.PowerPoint;
 

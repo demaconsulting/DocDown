@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     Writes a backend's resolved embedded images through the extraction sink, applying the

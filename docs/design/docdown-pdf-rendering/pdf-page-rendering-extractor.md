@@ -1,6 +1,6 @@
 ## PdfPageRenderingExtractor
 
-![DocDown.Pdf.Rendering Structure](DocDownPdfRenderingView.svg)
+![DemaConsulting.DocDown.Pdf.Rendering Structure](DocDownPdfRenderingView.svg)
 
 ### Purpose
 
@@ -58,8 +58,8 @@ fault reaches the caller as an exception.
 
 ### Dependencies
 
-- **DocDown.Core** — the extractor contract, the sink, the options, and the self-test types.
-- **DocDown.Pdf** — `PdfDocumentExtractor`, delegated to for the managed aspects; and PdfPig
+- **DemaConsulting.DocDown.Core** — the extractor contract, the sink, the options, and the self-test types.
+- **DemaConsulting.DocDown.Pdf** — `PdfDocumentExtractor`, delegated to for the managed aspects; and PdfPig
   (transitively) for counting pages to honor a page range.
 - **PageRenderer** — the rasterization seam. See *PageRenderer Design*.
 

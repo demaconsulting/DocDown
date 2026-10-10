@@ -1,6 +1,6 @@
 ## PdfAnnotationExtractor
 
-![DocDown.Pdf Structure](DocDownPdfView.svg)
+![DemaConsulting.DocDown.Pdf Structure](DocDownPdfView.svg)
 
 ### Purpose
 
@@ -126,7 +126,7 @@ facts about the document, not shortfalls.
 - **PdfPig** (OTS) - `Page.GetAnnotations()`, `Annotation.Type`, `Annotation.Content`,
   `Annotation.AnnotationDictionary`, `DictionaryToken.TryGet`, `NameToken.T`, `StringToken.Data`,
   and `HexToken.Data`.
-- **DocDown.Core** - `IExtractionSink` and `ExtractionNote`.
+- **DemaConsulting.DocDown.Core** - `IExtractionSink` and `ExtractionNote`.
 
 ### Callers
 

@@ -1,10 +1,10 @@
 using System.Runtime.InteropServices;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Tool.Cli;
 using DemaConsulting.TestResults.IO;
-using DocDown.Core;
-using DocDown.Tool.Cli;
 using TestResultsModel = DemaConsulting.TestResults;
 
-namespace DocDown.Tool.SelfTest;
+namespace DemaConsulting.DocDown.Tool.SelfTest;
 
 /// <summary>
 ///     Drives the <c>--validate</c> self-validation: it prints an environment header, runs the

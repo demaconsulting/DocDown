@@ -47,7 +47,7 @@ words:
   - weasyprint
   - netstandard
   - yamlfix
-  # Increment 2 (DocDown.Core) technical terms and intentional test identifiers
+  # Increment 2 (DemaConsulting.DocDown.Core) technical terms and intentional test identifiers
   - branchable
   - dedup
   - descr
@@ -72,7 +72,7 @@ words:
   - unsuffixed
   - wordprocessing
   - wrongformat
-  # Increment 3 (DocDown.Pdf) technical terms: PDF stream-filter names and PdfPig API
+  # Increment 3 (DemaConsulting.DocDown.Pdf) technical terms: PDF stream-filter names and PdfPig API
   # names (PdfPig spells its layout-analysis types with British 'Neighbour'), the
   # PdfPig package identifier, and the solution-file extension.
   - CCITT
@@ -83,12 +83,12 @@ words:
   - pdfpig
   - rasterizing
   - slnx
-  # Increment 4 (DocDown.Tool): the TestResults OTS item's package/file token
+  # Increment 4 (DemaConsulting.DocDown.Tool): the TestResults OTS item's package/file token
   - testresults
   # Increment 0 (legacy Office binary formats): the IANA media-type token for legacy .doc
   # (application/msword), the parallel of the already-listed modern OOXML media-type tokens.
   - msword
-  # Increment 5 (DocDown.Pdf.Rendering): the rasterization vocabulary and the packaging/runtime
+  # Increment 5 (DemaConsulting.DocDown.Pdf.Rendering): the rasterization vocabulary and the packaging/runtime
   # terms the backend's design docs use. PDFtoImage/PDFium/SkiaSharp remain as the superseded
   # rasterizer named in "replaces the previously used X" historical-comparison prose.
   - PDFtoImage
@@ -113,11 +113,14 @@ words:
   - canvasnetpdf
   - RGBA
   - desynchronize
-  # DocDown.PowerPoint.Rendering addition: lowercase filename tokens for the CanvasNet.Pptx and
+  # DemaConsulting.DocDown.PowerPoint.Rendering addition: lowercase filename tokens for the CanvasNet.Pptx and
   # CanvasNet.Charts OTS items used in reqstream/design/verification file paths.
   - canvasnetpptx
   - canvasnetcharts
-  # Increment 6 (DocDown.Word): Open XML field-instruction keywords used for structural furniture
+  # DemaConsulting.DocDown.Visio.Rendering addition: the lowercase filename token for the CanvasNet.Vsdx
+  # OTS item used in reqstream/design/verification file paths.
+  - canvasnetvsdx
+  # Increment 6 (DemaConsulting.DocDown.Word): Open XML field-instruction keywords used for structural furniture
   # detection, the backend identifier token, and descriptive vocabulary introduced by the mapping.
   - openxml
   - OOXML
@@ -129,7 +132,7 @@ words:
   - PAGEREF
   - SECTIONPAGES
   - SECTIONPAGESNUM
-  # Increment 6 (DocDown.Word) pass 2 — companion artifact prose and the System.IO.Packaging
+  # Increment 6 (DemaConsulting.DocDown.Word) pass 2 — companion artifact prose and the System.IO.Packaging
   # OTS file/token. All genuine technical or English terms, not misspellings.
   - systemiopackaging
   - parameterless
@@ -142,9 +145,10 @@ words:
   - metacharacters
   - renderable
   - misdetection
-  # Office formats pass (DocDown.Visio, DocDown.PowerPoint, DocDown.Excel): the macro-enabled Visio
-  # drawing extension and its IANA media-type token, and the Visio
-  # automation ProgID/method tokens. All genuine technical or product names, not misspellings.
+  # Office formats pass (DemaConsulting.DocDown.Visio, DemaConsulting.DocDown.PowerPoint,
+  # DemaConsulting.DocDown.Excel): the macro-enabled Visio drawing extension and its IANA
+  # media-type token, and the Visio automation ProgID/method tokens. All genuine technical
+  # or product names, not misspellings.
   - vsdm
   - macroenabled
   - OpenEx

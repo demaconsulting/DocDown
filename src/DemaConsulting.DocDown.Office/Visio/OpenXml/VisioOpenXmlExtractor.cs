@@ -1,8 +1,8 @@
-using DocDown.Core;
-using DocDown.Visio.Markdown;
-using CoreFormat = DocDown.Core.DocumentFormat;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Visio.Markdown;
+using CoreFormat = DemaConsulting.DocDown.Core.DocumentFormat;
 
-namespace DocDown.Visio.OpenXml;
+namespace DemaConsulting.DocDown.Visio.OpenXml;
 
 /// <summary>
 ///     The Visio Open Packaging backend: extracts every page's name, shape text, and — the headline
@@ -19,7 +19,8 @@ namespace DocDown.Visio.OpenXml;
 ///         package directly with <see cref="System.IO.Packaging"/> — and it deliberately stops at the
 ///         logical document structure: page names, shape text, connector topology, embedded images,
 ///         and document metadata. The spatial arrangement that only a render can recover is delivered
-///         by the separate COM backend when Microsoft Visio is available.
+///         by the separate, fully-managed <c>DemaConsulting.DocDown.Visio.Rendering</c> package
+///         (<c>AddVisioRendering</c>).
 ///     </para>
 ///     <para>
 ///         Because nothing about this backend is environment-dependent, <see cref="ProbeAvailability"/>
@@ -81,9 +82,9 @@ public sealed class VisioOpenXmlExtractor : IDocumentExtractor, ISelfValidating
 
         // Record what parsed this document, and state plainly that page rendering is not on offer here
         sink.ReportEnvironmentFact(new EnvironmentFact(
-            "DocDown.Visio", "visio.backend", "System.IO.Packaging (managed)", Available: true));
+            "DemaConsulting.DocDown.Visio", "visio.backend", "System.IO.Packaging (managed)", Available: true));
         sink.ReportEnvironmentFact(new EnvironmentFact(
-            "DocDown.Visio", "visio.pageRendering", "not provided by this extractor", Available: false));
+            "DemaConsulting.DocDown.Visio", "visio.pageRendering", "not provided by this extractor", Available: false));
 
         // Buffer the source: the package reader must seek, and a stream source is not guaranteed seekable
         var bytes = await ReadSourceAsync(source, cancellationToken).ConfigureAwait(false);
@@ -107,7 +108,7 @@ public sealed class VisioOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     [
         new SelfTestCase("visio.openxml.parseRoundTrip", Id, RunParseRoundTrip),
         new SelfTestCase("visio.pageRendering", Id, static _ => SelfTestResult.Skipped(
-            "This extractor does not render pages; page rendering needs the COM backend."))
+            "This extractor does not render pages; page rendering needs DemaConsulting.DocDown.Visio.Rendering."))
     ];
 
     /// <summary>

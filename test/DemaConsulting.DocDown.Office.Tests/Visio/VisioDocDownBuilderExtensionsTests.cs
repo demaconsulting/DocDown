@@ -1,5 +1,5 @@
-using DocDown.Core;
-using DocDown.Visio;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Visio;
 
 namespace DemaConsulting.DocDown.Office.Tests.Visio;
 
@@ -9,33 +9,16 @@ namespace DemaConsulting.DocDown.Office.Tests.Visio;
 public class VisioDocDownBuilderExtensionsTests
 {
     /// <summary>
-    ///     Proves <see cref="VisioDocDownBuilderExtensions.AddVisio"/> registers both the managed and
-    ///     COM backends.
+    ///     Proves <see cref="VisioDocDownBuilderExtensions.AddVisio"/> registers only the managed
+    ///     Open Packaging backend.
     /// </summary>
     [Fact]
-    public void AddVisio_RegistersOpenXmlAndComBackends()
+    public void AddVisio_RegistersOpenXmlBackend()
     {
         var engine = new DocDownBuilder().AddVisio().Build();
 
-        Assert.Equal(2, engine.Extractors.Count);
-        Assert.Contains(engine.Extractors, extractor => extractor.Id == "visio-openxml");
-        Assert.Contains(engine.Extractors, extractor => extractor.Id == "visio-com");
-    }
-
-    /// <summary>
-    ///     Proves the managed backend outranks the COM backend, and that the COM identifier sorts
-    ///     before the managed one — so equal priority would silently pick COM, which the explicit
-    ///     priorities prevent.
-    /// </summary>
-    [Fact]
-    public void AddVisio_ManagedBackend_HasHigherPriorityThanCom()
-    {
-        var engine = new DocDownBuilder().AddVisio().Build();
-
-        var managed = engine.Extractors.Single(extractor => extractor.Id == "visio-openxml");
-        var com = engine.Extractors.Single(extractor => extractor.Id == "visio-com");
-        Assert.True(managed.Priority > com.Priority);
-        Assert.True(string.CompareOrdinal("visio-com", "visio-openxml") < 0);
+        Assert.Single(engine.Extractors);
+        Assert.Equal("visio-openxml", engine.Extractors.Single().Id);
     }
 
     /// <summary>

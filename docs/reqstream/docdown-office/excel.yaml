@@ -1,10 +1,10 @@
 ---
-# Software System Requirements for DocDown.Excel
+# Software System Requirements for DemaConsulting.DocDown.Excel
 #
 # These requirements describe the externally visible behavior of the Excel extraction
 # package from the perspective of a host that registers it, without specifying
 # implementation details. Each decomposes into subsystem and unit requirements linked
-# below via children, and is proven by system-level or unit-level tests. DocDown.Excel
+# below via children, and is proven by system-level or unit-level tests. DemaConsulting.DocDown.Excel
 # has two subsystems (Markdown, OpenXml) and one direct unit
 # (ExcelDocDownBuilderExtensions).
 #

@@ -1,0 +1,69 @@
+using DemaConsulting.DocDown.Core;
+
+namespace DemaConsulting.DocDown.Visio.Rendering;
+
+/// <summary>
+///     The registration seam that adds optional Visio page rendering to a
+///     <see cref="DocDownBuilder"/>.
+/// </summary>
+/// <remarks>
+///     <para>
+///         DocDown registers backends explicitly rather than by reflection or assembly scanning, so
+///         a host's dependency graph is exactly what its code says it is. This class is that explicit
+///         seam for the rendering package — one call, one visible edge from the host to this
+///         assembly and, transitively, to the rasterization stack it carries.
+///     </para>
+///     <para>
+///         Deliberately free of any CanvasNet.Vsdx or CanvasNet type, so a host can reference
+///         the registration surface without those types entering its compilation.
+///         All members are static and thread-safe; the builder they mutate is not.
+///     </para>
+/// </remarks>
+public static class VisioRenderingDocDownBuilderExtensions
+{
+    /// <summary>
+    ///     Registers the Visio page-rendering extractor with the builder.
+    /// </summary>
+    /// <param name="builder">The builder to register with. Must not be null.</param>
+    /// <returns>The same <paramref name="builder"/>, so registration can be chained.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="builder"/> is <see langword="null"/>.</exception>
+    /// <remarks>
+    ///     Registers a factory rather than an instance so construction is deferred to
+    ///     <see cref="DocDownBuilder.Build"/>: a host that configures a builder but never builds an
+    ///     engine pays nothing, and each built engine gets its own extractor instance. Register this
+    ///     alongside the managed Visio backend (<c>AddOffice().AddVisioRendering()</c>, or
+    ///     <c>AddVisio().AddVisioRendering()</c>): the rendering backend is chosen when
+    ///     page rendering is requested, since it is the only backend for <c>.vsdx</c>/<c>.vsdm</c>
+    ///     that provides rendered pages, and the managed backend serves every other extraction.
+    ///     Returning the builder keeps the call chainable. Side effect: mutates
+    ///     <paramref name="builder"/>'s registration list.
+    /// </remarks>
+    /// <example>
+    ///     <code language="csharp">
+    ///     using System;
+    ///     using System.Threading;
+    ///     using DemaConsulting.DocDown.Core;
+    ///     using DemaConsulting.DocDown.Visio;
+    ///     using DemaConsulting.DocDown.Visio.Rendering;
+    ///
+    ///     var engine = new DocDownBuilder()
+    ///         .AddVisio()           // .vsdx, .vsdm - shape text and connections
+    ///         .AddVisioRendering()  // .vsdx, .vsdm - page images (fully managed)
+    ///         .Build();
+    ///
+    ///     var result = await engine.ExtractAsync(
+    ///         "drawings/sample-drawing.vsdx",
+    ///         "scratch/sample-drawing",
+    ///         new ExtractionOptions { RenderPages = true },
+    ///         CancellationToken.None);
+    ///
+    ///     Console.WriteLine(result.PagePaths.Count); // rendered page images under pages/
+    ///     </code>
+    /// </example>
+    public static DocDownBuilder AddVisioRendering(this DocDownBuilder builder)
+    {
+        // Reject a null builder at the point of the call so the error names this extension method
+        ArgumentNullException.ThrowIfNull(builder);
+        return builder.AddExtractor(static () => new VisioPageRenderingExtractor());
+    }
+}

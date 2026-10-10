@@ -1,6 +1,6 @@
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
-namespace DocDown.Excel.OpenXml;
+namespace DemaConsulting.DocDown.Excel.OpenXml;
 
 /// <summary>
 ///     The backend-neutral model of a whole workbook: its worksheets in workbook order, each with

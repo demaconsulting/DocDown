@@ -1,4 +1,4 @@
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     The contract a document extractor (backend) implements to participate in DocDown.

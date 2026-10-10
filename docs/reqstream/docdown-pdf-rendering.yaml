@@ -1,5 +1,5 @@
 ---
-# Software System Requirements for DocDown.Pdf.Rendering
+# Software System Requirements for DemaConsulting.DocDown.Pdf.Rendering
 #
 # These requirements describe the externally visible behavior of the optional PDF
 # page-rendering package from the perspective of a host that registers it, without

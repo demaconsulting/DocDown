@@ -21,10 +21,10 @@ Environment
   Operating system   : <operating-system>
   Runtime            : <runtime>
   Runtime identifier : <runtime-identifier>
-  DocDown.Pdf:
+  DemaConsulting.DocDown.Pdf:
     pdf.parser        : PdfPig (managed) (available)
     pdf.pageRendering : not provided by this extractor (NOT available)
-  DocDown.Pdf.Rendering:
+  DemaConsulting.DocDown.Pdf.Rendering:
     pages.renderer : CanvasNet.Pdf (managed) (available)
   1 other registered backend was available but did not run; run 'docdown --list-backends' to see them.
 

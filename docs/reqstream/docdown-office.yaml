@@ -1,11 +1,10 @@
 ---
 # Software System Requirements for DocDownOffice
 #
-# DocDown.Office is the Microsoft Office extraction package. It reads Word documents, Excel
+# DemaConsulting.DocDown.Office is the Microsoft Office extraction package. It reads Word documents, Excel
 # workbooks, PowerPoint presentations, and Visio drawings into the DocDown output contract. These
 # requirements state what the system as a whole must do; the per-format behavior decomposes into the
-# Word, Excel, PowerPoint, and Visio subsystems, and the behavior Visio's COM automation backend
-# uses decomposes into the Com subsystem.
+# Word, Excel, PowerPoint, and Visio subsystems.
 
 sections:
   - title: DocDownOffice Requirements
@@ -20,29 +19,11 @@ sections:
           as a single file cannot silently drop a backend and an auditor can read the registration
           rather than infer it. One call covers the common case - this host reads Microsoft Office
           documents - and the per-format calls remain for a host that reads only one format and
-          should not carry five backends to do it.
+          should not carry four backends to do it.
         tests:
           - AddOffice_OnBuilder_RegistersEveryOfficeBackend
           - AddOffice_ReturnsSameBuilderForChaining
           - AddExcel_Alone_RegistersOnlyTheExcelBackend
-
-      - id: DocDownOffice-ComAutomation
-        title: >-
-          The system shall report whether its COM automation backend can run in the current
-          environment, and shall keep a delegated run's output consistent with what it produced.
-        tags: [system]
-        justification: |
-          One of the five backends this package ships - Visio's - drives a Microsoft Office
-          application over COM, and cannot run where that application is absent - which is every
-          CI runner and most Linux and macOS hosts. The system must therefore answer whether such
-          a backend is usable before it is selected, and must do so without launching the
-          application. Where the COM backend does run, it delegates content extraction to its
-          managed counterpart and adds rendering on top, so the composed report must not carry the
-          delegate's statement that no rendering was performed. Both behaviors are shared by
-          Visio's COM backend and decompose into the Com subsystem.
-        children:
-          - DocDownOffice-Com-Availability
-          - DocDownOffice-Com-DelegatedComposition
 
       - id: DocDownOffice-SelfTestProbes
         title: >-

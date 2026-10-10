@@ -1,14 +1,14 @@
 using System.IO.Compression;
 using System.Text.Json;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Pdf;
 using DemaConsulting.DocDown.Pdf.Tests.TestData;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
-using DocDown.Pdf;
 
 namespace DemaConsulting.DocDown.Pdf.Tests;
 
 /// <summary>
-///     System-level integration tests for the DocDown.Pdf extraction system, driven end to end
+///     System-level integration tests for the DemaConsulting.DocDown.Pdf extraction system, driven end to end
 ///     through <see cref="DocDownEngine"/> against PDFs generated at test time.
 /// </summary>
 /// <remarks>

@@ -1,7 +1,7 @@
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Excel.Markdown;
+using DemaConsulting.DocDown.Excel.OpenXml;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
-using DocDown.Excel.Markdown;
-using DocDown.Excel.OpenXml;
 
 namespace DemaConsulting.DocDown.Office.Tests.Excel.Markdown;
 

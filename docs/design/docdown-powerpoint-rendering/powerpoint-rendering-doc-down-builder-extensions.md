@@ -1,6 +1,6 @@
 ## PowerPointRenderingDocDownBuilderExtensions
 
-![DocDown.PowerPoint.Rendering Structure](DocDownPowerPointRenderingView.svg)
+![DemaConsulting.DocDown.PowerPoint.Rendering Structure](DocDownPowerPointRenderingView.svg)
 
 ### Purpose
 
@@ -38,7 +38,7 @@ and constructs nothing.
 
 ### Dependencies
 
-- **DocDown.Core** — `DocDownBuilder`.
+- **DemaConsulting.DocDown.Core** — `DocDownBuilder`.
 - **PowerPointPageRenderingExtractor** — the backend this unit registers. See *PowerPointPageRenderingExtractor
   Design*.
 

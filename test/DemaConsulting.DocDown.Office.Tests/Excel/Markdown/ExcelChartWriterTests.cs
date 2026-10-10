@@ -1,5 +1,5 @@
-using DocDown.Excel.Markdown;
-using DocDown.Excel.OpenXml;
+using DemaConsulting.DocDown.Excel.Markdown;
+using DemaConsulting.DocDown.Excel.OpenXml;
 
 namespace DemaConsulting.DocDown.Office.Tests.Excel.Markdown;
 

@@ -1,17 +1,18 @@
 using System.IO.Compression;
 using System.Text.Json;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Excel;
+using DemaConsulting.DocDown.Pdf;
+using DemaConsulting.DocDown.Pdf.Rendering;
+using DemaConsulting.DocDown.PowerPoint;
+using DemaConsulting.DocDown.PowerPoint.Rendering;
 using DemaConsulting.DocDown.TestSupport;
 using DemaConsulting.DocDown.Tool.Tests.TestData;
+using DemaConsulting.DocDown.Visio;
+using DemaConsulting.DocDown.Visio.Rendering;
+using DemaConsulting.DocDown.Word;
 using DemaConsulting.TestResults;
 using DemaConsulting.TestResults.IO;
-using DocDown.Core;
-using DocDown.Excel;
-using DocDown.Pdf;
-using DocDown.Pdf.Rendering;
-using DocDown.PowerPoint;
-using DocDown.PowerPoint.Rendering;
-using DocDown.Visio;
-using DocDown.Word;
 
 namespace DemaConsulting.DocDown.Tool.Tests;
 
@@ -22,8 +23,9 @@ namespace DemaConsulting.DocDown.Tool.Tests;
 /// <remarks>
 ///     Each scenario runs the real tool over a real document and asserts on its captured output and
 ///     exit code. The tool builds its engine exactly as production does —
-///     <c>new DocDownBuilder().AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().Build()</c> — so these tests exercise the
-///     same explicit, reflection-free registration the shipped tool uses.
+///     <c>new DocDownBuilder().AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().AddPowerPointRendering().AddVisioRendering().Build()</c>
+///     — so these tests exercise the same explicit, reflection-free registration the shipped tool
+///     uses.
 /// </remarks>
 public class DocDownToolTests : IClassFixture<ValidationRuns>
 {
@@ -87,13 +89,13 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         Assert.Contains("The source document 'missing.pdf' could not be read.", log, StringComparison.Ordinal);
         Assert.Contains("Detected format:", log, StringComparison.Ordinal);
         Assert.DoesNotContain("Extraction failed.", log, StringComparison.Ordinal);
-        Assert.DoesNotContain("at DocDown.", log, StringComparison.Ordinal);
+        Assert.DoesNotContain("at DemaConsulting.DocDown.", log, StringComparison.Ordinal);
     }
 
     /// <summary>
     ///     Proves the default engine registers exactly the PDF, PDF rendering, Word, Visio,
-    ///     PowerPoint, Excel, and PowerPoint rendering backends through the explicit builder seams,
-    ///     with no reflection.
+    ///     PowerPoint, Excel, PowerPoint rendering, and Visio rendering backends through the
+    ///     explicit builder seams, with no reflection.
     /// </summary>
     [Fact]
     public void DocDownTool_Build_DefaultEngine_RegistersBackendsExplicitly()
@@ -101,6 +103,7 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         // Arrange & Act: the same one-liner the tool uses to build its engine
         var engine = new DocDownBuilder()
             .AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().AddPowerPointRendering()
+            .AddVisioRendering()
             .Build();
         var backends = engine.GetBackends();
 
@@ -110,10 +113,10 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         Assert.Contains(backends, backend => backend.Descriptor.Id == "pdf-rendering");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "word-openxml");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "visio-openxml");
-        Assert.Contains(backends, backend => backend.Descriptor.Id == "visio-com");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "powerpoint-openxml");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "excel-openxml");
         Assert.Contains(backends, backend => backend.Descriptor.Id == "powerpoint-rendering");
+        Assert.Contains(backends, backend => backend.Descriptor.Id == "visio-rendering");
     }
 
     /// <summary>
@@ -234,65 +237,6 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
     }
 
     /// <summary>
-    ///     Proves the Visio COM render case actually executes and passes where the application is
-    ///     installed.
-    /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///         This case is the only place the COM boundary — activation, read-only open, export,
-    ///         and session teardown — is exercised anywhere, so a machine that has Office must prove
-    ///         it works rather than accept a skip. A skip here would mean the suite had quietly
-    ///         stopped testing the thing this case exists for.
-    ///     </para>
-    ///     <para>
-    ///         Where the application is absent the case is legitimately not executed, which is the
-    ///         honest answer for that environment and is the only reason this test tolerates
-    ///         anything other than a pass. A failure is never tolerated on any machine.
-    ///     </para>
-    /// </remarks>
-    [Fact]
-    public void DocDownTool_Validate_ComRenderCases_ExecuteAndPassWhereOfficeIsInstalled()
-    {
-        // Arrange / Act: the shared command-line self-validation over the shipped engine
-        var trx = _runs.Trx.ResultsPath;
-        var parsed = TrxSerializer.Deserialize(File.ReadAllText(trx));
-
-        // The engine's own availability report decides what to expect, so the expectation is
-        // derived from this environment rather than assumed from the platform
-        var backends = new DocDownBuilder().AddVisio().AddPowerPoint().Build().GetBackends();
-        bool Available(string id) =>
-            backends.Any(b => b.Descriptor.Id == id && b.Availability.IsAvailable);
-
-        // Assert: the COM render case ran, and passed wherever its application is present
-        AssertComRenderCase(parsed, "visio.com.render", Available("visio-com"));
-    }
-
-    /// <summary>
-    ///     Asserts one COM render case is present, never failed, and passed where its application is installed.
-    /// </summary>
-    /// <param name="results">The parsed results of the shared validation run.</param>
-    /// <param name="caseName">The self-test case name to inspect.</param>
-    /// <param name="applicationAvailable">Whether the backing Office application is available here.</param>
-    /// <remarks>
-    ///     The availability flag comes from the engine's own backend report, which is the same answer
-    ///     selection acts on, so the expectation is derived from the environment rather than assumed.
-    /// </remarks>
-    private static void AssertComRenderCase(
-        DemaConsulting.TestResults.TestResults results, string caseName, bool applicationAvailable)
-    {
-        var renderCase = Assert.Single(results.Results, r => r.Name == caseName);
-        Assert.NotEqual(TestOutcome.Failed, renderCase.Outcome);
-
-        if (applicationAvailable)
-        {
-            Assert.True(
-                renderCase.Outcome == TestOutcome.Passed,
-                $"'{caseName}' must execute and pass where its application is installed, but was "
-                + $"{renderCase.Outcome}: {renderCase.ErrorMessage}");
-        }
-    }
-
-    /// <summary>
     ///     Proves <c>--list-backends</c> reports the PDF backend as available.
     /// </summary>
     [Fact]
@@ -358,7 +302,7 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         int exit;
         try
         {
-            exit = global::DocDown.Tool.Program.Main(["--bogus-argument"]);
+            exit = global::DemaConsulting.DocDown.Tool.Program.Main(["--bogus-argument"]);
         }
         finally
         {

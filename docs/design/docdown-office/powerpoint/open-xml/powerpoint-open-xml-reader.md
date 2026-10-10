@@ -1,6 +1,6 @@
 ### PowerPointOpenXmlReader
 
-![DocDown.PowerPoint Structure](PowerPointView.svg)
+![DemaConsulting.DocDown.PowerPoint Structure](PowerPointView.svg)
 
 ### Purpose
 
@@ -100,7 +100,7 @@ genuinely blank paragraphs and notes-slide furniture.
 
 ### Dependencies
 
-- **DocDown.Core** — `EmbeddedImage`, `DocumentMetadata`, `OpcCoreProperties`, `OpcMetadataMapper`,
+- **DemaConsulting.DocDown.Core** — `EmbeddedImage`, `DocumentMetadata`, `OpcCoreProperties`, `OpcMetadataMapper`,
   and the model types the reader populates.
 - **DocumentFormat.OpenXml** (OTS) — `PresentationDocument`, `PresentationPart`, `SlidePart`,
   `NotesSlidePart`, `CommentAuthorsPart`, `SlideCommentsPart`, `PowerPointCommentPart` and the

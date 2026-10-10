@@ -1,4 +1,4 @@
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     Identifies a document format by a short stable identifier and its IANA media type.

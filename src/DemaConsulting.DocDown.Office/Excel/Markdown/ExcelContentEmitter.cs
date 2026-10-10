@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text;
-using DocDown.Core;
-using DocDown.Excel.OpenXml;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Excel.OpenXml;
 
-namespace DocDown.Excel.Markdown;
+namespace DemaConsulting.DocDown.Excel.Markdown;
 
 /// <summary>
 ///     Emits a read <see cref="ExcelWorkbookModel"/> through the extraction sink: one content part

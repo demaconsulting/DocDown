@@ -1,6 +1,6 @@
 ## VisioImageReader
 
-![DocDown.Visio Structure](VisioView.svg)
+![DemaConsulting.DocDown.Visio Structure](VisioView.svg)
 
 ### Purpose
 
@@ -38,7 +38,7 @@ would throw. A missing relationship target is skipped rather than failing the re
 
 ### Dependencies
 
-- **DocDown.Core** — `EmbeddedImage` and its provenance fields (source pages, template-referenced flag).
+- **DemaConsulting.DocDown.Core** — `EmbeddedImage` and its provenance fields (source pages, template-referenced flag).
 - **System.IO.Packaging** — the OPC container, its parts, and their relationships.
 - **VisioPageImageRef** — the per-page inline image reference type.
 

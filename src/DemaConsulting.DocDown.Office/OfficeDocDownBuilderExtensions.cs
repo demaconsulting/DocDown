@@ -1,10 +1,10 @@
-using DocDown.Core;
-using DocDown.Excel;
-using DocDown.PowerPoint;
-using DocDown.Visio;
-using DocDown.Word;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Excel;
+using DemaConsulting.DocDown.PowerPoint;
+using DemaConsulting.DocDown.Visio;
+using DemaConsulting.DocDown.Word;
 
-namespace DocDown.Office;
+namespace DemaConsulting.DocDown.Office;
 
 /// <summary>
 ///     The registration seam that adds every Microsoft Office backend to a <see cref="DocDownBuilder"/>.
@@ -18,7 +18,7 @@ namespace DocDown.Office;
 ///     <para>
 ///         The per-format methods remain available for a host that wants only some of them — a
 ///         service that only ever sees spreadsheets can call <c>AddExcel</c> alone and register one
-///         backend rather than five.
+///         backend rather than four.
 ///     </para>
 ///     <para>
 ///         Deliberately free of any Open XML SDK type, so a host can reference the registration
@@ -37,21 +37,20 @@ public static class OfficeDocDownBuilderExtensions
     /// <remarks>
     ///     Equivalent to calling <c>AddWord</c>, <c>AddExcel</c>, <c>AddPowerPoint</c>, and
     ///     <c>AddVisio</c> in turn. Word, Excel, and PowerPoint each register one managed Open XML
-    ///     backend; Visio registers two backends: a managed Open XML reader that works everywhere,
-    ///     and a COM automation backend that renders pages and is selected only where Microsoft
-    ///     Visio is installed. Side effect: mutates <paramref name="builder"/>'s registration list.
+    ///     backend; Visio registers one managed backend built on System.IO.Packaging. Side effect:
+    ///     mutates <paramref name="builder"/>'s registration list.
     /// </remarks>
     /// <example>
     ///     <code language="csharp">
     ///     using System;
-    ///     using DocDown.Core;
-    ///     using DocDown.Office;
+    ///     using DemaConsulting.DocDown.Core;
+    ///     using DemaConsulting.DocDown.Office;
     ///
     ///     var engine = new DocDownBuilder()
     ///         .AddOffice() // .docx, .xlsx, .pptx, .vsdx, .vsdm
     ///         .Build();
     ///
-    ///     Console.WriteLine(engine.Extractors.Count); // 5 — three managed readers and two Visio backends
+    ///     Console.WriteLine(engine.Extractors.Count); // 4 — one managed reader per format
     ///     </code>
     /// </example>
     public static DocDownBuilder AddOffice(this DocDownBuilder builder)

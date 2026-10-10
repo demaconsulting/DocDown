@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
-using DocDown.Core;
-using DocDown.Word.Markdown;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Word.Markdown;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using A = DocumentFormat.OpenXml.Drawing;
@@ -9,7 +9,7 @@ using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
 using W = DocumentFormat.OpenXml.Wordprocessing;
 using WP = DocumentFormat.OpenXml.Drawing.Wordprocessing;
 
-namespace DocDown.Word.OpenXml;
+namespace DemaConsulting.DocDown.Word.OpenXml;
 
 /// <summary>
 ///     Reads a Word Open XML document into the backend-neutral <see cref="WordDocumentModel"/>.

@@ -1,7 +1,7 @@
+using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
-using DocDown.Visio.Markdown;
-using DocDown.Visio.OpenXml;
+using DemaConsulting.DocDown.Visio.Markdown;
+using DemaConsulting.DocDown.Visio.OpenXml;
 
 namespace DemaConsulting.DocDown.Office.Tests.Visio.Markdown;
 

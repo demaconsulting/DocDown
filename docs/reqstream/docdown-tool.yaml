@@ -1,10 +1,10 @@
 ---
-# Software System Requirements for DocDown.Tool
+# Software System Requirements for DemaConsulting.DocDown.Tool
 #
 # These requirements describe the externally visible behavior of the docdown command-line
 # tool from the perspective of someone invoking it, without specifying implementation
 # details. Each decomposes into subsystem and unit requirements linked below via children,
-# and is proven by system-level tests. DocDown.Tool has two subsystems (Cli, SelfTest) and
+# and is proven by system-level tests. DemaConsulting.DocDown.Tool has two subsystems (Cli, SelfTest) and
 # one direct unit (Program).
 #
 # SUPERSEDED REQUIREMENT: DocDownTool-ListBackends required the backend inventory to include
@@ -14,7 +14,7 @@
 # DocDownTool-BackendInventory.
 #
 # SUPERSEDED REQUIREMENT: DocDownTool-VerifyFolder required a separate contract-verification
-# command. The ContractVerifier and the --verify surface were removed when DocDown.Tool was
+# command. The ContractVerifier and the --verify surface were removed when DemaConsulting.DocDown.Tool was
 # reduced to extraction reporting and self-validation only. This requirement is retired with
 # no replacement.
 

@@ -1,0 +1,111 @@
+---
+# Software Unit Requirements for VisioPageRenderingExtractor
+#
+# VisioPageRenderingExtractor is the superset backend: it is unconditionally available with
+# rendered-page support, delegates the managed aspects to the base Visio backend, rasterizes the
+# requested pages, and reports every per-page failure as a plain note.
+
+sections:
+  - title: DocDownVisioRendering Requirements
+    sections:
+      - title: VisioPageRenderingExtractor Requirements
+        requirements:
+          - id: DocDownVisioRendering-VisioPageRenderingExtractor-ReportsUnconditionalAvailability
+            title: >-
+              VisioPageRenderingExtractor shall unconditionally report itself available with
+              rendered-page support.
+            justification: |
+              CanvasNet.Vsdx is fully managed and carries no runtime-identifier-specific asset, so
+              there is no environment in which this backend cannot rasterize. Reporting availability
+              unconditionally, rather than through a probe that could report otherwise, is what lets
+              Core choose this backend without an environment-dependent guess.
+            tests:
+              - VisioPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReportsUnconditionallyAvailable
+
+          - id: DocDownVisioRendering-VisioPageRenderingExtractor-DelegatesManagedAspects
+            title: >-
+              VisioPageRenderingExtractor shall obtain shape text, topology, embedded images, and
+              document metadata by delegating to the managed Visio backend with rendering
+              suppressed.
+            justification: |
+              Re-implementing the managed aspects would duplicate faithful, well-tested behavior and
+              risk divergence. Delegating with rendering suppressed reuses one source of truth and
+              keeps this unit focused on rasterization alone.
+            tests:
+              - VisioPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePng
+
+          - id: DocDownVisioRendering-VisioPageRenderingExtractor-SkipsRasterizationWhenNotRequested
+            title: >-
+              VisioPageRenderingExtractor shall not rasterize any page when page rendering was not
+              requested, even when it is the only registered backend for the format.
+            justification: |
+              Selection may hand this backend a plain extraction request when a host registers it
+              without the managed backend, since it is then the sole candidate regardless of what was
+              requested. Guarding rasterization on the request itself, rather than trusting selection
+              to only ever invoke this unit for a rendering request, is what keeps a plain extraction
+              free of rasterization cost in every registration shape.
+            tests:
+              - VisioPageRenderingExtractor_ExtractAsync_RenderNotRequested_WritesNoPages
+
+          - id: DocDownVisioRendering-VisioPageRenderingExtractor-WritesRenderedPages
+            title: >-
+              VisioPageRenderingExtractor shall write a valid PNG image for each rendered page
+              through the sink.
+            justification: |
+              The rendered page is the artifact this package adds. Writing it through the sink,
+              named by its page number, is what makes the mapping from output file to source page
+              unambiguous and the image a real, decodable PNG.
+            tests:
+              - VisioPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePng
+              - DocDownVisioRendering_Render_ProbeDrawing_ProducesValidPngPages
+
+          - id: DocDownVisioRendering-VisioPageRenderingExtractor-ReportsPageFailuresAsNotes
+            title: >-
+              VisioPageRenderingExtractor shall report a per-page rasterization failure as the plain
+              note `Page N could not be rasterized.`, continue with the remaining pages, and not
+              throw to the caller.
+            justification: |
+              One unrenderable page must not abort a whole extraction or reach the caller as an
+              exception. Catching each page's fault, naming the page in a short factual note, and
+              continuing is what keeps the run honest and alive without adding any extra judgement.
+            tests:
+              - VisioPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsNoteWithoutThrowing
+
+          - id: DocDownVisioRendering-VisioPageRenderingExtractor-ReportsPageCountFailureAsNote
+            title: >-
+              VisioPageRenderingExtractor shall report a page-count failure as the single plain note
+              `Pages could not be counted, so no page images were rendered.`, keep the delegated
+              managed content, and not throw to the caller.
+            justification: |
+              A page-count fault happens before any page-specific rasterization is attempted. Losing
+              only the rendered pages, while keeping the managed content the delegate already wrote,
+              is what keeps an otherwise good extraction from collapsing into an unreadable one.
+            tests:
+              - VisioPageRenderingExtractor_ExtractAsync_PageCountFaults_ReportsNoteAndKeepsDelegatedContent
+
+          - id: DocDownVisioRendering-VisioPageRenderingExtractor-ReportsEmptySelectionAsNote
+            title: >-
+              VisioPageRenderingExtractor shall report the plain note "Page rendering was requested
+              and a renderer was available, but no pages were produced." itself whenever page
+              rendering was requested and no page was selected to render.
+            justification: |
+              Core cannot distinguish this backend's own empty-outcome explanation from an unrelated
+              note the delegated managed backend may already have recorded during the earlier,
+              separate extraction phase, so it no longer attempts to infer or suppress a generic note
+              on this backend's behalf. Recording the note from the backend's own selected-page
+              count, which is immune to any unrelated note recorded elsewhere, is what keeps the
+              empty-pages outcome explained exactly once without relying on sink history.
+            tests:
+              - VisioPageRenderingExtractor_ExtractAsync_PageRangeSelectsNoPage_ReportsEmptyPagesNote
+
+          - id: DocDownVisioRendering-VisioPageRenderingExtractor-ContributesSelfTests
+            title: >-
+              VisioPageRenderingExtractor shall contribute a render round-trip self-test case named
+              distinctly from the managed backend's cases, which passes in every environment.
+            justification: |
+              An operator needs to confirm rendering genuinely works wherever DocDown is deployed. A
+              distinctly named case that renders the embedded drawing and always passes — because
+              CanvasNet.Vsdx carries no environment-dependent failure mode — provides that
+              confirmation without colliding with the managed backend's own case names.
+            tests:
+              - VisioPageRenderingExtractor_GetSelfTestCases_AnyEnvironment_PassesRenderCase

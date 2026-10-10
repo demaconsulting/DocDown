@@ -1,11 +1,11 @@
-using DocDown.Core;
-using DocDown.Word.Markdown;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.Word.Markdown;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
-using CoreFormat = DocDown.Core.DocumentFormat;
+using CoreFormat = DemaConsulting.DocDown.Core.DocumentFormat;
 using W = DocumentFormat.OpenXml.Wordprocessing;
 
-namespace DocDown.Word.OpenXml;
+namespace DemaConsulting.DocDown.Word.OpenXml;
 
 /// <summary>
 ///     The Word Open XML backend: extracts text, real tables, embedded images, document control, and
@@ -81,9 +81,9 @@ public sealed class WordOpenXmlExtractor : IDocumentExtractor, ISelfValidating
         var cancellationToken = context.CancellationToken;
 
         // Record what parsed this document, and state plainly that page rendering is not on offer
-        sink.ReportEnvironmentFact(new EnvironmentFact("DocDown.Word", "word.backend", "Open XML SDK (managed)", Available: true));
+        sink.ReportEnvironmentFact(new EnvironmentFact("DemaConsulting.DocDown.Word", "word.backend", "Open XML SDK (managed)", Available: true));
         sink.ReportEnvironmentFact(new EnvironmentFact(
-            "DocDown.Word", "word.pageRendering", "not provided by this extractor", Available: false));
+            "DemaConsulting.DocDown.Word", "word.pageRendering", "not provided by this extractor", Available: false));
 
         // Buffer the source: the package reader must seek, and a stream source is not guaranteed seekable
         var bytes = await ReadSourceAsync(source, cancellationToken).ConfigureAwait(false);

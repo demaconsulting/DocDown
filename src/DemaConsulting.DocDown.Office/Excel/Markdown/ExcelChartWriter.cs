@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Text;
-using DocDown.Excel.OpenXml;
+using DemaConsulting.DocDown.Excel.OpenXml;
 
-namespace DocDown.Excel.Markdown;
+namespace DemaConsulting.DocDown.Excel.Markdown;
 
 /// <summary>
 ///     Renders one chart's cached data as markdown: the labeling that makes the numbers mean

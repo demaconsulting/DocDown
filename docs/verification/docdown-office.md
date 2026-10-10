@@ -1,11 +1,11 @@
-# DocDown.Office Verification Design
+# DemaConsulting.DocDown.Office Verification Design
 
-This document describes the system-level verification strategy for `DocDown.Office`, the Microsoft
+This document describes the system-level verification strategy for `DemaConsulting.DocDown.Office`, the Microsoft
 Office extraction package.
 
 ## Verification Approach
 
-`DocDown.Office` is verified through the per-format system tests described in the Word, Excel,
+`DemaConsulting.DocDown.Office` is verified through the per-format system tests described in the Word, Excel,
 PowerPoint, and Visio subsystem verification documents, plus the system-level tests in
 `DemaConsulting.DocDown.Office.Tests`, running on xUnit v3 across net8.0, net9.0, and net10.0.
 
@@ -20,7 +20,7 @@ as readily as when one is silently added, and a merge of four packages into one 
 that could drop one unnoticed.
 
 One of the surviving per-format calls is verified directly. `AddExcel()` alone must register one
-backend, not six — that granularity is the stated reason those methods were kept, and an untested
+backend, not four — that granularity is the stated reason those methods were kept, and an untested
 reason is a weak one. `AddWord()`, `AddPowerPoint()`, and `AddVisio()` follow the identical shape and
 are not separately asserted here.
 
@@ -40,13 +40,10 @@ inside it. What is inside it is answered by the self-tests that extract it.
 - **Inputs**: the probe documents embedded in the package, authored in Microsoft Word, Excel,
   PowerPoint, and Visio and scrubbed of author metadata
 - **Mocking**: none at this level; the registration tests build the real engine
-- **Office automation**: not required. The COM backends register regardless of whether Microsoft
-  Office is present; whether they are *selected* is decided by their availability probe, which is
-  verified in the Com subsystem.
 
 ## Acceptance Criteria
 
-- `AddOffice()` registers exactly the five backends the package ships.
+- `AddOffice()` registers exactly the four backends the package ships.
 - `AddOffice()` returns the same builder, so registration chains.
 - A null builder is rejected rather than silently ignored.
 - `AddExcel()` alone registers exactly one backend.
@@ -60,7 +57,7 @@ inside it. What is inside it is answered by the self-tests that extract it.
 **Test**: `AddOffice_OnBuilder_RegistersEveryOfficeBackend`
 
 Builds an engine through `AddOffice()` and asserts the set of extractor identifiers is
-exactly `excel-openxml`, `powerpoint-openxml`, `visio-com`, `visio-openxml`, and
+exactly `excel-openxml`, `powerpoint-openxml`, `visio-openxml`, and
 `word-openxml`. The identifiers are sorted before comparison, so this fixes membership, not
 registration order. Evidence for `DocDownOffice-Registration`.
 
@@ -75,8 +72,8 @@ Proves the method returns its argument so calls compose, and that a null builder
 
 **Test**: `AddExcel_Alone_RegistersOnlyTheExcelBackend`
 
-Proves the per-format calls still register one format's backends on their own, so a host that reads
-only spreadsheets carries one backend rather than six. Evidence for `DocDownOffice-Registration`.
+Proves the per-format calls still register one format's backend on their own, so a host that reads
+only spreadsheets carries one backend rather than four. Evidence for `DocDownOffice-Registration`.
 
 ### The package carries its probe documents
 

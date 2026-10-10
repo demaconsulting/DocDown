@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     Produces the alt text for an inline markdown image link, applying the shared honesty and

@@ -1,14 +1,14 @@
 package DocDownPdf {
     doc
     /*
-     * DocDown.Pdf is a .NET library that extracts text, embedded images, document
+     * DemaConsulting.DocDown.Pdf is a .NET library that extracts text, embedded images, document
      * metadata, and reviewer annotations from PDF documents into the DocDown output
      * contract. It is 100% managed and ships no native assets, so it deliberately
      * provides no page rendering.
      */
 
     part def DocDownPdfSystem {
-        doc /* The DocDown.Pdf extraction system as a whole. */
+        doc /* The DemaConsulting.DocDown.Pdf extraction system as a whole. */
 
         comment testRef /* Test: test/DemaConsulting.DocDown.Pdf.Tests/DocDownPdfTests.cs */
         comment designRef /* Design: docs/design/docdown-pdf.md */

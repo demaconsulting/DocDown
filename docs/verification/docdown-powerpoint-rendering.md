@@ -1,11 +1,11 @@
-# DocDown.PowerPoint.Rendering Verification Design
+# DemaConsulting.DocDown.PowerPoint.Rendering Verification Design
 
-This document describes the system-level verification strategy for `DocDown.PowerPoint.Rendering`,
+This document describes the system-level verification strategy for `DemaConsulting.DocDown.PowerPoint.Rendering`,
 the optional PowerPoint slide-rendering package.
 
 ## Verification Approach
 
-`DocDown.PowerPoint.Rendering` is verified through system-level integration tests in
+`DemaConsulting.DocDown.PowerPoint.Rendering` is verified through system-level integration tests in
 `DocDownPowerPointRenderingTests.cs` and focused unit tests per unit, all in
 `DemaConsulting.DocDown.PowerPoint.Rendering.Tests`, running on xUnit v3 across net8.0, net9.0, and
 net10.0.
@@ -47,7 +47,7 @@ delegated managed content (text, images, metadata) left intact.
 ### Test fixtures reuse the embedded self-test probe; no binary is duplicated
 
 The test suite loads the real `Resources/probe.pptx` the production assembly embeds — the same file
-`docdown --validate` rasterizes — via `DocDown.Core`'s public `SelfTestProbe.Load` helper, rather than
+`docdown --validate` rasterizes — via `DemaConsulting.DocDown.Core`'s public `SelfTestProbe.Load` helper, rather than
 duplicating the binary in the test project. It is a real two-slide deck authored in Microsoft
 PowerPoint, so the rasterizer is always exercised against a file a real producer wrote. The PNG
 inspector reads only the signature and header, so no image-decoding dependency is added to the test

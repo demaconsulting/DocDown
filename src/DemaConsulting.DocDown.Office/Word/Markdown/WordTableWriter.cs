@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace DocDown.Word.Markdown;
+namespace DemaConsulting.DocDown.Word.Markdown;
 
 /// <summary>
 ///     Renders a <see cref="WordTableModel"/> to a GitHub-flavored-markdown table, applying the

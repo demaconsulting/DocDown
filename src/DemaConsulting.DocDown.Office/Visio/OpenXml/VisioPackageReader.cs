@@ -1,8 +1,8 @@
 using System.IO.Packaging;
 using System.Xml.Linq;
-using DocDown.Core;
+using DemaConsulting.DocDown.Core;
 
-namespace DocDown.Visio.OpenXml;
+namespace DemaConsulting.DocDown.Visio.OpenXml;
 
 /// <summary>
 ///     Reads a Visio drawing's Open Packaging container directly with <see cref="System.IO.Packaging"/>
@@ -554,14 +554,13 @@ internal static class VisioPackageReader
 }
 
 /// <summary>
-///     The exception the Visio reader or COM adapter raises for a drawing it cannot open or
-///     interpret, so Core can convert it into a structured failure rather than letting a raw fault
-///     reach the caller.
+///     The exception the Visio reader raises for a drawing it cannot open or interpret, so Core
+///     can convert it into a structured failure rather than letting a raw fault reach the caller.
 /// </summary>
 /// <remarks>
-///     Raised for a package that is not a valid Open Packaging container, a drawing with no pages
-///     part, or a COM automation failure. Core catches it and writes a structured failure with the
-///     full output layout still present.
+///     Raised for a package that is not a valid Open Packaging container, or a drawing with no
+///     pages part. Core catches it and writes a structured failure with the full output layout
+///     still present.
 /// </remarks>
 public sealed class VisioExtractionException : Exception
 {

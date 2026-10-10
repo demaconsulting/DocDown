@@ -1,8 +1,8 @@
 ---
-# System-Level Platform Requirements for DocDown.Excel
+# System-Level Platform Requirements for DemaConsulting.DocDown.Excel
 #
 # These requirements specify the platforms and frameworks the package must support.
-# DocDown.Excel is 100% managed and runtime-identifier agnostic, so its platform evidence is
+# DemaConsulting.DocDown.Excel is 100% managed and runtime-identifier agnostic, so its platform evidence is
 # the end-to-end extraction test, which selects the managed backend and produces the full output
 # contract and so passes on every runtime the package targets.
 #

@@ -1,4 +1,4 @@
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 /// The extraction contract every DocDown backend implements and the machinery that runs it:
@@ -7,7 +7,7 @@ namespace DocDown.Core;
 /// <c>images/</c>, <c>pages/</c>). Start at <c>DocDownBuilder</c> to register backends and build
 /// a <c>DocDownEngine</c>, which selects one <c>IDocumentExtractor</c> per document and gives it
 /// an <c>IExtractionSink</c> — the sole write path to the scratch folder. This package carries no
-/// format-specific code; add <c>DocDown.Pdf</c>, <c>DocDown.Word</c> and the other backend
+/// format-specific code; add <c>DemaConsulting.DocDown.Pdf</c>, <c>DemaConsulting.DocDown.Word</c> and the other backend
 /// packages for the formats you need.
 /// </summary>
 /// <remarks>
@@ -42,8 +42,8 @@ namespace DocDown.Core;
 /// <code language="csharp">
 /// using System;
 /// using System.Threading;
-/// using DocDown.Core;
-/// using DocDown.Excel;
+/// using DemaConsulting.DocDown.Core;
+/// using DemaConsulting.DocDown.Excel;
 ///
 /// var engine = new DocDownBuilder()
 ///     .AddExcel() // .xlsx - cells, formulas, charts; workbooks are never rendered

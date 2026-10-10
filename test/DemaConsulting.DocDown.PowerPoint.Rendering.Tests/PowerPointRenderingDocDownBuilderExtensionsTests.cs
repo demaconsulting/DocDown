@@ -1,6 +1,6 @@
 using System.Reflection;
-using DocDown.Core;
-using DocDown.PowerPoint.Rendering;
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.PowerPoint.Rendering;
 
 namespace DemaConsulting.DocDown.PowerPoint.Rendering.Tests;
 

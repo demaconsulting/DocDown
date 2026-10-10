@@ -5,6 +5,7 @@
     <Project Path="src/DemaConsulting.DocDown.Office/DemaConsulting.DocDown.Office.csproj" />
     <Project Path="src/DemaConsulting.DocDown.Pdf.Rendering/DemaConsulting.DocDown.Pdf.Rendering.csproj" />
     <Project Path="src/DemaConsulting.DocDown.PowerPoint.Rendering/DemaConsulting.DocDown.PowerPoint.Rendering.csproj" />
+    <Project Path="src/DemaConsulting.DocDown.Visio.Rendering/DemaConsulting.DocDown.Visio.Rendering.csproj" />
     <Project Path="src/DemaConsulting.DocDown.Tool/DemaConsulting.DocDown.Tool.csproj" />
   </Folder>
   <Folder Name="/test/">
@@ -13,6 +14,7 @@
     <Project Path="test/DemaConsulting.DocDown.Pdf.Rendering.Tests/DemaConsulting.DocDown.Pdf.Rendering.Tests.csproj" />
     <Project Path="test/DemaConsulting.DocDown.Pdf.Tests/DemaConsulting.DocDown.Pdf.Tests.csproj" />
     <Project Path="test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/DemaConsulting.DocDown.PowerPoint.Rendering.Tests.csproj" />
+    <Project Path="test/DemaConsulting.DocDown.Visio.Rendering.Tests/DemaConsulting.DocDown.Visio.Rendering.Tests.csproj" />
     <Project Path="test/DemaConsulting.DocDown.Tool.Tests/DemaConsulting.DocDown.Tool.Tests.csproj" />
     <Project Path="test/DemaConsulting.DocDown.TestSupport/DemaConsulting.DocDown.TestSupport.csproj" />
   </Folder>

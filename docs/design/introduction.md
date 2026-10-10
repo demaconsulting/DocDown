@@ -84,7 +84,7 @@ Three principles constrain every design decision in this document:
 This document covers the detailed design of the DocDown systems and their constituent software
 items, specifically:
 
-- **DocDown.Core (System)** — Shared abstractions and the implementation of the output contract,
+- **DemaConsulting.DocDown.Core (System)** — Shared abstractions and the implementation of the output contract,
   organized into three subsystems
 - **Detection (Subsystem)** — Identifies a document's format and the evidence behind the
   identification
@@ -108,7 +108,7 @@ items, specifically:
     and notes
   - **ImageTextSelector (Unit)** — Chooses which of the texts a document offered for an image is
     the most direct, so an image link carries the document's own words rather than invented ones
-- **DocDown.Pdf (System)** — PDF text, embedded-image, and document-metadata extraction; flat, with
+- **DemaConsulting.DocDown.Pdf (System)** — PDF text, embedded-image, and document-metadata extraction; flat, with
   no subsystems, because there is one architectural boundary here rather than several
   - **PdfDocumentExtractor (Unit)** — The backend the engine selects: availability, metadata,
     delegation, the content inventory, and notes
@@ -117,7 +117,7 @@ items, specifically:
   - **PdfImageExtractor (Unit)** — Writes the embedded images, labeling how each was produced and
     accounting for every one it could not deliver
   - **PdfDocDownBuilderExtensions (Unit)** — The reflection-free registration seam
-- **DocDown.Pdf.Rendering (System)** — Optional PDF page rendering (rasterization); flat, with no
+- **DemaConsulting.DocDown.Pdf.Rendering (System)** — Optional PDF page rendering (rasterization); flat, with no
   subsystems, and fully managed like the rest of DocDown
   - **PdfPageRenderingExtractor (Unit)** — The page-rendering backend the engine selects when
     rendering is requested: delegates the managed aspects, rasterizes pages, and
@@ -126,7 +126,7 @@ items, specifically:
     call and rasterizes one page to a PNG
   - **PdfRenderingDocDownBuilderExtensions (Unit)** — The reflection-free registration seam,
     carrying no CanvasNet type on its surface
-- **DocDown.Tool (System)** — The `docdown` command-line tool; two subsystems and one direct unit
+- **DemaConsulting.DocDown.Tool (System)** — The `docdown` command-line tool; two subsystems and one direct unit
   - **Program (Unit, direct)** — The entry point: priority-ordered dispatch, banner and help,
     explicit engine registration, extraction and reporting, and the auxiliary commands
   - **Cli (Subsystem)** — Command-line parsing, validation, option mapping, and output routing
@@ -136,32 +136,42 @@ items, specifically:
       the backend self-test union, and TRX/JUnit output
     - **SelfTestAdapter (Unit)** — Maps Core's dependency-free self-test records into the TestResults
       model
-- **DocDown.Office (System)** — Word, Excel, PowerPoint, and Visio extraction; four format
-  subsystems and one shared subsystem
+- **DemaConsulting.DocDown.Office (System)** — Word, Excel, PowerPoint, and Visio extraction; four format
+  subsystems
   - **Word (Subsystem)** — Word text, real tables, embedded images, reviewer comments, footnotes,
     document-control content, and document metadata, through the managed Open XML SDK
   - **Excel (Subsystem)** — Worksheet cell values recorded verbatim, the formulas behind computed
     cells, cached chart data, drawing annotations, embedded images, and workbook metadata
   - **PowerPoint (Subsystem)** — Slide text, titles, speaker notes, slide order, embedded images,
     and metadata through a managed backend; slide images are a separate, opt-in concern provided by
-    the `DocDown.PowerPoint.Rendering` system
+    the `DemaConsulting.DocDown.PowerPoint.Rendering` system
   - **Visio (Subsystem)** — Page names, shape text, and directed-connector topology through a
-    managed Open Packaging backend; page images through a COM automation backend
-  - **Com (Subsystem)** — The COM availability probe and the composition helpers the Visio
-    automation backend uses
+    managed Open Packaging backend; page images are a separate, opt-in concern provided by the
+    `DemaConsulting.DocDown.Visio.Rendering` system
+- **DemaConsulting.DocDown.Visio.Rendering (System)** — Optional Visio page rendering (rasterization); flat, with no
+  subsystems, and fully managed like the rest of DocDown
+  - **VisioPageRenderingExtractor (Unit)** — The page-rendering backend the engine selects when
+    rendering is requested: delegates the managed aspects, rasterizes pages, and records notes for
+    pages it cannot render
+  - **PageRenderer (Unit)** — The single rasterization seam: opens a CanvasNet.Vsdx document per
+    call and rasterizes one page to a PNG
+  - **VisioRenderingDocDownBuilderExtensions (Unit)** — The reflection-free registration seam,
+    carrying no CanvasNet type on its surface
 
 The following OTS items are also covered:
 
 - **BuildMark** — build-notes documentation tool
-- **CanvasNet** — fully-managed 2D canvas/codec library, a runtime dependency of
-  DocDown.Pdf.Rendering used for PNG encoding
+- **CanvasNet** — fully-managed 2D canvas/codec library, a runtime dependency of the Pdf, PowerPoint, and
+  Visio rendering packages used for PNG encoding
 - **CanvasNet.Pdf** — fully-managed PDF rasterization API, the runtime dependency of
-  DocDown.Pdf.Rendering used to rasterize pages. It and CanvasNet carry no native assets
+  DemaConsulting.DocDown.Pdf.Rendering used to rasterize pages. It and CanvasNet carry no native assets
+- **CanvasNet.Vsdx** — fully-managed Visio rasterization API, the runtime dependency of
+  DemaConsulting.DocDown.Visio.Rendering used to rasterize pages; it carries no native assets
 - **FileAssert** — document assertion tool
-- **Open XML SDK** — managed Open XML reader/writer, a runtime dependency of DocDown.Office
+- **Open XML SDK** — managed Open XML reader/writer, a runtime dependency of DemaConsulting.DocDown.Office
   shipped to consumers rather than a build-time tool
 - **Pandoc** — Markdown-to-HTML conversion tool
-- **PdfPig** — managed PDF parser, a runtime dependency of DocDown.Pdf shipped to consumers rather
+- **PdfPig** — managed PDF parser, a runtime dependency of DemaConsulting.DocDown.Pdf shipped to consumers rather
   than a build-time tool
 - **ReqStream** — requirements traceability tool
 - **ReviewMark** — file review enforcement tool
@@ -169,8 +179,8 @@ The following OTS items are also covered:
 - **SonarMark** — SonarCloud quality report tool
 - **SysML2Tools** — architecture model lint and diagram rendering tool
 - **System.IO.Packaging** — managed Open Packaging Conventions container reader, referenced and
-  called directly by DocDown.Office to open an Office document's container
-- **TestResults** — test-results serialization library, the one runtime dependency of DocDown.Tool
+  called directly by DemaConsulting.DocDown.Office to open an Office document's container
+- **TestResults** — test-results serialization library, the one runtime dependency of DemaConsulting.DocDown.Tool
 - **VersionMark** — tool-version documentation tool
 - **WeasyPrint** — HTML-to-PDF conversion tool
 - **xUnit** — unit-testing framework
@@ -197,7 +207,7 @@ diagram or the prose below.
 
 ![Software Structure](SoftwareStructureView.svg)
 
-DocDown.Core is organized into three subsystems that form a one-directional pipeline: **Detection**
+DemaConsulting.DocDown.Core is organized into three subsystems that form a one-directional pipeline: **Detection**
 identifies a document's format, **Extraction** registers backends and selects the best available one
 deterministically, and **Output** is the sole write path that produces the invariant scratch-folder
 layout. Each subsystem is a distinct architectural boundary with its own public surface, and the
@@ -206,51 +216,49 @@ subsystems; a larger set of supporting value, contract, and enumeration types �
 `ExtractionNote` — is documented inline within each subsystem's design document rather than as
 separate units.
 
-DocDown.Pdf sits alongside DocDown.Core as the second system and the first real extraction backend. It
+DemaConsulting.DocDown.Pdf sits alongside DemaConsulting.DocDown.Core as the second system and the
+first real extraction backend. It
 is flat - four units, no subsystems - because it spans one architectural boundary, the PDF, rather
-than several. It depends on DocDown.Core for the extraction contract and on the PdfPig OTS parser for
+than several. It depends on DemaConsulting.DocDown.Core for the extraction contract and on the PdfPig OTS parser for
 PDF structure, and a host joins the two with a single explicit registration call.
 
-DocDown.Pdf.Rendering is the third system: the optional page-rendering backend. It too is flat -
+DemaConsulting.DocDown.Pdf.Rendering is the third system: the optional page-rendering backend. It too is flat -
 three units, no subsystems - because it spans one boundary, rasterization. It depends on
-DocDown.Core for the contract and on DocDown.Pdf for the managed text/image/metadata extraction it
+DemaConsulting.DocDown.Core for the contract and on DemaConsulting.DocDown.Pdf for the managed
+text/image/metadata extraction it
 delegates to, and it wraps the fully-managed CanvasNet.Pdf and CanvasNet OTS APIs in a single
 rasterization seam. Because selection is deterministic, the rendering backend is chosen over the
 managed backend only when page rendering is requested; rendering is always available, since
 CanvasNet.Pdf carries no native assets.
 
-DocDown.Tool is the fourth system: the `docdown` command-line tool, a thin executable shell over
-DocDown.Core and the registered backends. It has two subsystems - Cli, which owns the command line,
+DemaConsulting.DocDown.Tool is the fourth system: the `docdown` command-line tool, a thin executable shell over
+DemaConsulting.DocDown.Core and the registered backends. It has two subsystems - Cli, which owns the command line,
 and SelfTest, which drives the `--validate` self-validation - plus Program, the entry point, as a
 direct unit. It registers its backends explicitly - `AddPdf().AddPdfRendering().AddWord()` - so it
 can be published as a single-file executable. Every backend it carries, including PDF page
 rendering, is fully managed and runtime-identifier agnostic, so both a framework-dependent
 `dotnet tool install -g` and a self-contained single-file publish stay portable across platforms;
 trimming and AOT are still left off as unverified for this dependency graph. It is the only package
-that references the DemaConsulting.TestResults OTS library, which keeps DocDown.Core free of
+that references the DemaConsulting.TestResults OTS library, which keeps DemaConsulting.DocDown.Core free of
 runtime dependencies.
 
-DocDown.Office is the fifth system: the Microsoft Office extraction backends, and the second family of
+DemaConsulting.DocDown.Office is the fifth system: the Microsoft Office extraction backends, and the second family of
 formats after PDF. It is one package holding four format subsystems — Word, Excel, PowerPoint and
-Visio — plus Com, the helpers the COM backends share. Those four were four packages once. They share a
+Visio. Those four were four packages once. They share a
 dependency, a release cadence and an audience, and splitting them bought a consumer nothing but four
-references to keep in step, while producing duplication the compiler could not see: two
-byte-equivalent copies of the COM composition helpers, and two identical availability probes. The
-namespaces did not move, so `DocDown.Word` and its siblings still hold the same types.
+references to keep in step. The
+namespaces did not move, so `DemaConsulting.DocDown.Word` and its siblings still hold the same types.
 
 Word and Excel are fully managed and read `.docx` and `.xlsx` on every platform with no native
 dependency. PowerPoint is also fully managed: it reads `.pptx` text, structure, images and metadata
 anywhere with no native dependency, and slide rendering is a separate, opt-in concern handled by the
-`DocDown.PowerPoint.Rendering` system rather than by a COM backend in this package. Visio ships two
-backends: a managed reader that extracts text, structure, images and metadata anywhere, and a COM
-automation backend that additionally renders page images where Microsoft Office is installed. The
-Visio COM backend probes its own availability cheaply and reports itself unavailable off Windows or
-where the application is not registered, so the managed backend serves the format instead and a
-rendering request made where the application is absent is recorded as a note rather than silently
-omitted. The package depends on DocDown.Core, the Open XML SDK and System.IO.Packaging; it ships no
-native asset, because the COM backend reaches Office through late-bound IDispatch with no interop
-assembly. The legacy binary formats — `.doc`, `.xls`, `.ppt` and `.vsd` — are not supported by
-DocDown at all.
+`DemaConsulting.DocDown.PowerPoint.Rendering` system rather than by a backend in this package. Visio
+is fully managed as well: it reads `.vsdx`/`.vsdm` text, structure, images and metadata anywhere with
+no native dependency, and page rendering is a separate, opt-in concern handled by the
+`DemaConsulting.DocDown.Visio.Rendering` system rather than by a backend in this package. The package
+depends on DemaConsulting.DocDown.Core, the Open XML SDK and System.IO.Packaging; it ships no
+native asset, so it stays runtime-identifier agnostic end to end. The legacy binary formats — `.doc`,
+`.xls`, `.ppt` and `.vsd` — are not supported by DocDown at all.
 
 ## Folder Layout
 
@@ -293,11 +301,6 @@ DemaConsulting.DocDown.Core/
 
 DemaConsulting.DocDown.Office/
 ├── OfficeDocDownBuilderExtensions.cs — Unit: registers every Office backend in one call
-├── Com/
-│   ├── ComposingDelegatedSink.cs        — Internal: reconciles the delegated backend's rendering facts
-│   ├── DelegatedExtractionContext.cs    — Internal: the render-suppressed context for the delegated managed run
-│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
-│   ├── OfficeComAvailability.cs         — Internal: probes whether an Office application's COM automation can run here
 ├── Excel/
 │   ├── ExcelDocDownBuilderExtensions.cs — Unit: the reflection-free AddExcel registration seam
 │   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
@@ -327,13 +330,6 @@ DemaConsulting.DocDown.Office/
 ├── Visio/
 │   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
 │   ├── VisioDocDownBuilderExtensions.cs — Unit: the reflection-free AddVisio registration seam
-├── Visio/Com/
-│   ├── IVisioAutomation.cs              — Interface: the render seam and its per-page result type
-│   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
-│   ├── VisioAutomation.cs               — Unit: the real COM automation adapter (Windows-only)
-│   ├── VisioComAvailability.cs          — Unit: the cheap, side-effect-free rendering-availability probe
-│   ├── VisioComDispatch.cs              — Internal: the low-level IDispatch plumbing and teardown
-│   ├── VisioComExtractor.cs             — Unit: the full-superset backend that delegates content and renders pages
 ├── Visio/Markdown/
 │   ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
 │   ├── VisioContentEmitter.cs           — Unit: the model-to-sink emission path, per-page content, inventory, and notes

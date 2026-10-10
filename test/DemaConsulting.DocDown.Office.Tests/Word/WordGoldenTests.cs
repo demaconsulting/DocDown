@@ -1,9 +1,9 @@
 using System.Text;
+using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.Office.Tests.Word.TestData;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
-using DocDown.Word;
-using DocDown.Word.OpenXml;
+using DemaConsulting.DocDown.Word;
+using DemaConsulting.DocDown.Word.OpenXml;
 
 namespace DemaConsulting.DocDown.Office.Tests.Word;
 

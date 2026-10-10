@@ -1,6 +1,6 @@
 ## WordDocDownBuilderExtensions
 
-![DocDown.Word Structure](WordView.svg)
+![DemaConsulting.DocDown.Word Structure](WordView.svg)
 
 ### Purpose
 
@@ -16,7 +16,7 @@ either upheld or lost.
 ### Data Model
 
 `WordDocDownBuilderExtensions` is a `public static class` with no state. It carries no Open XML SDK
-type on its public surface — the `using DocDown.Word.OpenXml;` directive references only this
+type on its public surface — the `using DemaConsulting.DocDown.Word.OpenXml;` directive references only this
 package's own extractor type — so a host can reference the surface it configures without the SDK's
 types entering its own compilation. Its member is thread-safe; the builder it mutates is not.
 
@@ -43,10 +43,10 @@ input or output and constructs nothing.
 
 ### Dependencies
 
-- **DocDown.Core** — `DocDownBuilder`.
+- **DemaConsulting.DocDown.Core** — `DocDownBuilder`.
 - **WordOpenXmlExtractor** — the backend registered. See *WordOpenXmlExtractor Design*.
 
 ### Callers
 
-A host application, once, when configuring an engine. `DocDown.Tool` calls `AddWord` alongside its
+A host application, once, when configuring an engine. `DemaConsulting.DocDown.Tool` calls `AddWord` alongside its
 other extractor registrations. Nothing inside this package calls it.

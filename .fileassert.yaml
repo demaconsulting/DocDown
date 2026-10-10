@@ -1,5 +1,5 @@
 ---
-# FileAssert document validation tests for DocDown.Core.
+# FileAssert document validation tests for DemaConsulting.DocDown.Core.
 # Tests are tagged by document group to allow per-group execution during the build pipeline.
 # Tags: build-notes, code-quality, code-review, design, verification, user-guide, requirements.
 #
@@ -154,7 +154,7 @@ tests:
             count: 1
 
   - name: SysML2Tools_DocDownCoreViewSvg
-    description: "DocDown.Core View diagram was rendered by SysML2Tools"
+    description: "DemaConsulting.DocDown.Core View diagram was rendered by SysML2Tools"
     tags: [design]
     files:
       - pattern: "docs/design/generated/DocDownCoreView.svg"
@@ -164,7 +164,7 @@ tests:
             count: 1
 
   - name: SysML2Tools_DocDownPdfViewSvg
-    description: "DocDown.Pdf View diagram was rendered by SysML2Tools"
+    description: "DemaConsulting.DocDown.Pdf View diagram was rendered by SysML2Tools"
     tags: [design]
     files:
       - pattern: "docs/design/generated/DocDownPdfView.svg"
@@ -390,7 +390,7 @@ tests:
     description: "The PDF packages are fully managed and runtime-identifier agnostic"
     tags: [packages]
     files:
-      # Matches both DocDown.Pdf and DocDown.Pdf.Rendering. Neither ships a native asset:
+      # Matches both DemaConsulting.DocDown.Pdf and DemaConsulting.DocDown.Pdf.Rendering. Neither ships a native asset:
       # the rendering package depends on CanvasNet.Pdf and CanvasNet, both fully managed
       # libraries with no native binaries. Asserting across both is therefore stronger
       # than naming the parser alone, and catches a native ever being vendored directly.
@@ -413,7 +413,7 @@ tests:
     description: "The PowerPoint rendering package is fully managed and runtime-identifier agnostic"
     tags: [packages]
     files:
-      # DocDown.PowerPoint.Rendering ships no native asset: it depends on CanvasNet.Pptx,
+      # DemaConsulting.DocDown.PowerPoint.Rendering ships no native asset: it depends on CanvasNet.Pptx,
       # CanvasNet, and CanvasNet.Charts, all fully managed libraries with no native
       # binaries. This mirrors the equivalent Pdf.Rendering assertion above.
       - pattern: "packages/DemaConsulting.DocDown.PowerPoint.Rendering.*.nupkg"
@@ -422,6 +422,26 @@ tests:
           files:
             # A consumer restoring this package gets a library deployable anywhere the
             # runtime is, with no native stack to resolve at all.
+            - pattern: "runtimes/**"
+              max: 0
+            - pattern: "**/*.so"
+              max: 0
+            - pattern: "**/*.dylib"
+              max: 0
+            - pattern: "lib/**/*.dll"
+              min: 1
+
+  - name: DocDownVisioRendering_Package_ContainsNoNativeAssets
+    description: "The Visio rendering package is fully managed and runtime-identifier agnostic"
+    tags: [packages]
+    files:
+      # DemaConsulting.DocDown.Visio.Rendering ships no native asset: it depends on CanvasNet.Vsdx
+      # and CanvasNet, both fully managed libraries with no native binaries. This mirrors the
+      # equivalent PowerPoint.Rendering assertion above.
+      - pattern: "packages/DemaConsulting.DocDown.Visio.Rendering.*.nupkg"
+        count: 1
+        zip:
+          files:
             - pattern: "runtimes/**"
               max: 0
             - pattern: "**/*.so"

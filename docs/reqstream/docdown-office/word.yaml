@@ -1,5 +1,5 @@
 ---
-# Software System Requirements for DocDown.Word
+# Software System Requirements for DemaConsulting.DocDown.Word
 #
 # These requirements describe the externally visible behavior of the Word extraction package from
 # the perspective of a host that registers it, without specifying implementation details. Each

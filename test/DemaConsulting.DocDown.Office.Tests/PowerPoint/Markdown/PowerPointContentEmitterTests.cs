@@ -1,7 +1,7 @@
+using DemaConsulting.DocDown.Core;
+using DemaConsulting.DocDown.PowerPoint.Markdown;
+using DemaConsulting.DocDown.PowerPoint.OpenXml;
 using DemaConsulting.DocDown.TestSupport;
-using DocDown.Core;
-using DocDown.PowerPoint.Markdown;
-using DocDown.PowerPoint.OpenXml;
 
 namespace DemaConsulting.DocDown.Office.Tests.PowerPoint.Markdown;
 

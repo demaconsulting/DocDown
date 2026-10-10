@@ -19,7 +19,7 @@
     <PackageIcon>Icon.png</PackageIcon>
     <PackageTags>docdown;office;word;excel;powerpoint;visio;openxml;dotnet-library</PackageTags>
     <Copyright>Copyright DEMA Consulting</Copyright>
-    <Title>DocDown.Office</Title>
+    <Title>DemaConsulting.DocDown.Office</Title>
     <Product>DemaConsulting.DocDown.Office</Product>
 
     <!-- Symbol Package Configuration -->

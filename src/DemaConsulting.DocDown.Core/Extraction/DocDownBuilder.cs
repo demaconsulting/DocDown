@@ -1,4 +1,4 @@
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     A fluent builder that collects extractor registrations and default options and produces a
@@ -31,8 +31,8 @@ namespace DocDown.Core;
 ///     <code language="csharp">
 ///     using System;
 ///     using System.Threading;
-///     using DocDown.Core;
-///     using DocDown.Word;
+///     using DemaConsulting.DocDown.Core;
+///     using DemaConsulting.DocDown.Word;
 ///
 ///     // Register only the backends this application needs; nothing else is discovered.
 ///     var engine = new DocDownBuilder()
@@ -67,29 +67,30 @@ namespace DocDown.Core;
 ///     need — each line states what it buys:
 ///     <code language="csharp">
 ///     using System;
-///     using DocDown.Core;
-///     using DocDown.Excel;
-///     using DocDown.Pdf;
-///     using DocDown.Pdf.Rendering;
-///     using DocDown.PowerPoint;
-///     using DocDown.Visio;
-///     using DocDown.Word;
+///     using DemaConsulting.DocDown.Core;
+///     using DemaConsulting.DocDown.Excel;
+///     using DemaConsulting.DocDown.Pdf;
+///     using DemaConsulting.DocDown.Pdf.Rendering;
+///     using DemaConsulting.DocDown.PowerPoint;
+///     using DemaConsulting.DocDown.Visio;
+///     using DemaConsulting.DocDown.Word;
 ///
 ///     var engine = new DocDownBuilder()
 ///         .AddPdf()          // .pdf  - text, embedded images, metadata
 ///         .AddPdfRendering() // .pdf  - page images (adds native binaries)
 ///         .AddWord()         // .docx - text, tables, images; no page images
 ///         .AddExcel()        // .xlsx - cells, formulas, charts; workbooks are never rendered
-///         .AddPowerPoint()   // .pptx - slide text and notes; slide images need PowerPoint
-///         .AddVisio()        // .vsdx, .vsdm - shape text and connections; page images need Visio
+///         .AddPowerPoint()   // .pptx - slide text and notes; slide images need AddPowerPointRendering()
+///         .AddVisio()        // .vsdx, .vsdm - shape text and connections; page images need AddVisioRendering()
 ///         .Build();
 ///
-///     Console.WriteLine(engine.Extractors.Count); // 8 — AddPowerPoint and AddVisio register two each
+///     Console.WriteLine(engine.Extractors.Count); // 6 — one extractor per registered call
 ///     </code>
 ///     Register only the formats you need — each call is one visible edge to one package. Slide and
-///     page images are produced by driving Microsoft Office over COM, so they are Windows-only and
-///     require that application to be installed. Without it the managed backend still extracts the
-///     text, and <c>summary.txt</c> records that pages were not rendered.
+///     page images are produced by the fully-managed, opt-in rendering add-ons
+///     (<c>AddPowerPointRendering</c>, <c>AddVisioRendering</c>), which are portable to every
+///     operating system. Without them the managed backend still extracts the text, and
+///     <c>summary.txt</c> records that pages were not rendered.
 /// </example>
 public sealed class DocDownBuilder
 {

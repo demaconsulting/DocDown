@@ -1,6 +1,6 @@
 package DocDownOffice {
     part def WordDocDownBuilderExtensions {
-        doc /* The registration seam: explicit, reflection-free calls that add the Word backends to a DocDown builder. A direct unit of the DocDown.Word system. */
+        doc /* The registration seam: explicit, reflection-free calls that add the Word backends to a DocDown builder. A direct unit of the DemaConsulting.DocDown.Word system. */
 
         comment sourceRef /* Source: src/DemaConsulting.DocDown.Office/Word/WordDocDownBuilderExtensions.cs */
         comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Word/WordDocDownBuilderExtensionsTests.cs */

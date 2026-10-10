@@ -5,7 +5,7 @@ using System.Xml.Linq;
 using DocumentFormat.OpenXml.Packaging;
 using Xdr = DocumentFormat.OpenXml.Drawing.Spreadsheet;
 
-namespace DocDown.Excel.OpenXml;
+namespace DemaConsulting.DocDown.Excel.OpenXml;
 
 /// <summary>
 ///     Reads the charts a worksheet shows into the model, recovering each chart's cached data series

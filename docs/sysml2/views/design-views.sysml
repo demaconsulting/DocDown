@@ -10,6 +10,7 @@ package DocDownCore {
         expose DocDownPdf;
         expose DocDownPdfRendering;
         expose DocDownPowerPointRendering;
+        expose DocDownVisioRendering;
         expose DocDownTool;
     }
 
@@ -55,6 +56,14 @@ package DocDownPowerPointRendering {
     }
 }
 
+// DocDownVisioRendering is the optional page-rendering system. It is flat - it has no
+// subsystems - so it needs only the one system view, which already shows every unit.
+package DocDownVisioRendering {
+    view DocDownVisioRenderingView {
+        expose DocDownVisioRenderingSystem;
+    }
+}
+
 // DocDownTool is the third system: the docdown command-line tool. It has two subsystems
 // (Cli, SelfTest) and one direct unit (Program), so it carries a system view plus a view
 // per subsystem.
@@ -72,17 +81,13 @@ package DocDownTool {
     }
 }
 
-// DocDownOffice is the Microsoft Office extraction system. It has five subsystems - the four
-// format subsystems and Com, which holds what the COM automation backends share - and one
-// direct unit (OfficeDocDownBuilderExtensions), so it carries a system view plus a view per
-// subsystem. The design documents embed the system view (DocDownOfficeView.svg).
+// DocDownOffice is the Microsoft Office extraction system. It has four format subsystems
+// (Word, Excel, PowerPoint, Visio) and one direct unit (OfficeDocDownBuilderExtensions), so it
+// carries a system view plus a view per subsystem. The design documents embed the system view
+// (DocDownOfficeView.svg).
 package DocDownOffice {
     view DocDownOfficeView {
         expose DocDownOfficeSystem;
-    }
-
-    view OfficeComView {
-        expose OfficeCom;
     }
 
     view WordView {
@@ -131,9 +136,5 @@ package DocDownOffice {
 
     view VisioOpenXmlView {
         expose VisioOpenXml;
-    }
-
-    view VisioComView {
-        expose VisioCom;
     }
 }

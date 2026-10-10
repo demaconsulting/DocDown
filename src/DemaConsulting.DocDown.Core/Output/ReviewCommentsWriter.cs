@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace DocDown.Core;
+namespace DemaConsulting.DocDown.Core;
 
 /// <summary>
 ///     Finalizes <c>review-comments.md</c>, the reviewer commentary a document carries, from the

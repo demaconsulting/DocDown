@@ -1,8 +1,8 @@
-# DocDown.Pdf System Design
+# DemaConsulting.DocDown.Pdf System Design
 
-![DocDown.Pdf Structure](DocDownPdfView.svg)
+![DemaConsulting.DocDown.Pdf Structure](DocDownPdfView.svg)
 
-`DocDown.Pdf` is the managed PDF extraction backend for DocDown. It reads document metadata, page
+`DemaConsulting.DocDown.Pdf` is the managed PDF extraction backend for DocDown. It reads document metadata, page
 text, embedded images, and reviewer annotations from a PDF and writes the extracted facts through
 `IExtractionSink`. Its reporting model is intentionally narrow: DocDown reports what it extracted
 and where. Ordinary document absences become content-inventory counts, and attempted steps that
@@ -64,13 +64,13 @@ Additional interface constraints:
 
 ## Dependencies
 
-- **DocDown.Core** - the extraction contract, sink interfaces, options, metadata model, note model,
-  and output layout. See the *DocDown.Core System Design*.
+- **DemaConsulting.DocDown.Core** - the extraction contract, sink interfaces, options, metadata model, note model,
+  and output layout. See the *DemaConsulting.DocDown.Core System Design*.
 - **PdfPig** (OTS) - managed PDF parsing, page access, marked-content inspection, layout analysis,
   and embedded-image access. See *PdfPig* in the OTS integration design.
 
 The package has no runtime dependency on a native renderer. Page rasterization lives in the
-separate `DocDown.Pdf.Rendering` package.
+separate `DemaConsulting.DocDown.Pdf.Rendering` package.
 
 ## Risk Control Measures
 
