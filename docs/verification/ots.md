@@ -9,11 +9,12 @@ self-validation CLI flags (where the tool provides a `--validate` or equivalent 
 and pipeline-evidence-based verification (where a passing CI pipeline run, having produced and
 validated the expected output at each stage, constitutes proof that the tool executed correctly).
 
-**PdfPig, CanvasNet.Pdf, CanvasNet, the Open XML SDK, and TestResults are verified differently, and
+**PdfPig, the CanvasNet family, the Open XML SDK, and TestResults are verified differently, and
 deliberately so.** None is a pipeline stage. PdfPig is a runtime library on the critical path of every
-`DemaConsulting.DocDown.Pdf` extraction, so its evidence is transitive from the extraction test suite. CanvasNet.Pdf
-and CanvasNet are on the critical path of every rendered page, so their evidence is transitive from
-the `DemaConsulting.DocDown.Pdf.Rendering` render tests, each of which names the exact tests that exercise them. The
+`DemaConsulting.DocDown.Pdf` extraction, so its evidence is transitive from the extraction test suite. CanvasNet.Pdf,
+CanvasNet.Pptx, CanvasNet.Vsdx, and CanvasNet are on the critical path of every rendered page, so their
+evidence is transitive from the Pdf, PowerPoint, and Visio rendering test suites, each of which names the
+exact tests that exercise them. The
 Open XML SDK is on the critical path of every Word, Excel and PowerPoint extraction, so its evidence is
 transitive from those extraction tests, which name the
 exact tests that exercise it. `System.IO.Packaging` is referenced and called directly by
@@ -34,8 +35,11 @@ detailed approach and named test scenarios.
 | :------------------ | :-------------------------------------------------------------------------------------- |
 | ApiMark             | Self-validation CLI suite: the named ApiMark_DotNetGeneration test                      |
 | BuildMark           | Self-validation CLI suite plus pipeline evidence via build-notes document               |
-| CanvasNet           | Transitive evidence from the DemaConsulting.DocDown.Pdf.Rendering render tests          |
+| CanvasNet           | Transitive evidence from the Pdf, PowerPoint, and Visio rendering test suites           |
+| CanvasNet.Charts    | Transitive evidence from the DemaConsulting.DocDown.PowerPoint.Rendering render tests   |
 | CanvasNet.Pdf       | Transitive evidence from the DemaConsulting.DocDown.Pdf.Rendering render tests          |
+| CanvasNet.Pptx      | Transitive evidence from the DemaConsulting.DocDown.PowerPoint.Rendering render tests   |
+| CanvasNet.Vsdx      | Transitive evidence from the DemaConsulting.DocDown.Visio.Rendering render tests        |
 | FileAssert          | Self-validation CLI suite plus transitive evidence from document assertions             |
 | Open XML SDK        | Transitive evidence from the Word, Excel and PowerPoint test suites                     |
 | Pandoc              | Pipeline evidence: FileAssert assertions on each generated HTML document                |

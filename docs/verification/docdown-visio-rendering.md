@@ -74,7 +74,8 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 - Every extraction scenario ends with `ContractAssert.LayoutPresent`.
 - No successful render scenario emits notes; a forced per-page fault emits the plain note
   `Page N could not be rasterized.` and still returns `Produced`; a forced page-count fault emits a
-  single note and keeps the delegated managed content.
+  single note and keeps the delegated managed content; a page range that selects no page emits a
+  single note explaining the empty outcome.
 - A page-renderer (this backend) is selected whenever page rendering is requested, and it is not
   selected when it is not.
 - The availability probe is cheap, non-throwing, and unconditionally reports rendered-page support.
@@ -146,7 +147,7 @@ CanvasNet.Vsdx is fully managed and carries no runtime-identifier-specific asset
 
 ### The managed aspects are delivered by delegation
 
-**Test**: `VisioPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePngs`
+**Test**: `VisioPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePng`
 
 Proves the backend delegates the managed aspects to `VisioOpenXmlExtractor` — content, images,
 and metadata are written — and adds valid page PNGs, so both the delegation and the rasterization
@@ -168,6 +169,15 @@ throw to the caller. Evidence for `DocDownVisioRendering-PerPageFailureReportedA
 Proves a faulting page-count function is caught once, records a single note, still returns
 `Produced`, and keeps the delegated managed content the base extractor already wrote. Evidence for
 `DocDownVisioRendering-PageCountFailureReportedAsNote`.
+
+### An empty page selection becomes a single note
+
+**Test**: `VisioPageRenderingExtractor_ExtractAsync_PageRangeSelectsNoPage_ReportsEmptyPagesNote`
+
+Proves a page range that selects no page of the drawing records the single plain note that
+rendering was requested and a renderer was available but no pages were produced, recorded by this
+backend itself from its own selected-page count. Evidence for
+`DocDownVisioRendering-EmptySelectionReportedAsNote`.
 
 ### Concurrent renders do not interfere
 

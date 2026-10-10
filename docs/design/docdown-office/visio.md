@@ -98,9 +98,8 @@ no native asset.
    shape text, directed connections, image references, and metadata.
 4. `VisioContentEmitter.EmitAsync` reports looked-for inventory for pages, labeled shapes, and
    connections; writes empty content immediately when the drawing has no pages; writes image files
-   before content so page sections can link them; writes per-page content as one flow or one part
-   per page; writes document info and metadata; and records a plain note when a requested PNG image
-   output cannot be honored and source-encoded bytes were written instead.
+   before content so page sections can link them; writes per-page content as one flow, each page
+   under its own heading; and writes document info and metadata.
 5. When page rendering was requested but no rendering-capable backend is registered alongside this
    one, Core records a plain note that pages were not rendered; this backend neither claims to
    provide rendered pages nor reports one. Rendering, when requested with

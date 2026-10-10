@@ -29,9 +29,9 @@ page's name, shape text, and directed topology; omits and counts bare-callout sh
 between unidentified shapes; keeps multi-line shape text intact inside its item; links images only
 when a path was returned; reports looked-for counts for pages, labeled shapes, and connections;
 writes empty content plus zero-count
-inventory for an empty drawing; writes the drawing as one flow or one part per page; and states the
-convention in the content only when a label is not authored text. Any silent omission, truncated
-text, dangling link, or missing note is a failure.
+inventory for an empty drawing; writes the drawing as one flow; and states the convention in the
+content only when a label is not authored text. Any silent omission, truncated text, or dangling
+link is a failure.
 
 ### Test Scenarios
 

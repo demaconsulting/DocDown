@@ -148,14 +148,25 @@ items, specifically:
   - **Visio (Subsystem)** — Page names, shape text, and directed-connector topology through a
     managed Open Packaging backend; page images are a separate, opt-in concern provided by the
     `DemaConsulting.DocDown.Visio.Rendering` system
+- **DemaConsulting.DocDown.Visio.Rendering (System)** — Optional Visio page rendering (rasterization); flat, with no
+  subsystems, and fully managed like the rest of DocDown
+  - **VisioPageRenderingExtractor (Unit)** — The page-rendering backend the engine selects when
+    rendering is requested: delegates the managed aspects, rasterizes pages, and records notes for
+    pages it cannot render
+  - **PageRenderer (Unit)** — The single rasterization seam: opens a CanvasNet.Vsdx document per
+    call and rasterizes one page to a PNG
+  - **VisioRenderingDocDownBuilderExtensions (Unit)** — The reflection-free registration seam,
+    carrying no CanvasNet type on its surface
 
 The following OTS items are also covered:
 
 - **BuildMark** — build-notes documentation tool
-- **CanvasNet** — fully-managed 2D canvas/codec library, a runtime dependency of
-  DemaConsulting.DocDown.Pdf.Rendering used for PNG encoding
+- **CanvasNet** — fully-managed 2D canvas/codec library, a runtime dependency of the Pdf, PowerPoint, and
+  Visio rendering packages used for PNG encoding
 - **CanvasNet.Pdf** — fully-managed PDF rasterization API, the runtime dependency of
   DemaConsulting.DocDown.Pdf.Rendering used to rasterize pages. It and CanvasNet carry no native assets
+- **CanvasNet.Vsdx** — fully-managed Visio rasterization API, the runtime dependency of
+  DemaConsulting.DocDown.Visio.Rendering used to rasterize pages; it carries no native assets
 - **FileAssert** — document assertion tool
 - **Open XML SDK** — managed Open XML reader/writer, a runtime dependency of DemaConsulting.DocDown.Office
   shipped to consumers rather than a build-time tool

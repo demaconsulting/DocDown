@@ -49,8 +49,8 @@ sections:
                   Nothing about this backend depends on the host environment beyond the .NET runtime:
                   it uses managed packaging APIs and no external application. The probe therefore
                   reports Available() on every platform the package can load, performs no I/O, and
-                  leaves rendered-page support false so the renderer decision stays with the COM
-                  backend.
+                  leaves rendered-page support false so the renderer decision stays with
+                  DemaConsulting.DocDown.Visio.Rendering.
                 tests:
                   - VisioOpenXmlExtractor_ProbeAvailability_AlwaysAvailable
 

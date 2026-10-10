@@ -33,7 +33,7 @@ genuinely tested.
 Per IEC 62304 §5.6.2, a Markdown subsystem test run passes when the emitter writes each page's
 name, shape text, and directed topology; omits and counts bare-callout shapes and edges between
 unidentified shapes; keeps multi-line shape text intact inside its item; links images only when a
-path was returned; reports looked-for counts for pages, labeled shapes, and connections; records a
+path was returned; reports looked-for counts for pages, labeled shapes, and connections;
 writes empty content plus zero-count inventory for an
 empty drawing; and states the labeling convention in content only when needed. The shape labeler
 must render authored text verbatim, a master type parenthesized with the shape id, and a bare shape

@@ -30,7 +30,7 @@ with `ArgumentNullException` at the point of the call.
 **Test**: `AddVisio_RegistersOpenXmlBackend`
 
 Proves the single call adds the managed backend as a deferred factory. Evidence for
-`DocDownVisio-VisioDocDownBuilderExtensions-RegistersBackend`.
+`DocDownVisio-VisioDocDownBuilderExtensions-RegistersManagedBackend`.
 
 #### The builder is returned for chaining
 

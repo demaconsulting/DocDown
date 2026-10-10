@@ -21,9 +21,8 @@ item.
 - **`ValueTask EmitAsync(IExtractionSink sink, ExtractionOptions options, VisioDocumentModel model,
   CancellationToken cancellationToken)`** — reports looked-for inventory for pages, labeled shapes,
   and connections; writes empty content immediately when the drawing has no pages; otherwise writes
-  images first, writes page content as one flow or one part per page, writes document info and any
-  captured metadata, and records a plain note when a requested PNG output could not be honored for
-  embedded images.
+  images first, writes page content as one flow, and writes document info and any
+  captured metadata.
 - **`WriteContentAsync`** (private) — writes the drawing as one content flow, each page under its
   own heading.
 - **`RenderPage`** (private) — renders one page: its name as a heading, informative shape text as a

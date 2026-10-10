@@ -10,7 +10,8 @@ The purpose of this document is to serve as the verification design entry point 
 requirements will be tested across all software items in this repository, covering the
 DemaConsulting.DocDown.Core, DemaConsulting.DocDown.Pdf, DemaConsulting.DocDown.Pdf.Rendering,
 DemaConsulting.DocDown.Tool, DemaConsulting.DocDown.Word, DemaConsulting.DocDown.Excel,
-DemaConsulting.DocDown.PowerPoint, and DemaConsulting.DocDown.Visio systems. This
+DemaConsulting.DocDown.PowerPoint, DemaConsulting.DocDown.Visio, and
+DemaConsulting.DocDown.Visio.Rendering systems. This
 documentation enables formal review by mapping every requirement to named test scenarios, supports
 compliance auditing by providing clear traceability from requirements through verification design
 to tests, and ensures test completeness can be assessed without reading implementation code.
@@ -139,6 +140,11 @@ constituent software items, specifically:
     - **VisioPackageReader (Unit)** — Turns the Visio package into the backend-neutral model, resolving
       page names, shape text, and the directed topology
     - **VisioImageReader (Unit)** — Yields each embedded image's bytes and page association
+- **DemaConsulting.DocDown.Visio.Rendering (System)** — Optional Visio page rendering (rasterization); flat, with no
+  subsystems, and fully managed
+  - **VisioPageRenderingExtractor (Unit)** — The page-rendering backend selected when rendering is requested
+  - **PageRenderer (Unit)** — The single rasterization seam over CanvasNet.Vsdx
+  - **VisioRenderingDocDownBuilderExtensions (Unit)** — The reflection-free registration seam
 
 Across these systems, an extraction either writes the invariant layout (`Produced`) or it does not
 (`Unreadable`). Verification therefore checks two reporting surfaces inside produced output: the
@@ -152,6 +158,8 @@ The following OTS items are also covered:
   DemaConsulting.DocDown.Pdf.Rendering render tests rather than from a pipeline stage
 - **CanvasNet.Pdf** — fully-managed PDF rasterization API, verified by transitive evidence from the
   DemaConsulting.DocDown.Pdf.Rendering render tests rather than from a pipeline stage
+- **CanvasNet.Vsdx** — fully-managed Visio rasterization API, verified by transitive evidence from the
+  DemaConsulting.DocDown.Visio.Rendering render tests rather than from a pipeline stage
 - **FileAssert** — document assertion tool
 - **Open XML SDK** — managed WordprocessingML reader/writer, verified by transitive evidence from the
   DemaConsulting.DocDown.Word extraction tests rather than from a pipeline stage

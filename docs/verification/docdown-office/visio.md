@@ -80,8 +80,8 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
   the file itself, with no Visio installation present.
 - A render requested without a rendering-capable backend registered alongside this one records a
   plain note while the managed content still reaches the output.
-- Embedded images are written and linked in the encoding the drawing stored them in, which is
-  recorded as a plain note while the source bytes are preserved.
+- Embedded images are written and linked in the encoding the drawing stored them in, with the
+  source bytes preserved.
 - The legacy binary `.vsd` format is refused with an unreadable result whose explanation states that
   the format is unsupported, never by an exception escaping to the caller and never by an
   install-instructing message.
@@ -136,8 +136,8 @@ Proves the directed connector topology is recovered with no Visio present and re
 **Test**: `DocDownVisio_Extract_RenderRequestedWithoutVisio_RecordsNoteButKeepsTopology`
 
 Proves that with only the managed backend registered, a render request records a plain note
-while the directed topology is still delivered in full. Evidence for
-`DocDownVisio-RenderingRequestNote`.
+while the directed topology is still delivered in full. This is Core's behavior, so
+it cites no Visio requirement.
 
 ### Embedded images are written into the output layout
 

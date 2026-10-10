@@ -34,7 +34,7 @@ The system has four format subsystems.
   package. See the *DemaConsulting.DocDown.Office PowerPoint Subsystem Design*.
 - **Visio** — a managed Open Packaging backend for `.vsdx` and `.vsdm`. Page rendering is served by
   the separate, fully-managed `DemaConsulting.DocDown.Visio.Rendering` package rather than by a backend in this
-  package. See the *DemaConsulting.DocDown.Office Visio Subsystem Design*.
+  package. See the *DemaConsulting.DocDown.Visio System Design*.
 
 Legacy binary formats — `.doc`, `.xls`, `.ppt` — are not supported and are reported as unreadable
 rather than routed to a backend that cannot read them.

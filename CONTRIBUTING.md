@@ -56,8 +56,8 @@ We follow a standard GitHub workflow for contributions:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/demaconsulting/DemaConsulting.DocDown.git
-   cd DemaConsulting.DocDown.Core
+   git clone https://github.com/demaconsulting/DocDown.git
+   cd DocDown
    ```
 
 2. Restore dependencies:

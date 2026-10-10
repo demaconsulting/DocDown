@@ -24,9 +24,8 @@ endpoints are named from what the drawing actually says about them.
 looked-for content inventory for pages, labeled shapes, and connections before any content is
 written. When the drawing has no pages, it writes empty content, document info with a zero page
 count, and any captured metadata, then returns. Otherwise it writes embedded images first so page
-sections can link them, writes content either as one flow or one part per page, writes document info
-and metadata, and records a plain note when a caller requested PNG output for embedded images but
-this backend had to preserve the source encoding instead.
+sections can link them, writes content as one flow with each page under its own heading, and writes
+document info and metadata.
 
 Each page renders its name as a heading, its informative shape text as a list, its meaningful
 connections as a directed `source -> target` list, and the images it shows as inline links only when

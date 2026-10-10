@@ -36,8 +36,9 @@ public static class OfficeDocDownBuilderExtensions
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="builder"/> is <see langword="null"/>.</exception>
     /// <remarks>
     ///     Equivalent to calling <c>AddWord</c>, <c>AddExcel</c>, <c>AddPowerPoint</c>, and
-    ///     <c>AddVisio</c> in turn. Word, Excel, PowerPoint, and Visio each register one managed
-    ///     Open XML backend. Side effect: mutates <paramref name="builder"/>'s registration list.
+    ///     <c>AddVisio</c> in turn. Word, Excel, and PowerPoint each register one managed Open XML
+    ///     backend; Visio registers one managed backend built on System.IO.Packaging. Side effect:
+    ///     mutates <paramref name="builder"/>'s registration list.
     /// </remarks>
     /// <example>
     ///     <code language="csharp">
