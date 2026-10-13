@@ -32,7 +32,7 @@ multi-series chart is read; when a chart caching no values keeps its source refe
 and when an automatic title is reported as generated; when a malformed chart part and an extended chart part
 are each kept with no data and a stated reason; and when charts are reported in frame order, once each, with
 an unreferenced chart part after them and an undeclared relationship ignored. A misread cache, an assumed-dense
-index, a dropped series, an authored-looking automatic title, a dropped or thrown unreadable chart, or a
+index, a dropped series, an authored-looking automatic title, a dropped or thrown unreadable chart, or an
 out-of-order chart is a failure.
 
 ### Test Scenarios

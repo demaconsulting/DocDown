@@ -29,7 +29,9 @@ than against a simulation of one.
 ### Acceptance Criteria
 
 Per IEC 62304 §5.5.2, a `WordOpenXmlReader` test run passes when styled paragraphs, lists, and
-tables map into structured blocks; when a header carrying a revision and classification builds a
+tables map into structured blocks; when a table's first row is recognized as a header row when flagged with the
+spelling Word writes and is not recognized for a value outside the valid spellings; when a header carrying a
+revision and classification builds a
 Document Control section; when a footer carrying only page-number fields is omitted from that
 section and counted on the model; when an identical header shared across sections is emitted once;
 when tracked changes render in the accepted view; when a password-protected container raises
@@ -50,6 +52,16 @@ captions, object names, or nearby headings according to the documented order.
 
 Proves the model's body carries a Heading 1 block, at least one bulleted list item, and a table
 with three rows. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-ReadsStructuredBlocks`.
+
+#### A table's header row is recognized from the flag's real spellings
+
+**Tests**: `WordOpenXmlReader_Read_HeaderRowValTrue_RecognizedAsHeaderRow`,
+`WordOpenXmlReader_Read_HeaderRowValMalformed_NotRecognizedAsHeaderRow`
+
+Prove a first row marked `w:tblHeader w:val="true"` — the spelling Word itself writes, which the SDK's typed
+accessor rejects — sets `FirstRowIsHeader` on the model's table, and that a row marked with a value outside
+the ST_OnOff spellings does not, so a malformed flag is never silently reported as a header row. Supporting
+evidence for the structured-block mapping above.
 
 #### A revision-and-classification header produces a Document Control section
 

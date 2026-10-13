@@ -169,8 +169,9 @@ produced, with no note because the read completed. Evidence for `DocDownExcel-Ch
 **Test**: `ExcelContentEmitter_Emit_ShapeText_WritesUnderTheSheet`
 
 Proves the text of a callout carried by a hand-built model — text that lives in no cell — is written under
-the sheet. This exercises the emitter only; coverage of `ExcelDrawingTextReader` is currently indirect and a
-later change adds tests that read real drawing shapes. Evidence for `DocDownExcel-DrawingShapeText`.
+the sheet. This exercises the emitter only; reading real drawing shapes is proven separately by the
+`ExcelDrawingTextReaderTests` unit tests, which are linked to `DocDownExcel-OpenXml-ShapeReading`.
+Evidence for `DocDownExcel-DrawingShapeText`.
 
 ### Embedded images are written and linked from the sheet
 

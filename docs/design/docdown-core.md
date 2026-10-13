@@ -37,9 +37,9 @@ explains why.
 
 ### Determinism is scoped to one environment
 
-Selection and serialization are deterministic inside one environment. When the caller supplies
-the extraction timestamp, two runs with the same inputs and the same available extractors
-produce byte-identical `summary.txt` and `manifest.json`. Core does not claim identical content
+Selection and serialization are deterministic inside one environment. Two runs with the same inputs and the same available
+extractors produce output that is identical apart from the extraction timestamp, which the engine
+takes from the current UTC time and which callers cannot supply. Core does not claim identical content
 across operating systems or across installations with different extractors available.
 
 ### A scratch-folder refusal is the one no-layout outcome
