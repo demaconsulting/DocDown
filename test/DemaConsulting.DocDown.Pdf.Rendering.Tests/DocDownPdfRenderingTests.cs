@@ -212,16 +212,16 @@ public class DocDownPdfRenderingTests
     private static DocDownEngine BuildEngine() => new DocDownBuilder().AddPdf().AddPdfRendering().Build();
 
     /// <summary>
-    ///     Creates options that request rendered pages with the reproducible fixed timestamp.
+    ///     Creates options that request rendered pages.
     /// </summary>
     /// <returns>An options instance with rendering enabled.</returns>
-    /// <remarks>The fixed timestamp is what makes the determinism scenario a real comparison.</remarks>
+    /// <remarks>Page images carry no timestamp, so repeated renders are directly byte-comparable.</remarks>
     private static ExtractionOptions RenderingOptions() => new() { RenderPages = true };
 
     /// <summary>
-    ///     Creates options carrying the fixed timestamp for reproducible output, with rendering off.
+    ///     Creates default options, with rendering off.
     /// </summary>
-    /// <returns>An options instance with a fixed timestamp.</returns>
+    /// <returns>A default options instance.</returns>
     /// <remarks>Used by the base-backend selection scenario, which must not request rendered pages.</remarks>
     private static ExtractionOptions FixedOptions() => new();
 

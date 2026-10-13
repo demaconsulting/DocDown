@@ -19,7 +19,7 @@ image structure rather than the directory listing.
 
 ### Every extraction scenario confirms the invariant layout
 
-Every scenario that performs an extraction ends with `ContractAssert.LayoutPresent`, proving the
+Every scenario that performs an extraction asserts `ContractAssert.LayoutPresent`, proving the
 standard DocDown output layout exists on disk. This applies to the clean render, the two selection
 scenarios, the page-range and DPI scenarios, and the forced page-failure unit scenario, so a missing
 core artifact or silently missing `pages/` output becomes a test failure rather than a review
@@ -60,8 +60,8 @@ project.
 - **Inputs**: PDFs generated at test time, plus the embedded `Resources/probe.pdf` the self-test
   reads; no committed binary test fixtures and no network access
 - **Determinism**: only the golden-summary test normalizes the run-varying timestamp and machine-specific
-  lines so repeated runs are byte-comparable; the determinism scenario compares page images rendered with
-  a fixed timestamp
+  lines so repeated runs are byte-comparable; the determinism scenario compares the page images of two runs,
+  which carry no timestamp, so no clock control is needed
 - **Isolation**: each test owns its temporary folder and cleans it on dispose
 
 ## Acceptance Criteria
@@ -71,14 +71,15 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 - Every scenario below passes on every operating system and runtime in the CI matrix, with no
   unexpected exception, wrong exception type, or wrong return value.
 - The rendered page is a valid PNG of plausible dimensions, not merely a file that exists.
-- Every extraction scenario ends with `ContractAssert.LayoutPresent`.
+- Every extraction scenario asserts `ContractAssert.LayoutPresent`.
 - No successful render scenario emits notes; a forced per-page fault emits the plain note
   `Page N could not be rasterized.` and still returns `Produced`.
 - The rendering backend is selected whenever page rendering is requested, and never when it is not.
-- The availability probe is cheap, non-throwing, and unconditionally reports rendered-page support.
+- The availability probe is a constant that performs no I/O, never throws, and unconditionally reports
+  rendered-page support.
 - Each of the six platform requirements is satisfied by a source-filtered result from the matching
   operating system or runtime; a result from another platform does not count.
-- Two renders of the same document with a fixed timestamp produce byte-identical page images.
+- Two renders of the same document produce byte-identical page images (the PNG bytes carry no timestamp).
 
 ## Test Scenarios
 
@@ -132,11 +133,11 @@ Proves only the in-range pages are rasterized, named by their document page numb
 Proves the requested DPI controls the raster: a higher-DPI render is strictly larger in both
 dimensions than a lower-DPI render of the same document. Evidence for `DocDownPdfRendering-HonorsDpi`.
 
-### Availability reporting is unconditional, cheap, and honest
+### Availability reporting is unconditional, constant, and honest
 
 **Test**: `PdfPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReportsUnconditionallyAvailable`
 
-Proves the extractor always reports rendered-page support, cheaply and without throwing, since
+Proves the extractor always reports rendered-page support, as a constant with no I/O and without throwing, since
 CanvasNet.Pdf is fully managed and carries no runtime-identifier-specific asset. Evidence for
 `DocDownPdfRendering-ReportsRenderedPagesAvailability` and `DocDownPdfRendering-ProbeCheapAndSafe`.
 
