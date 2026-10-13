@@ -25,6 +25,9 @@ includes:
   - docs/reqstream/docdown-core/output/summary-writer.yaml
   - docs/reqstream/docdown-core/output/manifest-writer.yaml
   - docs/reqstream/docdown-core/output/image-text-selector.yaml
+  - docs/reqstream/docdown-core/output/embedded-image-writer.yaml
+  - docs/reqstream/docdown-core/output/image-dimensions.yaml
+  - docs/reqstream/docdown-core/output/image-link-text.yaml
   - docs/reqstream/docdown-pdf.yaml
   - docs/reqstream/docdown-pdf/platform-requirements.yaml
   - docs/reqstream/docdown-pdf/pdf-document-extractor.yaml

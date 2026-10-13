@@ -166,6 +166,8 @@ sections:
               - DocDownCore-Output-ExtractionSink-ImageDeduplication
               - DocDownCore-Output-ExtractionSink-ImageSuppression
               - DocDownCore-Output-EmbeddedImageWriter-WritesDeduplicated
+              - DocDownCore-Output-EmbeddedImageWriter-MergesReferrers
+              - DocDownCore-Output-EmbeddedImageWriter-CountsVectorMetafiles
               - DocDownCore-Output-EmbeddedImageWriter-SkipsOversized
               - DocDownCore-Output-ImageDimensions-ReadsHeaders
               - DocDownCore-Output-ImageLinkText-SafeAltText

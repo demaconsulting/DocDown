@@ -199,7 +199,8 @@ public class DocDownCoreTests
     }
 
     /// <summary>
-    ///     Proves two runs into the same folder differ in nothing but the extraction timestamp.
+    ///     Proves two runs into the same folder differ in nothing but the extraction timestamp. The timestamp
+    ///     is not injected; <see cref="ContractAssert.FileEqualsIgnoringTimestamp"/> normalizes it away.
     /// </summary>
     [Fact]
     public async Task DocDownCore_Extract_RepeatedRun_IsByteIdentical()
@@ -221,6 +222,93 @@ public class DocDownCoreTests
         // Assert: both outputs are identical between runs apart from the wall-clock stamp
         ContractAssert.FileEqualsIgnoringTimestamp(firstSummary, Path.Combine(scratch, "summary.txt"));
         ContractAssert.FileEqualsIgnoringTimestamp(firstManifest, Path.Combine(scratch, "manifest.json"));
+    }
+
+    /// <summary>
+    ///     Proves a backend-supplied hostile image name cannot place a file outside the scratch folder.
+    /// </summary>
+    [Fact]
+    public async Task DocDownCore_Extract_HostileImageName_StaysInsideScratchFolder()
+    {
+        // Arrange: a backend that asks for an image named with traversal segments and a reserved device name
+        using var temp = new TempScratch();
+        var engine = BuildEngine(new StubExtractor
+        {
+            Id = "text",
+            SupportedFormats = [DocumentFormat.Text],
+            ExtractBehavior = WriteHostileNamedImagesAsync
+        });
+        var workRoot = Path.Combine(temp.Path, "work");
+        var scratch = Path.Combine(workRoot, "out");
+        Directory.CreateDirectory(workRoot);
+        var input = temp.CreateFile("document.txt", "hello world");
+
+        // Act: run the extraction end to end
+        var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
+
+        // Assert: nothing was written beside or above the scratch folder, and every image path is relative
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Equal([scratch], Directory.GetFileSystemEntries(workRoot));
+        Assert.Equal(2, ReadImageCount(scratch));
+        var scratchPrefix = Path.GetFullPath(scratch) + Path.DirectorySeparatorChar;
+        foreach (var file in Directory.GetFiles(scratch, "*", SearchOption.AllDirectories))
+        {
+            Assert.StartsWith(scratchPrefix, Path.GetFullPath(file), StringComparison.OrdinalIgnoreCase);
+        }
+
+        Assert.False(File.Exists(Path.Combine(temp.Path, "escape.png")));
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
+    ///     Proves a populated folder that DocDown cannot prove it owns is refused, returns an unreadable
+    ///     result, and leaves the caller's files and the folder untouched.
+    /// </summary>
+    [Fact]
+    public async Task DocDownCore_Extract_UnownedPopulatedScratchFolder_IsRefusedAndLeftUntouched()
+    {
+        // Arrange: a scratch folder holding a caller file and no DocDown manifest
+        using var temp = new TempScratch();
+        var engine = BuildEngine(StubExtractor.Available("text", [DocumentFormat.Text]));
+        var scratch = Path.Combine(temp.Path, "out");
+        Directory.CreateDirectory(scratch);
+        var userFile = Path.Combine(scratch, "precious.txt");
+        await File.WriteAllTextAsync(userFile, "keep me", Ct);
+
+        // Act: extract into that folder in the default safe mode
+        var result = await engine.ExtractAsync(temp.CreateFile("document.txt", "hello world"), scratch, FixedOptions(), Ct);
+
+        // Assert: refusal is reported, no artifacts are written, and the caller's file is intact
+        Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
+        Assert.Contains("was refused", result.Failure?.Summary, StringComparison.Ordinal);
+        Assert.Equal([userFile], Directory.GetFileSystemEntries(scratch));
+        Assert.Equal("keep me", await File.ReadAllTextAsync(userFile, Ct));
+    }
+
+    /// <summary>
+    ///     Proves re-running into a previous DocDown folder that gained an unaccounted file is refused and
+    ///     does not delete that file, while the prior run's artifacts stay in place.
+    /// </summary>
+    [Fact]
+    public async Task DocDownCore_Extract_RerunWithForeignFileAdded_IsRefusedWithoutDeletingIt()
+    {
+        // Arrange: a completed run followed by a caller file dropped into the same folder
+        using var temp = new TempScratch();
+        var engine = BuildEngine(StubExtractor.Available("text", [DocumentFormat.Text]));
+        var input = temp.CreateFile("document.txt", "hello world");
+        var scratch = Path.Combine(temp.Path, "out");
+        var first = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
+        var foreign = Path.Combine(scratch, "notes.txt");
+        await File.WriteAllTextAsync(foreign, "mine", Ct);
+
+        // Act: run again into the same folder
+        var second = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
+
+        // Assert: the first run succeeded, the second is refused, and the foreign file survives
+        Assert.Equal(ExtractionOutcome.Produced, first.Outcome);
+        Assert.Equal(ExtractionOutcome.Unreadable, second.Outcome);
+        Assert.Equal("mine", await File.ReadAllTextAsync(foreign, Ct));
+        Assert.True(File.Exists(Path.Combine(scratch, "manifest.json")));
     }
 
     /// <summary>
@@ -367,9 +455,9 @@ public class DocDownCoreTests
     }
 
     /// <summary>
-    ///     Creates options with a fixed timestamp for deterministic output.
+    ///     Creates default extraction options; the extraction timestamp is not fixed.
     /// </summary>
-    /// <returns>Options stamped with a fixed UTC timestamp.</returns>
+    /// <returns>Default options.</returns>
     private static ExtractionOptions FixedOptions() => new();
 
     /// <summary>
@@ -422,6 +510,35 @@ public class DocDownCoreTests
                 second,
                 new ImageHint("chart", "image/png", Transform: ImageTransform.DecodedToPng),
                 context.CancellationToken);
+        }
+
+        return ExtractionOutcome.Produced;
+    }
+
+    /// <summary>
+    ///     Writes two images whose preferred names try to escape the folder or name a reserved device.
+    /// </summary>
+    /// <param name="source">The document source, unused by this scripted behavior.</param>
+    /// <param name="context">The extraction context whose sink receives the images.</param>
+    /// <returns>The produced outcome.</returns>
+    private static async ValueTask<ExtractionOutcome> WriteHostileNamedImagesAsync(
+        DocumentSource source,
+        IExtractionContext context)
+    {
+        _ = source;
+        await context.Sink.WriteContentAsync("# Document\n\nHostile names.\n", context.CancellationToken);
+
+        using (var traversal = new MemoryStream([14, 24, 34, 44], writable: false))
+        {
+            await context.Sink.AddImageAsync(
+                traversal,
+                new ImageHint("..\\..\\escape", "image/png"),
+                context.CancellationToken);
+        }
+
+        using (var reserved = new MemoryStream([15, 25, 35, 45], writable: false))
+        {
+            await context.Sink.AddImageAsync(reserved, new ImageHint("CON", "image/png"), context.CancellationToken);
         }
 
         return ExtractionOutcome.Produced;

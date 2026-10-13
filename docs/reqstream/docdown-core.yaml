@@ -266,11 +266,14 @@ sections:
           - DocDownCore-Output-PathSafety
         tests:
           - DocDownCore_Extract_TextDocument_ProducesContractLayout
+          - DocDownCore_Extract_HostileImageName_StaysInsideScratchFolder
+          - DocDownCore_Extract_UnownedPopulatedScratchFolder_IsRefusedAndLeftUntouched
+          - DocDownCore_Extract_RerunWithForeignFileAdded_IsRefusedWithoutDeletingIt
 
       - id: DocDownCore-Determinism
         title: >-
-          The library shall produce byte-identical summary and manifest output for identical input
-          when the timestamp is fixed.
+          The library shall produce summary and manifest output that is identical for identical input,
+          apart from the extraction timestamp.
         tags: [system]
         justification: |
           Reproducible re-runs and clean diffs depend on deterministic serializer output within one

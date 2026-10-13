@@ -38,12 +38,14 @@ extraction steps that could not be completed.
   `ContentWriteResult`, and optional `ReviewCommentsWriteResult`; appends each fixed section and writes
   the file.
 - **`AppendTitleAndHeader`** — emits the title banner, the one-line gist (omitted when the format is
-  unknown or nothing was produced), and the header block. Long note prose is word-wrapped at 112
-  columns with a hanging indent so the file stays within 120 columns.
+  unknown or nothing was produced), and the header block. The gist is word-wrapped by `AppendWrapped`.
+- **`AppendWrapped`** — word-wraps prose at 112 columns with a hanging indent so the file stays within 120
+  columns; the gist, environment facts, image summary, and notes all use it.
 - **`AppendFailure`** — reproduces `ExtractionFailure.Explanation` verbatim for unreadable runs.
 - **`AppendBackend`** — names the selected extractor or states that no backend was selected.
 - **`AppendEnvironment`** — renders the runtime plus grouped environment facts, collapsing unused
-  available candidates into a counted line pointing at `manifest.json`.
+  available candidates into a counted line pointing at `docdown --list-backends` (the manifest records only the
+  backend that ran).
 - **`AppendDocumentMetadata`** — inlines author and modified date, then points at `metadata.json`.
 - **`AppendLayout`** — lists the fixed artifact names and resource-folder presence facts, including
   the conditional `review-comments.md` line, which states either `PRESENT - N comments` or

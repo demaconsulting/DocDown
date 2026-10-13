@@ -18,7 +18,7 @@ properties:
   deliberate zero for a looked-for feature; notes describe only attempted extraction steps that could
   not be completed.
 
-The subsystem contains seven documented units:
+The subsystem contains ten documented units:
 
 - **ScratchFolder** — owns the output directory and enforces path safety. See _ScratchFolder Design_.
 - **ExtractionSink** — concrete `IExtractionSink`; allocates paths, writes images and pages, buffers
@@ -30,11 +30,15 @@ The subsystem contains seven documented units:
 - **ManifestWriter** — serializes `manifest.json`. See _ManifestWriter Design_.
 - **ImageTextSelector** — shared image-text ranking policy used by backends when they derive image
   labels. See _ImageTextSelector Design_.
+- **EmbeddedImageWriter** — shared sink-write pipeline of the Open XML backends: content deduplication, size
+  limits, merged referrers, and the accounting each backend turns into notes. See _EmbeddedImageWriter Design_.
+- **ImageDimensions** — reads raster pixel size from PNG, JPEG, GIF, and BMP headers without decoding. See
+  _ImageDimensions Design_.
+- **ImageLinkText** — produces the honest, link-safe alt text of an inline image link. See _ImageLinkText Design_.
 
-`MetadataWriter`, `ArtifactInventory`, `EmbeddedImageWriter`, `ImageDimensions`, `ImageLinkText`, and
-`PartResourceLinkRewriter` are helper types documented inline here. `MetadataWriter`
-always writes `metadata.json`; `ArtifactInventory` defines which files a prior manifest accounts for
-so `ScratchFolder` can clean only proven DocDown output.
+`MetadataWriter`, `ArtifactInventory`, and `PartResourceLinkRewriter` are helper types documented inline
+here. `MetadataWriter` always writes `metadata.json`; `ArtifactInventory` defines which files a prior
+manifest accounts for so `ScratchFolder` can clean only proven DocDown output.
 
 ### Interfaces
 
@@ -89,21 +93,9 @@ chapters:
 - **`MetadataWriter`** — static helper that writes `metadata.json` with per-field provenance.
 - **`ArtifactInventory`** — internal static helper used by `ScratchFolder` to decide which prior files
   may be deleted safely.
-- **`EmbeddedImageWriter`**, **`EmbeddedImageWriteResult`**, and **`EmbeddedImage`** — the shared write
-  path of the Open XML backends (PowerPoint, Excel, Visio). `WriteAsync` takes the backend's resolved
-  images, deduplicates them by SHA-256 content digest so a reused image is counted and written once
-  (merging the page and template referrers of byte-identical parts into one record), skips an image
-  beyond `MaxImageDimensionPx` (raster only, via `ImageDimensions`) or `MaxImageBytes`, passes every
-  kept image through the sink unchanged, and returns an accounting (found, written, size-skipped with
-  a bounded item list, vector metafiles written, path by source reference). It never reports gaps
-  itself; each backend turns the accounting into its own notes. `IsVectorMetafile` identifies EMF and
-  WMF. `EmbeddedImage.Create` applies the shared naming policy through `ImageTextSelector`.
-- **`ImageDimensions`** — pure helper whose `TryRead` reads the pixel width and height of a PNG, JPEG,
-  GIF, or BMP from its header bytes without decoding; any other or malformed input is reported as
-  unknown rather than guessed.
-- **`ImageLinkText`** — pure helper whose `Alt` returns the alt text of an inline image link: the
-  neutral `image` placeholder when no descriptive text exists, with bracket, parenthesis, and
-  backslash escaped and line breaks collapsed to a space so the link stays on one line.
+- **`EmbeddedImage`** and **`EmbeddedImageWriteResult`** — the image reference and accounting types of
+  `EmbeddedImageWriter`, documented in _EmbeddedImageWriter Design_. `ImageHint` is declared in the same
+  source file.
 - **`PartResourceLinkRewriter`** — internal pure helper used by `ContentWriter` to rewrite
   root-relative `images/` and `pages/` link targets so they resolve from a part file under `parts/`.
   See _ContentWriter Design_.

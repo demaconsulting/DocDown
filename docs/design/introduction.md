@@ -110,9 +110,12 @@ items, specifically:
     document carries reviewer comments
   - **ImageTextSelector (Unit)** — Chooses which of the texts a document offered for an image is
     the most direct, so an image link carries the document's own words rather than invented ones
+  - **EmbeddedImageWriter (Unit)** — The shared sink-write pipeline of the Open XML backends: content
+    deduplication, size limits, merged referrers, and the accounting each backend turns into notes
+  - **ImageDimensions (Unit)** — Reads raster pixel size from image headers without decoding
+  - **ImageLinkText (Unit)** — Produces the honest, link-safe alt text of an inline image link
   - Supporting types documented inline in the Output subsystem design rather than as units:
-    `MetadataWriter` (serializes `metadata.json`), `EmbeddedImageWriter`, `ImageDimensions`,
-    `ImageLinkText`, `PartResourceLinkRewriter`, and `ArtifactInventory`
+    `MetadataWriter` (serializes `metadata.json`), `PartResourceLinkRewriter`, and `ArtifactInventory`
 - **DemaConsulting.DocDown.Pdf (System)** — PDF text, embedded-image, reviewer-annotation, and document-metadata
   extraction; flat, with no subsystems, because there is one architectural boundary here rather than several
   - **PdfDocumentExtractor (Unit)** — The backend the engine selects: availability, metadata,
@@ -233,10 +236,10 @@ DemaConsulting.DocDown.Core is organized into three subsystems that form a one-d
 identifies a document's format, **Extraction** registers backends and selects the best available one
 deterministically, and **Output** is the sole write path that produces the invariant scratch-folder
 layout. Each subsystem is a distinct architectural boundary with its own public surface, and the
-subsystems collaborate only through immutable value types. Twelve software units sit under these
+subsystems collaborate only through immutable value types. Fifteen software units sit under these
 subsystems; a larger set of supporting value, contract, and enumeration types — including
-`ExtractionNote`, `OpcMetadataMapper`, `SelfTestProbe`, `MetadataWriter`, `EmbeddedImageWriter`,
-`ImageDimensions`, `ImageLinkText`, and `PartResourceLinkRewriter` — is documented inline within each
+`ExtractionNote`, `OpcMetadataMapper`, `SelfTestProbe`, `MetadataWriter`, and
+`PartResourceLinkRewriter` — is documented inline within each
 subsystem's design document rather than as separate units.
 
 DemaConsulting.DocDown.Pdf sits alongside DemaConsulting.DocDown.Core as the first real extraction backend. It
@@ -318,11 +321,11 @@ DemaConsulting.DocDown.Core/
 ├── Output/
 │   ├── ArtifactInventory.cs             — Helper: the manifest-accounted file inventory used for safe scratch reuse
 │   ├── ContentWriter.cs                 — Unit: finalizes content.md and any parts/ files
-│   ├── EmbeddedImageWriter.cs           — Unit: writes an embedded image and its supporting value types
+│   ├── EmbeddedImageWriter.cs           — Unit: writes embedded images once each within size limits
 │   ├── ExtractionManifest.cs            — DTO graph: the manifest.json serialization model
 │   ├── ExtractionSink.cs                — Unit: allocates paths, writes bytes, and records notes and content inventory
-│   ├── ImageDimensions.cs               — Support: reads pixel dimensions from image headers without decoding
-│   ├── ImageLinkText.cs                 — Support: the alt text policy for an inline markdown image link
+│   ├── ImageDimensions.cs               — Unit: reads pixel dimensions from image headers without decoding
+│   ├── ImageLinkText.cs                 — Unit: the alt text policy for an inline markdown image link
 │   ├── ImageTextSelector.cs             — Unit: chooses the most direct image text a document offered
 │   ├── ManifestWriter.cs                — Unit: serializes manifest.json from recorded output, inventory, and notes
 │   ├── MetadataWriter.cs                — Writer: serializes metadata.json from self-reported document metadata

@@ -12,14 +12,15 @@ identifier resolution, and probe containment directly observable without filesys
 
 - **Framework**: xUnit v3 under the .NET SDK
 - **Targets**: net8.0, net9.0, and net10.0
-- **Backends**: `StubExtractor` instances, including throwing and unavailable probes
+- **Backends**: StubExtractor instances, including throwing and unavailable probes, plus a local test
+  double whose probe returns null
 - **Filesystem**: N/A - registry tests are fully in memory
 
 #### Acceptance Criteria
 
 Per IEC 62304 §5.5.2, `ExtractorRegistry` passes when descriptors remain in registration order,
-identifiers resolve as documented, availability is probed once and cached until refreshed, throwing
-or null-like probe behavior is contained as unavailability, and exactly one candidate is returned per
+identifiers resolve as documented, availability is probed once and cached until refreshed, a probe
+that throws or returns null is contained as unavailability, and exactly one candidate is returned per
 registered extractor.
 
 #### Test Scenarios
@@ -42,6 +43,7 @@ registered extractor.
 ##### Probe failures are contained as unavailability
 
 **Tests**: `ExtractorRegistry_GetCandidates_ThrowingProbe_ContainedAsUnavailable`,
+`ExtractorRegistry_GetCandidates_NullProbeResult_ContainedAsUnavailable`,
 `ExtractorRegistry_GetCandidates_UnavailableBackend_PreservesReason`
 
 ##### Availability is re-probed after refresh
@@ -62,9 +64,10 @@ silently shadowing one of them.
 `ExtractorRegistry_Construct_NullFactoryElement_ThrowsArgumentNullException`,
 `ExtractorRegistry_Construct_FactoryReturnsNull_ThrowsArgumentException`,
 `ExtractorRegistry_Construct_EmptyIdentifier_ThrowsArgumentException`,
+`ExtractorRegistry_Construct_NullIdentifier_ThrowsArgumentException`,
 `ExtractorRegistry_Construct_Factory_IsMaterializedExactlyOnce`
 
-Proves a null list, a null factory, a factory returning null, and an empty identifier are refused, an empty
+Proves a null list, a null factory, a factory returning null, and a null or empty identifier are refused, an empty
 list yields an empty registry, and each factory runs exactly once.
 
 ##### One candidate is yielded per extractor

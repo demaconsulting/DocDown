@@ -273,6 +273,36 @@ public class ExtractorRegistryTests
     }
 
     /// <summary>
+    ///     Proves an availability probe that returns null is contained as an unavailable candidate.
+    /// </summary>
+    [Fact]
+    public void ExtractorRegistry_GetCandidates_NullProbeResult_ContainedAsUnavailable()
+    {
+        // Arrange: a registry with a backend whose availability probe returns null
+        var registry = new ExtractorRegistry(Factories(new NullProbeExtractor("null-probe")));
+
+        // Act: enumerate candidates, forcing the probe pass
+        var candidate = Assert.Single(registry.GetCandidates());
+
+        // Assert: the null result is surfaced as ordinary unavailability with a stable reason
+        Assert.False(candidate.Availability.IsAvailable);
+        Assert.Equal("availability probe failed: returned null", candidate.Availability.UnavailableReason);
+    }
+
+    /// <summary>
+    ///     Proves an extractor with a null identifier is rejected at construction time.
+    /// </summary>
+    [Fact]
+    public void ExtractorRegistry_Construct_NullIdentifier_ThrowsArgumentException()
+    {
+        // Arrange: an extractor whose identifier is null
+        var factories = Factories(new NullProbeExtractor(null!));
+
+        // Act / Assert: a null identifier cannot be looked up or recorded, so it is refused
+        Assert.Throws<ArgumentException>(() => new ExtractorRegistry(factories));
+    }
+
+    /// <summary>
     ///     Proves each factory is invoked exactly once during construction.
     /// </summary>
     [Fact]
@@ -342,6 +372,37 @@ public class ExtractorRegistryTests
             ProbeCount++;
             return ExtractorAvailability.Available();
         }
+
+        /// <inheritdoc />
+        public ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context) =>
+            ValueTask.FromResult(ExtractionOutcome.Produced);
+    }
+
+    /// <summary>
+    ///     An extractor whose availability probe returns null, which the registry must contain.
+    /// </summary>
+    private sealed class NullProbeExtractor : IDocumentExtractor
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="NullProbeExtractor"/> class.
+        /// </summary>
+        /// <param name="id">The extractor identifier, which may be null to exercise validation.</param>
+        public NullProbeExtractor(string id) => Id = id;
+
+        /// <inheritdoc />
+        public string Id { get; }
+
+        /// <inheritdoc />
+        public string DisplayName => "null probe";
+
+        /// <inheritdoc />
+        public IReadOnlyCollection<DocumentFormat> SupportedFormats => [DocumentFormat.Text];
+
+        /// <inheritdoc />
+        public int Priority => 0;
+
+        /// <inheritdoc />
+        public ExtractorAvailability ProbeAvailability() => null!;
 
         /// <inheritdoc />
         public ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context) =>

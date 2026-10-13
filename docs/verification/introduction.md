@@ -54,11 +54,14 @@ constituent software items, specifically:
     document carries reviewer comments
   - **ImageTextSelector (Unit)** — Chooses the most direct of the texts a document offered for an
     image
-  - Supporting helpers with no verification document of their own — `MetadataWriter`,
-    `EmbeddedImageWriter`, `ImageDimensions`, `ImageLinkText`, and `PartResourceLinkRewriter` in
-    Output, and `OpcMetadataMapper`, `SelfTestProbe`, and `DocumentSource` in Extraction — are verified
-    through their owning subsystem's scenarios; all of them except `DocumentSource` also have their own
-    test files
+  - **EmbeddedImageWriter (Unit)** — Writes the resolved embedded images of the Open XML backends once
+    each, within the caller's size limits
+  - **ImageDimensions (Unit)** — Reads raster pixel size from image headers without decoding
+  - **ImageLinkText (Unit)** — Produces the alt text of an inline image link
+  - Supporting helpers with no verification document of their own — `MetadataWriter` and
+    `PartResourceLinkRewriter` in Output, and `OpcMetadataMapper`, `SelfTestProbe`, and
+    `DocumentSource` in Extraction — are verified through their owning subsystem's scenarios;
+    all of them except `DocumentSource` also have their own test files
 - **DemaConsulting.DocDown.Pdf (System)** — PDF text, embedded-image, reviewer-annotation, and
   document-metadata extraction; flat, with no subsystems
   - **PdfDocumentExtractor (Unit)** — The backend the engine selects: availability, metadata,

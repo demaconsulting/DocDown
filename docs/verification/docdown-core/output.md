@@ -93,20 +93,7 @@ the rendered shape (value-and-source objects, the absent array, and the explanat
 
 #### The supporting helpers are verified by their own test files
 
-**Tests**: `EmbeddedImageWriter_Write_DuplicateContent_CountsOnce`,
-`EmbeddedImageWriter_Write_DuplicateContent_MergesReferrerSets`,
-`EmbeddedImageWriter_Write_ExceedsByteLimit_SkipsForSize`,
-`EmbeddedImageWriter_Write_ExceedsDimensionLimit_SkipsForSize`,
-`EmbeddedImageWriter_Write_VectorMetafile_CountedAsVector`,
-`ImageDimensions_TryRead_Png_ReadsWidthAndHeight`, `ImageDimensions_TryRead_Jpeg_ReadsWidthAndHeight`,
-`ImageDimensions_TryRead_Gif_ReadsWidthAndHeight`,
-`ImageDimensions_TryRead_Bmp_ReadsWidthAndAbsoluteHeight`,
-`ImageDimensions_TryRead_BmpMinValueHeight_ReturnsFalseWithoutThrowing`,
-`ImageDimensions_TryRead_NonRaster_ReturnsFalse`,
-`ImageDimensions_TryRead_Truncated_ReturnsFalse`, `Alt_NoDescription_UsesNeutralPlaceholder`,
-`Alt_PlainDescription_IsPreserved`, `Alt_LinkStructuralCharacters_AreEscaped`,
-`Alt_MultiLineDescription_StaysOnOneLine`,
-`PartResourceLinkRewriter_Rewrite_ImageLinkInFlatPart_PrefixesOneParent`,
+**Tests**: `PartResourceLinkRewriter_Rewrite_ImageLinkInFlatPart_PrefixesOneParent`,
 `PartResourceLinkRewriter_Rewrite_AltTextWithEscapedBracket_PrefixesOneParent`,
 `PartResourceLinkRewriter_Rewrite_PageLinkPlainForm_PrefixesOneParent`,
 `PartResourceLinkRewriter_Rewrite_ExternalUrl_LeftUntouched`,
@@ -114,11 +101,6 @@ the rendered shape (value-and-source objects, the absent array, and the explanat
 `PartResourceLinkRewriter_Rewrite_AlreadyRelativeTarget_LeftUntouched`,
 `PartResourceLinkRewriter_Rewrite_NestedPart_PrefixesPerLevel`
 
-Proves the shared Open XML image path: byte-identical images are counted and written once with their
-referrers merged, images beyond a dimension or byte limit are skipped and counted, EMF/WMF files are
-counted as vector, raster dimensions are read from PNG, JPEG, GIF, and BMP headers (a negative BMP height
-is read as its absolute value, and a minimum-integer height, non-raster, or truncated input is reported
-unknown), alt text is neutral, escaped, and single-line, and part-file
-resource links are rewritten only for sink resource folders. These helpers are
-linked to the EmbeddedImageWriter, ImageDimensions, ImageLinkText, and ContentWriter link-rewrite
-requirements.
+Proves part-file resource links are rewritten only for sink resource folders. This helper is linked to the
+ContentWriter link-rewrite requirement. The shared Open XML image path is verified by the unit documents for
+_EmbeddedImageWriter_, _ImageDimensions_, and _ImageLinkText_.

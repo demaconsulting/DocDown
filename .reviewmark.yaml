@@ -164,13 +164,7 @@ reviews:
       - "src/DemaConsulting.DocDown.Core/Output/ArtifactInventory.cs"                 # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Output/MetadataWriter.cs"                    # supporting type (D8)
       - "test/DemaConsulting.DocDown.Core.Tests/Output/MetadataWriterTests.cs"        # supporting-type tests
-      - "src/DemaConsulting.DocDown.Core/Output/EmbeddedImageWriter.cs"               # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/ImageDimensions.cs"                   # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/ImageLinkText.cs"                     # supporting type (D8)
-      - "test/DemaConsulting.DocDown.Core.Tests/Output/ImageLinkTextTests.cs"          # supporting-type tests
       - "src/DemaConsulting.DocDown.Core/Output/PartResourceLinkRewriter.cs"          # supporting type (D8)
-      - "test/DemaConsulting.DocDown.Core.Tests/Output/EmbeddedImageWriterTests.cs"        # supporting-type tests
-      - "test/DemaConsulting.DocDown.Core.Tests/Output/ImageDimensionsTests.cs"           # supporting-type tests
       - "test/DemaConsulting.DocDown.Core.Tests/Output/PartResourceLinkRewriterTests.cs"  # supporting-type tests
 
   # DocDownCore-Detection-FormatSniffer Review (one per unit)
@@ -357,6 +351,51 @@ reviews:
       - "docs/verification/docdown-core/output/image-text-selector.md"               # unit verification
       - "src/DemaConsulting.DocDown.Core/Output/ImageTextSelector.cs"                # unit source
       - "test/DemaConsulting.DocDown.Core.Tests/Output/ImageTextSelectorTests.cs"    # unit tests
+
+  # DocDownCore-Output-EmbeddedImageWriter Review (one per unit)
+  - id: DocDownCore-Output-EmbeddedImageWriter
+    title: Review that DemaConsulting.DocDown.Core Output EmbeddedImageWriter Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/output.md"
+      - "docs/reqstream/docdown-core/output.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/output/embedded-image-writer.yaml"
+      - "docs/design/docdown-core/output/embedded-image-writer.md"
+      - "docs/verification/docdown-core/output/embedded-image-writer.md"
+      - "src/DemaConsulting.DocDown.Core/Output/EmbeddedImageWriter.cs"
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/EmbeddedImageWriterTests.cs"
+
+  # DocDownCore-Output-ImageDimensions Review (one per unit)
+  - id: DocDownCore-Output-ImageDimensions
+    title: Review that DemaConsulting.DocDown.Core Output ImageDimensions Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/output.md"
+      - "docs/reqstream/docdown-core/output.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/output/image-dimensions.yaml"
+      - "docs/design/docdown-core/output/image-dimensions.md"
+      - "docs/verification/docdown-core/output/image-dimensions.md"
+      - "src/DemaConsulting.DocDown.Core/Output/ImageDimensions.cs"
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/ImageDimensionsTests.cs"
+
+  # DocDownCore-Output-ImageLinkText Review (one per unit)
+  - id: DocDownCore-Output-ImageLinkText
+    title: Review that DemaConsulting.DocDown.Core Output ImageLinkText Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/output.md"
+      - "docs/reqstream/docdown-core/output.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/output/image-link-text.yaml"
+      - "docs/design/docdown-core/output/image-link-text.md"
+      - "docs/verification/docdown-core/output/image-link-text.md"
+      - "src/DemaConsulting.DocDown.Core/Output/ImageLinkText.cs"
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/ImageLinkTextTests.cs"
 
   # TestSupport Review (D9 / formal-review M6)
   # Repo-level, un-prefixed id: DemaConsulting.DocDown.TestSupport is shared test infrastructure

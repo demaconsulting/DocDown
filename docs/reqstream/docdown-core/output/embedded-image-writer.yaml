@@ -1,0 +1,54 @@
+---
+# Software Unit Requirements for EmbeddedImageWriter
+#
+# EmbeddedImageWriter is the shared sink-write pipeline of the Open XML backends. It deduplicates
+# resolved images by content, applies the caller's size limits, merges referrers, and returns the
+# accounting each backend turns into its own notes.
+
+sections:
+  - title: DocDownCore Requirements
+    sections:
+      - title: Output Requirements
+        sections:
+          - title: EmbeddedImageWriter Requirements
+            requirements:
+              - id: DocDownCore-Output-EmbeddedImageWriter-WritesDeduplicated
+                title: >-
+                  EmbeddedImageWriter shall write each distinct embedded image once and resolve every
+                  source reference of identical content to the shared path.
+                justification: |
+                  Backends hand every occurrence of an image to the writer. Writing identical bytes once
+                  keeps output compact while every reference still resolves.
+                tests:
+                  - EmbeddedImageWriter_Write_DuplicateContent_CountsOnce
+
+              - id: DocDownCore-Output-EmbeddedImageWriter-MergesReferrers
+                title: >-
+                  EmbeddedImageWriter shall merge the page referrers and the template flag of
+                  identical content into the single written image.
+                justification: |
+                  Discarding the second occurrence of an image would lose where it appeared. Merging
+                  keeps every reference recorded.
+                tests:
+                  - EmbeddedImageWriter_Write_DuplicateContent_MergesReferrerSets
+
+              - id: DocDownCore-Output-EmbeddedImageWriter-CountsVectorMetafiles
+                title: >-
+                  EmbeddedImageWriter shall count a written EMF or WMF vector metafile in the vector
+                  tally of its accounting.
+                justification: |
+                  A backend turns the vector tally into a readability caveat, because most viewers
+                  cannot render a Windows metafile.
+                tests:
+                  - EmbeddedImageWriter_Write_VectorMetafile_CountedAsVector
+
+              - id: DocDownCore-Output-EmbeddedImageWriter-SkipsOversized
+                title: >-
+                  EmbeddedImageWriter shall skip an image that exceeds the configured byte or dimension
+                  limit and report the skip.
+                justification: |
+                  Limits protect the caller from decompression-style abuse. A skipped image must be
+                  reported so the reader knows it was not extracted.
+                tests:
+                  - EmbeddedImageWriter_Write_ExceedsByteLimit_SkipsForSize
+                  - EmbeddedImageWriter_Write_ExceedsDimensionLimit_SkipsForSize
