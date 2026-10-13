@@ -37,9 +37,12 @@ matches the supported contract, the probe is unconditional and reports available
 support, and the self-tests report a passing round trip and a skipped page-rendering case; when the
 reader returns the slides in presentation order with their ordinals and titles, extracts each slide's
 body text separate from its title, reads the speaker notes from the notes body placeholder, and yields
-null notes for a notes-less deck; and when the image reader yields an embedded image and records its
+null notes for a notes-less deck; when it reads a legacy slide comment with its author resolved, keeps
+comments with their slide, yields none for a deck with no comments part, and counts modern comments
+without reading them; and when the image reader yields an embedded image and records its
 slide association. Any wrong descriptor field, reordered or dropped slide, misread or truncated notes,
-or lost slide association is a failure.
+or lost slide association is a failure. Corrupt-deck wrapping, cancellation, and text held in tables,
+group shapes, or SmartArt are not currently covered by a scenario (the last is not read at all).
 
 ### Test Scenarios
 

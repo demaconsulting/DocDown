@@ -88,8 +88,8 @@ sections:
 
           - id: DocDownPdf-PdfDocumentExtractor-ReportsReviewComments
             title: >-
-              PdfDocumentExtractor shall report each annotation found on the selected pages as a
-              review comment located by its 1-based page number.
+              PdfDocumentExtractor shall report each commentary annotation with non-blank text found on
+              the selected pages as a review comment located by its 1-based page number.
             justification: |
               Reviewer commentary describes the document rather than belonging to it, so it travels
               to Core through the review-comment channel instead of being written into the content.

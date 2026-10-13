@@ -31,7 +31,8 @@ The subsystem contains seven documented units:
 - **ImageTextSelector** — shared image-text ranking policy used by backends when they derive image
   labels. See _ImageTextSelector Design_.
 
-`MetadataWriter` and `ArtifactInventory` are helper types documented inline here. `MetadataWriter`
+`MetadataWriter`, `ArtifactInventory`, `EmbeddedImageWriter`, `ImageDimensions`, `ImageLinkText`, and
+`PartResourceLinkRewriter` are helper types documented inline here. `MetadataWriter`
 always writes `metadata.json`; `ArtifactInventory` defines which files a prior manifest accounts for
 so `ScratchFolder` can clean only proven DocDown output.
 
@@ -47,8 +48,7 @@ The subsystem exposes:
   `IsReservedDeviceName`, and `ValidateTotalPathLength`.
 
 The engine drives `ContentWriter`, `ReviewCommentsWriter`, `MetadataWriter`, `ManifestWriter`, and
-`SummaryWriter`; extractors
-touch only `IExtractionSink`.
+`SummaryWriter`; extractors touch only `IExtractionSink`.
 
 ### Design
 
@@ -57,9 +57,10 @@ later allocation. `CleanIfDocDownFolder` is the default reuse mode: it deletes o
 manifest written for that same folder accounts for, using `ArtifactInventory`, and refuses whenever
 anything about that proof fails. `Overwrite` is the explicit mode for unconditional replacement.
 
-`ExtractionSink` routes all binary writes through `ScratchFolder`, deduplicates identical images by
+`ExtractionSink` writes binary files to paths validated by `ScratchFolder.Combine`, deduplicates
+identical images by
 content key, allocates page and part paths in Core, and records the extractor's document info,
-self-reported metadata, content features, notes, and environment facts.
+self-reported metadata, content features, notes, review comments, and environment facts.
 
 `ContentWriter` decides the shape of `content.md`: a single flow, or an index over part files.
 `ReviewCommentsWriter` writes `review-comments.md` only when the document carries reviewer comments,
@@ -86,8 +87,26 @@ chapters:
 - **`ContentPart`** and **`ContentPartKind`** — buffered content part identity.
 - **`ExtractionEnvironment`** and **`EnvironmentFact`** — runtime context for the run.
 - **`MetadataWriter`** — static helper that writes `metadata.json` with per-field provenance.
-- **`ArtifactInventory`** — static helper used by `ScratchFolder` to decide which prior files may be
-  deleted safely.
+- **`ArtifactInventory`** — internal static helper used by `ScratchFolder` to decide which prior files
+  may be deleted safely.
+- **`EmbeddedImageWriter`**, **`EmbeddedImageWriteResult`**, and **`EmbeddedImage`** — the shared write
+  path of the Open XML backends (PowerPoint, Excel, Visio). `WriteAsync` takes the backend's resolved
+  images, deduplicates them by SHA-256 content digest so a reused image is counted and written once
+  (merging the page and template referrers of byte-identical parts into one record), skips an image
+  beyond `MaxImageDimensionPx` (raster only, via `ImageDimensions`) or `MaxImageBytes`, passes every
+  kept image through the sink unchanged, and returns an accounting (found, written, size-skipped with
+  a bounded item list, vector metafiles written, path by source reference). It never reports gaps
+  itself; each backend turns the accounting into its own notes. `IsVectorMetafile` identifies EMF and
+  WMF. `EmbeddedImage.Create` applies the shared naming policy through `ImageTextSelector`.
+- **`ImageDimensions`** — pure helper whose `TryRead` reads the pixel width and height of a PNG, JPEG,
+  GIF, or BMP from its header bytes without decoding; any other or malformed input is reported as
+  unknown rather than guessed.
+- **`ImageLinkText`** — pure helper whose `Alt` returns the alt text of an inline image link: the
+  neutral `image` placeholder when no descriptive text exists, with bracket, parenthesis, and
+  backslash escaped and line breaks collapsed to a space so the link stays on one line.
+- **`PartResourceLinkRewriter`** — internal pure helper used by `ContentWriter` to rewrite
+  root-relative `images/` and `pages/` link targets so they resolve from a part file under `parts/`.
+  See _ContentWriter Design_.
 - **`ExtractionManifest`** and **`DocDownJsonContext`** — the manifest DTO graph and source-generated
   JSON context.
 - **`ScratchFolderException`** — typed refusal returned when a folder or path is unsafe.

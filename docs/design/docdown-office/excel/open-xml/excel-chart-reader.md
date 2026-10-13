@@ -24,6 +24,13 @@ than the typed chart classes, because every plot type spells its series the same
   the worksheet's drawing for graphic frames so charts come out in the laid-out order, reads each
   referenced chart part, and then collects any chart part no frame references so an unreferenced chart
   is reported rather than lost. A sheet with no drawing part shows no chart.
+- **`ExcelChartData ReadChartData(Stream stream)`** — parses one chart part's XML into the cached-data
+  model. It is a separate public member of the internal class so the parsing rules can be exercised against
+  hand-written chart XML with no package around it. A null stream is rejected with
+  `ArgumentNullException`, and malformed XML raises `XmlException`, which `BuildChart` converts into the
+  chart's recorded read-failure reason.
+- **`ExtendedChartReason`** (internal const) — the fixed read-failure reason recorded for a chart drawn
+  with the extended chart grammar, named so the reader and its test cannot drift.
 - **`BuildChart`** (private) — parses one chart part into its cache, or returns the failure reason; a
   chart drawn with the newer extended chart grammar is returned with a named reason rather than thrown.
 - The series walk recovers each series' name reference, source reference, number format, declared point
@@ -42,8 +49,8 @@ adverse chart; any package-level fault propagates to the reader and Core.
 
 - **DocumentFormat.OpenXml** (OTS) — the packaging and spreadsheet-drawing types.
 - **System.Xml** — the `XDocument` name-driven walk of the chart part.
-- **ExcelChartModel** and its cached-data records — the model it populates. See the *Markdown*
-  subsystem design.
+- **ExcelChartModel** and its cached-data records (`ExcelChartData`, `ExcelChartSeries`,
+  `ExcelChartPoint`) — the model it populates, defined in this unit's own source file.
 
 ### Callers
 

@@ -17,8 +17,7 @@ serialized object uses only strings, numbers, booleans, nulls, and lists.
 
 #### On-disk format
 
-`manifest.json` is emitted with schema version `3.1`, `
-` line endings, and UTF-8 without a byte
+`manifest.json` is emitted with schema version `3.1`, `\n` line endings, and UTF-8 without a byte
 order mark. The top-level shape contains:
 
 - `schemaVersion`

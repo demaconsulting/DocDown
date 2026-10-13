@@ -43,10 +43,12 @@ position, or missing guard is a failure.
 
 **Tests**: `FormatSniffer_Detect_ExtensionContradictsContent_TrustsExtension`,
 `FormatSniffer_Detect_VsdxExtensionWithoutSignature_IdentifiesVsdxByExtension`,
+`FormatSniffer_Detect_VsdmExtensionWithoutSignature_IdentifiesVsdmByExtension`,
 `FormatSniffer_Detect_LegacyBinaryExtension_IdentifiesByExtension`,
 `FormatSniffer_Detect_UpperCaseLogExtension_IdentifiesTextCaseInsensitively`
 
-Proves the extension is the primary signal: it identifies a Visio document that carries no signature at
+Proves the extension is the primary signal: it identifies a Visio document (`.vsdx` or macro-enabled
+`.vsdm`) that carries no signature at
 all, it identifies each legacy binary Office format (`.doc`, `.xls`, `.ppt`, `.vsd`) by name with the
 correct format id and IANA media type, it matches case-insensitively, and it wins over a contradicting
 `%PDF-` content signature. Evidence for `DocDownCore-Detection-FormatSniffer-ExtensionPrimary`.

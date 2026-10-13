@@ -15,11 +15,12 @@ must open an OPC package without native binaries and expose those parts and rela
 ### Verification Approach
 
 **System.IO.Packaging is verified by direct evidence from the Visio package-reader tests, and by
-transitive evidence from the Word suite.** Per the software-items standard, a dedicated OTS test
+transitive evidence from the Office suite.** Per the software-items standard, a dedicated OTS test
 project is required only *if no other verification evidence is available*. That is not the case:
 `VisioPackageReader` names the packaging API in its own source, so the Visio reader tests exercise
 `Package.Open`, `PackagePart` lookup, and relationship resolution directly, on three target
-frameworks, in every CI matrix combination. The Word path reaches the same library transitively
+frameworks, in every CI matrix combination. The Word path (part of the Office suite) reaches the same
+library transitively
 through the SDK.
 
 The evidence is limited to the tests named below. The claim is bounded, not comprehensive: each

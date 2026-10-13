@@ -93,9 +93,9 @@ sections:
           library package.
         tags: [quality]
         justification: |
-          The README tells a consumer that a complete, runnable example travels offline inside the
-          installed package for every entry point they start from, so a member documented without
-          one breaks a stated promise rather than merely thinning the documentation. Making the
+          The user guide tells a consumer that a complete, runnable example travels offline inside the
+          installed package's `api/` folder for every entry point they start from, so a member documented
+          without one breaks a stated promise rather than merely thinning the documentation. Making the
           coverage a checked requirement keeps a newly added registration method from shipping
           without its example.
         tests:

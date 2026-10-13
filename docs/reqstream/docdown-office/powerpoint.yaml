@@ -16,48 +16,9 @@
 # counted zeros, and a short plain note is used only when DocDown attempted a step and could not
 # complete it.
 #
-# SUPERSEDED REQUIREMENT: DocDownPowerPoint-SpeakerNotesAbsenceGap required a deck carrying no speaker
-# notes to be reported as a counted gap. That requirement was authored as a statement of intent before
-# the repository owner established the governing principle that DocDown reports what was extracted and
-# where, and makes no acceptability judgement about the content: a shortfall report must describe what
-# DocDown could not do, never what the document does not contain. A deck with no notes cost the
-# extraction nothing — every notes slide was read. The requirement is therefore superseded (not
-# satisfied) by DocDownPowerPoint-SpeakerNotesAbsenceInventory, which places the same distinction in
-# the content inventory as a counted zero.
-#
-# SUPERSEDED REQUIREMENT: DocDownPowerPoint-EmptyDeck required a deck with no slides to be reported as
-# an extraction shortfall. That requirement is superseded (not satisfied) by
-# DocDownPowerPoint-EmptyDeckInventory, because an empty deck is now reported by an empty content file
-# plus zero-count inventory entries rather than by a separate shortfall classification.
-#
-# SUPERSEDED REQUIREMENT: DocDownPowerPoint-Charts required charts this backend does not read to be
-# reported separately. That requirement is superseded (not satisfied) with no replacement, because
-# chart-specific reporting was removed when this subsystem was reduced to the two governing reporting
-# forms: content inventory and plain notes about attempted steps that could not be completed.
-#
-# SUPERSEDED REQUIREMENT: DocDownPowerPoint-VectorImages required an informational caveat to be
-# recorded for EMF or WMF images. That requirement is superseded (not satisfied) by
-# DocDownPowerPoint-VectorImagePassthrough, because vector metafile bytes are now written as found
-# with no PowerPoint-specific note.
-#
-# SUPERSEDED REQUIREMENT: DocDownPowerPoint-DeclaredCapabilities required the backends to negotiate
-# over declared capability sets. That requirement is superseded (not satisfied) by
-# DocDownPowerPoint-BackendSelectionSurface, because selection now turns on explicit backend identity,
-# supported format, priority, page-rendering applicability, and the availability probe's
-# rendered-page support flag rather than a capability set.
-#
-# SUPERSEDED REQUIREMENT: DocDownPowerPoint-SlideRenderNotes required this subsystem's own rendering
-# backend to record a plain note naming any slide it could not render, and continue with the
-# remaining slides. That requirement is superseded (not satisfied) because this subsystem no longer
-# renders slides itself at all: rendering, and the honesty of its per-slide failures, is now entirely
-# DocDownPowerPoint.Rendering's concern, governed by docs/reqstream/docdown-powerpoint-rendering.yaml.
-#
-# SUPERSEDED REQUIREMENT: DocDownPowerPoint-RenderingAvailability required this subsystem to report its
-# own rendering backend as unavailable, with a declarative reason that instructs no installation,
-# where Microsoft PowerPoint could not be reached. That requirement is superseded (not satisfied)
-# because this subsystem's own backend never renders pages at all now, so rendering availability honesty
-# is entirely DocDownPowerPoint.Rendering's concern, governed by
-# docs/reqstream/docdown-powerpoint-rendering.yaml.
+# Earlier requirements about counted gaps, charts, vector-image caveats, declared capability sets, and
+# this subsystem's own slide rendering were retired (see version control history); rendering is now
+# governed by docs/reqstream/docdown-powerpoint-rendering.yaml.
 
 sections:
   - title: DocDownPowerPoint Requirements

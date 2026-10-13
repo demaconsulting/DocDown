@@ -75,12 +75,14 @@ Proves a comment the document records no author for is labelled `Unattributed` r
 dropped or attributed to a guessed name. Evidence for
 `DocDownCore-Output-ReviewCommentsWriter-UnattributedReported`.
 
-##### A multi-line body stays in its entry
+##### A multi-line body, author, or location stays in its entry
 
-**Test**: `ReviewCommentsWriter_WriteAsync_MultiLineBody_KeepsEntryOnOneLine`
+**Tests**: `ReviewCommentsWriter_WriteAsync_MultiLineBody_KeepsEntryOnOneLine`,
+`ReviewCommentsWriter_WriteAsync_MultiLineAuthorAndLocation_KeepsEntryOnOneLine`
 
-Proves a body spanning lines in both line-ending conventions is flattened onto one entry with all its
-words intact, so the comment cannot be misread as document text and the file stays one entry per line.
+Proves a body spanning lines in both line-ending conventions, and an author or location that spans
+lines, are each flattened onto one entry with all their words intact, so the comment cannot be misread
+as document text and the file stays one entry per line.
 Evidence for `DocDownCore-Output-ReviewCommentsWriter-EntryFormat`.
 
 ##### A padded body survives flattening unchanged

@@ -2,7 +2,8 @@
 
 ### Purpose
 
-`DocumentFormat.OpenXml` is the managed Open XML SDK `DemaConsulting.DocDown.Word` is built on. It was chosen
+`DocumentFormat.OpenXml` is the managed Open XML SDK that the Word, Excel, and PowerPoint readers in
+`DemaConsulting.DocDown.Office` are built on. It was chosen
 because it is 100% managed with no native assets, MIT-licensed, and compatible with this
 repository's MIT license, and because it is the canonical reader for the `.docx` package format —
 authoritative for both the OPC container it opens and the Wordprocessing schema its DOM projects.
@@ -23,8 +24,9 @@ component*, and the two packages fail every independence test that would make th
 - `DocumentFormat.OpenXml.Framework` is an implementation split of the same project — a
   factoring introduced by upstream so the base object model is available separately, referenced
   transitively by the main package on every restore.
-- They are versioned in lockstep. A restore of `DocumentFormat.OpenXml 3.5.1` produces
-  `DocumentFormat.OpenXml.Framework 3.5.1`; the two do not float relative to each other.
+- They are versioned in lockstep. A restore of a given `DocumentFormat.OpenXml` version produces the
+  `DocumentFormat.OpenXml.Framework` package of the same version; the two do not float relative to
+  each other.
 - Neither ships a native asset; both are `runtimes/`-free managed assemblies.
 
 Compare with `PdfPig` (its own item) under the OTS integration design: it is independently sourced
@@ -63,15 +65,17 @@ with a serialized copy of it.
 ### Integration Pattern
 
 **Runtime dependency, transitive to consumers.** OpenXml is a real runtime dependency of the
-`DemaConsulting.DocDown.Word` package and flows to consumers, and it is confined to the OpenXml subsystem —
-`WordOpenXmlExtractor`, `WordOpenXmlReader`, and `WordOpenXmlImageReader` are the only files that
+`DemaConsulting.DocDown.Office` package and flows to consumers, and it is confined to the Word,
+Excel, and PowerPoint OpenXml subsystems. For Word, `WordOpenXmlExtractor`, `WordOpenXmlReader`, and
+`WordOpenXmlImageReader` are the only files that
 name an SDK type. `WordDocDownBuilderExtensions` deliberately carries no SDK type on its public
 surface, so a host referencing the registration seam does not pull the SDK's types into its own
-compilation.
+compilation. The features listed above are the Wordprocessing surfaces; the Excel and PowerPoint
+readers use the corresponding spreadsheet and presentation surfaces of the same SDK.
 
-**Version pinning — reproducibility, not fragility.** The package reference is pinned to the
-exact version range `[3.5.1]` (see the comment in
-`src/DemaConsulting.DocDown.Office/Word/DemaConsulting.DocDown.Word.csproj`). The pin's stated purpose
+**Version pinning — reproducibility, not fragility.** The package reference in
+`src/DemaConsulting.DocDown.Office/DemaConsulting.DocDown.Office.csproj` is pinned to an exact
+version range (see the comment there). The pin's stated purpose
 is restore determinism and SBOM reproducibility: a floating reference would let a restore
 substitute a different patch, which would change the resolved dependency set recorded in the
 generated SBOM and break build reproducibility. This is **not** an API-fragility pin — the SDK
@@ -83,13 +87,14 @@ reproducibility pin.
 `System.IO.Packaging` is a distinct OTS item because it is a separately-shipped .NET runtime
 component with its own OS-conditional version resolution — see *System.IO.Packaging*.
 
-**Native assets.** None. The `DemaConsulting.DocDown.Word` build output contains no `runtimes/` folder and no
+**Native assets.** None. The `DemaConsulting.DocDown.Office` build output contains no `runtimes/` folder and no
 `.dll`, `.so`, or `.dylib` native binary. A `dotnet list package --include-transitive` for
-`DemaConsulting.DocDown.Word` resolves exactly `DocumentFormat.OpenXml [3.5.1]` → `DocumentFormat.OpenXml.Framework
-3.5.1` → `System.IO.Packaging` with nothing else.
+`DemaConsulting.DocDown.Office` resolves exactly `DocumentFormat.OpenXml` → `DocumentFormat.OpenXml.Framework`
+→ `System.IO.Packaging` with nothing else.
 
-**Evidence.** The SDK's behavior is exercised transitively by the `DemaConsulting.DocDown.Word` extraction
-tests — there is no dedicated OTS test project, and coverage is not overclaimed. The extraction
+**Evidence.** The SDK's behavior is exercised transitively by the Word extraction
+tests in `DemaConsulting.DocDown.Office.Tests` — there is no dedicated OTS test project, and
+coverage is not overclaimed. The extraction
 tests that most directly exercise the SDK are `DocDownWord_Extract_GeneratedDocx_ProducesContractLayout`
 (end-to-end open, read, extract), `WordOpenXmlReader_Read_HeadingsListsAndTables_ProducesStructuredBlocks`
 (styles, numbering, and table structure through the SDK's DOM), and

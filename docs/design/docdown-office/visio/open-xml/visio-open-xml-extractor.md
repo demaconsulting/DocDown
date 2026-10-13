@@ -42,8 +42,8 @@ environment there, so one instance can be registered once and reused across conc
 
 Null arguments are rejected with `ArgumentNullException`. Any fault from the reader, including a
 corrupt package, propagates to Core, which converts it into an unreadable result with the full layout
-still written; cancellation is observed while buffering the source and between pages and propagates as
-`OperationCanceledException`; the extractor
+still written; cancellation is observed while buffering the source and propagates as
+`OperationCanceledException` (the emitter additionally observes it between pages); the extractor
 itself writes no bytes outside the sink. The self-test reports every fault as data rather than
 throwing at its caller.
 

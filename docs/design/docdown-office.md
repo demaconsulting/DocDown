@@ -34,10 +34,10 @@ The system has four format subsystems.
   package. See the *DemaConsulting.DocDown.Office PowerPoint Subsystem Design*.
 - **Visio** — a managed Open Packaging backend for `.vsdx` and `.vsdm`. Page rendering is served by
   the separate, fully-managed `DemaConsulting.DocDown.Visio.Rendering` package rather than by a backend in this
-  package. See the *DemaConsulting.DocDown.Visio System Design*.
+  package. See the *DemaConsulting.DocDown.Visio Subsystem Design*.
 
-Legacy binary formats — `.doc`, `.xls`, `.ppt` — are not supported and are reported as unreadable
-rather than routed to a backend that cannot read them.
+Legacy binary formats — `.doc`, `.xls`, `.ppt`, and `.vsd` — are not supported and are reported as
+unreadable rather than routed to a backend that cannot read them.
 
 ## External Interfaces
 
@@ -71,6 +71,14 @@ runtime-identifier agnostic end to end.
 
 The engine selects a backend, and the backend reads the document into a format-specific model, emits
 markdown through the sink, and writes any embedded images.
+
+## Error Handling
+
+`AddOffice`, like each per-format registration method, throws `ArgumentNullException` when the builder
+is `null`; it has no other failure mode, because registration only records a backend. A document that
+cannot be read — a legacy binary format, a corrupt package, or a protected file — is not an error of
+this package: the selected backend reports it as an unreadable extraction through the engine, and the
+engine reports it as an outcome rather than throwing.
 
 ## Design Constraints
 

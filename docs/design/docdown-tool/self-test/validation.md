@@ -17,8 +17,12 @@ the in-process checks and the engine self-test cases.
 
 #### Key Methods
 
-- **`void Run(Context context)`** — prints the header, runs the checks, computes the totals, and
-  writes the results file if requested. It reports a non-zero exit through `context.WriteError` when
+- **`void Run(Context context, DocDownEngine engine)`** — prints the header, runs the checks and the
+  engine's self-test cases, computes the totals, and
+  writes the results file if requested. The engine is supplied by the caller (`Program` passes the
+  one it builds) rather than constructed here, so there is a single place that decides which
+  backends are registered. A null argument is rejected with `ArgumentNullException`. It reports a
+  non-zero exit through `context.WriteError` when
   any check failed or the results-file extension is unsupported; a skip is not a failure and does not
   affect the exit code.
 - **`PrintValidationHeader`** (private) — emits a markdown heading at `context.HeadingDepth` and a
@@ -27,9 +31,8 @@ the in-process checks and the engine self-test cases.
 - **`RunCliTest`** (private) — runs one of the tool's own commands (`--version`, `--help`) in-process
   via `Context.Create([... "--silent", "--log", <temp>])` and `Program.Run`, then asserts on the
   captured log. This is the same silence-plus-log mechanism the reference DEMA tool uses.
-- **`RunEngineSelfTests`** (private) — builds the engine with
-  `new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().Build()`,
-  enumerates `GetSelfTestCases()`, runs each case in its own work folder, maps the result through
+- **`RunEngineSelfTests`** (private) — enumerates `GetSelfTestCases()` on the supplied engine,
+  runs each case in its own work folder, maps the result through
   `SelfTestAdapter`, and prints a pass, fail, or skip line. The current Core portion of that union is
   `core.layout-invariance` and `core.manifest-schema`. A case that throws is recorded as a failure so
   the run continues and reports every case.
@@ -49,13 +52,12 @@ driving the exit code to 1.
   property in the header.
 - **Context** — constructed for each in-process check.
 - **SelfTestAdapter** — maps each engine self-test result into the results model.
-- **DemaConsulting.DocDown.Core** — the engine and the self-test types.
-- **DemaConsulting.DocDown.Pdf**, **DemaConsulting.DocDown.Pdf.Rendering**, **DemaConsulting.DocDown.Word**,
-  **DemaConsulting.DocDown.Visio**, **DemaConsulting.DocDown.PowerPoint**, and **DemaConsulting.DocDown.Excel** —
-  the explicit backend registration chain the driver validates.
+- **DemaConsulting.DocDown.Core** — the engine and the self-test types; `Validation` accepts a
+  `DocDownEngine` and takes no dependency on any backend package.
 - **DemaConsulting.TestResults** — the results collection and the `TrxSerializer` and
   `JUnitSerializer`.
 
 #### Callers
 
-`Program.Run` invokes `Validation.Run` when `--validate` is the highest-priority match.
+`Program.Run` invokes `Validation.Run(context, BuildEngine())` when `--validate` is the highest-priority
+match.

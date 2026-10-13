@@ -27,12 +27,15 @@ The system has two subsystems and one direct unit, following the DEMA tool house
 
 ### Why registration is explicit
 
-The tool builds its engine with one visible registration chain:
-`new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().Build()`.
+The tool builds its engine with one visible registration chain, in `Program.BuildEngine`:
+`new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().AddPowerPointRendering()
+.AddVisioRendering().Build()`. `AddOffice` registers the Word, Excel, PowerPoint, and Visio Open XML
+backends, so the chain registers eight backends in all: `pdf`, `pdf-rendering`, `word-openxml`,
+`excel-openxml`, `powerpoint-openxml`, `visio-openxml`, `powerpoint-rendering`, and `visio-rendering`.
 There is no reflection and no assembly scanning. That is the fact that keeps single-file publishing
 viable: a reflection-discovered backend would be invisible to the trimmer and absent from a
-single-file image. The same explicit registration is what self-validation exercises, so the
-self-test union always reflects exactly what the tool actually runs.
+single-file image. `Validation` receives the engine `Program` builds, so the self-test union reflects
+exactly what the tool actually runs.
 
 ### The dependency boundary that keeps Core clean
 
@@ -65,14 +68,13 @@ here, on the tool side of the boundary. Neither Core nor the extraction backends
   `AddPdfRendering`. It depends on the fully-managed `DemaConsulting.CanvasNet.Pdf`/
   `DemaConsulting.CanvasNet` packages and carries no native assets. See the
   *DemaConsulting.DocDown.Pdf.Rendering System Design*.
-- **DemaConsulting.DocDown.Word** — the Word extraction backend, added through `AddWord`. See the
-  *DemaConsulting.DocDown.Word System Design*.
-- **DemaConsulting.DocDown.Visio** — the Visio extraction backends, added through `AddVisio`. See the
-  *DemaConsulting.DocDown.Visio System Design*.
-- **DemaConsulting.DocDown.PowerPoint** — the PowerPoint extraction backends, added through `AddPowerPoint`. See
-  the *DemaConsulting.DocDown.PowerPoint System Design*.
-- **DemaConsulting.DocDown.Excel** — the Excel extraction backend, added through `AddExcel`. See the
-  *DemaConsulting.DocDown.Excel System Design*.
+- **DemaConsulting.DocDown.Office** — the Office extraction backends (Word, Excel, PowerPoint, and
+  Visio), added together through `AddOffice`. See the *DemaConsulting.DocDown.Office System Design*.
+- **DemaConsulting.DocDown.PowerPoint.Rendering** — the PowerPoint page-rendering backend, added
+  through `AddPowerPointRendering`. See the *DemaConsulting.DocDown.PowerPoint.Rendering System
+  Design*.
+- **DemaConsulting.DocDown.Visio.Rendering** — the Visio page-rendering backend, added through
+  `AddVisioRendering`. See the *DemaConsulting.DocDown.Visio.Rendering System Design*.
 - **DemaConsulting.TestResults** (OTS) — the test-results object model and the TRX/JUnit
   serializers, referenced only by this tool. See *TestResults* under the OTS integration design.
 
@@ -127,7 +129,8 @@ metadata.
    error and exits non-zero. On `ExtractionOutcome.Produced` it prints `Extraction produced the
    output layout.`, optionally prints the note count, then prints the absolute path to
    `summary.txt`.
-5. For `--validate`, `Validation` prints the header, runs the tool's own version and help checks
+5. For `--validate`, `Program` builds the engine and passes it to `Validation.Run(context, engine)`,
+   which prints the header, runs the tool's own version and help checks
    in-process against a captured log, runs the engine's self-test union, maps each result through
    `SelfTestAdapter`, prints per-test lines, and writes the TRX or JUnit file when requested.
 

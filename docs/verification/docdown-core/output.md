@@ -80,3 +80,39 @@ summary layout block, and is serialized into the manifest alongside the claimed 
 
 Proves the pipeline writes every referring page into `sourcePages`, aliases its first entry as
 `sourcePage`, and marks a template-only image with `referencedByTemplate`.
+
+#### The metadata artifact is always written
+
+**Tests**: `Output_ArtifactLayout_SuccessfulWrite_CreatesRootArtifacts` (asserts `metadata.json` is among
+the root artifacts), `MetadataWriter_WriteAsync_ReportedMetadata_WritesFile`,
+`MetadataWriter_WriteAsync_NoReportedMetadata_WritesSparseFile`
+
+Proves `metadata.json` exists for every run, carrying populated fields with their provenance when the
+backend reported metadata and a sparse form when it did not. The `MetadataWriter_Render_*` tests cover
+the rendered shape (value-and-source objects, the absent array, and the explanatory notes).
+
+#### The supporting helpers are verified by their own test files
+
+**Tests**: `EmbeddedImageWriter_Write_DuplicateContent_CountsOnce`,
+`EmbeddedImageWriter_Write_DuplicateContent_MergesReferrerSets`,
+`EmbeddedImageWriter_Write_ExceedsByteLimit_SkipsForSize`,
+`EmbeddedImageWriter_Write_ExceedsDimensionLimit_SkipsForSize`,
+`EmbeddedImageWriter_Write_VectorMetafile_CountedAsVector`,
+`ImageDimensions_TryRead_Png_ReadsWidthAndHeight`, `ImageDimensions_TryRead_Jpeg_ReadsWidthAndHeight`,
+`ImageDimensions_TryRead_Gif_ReadsWidthAndHeight`, `ImageDimensions_TryRead_NonRaster_ReturnsFalse`,
+`ImageDimensions_TryRead_Truncated_ReturnsFalse`, `Alt_NoDescription_UsesNeutralPlaceholder`,
+`Alt_PlainDescription_IsPreserved`, `Alt_LinkStructuralCharacters_AreEscaped`,
+`Alt_MultiLineDescription_StaysOnOneLine`,
+`PartResourceLinkRewriter_Rewrite_ImageLinkInFlatPart_PrefixesOneParent`,
+`PartResourceLinkRewriter_Rewrite_PageLinkPlainForm_PrefixesOneParent`,
+`PartResourceLinkRewriter_Rewrite_ExternalUrl_LeftUntouched`,
+`PartResourceLinkRewriter_Rewrite_AnchorLink_LeftUntouched`,
+`PartResourceLinkRewriter_Rewrite_AlreadyRelativeTarget_LeftUntouched`,
+`PartResourceLinkRewriter_Rewrite_NestedPart_PrefixesPerLevel`
+
+Proves the shared Open XML image path: byte-identical images are counted and written once with their
+referrers merged, images beyond a dimension or byte limit are skipped and counted, EMF/WMF files are
+counted as vector, raster dimensions are read from PNG, JPEG, and GIF headers (and non-raster or
+truncated input is reported unknown), alt text is neutral, escaped, and single-line, and part-file
+resource links are rewritten only for sink resource folders. These helpers have no dedicated
+requirement; they are evidence for their owning units and the Output subsystem behavior.

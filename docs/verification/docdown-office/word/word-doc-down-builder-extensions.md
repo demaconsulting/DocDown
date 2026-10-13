@@ -56,6 +56,7 @@ Evidence for `DocDownWord-WordDocDownBuilderExtensions-ReturnsBuilderForChaining
 
 **Test**: `AddWord_NullBuilder_Throws`
 
-Proves the failure happens where the mistake was made, naming the offending call site rather than
-surfacing later against configuration the host wrote correctly. Evidence for
+Proves the call rejects a null builder with an `ArgumentNullException` rather than surfacing later
+against configuration the host wrote correctly. The test asserts the exception type only, not the
+`ParamName`. Evidence for
 `DocDownWord-WordDocDownBuilderExtensions-RejectsNullBuilder`.

@@ -78,3 +78,24 @@ Proves extractor exceptions are contained by the engine.
 **Test**: `Extraction_SelfValidationSeam_Engine_ExposesCoreAndBackendCases`
 
 Proves the engine returns both built-in and backend-contributed self-tests through one interface.
+
+#### Core properties map to document metadata
+
+**Tests**: `OpcMetadataMapper_From_PopulatedProperties_MapsFieldsWithProvenanceAndIsoDates`,
+`OpcMetadataMapper_From_BlankValues_OmittedAsFieldsAndRecordedAbsent`,
+`OpcMetadataMapper_From_PopulatedInterestingField_NotRecordedAbsent`,
+`OpcMetadataMapper_From_UnspecifiedKindDate_TreatedAsUtc`,
+`OpcMetadataMapper_From_EmptyProperties_ProducesNoFields`
+
+Proves the shared mapping from OPC core properties to `DocumentMetadata` records populated fields with
+provenance and ISO-8601 dates, omits blank values while recording the interesting ones as absent, treats
+an unspecified-kind date as UTC, and yields no fields for an empty property set. These tests are in
+`OpcMetadataMapperTests.cs`.
+
+#### Self-test resources load or fail loudly
+
+**Tests**: `Load_MissingResource_ThrowsNamingTheResource`, `Load_MalformedArguments_Throw`
+
+Proves `SelfTestProbe.Load` names a missing embedded resource in its exception and rejects malformed
+arguments instead of returning an empty probe. These tests are in `SelfTestProbeTests.cs`. The
+success path and `DocumentSource` are exercised only indirectly through the engine and backend tests.

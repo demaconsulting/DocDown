@@ -48,6 +48,13 @@ registered extractor.
 
 **Test**: `ExtractorRegistry_RefreshAvailability_AfterCaching_ReprobesOnNextEnumeration`
 
+##### Duplicate identifiers are rejected
+
+**Test**: `ExtractorRegistry_Construct_DuplicateIds_ThrowsArgumentException`
+
+Proves a registry constructed over two extractors that share an identifier is refused rather than
+silently shadowing one of them. This is defensive evidence with no dedicated requirement.
+
 ##### One candidate is yielded per extractor
 
 **Test**: `ExtractorRegistry_GetCandidates_MixedAvailability_YieldsOneCandidatePerExtractor`

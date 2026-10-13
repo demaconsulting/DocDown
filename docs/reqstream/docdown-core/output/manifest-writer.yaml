@@ -12,13 +12,13 @@
 # required the removed complete flag. It is superseded (not satisfied) with no replacement because
 # manifest schema 2.0 no longer carries a completeness verdict.
 #
-# SUPERSEDED REQUIREMENT: DocDownCore-Output-ManifestWriter-SchemaVersion (2.0 wording)
-# is retained at version 3.1 rather than retired; the manifest still declares a schema version, but
-# the declared value moved to 3.0 when the digests, environment block, and requested-options echo
-# were removed, because a consumer pinned to 2.0 would otherwise meet a manifest missing fields
-# that schema promised. It moved again to 3.1 when the reviewComments array and reviewCommentsPath
-# were added: a purely additive change raises the minor version because a consumer pinned to 3.0
-# still finds everything 3.0 promised.
+# SCHEMA VERSION HISTORY: DocDownCore-Output-ManifestWriter-SchemaVersion is an active requirement
+# (not superseded) that tracks the declared schema version, currently 3.1. The declared value moved
+# from 2.0 to 3.0 when the digests, environment block, and requested-options echo were removed,
+# because a consumer pinned to 2.0 would otherwise meet a manifest missing fields that schema
+# promised. It moved to 3.1 when the reviewComments array and reviewCommentsPath were added: a purely
+# additive change raises the minor version because a consumer pinned to 3.0 still finds everything
+# 3.0 promised.
 
 sections:
   - title: DocDownCore Requirements

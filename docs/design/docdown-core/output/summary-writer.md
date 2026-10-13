@@ -15,8 +15,7 @@ document metadata, and environment facts, then renders one plain-text document.
 
 #### On-disk format
 
-`summary.txt` is written as UTF-8 without a byte-order mark and uses `
-` line endings always. Its
+`summary.txt` is written as UTF-8 without a byte-order mark and uses `\n` line endings always. Its
 sections appear in this fixed order:
 
 1. title and one-line gist;
@@ -35,8 +34,12 @@ extraction steps that could not be completed.
 
 #### Key Methods
 
-- **`WriteAsync(...)`** — public entry point that appends each fixed section and writes the file.
-- **`AppendTitleAndHeader`** — emits the title banner, gist, and header block.
+- **`WriteAsync(...)`** — public entry point taking the folder, sink, report, optional
+  `ContentWriteResult`, and optional `ReviewCommentsWriteResult`; appends each fixed section and writes
+  the file.
+- **`AppendTitleAndHeader`** — emits the title banner, the one-line gist (omitted when the format is
+  unknown or nothing was produced), and the header block. Long note prose is word-wrapped at 112
+  columns with a hanging indent so the file stays within 120 columns.
 - **`AppendFailure`** — reproduces `ExtractionFailure.Explanation` verbatim for unreadable runs.
 - **`AppendBackend`** — names the selected extractor or states that no backend was selected.
 - **`AppendEnvironment`** — renders the runtime plus grouped environment facts, collapsing unused
@@ -58,6 +61,9 @@ an empty note list is stated plainly.
 #### Dependencies
 
 - **`ScratchFolder`** — deterministic contained text write.
+- **`ExtractionSink`** — recorded content features, notes, images, pages, parts, and metadata.
+- **`ReviewCommentsWriteResult`** — whether `review-comments.md` was written and how many comments.
+- **`ExtractionEnvironment`** — runtime and environment facts.
 - **`ExtractionReport`**, **`ExtractionOutcome`**, **`ExtractionFailure`**,
   **`ContentWriteResult`**, **`DocumentMetadata`**, **`ContentFeature`**, **`RecordedImage`**, and
   **`ExtractionNote`** — supporting data.

@@ -63,6 +63,15 @@ page correspondence available. Evidence for `DocDownCore-Output-ContentWriter-Pa
 Proves an empty flow still writes the content file but reports the content absent, so an empty file is not
 mistaken for a delivered document. Evidence for `DocDownCore-Output-ContentWriter-AbsenceExplained`.
 
+##### A part's resource links resolve from its own location
+
+**Tests**: `ContentWriter_WriteAsync_PartImageLink_ResolvesOnDiskInIndexLayout`,
+`ContentWriter_WriteAsync_SingleFlowImageLink_ResolvesFromRootUnchanged`
+
+Proves an image link emitted root-relative resolves to the real file from a part under `parts/` in the
+index layout (the link is rewritten one level up) and from the scratch root, unchanged, in the
+single-flow layout. This is defensive evidence with no dedicated requirement.
+
 ##### A null sink is rejected
 
 **Test**: `ContentWriter_WriteAsync_NullSink_ThrowsArgumentNullException`

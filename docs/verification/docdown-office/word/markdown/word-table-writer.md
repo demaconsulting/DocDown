@@ -1,7 +1,8 @@
 ## WordTableWriter Verification Design
 
 This document describes the unit-level verification strategy for `WordTableWriter`, the unit that
-renders a table model as a GitHub-Flavored-Markdown table and counts every cell it flattens.
+renders a table model as a GitHub-Flavored-Markdown table and returns the flattened-cell count the
+model records.
 
 ### Verification Approach
 
@@ -15,8 +16,10 @@ carrying a newline and a pipe, an all-empty table, or a table declaring merged a
 counts — so a failure names one table rule rather than one document.
 
 Both return values are asserted. The rendered markdown proves the shape reached the output, and the
-flattened count is asserted separately because it is what the emitter later uses when it decides
-whether to report a table-flattening note.
+flattened count is asserted separately because it is the writer's second return value. The count
+reports the model's declared merged and nested totals; the flattening itself is performed by
+`WordOpenXmlReader`, and the emitter's table-flattening note is computed from the model rather than
+from this return value.
 
 ### Test Environment
 

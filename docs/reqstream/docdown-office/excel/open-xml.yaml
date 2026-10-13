@@ -98,7 +98,9 @@ sections:
               Callouts and labels live in the drawing part and in no cell, so a reader that walks cells
               and pictures alone drops them. Reading each shape's text — including shapes nested inside
               groups, and joining a shape's paragraphs into one readable annotation — recovers text that
-              would otherwise vanish while the extraction reported itself complete.
+              would otherwise vanish while the extraction reported itself complete. The linked test
+              currently exercises only the emitter's rendering of shape text from a hand-built model;
+              coverage of the reader itself is indirect until tests over real drawing parts are added.
             children:
               - DocDownExcel-OpenXml-ExcelDrawingTextReader-CollectsShapeText
             tests:

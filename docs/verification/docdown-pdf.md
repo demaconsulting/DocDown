@@ -21,29 +21,33 @@ from internal calls, which keeps the system evidence at the same surface a consu
 The suite now treats ordinary document absences as inventory questions, not as failure signals. A
 zero-page PDF is expected to report zero counted features. A scanned page with no glyphs is expected
 to produce image-backed output without an extraction note. Plain notes are reserved for attempted
-steps that could not complete, such as an undecodable image or a forced PNG output mode that the
-extractor could not honor.
+steps that could not complete, such as an undecodable image or an image skipped for a size limit.
 
-### Test fixtures are generated; the self-test probe is committed
+### Test fixtures are generated; the self-test probe and golden summaries are committed
 
 Every PDF the suite's tests use is built at test time, either through PdfPig's document writer or by
 assembling bytes in code for adverse cases such as encrypted, malformed, JPEG 2000, and JBIG2
-fixtures. No test fixture is committed.
-The one committed binary is the backend's self-test probe: a real PDF exported from Microsoft Word,
-embedded in the package so the self-test parses a document PdfPig did not write.
+fixtures. No test input PDF is committed.
+The committed binary is the backend's self-test probe: a real PDF exported from Microsoft Word,
+embedded in the package so the self-test parses a document PdfPig did not write. The suite also
+commits golden `summary.txt` files under `golden/` (see below), which are text expectations rather
+than inputs.
 
-### Text assertions are property-based, not golden
+### Text assertions are property-based; summaries are golden
 
 Reading-order recovery and paragraph segmentation are heuristic, so the text scenarios assert
-properties of the emitted markdown rather than exact golden files. Byte-exact comparison is reserved
-for the determinism scenario, where repeated runs are expected to be identical.
+properties of the emitted markdown rather than exact golden files. Byte-exact comparison is used for
+the determinism scenario, where repeated runs are expected to be identical, and for the golden
+summary scenarios in `PdfGoldenTests.cs`, which compare the rendered `summary.txt` for a simple PDF,
+an undecodable-image note, a page-rendering request note, an unreadable encrypted PDF, and an
+annotated PDF against committed files after normalizing machine-specific lines.
 
 ## Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
 - **Filesystem**: each system test owns a `TempScratch` folder for the generated input PDF and the
   extraction output
-- **Inputs**: PDFs generated at test time; no committed binaries and no network access
+- **Inputs**: PDFs generated at test time, plus committed golden summary files; no network access
 - **Mocking**: none for system tests; the real engine, real backend, and real parser are exercised
 - **Determinism**: the run-varying timestamp line is normalized so repeated runs are byte-comparable
 - **Isolation**: each test owns and disposes its own scratch folder
@@ -61,8 +65,12 @@ Per IEC 62304 Section 5.7.2, a system-level `DemaConsulting.DocDown.Pdf` test ru
 - A zero-page document reports zero counted content features rather than an explanatory note.
 - A scanned document with no glyphs still produces useful output and does not invent an extraction
   problem that did not occur.
-- An undecodable image, a size-limited image, and an unhonored PNG request each produce a plain
-  factual note naming what happened.
+- An undecodable image and a size-limited image each produce a plain factual note naming what
+  happened.
+- A document carrying reviewer annotations writes `review-comments.md`; a document with none writes
+  no such artifact.
+- The golden summaries for representative scenarios match the committed files after normalizing
+  machine-specific lines.
 - A page-rendering request against the managed PDF backend produces no rendered pages and states the
   limitation plainly.
 - Source-filtered platform requirements are evidenced by the matching CI source and do not accept a
@@ -190,6 +198,33 @@ Proves only the requested page's content appears in `content.md`. Evidence for `
 
 Proves every artifact produced by one run matches the second run byte for byte. Evidence for
 `DocDownPdf-Determinism`.
+
+### An annotated document writes the review-comments artifact
+
+**Test**: `DocDownPdf_Extract_AnnotatedPdf_WritesReviewCommentsArtifact`
+
+Proves a PDF carrying reviewer annotations produces `review-comments.md` through the full engine.
+
+### A document without annotations writes no review-comments artifact
+
+**Test**: `DocDownPdf_Extract_PdfWithoutAnnotations_WritesNoReviewCommentsArtifact`
+
+Proves an uncommented PDF produces no `review-comments.md`. This is supporting evidence for the
+annotation requirements.
+
+### Golden summaries match for representative scenarios
+
+**Tests**:
+
+- `PdfGolden_Simple_MatchesCommittedGolden`
+- `PdfGolden_UndecodableImageNote_MatchesCommittedGolden`
+- `PdfGolden_RenderPagesNote_MatchesCommittedGolden`
+- `PdfGolden_UnreadableEncrypted_MatchesCommittedGolden`
+- `PdfGolden_Annotated_MatchesCommittedGolden`
+
+Prove the rendered `summary.txt` for each scenario matches its committed golden file byte for byte
+after the timestamp, scratch path, source path, and host-environment lines are replaced with
+placeholders. These are supporting evidence; no requirement is linked to them.
 
 ### Every outcome writes the standard layout
 

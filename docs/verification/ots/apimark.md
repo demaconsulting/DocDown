@@ -63,7 +63,7 @@ recorded here rather than implied to be verified:
 - **The `ApiMarkPackDocs` packaging hook.** ApiMark's self-validation exercises generation, not
   the `_ApiMarkIncludeDocsInPackage` pack target. Placement of the `api/` folder inside the
   produced `.nupkg` was confirmed by inspecting real packages — `dotnet pack` on
-  `DemaConsulting.DocDown.Core` and `DemaConsulting.DocDown.Word`, then opening the resulting
+  `DemaConsulting.DocDown.Core` and `DemaConsulting.DocDown.Office`, then opening the resulting
   `.nupkg` archives and enumerating their `api/` entries — rather than by reading the project
   files. No requirement claims automated coverage of it.
 - **The content of the generated reference.** Whether a given type page carries the prose an

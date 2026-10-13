@@ -65,7 +65,9 @@ The constraints each interface carries, stated in full:
   page-rendering case that reports a skip with a reason because a workbook is non-paginated.
 - **`IExtractionSink`** is the only output channel. Every part, content count, note, environment fact,
   and metadata record goes through it, and no filesystem path is constructed in this subsystem.
-- **`DocDownBuilder`** is extended by one method, `AddExcel`; there is no alternate registration path.
+- **`DocDownBuilder`** is extended by one method, `AddExcel`, which a host calls directly or reaches
+  through `AddOffice()` in the `DemaConsulting.DocDown.Office` package; there is no alternate
+  registration path.
 - **The source document** is opened through `DocumentSource.OpenRead` and is not guaranteed seekable for
   a stream source, so the backend buffers the workbook into memory before opening the package because
   the package reader must seek.
@@ -76,7 +78,8 @@ The constraints each interface carries, stated in full:
   result. See the *DemaConsulting.DocDown.Core System Design*.
 - **DocumentFormat.OpenXml** (OTS) — the managed Open XML SDK the package is built on. See the
   *DocumentFormat.OpenXml* OTS design.
-- **System.IO.Packaging** (OTS, transitive) — the OPC container reader underneath the SDK that opens
+- **System.IO.Packaging** (OTS, direct package reference of `DemaConsulting.DocDown.Office`) — the OPC
+  container reader underneath the SDK that opens
   the `.xlsx` package and resolves its parts and relationships. See *System.IO.Packaging* under the
   OTS integration design.
 

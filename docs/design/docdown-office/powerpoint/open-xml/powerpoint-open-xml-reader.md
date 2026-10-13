@@ -49,6 +49,15 @@ modern persona comments contributes no comments to `review-comments.md`, and say
 know carries remarks reads the note, not a fault. The same statement appears in the reader's own XML
 documentation so it is visible at the call site.
 
+### Stated scope limitation: shape text
+
+`ReadSlide` walks only the **direct** `P.Shape` children of the slide's shape tree. Text held in tables
+(graphic frames), in group shapes, and in SmartArt is therefore not read, and no note or inventory entry
+records its absence. This is the current behavior, stated here so the design does not claim more than the
+code does; reading that text is a deferred item rather than a promise of this design. Likewise
+`ReadShapeParagraphs` concatenates only the paragraph's text runs, so line breaks and field text inside a
+paragraph are not carried into the line.
+
 ### Key Methods
 
 - **`PowerPointDeckModel Read(Stream stream)`** — opens the package read-only, walks the
@@ -59,10 +68,11 @@ documentation so it is visible at the call site.
   maps the OPC core properties to deck metadata. Precondition: `stream` is non-null, readable, and
   seekable. Throws `PowerPointExtractionException` when the package cannot be opened or carries no
   presentation part.
-- **`ReadSlide`** (private) — reads one slide: the title from the title placeholder, every other
-  shape's paragraphs as body lines, the speaker notes, and the reviewer comments; returns the slide
-  model with its ordinal
-  and image references.
+- **`ReadSlide`** (private) — reads one slide: the title from the first title placeholder, the paragraphs
+  of every other *direct* shape (`P.Shape` child of the slide's shape tree) as body lines, the speaker
+  notes, and the reviewer comments; returns the slide model with its ordinal and image references. Text
+  inside table cells (graphic frames), group shapes, and SmartArt is not read; see the stated scope
+  limitation on shape text below.
 - **`LoadCommentAuthors`** (private) — reads `PresentationPart.CommentAuthorsPart` into a map of
   author identifier to display name, up front, so every comment resolves its author without
   re-walking the package. A deck with no comment-authors part yields an empty map.
@@ -71,11 +81,6 @@ documentation so it is visible at the call site.
   their authors. The deck-level total and the number of slides carrying them travel on the model as
   `ModernCommentCount` and `ModernCommentSlideCount`, so the emitter can state their presence
   without this reader having to decide how it is phrased.
-- **`ReadComments`** (private) — reads `SlidePart.SlideCommentsPart` in declared order, resolving each
-  comment's author identifier against that map. An identifier the list does not name yields no
-  attribution rather than a bare number. A comment with no text is dropped because it says nothing. A
-  slide with no comments part yields no comments rather than an error. Modern persona comments are not
-  read; see the stated scope limitation above.
 - **`ReadComments`** (private) — reads `SlidePart.SlideCommentsPart` in declared order, resolving each
   comment's author identifier against that map. An identifier the list does not name yields no
   attribution rather than a bare number. A comment with no text is dropped because it says nothing. A
@@ -111,4 +116,5 @@ genuinely blank paragraphs and notes-slide furniture.
 ### Callers
 
 `PowerPointOpenXmlExtractor.ExtractAsync` calls `Read` after buffering the source. The self-test
-round-trip case and the COM backend's delegated managed run reach it through the same extractor.
+round-trip case and the PowerPoint.Rendering package's delegated managed run reach it through the same
+extractor.

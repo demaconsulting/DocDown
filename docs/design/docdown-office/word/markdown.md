@@ -32,11 +32,14 @@ that could drift from the first.
 `WordBlock` sequence; the surviving `WordDocumentControlSection` list; the `WordComment` list; the
 footnote bodies as inline sequences; metadata (`Title`, `Author`, `ProducerPageCount`, and the
 optional Core `DocumentMetadata` projection); and the counts only the reader can observe cheaply in
-one pass, including tracked changes, omitted header or footer parts, empty tables, and embedded
-charts.
+one pass, including tracked changes, omitted header or footer parts, empty tables, embedded
+charts, and `CommentsWithUnreadableContent` — the comments dropped because their only content was a
+picture or ink, which drives the image-only-comments note.
 
 **The block vocabulary.** `WordBlockKind` (`Heading`, `Paragraph`, `ListItem`, `Table`, `Image`,
-`PageBreak`) is deliberately small. A language-model consumer gains little from Word-specific
+`PageBreak`, `DocumentControl`) is deliberately small. The seventh kind, `DocumentControl`, is a
+labeled header or footer subsection whose origin label travels in `WordBlock.Label`. A language-model consumer gains
+little from Word-specific
 typography, but it gains a great deal from an honest structure: headings, lists, real tables,
 inline images, comments, and footnotes. `WordInline` carries literal text plus the minimal
 preserved formatting — bold, italic, hyperlink, and a `Raw` flag for markers that must bypass
@@ -45,29 +48,35 @@ escaping.
 **The table model.** `WordTableModel` and `WordTableCell` preserve rows and columns and account for
 exactly what markdown could not preserve. Merge continuations are represented as empty cells so the
 grid stays aligned, and nested tables are pre-flattened into `<br>`-joined rows.
-`MergedCellCount` and `NestedTableCount` are the accounting the emitter uses when it reports that
-markdown could not preserve all of the table structure.
+`MergedCellCount` and `NestedTableCount` are the accounting the emitter sums from the model when it
+reports that markdown could not preserve all of the table structure.
 
 **The document-control model.** `WordDocumentControlSection` records the origin label (`Header`,
-`Footer`, or a numbered variant) and the block sequence for the subsection. Headers and footers
+`Footer`, or a numbered variant) and the block sequence for the subsection. The model's
+`WordDocumentModel.Footnotes` carries footnote bodies only; endnotes are not read. Headers and footers
 that reduce to page furniture or to nothing at all are omitted from the rendered section. The
 reader still counts them on the model so tests can observe those cases without a second pass over the
 package.
 
 **The image reference.** `WordImageRef` carries the complete stored bytes together with the media
-type, preferred base name, optional description, description source, and source part URI. Bytes
-and provenance travel as one record because the two must agree. The emitter's `HintFor()` always
+type, preferred base name, optional description, description source, and source part URI. The preferred name only seeds
+the file
+name, so it may come from a heading; the alt text is set only when the chosen text is a descriptive
+claim about the picture; and the description and its source are recorded for descriptive and
+contextual text but never for the bare media-name fallback. Bytes and provenance travel as one record
+because the two must agree. The emitter's `HintFor()` always
 claims `ImageTransform.Passthrough`, and it leaves pixel dimensions unstated because `wp:extent`
 is an EMU display size rather than a pixel count.
 
 **The content inventory and notes.** `WordContentEmitter` reports the content inventory from the
 model rather than by scanning the rendered markdown again. It counts text blocks, headings, tables, list
 items, inline images, comments, distinct comment authors, and footnotes, and marks genuinely
-looked-for categories so zero remains explicit. It emits only two short extraction notes: charts
-whose chart parts were not read, and merged or nested table structure flattened for markdown.
+looked-for categories so zero remains explicit. It emits only three short extraction notes: charts
+whose chart parts were not read, merged or nested table structure flattened for markdown, and
+comments whose only content was a picture or ink.
 
 **The unit split.** Three units divide the work along the boundaries their responsibilities draw:
-`WordMarkdownWriter` owns rendering, `WordTableWriter` owns the table rules and the
-flattened-cell count, and `WordContentEmitter` owns sink emission, inventory reporting, and note
-reporting. The supporting record types live in the same subsystem folder because they are the
+`WordMarkdownWriter` owns rendering, `WordTableWriter` owns the table rules, and
+`WordContentEmitter` owns sink emission, inventory reporting, and note reporting. The supporting record types live in
+the same subsystem folder because they are the
 units' shared vocabulary rather than independent units of their own.

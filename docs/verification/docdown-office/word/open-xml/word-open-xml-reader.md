@@ -76,6 +76,7 @@ least two. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-DeduplicatesHeade
 **Test**:
 
 `WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewWithDiagnostic`
+(the test name retains the older "diagnostic" wording; it asserts only the accepted view)
 
 Proves the flattened body text contains `inserted-text` and does not contain `removed-text`, so
 the accepted view is what reached the model. Evidence for

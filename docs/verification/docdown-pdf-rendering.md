@@ -59,7 +59,9 @@ project.
 - **Filesystem**: a per-test `TempScratch` folder holds both the generated input and the output
 - **Inputs**: PDFs generated at test time, plus the embedded `Resources/probe.pdf` the self-test
   reads; no committed binary test fixtures and no network access
-- **Determinism**: the run-varying timestamp line is normalized so repeated runs are byte-comparable
+- **Determinism**: only the golden-summary test normalizes the run-varying timestamp and machine-specific
+  lines so repeated runs are byte-comparable; the determinism scenario compares page images rendered with
+  a fixed timestamp
 - **Isolation**: each test owns its temporary folder and cleans it on dispose
 
 ## Acceptance Criteria
@@ -177,6 +179,34 @@ surface. Evidence for `DocDownPdfRendering-Registration`.
 
 **Test**: `PdfPageRenderingExtractor_GetSelfTestCases_AnyEnvironment_PassesRenderCase`
 
-Proves the backend contributes a distinctly named render round-trip case that rasterizes a document it
-builds itself and passes in every environment, since CanvasNet.Pdf carries no environment-dependent
-failure mode. Evidence for `DocDownPdfRendering-SelfValidation`.
+Proves the backend contributes a distinctly named render round-trip case that rasterizes the embedded
+`Resources/probe.pdf` (not a document it builds itself) and passes in every environment, since
+CanvasNet.Pdf carries no environment-dependent failure mode. Evidence for
+`DocDownPdfRendering-SelfValidation`.
+
+### An empty page selection becomes a single note
+
+**Test**: `PdfPageRenderingExtractor_ExtractAsync_PageRangeSelectsNoPage_ReportsEmptyPagesNote`
+
+Proves a requested page range that selects no page (the generated document has one page; the test requests
+pages 5 to 6) still completes as `Produced`, records the single note
+`Page rendering was requested and a renderer was available, but no pages were produced.`, writes no page
+file, and leaves the layout present. Evidence for `DocDownPdfRendering-EmptySelectionReportedAsNote`.
+
+### A page-count fault becomes a single note and preserves delegated content
+
+**Test**: `PdfPageRenderingExtractor_ExtractAsync_PageCountFaults_ReportsNoteAndKeepsDelegatedContent`
+
+Proves a faulting page-count function is caught once, records the single note
+`Pages could not be counted, so no page images were rendered.`, still returns `Produced`, and keeps the
+delegated managed content. This behavior is covered by a unit test but has no requirement linked to it yet.
+
+### The rendered summary matches its committed golden
+
+**Test**: `PdfRenderingGolden_Summary_SimpleRenderedPdf_MatchesCommittedGolden`
+
+Renders a generated one-page PDF through the real backend and compares the resulting `summary.txt`, byte
+for byte, against the committed golden `summary-pdf-rendering-simple.txt` after normalizing the
+machine-specific lines (timestamp, scratch folder, source document, and the three host environment
+lines). Regeneration requires `DOCDOWN_UPDATE_GOLDEN=1` and is refused in CI. This is regression evidence
+for the whole report shape and is not linked to a single requirement.

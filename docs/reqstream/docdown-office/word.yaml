@@ -40,7 +40,8 @@
 # superseded (not satisfied) with no replacement because the caller-facing split choice was removed
 # under the simplicity principle; a Word document is one continuous flow and is written as one
 # content.md, which is what the Auto behavior always produced.
-## SUPERSEDED REQUIREMENT: DocDownWord-DeclaredCapabilities
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-DeclaredCapabilities
 # required a capability declaration for the managed backend. It is superseded (not satisfied) by
 # DocDownWord-ManagedAvailability because the backend now reports availability through
 # ExtractorAvailability rather than through a capability contract.

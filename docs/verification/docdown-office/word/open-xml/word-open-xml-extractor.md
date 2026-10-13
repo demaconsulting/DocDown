@@ -78,8 +78,20 @@ backend writes. Evidence for `DocDownWord-Markdown-WordContentEmitter-EmitsModel
 
 **Test**: `WordOpenXmlReader_Read_HeaderWithLogo_ReusesDeduplicatedImagePath`
 
-Proves a logo that appears in both the header and the body is written once rather than twice.
-Supporting evidence for the shared image-provenance path.
+Proves a logo that appears in both the header and the body is written once rather than twice, by
+extracting a document end to end; the single stored file is the result of Core's content-keyed
+image deduplication, not of reader-level logic. The test is named for the reader but lives in the
+extractor's test file and drives the whole engine. Evidence for
+`DocDownWord-OpenXml-WordOpenXmlReader-ReusesDeduplicatedImagePath`.
+
+#### A page-rendering request is reported with a reasoned note
+
+**Test**: `WordOpenXmlExtractor_Extract_PagesRequested_ReportsReasonedNote`
+
+Proves a run with page rendering requested still returns `Produced`, reports notes stating that page
+rendering was requested and that pages were not rendered, and keeps installation advice out of the
+summary. Supporting evidence for the extractor's statement that page rendering is not provided; it is
+not linked to a requirement.
 
 #### Self-test cases run and report honestly
 

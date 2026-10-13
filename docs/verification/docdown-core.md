@@ -4,7 +4,8 @@ This document describes the system-level verification strategy for DemaConsultin
 
 ## Verification Approach
 
-DemaConsulting.DocDown.Core is verified through end-to-end tests in `DocDownCoreTests.cs`, driven through the public
+DemaConsulting.DocDown.Core is verified through end-to-end tests in `DocDownCoreTests.cs` (plus
+`ApiExampleCoverageTests.cs` for the API-example scenario), driven through the public
 `DocDownEngine` with stub extractors from `DemaConsulting.DocDown.TestSupport`. Core ships no real
 format-specific backend of its own, so the stubs are the correct system-level seam: the engine,
 selection logic, and output writers all run for real while the tests control exactly what the backend
@@ -130,8 +131,10 @@ through a template container rather than giving it a fabricated page. Evidence f
 
 **Test**: `DocDownCore_ApiExamples_ConsumerEntryPoints_CarryRunnableExamples`
 
-Proves the builder, the extraction entry point, and all six backend registration methods each carry
+Proves the builder, the extraction entry point, and all nine backend registration methods each carry
 an example with a C# code block that builds an engine, so the API reference generated into every
-package's `api/` folder ships a runnable sample offline. The registration set is asserted by name, so
+package's `api/` folder ships a runnable sample offline. The registration set (`AddWord`, `AddExcel`,
+`AddPowerPoint`, `AddVisio`, `AddOffice`, `AddPdf`, `AddPdfRendering`, `AddPowerPointRendering`, and
+`AddVisioRendering`) is asserted by name, so
 a newly added format package cannot pass the check by being absent. Evidence for the repository-level
 `Quality-ApiExampleCoverage` requirement.

@@ -3,14 +3,16 @@
 ### Purpose
 
 xUnit v3 (`xunit.v3` and `xunit.runner.visualstudio`) is used as the unit-testing framework for
-the DemaConsulting.DocDown.Core. It was chosen as the standard, widely supported .NET test framework
+every DemaConsulting.DocDown test project. It was chosen as the standard, widely supported .NET test
+framework
 that discovers and executes `[Fact]`/`[Theory]` test methods and produces TRX results consumable
 by downstream tooling.
 
 ### Features Used
 
-- Test discovery and execution of `[Fact]`-annotated test methods in
-  `DemaConsulting.DocDown.Core.Tests`
+- Test discovery and execution of `[Fact]` and `[Theory]` test methods in every test project:
+  `DemaConsulting.DocDown.Core.Tests`, `Pdf.Tests`, `Pdf.Rendering.Tests`, `Office.Tests`,
+  `PowerPoint.Rendering.Tests`, `Visio.Rendering.Tests`, and `Tool.Tests`
 - TRX result-file generation, consumed by ReqStream for requirements-to-test traceability
 
 ### Integration Pattern

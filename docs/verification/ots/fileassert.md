@@ -35,24 +35,43 @@ results containing both passing and failing outcomes.
 
 **Requirement coverage**: `DocDown-OTS-FileAssert`.
 
-#### FileAssert_Exists
+#### FileAssert_File
 
-**Scenario**: FileAssert self-validation exercises a test configuration using a glob pattern to
-assert file existence.
+**Scenario**: FileAssert self-validation exercises file assertions, matching files by glob pattern
+and asserting how many files match.
 
-**Expected**: Passes when the specified file is present.
+**Expected**: Passes when the matched file count satisfies the configured expectation.
 
 **Requirement coverage**: `DocDown-OTS-FileAssert`.
 
-#### FileAssert_Contains
+#### FileAssert_Text
 
-**Scenario**: FileAssert self-validation exercises a test configuration using a `contains` assertion
-to verify file content.
+**Scenario**: FileAssert self-validation exercises text-content assertions, such as `contains`,
+against a file's content.
 
 **Expected**: Passes when the specified content is present.
 
 **Requirement coverage**: `DocDown-OTS-FileAssert`.
 
+#### FileAssert_Html
+
+**Scenario**: FileAssert self-validation exercises HTML assertions, which query a document's
+structure (for example `//head/title`) and assert on the result.
+
+**Expected**: Passes when the query results satisfy the configured expectation.
+
+**Requirement coverage**: `DocDown-OTS-FileAssert`.
+
+#### FileAssert_Pdf
+
+**Scenario**: FileAssert self-validation exercises PDF assertions on document metadata, page
+count, and extracted text.
+
+**Expected**: Passes when the PDF satisfies the configured metadata, page, and text expectations.
+
+**Requirement coverage**: `DocDown-OTS-FileAssert`.
+
 ### Requirements Coverage
 
-- **`DocDown-OTS-FileAssert`**: FileAssert_Results, FileAssert_Exists, FileAssert_Contains
+- **`DocDown-OTS-FileAssert`**: FileAssert_Results, FileAssert_File, FileAssert_Text,
+  FileAssert_Html, FileAssert_Pdf

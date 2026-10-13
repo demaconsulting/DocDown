@@ -154,12 +154,13 @@ sections:
 
               - id: DocDownWord-OpenXml-WordOpenXmlReader-ReusesDeduplicatedImagePath
                 title: >-
-                  WordOpenXmlReader shall reuse a single written path for an image that appears in
-                  both a header and the body.
+                  WordOpenXmlReader shall resolve an image that appears in both a header and the body to
+                  references with identical bytes, so the extraction stores a single image file.
                 justification: |
                   A logo that appears in the header and the body is one image, and writing it twice
-                  would waste space and imply two figures. Reusing the deduplicated path keeps one
-                  image one file and one link target.
+                  would waste space and imply two figures. The reader resolves every occurrence to
+                  its complete bytes; Core's content-keyed deduplication then keeps one image one
+                  file and one link target.
                 tests:
                   - WordOpenXmlReader_Read_HeaderWithLogo_ReusesDeduplicatedImagePath
 

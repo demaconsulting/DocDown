@@ -67,7 +67,12 @@ slide carried text. This package supplies the third layer — the facts only a r
 Rendering is always available, so this package never reports a selection-time unavailability. If
 rendering begins and a specific slide cannot be rasterized, this package reports one short factual
 note — `Slide N could not be rasterized.` — because it attempted that step and could not complete
-it. The note stays limited to that extraction fact itself.
+it. Two further cases are reported the same way: if the deck's slides cannot be counted, it reports
+`Slides could not be counted, so no slide images were rendered.` and keeps the delegated content; and if
+no slide is selected to render (an empty deck, or a page range matching nothing), it reports
+`Page rendering was requested and a renderer was available, but no pages were produced.` itself, because
+Core cannot tell this backend's note apart from an unrelated one the delegated backend already recorded.
+The notes stay limited to those extraction facts themselves.
 
 ## External Interfaces
 
@@ -146,9 +151,12 @@ machine-enforced by a reflection test over the package's exported types.
    rendering. Because rendering is suppressed on the delegate and selection already handled ordinary
    renderer unavailability, this backend adds no "renderer unavailable" note of its own.
 3. It records the authoritative `pages.renderer` environment fact.
-4. It selects the slides to render, honoring any requested range, and for each renders a PNG through
-   `SlideRenderer` and writes it through the sink, named by its slide number. A per-slide fault
-   becomes the note `Slide N could not be rasterized.`; the run continues.
+4. It counts the slides and selects those to render, honoring any requested range. A count fault becomes
+   the note `Slides could not be counted, so no slide images were rendered.` and rendering stops with the
+   delegated content intact; an empty selection becomes the note `Page rendering was requested and a
+   renderer was available, but no pages were produced.` Otherwise, for each selected slide it renders a
+   PNG through `SlideRenderer` and writes it through the sink, named by its slide number. A per-slide
+   fault becomes the note `Slide N could not be rasterized.`; the run continues.
 5. It returns `Produced` after the attempted slide loop completes.
 6. The engine finalizes the content and writes `summary.txt` and `manifest.json`.
 

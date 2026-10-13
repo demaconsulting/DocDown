@@ -26,10 +26,23 @@ Per IEC 62304 §5.5.2, an `ExcelOpenXmlReader` unit test run passes when a long 
 verbatim at full length; when a numeric cell is read exactly as stored; when a formula cell keeps its
 formula, its value, and its address; when a two-sheet workbook returns its sheets in workbook order with
 their tab names; when an image workbook yields the embedded image and records its sheet association; and
-when an empty sheet yields a sheet with no cells. Any truncated value, reformatted number, dropped formula,
-lost sheet name, or lost image association is a failure.
+when an empty sheet yields a sheet with no cells; when a legacy-only comment is read with its author, a
+threaded-only comment is read with its person resolved, a cell carrying both grammars keeps only the
+threaded comment, a multi-reply thread keeps every reply in order, a threaded-only cell is appended
+after the legacy-ordered cells, comments stay with their owning sheet, and a workbook with no comment parts
+yields no comments. Any truncated value, reformatted number, dropped formula,
+lost sheet name, lost image association, or lost, duplicated, or misattributed comment is a failure.
 
 ### Test Scenarios
+
+#### An embedded image is extracted and its sheet association recorded
+
+**Tests**: `ExcelOpenXmlReader_Read_ImageWorkbook_ExtractsEmbeddedImage` and
+`ExcelOpenXmlReader_Read_ImageWorkbook_RecordsSheetAssociation`
+
+Prove an image workbook yields its embedded image through `ExcelOpenXmlImageReader` and records which
+worksheet references it. These tests carry no requirement link of their own; they are the reader-level
+evidence for the image reader's behavior. Multi-sheet image association is not covered.
 
 #### A long prose cell is preserved verbatim at full length
 

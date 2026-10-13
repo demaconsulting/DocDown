@@ -32,8 +32,7 @@ handed to the sink unchanged and labeled as a passthrough; when a compressed-sam
 handed over as PNG and labeled as decoded to PNG; when a JPEG 2000 codestream is written unchanged
 as `image/jp2` with no extra note; when each written image records truthful provenance fields; when
 an undecodable encoding produces a plain note naming the encoding and count; when size-based skips
-produce their own note; when an unhonored PNG request produces a plain note naming the responsible
-encodings and an honored request produces none; when disabled image extraction attempts nothing; and
+produce their own note; when disabled image extraction attempts nothing; and
 when an image-free document returns zero counts without a note. Any mismatched media type,
 misreported transform, silent image loss, or conflation of note categories is a failure.
 

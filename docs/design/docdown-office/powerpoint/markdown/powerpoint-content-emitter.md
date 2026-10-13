@@ -8,8 +8,8 @@
 output contract. Its single responsibility is that every output the model implies — the per-slide
 content carrying title, body text, and speaker notes, the inline images, the content inventory, and
 the plain notes for attempted image steps that could not be completed — is produced in one place,
-driven only by the model and never by how the model was read. The COM backend reuses it by delegation,
-so a deck's content reads identically whether or not it was rendered.
+driven only by the model and never by how the model was read. The PowerPoint.Rendering package reuses it by
+delegation, so a deck's content reads identically whether or not it was rendered.
 
 ### Data Model
 
@@ -21,7 +21,9 @@ suppressed.
 
 - **`ValueTask EmitAsync(IExtractionSink sink, ExtractionOptions options, PowerPointDeckModel model,
   CancellationToken)`** — the whole emission. For an empty deck it writes empty content, reports page
-  count zero, reports zero-count inventory for the looked-for document structure, and returns.
+  count zero (with no title), reports the deck's captured metadata when present, reports zero-count
+  inventory for the looked-for document structure, and returns early: it reports no image notes, no
+  review comments, and no modern-comments note, because an empty deck carries none of them.
   Otherwise it writes embedded images first, writes the per-slide content, reports document info and
   captured metadata, reports plain notes for attempted image steps that could not be completed,
   reports every slide comment as a review comment, and
@@ -78,4 +80,4 @@ upstream in the reader or Core.
 ### Callers
 
 `PowerPointOpenXmlExtractor.ExtractAsync` calls `EmitAsync` after the reader produces the model; the
-COM backend reaches it through the same delegated managed extraction.
+PowerPoint.Rendering package reaches it through the same delegated managed extraction.

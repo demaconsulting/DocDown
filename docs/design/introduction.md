@@ -106,16 +106,23 @@ items, specifically:
   - **SummaryWriter (Unit)** — Serializes the human-readable `summary.txt`
   - **ManifestWriter (Unit)** — Serializes `manifest.json` from the recorded output, inventory,
     and notes
+  - **ReviewCommentsWriter (Unit)** — Serializes `review-comments.md`, written only when the
+    document carries reviewer comments
   - **ImageTextSelector (Unit)** — Chooses which of the texts a document offered for an image is
     the most direct, so an image link carries the document's own words rather than invented ones
-- **DemaConsulting.DocDown.Pdf (System)** — PDF text, embedded-image, and document-metadata extraction; flat, with
-  no subsystems, because there is one architectural boundary here rather than several
+  - Supporting types documented inline in the Output subsystem design rather than as units:
+    `MetadataWriter` (serializes `metadata.json`), `EmbeddedImageWriter`, `ImageDimensions`,
+    `ImageLinkText`, `PartResourceLinkRewriter`, and `ArtifactInventory`
+- **DemaConsulting.DocDown.Pdf (System)** — PDF text, embedded-image, reviewer-annotation, and document-metadata
+  extraction; flat, with no subsystems, because there is one architectural boundary here rather than several
   - **PdfDocumentExtractor (Unit)** — The backend the engine selects: availability, metadata,
     delegation, the content inventory, and notes
   - **PdfTextExtractor (Unit)** — Renders a page's glyphs into markdown paragraphs in reading
     order, with image links and page markers
   - **PdfImageExtractor (Unit)** — Writes the embedded images, labeling how each was produced and
     accounting for every one it could not deliver
+  - **PdfAnnotationExtractor (Unit)** — Reads the reviewer commentary a PDF carries as annotations
+    and returns it as review comments located by page
   - **PdfDocDownBuilderExtensions (Unit)** — The reflection-free registration seam
 - **DemaConsulting.DocDown.Pdf.Rendering (System)** — Optional PDF page rendering (rasterization); flat, with no
   subsystems, and fully managed like the rest of DocDown
@@ -148,6 +155,15 @@ items, specifically:
   - **Visio (Subsystem)** — Page names, shape text, and directed-connector topology through a
     managed Open Packaging backend; page images are a separate, opt-in concern provided by the
     `DemaConsulting.DocDown.Visio.Rendering` system
+- **DemaConsulting.DocDown.PowerPoint.Rendering (System)** — Optional PowerPoint slide rendering
+  (rasterization); flat, with no subsystems, and fully managed like the rest of DocDown
+  - **PowerPointPageRenderingExtractor (Unit)** — The slide-rendering backend the engine selects when
+    rendering is requested: delegates the managed aspects, rasterizes slides, and records notes for
+    slides it cannot render
+  - **SlideRenderer (Unit)** — The single rasterization seam: opens a CanvasNet.Pptx document per
+    call and rasterizes one slide to a PNG
+  - **PowerPointRenderingDocDownBuilderExtensions (Unit)** — The reflection-free registration seam,
+    carrying no CanvasNet type on its surface
 - **DemaConsulting.DocDown.Visio.Rendering (System)** — Optional Visio page rendering (rasterization); flat, with no
   subsystems, and fully managed like the rest of DocDown
   - **VisioPageRenderingExtractor (Unit)** — The page-rendering backend the engine selects when
@@ -160,11 +176,17 @@ items, specifically:
 
 The following OTS items are also covered:
 
+- **ApiMark** — build-time API reference generator whose Markdown output is packed into each
+  library's NuGet package
 - **BuildMark** — build-notes documentation tool
 - **CanvasNet** — fully-managed 2D canvas/codec library, a runtime dependency of the Pdf, PowerPoint, and
   Visio rendering packages used for PNG encoding
+- **CanvasNet.Charts** — fully-managed chart-rendering library used internally by CanvasNet.Pptx;
+  referenced by DemaConsulting.DocDown.PowerPoint.Rendering only so the dependency resolves
 - **CanvasNet.Pdf** — fully-managed PDF rasterization API, the runtime dependency of
   DemaConsulting.DocDown.Pdf.Rendering used to rasterize pages. It and CanvasNet carry no native assets
+- **CanvasNet.Pptx** — fully-managed PowerPoint rasterization API, the runtime dependency of
+  DemaConsulting.DocDown.PowerPoint.Rendering used to rasterize slides; it carries no native assets
 - **CanvasNet.Vsdx** — fully-managed Visio rasterization API, the runtime dependency of
   DemaConsulting.DocDown.Visio.Rendering used to rasterize pages; it carries no native assets
 - **FileAssert** — document assertion tool
@@ -211,18 +233,18 @@ DemaConsulting.DocDown.Core is organized into three subsystems that form a one-d
 identifies a document's format, **Extraction** registers backends and selects the best available one
 deterministically, and **Output** is the sole write path that produces the invariant scratch-folder
 layout. Each subsystem is a distinct architectural boundary with its own public surface, and the
-subsystems collaborate only through immutable value types. Eleven software units sit under these
+subsystems collaborate only through immutable value types. Twelve software units sit under these
 subsystems; a larger set of supporting value, contract, and enumeration types — including
-`ExtractionNote` — is documented inline within each subsystem's design document rather than as
-separate units.
+`ExtractionNote`, `OpcMetadataMapper`, `SelfTestProbe`, `MetadataWriter`, `EmbeddedImageWriter`,
+`ImageDimensions`, `ImageLinkText`, and `PartResourceLinkRewriter` — is documented inline within each
+subsystem's design document rather than as separate units.
 
-DemaConsulting.DocDown.Pdf sits alongside DemaConsulting.DocDown.Core as the second system and the
-first real extraction backend. It
-is flat - four units, no subsystems - because it spans one architectural boundary, the PDF, rather
+DemaConsulting.DocDown.Pdf sits alongside DemaConsulting.DocDown.Core as the first real extraction backend. It
+is flat - five units, no subsystems - because it spans one architectural boundary, the PDF, rather
 than several. It depends on DemaConsulting.DocDown.Core for the extraction contract and on the PdfPig OTS parser for
 PDF structure, and a host joins the two with a single explicit registration call.
 
-DemaConsulting.DocDown.Pdf.Rendering is the third system: the optional page-rendering backend. It too is flat -
+DemaConsulting.DocDown.Pdf.Rendering is the optional PDF page-rendering backend. It too is flat -
 three units, no subsystems - because it spans one boundary, rasterization. It depends on
 DemaConsulting.DocDown.Core for the contract and on DemaConsulting.DocDown.Pdf for the managed
 text/image/metadata extraction it
@@ -231,20 +253,29 @@ rasterization seam. Because selection is deterministic, the rendering backend is
 managed backend only when page rendering is requested; rendering is always available, since
 CanvasNet.Pdf carries no native assets.
 
-DemaConsulting.DocDown.Tool is the fourth system: the `docdown` command-line tool, a thin executable shell over
+DemaConsulting.DocDown.PowerPoint.Rendering and DemaConsulting.DocDown.Visio.Rendering are the optional
+slide- and page-rendering backends for PowerPoint and Visio documents. Each is flat - three units, no
+subsystems - and mirrors Pdf.Rendering: it depends on DemaConsulting.DocDown.Core for the contract and on
+DemaConsulting.DocDown.Office for the managed text, image and metadata extraction it delegates to, and it wraps
+the fully-managed CanvasNet.Pptx or CanvasNet.Vsdx OTS API (with CanvasNet for PNG encoding) in a single
+rasterization seam. Each is chosen over its managed backend only when page rendering is requested.
+
+DemaConsulting.DocDown.Tool is the `docdown` command-line tool, a thin executable shell over
 DemaConsulting.DocDown.Core and the registered backends. It has two subsystems - Cli, which owns the command line,
 and SelfTest, which drives the `--validate` self-validation - plus Program, the entry point, as a
-direct unit. It registers its backends explicitly - `AddPdf().AddPdfRendering().AddWord()` - so it
-can be published as a single-file executable. Every backend it carries, including PDF page
+direct unit. It registers its backends explicitly -
+`AddPdf().AddPdfRendering().AddOffice().AddPowerPointRendering().AddVisioRendering()`, which together
+register eight backends: PDF, PDF rendering, Word, Excel, PowerPoint, Visio, PowerPoint rendering, and Visio
+rendering - so it can be published as a single-file executable. Every backend it carries, including page
 rendering, is fully managed and runtime-identifier agnostic, so both a framework-dependent
 `dotnet tool install -g` and a self-contained single-file publish stay portable across platforms;
 trimming and AOT are still left off as unverified for this dependency graph. It is the only package
 that references the DemaConsulting.TestResults OTS library, which keeps DemaConsulting.DocDown.Core free of
 runtime dependencies.
 
-DemaConsulting.DocDown.Office is the fifth system: the Microsoft Office extraction backends, and the second family of
-formats after PDF. It is one package holding four format subsystems — Word, Excel, PowerPoint and
-Visio. Those four were four packages once. They share a
+DemaConsulting.DocDown.Office is the Microsoft Office extraction system, and the second family of
+formats after PDF. It is one system holding four format subsystems — Word, Excel, PowerPoint and
+Visio — and one package. Those four were four packages once. They share a
 dependency, a release cadence and an audience, and splitting them bought a consumer nothing but four
 references to keep in step. The
 namespaces did not move, so `DemaConsulting.DocDown.Word` and its siblings still hold the same types.
@@ -282,7 +313,7 @@ DemaConsulting.DocDown.Core/
 │   ├── ExtractorSelector.cs             — Unit: pure ranking function that selects the best available extractor
 │   ├── IDocumentExtractor.cs            — Interface: the backend contract implemented by extractor packages
 │   ├── OpcMetadataMapper.cs             — Mapper: shared OPC core-property snapshot to DocumentMetadata
-│   ├── SelfTestProbe.cs                 — Internal: reads a backend's embedded self-test probe document from its assembly
+│   ├── SelfTestProbe.cs                 — Support: reads a backend's embedded self-test probe document
 │   ├── SelfTestResult.cs                — Value type: a self-test status, message, and duration
 ├── Output/
 │   ├── ArtifactInventory.cs             — Helper: the manifest-accounted file inventory used for safe scratch reuse
@@ -290,12 +321,13 @@ DemaConsulting.DocDown.Core/
 │   ├── EmbeddedImageWriter.cs           — Unit: writes an embedded image and its supporting value types
 │   ├── ExtractionManifest.cs            — DTO graph: the manifest.json serialization model
 │   ├── ExtractionSink.cs                — Unit: allocates paths, writes bytes, and records notes and content inventory
-│   ├── ImageDimensions.cs               — Internal: reads pixel dimensions from image headers without decoding
-│   ├── ImageLinkText.cs                 — Internal: the alt text policy for an inline markdown image link
+│   ├── ImageDimensions.cs               — Support: reads pixel dimensions from image headers without decoding
+│   ├── ImageLinkText.cs                 — Support: the alt text policy for an inline markdown image link
 │   ├── ImageTextSelector.cs             — Unit: chooses the most direct image text a document offered
 │   ├── ManifestWriter.cs                — Unit: serializes manifest.json from recorded output, inventory, and notes
 │   ├── MetadataWriter.cs                — Writer: serializes metadata.json from self-reported document metadata
 │   ├── PartResourceLinkRewriter.cs      — Internal: rewrites resource links so they resolve from a content part's folder
+│   ├── ReviewCommentsWriter.cs          — Unit: serializes review-comments.md when reviewer comments exist
 │   ├── ScratchFolder.cs                 — Unit: owns the output directory and enforces safe scratch reuse
 │   ├── SummaryWriter.cs                 — Unit: serializes the human-readable summary.txt
 
@@ -356,6 +388,7 @@ DemaConsulting.DocDown.Office/
 
 DemaConsulting.DocDown.Pdf/
 ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+├── PdfAnnotationExtractor.cs        — Unit: reads reviewer annotations and returns them as review comments
 ├── PdfDocDownBuilderExtensions.cs   — Unit: the reflection-free AddPdf registration seam
 ├── PdfDocumentExtractor.cs          — Unit: orchestrates PDF extraction, content inventory, and notes
 ├── PdfImageExtractor.cs             — Unit: writes embedded images and records notes when one cannot be delivered
@@ -366,6 +399,18 @@ DemaConsulting.DocDown.Pdf.Rendering/
 ├── PageRenderer.cs                  — Unit: the single rasterization seam over CanvasNet.Pdf
 ├── PdfPageRenderingExtractor.cs     — Unit: page-rendering backend; delegates, rasterizes, and records notes
 ├── PdfRenderingDocDownBuilderExtensions.cs — Unit: the reflection-free AddPdfRendering registration seam
+
+DemaConsulting.DocDown.PowerPoint.Rendering/
+├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+├── PowerPointPageRenderingExtractor.cs — Unit: slide-rendering backend; delegates, rasterizes, and records notes
+├── PowerPointRenderingDocDownBuilderExtensions.cs — Unit: the reflection-free AddPowerPointRendering registration seam
+├── SlideRenderer.cs                 — Unit: the single rasterization seam over CanvasNet.Pptx
+
+DemaConsulting.DocDown.Visio.Rendering/
+├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders
+├── PageRenderer.cs                  — Unit: the single rasterization seam over CanvasNet.Vsdx
+├── VisioPageRenderingExtractor.cs   — Unit: page-rendering backend; delegates, rasterizes, and records notes
+├── VisioRenderingDocDownBuilderExtensions.cs — Unit: the reflection-free AddVisioRendering registration seam
 
 DemaConsulting.DocDown.Tool/
 ├── Program.cs                       — Unit: entry point, priority dispatch, banner/help, extraction and reporting

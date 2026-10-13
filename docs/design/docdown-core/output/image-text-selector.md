@@ -9,15 +9,15 @@ A backend gathers whatever a document offers about a picture — an authored alt
 drawing title, an adjacent caption, an embedded object name, the nearest heading, the media part name
 — and hands the set here; the selector ranks the candidates, discards empty and auto-generated names,
 and reports how confidently the chosen text describes the picture. Its single responsibility is the
-ranking-and-honesty decision, so every current and future backend (Word today; PowerPoint, Excel, and
-Visio later) names images and writes alt text the same way, and the decision that a heading may name a
+ranking-and-honesty decision, so every backend (Word, PowerPoint, Excel, and Visio) names images and
+writes alt text the same way, and the decision that a heading may name a
 file but must never be asserted as a description lives in exactly one place.
 
 #### Data Model
 
 `ImageTextSelector` is a `static class` — a pure policy with no state, safe for concurrent use. It
-operates on three supporting value types, all immutable positional records or enumerations documented
-as supporting types (D8) of the Output subsystem:
+operates on four supporting value types, all immutable positional records or enumerations documented
+as supporting types of the Output subsystem:
 
 - **`ImageTextSource`** (`enum`) — the origin of a candidate, in decreasing directness:
   `Description`, `Title`, `Caption`, `PictureName`, `Heading`, `Uri`. The declaration order **is** the
@@ -60,14 +60,17 @@ document content — an absence of usable text is reported as `null`, never a gu
 #### Dependencies
 
 - **`ImageTextSource`, `ImageTextConfidence`, `ImageTextCandidate`, `SelectedImageText`** — supporting
-  types (D8) declared alongside the selector.
-- `System.Text` (`StringBuilder`) only — no runtime NuGet dependencies; `DemaConsulting.DocDown.Word` stays fully
+  types declared alongside the selector.
+- `System.Text` (`StringBuilder`) only — no runtime NuGet dependencies; the Office backends stay fully
   managed by depending on this policy rather than any native code.
 
 #### Callers
 
-`WordOpenXmlReader` gathers a drawing's candidates and calls `Select`; `WordOpenXmlImageReader` appends
-the media-name fallback candidate, invokes the selector, and turns the result into an image reference's
-naming hint, alt text, and manifest description. The confidence tier is what makes the Word markdown
-writer assert alt text only for a `Descriptive` selection while still allowing a `Contextual` heading to
-seed the file name. See _WordOpenXmlReader Design_ and _WordMarkdownWriter Design_.
+In the Word subsystem of `DemaConsulting.DocDown.Office`, `WordOpenXmlReader` gathers a drawing's
+candidates and `WordOpenXmlImageReader` appends the media-name fallback candidate, invokes the selector,
+and turns the result into an image reference's naming hint, alt text, and manifest description. The
+PowerPoint, Excel, and Visio image readers reach the same policy through `EmbeddedImage.Create`, which
+appends the media-name fallback, calls `Select`, and applies the same naming, alt-text, and description
+rules. The confidence tier is what makes the markdown writers assert alt text only for a `Descriptive`
+selection while still allowing a `Contextual` heading to seed the file name. See _WordOpenXmlReader
+Design_ and _WordMarkdownWriter Design_.

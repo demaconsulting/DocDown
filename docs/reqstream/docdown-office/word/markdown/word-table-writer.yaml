@@ -2,7 +2,7 @@
 # Software Unit Requirements for WordTableWriter
 #
 # WordTableWriter renders a table model as a GitHub-Flavored-Markdown table, applying the rules
-# that make a Word grid legible in markdown and counting every cell it must flatten.
+# that make a Word grid legible in markdown and returning the flattened-cell count the model records.
 
 sections:
   - title: DocDownWord Requirements
@@ -52,12 +52,13 @@ sections:
 
               - id: DocDownWord-Markdown-WordTableWriter-FlattensMergedAndNested
                 title: >-
-                  WordTableWriter shall flatten merged and nested cells and report the count of
-                  cells it flattened.
+                  WordTableWriter shall render an already-flattened merged or nested table and return the
+                  count of flattened cells the model records.
                 justification: |
-                  GFM cannot express a merged span or a nested table, so each is flattened — the
-                  merged text placed in the first column and the nested rows joined with line breaks.
-                  Returning the count of flattened cells lets the emitter describe that incomplete
-                  preservation explicitly.
+                  GFM cannot express a merged span or a nested table, so WordOpenXmlReader flattens
+                  each before the model reaches the writer — merged text placed in the first column
+                  and nested rows joined with line breaks. The writer renders that flattened grid
+                  and returns the model's flattened-cell count. The emitter's table-flattening note
+                  is computed separately from the model, not from this return value.
                 tests:
                   - WordTableWriter_Write_MergedAndNestedCells_CountsFlattened

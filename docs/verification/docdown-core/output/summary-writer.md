@@ -81,6 +81,12 @@ block whether `review-comments.md` was written and how many comments it records.
 Proves the one artifact whose presence varies with the document is reported in both directions, so a
 reader never has to infer from silence whether a review was absent or the extraction fell short.
 
+##### A single comment uses the singular noun
+
+**Test**: `SummaryWriter_WriteAsync_WithOneReviewComment_UsesSingularNoun`
+
+Proves the layout line reads `PRESENT - 1 comment` rather than `1 comments`.
+
 ##### Unused available candidates collapse into one counted line
 
 **Test**: `SummaryWriter_WriteAsync_UnusedAvailableCandidates_CollapsesThemIntoOneCountedLine`

@@ -48,13 +48,15 @@ The constraints each interface carries, stated in full:
   `ExtractorAvailability.Available()` because nothing about this backend depends on a machine-local
   prerequisite. Page rendering is outside the backend's scope and is stated through environment
   facts and self-test output rather than through a separate declaration mechanism.
-- **`ISelfValidating`** contributes two cheap-to-enumerate cases: a parse round trip that builds
-  and reads a tiny `.docx` in memory, and a page-rendering case that reports a skip because this
+- **`ISelfValidating`** contributes two cheap-to-enumerate cases: a parse round trip that reads
+  the embedded probe `.docx` (a real document authored in Microsoft Word), and a page-rendering case that reports a
+  skip because this
   subsystem does not attempt page rendering.
 - **`IExtractionSink`** is the only output channel. Content, images, inventory features, notes,
   metadata, and environment facts all go through it, and this subsystem never writes directly to the
   filesystem.
-- **`DocDownBuilder`** is extended by one method, `AddWord`; there is no alternate registration
+- **`DocDownBuilder`** is extended by one method, `AddWord`, which a host calls directly or reaches
+  through `AddOffice()` in the `DemaConsulting.DocDown.Office` package; there is no alternate registration
   path and no environment-sensitive registration behavior.
 - **The source document** is opened through `DocumentSource.OpenRead()` and is not guaranteed
   seekable for a stream source, so the backend buffers the whole document into memory before
@@ -70,7 +72,8 @@ The constraints each interface carries, stated in full:
 - **DocumentFormat.OpenXml** (OTS) — the managed Open XML SDK the package is built on, pinned to
   `[3.5.1]` for restore determinism and SBOM reproducibility. See the
   *DocumentFormat.OpenXml* OTS design.
-- **System.IO.Packaging** (OTS, transitive) — the OPC container reader underneath the SDK. See
+- **System.IO.Packaging** (OTS, direct package reference of `DemaConsulting.DocDown.Office`) — the OPC
+  container reader underneath the SDK. See
   *System.IO.Packaging* under the OTS integration design.
 
 There are no native runtime dependencies and no dependency on a locally installed Office
@@ -88,10 +91,11 @@ application.
   `ImageTransform.Passthrough`, because the stored part bytes are the extracted image bytes.
 - **Report-only completeness.** The subsystem describes what it produced in the content inventory and
   uses a short note only when it attempted a step it could not complete. Empty content is therefore
-  conveyed by a zero inventory count, while chart extraction and table flattening are conveyed by
-  notes.
-- **Unreadable isolation.** The reader detects encrypted containers up front and raises a plain
-  `WordExtractionException`. Any other adverse document state propagates to Core, which converts it
+  conveyed by a zero inventory count, while unread charts, flattened table structure, and comments
+  that carry only a picture or ink are conveyed by notes.
+- **Unreadable isolation.** `WordOpenXmlReader` detects encrypted containers up front, and a package
+  with no main document part, and raises a plain `WordExtractionException`. Any other adverse document state propagates
+  to Core, which converts it
   into an `Unreadable` result without leaving a partial layout behind.
 
 ## Data Flow
@@ -101,8 +105,8 @@ application.
 2. `WordOpenXmlExtractor` records two environment facts through the sink:
    `word.backend = Open XML SDK (managed)` and
    `word.pageRendering = not provided by this extractor`.
-3. The extractor buffers the source, checks for the OLE signature that identifies an encrypted
-   `.docx`, opens the package read-only, and hands the stream to `WordOpenXmlReader.Read()`.
+3. The extractor buffers the source and hands a read-only stream to `WordOpenXmlReader.Read()`, which
+   checks for the OLE signature that identifies an encrypted `.docx` and opens the package read-only.
 4. `WordOpenXmlReader` walks the document and produces a `WordDocumentModel` containing the body
    flow, deduplicated document-control content, comments with their resolved location hints,
    footnotes, image references, metadata,
@@ -141,9 +145,10 @@ Word extraction reads materially better than the same document routed through PD
   inline images, comments, distinct comment authors, and footnotes. Categories a reader genuinely
   looked for, such as text blocks, comments, distinct comment authors, and footnotes, are marked
   looked-for so a zero count remains explicit.
-- **Extraction notes.** The subsystem currently emits notes for two incomplete steps only: embedded
-  charts whose chart parts are not read, and merged or nested table structure that had to be
-  flattened for markdown. An empty document is never a note; it is conveyed by a zero-count
+- **Extraction notes.** The subsystem currently emits notes for three incomplete steps only: embedded
+  charts whose chart parts are not read, merged or nested table structure that had to be flattened
+  for markdown, and comments whose only content was a picture or ink, which therefore cannot appear
+  in `review-comments.md`. An empty document is never a note; it is conveyed by a zero-count
   inventory feature.
 - **Content layout.** A Word document is one continuous flow, so it is written as a single
   `content.md` with the leading matter and the `## Document Control` section in place.

@@ -27,11 +27,12 @@ read-only I/O over an already-open package.
   does not resolve to an `ImagePart`, which is a valid outcome for drawings that point to something
   else such as a chart. On success it returns a `WordImageRef` carrying the complete part bytes,
   `imagePart.ContentType` as the media type, the selected preferred name, optional description,
-  description source, and `imagePart.Uri.ToString()` as the source-reference URI.
-- **`static IReadOnlyList<(byte[] Bytes, ImageHint Hint)> Read(WordprocessingDocument document)`**
-  — enumerates every `ImagePart` in the main part directly. Each entry pairs the complete bytes
-  with the `ImageHint` the emitter's `HintFor()` builds, always claiming
-  `Transform = Passthrough` and null pixel dimensions.
+  description source, and `imagePart.Uri.ToString()` as the source-reference URI. It appends the
+  part's file name as the final fallback candidate and lets the shared `ImageTextSelector` rank the
+  candidates; the alt text is set only for a descriptive selection, and the description and its
+  source are set for descriptive and contextual selections but not for the bare file-name fallback.
+- **`BuildReference()`** (private) — assembles the `WordImageRef` from the bytes, media type,
+  source URI, and the selected text.
 - **`ReadPartBytes()`** (private) — reads an image part fully into a byte array through a read-only
   stream.
 - **`NameFromUri()`** (private) — derives a fallback name from the part URI when the document
@@ -39,27 +40,28 @@ read-only I/O over an already-open package.
 
 ### Error Handling
 
-A null `container` or `document` is rejected with `ArgumentNullException` at the call site. A
+A null `container` or `candidates` argument is rejected with `ArgumentNullException` at the call site. A
 relationship id that does not resolve to an image part is a valid case and yields `null` from
 `Resolve()` rather than throwing; the reader simply does not add an image reference for that
 drawing. Other faults such as a corrupt or truncated part propagate to Core, which renders them as
 unreadable output.
 
-Deduplication is Core's job, keyed by image content, so the same logo referenced many times is stored
-once and every link resolves to it. This unit intentionally yields duplicate references when the
-document contains them.
+Deduplication of stored files is Core's job, keyed by image content, so the same logo referenced many
+times is stored once and every link resolves to it. This unit intentionally yields a reference for each
+blip it is asked to resolve, including duplicates, and `WordOpenXmlReader` does not deduplicate them
+either; the single stored file for a repeated logo is the result of the sink's content-keyed
+deduplication.
 
 ### Dependencies
 
-- **DemaConsulting.DocDown.Core** — `ImageHint` and `ImageTransform`.
-- **DocumentFormat.OpenXml** (OTS) — `WordprocessingDocument`, `OpenXmlPartContainer`, `ImagePart`,
-  and `MainDocumentPart`. See the *DocumentFormat.OpenXml* OTS design.
+- **DemaConsulting.DocDown.Core** — `ImageTextSelector`, `ImageTextCandidate`, `ImageTextSource`, and
+  `ImageTextConfidence`.
+- **DocumentFormat.OpenXml** (OTS) — `OpenXmlPartContainer` and `ImagePart`. See the
+  *DocumentFormat.OpenXml* OTS design.
 - **`WordImageRef`** — the record returned by `Resolve()`.
-- **`WordContentEmitter.HintFor()`** — used by `Read()` to build the paired hint from a resolved
-  reference.
 
 ### Callers
 
 `WordOpenXmlReader.CollectImage()` calls `Resolve()` for every blip in a drawing, including body,
-header, footer, comment, and footnote content. Tests also call `Read()` directly so they can
-observe the same passthrough provenance a real extraction would report.
+header, footer, comment, and footnote content. Tests call `Resolve()` directly through
+`InternalsVisibleTo`.

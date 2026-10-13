@@ -97,13 +97,14 @@ native renderer and no native interop assembly.
    `PowerPointOpenXmlReader.Read`.
 3. `PowerPointOpenXmlReader.Read` produces a `PowerPointDeckModel`: slides in presentation order,
    each with its title, body text lines, speaker notes, inline image references, and legacy reviewer
-   comments, plus deduplicated
-   embedded images and document metadata.
+   comments, plus deduplicated embedded images, document metadata, and a count of unread modern comments.
+   Only direct shapes contribute title and body text; table, group-shape, and SmartArt text is not read.
 4. `PowerPointContentEmitter.EmitAsync` writes embedded images, writes the deck content, reports
    document information and metadata, reports each slide comment to Core as a review comment, and
-   reports the content inventory. A deck with no slides becomes
-   an empty content file plus zero-count inventory. Image steps that exceed a caller size limit
-   become short plain notes.
+   reports the content inventory. A deck with no slides becomes an empty content file plus the captured
+   metadata (when present) and zero-count inventory; that early path reports no review comments and no
+   modern-comments note. Image steps that exceed a caller size limit become short plain notes, and a deck
+   carrying modern comments adds one note stating how many were not read.
 5. The backend returns `Produced` when the extraction completes. If no backend can read the detected
    format, or if a deck cannot be opened as a valid modern PowerPoint package, Core writes the standard
    layout and completes the result as `Unreadable`.

@@ -34,7 +34,9 @@ long or multi-line value is elided in the table with its full value verbatim in 
 elision note appears only when an elision occurred; when merged ranges are stated as a note; when each
 chart becomes a part after its sheet and is named under the sheet; when an unreadable chart records a
 short note and a chart with no cached data states that fact in its part; when shape text is written
-under the sheet; when images are linked inline only where a path was returned; when a workbook with no
+under the sheet (from a hand-built model); when each cell comment reaches the sink as a cell-qualified
+review comment and is never written into a sheet part, and comments and distinct authors are inventoried
+(zero when absent); when images are linked inline only where a path was returned; when a workbook with no
 images or no worksheets reports zero counts for the features it looked for; when a successfully written
 vector image records no vector-only note; when an empty worksheet states that it has no cell content;
 when a page-rendering request records no note; and when the content outline is reported from the model.
@@ -107,15 +109,17 @@ its own chart part stating the reason. Evidence for
 Proves an uncached chart states that no data table could be produced, with no sink note because the read
 completed. `ExcelContentEmitter_Emit_ChartBeyondBound_StatesTruncationInChartPart` proves a bounded
 chart states the omission in the chart part, and `ExcelContentEmitter_Emit_NoCharts_ReportsNoChartNotes`
-proves a chart-free workbook records no chart note. Evidence for
-`DocDownExcel-Markdown-ChartRendering`.
+proves a chart-free workbook records no chart note. These scenarios are supporting evidence for the
+subsystem-level requirement `DocDownExcel-Markdown-ChartRendering`, not for a unit requirement of this
+unit; they carry no unit-level requirement link.
 
 #### Shape text is written under the sheet
 
 **Test**: `ExcelContentEmitter_Emit_ShapeText_WritesUnderTheSheet`
 
-Proves a worksheet's drawing-shape text is written under the sheet. Evidence for
-`DocDownExcel-Markdown-ExcelContentEmitter-WritesShapeText`.
+Proves a worksheet's drawing-shape text, supplied in a hand-built model, is written under the sheet.
+Evidence for `DocDownExcel-Markdown-ExcelContentEmitter-WritesShapeText`. This test does not exercise
+`ExcelDrawingTextReader`.
 
 #### Images are linked inline from the sheet
 

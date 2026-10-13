@@ -17,7 +17,8 @@ observable contract is what the engine and a host observe: descriptor data, envi
 produced content, content inventory, and any extraction notes. The reader is driven directly
 against generated documents, because its contract is the `WordDocumentModel` it produces from a
 `.docx`. The image reader is driven directly against an opened `WordprocessingDocument`, because
-its contract is the sequence of image parts and their passthrough hints.
+its contract is the image reference `Resolve()` returns for a relationship id, which the tests pair
+with the emitter's `HintFor()` to observe the passthrough provenance.
 
 The SDK is not mocked. Every fixture is a real `.docx` built at test time by the Open XML SDK
 writer in `TestData/DocxFixtures.cs`, so each scenario exercises a genuine document rather than a
@@ -73,6 +74,7 @@ given in the *WordOpenXmlReader Verification Design*. Evidence for `DocDownWord-
 
 **Test**: `WordOpenXmlImageReader_Read_Png_YieldsPassthroughWithNullDimensions`
 
-Proves the passthrough hint, null pixel dimensions, and media type directly, with the vector
+Proves the passthrough hint (built by the emitter's `HintFor()` from the resolved reference), null
+pixel dimensions, and media type, with the vector
 media-type case given in the *WordOpenXmlImageReader Verification Design*. Evidence for
 `DocDownWord-OpenXml-Images`.

@@ -27,7 +27,9 @@ prose from being reinterpreted as headings, emphasis, links, list markers, or ta
   but the metadata names a title. Appends `## Footnotes` last. Reviewer comments carried on the
   model are deliberately not rendered. Pure.
 - **`static string WriteBlocks(IReadOnlyList<WordBlock>, IReadOnlyDictionary<string, string>)`** —
-  renders a block sequence, used for the body and for each document-control subsection. Pure.
+  renders a block sequence. Its production caller is `WordOpenXmlReader.BuildDocumentControl()`,
+  which renders each document-control candidate to compute the deduplication key; `Write()` renders
+  the body and the document-control subsections itself. Pure.
 - **`internal static string RenderInlines(IReadOnlyList<WordInline>?)`** — renders inline runs,
   escaping literal text and applying the minimal preserved formatting: bold as `**…**`, italic as
   `*…*`, and hyperlinks as `[text](href)`. A `Raw` inline is emitted verbatim so footnote markers
@@ -68,6 +70,6 @@ the writer received.
 
 ### Callers
 
-`WordContentEmitter.WriteContentAsync()` uses `Write()` for single-flow mode and `WriteBlocks()`
-for the body; `WordOpenXmlReader.BuildDocumentControl()` uses `WriteBlocks()` internally to
+`WordContentEmitter.WriteContentAsync()` calls `Write()` once to render the whole document as one
+continuous flow. `WordOpenXmlReader.BuildDocumentControl()` calls `WriteBlocks()` to
 compute the deduplication key for identical rendered header or footer content across sections.

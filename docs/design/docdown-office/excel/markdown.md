@@ -32,9 +32,13 @@ drift from the first.
 **The workbook model.** `ExcelWorkbookModel` is the whole cross-reader contract: the worksheets in
 workbook order, the deduplicated embedded images, and the workbook metadata. Each `ExcelSheetModel`
 carries its tab name, its non-empty cells in row-major order, its merged ranges, the images it
-references, the charts it shows, and the text of the shapes drawn over it; an `ExcelCellModel` carries
+references, the charts it shows, the text of the shapes drawn over it, and its reviewer comments
+(`ExcelCommentModel`: cell reference, optional author, and text); an `ExcelCellModel` carries
 the A1 address, the value verbatim (or null when the cell holds only a formula), and the formula
-(or null).
+(or null). An `ExcelChartModel` pairs a chart's part URI and worksheet name with either its cached
+`ExcelChartData` or a read-failure reason. The model and chart-model records are defined in the
+`OpenXml` subsystem's source files, which the reader populates; this subsystem consumes them and
+owns no model type of its own.
 
 **The content emitter.** `ExcelContentEmitter` is the single emission path. It writes embedded images
 first so each worksheet can link them inline, writes one `ContentPartKind.Sheet` part per worksheet and
@@ -60,6 +64,14 @@ A note never characterizes the workbook itself.
 
 **The unit split.** Two units divide the work along the boundaries their responsibilities draw:
 `ExcelContentEmitter` owns the sink walk, worksheet rendering, content inventory, and note policy;
-`ExcelChartWriter` owns chart-part wording and the plotted-point bound. The supporting model,
-chart-model, and `NamespaceDoc` types live in the same subsystem folder because they are the vocabulary
-of the units, not units of their own.
+`ExcelChartWriter` owns chart-part wording and the plotted-point bound. No model type is defined in
+this subsystem: the workbook and chart model records are defined in the `OpenXml` subsystem's source
+files and consumed here, and the subsystem's `NamespaceDoc` type documents the namespace only.
+
+**Error handling.** The subsystem raises no exception of its own for any workbook condition. A null
+argument to `ExcelContentEmitter.EmitAsync` is rejected with `ArgumentNullException`, and cancellation is
+observed between parts. Every attempted step the emitter cannot complete becomes either a short note
+(an unreadable chart, an image skipped by a size limit) or a statement in the part itself (an empty
+sheet, a chart with no cached data, a bounded chart table); an empty workbook becomes zero-count
+inventory entries. Neither unit performs filesystem I/O. Faults while reading belong to the `OpenXml`
+subsystem and propagate to Core.

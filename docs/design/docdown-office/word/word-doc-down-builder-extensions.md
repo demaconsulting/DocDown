@@ -48,5 +48,7 @@ input or output and constructs nothing.
 
 ### Callers
 
-A host application, once, when configuring an engine. `DemaConsulting.DocDown.Tool` calls `AddWord` alongside its
-other extractor registrations. Nothing inside this subsystem calls it.
+A host application, once, when configuring an engine: either directly, or indirectly through
+`AddOffice()` in the `DemaConsulting.DocDown.Office` package, which calls `AddWord()` among its format
+registrations. `DemaConsulting.DocDown.Tool` registers Word through `AddOffice()`. Nothing inside
+this subsystem calls it.

@@ -86,8 +86,10 @@ the expected-error contract; it has no separate requirement and supports the exp
 
 **Test**: `DocDownTool_Build_DefaultEngine_RegistersBackendsExplicitly`
 
-The engine the tool builds registers the expected backend set through the explicit builder seams.
-Evidence for `DocDownTool-Program-ExplicitRegistration` (shared with the system-level scenario).
+The engine registers the expected eight-backend set through the explicit builder seams. The test
+builds an equivalent chain from the individual `Add*` calls instead of calling the private
+`Program.BuildEngine`, so it does not exercise the tool's own chain. Evidence for
+`DocDownTool-Program-ExplicitRegistration` (shared with the system-level scenario).
 
 #### Expected errors exit non-zero without a stack trace
 

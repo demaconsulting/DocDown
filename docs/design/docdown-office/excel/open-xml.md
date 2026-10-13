@@ -73,8 +73,14 @@ package it cannot open and a missing workbook part — into `ExcelExtractionExce
 propagates to Core, which converts it into a structured `Unreadable` result with the full layout still
 written.
 
-**Self-containment.** No SDK type reaches the public surface: `ExcelOpenXmlExtractor` is public but its
+**Error handling.** At subsystem level the extractor passes reader faults through unchanged; it does not catch
+them. Cancellation is observed by the extractor and the emitter, and a null source or context is rejected with
+`ArgumentNullException`. A chart part that cannot be parsed is not an error: it is returned with a read-failure
+reason and reported by the emitter as a note. No SDK type reaches the public surface: `ExcelOpenXmlExtractor` is public
+but its
 public members name Core types only; the reader and the focused readers are internal, exposed to the
 test project through `InternalsVisibleTo`. The subsystem's supporting-type source files define the model
-records (`ExcelWorkbookModel`, `ExcelSheetModel`, `ExcelCellModel`, `ExcelSheetImageRef`), the chart
-model records (`ExcelChartData`, `ExcelChartSeries`, `ExcelChartPoint`), and `ExcelExtractionException`.
+records (`ExcelWorkbookModel`, `ExcelSheetModel`, `ExcelCellModel`, `ExcelSheetImageRef`,
+`ExcelCommentModel`), the chart model records (`ExcelChartModel`, `ExcelChartData`, `ExcelChartSeries`,
+`ExcelChartPoint`), the image reader's `ExcelImageCollection` result, and `ExcelExtractionException`,
+which is the one public type besides the extractor and carries no SDK type.

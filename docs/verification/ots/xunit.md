@@ -5,115 +5,58 @@ for this OTS item are defined in the xUnit OTS Software Requirements document.
 
 ### Required Functionality
 
-xUnit v3 (xunit.v3 and xunit.runner.visualstudio) is the unit-testing framework used by the
-project. It discovers and runs all test methods and writes TRX result files that feed into coverage
-reporting and requirements traceability. Passing tests confirm the framework is functioning
-correctly.
+xUnit v3 (xunit.v3 and xunit.runner.visualstudio) is the unit-testing framework used by every test
+project in the repository. It discovers and runs all test methods and writes TRX result files that
+feed into coverage reporting and requirements traceability. Passing tests confirm the framework is
+functioning correctly.
 
 ### Verification Approach
 
-xUnit is verified by self-validation evidence from the CI pipeline. Each scenario names a specific
-test method that xUnit must discover, execute, and record in a TRX result file. A passing pipeline
-run for all scenarios constitutes evidence that both requirements are satisfied.
+xUnit is verified by transitive evidence from the repository's own tests. Each scenario below names
+an ordinary DocDown test, in `DemaConsulting.DocDown.Core.Tests`, that xUnit must discover, execute,
+and record in a TRX result file. There is no dedicated OTS test project: if xUnit did not discover
+and execute these tests, no result would appear for them at all, and ReqStream would report the
+requirement tests as missing. A passing pipeline run for all scenarios constitutes evidence that
+both requirements are satisfied. The claim is limited to discovery, execution, and result
+recording; nothing beyond that is asserted about the framework.
 
 ### Test Scenarios
 
-#### Demo_DemoMethod_DefaultPrefix_ReturnsGreeting
+#### DocDownCore_Extract_Failure_StillWritesSummaryAndManifest
 
-**Scenario**: xUnit discovers and runs this test; the test verifies that DemoMethod returns the
-expected greeting using the default prefix.
+**Scenario**: xUnit discovers and runs this `[Fact]`; the test verifies that an extraction whose
+backend throws still returns an unreadable outcome and writes the full output layout.
 
-**Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
-
-**Requirement coverage**: `DocDown-OTS-xUnit-Execute`, `DocDown-OTS-xUnit-Report`.
-
-#### Demo_DemoMethod_CustomPrefix_ReturnsGreeting
-
-**Scenario**: xUnit discovers and runs this test; the test verifies that DemoMethod returns the
-expected greeting using a custom prefix.
-
-**Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
+**Expected**: xUnit executes the test, the test passes, and the result appears by name in the TRX
+output.
 
 **Requirement coverage**: `DocDown-OTS-xUnit-Execute`, `DocDown-OTS-xUnit-Report`.
 
-#### Demo_DemoMethod_NullInput_ThrowsArgumentNullException
+#### DocDownCore_Extract_OptionsMutatedAfterCall_DoNotAffectResult
 
-**Scenario**: xUnit discovers and runs this test; the test verifies that DemoMethod rejects a null
-argument with ArgumentNullException.
+**Scenario**: xUnit discovers and runs this `[Fact]`; the test verifies that mutating the extraction
+options after one call does not change that call's result.
 
-**Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
-
-**Requirement coverage**: `DocDown-OTS-xUnit-Execute`, `DocDown-OTS-xUnit-Report`.
-
-#### Demo_DemoMethod_EmptyInput_ThrowsArgumentException
-
-**Scenario**: xUnit discovers and runs this test; the test verifies that DemoMethod rejects an
-empty string argument with ArgumentException.
-
-**Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
+**Expected**: xUnit executes the test, the test passes, and the result appears by name in the TRX
+output.
 
 **Requirement coverage**: `DocDown-OTS-xUnit-Execute`, `DocDown-OTS-xUnit-Report`.
 
-#### Demo_Constructor_NullPrefix_ThrowsArgumentNullException
+#### DocDownCore_Extract_BackendUnavailable_ReasonAppearsInSummary
 
-**Scenario**: xUnit discovers and runs this test; the test verifies that the constructor rejects a
-null prefix with ArgumentNullException.
+**Scenario**: xUnit discovers and runs this `[Fact]`; the test verifies that an unavailable
+backend's reason appears verbatim in the summary when it is the only option.
 
-**Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
-
-**Requirement coverage**: `DocDown-OTS-xUnit-Execute`, `DocDown-OTS-xUnit-Report`.
-
-#### Demo_Constructor_EmptyPrefix_ThrowsArgumentException
-
-**Scenario**: xUnit discovers and runs this test; the test verifies that the constructor rejects an
-empty string prefix with ArgumentException.
-
-**Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
-
-**Requirement coverage**: `DocDown-OTS-xUnit-Execute`, `DocDown-OTS-xUnit-Report`.
-
-#### Demo_DefaultPrefix_Read_IsHello
-
-**Scenario**: xUnit discovers and runs this test; the test verifies that the DefaultPrefix constant
-has the value "Hello".
-
-**Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
-
-**Requirement coverage**: `DocDown-OTS-xUnit-Execute`, `DocDown-OTS-xUnit-Report`.
-
-#### Demo_Prefix_WithCustomConstruction_ReturnsCustomPrefix
-
-**Scenario**: xUnit discovers and runs this test; the test verifies that the Prefix property
-returns the value supplied at construction.
-
-**Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
-
-**Requirement coverage**: `DocDown-OTS-xUnit-Execute`, `DocDown-OTS-xUnit-Report`.
-
-#### Demo_DefaultConstructor_WithNoArgs_SetsDefaultPrefix
-
-**Scenario**: xUnit discovers and runs this test; the test verifies that the default constructor
-sets Prefix to the DefaultPrefix constant.
-
-**Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
+**Expected**: xUnit executes the test, the test passes, and the result appears by name in the TRX
+output.
 
 **Requirement coverage**: `DocDown-OTS-xUnit-Execute`, `DocDown-OTS-xUnit-Report`.
 
 ### Requirements Coverage
 
-- **`DocDown-OTS-xUnit-Execute`**: Demo_DemoMethod_DefaultPrefix_ReturnsGreeting,
-  Demo_DemoMethod_CustomPrefix_ReturnsGreeting,
-  Demo_DemoMethod_NullInput_ThrowsArgumentNullException,
-  Demo_DemoMethod_EmptyInput_ThrowsArgumentException,
-  Demo_Constructor_NullPrefix_ThrowsArgumentNullException,
-  Demo_Constructor_EmptyPrefix_ThrowsArgumentException, Demo_DefaultPrefix_Read_IsHello,
-  Demo_Prefix_WithCustomConstruction_ReturnsCustomPrefix,
-  Demo_DefaultConstructor_WithNoArgs_SetsDefaultPrefix
-- **`DocDown-OTS-xUnit-Report`**: Demo_DemoMethod_DefaultPrefix_ReturnsGreeting,
-  Demo_DemoMethod_CustomPrefix_ReturnsGreeting,
-  Demo_DemoMethod_NullInput_ThrowsArgumentNullException,
-  Demo_DemoMethod_EmptyInput_ThrowsArgumentException,
-  Demo_Constructor_NullPrefix_ThrowsArgumentNullException,
-  Demo_Constructor_EmptyPrefix_ThrowsArgumentException, Demo_DefaultPrefix_Read_IsHello,
-  Demo_Prefix_WithCustomConstruction_ReturnsCustomPrefix,
-  Demo_DefaultConstructor_WithNoArgs_SetsDefaultPrefix
+- **`DocDown-OTS-xUnit-Execute`**: DocDownCore_Extract_Failure_StillWritesSummaryAndManifest,
+  DocDownCore_Extract_OptionsMutatedAfterCall_DoNotAffectResult,
+  DocDownCore_Extract_BackendUnavailable_ReasonAppearsInSummary
+- **`DocDown-OTS-xUnit-Report`**: DocDownCore_Extract_Failure_StillWritesSummaryAndManifest,
+  DocDownCore_Extract_OptionsMutatedAfterCall_DoNotAffectResult,
+  DocDownCore_Extract_BackendUnavailable_ReasonAppearsInSummary

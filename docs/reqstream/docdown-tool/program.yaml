@@ -73,8 +73,8 @@ sections:
 
           - id: DocDownTool-Program-ExplicitRegistration
             title: >-
-              Program shall build its engine by explicitly registering the PDF, PDF-rendering,
-              Word, Visio, PowerPoint, and Excel backends.
+              Program shall build its engine by explicitly registering the PDF, PDF-rendering, Office
+              (Word, Excel, PowerPoint, and Visio), PowerPoint-rendering, and Visio-rendering backends.
             justification: |
               The registration the tool performs is the single fact that keeps single-file publishing
               viable. Building the engine from explicit calls, with no reflection, makes the active

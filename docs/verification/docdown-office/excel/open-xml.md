@@ -15,10 +15,11 @@ not a simulation, because their contract is the faithful translation of a genuin
 model: verbatim cell values, formulas, sheet identity, embedded images and their sheet association, and
 charts' cached series. The extractor surface — its identity, priority, supported format,
 page-rendering flag, and unconditional probe — is asserted directly, and its self-test cases are run to
-prove the round-trip case passes and the page-rendering case skips. The image reader and the
-drawing-text reader carry no dedicated test class; their behavior is proved through the reader that
-drives them and the emitter scenarios that render their output, because their observable contract is
-what reaches the model and the sink.
+prove the round-trip case passes and the page-rendering case skips. The image reader carries no dedicated
+test class; its behavior is proved through the reader that drives it. The drawing-text reader likewise has
+no dedicated test class and no test that reads a real drawing part: the only linked scenario drives the
+emitter with a hand-built model, so coverage of `ExcelDrawingTextReader` is currently indirect and a later
+change adds real tests.
 
 ### Test Environment
 

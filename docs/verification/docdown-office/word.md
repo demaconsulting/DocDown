@@ -9,12 +9,14 @@ extraction subsystem.
 `WordGoldenTests.cs`, and through subsystem and unit tests in `DemaConsulting.DocDown.Office.Tests`,
 running on xUnit v3 across net8.0, net9.0, and net10.0.
 
-### Every extraction test proves the expected layout is written
+### Extraction scenarios prove the expected layout is written
 
-Every subsystem-level extraction scenario ends with `ContractAssert.LayoutPresent`, which proves the
+Most subsystem-level extraction scenarios end with `ContractAssert.LayoutPresent`, which proves the
 expected output layout exists on disk for the same run whose content, notes, metadata, or summary
 is being asserted. This is the highest-value assertion at subsystem level: a successful or unreadable
-result still has to produce the layout the rest of DocDown expects.
+result still has to produce the layout the rest of DocDown expects. The exceptions are
+`DocDownWord_Extract_Docx_SelectsOpenXml`, which asserts only which backend was selected, and the
+golden tests, which compare the normalized `summary.txt` against a committed golden instead.
 
 ### One backend, one reader, one emitter
 
@@ -29,7 +31,8 @@ result with a plain explanation rather than an exception surfacing to the caller
 Most of the reporting behavior under test now falls into one of two buckets. The content inventory
 states what reached the output, including deliberate zero counts for categories the extractor
 looked for. Short extraction notes are reserved for attempted steps the extractor could not
-complete, such as chart-part reading or flattened merged or nested table structure. The suite
+complete, such as chart-part reading, flattened merged or nested table structure, or comments whose
+only content is a picture or ink. The suite
 therefore covers both clean extractions and honest incomplete-step reporting.
 
 ### Test fixtures are generated; the self-test probe is committed
@@ -43,8 +46,9 @@ Word, embedded in the subsystem so the self-test reads what that application emi
 
 ### Golden summaries pin representative outputs
 
-Four representative extractions render `summary.txt` under a fixed timestamp and fixed backend,
-normalize the machine-specific lines, and compare the remainder byte for byte against committed
+Five representative extractions render `summary.txt` with the single managed backend, normalize
+the machine-specific lines (including the run-varying timestamp), and compare the remainder byte for
+byte against committed
 goldens under `test/.../golden/`. Setting `DOCDOWN_UPDATE_GOLDEN=1` rewrites a golden, and
 regeneration is refused in CI.
 
@@ -57,7 +61,7 @@ regeneration is refused in CI.
   short byte sequence for the legacy `.doc` unreadable scenario; no committed binary fixtures and
   no network access
 - **Mocking**: none — every subsystem test drives the real engine and the real Open XML backend
-- **Determinism**: the run-varying timestamp line is normalized so repeated runs are byte-comparable
+- **Determinism**: the run-varying timestamp line is normalized so runs are byte-comparable
 - **Isolation**: each test owns its temporary folder and cleans it on dispose
 
 ## Acceptance Criteria
@@ -70,13 +74,15 @@ Per IEC 62304 §5.7.2, a subsystem-level test run passes when:
   Control section, `ExtractionOutcome.Produced`, and no extraction notes for the clean scenario.
 - The summary and manifest make reviewer comments discoverable through content inventory rather than
   only through a character count.
+- Reviewer comments are written to `review-comments.md` and are not rendered into `content.md`, and a
+  document with an empty comment still produces its content and its real comments.
 - A document embedding a chart produces `ExtractionOutcome.Produced` together with one short note
   explaining that chart parts were not read.
 - Embedded images are written and linked from the content, and a vector image is written unchanged
   when the document stores one.
 - A legacy binary `.doc` produces `ExtractionOutcome.Unreadable` with a plain unsupported-format
   explanation and the expected output layout.
-- Four representative summaries match their committed goldens after normalization.
+- Five representative summaries match their committed goldens after normalization.
 
 ## Test Scenarios
 
@@ -106,6 +112,21 @@ six `DocDownWord-Platform-*` requirements.
 Proves the summary and manifest name the document's comments and distinct comment authors, so a
 consumer can tell from the inventory that reviewer commentary is present. Supporting evidence for
 the Markdown subsystem's content-inventory behavior.
+
+### Reviewer comments are routed to review-comments.md, not content
+
+**Test**: `DocDownWord_Extract_DocxWithComment_WritesReviewCommentsNotContent`
+
+Proves a reviewer comment appears in `review-comments.md` with its author and is absent from
+`content.md`. Supporting evidence for the Markdown subsystem's comment-reporting behavior.
+
+### A document with an empty comment still produces its content
+
+**Test**: `DocDownWord_Extract_DocxWithEmptyComment_StillProducesContentAndRealComment`
+
+Proves a comment with no text is dropped by the reader rather than aborting the extraction, while the
+document's content and its real comment are still produced. Supporting evidence for the OpenXml
+subsystem's comment-reading behavior.
 
 ### Document Control is preserved from an engineering-style document
 
@@ -154,8 +175,12 @@ produces the expected layout. Evidence for `DocDownWord-LegacyFormatUnreadable`.
 - `WordGolden_TablesAndImages_MatchesCommittedGolden`
 - `WordGolden_MergedCellsGap_MatchesCommittedGolden`
 - `WordGolden_DocumentControl_MatchesCommittedGolden`
+- `WordGolden_ReviewComments_MatchesCommittedGolden`
 
-Prove four representative extractions — a simple two-section document, a document with tables and
-images, one whose merged cells produce a flattening note, and an engineering-style document with a
-Document Control section — render a normalized `summary.txt` that is byte-identical to its
-committed golden. Evidence for `DocDownWord-Determinism`.
+Prove five representative extractions — a simple two-section document, a document with tables and
+images, one whose merged cells produce a flattening note, an engineering-style document with a
+Document Control section, and a document with reviewer comments — render a normalized `summary.txt`
+that is byte-identical to its committed golden. The golden test for merged cells and its golden file
+still carry the older "gap" name, although the behavior they pin is the flattening note. Evidence for
+`DocDownWord-Determinism`, which the golden comparison supports as a one-run comparison of the
+normalized summary rather than a repeated-run comparison of every artifact.

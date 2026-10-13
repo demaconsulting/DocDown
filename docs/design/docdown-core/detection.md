@@ -49,8 +49,15 @@ Only when the name yields nothing does the sniffer read up to 512 leading bytes 
 order, the `%PDF-` signature and a BOM- and whitespace-tolerant HTML doctype or root element. A
 match returns basis `ContentSignature`; otherwise the result is `Unknown`.
 
-The supporting value types remain unchanged:
+The supporting value types:
 
-- **`DocumentFormat`** — the stable format vocabulary shared across systems.
+- **`DocumentFormat`** — the stable format vocabulary shared across systems: a `readonly record
+  struct` of an `Id` and a `MediaType`. Well-known static members name `Pdf`, `Docx`, `Doc`, `Xlsx`,
+  `Xls`, `Pptx`, `Ppt`, `Vsdx`, `Vsdm`, `Vsd`, `Html`, `Text`, and `Unknown`. `Custom(id, mediaType)`
+  builds an extension format and throws `ArgumentException` for an empty identifier or media type.
+  `IsUnknown` is true for the `unknown` identifier and also for a default-constructed value whose
+  `Id` is null, so an uninitialized value is never mistaken for a recognized format. `ToString`
+  renders `id (mediaType)`.
 - **`DetectionBasis`** — `Extension` or `ContentSignature`.
-- **`FormatDetection`** — the identified format and the basis it was identified by.
+- **`FormatDetection`** — the identified format and the basis it was identified by; `Describe()`
+  renders the pair as text for reports.
