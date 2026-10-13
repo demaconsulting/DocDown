@@ -1,84 +1,84 @@
 # DocDown
 
-[![GitHub forks][badge-forks]][link-forks]
-[![GitHub stars][badge-stars]][link-stars]
-[![GitHub contributors][badge-contributors]][link-contributors]
-[![License][badge-license]][link-license]
-[![Build][badge-build]][link-build]
-[![Quality Gate][badge-quality]][link-quality]
-[![Security][badge-security]][link-security]
-[![NuGet Core][badge-nuget]][link-nuget]
-[![NuGet Pdf][badge-nuget-pdf]][link-nuget-pdf]
-[![NuGet Tool][badge-nuget-tool]][link-nuget-tool]
+<!-- IMPORTANT: All links in this file must be absolute URLs.
+     This file is distributed in packages and relative links will not resolve. -->
 
-DocDown is a family of .NET libraries and a command-line tool that break documents into a
-predictable scratch-folder layout for multimodal AI agents and other automation. It reports what was
-read, what was counted, and any plain-language notes about steps that could not be completed; it
-does not judge whether document content is acceptable.
+[![GitHub forks](https://img.shields.io/github/forks/demaconsulting/DocDown?style=plastic)](https://github.com/demaconsulting/DocDown/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/demaconsulting/DocDown?style=plastic)](https://github.com/demaconsulting/DocDown/stargazers)
+[![GitHub contributors](https://img.shields.io/github/contributors/demaconsulting/DocDown?style=plastic)](https://github.com/demaconsulting/DocDown/graphs/contributors)
+[![License](https://img.shields.io/github/license/demaconsulting/DocDown?style=plastic)](https://github.com/demaconsulting/DocDown/blob/main/LICENSE)
+[![Build](https://img.shields.io/github/actions/workflow/status/demaconsulting/DocDown/build_on_push.yaml)](https://github.com/demaconsulting/DocDown/actions/workflows/build_on_push.yaml)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=demaconsulting_DocDown&metric=alert_status)](https://sonarcloud.io/dashboard?id=demaconsulting_DocDown)
+[![Security](https://sonarcloud.io/api/project_badges/measure?project=demaconsulting_DocDown&metric=security_rating)](https://sonarcloud.io/dashboard?id=demaconsulting_DocDown)
+[![NuGet](https://img.shields.io/nuget/v/DemaConsulting.DocDown.Core?style=plastic)](https://www.nuget.org/packages/DemaConsulting.DocDown.Core)
 
-## Terms Used Here
+## Overview
 
-Three words appear throughout this README and the user guide, and they are not interchangeable:
+DocDown is a family of .NET libraries and a command-line tool that extract useful information from
+documents (PDF, Word, Excel, PowerPoint, Visio) into a scratch folder, in a predictable layout
+designed to be fed to multimodal AI agents. It reports what was read, what was counted, and any
+plain-language notes about steps that could not be completed; it does not judge whether document
+content is acceptable.
 
-- **Backend** — the component that reads one document format, or renders its pages. `docdown
-  --list-backends` prints them, `summary.txt` names the one that ran in its *Backend* section, and a
-  single format may be served by more than one, such as PowerPoint's or Visio's managed backend
-  and its optional rendering backend. This is the primary term.
-- **Format package** — the NuGet package that ships one or more backends for a format, such as
-  `DemaConsulting.DocDown.Office`. You install format packages; you select backends.
-- **Extractor** — the name the API and the CLI give a backend where an identifier is needed:
-  `DocDownBuilder.AddExtractor`, `result.SelectedExtractor`, and the extractor id used to break
-  selection ties. Read it as the code-level spelling of *backend*.
+## Features
 
-## Which Package Do I Need?
+- 📄 **Many Formats** - PDF, Word, Excel, PowerPoint, and Visio
+- 📦 **Invariant Output Layout** - `summary.txt`, `manifest.json`, `metadata.json`, `content.md`,
+  `images/`, and `pages/` for every document
+- 🖼️ **Page Images** - Optional fully managed rendering of PDF pages, slides, and Visio pages
+- 💬 **Review Comments** - `review-comments.md` written when the document carries reviewer comments
+- 📝 **Honest Reporting** - Anything that could not be extracted is reported with a reason, never
+  silently omitted
+- 🧩 **Pluggable Backends** - Explicit, reflection-free registration; write your own backend on the
+  Core abstractions
+- 🌐 **Cross-Platform** - Fully managed libraries for .NET 8, 9, and 10; the tool runs on .NET 10
+- ✅ **Self-Validation** - Built-in qualification tests for regulated environments
 
-Install one format package per format you actually read. Each format package brings
-`DemaConsulting.DocDown.Core` with it as a transitive dependency, so ordinary use never references
-Core directly — you reference it yourself only when you are writing a backend of your own.
+## Installation
 
-| Format | Package (all prefixed `DemaConsulting.DocDown.`) | Optional extra | Platform note |
-| --- | --- | --- | --- |
-| PDF `.pdf` | `Pdf` | `Pdf.Rendering` for page images | Fully managed; every platform |
-| Word `.docx` | `Office` | — | Managed; every platform |
-| Excel `.xlsx` | `Office` | — | Managed; a workbook is not paginated |
-| PowerPoint `.pptx` | `Office` | `PowerPoint.Rendering` for slide images | Fully managed |
-| Visio `.vsdx`, `.vsdm` | `Office` | `Visio.Rendering` for page images | Fully managed |
-| Any format, from a shell | `Tool` | — | Global or local tool manifest install |
-| Your own backend | `DemaConsulting.DocDown.Core` | — | Abstractions only; extracts nothing itself |
+### Libraries
+
+Install one format package per format you read; each brings `DemaConsulting.DocDown.Core` with it.
 
 ```bash
-dotnet add package DemaConsulting.DocDown.Pdf                  # .pdf
-dotnet add package DemaConsulting.DocDown.Pdf.Rendering        # optional: rasterize PDF pages
-dotnet add package DemaConsulting.DocDown.Office                # .docx, .xlsx, .pptx, .vsdx, .vsdm
-dotnet add package DemaConsulting.DocDown.PowerPoint.Rendering  # optional: rasterize PowerPoint slides
-dotnet add package DemaConsulting.DocDown.Visio.Rendering       # optional: rasterize Visio pages
+dotnet add package DemaConsulting.DocDown.Pdf      # .pdf
+dotnet add package DemaConsulting.DocDown.Office   # .docx, .xlsx, .pptx, .vsdx, .vsdm
 ```
 
-The four Microsoft Office formats ship in one package. They share a dependency, a release cadence,
-and an audience, and splitting them bought a consumer nothing but four references to keep in step.
-`AddOffice()` registers all of them; the per-format calls remain, so a service that only ever sees
-spreadsheets can still call `AddExcel()` and register one backend rather than four.
+Page images come from optional add-on packages: `DemaConsulting.DocDown.Pdf.Rendering`,
+`DemaConsulting.DocDown.PowerPoint.Rendering`, and `DemaConsulting.DocDown.Visio.Rendering`.
 
-Install the command-line tool globally, or into a local tool manifest so the version travels with
-the repository:
+### Command-Line Tool
+
+Requires the [.NET 10 SDK or runtime](https://dotnet.microsoft.com/download).
 
 ```bash
-dotnet tool install -g DemaConsulting.DocDown.Tool          # global
-dotnet tool install --local DemaConsulting.DocDown.Tool     # local tool manifest
+dotnet tool install --global DemaConsulting.DocDown.Tool
+docdown --version
 ```
 
-The tool requires a **.NET 10 runtime**. Every backend it carries, including PDF page rendering and
-PowerPoint slide rendering, is fully managed and runtime-identifier agnostic, so the same package
-installs and runs on every supported platform. The libraries have no platform restriction either:
-they target .NET 8, 9, and 10 and are platform-neutral, including the optional PDF and PowerPoint
-page renderers, so referencing them does not constrain your project to the tool's runtime.
+Or install into a local tool manifest so the version travels with the repository:
 
-## Quick Start
+```bash
+dotnet new tool-manifest  # if you don't have a tool manifest already
+dotnet tool install DemaConsulting.DocDown.Tool
+dotnet docdown --version
+```
+
+## Usage
+
+### Command Line
+
+```bash
+docdown --input report.pdf --scratch ./out
+```
+
+The last line of output is the absolute path to the produced `summary.txt`, ready to hand to an
+agent. The tool exits `0` when the output layout was written (even if notes were recorded) and `1`
+when the document was unreadable or an argument was bad. Run `docdown --help` for all options, and
+`docdown --validate` to run self-validation.
 
 ### Library
-
-Register only the backend you need, extract, and branch on the outcome. Nothing else is discovered:
-registration is explicit and reflection-free, which is what keeps single-file publishing viable.
 
 ```csharp
 using System;
@@ -87,7 +87,7 @@ using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.Word;
 
 var engine = new DocDownBuilder()
-    .AddWord() // .docx - text, tables, images; no page images
+    .AddWord()
     .Build();
 
 var result = await engine.ExtractAsync(
@@ -102,371 +102,69 @@ if (result.Outcome == ExtractionOutcome.Unreadable)
     return 1;
 }
 
-Console.WriteLine(result.SummaryPath);  // paste this summary.txt into the model context window
-
-foreach (var note in result.Notes)
-{
-    Console.WriteLine($"Note: {note.Message}");
-}
-
+Console.WriteLine(result.SummaryPath);
 return 0;
 ```
 
-Swap `AddWord()` for `AddOffice()`, `AddExcel()`, `AddPdf()`, `AddPowerPoint()`, or `AddVisio()` — one call per
-format package you reference. The same example works for a workbook or a deck with no other change.
-The annotated full menu is in *Registering Several Backends*, below.
-
-### Command Line
-
-Install the tool, run it once, and read the three things it tells you — the outcome, the note count,
-and the path to paste into a model:
-
-```bash
-dotnet tool install -g DemaConsulting.DocDown.Tool
-docdown --input sample-agreement.docx --scratch ./out
-```
-
-```text
-DocDown Tool version 1.2.3
-Copyright (c) DEMA Consulting
-
-Extraction produced the output layout.
-1 note(s) recorded; see summary.txt for detail.
-/home/user/project/out/summary.txt
-```
-
-```bash
-echo $?   # 0
-```
-
-Unless `--silent` is given, the last line of output is the absolute path to `summary.txt`, so
-`docdown ... | tail -1` gives you the file to feed to an agent. `--silent` suppresses all console
-output, so use it only when the scratch folder path is already known to the caller. The notes line
-appears only when notes were recorded. Exit
-codes are the whole contract:
-
-| Exit code | Meaning |
-| --- | --- |
-| `0` | The output layout was written, whether or not notes were recorded |
-| `1` | The document was unreadable, the scratch folder was refused, or an argument was bad |
-
-An unreadable document prints the failure explanation on standard error instead of a summary path,
-and exits `1`:
-
-```text
-DocDown Tool version 1.2.3
-Copyright (c) DEMA Consulting
-
-DocDown does not support the legacy binary Office formats, so 'ppt' cannot be extracted by any
-DocDown package; only the modern XML-based Office formats are supported.
-```
-
-## Outcomes and Notes
-
-Every extraction ends in exactly one of two outcomes:
-
-- **`Produced`** — the invariant output layout was written under the scratch folder.
-- **`Unreadable`** — the document could not be read, or the scratch folder was refused.
-  `result.Failure.Explanation` says why, and the CLI exits `1`.
-
-`result.Notes` may contain entries on a **produced** extraction: each note is a short factual message
-about a step DocDown attempted but could not finish, such as pages that were not rendered because no
-renderer was registered. Notes are not failures, and a produced extraction with notes still exits
-`0`.
-
-## Supported Formats
-
-| Format | Extensions | Package | Text, tables, images | Page images |
-| --- | --- | --- | --- | --- |
-| PDF | `.pdf` | `DemaConsulting.DocDown.Pdf` | Yes | With `DemaConsulting.DocDown.Pdf.Rendering` |
-| Word | `.docx` | `DemaConsulting.DocDown.Office` | Yes | No |
-| Excel | `.xlsx` | `DemaConsulting.DocDown.Office` | Yes | Not applicable; not paginated |
-| PowerPoint | `.pptx` | `DemaConsulting.DocDown.Office` | Yes | With `DemaConsulting.DocDown.PowerPoint.Rendering` |
-| Visio | `.vsdx`, `.vsdm` | `DemaConsulting.DocDown.Office` | Yes | With `DemaConsulting.DocDown.Visio.Rendering` |
-
-Not supported today:
-
-| Format | Extensions | What happens |
-| --- | --- | --- |
-| Legacy binary Office | `.doc`, `.xls`, `.ppt`, `.vsd` | Recognized, then refused as unsupported (`Unreadable`) |
-| HTML | `.html`, `.htm` | Recognized; `DemaConsulting.DocDown.Html` is planned and not yet available |
-| Anything else | — | Reported as an unrecognized format rather than guessed at |
-
-## The Output Contract
-
-When DocDown produces an extraction, it writes the same five artifacts under the scratch folder,
-plus a sixth that appears only when the document carries reviewer comments:
+### Output Layout
 
 ```text
 out/
-├── summary.txt         # what was extracted and where — paste this into the model context window
+├── summary.txt         # what was extracted and where - paste this into the model context window
 ├── manifest.json       # machine-readable twin of summary.txt
 ├── metadata.json       # what the document asserts about itself, with provenance
 ├── content.md          # textual content as markdown, linking into images/
-├── review-comments.md  # reviewer comments — only when the document has any
+├── review-comments.md  # reviewer comments - only when the document has any
 ├── images/             # extracted embedded images
 └── pages/              # rendered page images, when requested and available
 ```
 
-- **`summary.txt`** — the short human- and agent-readable summary of what was extracted and where,
-  including the absolute scratch path. It opens with a plain-English gist, records the Scratch,
-  Source, Detected, Extracted, and Status fields, then summarizes the backend, environment,
-  document metadata, layout, what **was** extracted, and anything DocDown could not finish reading.
-  Counts are explicit, including a plain `0` for features the backend genuinely looked for, such
-  as PowerPoint speaker notes in a deck that has none.
-- **`manifest.json`** — the machine-readable twin of `summary.txt`. Its schema version is now
-  `3.1`; it carries a `notes` string array, a `reviewComments` array, and preserves per-image
-  provenance, content inventory,
-  and metadata-facing details. It describes the document that was extracted and nothing else: there
-  is no `environment` block (`summary.txt` still reports which backend ran and what was
-  available), no `requestedOptions` echo of the caller's own arguments, and no SHA-256 digests.
-- **`metadata.json`** — what the document asserts about itself, with per-field provenance and blank
-  values omitted.
-- **`content.md`** — the extracted textual content as markdown, linking to extracted images.
-- **`review-comments.md`** — the reviewer comments and annotations the document carries, one entry
-  per comment as `- **Author** (Location): Body`. This file is written **only** when the document
-  actually has reviewer comments. An empty file would assert that a review happened and found
-  nothing, which is a different claim from the document never having been commented on — so no
-  comments means no file. `summary.txt` says so explicitly in its Layout block, and
-  `manifest.json` leaves `reviewCommentsPath` null. The `Location` is one human-readable phrase
-  composed by the backend that knows the format: Word uses `§Heading — "snippet…"`, Excel uses
-  `Sheet1!B7`, PowerPoint uses `Slide 4`, and PDF uses `Page 12`. The `Body` is written with
-  inline markdown characters escaped so a reviewer's words read literally; `manifest.json` records
-  the same comment text exactly as the document holds it, unescaped.
+## User Guide
 
-  PowerPoint reads the classic comment grammar. Newer "modern" comments — the persona-based ones
-  recent PowerPoint versions write — are out of scope for now; a deck that carries them says so in
-  an extraction note naming how many there are, so a commented deck is never mistaken for an
-  uncommented one.
-- **`images/` and `pages/`** — extracted embedded images and optional rendered page images.
-
-`summary.txt` stays compact because it is the artifact a user pastes into an LLM context window.
-Its sections are header and gist, Scratch, Source, Detected, Extracted, Status, optional Failure,
-Backend, Environment, Document metadata, Layout, What WAS extracted, and Could not read. There is
-no "What was NOT extracted", "Completeness", or "Diagnostics" section.
-
-DocDown reports extraction details in only two ways:
-
-1. **Inventory counts** — what is present, including an explicit `0` for anything the backend
-   genuinely checked.
-2. **Plain-language notes** — short factual messages about a step DocDown attempted but could not
-   complete. A note carries only a message and no extra classification or follow-up fields, and it
-   never characterizes the document.
-
-The scratch folder is an explicit boundary. DocDown writes fixed artifact names beneath that root
-and refuses unsafe or unusable scratch targets rather than guessing at another location.
-
-Backends are registered explicitly rather than discovered by reflection or assembly scanning, so
-the command-line tool can be published as a single-file executable.
-
-### What to expect
-
-Extraction is best-effort and environment-dependent. `ExtractAsync` also has an overload taking a
-`DocumentSource` instead of a path, for documents that are not on disk; both take the scratch
-folder, an optional `ExtractionOptions`, and a `CancellationToken`. On produced extractions,
-`result.Notes` is an `IReadOnlyList<ExtractionNote>`; notes replace the earlier absence-report
-collection.
-
-For paginated formats, if page rendering was requested but no renderer is available, the layout is
-still produced and a note explains that pages were not rendered. For a non-paginated format such as
-an Excel workbook, a page request is honored with silence. When no backend matches a detected format,
-the failure explanation names the format and, for a well-known format, the format package that
-provides its backend, or states that a legacy binary Office format is unsupported.
-
-## Registering Several Backends
-
-One engine can serve every format a host handles. The full menu is below — each line says what it
-buys, so delete the lines you do not need:
-
-```csharp
-using System;
-using System.Threading;
-using DemaConsulting.DocDown.Core;
-using DemaConsulting.DocDown.Excel;
-using DemaConsulting.DocDown.Pdf;
-using DemaConsulting.DocDown.Pdf.Rendering;
-using DemaConsulting.DocDown.PowerPoint;
-using DemaConsulting.DocDown.PowerPoint.Rendering;
-using DemaConsulting.DocDown.Visio;
-using DemaConsulting.DocDown.Visio.Rendering;
-using DemaConsulting.DocDown.Word;
-
-var engine = new DocDownBuilder()
-    .AddPdf()                 // .pdf  - text, embedded images, metadata
-    .AddPdfRendering()        // .pdf  - page images (fully managed)
-    .AddWord()                // .docx - text, tables, images; no page images
-    .AddExcel()               // .xlsx - cells, formulas, charts; workbooks are never rendered
-    .AddPowerPoint()          // .pptx - slide text and notes
-    .AddPowerPointRendering() // .pptx - slide images (fully managed)
-    .AddVisio()               // .vsdx, .vsdm - shape text and connections
-    .AddVisioRendering()      // .vsdx, .vsdm - page images (fully managed)
-    .Build();
-
-var options = new ExtractionOptions { RenderPages = true };
-
-var result = await engine.ExtractAsync("manuals/sample-manual.pdf", "out", options, CancellationToken.None);
-
-Console.WriteLine(result.Outcome);
-Console.WriteLine($"Summary:  {result.SummaryPath}");
-Console.WriteLine($"Manifest: {result.ManifestPath}");
-Console.WriteLine($"Content:  {result.ContentPath}");
-Console.WriteLine($"Images:   {result.ImagePaths.Count}, Pages: {result.PagePaths.Count}");
-```
-
-Register only the formats you need — each call is one visible edge to one package. PDF, PowerPoint,
-and Visio page images are each produced by a fully-managed rasterizer with no platform restriction;
-register the matching `.Rendering` package to obtain them. Without it the managed backend still
-extracts the text, and `summary.txt` records that pages were not rendered.
-
-Selection stays deterministic: DocDown detects the format, keeps the backends that match it and are
-available, prefers a page renderer when pages were requested and one is available, then breaks ties
-by priority and extractor id.
-
-## Command-Line Tool
-
-`docdown` extracts a document into a scratch folder and prints the absolute path to the produced
-`summary.txt`:
-
-```bash
-docdown --input report.pdf --scratch ./out
-```
-
-When output is produced, the tool prints:
-
-```text
-DocDown Tool version 1.2.3
-Copyright (c) DEMA Consulting
-
-Extraction produced the output layout.
-2 note(s) recorded; see summary.txt for detail.
-C:\work\out\summary.txt
-```
-
-The notes line is printed only when notes were recorded. On an unreadable document or a bad
-argument, the tool prints the failure explanation and exits `1`.
-
-Common options:
-
-- `--input <file>` / `--scratch <dir>` — the document to extract and the folder to write into
-- `--pages` / `--no-pages` — request rendered pages or disable them
-- `--page-range <a-b>`, `--dpi <#>`, `--no-images`, `--max-image-dim <#>`,
-  `--max-image-bytes <#>` — extraction tuning
-- `--overwrite <clean|overwrite>` — scratch folder policy (`clean` is the default)
-- `--list-backends` — list registered backends as `<id> - <name>`, then `formats: ...` and
-  `status: available|unavailable (reason)`
-- `--validate [--results <file>.trx|.xml]` — run self-validation and optionally write TRX or JUnit
-- `-v|--version`, `-?|-h|--help`, `--silent`, `--log <file>`, `--depth <#>` — the standard DEMA
-  flags
-
-Run `docdown --help` for the full list. Exit codes are `0` when output was produced, even if notes
-were recorded, and `1` on an unreadable document or a bad argument.
-
-## Documentation
-
-Generated documentation includes:
-
-- **Build Notes**: Release information and changes
-- **User Guide**: Comprehensive usage documentation
-- **Code Quality Report**: CodeQL and SonarCloud analysis results
-- **Requirements**: Functional and non-functional requirements
-- **Requirements Justifications**: Detailed requirement rationale
-- **Trace Matrix**: Requirements to test traceability
-
-## API Documentation
-
-Detailed API documentation for all public types and members is distributed in the `api/` folder
-of each NuGet package. `DocDownBuilder`, `DocDownEngine.ExtractAsync`, and every `Add…()`
-registration method carry a complete, runnable example, so the sample is available offline with the
-package you installed.
-
-## Features
-
-- **Uniform Output Layout**: The same five artifacts for every produced extraction, plus a sixth
-  when the document carries reviewer comments
-- **Inventory-First Reporting**: Explicit counts, including `0` for features the backend checked
-- **Plain Notes**: Message-only extraction notes with no diagnostic taxonomy or acceptability
-  judgment
-- **Deterministic Backend Selection**: Detect format, keep available backends, prefer a page renderer
-  when pages were requested and one is available, then break ties by priority and extractor id
-- **PDF Extraction**: Text in reading order, embedded images, and document metadata, with no native
-  dependency in the base package
-- **Word Extraction**: Text, genuine GitHub-Flavored-Markdown tables, embedded images, a Document
-  Control section drawn from headers and footers, and document metadata for `.docx`
-- **Excel Extraction**: Every worksheet's cell values reproduced verbatim at full length, formulas
-  preserved, chart caches surfaced as data tables, and embedded images linked from `content.md`
-- **PowerPoint Extraction**: Slide text, titles, speaker notes, and embedded images linked from
-  `content.md` at each slide that shows them
-- **Visio Extraction**: Page names, shape text, connector topology, and embedded images linked from
-  `content.md` under the page that shows them
-- **Optional Page Rendering**: PDF pages, PowerPoint slides, and Visio pages are rasterized by
-  fully-managed renderers with no platform restriction when pages were requested
-- **Per-Field Metadata Provenance**: `metadata.json` records where each metadata value came from
-- **Reflection-Free Registration**: Explicit backend registration, suitable for single-file
-  publishing
-- **Multi-Platform Support**: Builds and runs on Windows, Linux, and macOS
-- **Multi-Runtime Support**: The libraries target .NET 8, 9, and 10; the `docdown` tool ships for
-  .NET 10
-- **xUnit v3**: Modern unit testing with xUnit framework version 3
-- **Comprehensive CI/CD**: GitHub Actions workflows with quality checks and builds
-- **Linting Enforcement**: markdownlint, cspell, and yamllint enforced on every CI run
-- **Continuous Compliance**: Compliance evidence generated automatically on every CI run, following
-  the [Continuous Compliance][link-continuous-compliance] methodology
-- **SonarCloud Integration**: Quality gate and security analysis on every build
-- **Documentation Generation**: Automated build notes, user guide, code quality reports,
-  requirements, justifications, and trace matrix
-- **Requirements Traceability**: Requirements linked to passing tests with an auto-generated trace
-  matrix
-
-## Project Status
-
-Seven packages are implemented and under active development: `DemaConsulting.DocDown.Core`, the
-shared abstractions and output contract; the two format packages and the three rendering add-ons
-listed in the package table above; and `DemaConsulting.DocDown.Tool`, the `docdown` command-line
-tool. `DemaConsulting.DocDown.Html` is planned and not yet available.
-
-`DemaConsulting.DocDown.Pdf` and the PowerPoint and Visio backends in `DemaConsulting.DocDown.Office`
-are fully managed and ship no native assets, so none renders pages by itself. When pages are
-requested without the matching rendering package, extraction still produces the layout and a note
-says page rendering was not completed. `DemaConsulting.DocDown.PowerPoint.Rendering` and
-`DemaConsulting.DocDown.Visio.Rendering` are themselves fully managed, depending only on the
-`DemaConsulting.CanvasNet.Pptx`/`DemaConsulting.CanvasNet.Vsdx`/`DemaConsulting.CanvasNet` packages,
-so page rendering carries no native assets and no platform restriction for either format.
+The DocDown User Guide, covering every format, the output contract, backend selection, and the tool
+options, is available on the
+[DocDown releases page](https://github.com/demaconsulting/DocDown/releases).
 
 ## Contributing
 
-Contributions are welcome. See [CONTRIBUTING.md][link-contributing] for development setup, coding
-standards, and the pull request process.
+Contributions are welcome! Please see our
+[Contributing Guide](https://github.com/demaconsulting/DocDown/blob/main/CONTRIBUTING.md) for
+development setup, coding standards, and submission guidelines. Also review our
+[Code of Conduct](https://github.com/demaconsulting/DocDown/blob/main/CODE_OF_CONDUCT.md).
+
+For bug reports, feature requests, and questions, please use
+[GitHub Issues](https://github.com/demaconsulting/DocDown/issues).
 
 ## License
 
-Copyright (c) DEMA Consulting. Licensed under the MIT License. See [LICENSE][link-license] for
-details.
+This project is licensed under the MIT License — see the
+[LICENSE](https://github.com/demaconsulting/DocDown/blob/main/LICENSE) file for details.
 
-By contributing to this project, you agree that your contributions will be licensed under the MIT
-License.
+## Support
 
-<!-- Badge References -->
-[badge-forks]: https://img.shields.io/github/forks/demaconsulting/DocDown?style=plastic
-[badge-stars]: https://img.shields.io/github/stars/demaconsulting/DocDown?style=plastic
-[badge-contributors]: https://img.shields.io/github/contributors/demaconsulting/DocDown?style=plastic
-[badge-license]: https://img.shields.io/github/license/demaconsulting/DocDown?style=plastic
-[badge-build]: https://img.shields.io/github/actions/workflow/status/demaconsulting/DocDown/build_on_push.yaml
-[badge-quality]: https://sonarcloud.io/api/project_badges/measure?project=demaconsulting_DocDown&metric=alert_status
-[badge-security]: https://sonarcloud.io/api/project_badges/measure?project=demaconsulting_DocDown&metric=security_rating
-[badge-nuget]: https://img.shields.io/nuget/v/DemaConsulting.DocDown.Core?style=plastic
-[badge-nuget-pdf]: https://img.shields.io/nuget/v/DemaConsulting.DocDown.Pdf?style=plastic
-[badge-nuget-tool]: https://img.shields.io/nuget/v/DemaConsulting.DocDown.Tool?style=plastic
+- 🐛 **Report Bugs**: [GitHub Issues](https://github.com/demaconsulting/DocDown/issues)
+- 💡 **Request Features**: [GitHub Issues](https://github.com/demaconsulting/DocDown/issues)
+- 🤝 **Contributing**: [Contributing Guide](https://github.com/demaconsulting/DocDown/blob/main/CONTRIBUTING.md)
 
-<!-- Link References -->
-[link-forks]: https://github.com/demaconsulting/DocDown/network/members
-[link-stars]: https://github.com/demaconsulting/DocDown/stargazers
-[link-contributors]: https://github.com/demaconsulting/DocDown/graphs/contributors
-[link-license]: https://github.com/demaconsulting/DocDown/blob/main/LICENSE
-[link-build]: https://github.com/demaconsulting/DocDown/actions/workflows/build_on_push.yaml
-[link-quality]: https://sonarcloud.io/dashboard?id=demaconsulting_DocDown
-[link-security]: https://sonarcloud.io/dashboard?id=demaconsulting_DocDown
-[link-nuget]: https://www.nuget.org/packages/DemaConsulting.DocDown.Core
-[link-nuget-pdf]: https://www.nuget.org/packages/DemaConsulting.DocDown.Pdf
-[link-nuget-tool]: https://www.nuget.org/packages/DemaConsulting.DocDown.Tool
-[link-continuous-compliance]: https://github.com/demaconsulting/ContinuousCompliance
-[link-contributing]: https://github.com/demaconsulting/DocDown/blob/main/CONTRIBUTING.md
+## Project Practices
+
+- 🔍 **Linting Enforcement** - markdownlint, cspell, and yamllint enforced on every CI run
+- 📋 **Continuous Compliance** - Compliance evidence generated automatically on every CI run,
+  following the [Continuous Compliance](https://github.com/demaconsulting/ContinuousCompliance) methodology
+- ☁️ **SonarCloud Integration** - Quality gate and security analysis on every build
+- 🔗 **Requirements Traceability** - Requirements linked to passing tests with auto-generated trace matrix
+
+## Security
+
+For security concerns and vulnerability reporting, please see our
+[Security Policy](https://github.com/demaconsulting/DocDown/blob/main/SECURITY.md).
+
+## Acknowledgements
+
+DocDown is built with the following open-source projects:
+
+- [.NET](https://dotnet.microsoft.com/) - Cross-platform framework for building applications
+- [DocumentFormat.OpenXml](https://github.com/dotnet/Open-XML-SDK) - Office Open XML parsing
+- [PdfPig](https://github.com/UglyToad/PdfPig) - Managed PDF parsing
+- [CanvasNet](https://github.com/demaconsulting/CanvasNet) - Managed page rendering
+- [DemaConsulting.TestResults](https://github.com/demaconsulting/TestResults) - TRX and JUnit XML test results library
