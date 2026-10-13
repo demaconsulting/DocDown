@@ -19,9 +19,12 @@ sections:
               extraction path: availability, environment facts, document buffering, reader
               invocation, and self-validation.
             children:
+              - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsSupportedFormatAndPriority
               - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsManagedAvailability
+              - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsPageRenderingNotProvided
               - DocDownWord-OpenXml-WordOpenXmlExtractor-WritesVectorImageAsIs
               - DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests
+              - DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSkippedPageRenderingSelfTest
             tests:
               - WordOpenXmlExtractor_Descriptor_HasPriority10AndManagedAvailability
 
@@ -43,8 +46,12 @@ sections:
               - DocDownWord-OpenXml-WordOpenXmlReader-DetectsPasswordProtected
               - DocDownWord-OpenXml-WordOpenXmlReader-CollectsComments
               - DocDownWord-OpenXml-WordOpenXmlReader-DropsTextlessComments
+              - DocDownWord-OpenXml-WordOpenXmlReader-CountsUnreadableComments
               - DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation
+              - DocDownWord-OpenXml-WordOpenXmlReader-BoundsCommentSnippet
+              - DocDownWord-OpenXml-WordOpenXmlReader-DegradesCommentLocation
               - DocDownWord-OpenXml-WordOpenXmlReader-SurfacesMetadata
+              - DocDownWord-OpenXml-WordOpenXmlReader-OmitsUndeclaredMetadata
               - DocDownWord-OpenXml-WordOpenXmlReader-ReportsProducerPageCount
               - DocDownWord-OpenXml-WordOpenXmlReader-ReusesDeduplicatedImagePath
               - DocDownWord-OpenXml-WordOpenXmlReader-SelectsImageText
@@ -66,5 +73,8 @@ sections:
               - DocDownWord-OpenXml-WordOpenXmlImageReader-YieldsPassthroughImages
               - DocDownWord-OpenXml-WordOpenXmlImageReader-RecordsPassthroughProvenance
               - DocDownWord-OpenXml-WordOpenXmlImageReader-ReportsVectorMediaType
+              - DocDownWord-OpenXml-WordOpenXmlImageReader-ResolvesPartScopedImages
+              - DocDownWord-OpenXml-WordOpenXmlImageReader-IgnoresInvalidRelationships
+              - DocDownWord-OpenXml-WordOpenXmlImageReader-RanksNamingCandidates
             tests:
               - WordOpenXmlImageReader_Read_Png_YieldsPassthroughWithNullDimensions

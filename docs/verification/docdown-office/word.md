@@ -15,8 +15,9 @@ Most subsystem-level extraction scenarios end with `ContractAssert.LayoutPresent
 expected output layout exists on disk for the same run whose content, notes, metadata, or summary
 is being asserted. This is the highest-value assertion at subsystem level: a successful or unreadable
 result still has to produce the layout the rest of DocDown expects. The exceptions are
-`DocDownWord_Extract_Docx_SelectsOpenXml`, which asserts only which backend was selected, and the
-golden tests, which compare the normalized `summary.txt` against a committed golden instead.
+`DocDownWord_Extract_Docx_SelectsOpenXml`, which asserts only which backend was selected,
+`DocDownWord_Extract_SameDocumentTwice_ProducesIdenticalOutput`, which compares artifact bytes between two runs,
+and the golden tests, which compare the normalized `summary.txt` against a committed golden instead.
 
 ### One backend, one reader, one emitter
 
@@ -61,7 +62,8 @@ regeneration is refused in CI.
   short byte sequence for the legacy `.doc` unreadable scenario; no committed binary fixtures and
   no network access
 - **Mocking**: none — every subsystem test drives the real engine and the real Open XML backend
-- **Determinism**: the run-varying timestamp line is normalized so runs are byte-comparable
+- **Determinism**: the golden tests normalize the run-varying timestamp line; the repeat-run scenario compares
+  `content.md`, `metadata.json`, and the image file names, which carry no timestamp
 - **Isolation**: each test owns its temporary folder and cleans it on dispose
 
 ## Acceptance Criteria
@@ -83,6 +85,15 @@ Per IEC 62304 §5.7.2, a subsystem-level test run passes when:
 - A legacy binary `.doc` produces `ExtractionOutcome.Unreadable` with a plain unsupported-format
   explanation and the expected output layout.
 - Five representative summaries match their committed goldens after normalization.
+- Merged or nested table structure, charts, and comments whose only content is a picture are each reported as a
+  short note; an empty document is reported as a zero-count text inventory entry; tracked changes render in the
+  accepted view; and a vector image is written unchanged.
+- The managed extractor reports itself available and states that rendered pages are not provided, and its
+  self-test cases pass and skip as documented.
+- Headings render as markdown heading levels, with the markup-escaping, list, inline-formatting, and footnote
+  behavior proved at the unit level.
+- Null arguments are rejected, a cancelled token stops the extraction, and declared title, author, and producer
+  page count are reported while undeclared metadata is omitted.
 
 ## Test Scenarios
 
@@ -134,7 +145,8 @@ subsystem's comment-reading behavior.
 
 Proves the extracted content contains `## Document Control`, preserves the revision and
 classification text, and does not surface page-number furniture as body-like content. Evidence for
-`DocDownWord-DocumentControl`.
+`DocDownWord-DocumentControl`. The placement requirement `DocDownWord-DocumentControlPlacement` is proved by
+`WordMarkdownWriter_Write_DocumentControl_PlacedAfterTitleHeading`.
 
 ### Embedded charts are reported as a short extraction note
 
@@ -204,17 +216,22 @@ section. Evidence for `DocDownWord-Footnotes`.
 Prove a zip package lacking a main document part raises `WordExtractionException` at the reader and
 is reported unreadable by the extractor. Evidence for `DocDownWord-MissingMainPart`.
 
-### Null arguments and cancellation are honored
+### Null arguments are rejected
 
 **Tests**:
 
 - `WordOpenXmlReader_Read_NullStream_ThrowsArgumentNullException`
 - `WordOpenXmlExtractor_Extract_NullArguments_Throw`
-- `WordOpenXmlExtractor_Extract_CancelledToken_ThrowsOperationCanceled`
 - `WordOpenXmlImageReader_Resolve_NullArguments_Throw`
 
-Prove null arguments throw `ArgumentNullException` and a cancelled token throws
-`OperationCanceledException`. Evidence for `DocDownWord-ArgumentAndCancellationHandling`.
+Prove null arguments throw `ArgumentNullException`. Evidence for `DocDownWord-ArgumentAndCancellationHandling`.
+
+### A cancelled token stops the extraction
+
+**Test**: `WordOpenXmlExtractor_Extract_CancelledToken_ThrowsOperationCanceled`
+
+Proves a cancelled token makes the extractor throw `OperationCanceledException` rather than return a
+partial extraction. Evidence for `DocDownWord-CancellationHandling`.
 
 ### Breaks render as rules and hard line breaks
 
@@ -252,13 +269,13 @@ Proves parentheses in a destination are percent-encoded. Evidence for
 
 **Tests**:
 
-- `WordOpenXmlImageReader_Resolve_MissingOrNonImageRelationship_ReturnsNull`
 - `WordOpenXmlImageReader_Resolve_HeaderScopedImage_ResolvesAgainstHeaderPart`
+- `WordOpenXmlImageReader_Resolve_MissingOrNonImageRelationship_ReturnsNull`
 - `WordOpenXmlImageReader_Resolve_Candidates_RankAndGateAltText`
 
-Prove missing or non-image relationships resolve to nothing, header images resolve against the
-header part, and naming candidates are ranked with alt text gated. Evidence for
-`DocDownWord-ImageResolution`.
+Prove header images resolve against the header part, missing or non-image relationships resolve to
+nothing, and naming candidates are ranked with alt text gated. Evidence for `DocDownWord-ImageResolution`,
+`DocDownWord-ImageRelationshipValidation`, and `DocDownWord-ImageNamingCandidateRanking` respectively.
 
 ### Protected, metadata, repeat-run, and plural chart cases
 
@@ -273,4 +290,67 @@ header part, and naming candidates are ranked with alt text gated. Evidence for
 Prove a protected document is unreadable with an explanation, core properties reach
 `metadata.json`, two extractions of one document are identical, and two charts yield a plural note.
 Evidence for `DocDownWord-ProtectedDocument`, `DocDownWord-DocumentMetadata`,
-`DocDownWord-Determinism`, and `DocDownWord-ChartNotes`.
+`DocDownWord-Determinism`, and `DocDownWord-ChartNotes`. The repeat-run comparison covers `content.md`,
+`metadata.json`, and the image file names.
+
+### Producer page count and undeclared metadata
+
+**Tests**: `WordOpenXmlReader_Read_ProducerPageCount_FromExtendedProperties`,
+`WordOpenXmlReader_Read_NoMetadata_ReportsNothing`
+
+Prove the page count is taken from the producer-stated extended property and that a document declaring no
+title, author, or page count yields none of them. Evidence for `DocDownWord-ProducerPageCount` and
+`DocDownWord-UndeclaredMetadataOmitted`.
+
+### Merged or nested table structure is reported as a note
+
+**Test**: `WordOpenXmlExtractor_Extract_MergedCells_ReportsFlatteningNote`
+
+Proves a document with merged cells completes as `Produced` and records a short note stating that the table
+structure was flattened.
+Evidence for `DocDownWord-TableStructureNotes`.
+
+### Tracked changes render in the accepted view
+
+**Test**: `WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewAndCountsChanges`
+
+Proves inserted text is kept, deleted text is dropped, and the changes are counted. Evidence for
+`DocDownWord-TrackedChangesAcceptedView`.
+
+### A vector image is written as stored
+
+**Test**: `WordOpenXmlExtractor_Extract_VectorImage_WritesAsIs`
+
+Proves an EMF image is written to `images/` with no caveat note and the run reports
+`ExtractionOutcome.Produced`; byte identity is proved at the unit level. Evidence for
+`DocDownWord-VectorImagesWrittenAsIs`.
+
+### The managed extractor reports availability
+
+**Test**: `WordOpenXmlExtractor_Descriptor_HasPriority10AndManagedAvailability`
+
+Proves the descriptor reports the `.docx` format, priority 10, availability with no unavailable reason,
+and that rendered pages are not provided. Evidence for `DocDownWord-ManagedAvailability` and
+`DocDownWord-PageRenderingNotProvided`.
+
+### An empty document reports a zero-count text inventory
+
+**Test**: `WordOpenXmlExtractor_Extract_EmptyDocument_ProducesZeroCountTextInventory`
+
+Proves an empty document still produces normal output with a zero-count text-block inventory entry and
+no failure. Evidence for `DocDownWord-EmptyDocumentInventory`.
+
+### Headings render as markdown heading levels
+
+**Test**: `WordMarkdownWriter_Write_Headings_RendersHashLevels`
+
+Proves heading styles render as hash levels. Evidence for `DocDownWord-MarkdownRendering`; the list,
+inline-formatting, escaping, and footnote behavior it also names is proved by the Markdown unit
+tests cited in the unit verification documents.
+
+### The extractor contributes self-validation cases
+
+**Test**: `WordOpenXmlExtractor_SelfValidation_ReportsCases`
+
+Proves the backend contributes two cases, one that passes by reading back its embedded probe document
+and one that is skipped for page rendering, with no failures. Evidence for `DocDownWord-SelfValidation`.

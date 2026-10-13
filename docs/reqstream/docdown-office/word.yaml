@@ -136,20 +136,31 @@ sections:
       - id: DocDownWord-DocumentControl
         title: >-
           The subsystem shall collect the surviving header and footer content once, under a Document
-          Control heading placed after the title and before the body.
+          Control heading.
         tags: [system]
         justification: |
           A Word document's identifying furniture — document number, revision, classification, and
-          similar control text — often lives in headers and footers. Surfacing that content once,
-          near the top where a reader expects it, preserves information a page-image extraction
-          would otherwise smear across repeated pages or miss entirely.
+          similar control text — often lives in headers and footers. Surfacing that content once
+          preserves information a page-image extraction would otherwise smear across repeated pages
+          or miss entirely.
         children:
           - DocDownWord-OpenXml-WordOpenXmlReader-BuildsDocumentControl
           - DocDownWord-OpenXml-WordOpenXmlReader-OmitsPageFurnitureFromDocumentControl
           - DocDownWord-OpenXml-WordOpenXmlReader-DeduplicatesHeaders
-          - DocDownWord-Markdown-WordMarkdownWriter-PlacesDocumentControl
         tests:
           - DocDownWord_Extract_EngineeringStyleDocx_PreservesRevisionInDocumentControl
+
+      - id: DocDownWord-DocumentControlPlacement
+        title: >-
+          The subsystem shall place the Document Control section after the title and before the body.
+        tags: [system]
+        justification: |
+          Control text is most useful near the top of the document where a reader expects it, so the
+          writer places it after the title heading and before the body content.
+        children:
+          - DocDownWord-Markdown-WordMarkdownWriter-PlacesDocumentControl
+        tests:
+          - WordMarkdownWriter_Write_DocumentControl_PlacedAfterTitleHeading
 
       - id: DocDownWord-TrackedChangesAcceptedView
         title: >-
@@ -226,16 +237,26 @@ sections:
 
       - id: DocDownWord-ManagedAvailability
         title: >-
-          The subsystem shall report its managed `.docx` extractor available and shall report that page
-          rendering is not provided by that extractor.
+          The subsystem shall report its managed `.docx` extractor available.
         tags: [system]
         justification: |
           Backend selection needs a truthful statement of whether modern Word extraction is
           available. Because this backend is fully managed and ships inside the subsystem, its probe is
-          satisfied by construction; page rendering remains outside its scope and is reported
-          plainly rather than implied.
+          satisfied by construction.
         children:
           - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsManagedAvailability
+        tests:
+          - WordOpenXmlExtractor_Descriptor_HasPriority10AndManagedAvailability
+
+      - id: DocDownWord-PageRenderingNotProvided
+        title: >-
+          The subsystem shall report that page rendering is not provided by its managed extractor.
+        tags: [system]
+        justification: |
+          Page rendering remains outside the scope of the managed extractor, so the availability
+          report states that plainly rather than implying a capability the extractor does not have.
+        children:
+          - DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsPageRenderingNotProvided
         tests:
           - WordOpenXmlExtractor_Descriptor_HasPriority10AndManagedAvailability
 
@@ -270,21 +291,44 @@ sections:
 
       - id: DocDownWord-DocumentMetadata
         title: >-
-          The subsystem shall report the document's declared title and author and its producer-stated
-          page count, and shall report nothing where the document declares nothing.
+          The subsystem shall report the document's declared title and author.
         tags: [system]
         justification: |
           Downstream indexing and routing decisions are made on document metadata before any content
-          is read. Reporting what the document itself declares, taking the page count only from the
-          producer's own extended-properties value rather than computing one, keeps those decisions
-          on facts rather than guesses.
+          is read. Reporting what the document itself declares keeps those decisions on facts rather
+          than guesses.
         children:
           - DocDownWord-OpenXml-WordOpenXmlReader-SurfacesMetadata
-          - DocDownWord-OpenXml-WordOpenXmlReader-ReportsProducerPageCount
         tests:
           - WordOpenXmlReader_Read_Metadata_TitleAndAuthorSurfaced
           - DocDownWord_Extract_DocxWithCoreProperties_WritesDocumentMetadata
           - WordOpenXmlReader_Read_CoreProperties_MapsSharedMetadata
+
+      - id: DocDownWord-ProducerPageCount
+        title: >-
+          The subsystem shall report the producer-stated page count from the document's extended
+          properties.
+        tags: [system]
+        justification: |
+          A Word document does not paginate itself during extraction, so a computed page count would
+          be fabricated. Taking the page count only from the producer's own extended-properties value
+          keeps it honest.
+        children:
+          - DocDownWord-OpenXml-WordOpenXmlReader-ReportsProducerPageCount
+        tests:
+          - WordOpenXmlReader_Read_ProducerPageCount_FromExtendedProperties
+
+      - id: DocDownWord-UndeclaredMetadataOmitted
+        title: >-
+          The subsystem shall report no title, author, or page count where the document declares none.
+        tags: [system]
+        justification: |
+          A blank value is a different claim from an absent one. Leaving undeclared metadata
+          unstated keeps downstream decisions on facts rather than invented values.
+        children:
+          - DocDownWord-OpenXml-WordOpenXmlReader-OmitsUndeclaredMetadata
+        tests:
+          - WordOpenXmlReader_Read_NoMetadata_ReportsNothing
 
       - id: DocDownWord-MarkdownRendering
         title: >-
@@ -329,6 +373,7 @@ sections:
           - WordGolden_TablesAndImages_MatchesCommittedGolden
           - WordGolden_DocumentControl_MatchesCommittedGolden
           - WordGolden_MergedCellsFlattened_MatchesCommittedGolden
+          - WordGolden_ReviewComments_MatchesCommittedGolden
           - DocDownWord_Extract_SameDocumentTwice_ProducesIdenticalOutput
 
       - id: DocDownWord-SelfValidation
@@ -341,6 +386,7 @@ sections:
           available on demand.
         children:
           - DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests
+          - DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSkippedPageRenderingSelfTest
         tests:
           - WordOpenXmlExtractor_SelfValidation_ReportsCases
 
@@ -370,16 +416,25 @@ sections:
 
       - id: DocDownWord-ArgumentAndCancellationHandling
         title: >-
-          The subsystem shall reject null arguments and honor a cancelled token.
+          The subsystem shall reject null arguments.
         tags: [system]
         justification: |
-          Callers need a fast, predictable failure for misuse and a prompt stop when the host cancels
-          the run, rather than a partial extraction.
+          Callers need a fast, predictable failure for misuse rather than a partial extraction.
         tests:
           - WordOpenXmlReader_Read_NullStream_ThrowsArgumentNullException
           - WordOpenXmlExtractor_Extract_NullArguments_Throw
-          - WordOpenXmlExtractor_Extract_CancelledToken_ThrowsOperationCanceled
           - WordOpenXmlImageReader_Resolve_NullArguments_Throw
+
+      - id: DocDownWord-CancellationHandling
+        title: >-
+          The subsystem shall stop an extraction with an operation-canceled exception when the host
+          cancels the run.
+        tags: [system]
+        justification: |
+          A host that cancels a run expects a prompt stop, not a partial extraction presented as a
+          result.
+        tests:
+          - WordOpenXmlExtractor_Extract_CancelledToken_ThrowsOperationCanceled
 
       - id: DocDownWord-BreakRendering
         title: >-
@@ -424,12 +479,38 @@ sections:
 
       - id: DocDownWord-ImageResolution
         title: >-
-          The subsystem shall resolve images from body and header parts, ignoring relationships that are
-          missing or not images, and rank naming candidates.
+          The subsystem shall resolve an image from a header part against that header part's own
+          relationships.
         tags: [system]
         justification: |
-          Image naming and byte extraction must be correct for every part an image can come from.
+          Image naming and byte extraction must be correct for every part an image can come from; an
+          image in a header resolves through the header's relationships, not the body's.
+        children:
+          - DocDownWord-OpenXml-WordOpenXmlImageReader-ResolvesPartScopedImages
+        tests:
+          - WordOpenXmlImageReader_Resolve_HeaderScopedImage_ResolvesAgainstHeaderPart
+
+      - id: DocDownWord-ImageRelationshipValidation
+        title: >-
+          The subsystem shall ignore an image relationship that is missing or does not point to an image.
+        tags: [system]
+        justification: |
+          A dangling or non-image relationship must not abort the extraction or write a bogus image;
+          ignoring it keeps the rest of the document readable.
+        children:
+          - DocDownWord-OpenXml-WordOpenXmlImageReader-IgnoresInvalidRelationships
         tests:
           - WordOpenXmlImageReader_Resolve_MissingOrNonImageRelationship_ReturnsNull
-          - WordOpenXmlImageReader_Resolve_HeaderScopedImage_ResolvesAgainstHeaderPart
+
+      - id: DocDownWord-ImageNamingCandidateRanking
+        title: >-
+          The subsystem shall rank an image's naming candidates and gate alt text on authored
+          descriptions.
+        tags: [system]
+        justification: |
+          A useful image name and honest alt text depend on choosing the best authored candidate and
+          not asserting a heading or placeholder as a description.
+        children:
+          - DocDownWord-OpenXml-WordOpenXmlImageReader-RanksNamingCandidates
+        tests:
           - WordOpenXmlImageReader_Resolve_Candidates_RankAndGateAltText

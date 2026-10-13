@@ -45,9 +45,11 @@ two honest self-test cases; when the reader maps styled paragraphs, lists, and t
 structured blocks, builds a Document Control section from header content, omits page-number-only
 footer content from that section, deduplicates identical headers, renders tracked changes in the
 accepted view, detects a password-protected container with `WordExtractionException`, collects
-comments, surfaces metadata, reports the producer-stated page count, and chooses image naming text
-from authored sources; and when the image reader yields a PNG's bytes unchanged with a passthrough
-hint and reports an EMF part's media type truthfully.
+comments, surfaces metadata and omits it where undeclared, reports the producer-stated page count, and chooses
+image naming text from authored sources; and when the image reader yields a PNG's bytes unchanged with a
+passthrough hint, reports an EMF part's media type truthfully, resolves header-scoped images, ignores invalid
+relationships, and ranks naming candidates. Null arguments, a cancelled token, a package without a main part,
+footnotes, and breaks are covered in the unit chapters.
 
 ### Test Scenarios
 
@@ -67,8 +69,9 @@ the *WordOpenXmlExtractor Verification Design*. Evidence for `DocDownWord-OpenXm
 **Test**: `WordOpenXmlReader_Read_HeadingsListsAndTables_ProducesStructuredBlocks`
 
 Proves the mapping directly for structured blocks. The Document Control, tracked-changes,
-protected-container, comment, metadata, page-count, deduplication, and image-text scenarios are
-given in the *WordOpenXmlReader Verification Design*. Evidence for `DocDownWord-OpenXml-Reading`.
+protected-container, comment, metadata, page-count, footnote, missing-main-part, null-argument, break,
+deduplication, and image-text scenarios are given in the *WordOpenXmlReader Verification Design*. Evidence
+for `DocDownWord-OpenXml-Reading`.
 
 #### The image reader yields passthrough images with honest provenance
 
@@ -76,5 +79,6 @@ given in the *WordOpenXmlReader Verification Design*. Evidence for `DocDownWord-
 
 Proves the passthrough hint (built by the emitter's `HintFor()` from the resolved reference), null
 pixel dimensions, and media type, with the vector
-media-type case given in the *WordOpenXmlImageReader Verification Design*. Evidence for
+media-type case, the part-scoped resolution, invalid-relationship, and naming-candidate scenarios are
+given in the *WordOpenXmlImageReader Verification Design*. Evidence for
 `DocDownWord-OpenXml-Images`.

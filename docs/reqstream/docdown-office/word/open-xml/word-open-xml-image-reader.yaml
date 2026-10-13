@@ -42,3 +42,35 @@ sections:
                   type. Reporting it truthfully preserves the document's stored image format.
                 tests:
                   - WordOpenXmlImageReader_Read_Emf_ReportsVectorMediaType
+
+              - id: DocDownWord-OpenXml-WordOpenXmlImageReader-ResolvesPartScopedImages
+                title: >-
+                  WordOpenXmlImageReader shall resolve an image relationship against the part that owns
+                  it, including a header part.
+                justification: |
+                  An image in a header is related to the header part, not the main part. Resolving
+                  against the owning part is what yields the image's bytes for every part an image can
+                  come from.
+                tests:
+                  - WordOpenXmlImageReader_Resolve_HeaderScopedImage_ResolvesAgainstHeaderPart
+
+              - id: DocDownWord-OpenXml-WordOpenXmlImageReader-IgnoresInvalidRelationships
+                title: >-
+                  WordOpenXmlImageReader shall resolve a missing relationship id, or one naming a
+                  non-image part, to no reference.
+                justification: |
+                  A dangling or non-image relationship must not abort the extraction or produce a bogus
+                  image, so it resolves to nothing and the rest of the document stays readable.
+                tests:
+                  - WordOpenXmlImageReader_Resolve_MissingOrNonImageRelationship_ReturnsNull
+
+              - id: DocDownWord-OpenXml-WordOpenXmlImageReader-RanksNamingCandidates
+                title: >-
+                  WordOpenXmlImageReader shall rank naming candidates and assert a candidate as alt text
+                  only when it is an authored description.
+                justification: |
+                  A descriptive candidate outranks the media name, while a contextual candidate such as
+                  a heading may name the file but must not be asserted as a description the document
+                  never gave.
+                tests:
+                  - WordOpenXmlImageReader_Resolve_Candidates_RankAndGateAltText

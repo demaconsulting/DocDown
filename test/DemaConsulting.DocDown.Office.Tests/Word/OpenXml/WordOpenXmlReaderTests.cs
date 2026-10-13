@@ -269,6 +269,20 @@ public class WordOpenXmlReaderTests
     }
 
     /// <summary>
+    ///     Proves a document that declares no title, author, or page count yields none of them rather
+    ///     than an invented value.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_NoMetadata_ReportsNothing()
+    {
+        var model = Read(DocxFixtures.DocumentWithoutMetadata());
+
+        Assert.True(string.IsNullOrEmpty(model.Title));
+        Assert.True(string.IsNullOrEmpty(model.Author));
+        Assert.Null(model.ProducerPageCount);
+    }
+
+    /// <summary>
     ///     Proves a nested table flattened into a cell joins its cells with an escaped pipe, so the
     ///     separator cannot split the enclosing cell, and escapes a pipe inside a cell's own text.
     /// </summary>

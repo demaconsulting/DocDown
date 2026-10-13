@@ -555,6 +555,18 @@ public static class DocxFixtures
     });
 
     /// <summary>
+    ///     Builds a document that declares no title, author, or extended properties.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Proves a reader reports nothing where the document declares nothing.</remarks>
+    public static byte[] DocumentWithoutMetadata() => BuildDocx((_, mainPart) =>
+    {
+        var body = new W.Body();
+        body.AppendChild(TextParagraph("A paragraph in a document that declares no metadata."));
+        SetBody(mainPart, body);
+    });
+
+    /// <summary>
     ///     Builds a document declaring a producer page count in its extended properties.
     /// </summary>
     /// <returns>The document bytes.</returns>

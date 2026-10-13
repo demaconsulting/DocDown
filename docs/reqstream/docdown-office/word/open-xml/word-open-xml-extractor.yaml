@@ -48,14 +48,30 @@ sections:
         sections:
           - title: WordOpenXmlExtractor Requirements
             requirements:
-              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsManagedAvailability
+              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsSupportedFormatAndPriority
                 title: >-
-                  WordOpenXmlExtractor shall report the modern Word format, its selection priority,
-                  and managed availability for extraction.
+                  WordOpenXmlExtractor shall report the modern Word format as supported and its
+                  selection priority.
                 justification: |
                   Selection ranks backends before any document is opened. Reporting the supported
-                  format, priority, and managed availability truthfully is what makes this backend
-                  the chosen reader for `.docx` without implying work it does not perform.
+                  format and priority truthfully is what makes this backend the chosen reader for
+                  `.docx`.
+                tests:
+                  - WordOpenXmlExtractor_Descriptor_HasPriority10AndManagedAvailability
+
+              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsManagedAvailability
+                title: WordOpenXmlExtractor shall report itself available for extraction.
+                justification: |
+                  The backend is fully managed and ships inside the package, so its availability probe
+                  is satisfied by construction and says so without an unavailable reason.
+                tests:
+                  - WordOpenXmlExtractor_Descriptor_HasPriority10AndManagedAvailability
+
+              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsPageRenderingNotProvided
+                title: WordOpenXmlExtractor shall report that it does not provide rendered pages.
+                justification: |
+                  Page rendering is outside this package, so the availability report states plainly
+                  that rendered pages are not provided rather than implying work it does not perform.
                 tests:
                   - WordOpenXmlExtractor_Descriptor_HasPriority10AndManagedAvailability
 
@@ -71,12 +87,21 @@ sections:
 
               - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests
                 title: >-
-                  WordOpenXmlExtractor shall contribute self-test cases, including a skipped
-                  page-rendering case because this package does not attempt page rendering.
+                  WordOpenXmlExtractor shall contribute a round-trip self-test case that reads back its
+                  embedded probe document.
                 justification: |
                   An operator needs to confirm the backend works where it is deployed. A round-trip
-                  case that reads back the embedded probe document proves the SDK is genuinely functional
-                  against what Word itself emits, and a
-                  skipped page-rendering case states that omitted scope honestly.
+                  case that reads back the embedded probe document proves the SDK is genuinely
+                  functional against what Word itself emits.
+                tests:
+                  - WordOpenXmlExtractor_SelfValidation_ReportsCases
+
+              - id: DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSkippedPageRenderingSelfTest
+                title: >-
+                  WordOpenXmlExtractor shall contribute a skipped page-rendering self-test case because
+                  this package does not attempt page rendering.
+                justification: |
+                  A skipped case states the omitted page-rendering scope honestly instead of leaving the
+                  gap unmentioned or reporting a false pass.
                 tests:
                   - WordOpenXmlExtractor_SelfValidation_ReportsCases

@@ -329,7 +329,7 @@ public class DocDownWordTests
     }
 
     /// <summary>
-    ///     Creates options carrying the fixed timestamp for reproducible output.
+    ///     Creates default extraction options.
     /// </summary>
     /// <returns>The options.</returns>
     private static ExtractionOptions FixedOptions() => new();

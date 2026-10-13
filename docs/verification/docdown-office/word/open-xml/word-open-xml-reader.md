@@ -36,8 +36,11 @@ when tracked changes render in the accepted view; when a password-protected cont
 `WordExtractionException`; when a comment's author and text are collected; when a comment's anchor
 resolves into a location hint naming its heading and quoting its text, degrading gracefully when
 the document anchors it partially or not at all; when title, author, and
-producer page count are surfaced from document metadata; and when image naming text is chosen from
-authored sources, captions, object names, or nearby headings according to the documented order.
+producer page count are surfaced from document metadata and omitted where undeclared; when core properties map
+into the shared metadata; when footnotes, line and page breaks, nested-table pipes, hyperlink destinations, and
+headers differing only by image are handled as documented; when a null stream is rejected and a package without
+a main part raises `WordExtractionException`; and when image naming text is chosen from authored sources,
+captions, object names, or nearby headings according to the documented order.
 
 ### Test Scenarios
 
@@ -116,7 +119,8 @@ Proves three comments anchored three different ways resolve independently: a bra
 a comment the document anchors nowhere yields a null `Location` rather than borrowing a neighbour's.
 A reader that resolved anchors by position rather than by id, or that invented a location for the
 unanchored comment, fails here. Evidence for
-`DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation`.
+`DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation` (independent resolution) and
+`DocDownWord-OpenXml-WordOpenXmlReader-DegradesCommentLocation`.
 
 #### The anchor snippet accumulator never grows past its stated bound
 
@@ -128,7 +132,7 @@ across calls can grow the accumulator past it. The final rendered `Location` alr
 the same bound regardless, so this invariant is otherwise unobservable from the public surface; the
 test reaches the private type through reflection, following this codebase's existing precedent for
 asserting an internal bound the public API cannot exercise directly. Evidence for
-`DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation`.
+`DocDownWord-OpenXml-WordOpenXmlReader-BoundsCommentSnippet`.
 
 #### A comment carrying no text is dropped, and a picture-only comment is counted
 
@@ -141,7 +145,8 @@ same document does, and that a comment whose only content is a drawing is likewi
 the dropped one is what makes the guard falsifiable: a reader that dropped the whole comments part
 would pass a test that only checked for absence. The split between dropped-silently and
 dropped-and-counted is asserted directly, because a wholly empty comment lost nothing while a drawn
-remark did. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-DropsTextlessComments`.
+remark did. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-DropsTextlessComments` (the empty-comment test)
+and `DocDownWord-OpenXml-WordOpenXmlReader-CountsUnreadableComments` (the picture-only test).
 
 #### The title and author metadata are surfaced
 
@@ -150,12 +155,26 @@ remark did. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-DropsTextlessCom
 Proves the model's `Title` is `Quarterly Report` and its `Author` is `DocDown Test Suite`.
 Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-SurfacesMetadata`.
 
+#### A document declaring no metadata reports nothing
+
+**Test**: `WordOpenXmlReader_Read_NoMetadata_ReportsNothing`
+
+Proves a document with no core or extended properties yields an empty title and author and no producer
+page count. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-OmitsUndeclaredMetadata`.
+
+#### Core properties map into the shared metadata
+
+**Test**: `WordOpenXmlReader_Read_CoreProperties_MapsSharedMetadata`
+
+Proves the title, subject, keywords, and last-modified-by core properties appear as fields of the shared
+document metadata. Evidence for `DocDownWord-DocumentMetadata`.
+
 #### The producer-stated page count is reported
 
 **Test**: `WordOpenXmlReader_Read_ProducerPageCount_FromExtendedProperties`
 
 Proves the model's `ProducerPageCount` is `7`. Evidence for
-`DocDownWord-OpenXml-WordOpenXmlReader-ReportsProducerPageCount`.
+`DocDownWord-OpenXml-WordOpenXmlReader-ReportsProducerPageCount` and `DocDownWord-ProducerPageCount`.
 
 #### An image's naming and description text is chosen from authored sources
 
@@ -183,3 +202,42 @@ Proves an adjacent caption whose figure number is a `SEQ` field result reads as
 Prove a nearby heading may seed the file name and manifest description while the alt text remains
 neutral, and that an image with no text source falls back to its media name. Evidence for
 `DocDownWord-OpenXml-WordOpenXmlReader-HeadingNamesButNeutralAlt`.
+
+#### A footnote is collected as a marker and a body
+
+**Test**: `WordOpenXmlReader_Read_Footnote_CollectsMarkerAndBody`
+
+Proves a footnote reference becomes an inline marker and its body is collected for the Footnotes
+section. Evidence for `DocDownWord-Footnotes`.
+
+#### A package without a main part raises a Word extraction exception
+
+**Test**: `WordOpenXmlReader_Read_MissingMainPart_ThrowsWordExtractionException`
+
+Proves a zip package lacking a main document part makes `Read()` throw `WordExtractionException`
+rather than a raw parser exception. Evidence for `DocDownWord-MissingMainPart`.
+
+#### A null stream is rejected
+
+**Test**: `WordOpenXmlReader_Read_NullStream_ThrowsArgumentNullException`
+
+Proves `Read(null)` throws `ArgumentNullException`. Evidence for
+`DocDownWord-ArgumentAndCancellationHandling`.
+
+#### Line and page breaks are read as break blocks
+
+**Test**: `WordOpenXmlReader_Read_LineAndPageBreaks_RenderHardBreakAndPageBreakBlock`
+
+Proves a line break becomes a hard break and a page break becomes a page-break block. Evidence for
+`DocDownWord-BreakRendering`.
+
+#### Nested-table pipes, hyperlink destinations, and same-text headers
+
+**Tests**: `WordOpenXmlReader_Read_NestedTableWithPipe_EscapesEveryPipeInFlattenedCell`,
+`WordOpenXmlReader_Read_HyperlinkWithParentheses_EscapesDestination`,
+`WordOpenXmlReader_Read_SameHeaderTextDifferentImages_KeepsBothHeaders`
+
+Prove every pipe in a flattened nested cell is escaped, parentheses in a hyperlink destination are
+escaped, and two headers with identical text but different images are both kept. Evidence for
+`DocDownWord-NestedTableEscaping`, `DocDownWord-LinkDestinationEscaping`, and
+`DocDownWord-HeaderImageDistinction`.
