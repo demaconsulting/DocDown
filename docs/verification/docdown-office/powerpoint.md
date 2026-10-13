@@ -1,17 +1,17 @@
 # DemaConsulting.DocDown.PowerPoint Verification Design
 
-This document describes the system-level verification strategy for `DemaConsulting.DocDown.PowerPoint`, the
-PowerPoint extraction package.
+This document describes the subsystem-level verification strategy for `DemaConsulting.DocDown.PowerPoint`, the
+PowerPoint extraction subsystem.
 
 ## Verification Approach
 
-`DemaConsulting.DocDown.PowerPoint` is verified through system-level integration tests in `DocDownPowerPointTests.cs`
+`DemaConsulting.DocDown.PowerPoint` is verified through subsystem-level integration tests in `DocDownPowerPointTests.cs`
 and unit tests per unit in `DemaConsulting.DocDown.Office.Tests`.
 
 ### Every extraction test reconciles against the filesystem
 
 Every scenario that performs an extraction ends with layout assertions proving the invariant output
-folders and files are present on disk. This is the highest-value assertion available to this package:
+folders and files are present on disk. This is the highest-value assertion available to this subsystem:
 it makes a dishonest extraction a test failure rather than a review finding, and it applies to both
 clean `Produced` runs and `Unreadable` runs. The legacy `.ppt` refusal scenario is checked the same
 way, so the structured unreadable layout is verified alongside successful modern-deck extractions.
@@ -20,7 +20,7 @@ Beyond the layout, each scenario asserts the extraction outcome, the inventory c
 
 ### One reader, one emitter
 
-The package ships one backend. The managed Open XML backend reads a deck into the reader-neutral
+The subsystem ships one backend. The managed Open XML backend reads a deck into the reader-neutral
 model and drives the content emitter, so every mapping decision is made in exactly one place and can
 be proved from a hand-built model with no deck behind it. Rendered slide images are a separate,
 opt-in concern provided by `DemaConsulting.DocDown.PowerPoint.Rendering` and verified there.
@@ -43,7 +43,7 @@ The legacy `.ppt` scenario writes a placeholder byte sequence whose extension dr
 because the selection path never opens the file: no registered backend supports the format. No
 fixture is committed.
 The one committed binary is the backend's self-test probe: a real deck authored in Microsoft
-PowerPoint, embedded in the package so the self-test reads what that application emits.
+PowerPoint, embedded in the subsystem so the self-test reads what that application emits.
 The suite's own fixtures stay generated. No `.pptx` or
 `.ppt` beyond that probe is committed, so every slide title, body line, speaker note,
 image name, and rendered payload in the fixtures is synthetic.
@@ -63,7 +63,7 @@ image name, and rendered payload in the fixtures is synthetic.
 
 ## Acceptance Criteria
 
-Per IEC 62304 §5.7.2, a system-level test run passes when:
+Per IEC 62304 §5.7.2, a subsystem-level test run passes when:
 
 - Every scenario below passes on every operating system and runtime in the CI matrix, with no
   unexpected exception or wrong return value.
@@ -81,7 +81,7 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 
 ## Test Scenarios
 
-Each scenario corresponds to one system requirement and names the real test method that evidences it.
+Each scenario corresponds to one subsystem requirement and names the real test method that evidences it.
 
 ### The default engine registers the managed PowerPoint backend
 
@@ -186,7 +186,7 @@ reported from the model and reach the end-to-end artifacts. Evidence for
 
 **Test**: `DocDownPowerPoint_Extract_LegacyPpt_FailsWithUnsupportedFormatExplanation`
 
-Proves an engine with the PowerPoint package registered completes a `.ppt` request as `Unreadable`
+Proves an engine with the PowerPoint subsystem registered completes a `.ppt` request as `Unreadable`
 with a plain explanation stating that DocDown does not support the legacy binary Office formats, with
 no installation instruction. Evidence for `DocDownPowerPoint-LegacyFormatRefusal`.
 

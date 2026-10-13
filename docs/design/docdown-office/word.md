@@ -1,18 +1,18 @@
-# DemaConsulting.DocDown.Word System Design
+# DemaConsulting.DocDown.Word Subsystem Design
 
 ![DemaConsulting.DocDown.Word Structure](WordView.svg)
 
-`DemaConsulting.DocDown.Word` is the Word extraction system for the DocDown output contract. It reads a Word
+`DemaConsulting.DocDown.Word` is the Word extraction subsystem for the DocDown output contract. It reads a Word
 document's text, real tables, embedded images, reviewer comments, footnotes, document-control
 content, and document metadata, then writes them through the `IExtractionSink` the engine supplies.
-It is a separately distributed NuGet package that a host registers explicitly alongside
+It is a subsystem of `DemaConsulting.DocDown.Office` that a host registers explicitly alongside
 `DemaConsulting.DocDown.Core`, and it ships one backend: a managed Open XML SDK backend for `.docx`. Legacy binary
 `.doc` documents are not supported and are reported as unreadable rather than routed to a backend
 that cannot read them.
 
 ## Architecture
 
-The system has two subsystems and one direct unit:
+This subsystem has two child subsystems and one direct unit:
 
 - **WordDocDownBuilderExtensions** *(direct unit)* is the registration seam. `AddWord` registers
   the managed backend through one explicit host call, with no reflection and no Open XML SDK type
@@ -24,9 +24,9 @@ The system has two subsystems and one direct unit:
 - **OpenXml** *(subsystem)* is the backend. It contains the extractor the engine selects, the
   reader that turns a `WordprocessingDocument` DOM into the shared model, the image reader that
   resolves each embedded image part, and `WordExtractionException`, the one exception type this
-  package raises intentionally.
+  subsystem raises intentionally.
 
-`DemaConsulting.DocDown.Word` deliberately has no second backend. The package is fully managed, deployable
+`DemaConsulting.DocDown.Word` deliberately has no second backend. The subsystem is fully managed, deployable
 anywhere the .NET runtime is, and keeps its extraction behavior in one reader and one emitter
 instead of splitting it across environment-specific implementations.
 
@@ -50,9 +50,9 @@ The constraints each interface carries, stated in full:
   facts and self-test output rather than through a separate declaration mechanism.
 - **`ISelfValidating`** contributes two cheap-to-enumerate cases: a parse round trip that builds
   and reads a tiny `.docx` in memory, and a page-rendering case that reports a skip because this
-  package does not attempt page rendering.
+  subsystem does not attempt page rendering.
 - **`IExtractionSink`** is the only output channel. Content, images, inventory features, notes,
-  metadata, and environment facts all go through it, and this package never writes directly to the
+  metadata, and environment facts all go through it, and this subsystem never writes directly to the
   filesystem.
 - **`DocDownBuilder`** is extended by one method, `AddWord`; there is no alternate registration
   path and no environment-sensitive registration behavior.
@@ -86,7 +86,7 @@ application.
 - **Truthful image provenance.** Every image reference carries its bytes, media type, preferred
   name, optional description, and source part URI together. The emitter always reports
   `ImageTransform.Passthrough`, because the stored part bytes are the extracted image bytes.
-- **Report-only completeness.** The package describes what it produced in the content inventory and
+- **Report-only completeness.** The subsystem describes what it produced in the content inventory and
   uses a short note only when it attempted a step it could not complete. Empty content is therefore
   conveyed by a zero inventory count, while chart extraction and table flattening are conveyed by
   notes.
@@ -117,7 +117,7 @@ application.
 
 ### Markdown mapping decisions
 
-The mapping decisions this system makes are worth stating together, because they are the reason a
+The mapping decisions this subsystem makes are worth stating together, because they are the reason a
 Word extraction reads materially better than the same document routed through PDF:
 
 - **Real tables.** A `w:tbl` becomes a GFM table with a header row, padded short rows, escaped cell
@@ -137,11 +137,11 @@ Word extraction reads materially better than the same document routed through PD
   text, rendered `§Scope — "the quick brown fox…"` — and the emitter reports the comment to Core as
   a `DocumentComment`. Core writes the dedicated `review-comments.md` artifact. A comment the
   document anchors nowhere is reported with `(location unknown)` rather than an invented location.
-- **Content inventory.** The system reports counts for text blocks, headings, tables, list items,
+- **Content inventory.** The subsystem reports counts for text blocks, headings, tables, list items,
   inline images, comments, distinct comment authors, and footnotes. Categories a reader genuinely
   looked for, such as text blocks, comments, distinct comment authors, and footnotes, are marked
   looked-for so a zero count remains explicit.
-- **Extraction notes.** The system currently emits notes for two incomplete steps only: embedded
+- **Extraction notes.** The subsystem currently emits notes for two incomplete steps only: embedded
   charts whose chart parts are not read, and merged or nested table structure that had to be
   flattened for markdown. An empty document is never a note; it is conveyed by a zero-count
   inventory feature.
@@ -150,10 +150,10 @@ Word extraction reads materially better than the same document routed through PD
 
 ## Design Constraints
 
-- **The package is fully managed, runtime-identifier agnostic, and ships no renderer.** It reads
+- **The subsystem is fully managed, runtime-identifier agnostic, and ships no renderer.** It reads
   structure and content from Open XML and does not attempt page rasterization.
 - **The whole source document is buffered into memory, and the SDK builds an in-memory DOM.** Very
-  large documents are therefore bounded by available memory; the package does not implement a
+  large documents are therefore bounded by available memory; the subsystem does not implement a
   streaming reader.
 - **Trimming and AOT publishing stay off.** The tool project records that the overall stack has not
   been verified for trim or AOT publishing.

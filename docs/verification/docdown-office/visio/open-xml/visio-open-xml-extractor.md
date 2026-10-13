@@ -6,7 +6,7 @@ managed backend the engine selects.
 ### Verification Approach
 
 `VisioOpenXmlExtractor` is verified through unit tests in `OpenXml/VisioOpenXmlExtractorTests.cs`
-and end to end through the system-level integration tests. The unit tests assert the extractor's
+and end to end through the subsystem-level integration tests. The unit tests assert the extractor's
 selection identity, always-available probe result, and self-test contribution; the integration tests
 prove the orchestration produces the full output contract.
 
@@ -15,7 +15,7 @@ prove the orchestration produces the full output contract.
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
 - **Inputs**: the descriptor and probe directly; the embedded probe drawing for the self-test
   round-trip; drawings built at test time by `VisioPackageBuilder` (test project) for the integration
-  scenarios; the system integration drawings for orchestration
+  scenarios; the subsystem integration drawings for orchestration
 - **Mocking**: none; the extractor runs against a real package and a recording context
 - **Isolation**: each test owns its inputs
 
@@ -41,7 +41,7 @@ meaningful request for Visio drawings. Evidence for
 
 **Test**: `VisioOpenXmlExtractor_ProbeAvailability_AlwaysAvailable`
 
-Proves the availability probe reports available everywhere the package loads, without rendered-page
+Proves the availability probe reports available everywhere the subsystem loads, without rendered-page
 support and without I/O. Evidence for
 `DocDownVisio-OpenXml-VisioOpenXmlExtractor-ProbesUnconditionally`.
 

@@ -6,7 +6,7 @@ using DemaConsulting.DocDown.Visio;
 namespace DemaConsulting.DocDown.Office.Tests.Visio;
 
 /// <summary>
-///     System-level integration tests for the DocDown Visio extraction system, driven end to end
+///     Subsystem-level integration tests for the DocDown Visio extraction subsystem, driven end to end
 ///     through <see cref="DocDownEngine"/> against drawings generated at test time.
 /// </summary>
 /// <remarks>
@@ -152,7 +152,7 @@ public class DocDownVisioTests
     }
 
     /// <summary>
-    ///     Extracts a fixture through the full Visio system and returns the folder and result.
+    ///     Extracts a fixture through the full Visio subsystem and returns the folder and result.
     /// </summary>
     private static async Task<(string Folder, ExtractionResult Result)> ExtractAsync(
         TempScratch temp, string name, byte[] bytes, ExtractionOptions options)

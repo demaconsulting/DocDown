@@ -5,7 +5,7 @@
 ### Purpose
 
 `WordContentEmitter` emits a rendered `WordDocumentModel` through the extraction sink, applying the
-package's reporting policy in one place. It writes content, images, `DocumentInfo`, content
+subsystem's reporting policy in one place. It writes content, images, `DocumentInfo`, content
 inventory, reviewer comments, metadata, and short extraction notes derived from the model. Nothing
 is omitted silently.
 

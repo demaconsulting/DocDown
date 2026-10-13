@@ -7,7 +7,7 @@ and the image, chart, and drawing-text readers that resolve the drawing layer.
 ### Verification Approach
 
 The OpenXml subsystem is verified through unit tests in `OpenXml/ExcelOpenXmlExtractorTests.cs`,
-`OpenXml/ExcelOpenXmlReaderTests.cs`, and `OpenXml/ExcelChartReaderTests.cs`, plus the system-level
+`OpenXml/ExcelOpenXmlReaderTests.cs`, and `OpenXml/ExcelChartReaderTests.cs`, plus the subsystem-level
 scenarios in `DocDownExcelTests.cs`, all in `DemaConsulting.DocDown.Office.Tests`.
 
 The reader units are exercised against **real generated workbooks** from `TestData/XlsxFixtures.cs`,
@@ -25,7 +25,7 @@ what reaches the model and the sink.
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
 - **Inputs**: SpreadsheetML workbooks generated at test time by `TestData/XlsxFixtures.cs`; every
   value, sheet name, chart series, and image in them is synthetic
-- **Filesystem**: a per-test `TempScratch` folder for the system-level scenarios; none for the reader
+- **Filesystem**: a per-test `TempScratch` folder for the subsystem-level scenarios; none for the reader
   scenarios, which read a generated workbook from memory
 - **Mocking**: none; the SDK is exercised against real workbooks and the sink is Core's real writer
   through the engine

@@ -45,7 +45,7 @@ images as template furniture, and excludes the package thumbnail.
 - **`VisioDocumentModel`** and its records (`VisioPageModel`, `VisioShapeModel`,
   `VisioConnectionModel`, `VisioPageImageRef`) — the shared model the reader populates and the
   emitter consumes.
-- **`VisioExtractionException`** — the exception type this package raises for unreadable Visio
+- **`VisioExtractionException`** — the exception type this subsystem raises for unreadable Visio
   package conditions.
 - **`SelfTestProbe`** (Core) — loads the embedded drawing the self-test reads. The package
   synthesizer that once sat here now lives in the test project, because writing Visio packages is

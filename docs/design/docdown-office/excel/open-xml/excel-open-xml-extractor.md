@@ -20,7 +20,7 @@ extraction.
   use.
 - **`DisplayName`** (`string`) — `Excel (Open XML SDK)`.
 - **`SupportedFormats`** — `Xlsx` only. The legacy binary `.xls` format is not supported by DocDown.
-- **`Priority`** (`int`) — `10`; the package's only backend, placing Excel extraction above a
+- **`Priority`** (`int`) — `10`; the subsystem's only backend, placing Excel extraction above a
   hypothetical lower-priority generic reader a host might also register.
 - **`PageRenderingApplicable`** (`bool`) — `false`; a workbook has no page grid, so page rendering
   applies to nothing rather than being deferred work.
@@ -30,7 +30,7 @@ extraction.
 - **`ExtractorAvailability ProbeAvailability()`** — returns `ExtractorAvailability.Available()`
   unconditionally, performing no I/O. Precondition: none. Postcondition: never throws and completes
   well under the 50 ms the contract allows. There is nothing to probe: the Open XML SDK is a managed
-  assembly shipped inside this package.
+  assembly shipped inside this subsystem.
 - **`ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context)`** —
   reports two environment facts (`excel.backend = Open XML SDK (managed)` and
   `excel.pageRendering = not applicable to a non-paginated workbook`), buffers the source through

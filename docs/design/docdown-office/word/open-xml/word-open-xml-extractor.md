@@ -18,16 +18,16 @@ extraction.
 
 - **`Id`** (`string`) — `word-openxml`; the stable key for selection, override, and the manifest.
 - **`DisplayName`** (`string`) — `Word (Open XML SDK)`; shown in backend listings and summaries.
-- **`SupportedFormats`** — `Docx` only. The legacy binary `.doc` format is outside this package's
+- **`SupportedFormats`** — `Docx` only. The legacy binary `.doc` format is outside this subsystem's
   scope.
-- **`Priority`** (`int`) — `10`; the package's only backend.
+- **`Priority`** (`int`) — `10`; the subsystem's only backend.
 
 ### Key Methods
 
 - **`ExtractorAvailability ProbeAvailability()`** — returns
   `ExtractorAvailability.Available()` unconditionally, performing no I/O. Precondition: none.
   Postcondition: never throws and completes well under the contract's time budget. There is nothing
-  to probe: the Open XML SDK is a managed assembly shipped inside this package.
+  to probe: the Open XML SDK is a managed assembly shipped inside this subsystem.
 - **`ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context)`**
   — reports two environment facts (`word.backend = Open XML SDK (managed)` and
   `word.pageRendering = not provided by this extractor`), buffers the source through
@@ -38,7 +38,7 @@ extraction.
 - **`IEnumerable<SelfTestCase> GetSelfTestCases()`** — returns two cases:
   - `word.openxml.parseRoundTrip`, which reads the embedded document authored in Microsoft Word
     and passes when the body carries content.
-  - `word.pageRendering`, which reports a reasoned skip because this package does not attempt page
+  - `word.pageRendering`, which reports a reasoned skip because this subsystem does not attempt page
     rendering.
 - **`ReadSourceAsync()`** (private) — copies the source into memory. Buffering is essential because
   a stream-backed `DocumentSource` is not guaranteed seekable and the SDK's package reader must

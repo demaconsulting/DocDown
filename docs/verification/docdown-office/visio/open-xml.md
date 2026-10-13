@@ -7,7 +7,7 @@ backend: the extractor, the package reader, and the image reader.
 
 The OpenXml subsystem is verified through unit tests in `OpenXml/VisioOpenXmlExtractorTests.cs`,
 `OpenXml/VisioPackageReaderTests.cs`, and `OpenXml/VisioImageReaderTests.cs`, alongside the
-system-level integration tests that drive the managed extractor end to end.
+subsystem-level integration tests that drive the managed extractor end to end.
 
 The extractor's selection identity, always-available probe, and self-test contribution are asserted
 directly. The package reader is proved against drawings built at test time by `VisioPackageBuilder` (test project):

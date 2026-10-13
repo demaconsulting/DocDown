@@ -1,24 +1,24 @@
 # DemaConsulting.DocDown.Word Verification Design
 
-This document describes the system-level verification strategy for `DemaConsulting.DocDown.Word`, the Word
-extraction package.
+This document describes the subsystem-level verification strategy for `DemaConsulting.DocDown.Word`, the Word
+extraction subsystem.
 
 ## Verification Approach
 
-`DemaConsulting.DocDown.Word` is verified through system-level integration tests in `DocDownWordTests.cs` and
+`DemaConsulting.DocDown.Word` is verified through subsystem-level integration tests in `DocDownWordTests.cs` and
 `WordGoldenTests.cs`, and through subsystem and unit tests in `DemaConsulting.DocDown.Office.Tests`,
 running on xUnit v3 across net8.0, net9.0, and net10.0.
 
 ### Every extraction test proves the expected layout is written
 
-Every system-level extraction scenario ends with `ContractAssert.LayoutPresent`, which proves the
+Every subsystem-level extraction scenario ends with `ContractAssert.LayoutPresent`, which proves the
 expected output layout exists on disk for the same run whose content, notes, metadata, or summary
-is being asserted. This is the highest-value assertion at system level: a successful or unreadable
+is being asserted. This is the highest-value assertion at subsystem level: a successful or unreadable
 result still has to produce the layout the rest of DocDown expects.
 
 ### One backend, one reader, one emitter
 
-The package ships one backend: the managed Open XML reader. It reads a document into the
+The subsystem ships one backend: the managed Open XML reader. It reads a document into the
 reader-neutral model and drives the shared emitter, so every mapping decision is made in one place
 and can be proved either from a hand-built model or from a real extraction. Legacy binary `.doc`
 content has no reader here and none anywhere in DocDown, so the request produces an unreadable
@@ -39,7 +39,7 @@ Every document the suite's tests use is built at test time by the Open XML SDK w
 scenario writes a placeholder byte sequence whose extension drives format detection, because the
 selection path never opens the file. No test fixture is committed.
 The one committed binary is the backend's self-test probe: a real document authored in Microsoft
-Word, embedded in the package so the self-test reads what that application emits.
+Word, embedded in the subsystem so the self-test reads what that application emits.
 
 ### Golden summaries pin representative outputs
 
@@ -56,13 +56,13 @@ regeneration is refused in CI.
 - **Inputs**: WordprocessingML documents generated at test time by the Open XML SDK writer, plus a
   short byte sequence for the legacy `.doc` unreadable scenario; no committed binary fixtures and
   no network access
-- **Mocking**: none — every system test drives the real engine and the real Open XML backend
+- **Mocking**: none — every subsystem test drives the real engine and the real Open XML backend
 - **Determinism**: the run-varying timestamp line is normalized so repeated runs are byte-comparable
 - **Isolation**: each test owns its temporary folder and cleans it on dispose
 
 ## Acceptance Criteria
 
-Per IEC 62304 §5.7.2, a system-level test run passes when:
+Per IEC 62304 §5.7.2, a subsystem-level test run passes when:
 
 - Every scenario below passes on every operating system and runtime in the CI matrix, with no
   unexpected exception reaching the caller.
@@ -80,7 +80,7 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 
 ## Test Scenarios
 
-Each scenario corresponds to one system requirement or provides supporting system evidence.
+Each scenario corresponds to one subsystem requirement or provides supporting subsystem evidence.
 Platform requirements are covered by the source-filtered runs of the clean-layout scenario.
 
 ### The default engine registers the Word backend
@@ -142,7 +142,7 @@ OpenXml subsystem selection path.
 
 **Test**: `DocDownWord_Extract_LegacyDoc_IsUnreadableWithUnsupportedFormatExplanation`
 
-Proves an engine with the Word package registered returns `ExtractionOutcome.Unreadable` for a
+Proves an engine with the Word subsystem registered returns `ExtractionOutcome.Unreadable` for a
 `.doc`, states plainly that DocDown does not support the legacy binary Office formats, and still
 produces the expected layout. Evidence for `DocDownWord-LegacyFormatUnreadable`.
 

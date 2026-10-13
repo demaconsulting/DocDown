@@ -31,7 +31,7 @@ document as a whole).
 **The extractor descriptor.** `WordOpenXmlExtractor` declares `Id = "word-openxml"`,
 `DisplayName = "Word (Open XML SDK)"`, `SupportedFormats = [Docx]`, and `Priority = 10`.
 `ProbeAvailability()` returns `ExtractorAvailability.Available()` unconditionally, with no I/O:
-the SDK is a managed assembly shipped inside this package, so if the type can be constructed the
+the SDK is a managed assembly shipped inside this subsystem, so if the type can be constructed the
 extractor can run.
 
 **The extraction path.** `ExtractAsync()` reports two environment facts,
@@ -43,7 +43,7 @@ read-only `MemoryStream`, builds a fresh `WordOpenXmlReader`, and hands the resu
 **The self-test set.** Two cases are exposed: `word.openxml.parseRoundTrip`, which reads the
 embedded document authored in Microsoft Word with the reader, and passes
 when the body contains content; and `word.pageRendering`, which reports a skip with a reason
-because this package does not attempt page rendering.
+because this subsystem does not attempt page rendering.
 
 **The reader.** `WordOpenXmlReader` opens the package read-only, walks the body once, and produces
 the model. It handles styled paragraphs (`Heading 1` through `Heading 9`, `Title`, and

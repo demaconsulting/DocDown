@@ -13,7 +13,7 @@ public class WordDocDownBuilderExtensionsTests
     ///     backend, and that it is the only backend the package registers.
     /// </summary>
     /// <remarks>
-    ///     The absence assertion is as load-bearing as the presence one: this package ships exactly
+    ///     The absence assertion is as load-bearing as the presence one: this subsystem ships exactly
     ///     one backend, so a second registered extractor would mean a backend re-entered the package
     ///     without anyone deciding it should.
     /// </remarks>

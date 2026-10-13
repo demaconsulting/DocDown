@@ -1,19 +1,19 @@
-# DemaConsulting.DocDown.PowerPoint System Design
+# DemaConsulting.DocDown.PowerPoint Subsystem Design
 
 ![DemaConsulting.DocDown.PowerPoint Structure](PowerPointView.svg)
 
-`DemaConsulting.DocDown.PowerPoint` is the PowerPoint extraction system for the DocDown output contract. It reads a
+`DemaConsulting.DocDown.PowerPoint` is the PowerPoint extraction subsystem for the DocDown output contract. It reads a
 modern `.pptx` deck's slide text, slide titles, speaker notes, slide order, embedded images, and deck
 metadata from the file itself. Rendered slide images are a separate, opt-in concern provided by the
-`DemaConsulting.DocDown.PowerPoint.Rendering` package; this system's own backend always states that it provides no
-rendered pages. Reporting follows one rule throughout the system: DocDown reports what it extracted
+`DemaConsulting.DocDown.PowerPoint.Rendering` package; this subsystem's own backend always states that it provides no
+rendered pages. Reporting follows one rule throughout the subsystem: DocDown reports what it extracted
 and where it wrote it. The content inventory states what was looked for, including counted zeros, and
 a short plain note is used only when DocDown attempted a step and could not complete it. Legacy
 binary `.ppt` decks are not extracted and complete as `Unreadable` with a plain explanation.
 
 ## Architecture
 
-The system has two subsystems and one direct unit:
+This subsystem has two child subsystems and one direct unit:
 
 - **PowerPointDocDownBuilderExtensions** *(direct unit)* is the registration seam: `AddPowerPoint`
   registers the managed PowerPoint backend explicitly. It stays free of deck I/O and eager environment
@@ -21,7 +21,7 @@ The system has two subsystems and one direct unit:
 - **OpenXml** *(subsystem)* is the managed content backend: the extractor the engine selects for a
   normal `.pptx` extraction, the reader that turns a `PresentationDocument` into the shared deck
   model, the image reader that resolves embedded image bytes and slide association, and
-  `PowerPointExtractionException`, the one package-specific exception type this system raises.
+  `PowerPointExtractionException`, the one subsystem-specific exception type this subsystem raises.
 - **Markdown** *(subsystem)* is the reader-neutral projection: the emitter that writes slide content,
   image links, document information, metadata, the content inventory, and plain notes about attempted
   steps that could not be completed. Every PowerPoint-specific mapping decision lives here.
@@ -43,9 +43,9 @@ The constraints each interface carries are:
 - **`ISelfValidating`** enumeration is cheap; the managed backend contributes a parse round-trip case
   and an honest skipped rendering case.
 - **`IExtractionSink`** is the only output channel. Every byte, inventory item, environment fact, and
-  note goes through it. No output path is constructed in this package.
+  note goes through it. No output path is constructed in this subsystem.
 - **`DocDownBuilder`** is extended by one method, `AddPowerPoint`; there is no other registration
-  surface for this package's backend.
+  surface for this subsystem's backend.
 - **The source document** is opened through `DocumentSource.OpenRead`. The backend buffers the deck
   into memory before opening it because the package reader must seek.
 
@@ -55,7 +55,7 @@ The constraints each interface carries are:
   facts, plain notes, and the `Produced` and `Unreadable` outcomes. See the *DemaConsulting.DocDown.Core System
   Design*.
 - **DocumentFormat.OpenXml** (OTS) — the managed Open XML SDK used to read `.pptx` packages. See the
-  *DocumentFormat.OpenXml* OTS design; its correctness reaches this package through the PowerPoint
+  *DocumentFormat.OpenXml* OTS design; its correctness reaches this subsystem through the PowerPoint
   extraction tests.
 - **System.IO.Packaging** (OTS, transitive) — the OPC container reader under the SDK, which opens the
   package and resolves its parts and relationships. See *System.IO.Packaging* under the OTS
@@ -83,7 +83,7 @@ native renderer and no native interop assembly.
   not silently reported as having no comments at all: the reader counts those comments and the
   emitter states the unread count as a note. See *PowerPointOpenXmlReader Design* for the full
   statement of that boundary.
-- **Two reporting forms only.** The system uses content inventory for what was looked for and found,
+- **Two reporting forms only.** The subsystem uses content inventory for what was looked for and found,
   including counted zeros, and plain notes only when an attempted step could not be completed. It does
   not classify ordinary document content as acceptable or unacceptable.
 - **Failure containment is outcome-based.** Normal completion returns `Produced`. A document that
@@ -116,6 +116,6 @@ native renderer and no native interop assembly.
   `DemaConsulting.DocDown.PowerPoint.Rendering` package.
 - **The whole deck is buffered into memory.** A stream source is not guaranteed seekable, and the SDK
   package reader must seek, so the backend buffers the document before opening it.
-- **Legacy binary `.ppt` is detected but not extracted.** The system gives a plain `Unreadable`
+- **Legacy binary `.ppt` is detected but not extracted.** The subsystem gives a plain `Unreadable`
   explanation rather than an "unknown format" answer, and it does not point at another package or
   environment because no DocDown PowerPoint backend reads that format.

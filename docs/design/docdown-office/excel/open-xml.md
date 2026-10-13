@@ -32,7 +32,7 @@ of a worksheet's drawing layer — the image reader (`ExcelOpenXmlImageReader`),
 `DisplayName = "Excel (Open XML SDK)"`, `SupportedFormats = [Xlsx]`, and `Priority = 10`.
 `PageRenderingApplicable` is `false` because a workbook is non-paginated. `ProbeAvailability` returns
 `ExtractorAvailability.Available()` unconditionally, with no I/O: there is nothing to probe because the
-SDK is a managed assembly shipped inside this package.
+SDK is a managed assembly shipped inside this subsystem.
 
 **The self-test set.** Two cases are exposed: an `excel.openxml.parseRoundTrip` case that reads the
 embedded workbook authored in Microsoft Excel, reads it with the reader, and

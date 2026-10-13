@@ -7,7 +7,7 @@ using DemaConsulting.DocDown.TestSupport;
 namespace DemaConsulting.DocDown.Office.Tests.PowerPoint;
 
 /// <summary>
-///     System-level integration tests for the DocDown PowerPoint extraction system, driven end to
+///     Subsystem-level integration tests for the DocDown PowerPoint extraction subsystem, driven end to
 ///     end through <see cref="DocDownEngine"/> against decks generated at test time.
 /// </summary>
 /// <remarks>
@@ -177,7 +177,7 @@ public class DocDownPowerPointTests
     }
 
     /// <summary>
-    ///     Extracts a fixture through the full PowerPoint system and returns the folder and result.
+    ///     Extracts a fixture through the full PowerPoint subsystem and returns the folder and result.
     /// </summary>
     private static async Task<(string Folder, ExtractionResult Result)> ExtractAsync(
         TempScratch temp, string name, byte[] bytes, ExtractionOptions options)

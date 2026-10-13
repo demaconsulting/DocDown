@@ -1,19 +1,19 @@
-# DemaConsulting.DocDown.Visio System Design
+# DemaConsulting.DocDown.Visio Subsystem Design
 
 ![DemaConsulting.DocDown.Visio Structure](VisioView.svg)
 
-`DemaConsulting.DocDown.Visio` is the Visio extraction system for the DocDown output contract. It reads each page
+`DemaConsulting.DocDown.Visio` is the Visio extraction subsystem for the DocDown output contract. It reads each page
 name, the text of the shapes that carry text, the directed connections between shapes, embedded
 images, and metadata from modern `.vsdx` and `.vsdm` drawings, through the file itself. Rendered page
 images are a separate, opt-in concern provided by the `DemaConsulting.DocDown.Visio.Rendering` package; this
-system's own backend always states that it provides no rendered pages. Every artifact is written
-through `IExtractionSink`, and the package reports what it extracted through looked-for content
+subsystem's own backend always states that it provides no rendered pages. Every artifact is written
+through `IExtractionSink`, and the subsystem reports what it extracted through looked-for content
 inventory and short notes for attempted steps it could not complete. Legacy binary `.vsd` drawings
 are not supported and are returned as unreadable.
 
 ## Architecture
 
-The system has two subsystems and one direct unit:
+This subsystem has two child subsystems and one direct unit:
 
 - **VisioDocDownBuilderExtensions** *(direct unit)* is the registration seam. `AddVisio` registers
   the managed Visio backend without reflection or assembly scanning.
@@ -30,9 +30,9 @@ The system has two subsystems and one direct unit:
 The managed backend can always recover the page names, shape text, topology, images, and metadata
 from modern Visio packages, with no environment dependency. Rendered pages are a distinct
 architectural concern — rasterization versus parsing — carried entirely by the separate
-`DemaConsulting.DocDown.Visio.Rendering` package, which delegates back to this package's own
+`DemaConsulting.DocDown.Visio.Rendering` package, which delegates back to this subsystem's own
 `VisioOpenXmlExtractor` for the managed aspects. This keeps content extraction deterministic and
-available everywhere the package loads, while a host that needs rendered pages opts into the extra
+available everywhere the subsystem loads, while a host that needs rendered pages opts into the extra
 dependency explicitly.
 
 ## External Interfaces
@@ -55,7 +55,7 @@ The interfaces carry the following constraints:
 - **`ISelfValidating`** contributes cheap-to-enumerate cases: a topology round-trip case and a
   rendering-skip case that reports page rendering as not provided by this extractor.
 - **`IExtractionSink`** is the only output channel. No file in the output layout is written directly
-  by this package.
+  by this subsystem.
 - **`DocDownBuilder`** is extended by one method, `AddVisio`; there is no alternative registration
   path.
 - **The source document** is opened through `DocumentSource.OpenRead`. Because the package reader
@@ -72,7 +72,7 @@ The interfaces carry the following constraints:
 - **System.IO.Packaging** (OTS) — the managed OPC container reader the OpenXml subsystem uses
   directly because `DocumentFormat.OpenXml` has no Visio types.
 
-There is no native rendering library in this package. The managed backend is fully managed and ships
+There is no native rendering library in this subsystem. The managed backend is fully managed and ships
 no native asset.
 
 ## Risk Control Measures
@@ -82,7 +82,7 @@ no native asset.
   drawing's content reads the same whether or not it was rendered.
 - **Managed content is always available.** The page names, shape text, topology, images, and
   metadata come from the Open Packaging drawing itself, so the logical content is recoverable on any
-  machine that can run the package.
+  machine that can run the subsystem.
 - **Reporting stays factual.** The content emitter reports looked-for counts for pages, labeled
   shapes, and connections, including zero. When DocDown attempted a step and could not complete it,
   it records a short note rather than inventing a judgment about the document.
@@ -128,7 +128,7 @@ The mapping decisions that shape the Visio output are:
 ## Design Constraints
 
 - **The managed backend is fully managed.** It ships no native asset and depends only on
-  `System.IO.Packaging`, which is why the guaranteed content path is available everywhere the package
+  `System.IO.Packaging`, which is why the guaranteed content path is available everywhere the subsystem
   loads. It can read `.vsdx`/`.vsdm` content everywhere but it does not render pages itself;
   rendered page images are a separate, opt-in concern provided by the
   `DemaConsulting.DocDown.Visio.Rendering` package.

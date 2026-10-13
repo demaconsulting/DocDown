@@ -30,7 +30,7 @@ extraction.
 
 - **`ExtractorAvailability ProbeAvailability()`** — returns `Available()` unconditionally, performing
   no I/O. Postcondition: the available result leaves rendered-page support false. There is nothing to
-  probe: the Open XML SDK is a managed assembly shipped inside this package.
+  probe: the Open XML SDK is a managed assembly shipped inside this subsystem.
 - **`ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context)`** —
   reports two environment facts (`powerpoint.backend = Open XML SDK (managed)` and
   `powerpoint.pageRendering = not provided by this extractor`), buffers the source through

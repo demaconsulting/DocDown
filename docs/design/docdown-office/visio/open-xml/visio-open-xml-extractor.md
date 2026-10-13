@@ -6,7 +6,7 @@
 
 `VisioOpenXmlExtractor` is the managed backend the engine selects for ordinary content extraction.
 Its single responsibility is orchestration: identify the modern Visio drawings it reads, probe
-available everywhere the package can load, record the managed-path environment facts, buffer and
+available everywhere the subsystem can load, record the managed-path environment facts, buffer and
 open the drawing, hand the stream to the reader, delegate emission to the shared emitter, and
 contribute self-tests that describe its own behavior.
 

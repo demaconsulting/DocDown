@@ -29,7 +29,7 @@ author by an identifier resolved through the presentation's `commentAuthors.xml`
 The **modern** grammar — the persona-based, cloud-synced comments that current PowerPoint writes — is
 deliberately **not** read. This is a scope choice, not a tooling limit, and the distinction matters
 because an earlier revision of this document claimed the opposite. `DocumentFormat.OpenXml 3.5.1`,
-the SDK this package is built on, *does* expose both the part and its grammar: `SlidePart.commentParts`
+the SDK this subsystem is built on, *does* expose both the part and its grammar: `SlidePart.commentParts`
 yields `PowerPointCommentPart`, whose `CommentList` is typed over the
 `DocumentFormat.OpenXml.Office2021.PowerPoint.Comment` namespace. Nothing here needs raw relationship
 access or guesswork about an unversioned grammar.

@@ -1,10 +1,10 @@
 ---
-# Software System Requirements for DemaConsulting.DocDown.Word
+# Software Subsystem Requirements for DemaConsulting.DocDown.Word
 #
-# These requirements describe the externally visible behavior of the Word extraction package from
+# These requirements describe the externally visible behavior of the Word extraction subsystem from
 # the perspective of a host that registers it, without specifying implementation details. Each
 # decomposes into subsystem and unit requirements linked below via children, and is proven by
-# system-level tests plus focused subsystem and unit tests where appropriate.
+# subsystem-level tests plus focused subsystem and unit tests where appropriate.
 #
 # SUPERSEDED REQUIREMENT: DocDownWord-StructuralFidelity
 # required merged or nested table cells to be reported as a counted structural gap. It is
@@ -20,7 +20,7 @@
 #
 # SUPERSEDED REQUIREMENT: DocDownWord-VectorImages
 # required EMF or WMF images to be written with a caveat. It is superseded (not satisfied) by
-# DocDownWord-VectorImagesWrittenAsIs because the package now reports only what it extracted; a
+# DocDownWord-VectorImagesWrittenAsIs because the subsystem now reports only what it extracted; a
 # vector image written unchanged needs no extra note.
 #
 # SUPERSEDED REQUIREMENT: DocDownWord-ImageOutput
@@ -70,7 +70,7 @@ sections:
     requirements:
       - id: DocDownWord-Registration
         title: >-
-          The system shall register its Word backend through an explicit extension method without
+          The subsystem shall register its Word backend through an explicit extension method without
           reflection or assembly scanning.
         tags: [system]
         justification: |
@@ -87,11 +87,11 @@ sections:
 
       - id: DocDownWord-Extraction
         title: >-
-          The system shall extract a Word document's text, structure, images, comments, and
+          The subsystem shall extract a Word document's text, structure, images, comments, and
           metadata into the DocDown output contract.
         tags: [system]
         justification: |
-          The package exists to turn a Word document into the invariant DocDown output layout so a
+          The subsystem exists to turn a Word document into the invariant DocDown output layout so a
           downstream agent sees the same core artifact set it sees for every other format. Reading
           the structure the document already carries — styled paragraphs, real tables, embedded
           image parts, reviewer comments, and document information — is what makes the Word output
@@ -107,7 +107,7 @@ sections:
 
       - id: DocDownWord-Tables
         title: >-
-          The system shall render a Word table as a GitHub-Flavored-Markdown table.
+          The subsystem shall render a Word table as a GitHub-Flavored-Markdown table.
         tags: [system]
         justification: |
           Tables are the headline advantage of reading the Word model rather than a rasterized or
@@ -120,7 +120,7 @@ sections:
 
       - id: DocDownWord-TableStructureNotes
         title: >-
-          The system shall report merged or nested table structure it could not preserve in
+          The subsystem shall report merged or nested table structure it could not preserve in
           markdown as a short extraction note.
         tags: [system]
         justification: |
@@ -134,7 +134,7 @@ sections:
 
       - id: DocDownWord-DocumentControl
         title: >-
-          The system shall collect the surviving header and footer content once, under a Document
+          The subsystem shall collect the surviving header and footer content once, under a Document
           Control heading placed after the title and before the body.
         tags: [system]
         justification: |
@@ -152,7 +152,7 @@ sections:
 
       - id: DocDownWord-TrackedChangesAcceptedView
         title: >-
-          The system shall render tracked changes in the accepted view.
+          The subsystem shall render tracked changes in the accepted view.
         tags: [system]
         justification: |
           A document under revision has more than one possible reading. Rendering the accepted view
@@ -165,7 +165,7 @@ sections:
 
       - id: DocDownWord-ChartNotes
         title: >-
-          The system shall report embedded charts whose chart parts it did not read as a short
+          The subsystem shall report embedded charts whose chart parts it did not read as a short
           extraction note.
         tags: [system]
         justification: |
@@ -179,7 +179,7 @@ sections:
 
       - id: DocDownWord-EmbeddedImages
         title: >-
-          The system shall write a document's embedded images into the images folder and link them
+          The subsystem shall write a document's embedded images into the images folder and link them
           from the content document.
         tags: [system]
         justification: |
@@ -195,7 +195,7 @@ sections:
 
       - id: DocDownWord-ImageProvenance
         title: >-
-          The system shall pass an embedded image's bytes through unchanged and record that the
+          The subsystem shall pass an embedded image's bytes through unchanged and record that the
           image was passed through rather than re-encoded.
         tags: [system]
         justification: |
@@ -210,7 +210,7 @@ sections:
 
       - id: DocDownWord-VectorImagesWrittenAsIs
         title: >-
-          The system shall write an EMF or WMF image in the vector format the document stored.
+          The subsystem shall write an EMF or WMF image in the vector format the document stored.
         tags: [system]
         justification: |
           A vector metafile's stored bytes are the extracted image bytes. Writing them unchanged
@@ -224,12 +224,12 @@ sections:
 
       - id: DocDownWord-ManagedAvailability
         title: >-
-          The system shall report its managed `.docx` extractor available and shall report that page
+          The subsystem shall report its managed `.docx` extractor available and shall report that page
           rendering is not provided by that extractor.
         tags: [system]
         justification: |
           Backend selection needs a truthful statement of whether modern Word extraction is
-          available. Because this backend is fully managed and ships inside the package, its probe is
+          available. Because this backend is fully managed and ships inside the subsystem, its probe is
           satisfied by construction; page rendering remains outside its scope and is reported
           plainly rather than implied.
         children:
@@ -239,7 +239,7 @@ sections:
 
       - id: DocDownWord-EmptyDocumentInventory
         title: >-
-          The system shall report an empty document by a zero-count looked-for text-block inventory
+          The subsystem shall report an empty document by a zero-count looked-for text-block inventory
           entry and still produce normal output.
         tags: [system]
         justification: |
@@ -253,7 +253,7 @@ sections:
 
       - id: DocDownWord-ProtectedDocument
         title: >-
-          The system shall report a password-protected document as unreadable without letting a raw
+          The subsystem shall report a password-protected document as unreadable without letting a raw
           parser exception reach the caller.
         tags: [system]
         justification: |
@@ -267,7 +267,7 @@ sections:
 
       - id: DocDownWord-DocumentMetadata
         title: >-
-          The system shall report the document's declared title and author and its producer-stated
+          The subsystem shall report the document's declared title and author and its producer-stated
           page count, and shall report nothing where the document declares nothing.
         tags: [system]
         justification: |
@@ -283,7 +283,7 @@ sections:
 
       - id: DocDownWord-MarkdownRendering
         title: >-
-          The system shall render headings, lists, inline formatting, and footnotes as markdown,
+          The subsystem shall render headings, lists, inline formatting, and footnotes as markdown,
           escaping content that would otherwise be interpreted as markup.
         tags: [system]
         justification: |
@@ -300,11 +300,11 @@ sections:
 
       - id: DocDownWord-LegacyFormatUnreadable
         title: >-
-          The system shall report a legacy binary Word document as unreadable with a plain
+          The subsystem shall report a legacy binary Word document as unreadable with a plain
           unsupported-format explanation.
         tags: [system]
         justification: |
-          This package reads Open XML documents and nothing else, and DocDown does not support the
+          This subsystem reads Open XML documents and nothing else, and DocDown does not support the
           legacy binary Office formats. A caller who hands the engine a `.doc` therefore deserves a
           plain statement of that fact with the expected output layout still written.
         tests:
@@ -312,7 +312,7 @@ sections:
 
       - id: DocDownWord-Determinism
         title: >-
-          The system shall produce byte-identical artifacts across repeated extractions of the same
+          The subsystem shall produce byte-identical artifacts across repeated extractions of the same
           document in the same environment.
         tags: [system]
         justification: |
@@ -326,12 +326,12 @@ sections:
           - WordGolden_MergedCellsGap_MatchesCommittedGolden
 
       - id: DocDownWord-SelfValidation
-        title: The system shall contribute self-validation cases describing its own extraction behavior.
+        title: The subsystem shall contribute self-validation cases describing its own extraction behavior.
         tags: [system]
         justification: |
           An operator needs to confirm the backend actually works where it is deployed, not merely
           that it is present. Cases the backend contributes about itself — including an honest skip
-          for page rendering because this package does not attempt it — make that confirmation
+          for page rendering because this subsystem does not attempt it — make that confirmation
           available on demand.
         children:
           - DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests

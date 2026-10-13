@@ -50,7 +50,7 @@ prose from being reinterpreted as headings, emphasis, links, list markers, or ta
   supplied a resolved path.
 - **`AppendDocumentControl()`** and **`AppendFootnotes()`** (private) —
   append the surviving document-control subsections and the footnote
-  definitions in the positions the system design requires.
+  definitions in the positions the subsystem design requires.
 
 ### Error Handling
 

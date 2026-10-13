@@ -10,8 +10,8 @@ namespace DemaConsulting.DocDown.Excel;
 ///     <para>
 ///         DocDown registers backends explicitly rather than by reflection or assembly scanning, so a
 ///         host's dependency graph is exactly what its code says it is. This class is that explicit
-///         seam for the Excel package: <see cref="AddExcel"/> registers the managed Open XML backend,
-///         which is the only Excel backend this package ships — the workbook intent deliberately
+///         seam for the Excel subsystem: <see cref="AddExcel"/> registers the managed Open XML backend,
+///         which is the only Excel backend this subsystem ships — the workbook intent deliberately
 ///         offers no rendering and therefore no second, environment-dependent backend.
 ///     </para>
 ///     <para>

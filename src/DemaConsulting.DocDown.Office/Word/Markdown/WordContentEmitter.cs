@@ -227,7 +227,7 @@ internal static class WordContentEmitter
     /// <remarks>
     ///     When images are suppressed nothing is written and Core records the suppression itself. A
     ///     force-PNG request is recorded as a note when files were written in their source encoding,
-    ///     because this package ships no imaging stack and therefore cannot re-encode them. Side
+    ///     because this subsystem ships no imaging stack and therefore cannot re-encode them. Side
     ///     effect: writes images and records reports on the sink.
     /// </remarks>
     private static async ValueTask<Dictionary<string, string>> WriteImagesAsync(

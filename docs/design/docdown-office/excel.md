@@ -1,12 +1,13 @@
-# DemaConsulting.DocDown.Excel System Design
+# DemaConsulting.DocDown.Excel Subsystem Design
 
 ![DemaConsulting.DocDown.Excel Structure](ExcelView.svg)
 
-`DemaConsulting.DocDown.Excel` is the Excel extraction system for the DocDown output contract. It reads a workbook's
+`DemaConsulting.DocDown.Excel` is the Excel extraction subsystem for the DocDown output contract. It reads a workbook's
 worksheet cell values, formulas, charts, drawing annotations, embedded images, and metadata, and writes
-those artifacts through the `IExtractionSink` the engine supplies. It is a separately distributed NuGet
-package that a host registers explicitly alongside `DemaConsulting.DocDown.Core`, and it ships one managed Open XML
-backend for `.xlsx` workbooks. Legacy binary `.xls` workbooks are not extracted; they end as a
+those artifacts through the `IExtractionSink` the engine supplies. It is a subsystem of
+`DemaConsulting.DocDown.Office` that a host registers explicitly alongside `DemaConsulting.DocDown.Core`,
+and it ships one managed Open XML backend for `.xlsx` workbooks. Legacy binary `.xls` workbooks are not
+extracted; they end as a
 structured `Unreadable` result with a plain explanation that the format is unsupported.
 
 A workbook, in this product's domain, is a prose and data container, not a picture. Its cells hold
@@ -17,11 +18,11 @@ caches are reported as data, and page rendering is deliberately treated as not a
 
 ## Architecture
 
-The system has two subsystems and one direct unit:
+This subsystem has two child subsystems and one direct unit:
 
 - **ExcelDocDownBuilderExtensions** *(direct unit)* is the registration seam: `AddExcel` registers the
   managed backend. It stays reflection-free and names no Open XML SDK type on its public surface, so a
-  host can reference the package's registration surface without the SDK's types entering its own
+  host can reference the subsystem's registration surface without the SDK's types entering its own
   compilation.
 - **Markdown** *(subsystem)* is the reader-neutral projection: the emitter that walks the workbook
   model through the sink — one content part per worksheet and one per chart — and the chart writer that
@@ -32,7 +33,7 @@ The system has two subsystems and one direct unit:
 - **OpenXml** *(subsystem)* is the backend: the extractor the engine selects, the reader that turns a
   `SpreadsheetDocument` into the shared model, the image reader that yields each embedded image's bytes
   and sheet association, the chart reader that recovers each chart's cached data, the drawing-text
-  reader that recovers each shape's annotation text, and `ExcelExtractionException`, the package's one
+  reader that recovers each shape's annotation text, and `ExcelExtractionException`, the subsystem's one
   workbook-specific exception type. The subsystem is fully managed and ships no native asset.
 
 ### Why there is no rendering backend
@@ -63,7 +64,7 @@ The constraints each interface carries, stated in full:
 - **`ISelfValidating`** enumeration is cheap. The backend contributes a parse round-trip case and a
   page-rendering case that reports a skip with a reason because a workbook is non-paginated.
 - **`IExtractionSink`** is the only output channel. Every part, content count, note, environment fact,
-  and metadata record goes through it, and no filesystem path is constructed in this package.
+  and metadata record goes through it, and no filesystem path is constructed in this subsystem.
 - **`DocDownBuilder`** is extended by one method, `AddExcel`; there is no alternate registration path.
 - **The source document** is opened through `DocumentSource.OpenRead` and is not guaranteed seekable for
   a stream source, so the backend buffers the workbook into memory before opening the package because
@@ -80,7 +81,7 @@ The constraints each interface carries, stated in full:
   OTS integration design.
 
 There are no other runtime dependencies, and there is no dependency of any kind on a native library.
-The package's build output contains no `runtimes/` folder and no native `.dll`, `.so`, or `.dylib`.
+The subsystem's build output contains no `runtimes/` folder and no native `.dll`, `.so`, or `.dylib`.
 
 ## Risk Control Measures
 
@@ -126,7 +127,7 @@ The package's build output contains no `runtimes/` folder and no native `.dll`, 
 
 ### Mapping decisions
 
-The mapping decisions this system makes are worth stating together, because they are what make an Excel
+The mapping decisions this subsystem makes are worth stating together, because they are what make an Excel
 extraction a faithful data container rather than a flattened dump:
 
 - **Verbatim listing.** Every worksheet becomes a `ContentPartKind.Sheet` part whose body is an
@@ -162,7 +163,7 @@ extraction a faithful data container rather than a flattened dump:
 
 ## Design Constraints
 
-- **The package is 100% managed, runtime-identifier agnostic, and ships no native asset.** This is what
+- **The subsystem is 100% managed, runtime-identifier agnostic, and ships no native asset.** This is what
   makes it deployable anywhere the .NET runtime is.
 - **The whole workbook is buffered into memory, and the SDK builds an in-memory object model.** A very
   large workbook is therefore bounded by available memory. The chart data table is bounded at a fixed
@@ -174,7 +175,7 @@ extraction a faithful data container rather than a flattened dump:
   design.
 - **`ProbeAvailability` is unconditional.** Nothing about this backend is environment-dependent — there
   is no native asset, no installed application, and no registration to check — so the probe is
-  satisfied by construction and reports `Available()` everywhere the package loads.
+  satisfied by construction and reports `Available()` everywhere the subsystem loads.
 - **The legacy binary formats are detected but never extracted.** Core recognizes `.xls` deliberately,
   because "this is an `.xls`, and DocDown does not support legacy binary formats" is a far better answer
   than "unrecognized format".

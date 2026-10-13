@@ -7,15 +7,15 @@ registration seam that adds the Word backend to a builder.
 
 `WordDocDownBuilderExtensions` is verified through unit tests in
 `WordDocDownBuilderExtensionsTests.cs` in `DemaConsulting.DocDown.Office.Tests`, exercising the one
-extension method the package offers: `AddWord`.
+extension method the subsystem offers: `AddWord`.
 
 Nothing is mocked: a real builder is used and a real engine is built from it, because the observable
 behavior under test is exactly what a host observes. The registration's effect is asserted through
 the engine's own descriptor list rather than through any internal state, so the test verifies the
 promise made to a host rather than an implementation detail. The registration is asserted both
 positively and exhaustively — the Open XML backend is present, and it is the only extractor — because
-this package ships one backend and a second registered extractor would mean a backend re-entered the
-package without anyone deciding it should.
+this subsystem ships one backend and a second registered extractor would mean a backend re-entered the
+subsystem without anyone deciding it should.
 
 ### Test Environment
 

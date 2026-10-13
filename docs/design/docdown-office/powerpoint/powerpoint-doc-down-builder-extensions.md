@@ -4,7 +4,7 @@
 
 ### Purpose
 
-`PowerPointDocDownBuilderExtensions` is the one visible edge from a host to this package: the explicit,
+`PowerPointDocDownBuilderExtensions` is the one visible edge from a host to this subsystem: the explicit,
 reflection-free call that adds the PowerPoint backend to a `DocDownBuilder`. Its single responsibility is
 registration — it constructs no extractor eagerly and opens no file. DocDown registers backends
 explicitly rather than by reflection or assembly scanning, so a host's dependency graph is exactly what
@@ -40,4 +40,4 @@ pulls in are not part of this unit's public surface.
 ### Callers
 
 A host calls `AddPowerPoint` when configuring a DocDown engine, alongside `AddCore` and any other format
-packages it wants. Nothing else in the package calls it.
+packages it wants. Nothing else in the subsystem calls it.

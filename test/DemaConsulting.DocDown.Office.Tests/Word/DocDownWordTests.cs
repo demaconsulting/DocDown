@@ -211,7 +211,7 @@ public class DocDownWordTests
     ///     that the format is unsupported.
     /// </summary>
     /// <remarks>
-    ///     This package reads Open XML documents and nothing else, so a <c>.doc</c> has no reader
+    ///     This subsystem reads Open XML documents and nothing else, so a <c>.doc</c> has no reader
     ///     here and never will. The value of the test is the shape of the refusal: a structured
     ///     failure with the full output layout still written and no exception reaching the caller —
     ///     never a silent omission and never an install directive the reader cannot act on.
@@ -241,7 +241,7 @@ public class DocDownWordTests
     }
 
     /// <summary>
-    ///     Extracts a fixture through the full Word system and returns the folder and result.
+    ///     Extracts a fixture through the full Word subsystem and returns the folder and result.
     /// </summary>
     /// <param name="temp">The owning temporary folder.</param>
     /// <param name="name">The fixture file name.</param>

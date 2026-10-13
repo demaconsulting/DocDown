@@ -4,7 +4,7 @@
 
 ### Purpose
 
-`VisioDocDownBuilderExtensions` is the one visible edge from a host to this package: the explicit,
+`VisioDocDownBuilderExtensions` is the one visible edge from a host to this subsystem: the explicit,
 reflection-free call that adds the managed Visio backend to a `DocDownBuilder`. Its single
 responsibility is registration — it constructs no extractor eagerly and opens no file. DocDown
 registers backends explicitly rather than by reflection or assembly scanning, so a host's dependency
@@ -43,4 +43,4 @@ pulls in is not part of this unit's public surface.
 ### Callers
 
 A host calls `AddVisio` when configuring a DocDown engine, alongside `AddCore` and any other format
-packages it wants. Nothing else in the package calls it.
+packages it wants. Nothing else in the subsystem calls it.

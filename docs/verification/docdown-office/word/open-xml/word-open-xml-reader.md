@@ -10,8 +10,8 @@ turns an Open XML document into the backend-neutral model.
 
 The unit is driven directly, outside the engine, by opening a fixture stream and calling `Read()`
 against a fresh reader instance. This is the level at which the reader's contract lives: the
-returned `WordDocumentModel` is what the rest of the package works on, so asserting the model's
-shape names one reader behavior rather than one system outcome.
+returned `WordDocumentModel` is what the rest of the subsystem works on, so asserting the model's
+shape names one reader behavior rather than one subsystem outcome.
 
 The SDK is not mocked. Every fixture is a real `.docx` built at test time by the Open XML SDK
 writer in `TestData/DocxFixtures.cs`, so the unit is exercised against genuine documents rather

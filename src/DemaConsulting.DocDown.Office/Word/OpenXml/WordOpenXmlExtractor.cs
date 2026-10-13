@@ -18,7 +18,7 @@ namespace DemaConsulting.DocDown.Word.OpenXml;
 ///         already contains — styled paragraphs, genuine table grids, embedded image parts, and the
 ///         document information — and it does materially better than the PDF backend on tables, which
 ///         Open XML preserves where a PDF flattened them. It cannot render a page, because
-///         rasterization needs a renderer this package deliberately does not ship, so
+///         rasterization needs a renderer this subsystem deliberately does not ship, so
 ///         <see cref="ProbeAvailability"/> reports the extractor available without rendered-page
 ///         support.
 ///     </para>
@@ -66,7 +66,7 @@ public sealed class WordOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     /// <inheritdoc />
     /// <remarks>
     ///     Always available. There is nothing to probe: the Open XML SDK is a managed assembly that
-    ///     ships inside this package, so if this type could be constructed the extractor can run.
+    ///     ships inside this subsystem, so if this type could be constructed the extractor can run.
     ///     Performs no I/O and cannot throw.
     /// </remarks>
     public ExtractorAvailability ProbeAvailability() => ExtractorAvailability.Available();
@@ -104,7 +104,7 @@ public sealed class WordOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     ///     read the document authored in Microsoft Word and embedded here, and that page rendering
     ///     is outside this backend's scope
     ///     rather than merely untested. The rendering case reports as skipped with a reason because
-    ///     this package does not attempt page rendering.
+    ///     this subsystem does not attempt page rendering.
     /// </remarks>
     public IEnumerable<SelfTestCase> GetSelfTestCases() =>
     [

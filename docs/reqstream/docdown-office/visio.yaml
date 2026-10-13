@@ -1,14 +1,14 @@
 ---
-# Software System Requirements for DemaConsulting.DocDown.Visio
+# Software Subsystem Requirements for DemaConsulting.DocDown.Visio
 #
-# These requirements describe the externally visible behavior of the Visio extraction package
+# These requirements describe the externally visible behavior of the Visio extraction subsystem
 # from the perspective of a host that registers it, without specifying implementation details.
 # Each decomposes into subsystem and unit requirements linked below via children, and is proven
-# by the Visio test suite. DemaConsulting.DocDown.Visio has two subsystems (Markdown, OpenXml) and one
+# by the Visio test suite. DemaConsulting.DocDown.Visio has two child subsystems (Markdown, OpenXml) and one
 # direct unit (VisioDocDownBuilderExtensions).
 #
 # A Visio drawing is an engineering schematic, so these requirements are traced forward from the
-# package intent: recover each page name, the text of the shapes that carry text, and the
+# subsystem intent: recover each page name, the text of the shapes that carry text, and the
 # directed connections between shapes from the file itself, with no Visio installation present.
 # DocDown reports what it extracted and where. The reporting surface here is therefore limited to
 # looked-for content inventory and short plain notes describing a step DocDown attempted but
@@ -20,18 +20,18 @@
 # a short plain note for attempted-but-unfinished steps, so the behavior was superseded by
 # DocDownVisio-RenderingRequestNote.
 #
-# SUPERSEDED REQUIREMENT: DocDownVisio-RenderingRequestNote required this system to keep the
+# SUPERSEDED REQUIREMENT: DocDownVisio-RenderingRequestNote required this subsystem to keep the
 # extracted content and record its own plain note when page rendering was requested but no
 # renderer backend was registered alongside it. That requirement is superseded (not satisfied)
 # with no replacement here, because Core now records that generic note itself whenever page
 # rendering was requested and no registered backend provides it, independent of format; this
-# system's own backend simply states plainly, through
+# subsystem's own backend simply states plainly, through
 # DocDownVisio-OpenXml-VisioOpenXmlExtractor-ProbesUnconditionally, that it provides no rendered
 # pages.
 #
 # SUPERSEDED REQUIREMENT: DocDownVisio-PageRenderFidelity required a counted gap and diagnostic
 # when an individual page could not be rendered. That requirement is superseded (not satisfied)
-# with no replacement here, because this system no longer renders pages itself at all: rendering,
+# with no replacement here, because this subsystem no longer renders pages itself at all: rendering,
 # and the honesty of its per-page failures, is now entirely
 # DemaConsulting.DocDown.Visio.Rendering's concern, governed by
 # docs/reqstream/docdown-visio-rendering.yaml.
@@ -51,16 +51,16 @@
 # DocDownVisio-OpenXml-VisioOpenXmlExtractor-ParticipatesInSelection and
 # DocDownVisio-OpenXml-VisioOpenXmlExtractor-ProbesUnconditionally.
 #
-# SUPERSEDED REQUIREMENT: DocDownVisio-PageRendering required this system to render each page to
+# SUPERSEDED REQUIREMENT: DocDownVisio-PageRendering required this subsystem to render each page to
 # an image when Microsoft Visio is available, through its own COM automation backend. That
 # requirement is superseded (not satisfied) by DocDownVisio-PageRenderingNotProvided, because this
-# system's own backend never renders pages at all now: rendered page images are a separate,
+# subsystem's own backend never renders pages at all now: rendered page images are a separate,
 # opt-in concern delivered entirely by the DemaConsulting.DocDown.Visio.Rendering package.
 #
-# SUPERSEDED REQUIREMENT: DocDownVisio-RenderingAvailability required this system to report its
+# SUPERSEDED REQUIREMENT: DocDownVisio-RenderingAvailability required this subsystem to report its
 # own rendering backend as unavailable, with a declarative reason that instructs no installation,
 # where Microsoft Visio could not be reached. That requirement is superseded (not satisfied)
-# because this system's own backend never renders pages at all now, so rendering availability
+# because this subsystem's own backend never renders pages at all now, so rendering availability
 # honesty is entirely DemaConsulting.DocDown.Visio.Rendering's concern, governed by
 # docs/reqstream/docdown-visio-rendering.yaml.
 
@@ -69,7 +69,7 @@ sections:
     requirements:
       - id: DocDownVisio-Registration
         title: >-
-          The system shall register its managed Visio backend through an explicit extension method
+          The subsystem shall register its managed Visio backend through an explicit extension method
           without reflection or assembly scanning.
         tags: [system]
         justification: |
@@ -78,7 +78,7 @@ sections:
           accident rather than a decision, which cannot be audited; one explicit call keeps the edge
           from host to backend visible and reviewable. Rendered page images are a separate, opt-in
           concern registered through the DemaConsulting.DocDown.Visio.Rendering package's own
-          `AddVisioRendering`, so this system's single call registers only the managed content
+          `AddVisioRendering`, so this subsystem's single call registers only the managed content
           backend.
         children:
           - DocDownVisio-VisioDocDownBuilderExtensions-RegistersManagedBackend
@@ -89,12 +89,12 @@ sections:
 
       - id: DocDownVisio-Extraction
         title: >-
-          The system shall extract each page of a drawing as content — its name, its shape text,
+          The subsystem shall extract each page of a drawing as content — its name, its shape text,
           and the directed connections between its shapes — along with its images and metadata,
           into the DocDown output contract.
         tags: [system]
         justification: |
-          The package exists to turn a drawing into the invariant DocDown output layout so a
+          The subsystem exists to turn a drawing into the invariant DocDown output layout so a
           downstream agent sees the same artifacts it sees for every other format. A schematic's
           meaning is carried by which shapes exist, what they are labeled, which page they belong to,
           and how they are connected, so extracting that from the file itself is what makes the
@@ -107,7 +107,7 @@ sections:
           - DocDownVisio_Extract_Vsdx_SelectsOpenXml
 
       - id: DocDownVisio-PageNames
-        title: The system shall extract the name of every page.
+        title: The subsystem shall extract the name of every page.
         tags: [system]
         justification: |
           Engineers navigate and cite a drawing by page name, so a page's name is the first thing
@@ -121,7 +121,7 @@ sections:
           - DocDownVisio_Extract_TwoPages_SurfacesEveryPageName
 
       - id: DocDownVisio-ShapeText
-        title: The system shall extract the text of every shape that carries text.
+        title: The subsystem shall extract the text of every shape that carries text.
         tags: [system]
         justification: |
           Labels carry the identity of the modeled things: a shape's text is the part number, the
@@ -137,7 +137,7 @@ sections:
 
       - id: DocDownVisio-Topology
         title: >-
-          The system shall resolve the drawing's connectors into directed connections between shapes
+          The subsystem shall resolve the drawing's connectors into directed connections between shapes
           and render them as a readable source-to-target topology.
         tags: [system]
         justification: |
@@ -155,7 +155,7 @@ sections:
 
       - id: DocDownVisio-TopologyProvenance
         title: >-
-          The system shall record whether each rendered topology endpoint came from the shape's own
+          The subsystem shall record whether each rendered topology endpoint came from the shape's own
           text, its master type, or only a shape id, and shall state the labeling convention in the
           content whenever a rendered label is not authored text.
         tags: [system]
@@ -172,13 +172,13 @@ sections:
 
       - id: DocDownVisio-NoInstallationRequired
         title: >-
-          The system shall recover a drawing's page names, shape text, and directed topology with no
+          The subsystem shall recover a drawing's page names, shape text, and directed topology with no
           Visio installation present.
         tags: [system]
         justification: |
           The schematic's logical content must be recoverable on any machine and in CI, where no
           Office application is installed. The managed backend reads the Open Packaging container
-          directly and probes available everywhere the package can load, so the guaranteed content
+          directly and probes available everywhere the subsystem can load, so the guaranteed content
           path never depends on Microsoft Visio.
         children:
           - DocDownVisio-OpenXml-VisioOpenXmlExtractor-ProbesUnconditionally
@@ -187,15 +187,15 @@ sections:
 
       - id: DocDownVisio-PageRenderingNotProvided
         title: >-
-          The system's own backend shall never render a page to an image itself, and shall always
+          The subsystem's own backend shall never render a page to an image itself, and shall always
           state plainly that rendered pages are not provided.
         tags: [system]
         justification: |
           Spatial arrangement — layout, grouping, and relative position — is itself engineering
-          meaning, but this system's content path is the guaranteed, deterministic read of a
+          meaning, but this subsystem's content path is the guaranteed, deterministic read of a
           drawing's file-level content and never opens an external application. Rendered page
           images are a separate, opt-in concern delivered entirely by the
-          DemaConsulting.DocDown.Visio.Rendering package; this system's own backend states plainly,
+          DemaConsulting.DocDown.Visio.Rendering package; this subsystem's own backend states plainly,
           on every extraction, that it provides no rendered pages rather than ever fabricating one.
         children:
           - DocDownVisio-OpenXml-VisioOpenXmlExtractor-ProbesUnconditionally
@@ -204,7 +204,7 @@ sections:
 
       - id: DocDownVisio-EmbeddedImages
         title: >-
-          The system shall write a drawing's embedded images into the images folder, link them from
+          The subsystem shall write a drawing's embedded images into the images folder, link them from
           the page that shows them, and record which page each belongs to, excluding the package
           thumbnail.
         tags: [system]
@@ -224,12 +224,12 @@ sections:
 
       - id: DocDownVisio-LegacyFormatRefusal
         title: >-
-          The system shall refuse a legacy binary Visio drawing with an unreadable result whose
+          The subsystem shall refuse a legacy binary Visio drawing with an unreadable result whose
           explanation states plainly that the format is unsupported, and without an exception
           reaching the caller.
         tags: [system]
         justification: |
-          This package reads Open Packaging drawings and nothing else, and DocDown does not support
+          This subsystem reads Open Packaging drawings and nothing else, and DocDown does not support
           the legacy binary formats at all — no future version and no different installation will
           ever extract a `.vsd`. A caller who hands the engine one therefore deserves a plain
           statement of that fact with the full output layout still written, not an exception and not
@@ -238,7 +238,7 @@ sections:
           - DocDownVisio_Extract_LegacyVsd_ReturnsUnreadableFailure
 
       - id: DocDownVisio-SelfValidation
-        title: The system shall contribute self-validation cases describing its own extraction behavior.
+        title: The subsystem shall contribute self-validation cases describing its own extraction behavior.
         tags: [system]
         justification: |
           An operator needs to confirm the backend actually works where it is deployed, not merely
@@ -246,7 +246,7 @@ sections:
           embedded probe drawing — two labeled shapes joined by a glued connector — and confirms the
           connection resolved — proving
           the topology path is genuinely functional — plus an honest skip for the page-rendering case,
-          since rendered pages are this system's own backend's one declared absence, not something it
+          since rendered pages are this subsystem's own backend's one declared absence, not something it
           provides.
         children:
           - DocDownVisio-OpenXml-VisioOpenXmlExtractor-ContributesSelfTests

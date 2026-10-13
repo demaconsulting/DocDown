@@ -74,7 +74,7 @@ public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     /// <inheritdoc />
     /// <remarks>
     ///     Always available, and never reports rendered pages. There is nothing to probe: the Open
-    ///     XML SDK is a managed assembly that ships inside this package, and a spreadsheet has no
+    ///     XML SDK is a managed assembly that ships inside this subsystem, and a spreadsheet has no
     ///     page grid to render in the first place. Performs no I/O and cannot throw.
     /// </remarks>
     public ExtractorAvailability ProbeAvailability() => ExtractorAvailability.Available();
@@ -113,7 +113,7 @@ public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
     ///     read the workbook authored in Microsoft Excel and embedded here, and that page rendering
     ///     is genuinely not offered rather
     ///     than merely untested. The rendering case reports as skipped with a reason, because a
-    ///     capability this package does not claim must not be reported as a failure.
+    ///     capability this subsystem does not claim must not be reported as a failure.
     /// </remarks>
     public IEnumerable<SelfTestCase> GetSelfTestCases() =>
     [

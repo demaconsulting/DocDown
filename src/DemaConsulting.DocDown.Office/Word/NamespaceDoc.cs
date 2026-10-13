@@ -2,7 +2,7 @@ namespace DemaConsulting.DocDown.Word;
 
 /// <summary>
 /// Word extraction backend. Registers the managed Open XML extractor for <c>.docx</c> documents
-/// via <c>AddWord</c>; this is the whole public surface of the package, and the extraction work
+/// via <c>AddWord</c>; this is the whole public surface of the subsystem, and the extraction work
 /// itself lives in <c>DemaConsulting.DocDown.Word.OpenXml</c>. The legacy binary <c>.doc</c> format is not
 /// supported.
 /// </summary>
