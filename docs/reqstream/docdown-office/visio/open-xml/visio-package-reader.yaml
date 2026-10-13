@@ -98,6 +98,20 @@ sections:
                 tests:
                   - VisioPackageReader_Read_SymbolFontRun_RecoversArrowWithoutCorruptingText
 
+                - id: DocDownVisio-OpenXml-VisioPackageReader-ResolvesNumericFontRefs
+                  title: >-
+                  VisioPackageReader shall resolve a numeric character font reference through the
+                  document's face-name table, and leave the run's text unchanged when the reference
+                  is not declared or names no symbol font.
+                  justification: |
+                  A real drawing's character rows name their font by face-name id rather than by name,
+                  so symbol-font recovery would never trigger unless the id is resolved through the
+                  document's FaceNames table. An id the table does not declare, or one that resolves to
+                  an ordinary face, is kept as written and so can never cause text to be altered.
+                  tests:
+                  - VisioPackageReader_Read_NumericFontRef_ResolvesFaceNameAndRecoversArrow
+                  - VisioPackageReader_Read_NonSymbolNumericFontRef_LeavesTextAlone
+
               - id: DocDownVisio-OpenXml-VisioPackageReader-YieldsEmptyPageCleanly
                 title: >-
                   VisioPackageReader shall yield a page that carries no shapes with recoverable text and no

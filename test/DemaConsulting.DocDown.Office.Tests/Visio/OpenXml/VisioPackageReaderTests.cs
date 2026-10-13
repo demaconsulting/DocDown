@@ -68,6 +68,43 @@ public class VisioPackageReaderTests
     }
 
     /// <summary>
+    ///     Proves a numeric <c>Font</c> value is resolved through the document's face-name table, so a
+    ///     Wingdings arrow named by id is still recovered.
+    /// </summary>
+    [Fact]
+    public void VisioPackageReader_Read_NumericFontRef_ResolvesFaceNameAndRecoversArrow()
+    {
+        // Arrange: the arrow run's Font cell is the id "1", which the table declares as Wingdings
+        using var stream = new MemoryStream(VsdxFixtures.SymbolFontArrowsByFaceId("1"));
+
+        // Act: read the drawing
+        var model = VisioPackageReader.Read(stream);
+
+        // Assert: the id resolved to the symbol font, so the code point became the arrow
+        Assert.Equal("IN \u2794 OUT", Assert.Single(model.Pages[0].Shapes).Text);
+    }
+
+    /// <summary>
+    ///     Proves a numeric <c>Font</c> value that resolves to an ordinary face, or to no declared face
+    ///     at all, leaves the run's text exactly as authored.
+    /// </summary>
+    /// <param name="faceId">The numeric font value the run declares.</param>
+    [Theory]
+    [InlineData("2")]
+    [InlineData("99")]
+    public void VisioPackageReader_Read_NonSymbolNumericFontRef_LeavesTextAlone(string faceId)
+    {
+        // Arrange: id 2 is Arial in the table; id 99 is not declared
+        using var stream = new MemoryStream(VsdxFixtures.SymbolFontArrowsByFaceId(faceId));
+
+        // Act: read the drawing
+        var model = VisioPackageReader.Read(stream);
+
+        // Assert: nothing was substituted
+        Assert.Equal("IN \u00e0 OUT", Assert.Single(model.Pages[0].Shapes).Text);
+    }
+
+    /// <summary>
     ///     Proves the reader resolves connector records into real directed edges between shapes, with
     ///     the direction the <c>FromCell</c> of <c>BeginX</c>/<c>EndX</c> encodes.
     /// </summary>

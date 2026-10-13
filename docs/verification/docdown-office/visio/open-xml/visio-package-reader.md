@@ -95,6 +95,16 @@ Proves a Wingdings arrow byte is recovered to its Unicode equivalent only within
 that symbol font, leaving text in other fonts unchanged. This exceeds the intent and is covered because it
 is tested. Evidence for `DocDownVisio-OpenXml-VisioPackageReader-RecoversSymbolFontGlyphs`.
 
+#### A numeric font reference is resolved through the face-name table
+
+**Tests**: `VisioPackageReader_Read_NumericFontRef_ResolvesFaceNameAndRecoversArrow`,
+`VisioPackageReader_Read_NonSymbolNumericFontRef_LeavesTextAlone`
+
+Prove a character row whose font is a face-name id resolves to the face name declared in
+`visio/document.xml`, so a Wingdings arrow named by id is recovered, while an id that resolves to an
+ordinary face or is not declared leaves the text exactly as authored. Evidence for
+`DocDownVisio-OpenXml-VisioPackageReader-ResolvesNumericFontRefs`.
+
 #### An empty page is yielded cleanly
 
 **Test**: `VisioPackageReader_Read_EmptyPage_YieldsNoShapesOrConnections`
