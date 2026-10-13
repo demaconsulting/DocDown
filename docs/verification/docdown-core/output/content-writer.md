@@ -70,7 +70,8 @@ mistaken for a delivered document. Evidence for `DocDownCore-Output-ContentWrite
 
 Proves an image link emitted root-relative resolves to the real file from a part under `parts/` in the
 index layout (the link is rewritten one level up) and from the scratch root, unchanged, in the
-single-flow layout. This is defensive evidence with no dedicated requirement.
+single-flow layout. The `PartResourceLinkRewriter_Rewrite_*` tests (described in the Output subsystem
+verification) cover the rewrite rules; all are linked to the part-link requirement.
 
 ##### A null sink is rejected
 

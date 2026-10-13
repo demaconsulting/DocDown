@@ -34,8 +34,9 @@ public class ScratchFolderTests
         using var temp = new TempScratch();
         var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
 
-        // Act / Assert: every escape attempt is refused
-        Assert.Throws<ScratchFolderException>(() => folder.Combine(hostilePath));
+        // Act / Assert: every escape attempt is refused with a structured path reason
+        var exception = Assert.Throws<ScratchFolderException>(() => folder.Combine(hostilePath));
+        Assert.Contains(exception.Reason, new[] { "pathEscapesScratchFolder", "invalidPathComponent" });
     }
 
     /// <summary>
@@ -68,8 +69,9 @@ public class ScratchFolderTests
         using var temp = new TempScratch();
         var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
 
-        // Act / Assert: injection characters are refused
-        Assert.Throws<ScratchFolderException>(() => folder.Combine(hostileComponent));
+        // Act / Assert: injection characters are refused with a structured reason
+        var exception = Assert.Throws<ScratchFolderException>(() => folder.Combine(hostileComponent));
+        Assert.Equal("invalidPathComponent", exception.Reason);
     }
 
     /// <summary>
@@ -122,8 +124,9 @@ public class ScratchFolderTests
         using var temp = new TempScratch();
         var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
 
-        // Act / Assert: an allocation naming a device is refused
-        Assert.Throws<ScratchFolderException>(() => folder.Combine("images/CON.png"));
+        // Act / Assert: an allocation naming a device is refused with a structured reason
+        var exception = Assert.Throws<ScratchFolderException>(() => folder.Combine("images/CON.png"));
+        Assert.Equal("reservedDeviceName", exception.Reason);
     }
 
     /// <summary>
@@ -385,6 +388,64 @@ public class ScratchFolderTests
         Assert.Empty(Directory.GetFileSystemEntries(folder.AbsolutePath));
     }
 
+    /// <summary>
+    ///     Proves a manifest that fails any structural identity proof is refused and nothing is deleted.
+    /// </summary>
+    /// <param name="kind">The identity condition to break.</param>
+    [Theory]
+    [InlineData("unsupportedSchema")]
+    [InlineData("wrongToolName")]
+    [InlineData("wrongPackagePrefix")]
+    [InlineData("nullSource")]
+    [InlineData("corruptJson")]
+    [InlineData("oversizedManifest")]
+    public void ScratchFolder_Prepare_ManifestFailsIdentityProof_RefusesAndPreservesContents(string kind)
+    {
+        // Arrange: a folder with one inventoried-looking file and a manifest that breaks one identity condition
+        using var temp = new TempScratch();
+        var target = Path.Combine(temp.Path, "suspect");
+        Directory.CreateDirectory(target);
+        var userFile = Path.Combine(target, "summary.txt");
+        File.WriteAllText(userFile, "keep me");
+        var genuine = DocDownManifest(target);
+        var manifest = kind switch
+        {
+            "unsupportedSchema" => genuine.Replace("\"schemaVersion\":\"3.0\"", "\"schemaVersion\":\"9.9\""),
+            "wrongToolName" => genuine.Replace("\"name\":\"DocDown\"", "\"name\":\"NotDocDown\""),
+            "wrongPackagePrefix" => genuine.Replace(
+                "\"package\":\"DemaConsulting.DocDown.Core\"", "\"package\":\"Other.Package\""),
+            "nullSource" => System.Text.RegularExpressions.Regex.Replace(genuine, "\"source\":\\{[^}]*\\}", "\"source\":null"),
+            "corruptJson" => "{ this is not json",
+            _ => genuine + new string(' ', (8 * 1024 * 1024) + 1)
+        };
+        Assert.NotEqual(genuine, manifest);
+        File.WriteAllText(Path.Combine(target, "manifest.json"), manifest);
+
+        // Act / Assert: the folder is not provably DocDown output, so it is refused and left intact
+        var exception = Assert.Throws<ScratchFolderException>(
+            () => ScratchFolder.Prepare(target, ScratchFolderMode.CleanIfDocDownFolder));
+        Assert.Equal("scratchFolderNotDocDown", exception.Reason);
+        Assert.True(File.Exists(userFile));
+    }
+
+    /// <summary>
+    ///     Proves an unrecognized preparation mode is refused with a structured reason.
+    /// </summary>
+    [Fact]
+    public void ScratchFolder_Prepare_UnknownMode_IsRefused()
+    {
+        // Arrange: a populated folder so the mode is actually consulted
+        using var temp = new TempScratch();
+        var target = Path.Combine(temp.Path, "populated");
+        Directory.CreateDirectory(target);
+        var userFile = Path.Combine(target, "user.txt");
+        File.WriteAllText(userFile, "keep me");
+
+        // Act / Assert: the unknown mode is refused and the contents are untouched
+        var exception = Assert.Throws<ScratchFolderException>(() => ScratchFolder.Prepare(target, (ScratchFolderMode)99));
+        Assert.Equal("unknownScratchFolderMode", exception.Reason);
+        Assert.True(File.Exists(userFile));
+    }
     /// <summary>
     ///     Builds a minimal well-formed DocDown manifest bound to a given scratch folder.
     /// </summary>

@@ -111,7 +111,7 @@ public static class ExtractorSelector
         {
             failure = MakeFailure(
                 "No available extractor can process the detected format in this environment.", format,
-                DescribeUnsupportedFormat(format.Format));
+                DescribeUnavailable(format.Format, formatMatched));
             return null;
         }
 
@@ -167,6 +167,33 @@ public static class ExtractorSelector
         return
             $"Core does not extract '{format.Id}' itself; that capability comes from the separate " +
             $"{package} extractor package, which a host registers with the engine.";
+    }
+
+    /// <summary>
+    ///     States that extractors support the format but none can run here, naming each unavailability reason.
+    /// </summary>
+    /// <param name="format">The detected format that the unavailable candidates support.</param>
+    /// <param name="matched">The format-matched candidates, all of which are unavailable.</param>
+    /// <returns>Prose stating the unavailability and listing each candidate's reason.</returns>
+    /// <remarks>
+    ///     Unlike <see cref="DescribeUnsupportedFormat"/>, this never claims that no extractor supports the
+    ///     format: one does, but its probe reported it cannot run. Candidates are listed by identifier so
+    ///     the output is stable. Pure and side-effect free.
+    /// </remarks>
+    private static string DescribeUnavailable(DocumentFormat format, IEnumerable<ExtractorCandidate> matched)
+    {
+        var builder = new StringBuilder();
+        builder.Append($"Extractors that support '{format.Id}' are registered, ")
+            .Append("but none is available in this environment.");
+        foreach (var candidate in matched.OrderBy(c => c.Descriptor.Id, StringComparer.Ordinal))
+        {
+            var reason = string.IsNullOrWhiteSpace(candidate.Availability.UnavailableReason)
+                ? "no reason was reported"
+                : candidate.Availability.UnavailableReason;
+            builder.Append('\n').Append("- ").Append(candidate.Descriptor.Id).Append(": ").Append(reason);
+        }
+
+        return builder.ToString();
     }
 
     /// <summary>

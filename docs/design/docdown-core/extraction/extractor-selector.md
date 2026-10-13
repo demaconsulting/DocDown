@@ -42,6 +42,8 @@ Private helpers keep concerns separate:
 - **`Supports`** — matches a descriptor to a detected format by stable format identifier.
 - **`DescribeUnsupportedFormat`** — returns honest prose naming the owning package for a well-known
   format or stating that a legacy binary format is unsupported.
+- **`DescribeUnavailable`** — returns prose stating that matching extractors are registered but none is
+  available in this environment, followed by one `- id: reason` line per candidate ordered by identifier.
 - **`MakeFailure`** — composes the final multi-line `ExtractionFailure`.
 
 #### Error Handling

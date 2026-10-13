@@ -54,6 +54,35 @@ public class ImageDimensionsTests
     }
 
     /// <summary>
+    ///     Proves a bottom-up BMP reports its positive height and a top-down BMP reports the absolute value.
+    /// </summary>
+    /// <param name="storedHeight">The signed height stored in the BMP header.</param>
+    [Theory]
+    [InlineData(20)]
+    [InlineData(-20)]
+    public void ImageDimensions_TryRead_Bmp_ReadsWidthAndAbsoluteHeight(int storedHeight)
+    {
+        var ok = ImageDimensions.TryRead(Bmp(30, storedHeight), out var width, out var height);
+
+        Assert.True(ok);
+        Assert.Equal(30, width);
+        Assert.Equal(20, height);
+    }
+
+    /// <summary>
+    ///     Proves a BMP whose stored height is <c>int.MinValue</c> is reported as unknown instead of throwing.
+    /// </summary>
+    [Fact]
+    public void ImageDimensions_TryRead_BmpMinValueHeight_ReturnsFalseWithoutThrowing()
+    {
+        var ok = ImageDimensions.TryRead(Bmp(30, int.MinValue), out var width, out var height);
+
+        Assert.False(ok);
+        Assert.Equal(0, height);
+        Assert.Equal(30, width);
+    }
+
+    /// <summary>
     ///     Proves a vector metafile or unrecognized payload is reported as unknown rather than guessed.
     /// </summary>
     [Fact]
@@ -94,6 +123,22 @@ public class ImageDimensionsTests
         // Length (13) and "IHDR" fill offsets 8..15; the reader only needs offsets 16..23
         WriteBigEndian(bytes, 16, width);
         WriteBigEndian(bytes, 20, height);
+        return bytes;
+    }
+
+    /// <summary>
+    ///     Builds a minimal BMP header carrying the given pixel width and signed height.
+    /// </summary>
+    /// <param name="width">The pixel width.</param>
+    /// <param name="height">The signed pixel height as stored in the header.</param>
+    /// <returns>The 30-byte BMP header.</returns>
+    private static byte[] Bmp(int width, int height)
+    {
+        var bytes = new byte[30];
+        bytes[0] = (byte)'B';
+        bytes[1] = (byte)'M';
+        BitConverter.GetBytes(width).CopyTo(bytes, 18);
+        BitConverter.GetBytes(height).CopyTo(bytes, 22);
         return bytes;
     }
 

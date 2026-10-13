@@ -27,7 +27,7 @@ public static class ImageLinkText
     /// <returns>The escaped descriptive text, or the neutral <c>image</c> placeholder when none was given.</returns>
     /// <remarks>
     ///     Escapes the characters that would otherwise close the alt bracket, open or close the link
-    ///     target, or introduce a line break, and collapses any newline to a space so the link stays
+    ///     target, or introduce a line break, and collapses any newline (CRLF, lone CR, or LF) to a single space so the link stays
     ///     on one line. Pure.
     /// </remarks>
     public static string Alt(string? altText)
@@ -38,11 +38,18 @@ public static class ImageLinkText
         }
 
         var builder = new StringBuilder(altText.Length);
-        foreach (var character in altText)
+        for (var index = 0; index < altText.Length; index++)
         {
+            var character = altText[index];
             switch (character)
             {
                 case '\r':
+                    // A CRLF pair becomes one space (emitted for the LF); a lone CR is a line break too
+                    if (index + 1 >= altText.Length || altText[index + 1] != '\n')
+                    {
+                        builder.Append(' ');
+                    }
+
                     break;
                 case '\n':
                     builder.Append(' ');

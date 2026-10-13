@@ -34,6 +34,23 @@ public class SelfTestProbeTests
     }
 
     /// <summary>
+    ///     Proves an embedded resource is loaded as its exact bytes.
+    /// </summary>
+    [Fact]
+    public void Load_PresentResource_ReturnsResourceBytes()
+    {
+        // Arrange: an assembly whose manifest carries one known resource
+        byte[] expected = [0x50, 0x4B, 0x03, 0x04, 0x00, 0xFF];
+        var assembly = new StubAssembly("probe.bin", expected);
+
+        // Act: load the resource by name
+        var loaded = SelfTestProbe.Load(assembly, "probe.bin");
+
+        // Assert: the bytes are returned unchanged
+        Assert.Equal(expected, loaded);
+    }
+
+    /// <summary>
     ///     Proves malformed arguments are rejected at the call site.
     /// </summary>
     [Fact]
@@ -43,5 +60,35 @@ public class SelfTestProbeTests
 
         Assert.Throws<ArgumentNullException>(() => SelfTestProbe.Load(null!, "probe"));
         Assert.Throws<ArgumentException>(() => SelfTestProbe.Load(assembly, string.Empty));
+    }
+
+    /// <summary>
+    ///     An assembly stand-in whose manifest holds exactly one in-memory resource.
+    /// </summary>
+    private sealed class StubAssembly : Assembly
+    {
+        /// <summary>The name of the single resource.</summary>
+        private readonly string _resourceName;
+
+        /// <summary>The bytes of the single resource.</summary>
+        private readonly byte[] _bytes;
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="StubAssembly"/> class.
+        /// </summary>
+        /// <param name="resourceName">The name of the resource the manifest carries.</param>
+        /// <param name="bytes">The resource content.</param>
+        public StubAssembly(string resourceName, byte[] bytes)
+        {
+            _resourceName = resourceName;
+            _bytes = bytes;
+        }
+
+        /// <inheritdoc />
+        public override string[] GetManifestResourceNames() => [_resourceName];
+
+        /// <inheritdoc />
+        public override Stream? GetManifestResourceStream(string name) =>
+            string.Equals(name, _resourceName, StringComparison.Ordinal) ? new MemoryStream(_bytes) : null;
     }
 }

@@ -36,6 +36,7 @@ sections:
                   of that folder's contents.
                 tests:
                   - ScratchFolder_Prepare_CopiedGenuineManifestAmongUserFiles_RefusesAndPreservesContents
+                  - ScratchFolder_Prepare_ManifestFailsIdentityProof_RefusesAndPreservesContents
 
               - id: DocDownCore-Output-ScratchFolder-AdditiveSchemaAccepted
                 title: >-
@@ -60,6 +61,8 @@ sections:
                 tests:
                   - ScratchFolder_Prepare_UnaccountedFileBesideManifest_RefusesAndPreservesContents
                   - ScratchFolder_Prepare_EscapingManifestPath_Refuses
+                  - ScratchFolder_Prepare_ManifestFailsIdentityProof_RefusesAndPreservesContents
+                  - ScratchFolder_Prepare_UnknownMode_IsRefused
                   - ScratchFolder_Prepare_CleanIfDocDownOnDocDownFolder_CleansInventoriedFiles
 
               - id: DocDownCore-Output-ScratchFolder-RevalidatedBeforeDeletion
@@ -77,6 +80,7 @@ sections:
                   Overwrite is the caller's explicit opt-in to unconditional replacement.
                 tests:
                   - ScratchFolder_Prepare_OverwriteOnPopulatedFolder_ClearsContents
+                  - ScratchFolder_Prepare_UnknownMode_IsRefused
 
               - id: DocDownCore-Output-ScratchFolder-PathContainment
                 title: ScratchFolder shall confine every allocated path within the scratch folder and refuse escapes.
@@ -123,3 +127,5 @@ sections:
                 tests:
                   - ScratchFolder_Prepare_CleanIfDocDownOnUserFolder_RefusesAndPreservesContents
                   - ScratchFolder_Prepare_EscapingManifestPath_Refuses
+                  - ScratchFolder_Prepare_ManifestFailsIdentityProof_RefusesAndPreservesContents
+                  - ScratchFolder_Prepare_UnknownMode_IsRefused

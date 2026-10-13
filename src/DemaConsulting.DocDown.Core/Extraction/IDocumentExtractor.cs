@@ -25,7 +25,7 @@ namespace DemaConsulting.DocDown.Core;
 public interface IDocumentExtractor
 {
     /// <summary>
-    ///     Gets the extractor's stable, unique identifier used for lookup and override.
+    ///     Gets the extractor's stable, unique identifier used for lookup and manifest reporting.
     /// </summary>
     /// <remarks>
     ///     Must be stable across releases because callers and manifests reference it; duplicate
@@ -47,7 +47,7 @@ public interface IDocumentExtractor
     /// </summary>
     /// <remarks>
     ///     Used by selection to filter candidates before considering availability or
-    ///     capabilities.
+    ///     page-rendering preference.
     /// </remarks>
     IReadOnlyCollection<DocumentFormat> SupportedFormats { get; }
 

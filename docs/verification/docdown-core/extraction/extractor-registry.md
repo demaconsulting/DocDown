@@ -53,7 +53,19 @@ registered extractor.
 **Test**: `ExtractorRegistry_Construct_DuplicateIds_ThrowsArgumentException`
 
 Proves a registry constructed over two extractors that share an identifier is refused rather than
-silently shadowing one of them. This is defensive evidence with no dedicated requirement.
+silently shadowing one of them.
+
+##### Construction validates its factories
+
+**Tests**: `ExtractorRegistry_Construct_NullFactoryList_ThrowsArgumentNullException`,
+`ExtractorRegistry_Construct_EmptyFactoryList_YieldsEmptyRegistry`,
+`ExtractorRegistry_Construct_NullFactoryElement_ThrowsArgumentNullException`,
+`ExtractorRegistry_Construct_FactoryReturnsNull_ThrowsArgumentException`,
+`ExtractorRegistry_Construct_EmptyIdentifier_ThrowsArgumentException`,
+`ExtractorRegistry_Construct_Factory_IsMaterializedExactlyOnce`
+
+Proves a null list, a null factory, a factory returning null, and an empty identifier are refused, an empty
+list yields an empty registry, and each factory runs exactly once.
 
 ##### One candidate is yielded per extractor
 

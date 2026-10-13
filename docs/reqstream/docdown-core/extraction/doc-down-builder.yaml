@@ -47,6 +47,7 @@ sections:
                   A built engine must remain stable even if the caller keeps editing the builder.
                 tests:
                   - DocDownBuilder_Build_MutatedAfterBuild_DoesNotAffectSnapshot
+                  - DocDownBuilder_Build_ConfigureDefaultsAfterBuild_DoesNotAffectBuiltEngine
                   - DocDownBuilder_Build_CalledTwiceWithMoreRegistrations_ProducesIndependentEngines
 
               - id: DocDownCore-Extraction-DocDownBuilder-RejectNullArguments

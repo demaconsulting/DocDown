@@ -806,7 +806,7 @@ public sealed class ScratchFolder
     /// </returns>
     /// <remarks>
     ///     <para>
-    ///         This is the first of the reuse guard's four steps. It establishes only that the file
+    ///         This is the first of the reuse guard's five steps. It establishes only that the file
     ///         <em>is a DocDown manifest</em> — never that the folder is <em>this run's</em> output,
     ///         which <see cref="PathBinds"/> and the inventory checks in
     ///         <see cref="PrepareCleanIfDocDown"/> decide. Returning the parsed manifest rather than
@@ -823,9 +823,9 @@ public sealed class ScratchFolder
     ///         <see cref="SupportedManifestSchemas"/> with an ordinal comparison; (4) <c>tool.name</c> equals
     ///         <see cref="DocDownToolName"/> <em>exactly</em>, never as a substring;
     ///         (5) <c>tool.package</c> starts with <see cref="DocDownPackagePrefix"/>; and
-    ///         (6) an <c>artifacts</c> ledger is present, which every real DocDown run writes.
-    ///         An alien-but-valid JSON document deserializes with null members and fails at (3)
-    ///         or (4).
+    ///         (6) the manifest's <c>source</c> section is present, which every real DocDown run
+    ///         writes. An alien-but-valid JSON document deserializes with null members and fails
+    ///         at (3) or (4).
     ///     </para>
     ///     <para>
     ///         Every DocDown run — including a failed one — writes the full layout with a

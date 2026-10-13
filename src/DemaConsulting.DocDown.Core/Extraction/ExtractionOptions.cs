@@ -67,8 +67,9 @@ public sealed class ExtractionOptions
     ///     for no limit.
     /// </summary>
     /// <remarks>
-    ///     Provided so callers can bound the size of extracted raster assets. Interpreted by
-    ///     backends that can downscale; a backend that cannot honor it reports a gap.
+    ///     Bounds the size of extracted raster assets: an embedded raster image whose width or height
+    ///     exceeds the limit is skipped and recorded in an extraction note. The value is not validated;
+    ///     a non-positive limit skips every raster image whose dimensions are known.
     /// </remarks>
     public int? MaxImageDimensionPx { get; set; }
 
@@ -77,8 +78,9 @@ public sealed class ExtractionOptions
     ///     limit.
     /// </summary>
     /// <remarks>
-    ///     Provided so callers can cap the on-disk cost of extracted images. Interpreted by
-    ///     backends that can enforce it.
+    ///     Caps the on-disk cost of extracted images: an embedded image larger than the limit is
+    ///     skipped and recorded in an extraction note. The value is not validated; a non-positive
+    ///     limit skips every non-empty image.
     /// </remarks>
     public long? MaxImageBytes { get; set; }
 
@@ -87,7 +89,8 @@ public sealed class ExtractionOptions
     /// </summary>
     /// <remarks>
     ///     Balances output fidelity against file size; only meaningful when
-    ///     <see cref="RenderPages"/> is enabled and a rendering backend is available.
+    ///     <see cref="RenderPages"/> is enabled and a rendering backend is available. The value is not validated by Core;
+    ///     a non-positive value is passed to the renderer, which decides how to treat it.
     /// </remarks>
     public int PageRenderDpi { get; set; } = 150;
 

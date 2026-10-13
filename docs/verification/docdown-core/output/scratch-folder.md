@@ -84,3 +84,18 @@ as an unaccounted stray.
 ##### Overwrite clears any existing contents
 
 **Test**: `ScratchFolder_Prepare_OverwriteOnPopulatedFolder_ClearsContents`
+
+##### Manifests that fail the identity proof are refused
+
+**Test**: `ScratchFolder_Prepare_ManifestFailsIdentityProof_RefusesAndPreservesContents`
+
+Proves a populated folder whose manifest has an unsupported schema, a wrong tool name, a wrong package
+prefix, no source section, corrupt JSON, or an oversized body is refused with the not-a-DocDown-folder
+reason and its contents are preserved.
+
+##### An unknown mode is refused
+
+**Test**: `ScratchFolder_Prepare_UnknownMode_IsRefused`
+
+Proves an undefined mode value is refused with the unknown-mode reason rather than treated as a permissive
+mode.

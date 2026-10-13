@@ -84,3 +84,18 @@ dropped unless the backend marked the feature as looked for.
 ##### Hostile preferred names stay contained
 
 **Test**: `ExtractionSink_AddImageAsync_HostilePreferredName_StaysContained`
+
+##### Image transform provenance is recorded
+
+**Tests**: `ExtractionSink_AddImageAsync_NoTransformReported_RecordsPassthrough`,
+`ExtractionSink_AddImageAsync_DecodedToPngReported_RecordsTransform`
+
+Proves an image added with no reported transform is recorded as a passthrough and a reported transform is
+preserved verbatim.
+
+##### Image description and referrer metadata are recorded
+
+**Test**: `ExtractionSink_AddImageAsync_DescriptionAndReferrers_AreRecorded`
+
+Proves the description, its provenance, the source reference, the source pages, and the template flag
+survive on the stored image record.

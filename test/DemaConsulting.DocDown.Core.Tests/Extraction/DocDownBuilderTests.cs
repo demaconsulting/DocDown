@@ -132,6 +132,31 @@ public class DocDownBuilderTests
     }
 
     /// <summary>
+    ///     Proves reconfiguring defaults after Build does not change the already-built engine.
+    /// </summary>
+    [Fact]
+    public async Task DocDownBuilder_Build_ConfigureDefaultsAfterBuild_DoesNotAffectBuiltEngine()
+    {
+        // Arrange: defaults request page rendering, then the engine is built
+        using var temp = new TempScratch();
+        var builder = new DocDownBuilder()
+            .AddExtractor(StubExtractor.Available("text", [DocumentFormat.Text]))
+            .ConfigureDefaults(options => options.RenderPages = true);
+        var engine = builder.Build();
+        var input = temp.CreateFile("document.txt", "hello world");
+
+        // Act: reconfigure the builder defaults after the snapshot, then run the earlier engine
+        builder.ConfigureDefaults(options => options.RenderPages = false);
+        var result = await engine.ExtractAsync(input, Path.Combine(temp.Path, "out"), null, Ct);
+
+        // Assert: the engine still uses the defaults captured at Build time
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Contains(
+            result.Notes,
+            note => note.Message.Contains("Page rendering was requested", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     ///     Proves the builder remains reusable and produces independent engines.
     /// </summary>
     [Fact]

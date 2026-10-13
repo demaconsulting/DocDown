@@ -90,6 +90,9 @@ The subsystem defines the following supporting types inline rather than as separ
   | `PageRenderDpi` | `150` | Resolution used when pages are rendered. |
   | `ScratchFolder` | `CleanIfDocDownFolder` | The `ScratchFolderMode` for the output folder. |
 
+  The numeric options are not validated. A non-positive size limit skips every image that reports a size,
+  and a non-positive `PageRenderDpi` is passed to the renderer as given.
+
   `Clone` makes a shallow member-wise copy, which suffices because every member is a value or an
   immutable value, so a caller's later changes never affect a run in flight. The setters do not
   validate ranges.

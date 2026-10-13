@@ -17,7 +17,7 @@ namespace DemaConsulting.DocDown.Core;
 ///     </para>
 ///     <para>
 ///         The writer invents no content: page markers originate in the extractor's markdown, and
-///         headings for concatenated parts use the part titles the extractor supplied. It performs
+///         index entries and part headings use the part titles the extractor supplied. It performs
 ///         filesystem I/O through the scratch-folder gate and holds no state, so it is safe to call
 ///         from the single extraction flow; it is not designed for concurrent invocation against the
 ///         same folder.

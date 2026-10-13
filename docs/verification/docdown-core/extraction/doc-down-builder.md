@@ -46,7 +46,11 @@ Proves a default render-pages option reaches the engine and causes the expected 
 ##### The built snapshot is unaffected by later builder mutation
 
 **Tests**: `DocDownBuilder_Build_MutatedAfterBuild_DoesNotAffectSnapshot`,
+`DocDownBuilder_Build_ConfigureDefaultsAfterBuild_DoesNotAffectBuiltEngine`,
 `DocDownBuilder_Build_CalledTwiceWithMoreRegistrations_ProducesIndependentEngines`
+
+Proves neither later registrations nor a later change to the configured defaults alter an engine that was
+already built.
 
 ##### Null arguments are rejected
 

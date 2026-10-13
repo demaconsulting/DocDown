@@ -126,6 +126,31 @@ public class ExtractorSelectorTests
     }
 
     /// <summary>
+    ///     Proves the availability failure states that extractors exist but cannot run, names each reason,
+    ///     and does not claim the format is unsupported.
+    /// </summary>
+    [Fact]
+    public void ExtractorSelector_Select_AllMatchingCandidatesUnavailable_ExplanationStatesReasons()
+    {
+        // Arrange: two matching candidates, each unavailable for a different reason
+        var candidates = new[] { Unavailable("zeta", "native library missing"), Unavailable("alpha", "tool not installed") };
+
+        // Act: select automatically
+        var selected = ExtractorSelector.Select(TextDetection(), TextOnlyOptions(), candidates, out var failure);
+
+        // Assert: the prose states unavailability with both reasons, ordered by identifier
+        Assert.Null(selected);
+        Assert.NotNull(failure);
+        Assert.Contains("none is available in this environment", failure.Explanation, StringComparison.Ordinal);
+        Assert.Contains("- alpha: tool not installed", failure.Explanation, StringComparison.Ordinal);
+        Assert.Contains("- zeta: native library missing", failure.Explanation, StringComparison.Ordinal);
+        Assert.True(
+            failure.Explanation.IndexOf("alpha:", StringComparison.Ordinal)
+            < failure.Explanation.IndexOf("zeta:", StringComparison.Ordinal));
+        Assert.DoesNotContain("No registered extractor supports", failure.Explanation, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves a render-capable candidate is preferred when page rendering was requested.
     /// </summary>
     [Fact]

@@ -36,7 +36,11 @@ and returns the same winner for equal logical inputs regardless of candidate ord
 
 ##### All matching candidates unavailable returns failure
 
-**Test**: `ExtractorSelector_Select_AllMatchingCandidatesUnavailable_ReturnsAvailabilityFailure`
+**Tests**: `ExtractorSelector_Select_AllMatchingCandidatesUnavailable_ReturnsAvailabilityFailure`,
+`ExtractorSelector_Select_AllMatchingCandidatesUnavailable_ExplanationStatesReasons`
+
+Proves the failure summary is returned and that the explanation states extractors are registered but none is
+available, listing each candidate
 
 ##### Requested rendered pages prefer a renderer and otherwise fall back to priority
 

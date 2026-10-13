@@ -18,7 +18,7 @@ namespace DemaConsulting.DocDown.Core;
 ///         defers instance creation to <see cref="Build"/>, where <see cref="ExtractorRegistry"/>
 ///         materializes each factory exactly once and rejects duplicate identifiers. Duplicate
 ///         identifiers therefore surface as an <see cref="ArgumentException"/> at build time, because
-///         an identifier is both the caller-override key and the manifest key and must be unique.
+///         an identifier is both the lookup key and the manifest key and must be unique.
 ///     </para>
 ///     <para>
 ///         A builder instance is not thread-safe and is intended to be configured from a single
