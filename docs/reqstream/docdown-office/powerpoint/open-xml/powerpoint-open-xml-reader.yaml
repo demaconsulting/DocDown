@@ -141,3 +141,66 @@ sections:
                 tests:
                   - PowerPointOpenXmlReader_Read_DeckWithModernComments_CountsThemWithoutReadingThem
                   - PowerPointOpenXmlReader_Read_DeckWithComment_CountsNoModernComments
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsTableText
+                title: >-
+                  PowerPointOpenXmlReader shall read the text of a table on a slide as one line per row,
+                  joining a row's non-empty cells with a pipe separator.
+                justification: |
+                  A table carries data a slide's argument rests on, and it lives in a graphic frame
+                  rather than in a shape, so a reader that walks only shapes would drop it silently.
+                  Reading each row as one line keeps the cells of a row together in reading order.
+                tests:
+                  - PowerPointOpenXmlReader_Read_DeckWithTable_ReadsRowsAsLines
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsGroupedShapeText
+                title: >-
+                  PowerPointOpenXmlReader shall read the text of shapes held in a group shape,
+                  including groups nested inside groups, in shape-tree order.
+                justification: |
+                  Authors group shapes to move and style them together, and a grouped text box is still
+                  slide text. Walking group shapes recursively keeps that text in the extraction and in
+                  the order the shape tree declares.
+                tests:
+                  - PowerPointOpenXmlReader_Read_DeckWithGroupedShapes_ReadsNestedGroupText
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsSmartArtText
+                title: >-
+                  PowerPointOpenXmlReader shall read the node text of a SmartArt diagram from the
+                  diagram's data part.
+                justification: |
+                  SmartArt keeps its words in a separate diagram data part that the slide references by
+                  relationship, so they are absent from the slide's own shapes. Resolving the data part
+                  keeps the diagram's text searchable and citable.
+                tests:
+                  - PowerPointOpenXmlReader_Read_DeckWithSmartArt_ReadsNodeText
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsBreakAndFieldText
+                title: >-
+                  PowerPointOpenXmlReader shall carry field text into a paragraph's line and read a
+                  soft line break as a space.
+                justification: |
+                  A soft line break and a field are part of a paragraph but are not text runs. Reading
+                  only runs would join the words either side of a break and lose a field's text, which
+                  would corrupt the line rather than merely shorten it.
+                tests:
+                  - PowerPointOpenXmlReader_Read_DeckWithBreakAndField_KeepsBreakAndFieldText
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-WrapsUnreadablePackage
+                title: >-
+                  PowerPointOpenXmlReader shall wrap a package it cannot open in a
+                  PowerPointExtractionException so Core sees a structured failure.
+                justification: |
+                  An encrypted or malformed deck is an ordinary adverse input, not a program fault. A
+                  single named exception type carrying a plain message lets Core convert it into an
+                  unreadable result with the full output layout still written.
+                tests:
+                  - PowerPointOpenXmlReader_Read_CorruptPackage_ThrowsExtractionException
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-RejectsNullStream
+                title: PowerPointOpenXmlReader shall reject a null stream with an argument exception.
+                justification: |
+                  A null stream is a caller defect, so it is reported at the call site rather than as
+                  an unrelated fault from inside the package reader.
+                tests:
+                  - PowerPointOpenXmlReader_Read_NullStream_Throws

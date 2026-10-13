@@ -61,8 +61,9 @@ sections:
 
       - id: DocDownPowerPoint-Extraction
         title: >-
-          The subsystem shall extract each slide of a deck as content — its title, text, and speaker
-          notes — along with its images and metadata, into the DocDown output contract.
+          The subsystem shall extract each slide of a deck as content — its title, text, speaker
+          notes, and reviewer comments — along with its images and metadata, into the DocDown output
+          contract.
         tags: [system]
         justification: |
           The subsystem exists to turn a deck into the invariant DocDown output layout so a downstream
@@ -78,18 +79,29 @@ sections:
           - DocDownPowerPoint_Extract_Pptx_SelectsOpenXml
 
       - id: DocDownPowerPoint-SlideText
-        title: The subsystem shall extract the text of every slide.
+        title: >-
+          The subsystem shall extract the text of every slide, including text held in tables, grouped
+          shapes, and SmartArt diagrams.
         tags: [system]
         justification: |
           The words on a slide are its assertions, and they are recoverable from the file with no
           rendering. A backend that captured only a picture of each slide would leave that text
           unsearchable and impossible to cite, so the text of every slide is extracted from the file
-          itself as the guaranteed outcome that no environment can take away.
+          itself as the guaranteed outcome that no environment can take away. Text is not confined to
+          plain shapes: tables, grouped shapes, and SmartArt diagrams carry assertions too, and a
+          reader that walked only plain shapes would drop them without saying so.
         children:
           - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExtractsBodyText
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsTableText
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsGroupedShapeText
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsSmartArtText
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsBreakAndFieldText
           - DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesSlideText
         tests:
           - PowerPointOpenXmlReader_Read_Slide_ExtractsBodyTextLines
+          - PowerPointOpenXmlReader_Read_DeckWithTable_ReadsRowsAsLines
+          - PowerPointOpenXmlReader_Read_DeckWithGroupedShapes_ReadsNestedGroupText
+          - PowerPointOpenXmlReader_Read_DeckWithSmartArt_ReadsNodeText
 
       - id: DocDownPowerPoint-SlideTitle
         title: The subsystem shall extract each slide's title where one exists.
@@ -212,18 +224,60 @@ sections:
       - id: DocDownPowerPoint-ContentOutline
         title: >-
           The subsystem shall report an outline of what the content contains — slides, slide titles,
-          sets of speaker notes, and inline images — counted from the model.
+          sets of speaker notes, inline images, comments, and distinct comment authors — counted from
+          the model.
         tags: [system]
         justification: |
           A character count says nothing about whether the deck's speaker notes — the half no
           rendered slide image can supply — are present in the text, nor how many slides carry a
-          title worth navigating by. Counting each content kind from the model the reader built gives
-          a reader an honest shape of the deck before reading a single slide.
+          title worth navigating by, nor whether reviewers left commentary. Counting each content
+          kind from the model the reader built gives a reader an honest shape of the deck before
+          reading a single slide.
         children:
           - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsContentFeatures
+          - DocDownPowerPoint-Markdown-PowerPointContentEmitter-InventoriesComments
         tests:
           - PowerPointContentEmitter_Emit_Deck_ReportsContentFeaturesIncludingSpeakerNotes
           - DocDownPowerPoint_Extract_DeckWithNotes_ReportsSpeakerNotesInventory
+          - DocDownPowerPoint_Extract_DeckWithComment_WritesReviewComments
+
+      - id: DocDownPowerPoint-ReviewComments
+        title: >-
+          The subsystem shall extract each slide's legacy reviewer comments, with their resolved
+          authors, into the review-comments artifact qualified by slide number, and keep them out of
+          the slide text.
+        tags: [system]
+        justification: |
+          A reviewer's remark is commentary about the deck rather than part of it, and in a draft it
+          is often the most valuable content while being the least visible from a rendered slide.
+          Reporting each comment with its author and the slide it was made on lets a reader act on
+          it, and keeping it out of the slide text stops a consumer mistaking a reviewer's words for
+          the author's.
+        children:
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsSlideComments
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ResolvesCommentAuthors
+          - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsReviewComments
+        tests:
+          - DocDownPowerPoint_Extract_DeckWithComment_WritesReviewComments
+
+      - id: DocDownPowerPoint-ModernCommentsNote
+        title: >-
+          The subsystem shall state in an extraction note the number of modern persona-based comments
+          it does not read and the number of slides carrying them, and shall record no note for a deck
+          without them.
+        tags: [system]
+        justification: |
+          Modern comments are not read, because resolving their authors could not be validated. A deck
+          whose comments are all modern would otherwise read as a deck nobody commented on, which
+          states something untrue about the document. Counting them and saying so in the output makes
+          the boundary visible to whoever holds the output, so an absence caused by the extractor is
+          reported rather than rendered as an absence in the document.
+        children:
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExcludesModernPersonaComments
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-CountsModernPersonaComments
+          - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsModernCommentsNote
+        tests:
+          - DocDownPowerPoint_Extract_DeckWithModernComments_ReportsUnreadCommentsNote
 
       - id: DocDownPowerPoint-LegacyFormatRefusal
         title: >-
@@ -248,5 +302,6 @@ sections:
           runs the self-test tool.
         children:
           - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ContributesSelfTests
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ExplainsRenderingSkip
         tests:
           - PowerPointOpenXmlExtractor_SelfTestCases_RoundTripPassesAndRenderingSkipped

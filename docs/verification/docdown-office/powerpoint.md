@@ -108,10 +108,13 @@ produced, and the run completes as `Produced` with no notes recorded. Evidence f
 
 ### Slide body text is extracted
 
-**Test**: `PowerPointOpenXmlReader_Read_Slide_ExtractsBodyTextLines`
+**Tests**: `PowerPointOpenXmlReader_Read_Slide_ExtractsBodyTextLines`,
+`PowerPointOpenXmlReader_Read_DeckWithTable_ReadsRowsAsLines`,
+`PowerPointOpenXmlReader_Read_DeckWithGroupedShapes_ReadsNestedGroupText`,
+`PowerPointOpenXmlReader_Read_DeckWithSmartArt_ReadsNodeText`
 
-Proves a slide's body text lines are extracted from the file, separate from its title. Evidence for
-`DocDownPowerPoint-SlideText`.
+Prove a slide's body text lines are extracted from the file, separate from its title, including text held
+in tables, grouped shapes, and SmartArt diagrams. Evidence for `DocDownPowerPoint-SlideText`.
 
 ### Slide titles are extracted and written
 
@@ -176,11 +179,27 @@ document structure. Evidence for `DocDownPowerPoint-EmptyDeckInventory`.
 ### The content outline is reported from the model
 
 **Tests**: `PowerPointContentEmitter_Emit_Deck_ReportsContentFeaturesIncludingSpeakerNotes`,
-`DocDownPowerPoint_Extract_DeckWithNotes_ReportsSpeakerNotesInventory`
+`DocDownPowerPoint_Extract_DeckWithNotes_ReportsSpeakerNotesInventory`,
+`DocDownPowerPoint_Extract_DeckWithComment_WritesReviewComments`
 
-Prove the outline counts — slides, slide titles, sets of speaker notes, and inline images — are
-reported from the model and reach the end-to-end artifacts. Evidence for
+Prove the outline counts — slides, slide titles, sets of speaker notes, inline images, comments, and
+distinct comment authors — are reported from the model and reach the end-to-end artifacts. Evidence for
 `DocDownPowerPoint-ContentOutline`.
+
+### Reviewer comments reach the review-comments artifact
+
+**Test**: `DocDownPowerPoint_Extract_DeckWithComment_WritesReviewComments`
+
+Proves a legacy slide comment is written to `review-comments.md` with its resolved author and a
+`Slide 1` location, and is counted in the summary. Evidence for `DocDownPowerPoint-ReviewComments`.
+
+### Unread modern comments are stated in a note
+
+**Test**: `DocDownPowerPoint_Extract_DeckWithModernComments_ReportsUnreadCommentsNote`
+
+Proves a deck whose only comments are modern persona comments records one extraction note naming the
+count of unread comments, and that the note reaches `summary.txt`. The emitter's no-note case for a deck
+without modern comments is proved at unit level. Evidence for `DocDownPowerPoint-ModernCommentsNote`.
 
 ### A legacy binary deck is refused with a plain explanation
 

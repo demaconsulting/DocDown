@@ -64,3 +64,26 @@ delegates emission, producing the reconciling contract layout. Evidence for
 Proves the round-trip case genuinely passes in the environment under test and the page-rendering case
 reports a skip with a reason rather than a failure. Evidence for
 `DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ContributesSelfTests`.
+
+#### The rendering skip names the rendering package
+
+**Test**: `PowerPointOpenXmlExtractor_SelfTestCases_RenderingSkipNamesRenderingPackage`
+
+Proves the skipped page-rendering case reports a reason that names the PowerPoint.Rendering package and
+never mentions a COM backend. Evidence for
+`DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ExplainsRenderingSkip`.
+
+#### A corrupt deck propagates as an extraction exception
+
+**Test**: `PowerPointOpenXmlExtractor_ExtractAsync_CorruptDeck_ThrowsExtractionException`
+
+Proves a corrupt package makes the extractor throw `PowerPointExtractionException` and write no content,
+leaving Core to convert the fault into an unreadable result. Evidence for
+`DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-PropagatesUnreadableDeck`.
+
+#### Cancellation propagates
+
+**Test**: `PowerPointOpenXmlExtractor_ExtractAsync_CancelledToken_Throws`
+
+Proves an already-canceled token surfaces as `OperationCanceledException` with no content written.
+Evidence for `DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-HonorsCancellation`.

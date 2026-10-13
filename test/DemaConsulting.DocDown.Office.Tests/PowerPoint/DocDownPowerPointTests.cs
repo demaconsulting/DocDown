@@ -147,6 +147,48 @@ public class DocDownPowerPointTests
     }
 
     /// <summary>
+    ///     Proves a deck's legacy review comments reach the review-comments artifact, qualified by
+    ///     slide, and are counted in the content outline, end to end.
+    /// </summary>
+    [Fact]
+    public async Task DocDownPowerPoint_Extract_DeckWithComment_WritesReviewComments()
+    {
+        using var temp = new TempScratch();
+        var (scratch, result) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithComment(), FixedOptions());
+
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        var reviewComments = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        Assert.Contains("Dana Reyes", reviewComments, StringComparison.Ordinal);
+        Assert.Contains("Slide 1", reviewComments, StringComparison.Ordinal);
+        Assert.Contains("Tighten this claim", reviewComments, StringComparison.Ordinal);
+
+        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        Assert.Contains("1 comment", summary, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
+    ///     Proves a deck whose only comments are modern persona comments records an extraction note
+    ///     naming the unread comments, rather than reading as a deck nobody commented on.
+    /// </summary>
+    [Fact]
+    public async Task DocDownPowerPoint_Extract_DeckWithModernComments_ReportsUnreadCommentsNote()
+    {
+        using var temp = new TempScratch();
+        var (scratch, result) = await ExtractAsync(
+            temp, "deck.pptx", PptxFixtures.DeckWithModernComments(), FixedOptions());
+
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        var note = Assert.Single(result.Notes);
+        Assert.Contains("1 modern", note.Message, StringComparison.Ordinal);
+        Assert.Contains("does not read", note.Message, StringComparison.Ordinal);
+
+        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        Assert.Contains("modern (persona-based, cloud-synced) comment", summary, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
     ///     Proves a legacy binary deck fails as unreadable with a structured explanation that states
     ///     plainly the format is unsupported and never instructs an installation.
     /// </summary>

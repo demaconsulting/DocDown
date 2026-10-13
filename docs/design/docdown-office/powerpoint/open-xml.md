@@ -45,9 +45,9 @@ PowerPoint.Rendering package).
 **The reader.** `PowerPointOpenXmlReader` opens the package read-only and walks the presentation's
 slide-id list — never the package parts, which are unordered — so slides come out in presentation
 order with their 1-based ordinals. For each slide it separates the title placeholder from the other
-direct body shapes (text in tables, group shapes, and SmartArt is not read), joins each paragraph's text
-runs into one line, reads the notes slide's body placeholder so the narration is recovered from the file
-itself, reads the legacy-grammar review comments with their resolved authors, counts (without reading)
+shapes, table rows, grouped shapes, and SmartArt diagram text, joins each paragraph's text and field
+text into one line (a line break reads as a space), reads the notes slide's body placeholder so the narration is
+recovered from the file itself, reads the legacy-grammar review comments with their resolved authors, counts (without reading)
 the modern persona-based comments so the emitter can report them, resolves embedded images through
 `PowerPointOpenXmlImageReader`, and maps the OPC core properties to deck metadata.
 

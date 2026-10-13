@@ -20,8 +20,7 @@ namespace DemaConsulting.DocDown.PowerPoint.OpenXml;
 ///         the text of every slide, the slide title where one exists, the speaker notes, the deck's
 ///         embedded images, and the slide order. It is 100% managed and deliberately does not render
 ///         slide images: rasterizing a slide needs a renderer this subsystem does not ship in managed
-///         code. Rendering is delivered by the separate COM backend when Microsoft PowerPoint is
-///         available.
+///         code. Rendering is delivered by the separate PowerPoint.Rendering package.
 ///     </para>
 ///     <para>
 ///         Because nothing about this backend is environment-dependent, <see cref="ProbeAvailability"/>
@@ -109,7 +108,7 @@ public sealed class PowerPointOpenXmlExtractor : IDocumentExtractor, ISelfValida
     [
         new SelfTestCase("powerpoint.openxml.parseRoundTrip", Id, RunParseRoundTrip),
         new SelfTestCase("powerpoint.pageRendering", Id, static _ => SelfTestResult.Skipped(
-            "This extractor does not render slide images; slide rendering needs the COM backend."))
+            "This extractor does not render slide images; slide rendering needs the PowerPoint.Rendering package."))
     ];
 
     /// <summary>

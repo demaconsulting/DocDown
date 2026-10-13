@@ -28,6 +28,9 @@ sections:
               - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ProbesUnconditionally
               - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-OrchestratesExtraction
               - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ContributesSelfTests
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ExplainsRenderingSkip
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-PropagatesUnreadableDeck
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-HonorsCancellation
             tests:
               - PowerPointOpenXmlExtractor_Descriptor_MatchesContract
 
@@ -54,6 +57,12 @@ sections:
               - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ResolvesCommentAuthors
               - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExcludesModernPersonaComments
               - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-CountsModernPersonaComments
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsTableText
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsGroupedShapeText
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsSmartArtText
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsBreakAndFieldText
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-WrapsUnreadablePackage
+              - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-RejectsNullStream
             tests:
               - PowerPointOpenXmlReader_Read_DeckWithNotes_ReturnsSlidesInOrder
 

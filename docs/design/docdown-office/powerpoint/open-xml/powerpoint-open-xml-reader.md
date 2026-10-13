@@ -49,14 +49,14 @@ modern persona comments contributes no comments to `review-comments.md`, and say
 know carries remarks reads the note, not a fault. The same statement appears in the reader's own XML
 documentation so it is visible at the call site.
 
-### Stated scope limitation: shape text
+### Shape text coverage
 
-`ReadSlide` walks only the **direct** `P.Shape` children of the slide's shape tree. Text held in tables
-(graphic frames), in group shapes, and in SmartArt is therefore not read, and no note or inventory entry
-records its absence. This is the current behavior, stated here so the design does not claim more than the
-code does; reading that text is a deferred item rather than a promise of this design. Likewise
-`ReadShapeParagraphs` concatenates only the paragraph's text runs, so line breaks and field text inside a
-paragraph are not carried into the line.
+`ReadSlide` walks the slide's shape tree in tree order through `CollectShapeText`. Plain shapes contribute
+their paragraphs, group shapes (`P.GroupShape`) are walked recursively, and graphic frames contribute the
+rows of a table (each row becomes one line, with its non-empty cells joined by a pipe separator) and the
+paragraphs of a SmartArt diagram's data part. A line break (`a:br`) inside a paragraph reads as a single
+space, and field text (`a:fld`) is carried as its text, so neither joins words together or disappears.
+Charts and other graphic-frame content are not read as text.
 
 ### Key Methods
 
@@ -68,11 +68,11 @@ paragraph are not carried into the line.
   maps the OPC core properties to deck metadata. Precondition: `stream` is non-null, readable, and
   seekable. Throws `PowerPointExtractionException` when the package cannot be opened or carries no
   presentation part.
-- **`ReadSlide`** (private) — reads one slide: the title from the first title placeholder, the paragraphs
-  of every other *direct* shape (`P.Shape` child of the slide's shape tree) as body lines, the speaker
-  notes, and the reviewer comments; returns the slide model with its ordinal and image references. Text
-  inside table cells (graphic frames), group shapes, and SmartArt is not read; see the stated scope
-  limitation on shape text below.
+- **`ReadSlide`** (private) — reads one slide: the title from the first title placeholder, the text of every
+  other shape, table, group shape, and SmartArt diagram as body lines (through `CollectShapeText`), the
+  speaker notes, and the reviewer comments; returns the slide model with its ordinal and image references.
+- **`CollectShapeText`** / **`ReadGraphicFrameText`** (private) — walk a shape tree or group shape in tree
+  order, recursing into group shapes, reading table rows and SmartArt node paragraphs from graphic frames.
 - **`LoadCommentAuthors`** (private) — reads `PresentationPart.CommentAuthorsPart` into a map of
   author identifier to display name, up front, so every comment resolves its author without
   re-walking the package. A deck with no comment-authors part yields an empty map.
@@ -89,8 +89,8 @@ paragraph are not carried into the line.
 - **`ReadNotes`** (private) — reads the speaker notes from the notes slide's body placeholder only, so
   slide-number and date furniture on the notes slide do not contaminate the narration; returns null
   when the slide has no notes.
-- **`ReadShapeParagraphs`** (private) — concatenates each paragraph's text runs into one line and
-  drops blank paragraphs, so a run-split line reads as one line.
+- **`ReadShapeParagraphs`** / **`ReadParagraph`** (private) — concatenate each paragraph's text runs and
+  field text into one line, read a line break as a space, and drop blank paragraphs.
 - **`IsTitle`** / **`IsBody`** / **`PlaceholderType`** (private) — classify a shape by its
   placeholder type, separating the title placeholder from the body shapes and identifying the notes
   body placeholder.

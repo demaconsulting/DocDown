@@ -41,8 +41,9 @@ null notes for a notes-less deck; when it reads a legacy slide comment with its 
 comments with their slide, yields none for a deck with no comments part, and counts modern comments
 without reading them; and when the image reader yields an embedded image and records its
 slide association. Any wrong descriptor field, reordered or dropped slide, misread or truncated notes,
-or lost slide association is a failure. Corrupt-deck wrapping, cancellation, and text held in tables,
-group shapes, or SmartArt are not currently covered by a scenario (the last is not read at all).
+or lost slide association is a failure. Text held in tables, group shapes, and SmartArt diagrams, line
+breaks and field text, corrupt-deck wrapping, and cancellation are each covered by a scenario in the unit
+verification chapters.
 
 ### Test Scenarios
 
