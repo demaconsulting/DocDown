@@ -931,7 +931,7 @@ The tool provides the standard DEMA command-line vocabulary plus DocDown's extra
 | `--input <file>` | Document to extract (required for extraction) |
 | `--scratch <dir>` | Scratch folder to write the extraction into (required) |
 | `--pages` / `--no-pages` | Request or disable rendered page images |
-| `--page-range <a-b>` | Restrict extraction to a page range |
+| `--page-range <a-b>` | Restrict extraction to a page range; `a` must not exceed `b` |
 | `--dpi <#>` | Page render DPI (range 36-1200) |
 | `--no-images` | Do not extract embedded images |
 | `--max-image-dim <#>` | Skip images exceeding this pixel dimension |

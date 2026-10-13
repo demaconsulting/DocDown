@@ -96,6 +96,15 @@ public class ProgramTests
         Assert.Throws<ArgumentException>(() => CliHarness.Run("--scratch", scratch));
     }
 
+    /// <summary>Proves a missing required <c>--scratch</c> is an expected argument error.</summary>
+    [Fact]
+    public void Program_Run_MissingScratch_ThrowsArgumentException()
+    {
+        using var temp = new TempScratch();
+        var input = Path.Combine(temp.Path, "input.pdf");
+
+        Assert.Throws<ArgumentException>(() => CliHarness.Run("--input", input));
+    }
     /// <summary>Proves an unrecognized argument returns 1 with an error and no stack trace.</summary>
     [Fact]
     public void Program_Main_UnknownArgument_WritesErrorAndReturnsOneWithoutStackTrace()

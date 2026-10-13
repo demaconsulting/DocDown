@@ -92,6 +92,29 @@ sections:
                   - Context_Create_MalformedPageRange_ThrowsArgumentException
                   - Context_Create_RemovedScratchPolicyToken_ThrowsArgumentException
 
+              - id: DocDownTool-Context-PageRangeOrder
+                title: >-
+                  Context shall reject a page range whose first page is greater than its last page,
+                  and accept one whose first page equals its last page.
+                justification: |
+                  A reversed range such as 5-2 selects no pages and is almost certainly a mistake, so
+                  it must fail at parse time instead of producing an empty extraction. A range with
+                  equal ends names exactly one page and remains valid.
+                tests:
+                  - Context_Create_ReversedPageRange_ThrowsArgumentException
+                  - Context_Create_SinglePageRange_IsAccepted
+
+              - id: DocDownTool-Context-ErrorMessageParameter
+                title: >-
+                  Context shall report an argument fault as an argument exception whose message ends
+                  with the parameter-name suffix.
+                justification: |
+                  The argument exception message is shown to the user verbatim by the entry point, so
+                  its shape is part of the observable interface. Documenting the standard suffix keeps
+                  scripts and tests that match on it stable.
+                tests:
+                  - Context_Create_UnknownArgument_MessageEndsWithParameterArgsSuffix
+
               - id: DocDownTool-Context-Depth
                 title: Context shall reject a heading depth outside the supported range with an argument fault.
                 justification: |

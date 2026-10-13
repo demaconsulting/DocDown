@@ -34,7 +34,7 @@ which reads the assembly's `AssemblyInformationalVersionAttribute` on each acces
 - **`RunListBackends`** (private) — prints each registered backend's identifier and display name,
   supported formats, and availability from `DocDownEngine.GetBackends()`, which returns an
   `IReadOnlyList<ExtractorCandidate>`.
-- **`BuildEngine`** (private) —
+- **`BuildEngine`** (internal, so tests can exercise the shipped chain) —
   `new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().AddPowerPointRendering()
   .AddVisioRendering().Build()`, which registers eight backends (`AddOffice` adds the Word, Excel,
   PowerPoint, and Visio Open XML backends); the one explicit, reflection-free registration chain

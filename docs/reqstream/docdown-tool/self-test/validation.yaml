@@ -56,3 +56,12 @@ sections:
                   failure and must not make the run report one.
                 tests:
                   - Validation_Run_AllPass_ExitCodeZero
+
+              - id: DocDownTool-Validation-FailureExitCode
+                title: Validation shall report a failed case and exit non-zero when any case fails.
+                justification: |
+                  A build gate that runs self-validation depends on the exit code to detect a broken
+                  installation, so a failed case must be shown as a failure and must never be hidden by
+                  an otherwise passing run.
+                tests:
+                  - Validation_Run_FailingCase_ReportsFailureAndExitsNonZero

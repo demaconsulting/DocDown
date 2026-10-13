@@ -73,8 +73,8 @@ sections:
 
           - id: DocDownTool-Program-ExplicitRegistration
             title: >-
-              Program shall build its engine by explicitly registering the PDF, PDF-rendering, Office
-              (Word, Excel, PowerPoint, and Visio), PowerPoint-rendering, and Visio-rendering backends.
+              Program shall build its engine by explicitly registering the PDF, PDF-rendering, Word,
+              Visio, PowerPoint, Excel, PowerPoint-rendering, and Visio-rendering backends: eight in all.
             justification: |
               The registration the tool performs is the single fact that keeps single-file publishing
               viable. Building the engine from explicit calls, with no reflection, makes the active
@@ -94,6 +94,18 @@ sections:
             tests:
               - Program_Main_UnknownArgument_WritesErrorAndReturnsOneWithoutStackTrace
               - Program_Main_LogOpenFailure_ReturnsOneWithoutStackTrace
+
+          - id: DocDownTool-Program-RequiredOptions
+            title: >-
+              Program shall reject an extraction request that lacks the input option or the scratch
+              option with an argument fault.
+            justification: |
+              Extraction cannot start without a document and a scratch folder. Failing with an argument
+              fault that names the missing option, and not guessing a default, keeps the failure local
+              to the mistake and lets the entry point report it as an expected error.
+            tests:
+              - Program_Run_MissingInput_ThrowsArgumentException
+              - Program_Run_MissingScratch_ThrowsArgumentException
 
           - id: DocDownTool-Program-BackendInventory
             title: >-

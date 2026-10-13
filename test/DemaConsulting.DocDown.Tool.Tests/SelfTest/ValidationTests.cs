@@ -151,4 +151,23 @@ public class ValidationTests
         Assert.True(exit == 0, log);
         Assert.DoesNotContain("[FAIL]", log, StringComparison.Ordinal);
     }
+    /// <summary>Proves a failing self-test case makes the run report a failure and a non-zero exit.</summary>
+    [Fact]
+    public void Validation_Run_FailingCase_ReportsFailureAndExitsNonZero()
+    {
+        // Arrange: a managed engine whose one backend contributes a case that fails
+        var stub = StubExtractor.Available("failing-backend", [DemaConsulting.DocDown.Core.DocumentFormat.Text]);
+        stub.SelfTestCases.Add(new DemaConsulting.DocDown.Core.SelfTestCase(
+            "stub.alwaysFails",
+            "Stub",
+            _ => DemaConsulting.DocDown.Core.SelfTestResult.Failed("deliberate failure", TimeSpan.Zero)));
+        var engine = new DemaConsulting.DocDown.Core.DocDownBuilder().AddExtractor(stub).Build();
+
+        // Act
+        var (exit, log) = CliHarness.RunSelfValidation(engine);
+
+        // Assert
+        Assert.NotEqual(0, exit);
+        Assert.Contains("[FAIL] stub.alwaysFails", log, StringComparison.Ordinal);
+    }
 }

@@ -77,18 +77,19 @@ Evidence for `DocDownTool-Program-StructuredFailure`.
 
 #### A missing required option is an expected error
 
-**Test**: `Program_Run_MissingInput_ThrowsArgumentException`
+**Tests**: `Program_Run_MissingInput_ThrowsArgumentException`,
+`Program_Run_MissingScratch_ThrowsArgumentException`
 
-Proves an extraction with no `--input` raises an argument fault. This is the argument-fault half of
-the expected-error contract; it has no separate requirement and supports the expected-error scenarios.
+Prove an extraction with no `--input`, and one with no `--scratch`, each raise an argument fault.
+Evidence for `DocDownTool-Program-RequiredOptions`.
 
 #### Explicit registration
 
 **Test**: `DocDownTool_Build_DefaultEngine_RegistersBackendsExplicitly`
 
 The engine registers the expected eight-backend set through the explicit builder seams. The test
-builds an equivalent chain from the individual `Add*` calls instead of calling the private
-`Program.BuildEngine`, so it does not exercise the tool's own chain. Evidence for
+calls the internal `Program.BuildEngine`, so it exercises the tool's own chain and cannot drift
+from it. Evidence for
 `DocDownTool-Program-ExplicitRegistration` (shared with the system-level scenario).
 
 #### Expected errors exit non-zero without a stack trace

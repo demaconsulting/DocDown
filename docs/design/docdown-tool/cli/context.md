@@ -41,13 +41,15 @@ The log writer is a private `StreamWriter?` opened by `Create` when `--log` is g
 - **`ArgumentParser.ParseArgument`** (nested, private) — a `switch` over the argument, with
   `GetRequiredStringArgument`, `GetRequiredIntArgument(min, max)`, and `GetRequiredLongArgument(min,
   max)` helpers, and token parsers for the page range and the scratch policy,
-  each throwing an argument fault on a malformed value. The default case rejects an unsupported
-  argument.
+  each throwing an argument fault on a malformed value, including a page range whose first page
+  exceeds its last. The default case rejects an unsupported argument.
 
 #### Error Handling
 
 All argument and value validation happens at `Create` time and surfaces as `ArgumentException`, so a
-bad command line fails before any work begins. A log file that cannot be opened is wrapped as an
+bad command line fails before any work begins. The exception message ends with the framework's
+`(Parameter 'args')` suffix (the argument name for the page-range parser). A page range must have
+its first page no greater than its last page. A log file that cannot be opened is wrapped as an
 `InvalidOperationException`. Both are the expected error classes `Program.Main` reduces to a clean
 non-zero exit. `Dispose` closes the log writer.
 

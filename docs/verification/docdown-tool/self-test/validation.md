@@ -72,3 +72,10 @@ rejected as an unsupported format with a non-zero exit. Evidence for
 
 Proves a run whose only non-passing result is a benign skip exits zero and reports no failure.
 Evidence for `DocDownTool-Validation-Outcome`.
+
+#### A failing case exits non-zero
+
+**Test**: `Validation_Run_FailingCase_ReportsFailureAndExitsNonZero`
+
+Proves a registered backend's failing self-test case is reported as a failure and makes the run exit
+non-zero. Evidence for `DocDownTool-Validation-FailureExitCode`.

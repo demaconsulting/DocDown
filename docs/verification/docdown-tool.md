@@ -60,9 +60,7 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
   exits non-zero.
 - The registration chain the test builds registers exactly eight backends: PDF, PDF-rendering, Word,
   Visio, PowerPoint, Excel, PowerPoint-rendering, and Visio-rendering. The test lists the individual
-  `Add*` calls itself rather than calling `Program.BuildEngine`, so it verifies the expected backend
-  set rather than the tool's own chain; the shipped chain is covered only indirectly through the
-  end-to-end extraction, `--list-backends`, and `--validate` scenarios.
+  `Program.BuildEngine` itself, so the test verifies the chain the tool ships.
 - `docdown --validate --results <file>.trx` and `--results <file>.xml` produce well-formed TRX and
   JUnit that re-parse, include `core.layout-invariance` and `core.manifest-schema`, and record the
   always-skipped page-rendering case as not-executed, distinct from a failure.
@@ -106,10 +104,8 @@ stack trace reaching the output. Evidence for `DocDownTool-StructuredFailure`.
 
 **Test**: `DocDownTool_Build_DefaultEngine_RegistersBackendsExplicitly`
 
-Proves a chain registering the expected eight-backend set builds with no reflection. The test
-spells out the individual `Add*` calls (`AddWord`, `AddVisio`, `AddPowerPoint`, and `AddExcel` in
-place of `AddOffice`) rather than invoking the private `Program.BuildEngine`, so it does not exercise
-the tool's own chain; a change to `BuildEngine` would not be detected by this test. Evidence for
+Proves the engine built by the internal `Program.BuildEngine` registers the expected eight-backend
+set with no reflection, so a change to the tool's own chain is detected by this test. Evidence for
 `DocDownTool-ExplicitRegistration`.
 
 ### Self-validation produces well-formed TRX and JUnit

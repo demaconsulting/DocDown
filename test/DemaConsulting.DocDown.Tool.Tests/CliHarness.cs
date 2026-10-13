@@ -103,7 +103,7 @@ internal static class CliHarness
     /// <returns>An engine registering only the fully managed PDF backends.</returns>
     /// <remarks>
     ///     Enough to produce every case shape the unit's accounting has to handle — a passing round
-    ///     trip, an always-skipped page-rendering case, and a native-stack render — and deliberately
+    ///     trip, an always-skipped page-rendering case, and a managed page render — and deliberately
     ///     no Office backend, because none of those assertions is about Visio or PowerPoint.
     /// </remarks>
     public static DocDownEngine BuildManagedEngine() =>
