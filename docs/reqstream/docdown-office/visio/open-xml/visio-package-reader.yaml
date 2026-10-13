@@ -122,3 +122,15 @@ sections:
                   an error, leaving the emitter to note it informationally.
                 tests:
                   - VisioPackageReader_Read_EmptyPage_YieldsNoShapesOrConnections
+
+              - id: DocDownVisio-OpenXml-VisioPackageReader-DeduplicatesShapeIds
+                title: >-
+                  VisioPackageReader shall keep the first declaration of a shape id that a page repeats and
+                  drop the later ones.
+                justification: |
+                  A shape id identifies a shape within its page, so a repeated id is one shape declared
+                  twice rather than two shapes. Keeping the first declaration keeps the shape count and the
+                  connector endpoints unambiguous, and stops the repeat from being counted a second time
+                  downstream.
+                tests:
+                  - VisioPackageReader_Read_DuplicateShapeId_KeepsFirstDeclaration

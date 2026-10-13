@@ -339,17 +339,19 @@ internal static class VisioPackageReader
     ///     Every <c>&lt;Shape&gt;</c>, including those nested inside a group, is read; a shape's own
     ///     direct text is taken. A shape's <c>Master</c> attribute names the stencil master it came
     ///     from; a shape with no such attribute, or one naming a master the drawing does not declare,
-    ///     simply carries no master name rather than a guessed one.
+    ///     simply carries no master name rather than a guessed one. A repeated shape id keeps its first
+    ///     declaration and the later ones are dropped, so no shape is counted twice.
     /// </remarks>
     private static IReadOnlyList<VisioShapeModel> ReadShapes(
         XDocument contentsXml, IReadOnlyDictionary<string, string> masterNames,
         IReadOnlyDictionary<string, string> faceNames)
     {
         var shapes = new List<VisioShapeModel>();
+        var seenIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var shape in contentsXml.Descendants(VisioNamespace + "Shape"))
         {
             var id = shape.Attribute("ID")?.Value;
-            if (string.IsNullOrEmpty(id))
+            if (string.IsNullOrEmpty(id) || !seenIds.Add(id))
             {
                 continue;
             }

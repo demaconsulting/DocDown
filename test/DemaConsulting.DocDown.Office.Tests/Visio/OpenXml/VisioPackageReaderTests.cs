@@ -195,6 +195,22 @@ public class VisioPackageReaderTests
     }
 
     /// <summary>
+    ///     Proves a shape id declared more than once on a page keeps its first declaration, so the
+    ///     repeat is not counted a second time.
+    /// </summary>
+    [Fact]
+    public void VisioPackageReader_Read_DuplicateShapeId_KeepsFirstDeclaration()
+    {
+        using var stream = new MemoryStream(VsdxFixtures.DuplicateShapeId());
+
+        var model = VisioPackageReader.Read(stream);
+
+        var shapes = model.Pages[0].Shapes;
+        Assert.Equal(2, shapes.Count);
+        Assert.Equal(["First", "Other"], shapes.Select(shape => shape.Text).ToList());
+    }
+
+    /// <summary>
     ///     Proves pages that reuse the same shape ids report only their own edges, because each page's
     ///     connectors are resolved against its own part.
     /// </summary>

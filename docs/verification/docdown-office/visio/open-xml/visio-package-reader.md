@@ -75,6 +75,14 @@ Proves the pages come out in the order the drawing declares them. Evidence for
 Proves a shape id reused on another page does not cross-link, because each page's connectors resolve against
 only that page's shapes. Evidence for `DocDownVisio-OpenXml-VisioPackageReader-ScopesEdgesToOwnPage`.
 
+#### A repeated shape id keeps its first declaration
+
+**Test**: `VisioPackageReader_Read_DuplicateShapeId_KeepsFirstDeclaration`
+
+Proves a page that declares the same shape id twice yields the first declaration and drops the repeat,
+so the shape is neither double-counted nor given the later text. Evidence for
+`DocDownVisio-OpenXml-VisioPackageReader-DeduplicatesShapeIds`.
+
 #### Master names are resolved
 
 **Tests**: `VisioPackageReader_Read_MasterTypedSchematic_ResolvesMasterNames`,

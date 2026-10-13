@@ -183,6 +183,24 @@ public static class VsdxFixtures
             ],
             [("2", "3"), ("3", "1")])
     ]);
+
+    /// <summary>
+    ///     Builds a single page that declares shape id "1" twice with different text, so the first
+    ///     declaration must win and the second must be dropped.
+    /// </summary>
+    /// <returns>The drawing bytes.</returns>
+    public static byte[] DuplicateShapeId() => VisioPackageBuilder.Build(
+    [
+        new VisioBuildPage(
+            "Duplicates",
+            [
+                new VisioBuildShape("1", "First"),
+                new VisioBuildShape("2", "Other"),
+                new VisioBuildShape("1", "Second")
+            ],
+            [])
+    ]);
+
     /// <summary>
     ///     Builds a one-page drawing whose text-less shapes are instantiated from named masters,
     ///     reproducing the mix a real engineering schematic carries: a labeled shape, shapes named

@@ -53,6 +53,7 @@ sections:
               - DocDownVisio-OpenXml-VisioPackageReader-ResolvesMasterNames
               - DocDownVisio-OpenXml-VisioPackageReader-RecoversSymbolFontGlyphs
               - DocDownVisio-OpenXml-VisioPackageReader-YieldsEmptyPageCleanly
+              - DocDownVisio-OpenXml-VisioPackageReader-DeduplicatesShapeIds
             tests:
               - VisioPackageReader_Read_WashSystem_ResolvesDirectedTopology
 
