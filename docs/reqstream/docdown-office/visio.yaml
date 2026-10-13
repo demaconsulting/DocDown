@@ -132,6 +132,7 @@ sections:
         children:
           - DocDownVisio-OpenXml-VisioPackageReader-ExtractsShapeText
           - DocDownVisio-Markdown-VisioContentEmitter-WritesShapeText
+          - DocDownVisio-OpenXml-VisioPackageReader-ResolvesNumericFontRefs
         tests:
           - VisioPackageReader_Read_WashSystem_ExtractsShapeText
 
@@ -150,6 +151,7 @@ sections:
         children:
           - DocDownVisio-OpenXml-VisioPackageReader-ResolvesDirectedTopology
           - DocDownVisio-Markdown-VisioContentEmitter-RendersDirectedTopology
+          - DocDownVisio-Markdown-VisioContentEmitter-KeepsEdgesOnOneLine
         tests:
           - DocDownVisio_Extract_WashSystem_RecoversDirectedTopology
 
