@@ -158,7 +158,8 @@ internal static class VisioContentEmitter
     /// <remarks>
     ///     Each image the page shows is linked at its point of occurrence — after the shapes and
     ///     topology — exactly when the sink returned a path for it, so a suppressed, size-skipped, or
-    ///     deduplicated-away image never leaves a link pointing at nothing, mirroring Word. Pure.
+    ///     deduplicated-away image never leaves a link pointing at nothing, mirroring Word. Each edge
+    ///     is kept on one list line: multi-line endpoint labels are collapsed to single spaces. Pure.
     /// </remarks>
     private static string RenderPage(VisioPageModel page, IReadOnlyDictionary<string, string> imagePaths)
     {
@@ -218,7 +219,8 @@ internal static class VisioContentEmitter
 
                 foreach (var (from, to) in meaningful)
                 {
-                    builder.Append("- ").Append(from.Display).Append(Arrow).Append(to.Display).Append('\n');
+                    builder.Append("- ").Append(AsSingleLine(from.Display)).Append(Arrow)
+                        .Append(AsSingleLine(to.Display)).Append('\n');
                 }
 
                 builder.Append('\n');
@@ -314,6 +316,21 @@ internal static class VisioContentEmitter
 
         return builder.ToString();
     }
+
+    /// <summary>
+    ///     Collapses an endpoint label onto a single line so an edge always occupies exactly one list item.
+    /// </summary>
+    /// <param name="label">The endpoint label, which may span several lines when it is a shape's own text.</param>
+    /// <returns>The label with every run of line breaks and surrounding whitespace collapsed to one space.</returns>
+    /// <remarks>
+    ///     An edge is one list line; a raw line break inside a label would split it and corrupt the
+    ///     list. Unlike the shape list, an edge has no room for continuation lines, so the lines are
+    ///     joined with a single space and nothing is truncated. Pure.
+    /// </remarks>
+    private static string AsSingleLine(string label) =>
+        string.Join(
+            ' ',
+            label.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
     /// <summary>
     ///     Indexes a page's shapes by id for endpoint resolution.

@@ -310,6 +310,32 @@ public class VisioContentEmitterTests
     }
 
     /// <summary>
+    ///     Proves a multi-line endpoint label is collapsed so its edge stays on exactly one list line.
+    /// </summary>
+    [Fact]
+    public async Task VisioContentEmitter_Emit_MultiLineEndpointLabel_StaysOnOneEdgeLine()
+    {
+        // Arrange: the source endpoint's own text spans two lines
+        var model = new VisioDocumentModel(
+        [
+            new VisioPageModel(
+                "P",
+                [new VisioShapeModel("1", "A line 1\r\nline 2"), new VisioShapeModel("2", "B")],
+                [new VisioConnectionModel("1", "2")])
+        ]);
+        var sink = new RecordingSink();
+
+        // Act: emit the drawing
+        await VisioContentEmitter.EmitAsync(
+            sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, Ct);
+
+        // Assert: exactly one edge line carries both endpoints, with the label joined by a space
+        var content = Assert.Single(sink.ContentWrites);
+        var edgeLines = content.Split('\n').Where(line => line.Contains('\u2192', StringComparison.Ordinal)).ToList();
+        Assert.Equal(["- A line 1 line 2 \u2192 B"], edgeLines);
+    }
+
+    /// <summary>
     ///     Proves a shape whose text is a bare callout number is omitted, and the omission is counted
     ///     in the content rather than left silent.
     /// </summary>

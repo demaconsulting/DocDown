@@ -60,6 +60,13 @@ was dropped is stated. Evidence for
 Proves a shape's multi-line text is kept inside its item and never truncated. Evidence for
 `DocDownVisio-Markdown-VisioContentEmitter-PreservesMultiLineShapeText`.
 
+#### A multi-line endpoint label stays on one edge line
+
+**Test**: `VisioContentEmitter_Emit_MultiLineEndpointLabel_StaysOnOneEdgeLine`
+
+Proves an endpoint label whose text spans lines is collapsed so its edge occupies exactly one list
+line. Evidence for `DocDownVisio-Markdown-VisioContentEmitter-KeepsEdgesOnOneLine`.
+
 #### An edge between unnamed shapes is omitted and counted
 
 **Test**: `VisioContentEmitter_Emit_EdgeBetweenUnnamedShapes_OmittedAndCounted`

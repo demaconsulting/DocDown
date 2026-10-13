@@ -104,6 +104,17 @@ sections:
                 tests:
                   - VisioContentEmitter_Emit_MultiLineShapeText_StaysInsideItsListItem
 
+              - id: DocDownVisio-Markdown-VisioContentEmitter-KeepsEdgesOnOneLine
+                title: >-
+                  VisioContentEmitter shall keep each connection on a single list line, collapsing
+                  line breaks in an endpoint label to spaces.
+                justification: |
+                  An edge is one list item; a shape's own multi-line text used as an endpoint label
+                  would otherwise split the line and corrupt the list, so the label's lines are
+                  joined with single spaces and nothing is truncated.
+                tests:
+                  - VisioContentEmitter_Emit_MultiLineEndpointLabel_StaysOnOneEdgeLine
+
               - id: DocDownVisio-Markdown-VisioContentEmitter-OmitsEdgesBetweenUnnamedShapes
                 title: >-
                   VisioContentEmitter shall omit a connection whose endpoints are both unidentified

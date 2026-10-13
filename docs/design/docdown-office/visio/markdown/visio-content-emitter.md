@@ -30,9 +30,10 @@ item.
   omitted-callout and omitted-edge counts, and inline images whose paths were returned by the sink.
 - **`ReportContentFeatures`** (private) — reports looked-for counts for pages, labeled shapes, and
   connections, counting only the edges that reach the output.
-- **`AsListItem`** / **`Informative`** / **`IndexShapes`** (private) — preserve multi-line text,
-  decide whether a shape text is informative, and build a page-local shape map for endpoint
-  resolution.
+- **`AsListItem`** / **`AsSingleLine`** / **`Informative`** / **`IndexShapes`** (private) — preserve
+  multi-line shape text inside its list item, collapse line breaks in an edge endpoint label to single
+  spaces so each edge stays on one list line, decide whether a shape text is informative, and build a
+  page-local shape map for endpoint resolution.
 
 ### Error Handling
 
