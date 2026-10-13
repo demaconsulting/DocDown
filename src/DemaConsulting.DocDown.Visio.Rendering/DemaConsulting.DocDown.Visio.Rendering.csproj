@@ -84,8 +84,8 @@
          a mismatched pin anywhere would fail restore with NU1107. Neither package carries a native
          asset for any runtime identifier — see docs/design/ots/canvasnetvsdx.md for the
          rationale. -->
-    <PackageReference Include="DemaConsulting.CanvasNet.Vsdx" Version="[0.1.0-beta.12]" />
-    <PackageReference Include="DemaConsulting.CanvasNet" Version="[0.1.0-beta.12]" />
+    <PackageReference Include="DemaConsulting.CanvasNet.Vsdx" Version="[0.1.0]" />
+    <PackageReference Include="DemaConsulting.CanvasNet" Version="[0.1.0]" />
   </ItemGroup>
 
   <!-- Build Tool Dependencies -->
