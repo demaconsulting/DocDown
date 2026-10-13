@@ -98,7 +98,8 @@ native renderer and no native interop assembly.
 3. `PowerPointOpenXmlReader.Read` produces a `PowerPointDeckModel`: slides in presentation order,
    each with its title, body text lines, speaker notes, inline image references, and legacy reviewer
    comments, plus deduplicated embedded images, document metadata, and a count of unread modern comments.
-   Only direct shapes contribute title and body text; table, group-shape, and SmartArt text is not read.
+   Title and body text come from direct shapes, table rows (one line per row), grouped shapes (read
+   recursively), and SmartArt node text; charts and other graphic-frame content are not read.
 4. `PowerPointContentEmitter.EmitAsync` writes embedded images, writes the deck content, reports
    document information and metadata, reports each slide comment to Core as a review comment, and
    reports the content inventory. A deck with no slides becomes an empty content file plus the captured

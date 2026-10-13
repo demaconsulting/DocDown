@@ -160,7 +160,7 @@ separate, opt-in concern delivered entirely by `DemaConsulting.DocDown.PowerPoin
 **Test**: `DocDownPowerPoint_Extract_DeckWithImage_WritesEmbeddedImage`
 
 Proves a deck's embedded image is written to `images/` and the extraction reconciles cleanly, with
-the slide association recorded. Evidence for `DocDownPowerPoint-EmbeddedImages`.
+the slide association recorded as an `images/` link in `content.md`. Evidence for `DocDownPowerPoint-EmbeddedImages`.
 
 ### A vector image is written unchanged
 

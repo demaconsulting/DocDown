@@ -28,9 +28,12 @@ public class DocDownPowerPointTests
     public async Task DocDownPowerPoint_Extract_Pptx_SelectsOpenXml()
     {
         using var temp = new TempScratch();
-        var (_, result) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithNotes(), FixedOptions());
+        var (scratch, result) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithNotes(), FixedOptions());
 
         Assert.Equal("powerpoint-openxml", result.SelectedExtractor?.Id);
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Empty(result.Notes);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
@@ -48,6 +51,8 @@ public class DocDownPowerPointTests
         Assert.Single(images);
         Assert.EndsWith(".png", images[0], StringComparison.Ordinal);
         Assert.Empty(result.Notes);
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        Assert.Contains("images/" + Path.GetFileName(images[0]), content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
 
