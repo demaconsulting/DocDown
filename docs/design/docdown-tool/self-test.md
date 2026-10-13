@@ -49,9 +49,7 @@ knowing anything about the results model.
 
 ## Dependencies
 
-- **DemaConsulting.DocDown.Core** — `DocDownBuilder`, `DocDownEngine`, and the self-test seam (`SelfTestCase`,
-  `SelfTestResult`, `SelfTestStatus`, `SelfTestContext`).
-- **DemaConsulting.DocDown.Pdf**, **DemaConsulting.DocDown.Pdf.Rendering**, **DemaConsulting.DocDown.Word**,
-  **DemaConsulting.DocDown.Visio**, **DemaConsulting.DocDown.PowerPoint**, and **DemaConsulting.DocDown.Excel** —
-  the same backend registration seams the tool uses for extraction, so validation exercises the shipped configuration.
+- **DemaConsulting.DocDown.Core** — `DocDownEngine` and the self-test seam (`SelfTestCase`, `SelfTestResult`,
+  `SelfTestStatus`, `SelfTestContext`). `Validation` takes its engine from `Program.BuildEngine`, so validation
+  exercises the shipped configuration without referencing any backend package itself.
 - **DemaConsulting.TestResults** (OTS) — the results model and serializers, referenced only here.

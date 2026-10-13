@@ -22,7 +22,8 @@ itself.
 Per IEC 62304 §5.5.2, a `SelfTestAdapter` unit test run passes when a passed status maps to a passed
 outcome and a failed status to a failed outcome; when a skipped status maps to a not-executed outcome
 distinct from a failure; and when a mapped result preserves the case name, category, duration, and
-message, including a failure detail.
+message, including a failure detail; and when an undefined status, a null case, and a null result are
+each rejected with the documented argument exception.
 
 ### Test Scenarios
 
@@ -50,3 +51,12 @@ distinction a traceability pipeline relies on. Evidence for
 Prove the mapped result carries the case name, its category as the class name, the duration, the
 outcome, and any skip reason or failure detail. Evidence for
 `DocDownTool-SelfTestAdapter-PreservesMetadata`.
+
+#### Invalid input is rejected
+
+**Tests**: `SelfTestAdapter_ToTestOutcome_UndefinedStatus_ThrowsArgumentOutOfRange`,
+`SelfTestAdapter_ToTestResult_NullCase_ThrowsArgumentNull`,
+`SelfTestAdapter_ToTestResult_NullResult_ThrowsArgumentNull`
+
+Prove an undefined status raises `ArgumentOutOfRangeException` and a null case or result raises
+`ArgumentNullException`. Evidence for `DocDownTool-SelfTestAdapter-RejectsInvalidInput`.

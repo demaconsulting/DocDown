@@ -44,5 +44,6 @@ sections:
               - DocDownTool-SelfTestAdapter-MapsOutcomes
               - DocDownTool-SelfTestAdapter-SkippedIsNotExecuted
               - DocDownTool-SelfTestAdapter-PreservesMetadata
+              - DocDownTool-SelfTestAdapter-RejectsInvalidInput
             tests:
               - SelfTestAdapter_ToTestOutcome_Skipped_ReturnsNotExecuted

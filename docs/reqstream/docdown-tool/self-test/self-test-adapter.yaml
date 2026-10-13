@@ -46,3 +46,16 @@ sections:
                 tests:
                   - SelfTestAdapter_ToTestResult_PreservesNameCategoryDurationAndMessage
                   - SelfTestAdapter_ToTestResult_FailedCase_CarriesMessage
+
+              - id: DocDownTool-SelfTestAdapter-RejectsInvalidInput
+                title: >-
+                  SelfTestAdapter shall reject an undefined status and a null case or result with an
+                  argument exception.
+                justification: |
+                  The mapping is the single point where Core's records enter the results model. An
+                  unknown status or a missing record signals a programming fault, and failing loudly
+                  prevents a wrong outcome from being written to the results file silently.
+                tests:
+                  - SelfTestAdapter_ToTestOutcome_UndefinedStatus_ThrowsArgumentOutOfRange
+                  - SelfTestAdapter_ToTestResult_NullCase_ThrowsArgumentNull
+                  - SelfTestAdapter_ToTestResult_NullResult_ThrowsArgumentNull
