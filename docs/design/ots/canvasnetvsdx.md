@@ -34,9 +34,7 @@ sequence with no retained configuration and no process-level state of this packa
 
 **Version pinning.** The package reference is pinned to an exact version range rather than a
 floating minimum, for the same reason `DemaConsulting.DocDown.PowerPoint.Rendering` pins
-`CanvasNet.Pptx`, and because this is a pre-1.0, beta-labeled release whose API has not yet committed
-to semantic-versioning stability — a floating reference could pick up a breaking change between
-builds.
+`CanvasNet.Pptx` — a floating reference could pick up a breaking change between builds.
 
 **No `CanvasNet.Charts`-equivalent dependency.** Unlike `CanvasNet.Pptx`, which depends on
 `CanvasNet.Charts` to rasterize embedded charts on a slide, `CanvasNet.Vsdx` has no comparable
