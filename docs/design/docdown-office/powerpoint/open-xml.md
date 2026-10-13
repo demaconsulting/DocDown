@@ -46,9 +46,10 @@ PowerPoint.Rendering package).
 slide-id list — never the package parts, which are unordered — so slides come out in presentation
 order with their 1-based ordinals. For each slide it separates the title placeholder from the other
 shapes, table rows, grouped shapes, and SmartArt diagram text, joins each paragraph's text and field
-text into one line (a line break reads as a space), reads the notes slide's body placeholder so the narration is
-recovered from the file itself, reads the legacy-grammar review comments with their resolved authors, counts (without reading)
-the modern persona-based comments so the emitter can report them, resolves embedded images through
+text into one line (a line break reads as a space), reads the notes slide's body placeholder so the
+narration is recovered from the file itself, reads the legacy-grammar review comments with their
+resolved authors, counts (without reading) the modern persona-based comments so the emitter can
+report them, resolves embedded images through
 `PowerPointOpenXmlImageReader`, and maps the OPC core properties to deck metadata.
 
 **The image reader.** `PowerPointOpenXmlImageReader` gathers image parts from slides and notes in
