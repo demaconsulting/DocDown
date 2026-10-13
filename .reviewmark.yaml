@@ -712,6 +712,7 @@ reviews:
       - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/DocDownVisioRenderingTests.cs"  # integration
       - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/VisioRenderingGoldenTests.cs"   # golden tests
       - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/TestData/VsdxRenderingFixtures.cs"  # test fixtures
+      - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/TestData/StubExtractionContext.cs"  # test context stub
       - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/TestData/Png.cs"        # test PNG inspector
       - "src/DemaConsulting.DocDown.Visio.Rendering/NamespaceDoc.cs"              # namespace documentation
 
@@ -1543,6 +1544,7 @@ reviews:
       - "docs/verification/docdown-office/visio.md"                                     # subsystem verification
       - "test/DemaConsulting.DocDown.Office.Tests/Visio/DocDownVisioTests.cs"           # integration tests
       - "test/DemaConsulting.DocDown.Office.Tests/Visio/TestData/VsdxFixtures.cs"       # generated test fixtures
+      - "test/DemaConsulting.DocDown.Office.Tests/Visio/TestData/StubExtractionContext.cs"  # test context stub
       - "src/DemaConsulting.DocDown.Office/Visio/NamespaceDoc.cs"                       # namespace documentation
 
   # DocDownVisio-Design Review (one per format subsystem)
@@ -1766,6 +1768,14 @@ reviews:
       - "docs/reqstream/ots/canvasnetpptx.yaml"                            # OTS requirements
       - "docs/design/ots/canvasnetpptx.md"                                 # OTS integration design
       - "docs/verification/ots/canvasnetpptx.md"                          # OTS verification
+
+  # OTS-CanvasNetVsdx Review (one per OTS item)
+  - id: OTS-CanvasNetVsdx
+    title: Review that CanvasNet.Vsdx Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/canvasnetvsdx.yaml"                            # OTS requirements
+      - "docs/design/ots/canvasnetvsdx.md"                                 # OTS integration design
+      - "docs/verification/ots/canvasnetvsdx.md"                          # OTS verification
 
   # OTS-CanvasNetCharts Review (one per OTS item)
   - id: OTS-CanvasNetCharts
