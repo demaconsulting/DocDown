@@ -13,9 +13,8 @@ without a workbook obscuring which one was responsible. Every value, sheet name,
 models is synthetic.
 
 The note-only rule is exercised directly by the unreadable-chart scenario. The image scenarios prove the
-same emission path writes images, preserves zero counts when no images are present, and keeps a
-successfully written vector image silent; the image-size note branch shares that same reporting rule
-but has no dedicated Excel-specific test.
+same emission path writes images, preserves zero counts when no images are present, keeps a successfully
+written vector image silent, and reports an image over the caller's size limit as a skipped image.
 
 ### Test Environment
 
@@ -39,7 +38,8 @@ review comment and is never written into a sheet part, and comments and distinct
 (zero when absent); when images are linked inline only where a path was returned; when a workbook with no
 images or no worksheets reports zero counts for the features it looked for; when a successfully written
 vector image records no vector-only note; when an empty worksheet states that it has no cell content;
-when a page-rendering request records no note; and when the content outline is reported from the model.
+when a page-rendering request records no note; when an image over the size limit is not written and is
+reported as a size-limited skip; and when the content outline is reported from the model.
 A missing part, a wrong note, a missing zero count, or a weakened listing is a failure.
 
 ### Test Scenarios

@@ -26,11 +26,15 @@ Per IEC 62304 §5.5.2, an `ExcelOpenXmlReader` unit test run passes when a long 
 verbatim at full length; when a numeric cell is read exactly as stored; when a formula cell keeps its
 formula, its value, and its address; when a two-sheet workbook returns its sheets in workbook order with
 their tab names; when an image workbook yields the embedded image and records its sheet association; and
-when an empty sheet yields a sheet with no cells; when a legacy-only comment is read with its author, a
+when an empty sheet yields a sheet with no cells; when inline-string cells resolve to their full text,
+including rich-text runs; when error and date-serial cells are read as stored; when the package's core
+properties are mapped into the model's metadata; when bytes that are not a package, a null stream, and a
+package with no workbook part are each rejected; when a legacy-only comment is read with its author, a
 threaded-only comment is read with its person resolved, a cell carrying both grammars keeps only the
 threaded comment, a multi-reply thread keeps every reply in order, a threaded-only cell is appended
 after the legacy-ordered cells, comments stay with their owning sheet, and a workbook with no comment parts
-yields no comments. Any truncated value, reformatted number, dropped formula,
+yields no comments, and a comment whose legacy author index or threaded person identifier names nobody is
+reported with no author and its text intact. Any truncated value, reformatted number, dropped formula,
 lost sheet name, lost image association, or lost, duplicated, or misattributed comment is a failure.
 
 ### Test Scenarios
@@ -42,7 +46,8 @@ lost sheet name, lost image association, or lost, duplicated, or misattributed c
 
 Prove an image workbook yields its embedded image through `ExcelOpenXmlImageReader` and records which
 worksheet references it. These tests carry no requirement link of their own; they are the reader-level
-evidence for the image reader's behavior. Multi-sheet image association is not covered.
+evidence for the image reader's behavior. Multi-sheet image association is covered in the image reader's own
+test class.
 
 #### A long prose cell is preserved verbatim at full length
 
@@ -149,9 +154,55 @@ value, and that declared merged ranges are carried in order while a blank range 
 `DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsNumericValuesVerbatim` and
 `DocDownExcel-OpenXml-ExcelOpenXmlReader-CarriesMergedRanges`.
 
+#### Error and date-serial cells are read as stored
+
+**Test**: `ExcelOpenXmlReader_Read_ErrorAndDateSerialCells_ReadAsStored`
+
+Proves two error cells (`#DIV/0!` and `#N/A`) and a date-serial cell (`45292.5`) reach the model exactly as
+stored. Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsNumericValuesVerbatim`.
+
+#### Inline-string cells resolve to their full text
+
+**Test**: `ExcelOpenXmlReader_Read_InlineStringCells_ResolveToFullText`
+
+Proves a plain inline-string cell and one split into two rich-text runs resolve to `Plain inline text` and
+`Rich text`. Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsInlineStrings`.
+
+#### Core properties are mapped into metadata
+
+**Test**: `ExcelOpenXmlReader_Read_CorePropertiesWorkbook_MapsMetadata`
+
+Proves a package declaring a creator, a title, and a creation date yields metadata fields `creator`,
+`title`, and `created` (as `2024-03-05T10:30:00Z`), every field carrying core-properties provenance.
+Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlReader-MapsCoreProperties`.
+
+#### Unresolved authors yield no attribution
+
+**Test**: `ExcelOpenXmlReader_Read_UnresolvedAuthors_YieldNullAuthorAndKeepText`
+
+Proves a legacy comment citing an author index the part does not list, and a threaded comment citing a
+person identifier the person part does not list, are both reported with a null author and their text intact.
+Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsLegacyComments` and
+`DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsThreadedComments`.
+
 #### An invalid package is rejected with a typed exception
 
-**Test**: `ExcelOpenXmlReader_Read_InvalidPackageOrNullStream_ThrowsTypedException`
+**Test**: `ExcelOpenXmlReader_Read_InvalidPackage_ThrowsTypedException`
 
-Proves bytes that are not an Open XML package raise `ExcelExtractionException` and a null stream raises
-`ArgumentNullException`. Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlReader-RejectsInvalidPackage`.
+Proves bytes that are not an Open XML package raise `ExcelExtractionException`. Evidence for
+`DocDownExcel-OpenXml-ExcelOpenXmlReader-RejectsInvalidPackage`.
+
+#### A null stream is rejected
+
+**Test**: `ExcelOpenXmlReader_Read_NullStream_ThrowsArgumentNullException`
+
+Proves a null stream raises `ArgumentNullException`. Evidence for
+`DocDownExcel-OpenXml-ExcelOpenXmlReader-RejectsInvalidPackage`.
+
+#### A package with no workbook part is rejected
+
+**Test**: `ExcelOpenXmlReader_Read_PackageWithoutWorkbookPart_ThrowsTypedException`
+
+Proves a valid package with no workbook part raises `ExcelExtractionException` whose message says the
+workbook contains no workbook part. Evidence for
+`DocDownExcel-OpenXml-ExcelOpenXmlReader-RejectsMissingWorkbookPart`.

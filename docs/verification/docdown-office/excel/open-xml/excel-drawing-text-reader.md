@@ -42,4 +42,4 @@ nothing, a grouped shape is read, and a missing part or drawing yields no text. 
 **Test**: `ExcelContentEmitter_Emit_ShapeText_WritesUnderTheSheet`
 
 Proves the text of a callout carried by a hand-built model is written under the sheet under its own
-heading. Evidence for `DocDownExcel-OpenXml-ExcelDrawingTextReader-CollectsShapeText`.
+heading. This test does not exercise the reader, so it is supporting evidence for the downstream half only.

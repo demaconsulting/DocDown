@@ -34,6 +34,27 @@ public class ExcelOpenXmlImageReaderTests
     }
 
     /// <summary>
+    ///     Proves one image part shown on two sheets is yielded once, and that both sheets are recorded
+    ///     as its referrers and each keeps its own inline reference.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlImageReader_Collect_ImagePartSharedByTwoSheets_YieldsOneImageWithBothSheets()
+    {
+        // Arrange: two sheets whose drawings relate to the same image part
+        using var stream = new MemoryStream(XlsxFixtures.SharedImagePartWorkbook());
+        using var document = SpreadsheetDocument.Open(stream, false);
+
+        // Act
+        var collection = ExcelOpenXmlImageReader.Collect(document.WorkbookPart!);
+
+        // Assert: one image referenced from both sheets, and each sheet links it
+        var image = Assert.Single(collection.Images);
+        Assert.Equal([1, 2], image.SourcePages);
+        Assert.Equal(image.SourceRef, Assert.Single(collection.SheetImageRefs[1]).SourceRef);
+        Assert.Equal(image.SourceRef, Assert.Single(collection.SheetImageRefs[2]).SourceRef);
+    }
+
+    /// <summary>
     ///     Proves a workbook with no drawings yields no images, and a null workbook part is rejected.
     /// </summary>
     [Fact]

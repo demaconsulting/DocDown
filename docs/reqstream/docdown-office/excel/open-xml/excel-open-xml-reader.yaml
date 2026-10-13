@@ -33,6 +33,7 @@ sections:
                   quantity the workbook exists to carry.
                 tests:
                   - ExcelOpenXmlReader_Read_NumericCells_ReadVerbatim
+                  - ExcelOpenXmlReader_Read_ErrorAndDateSerialCells_ReadAsStored
                   - ExcelOpenXmlReader_Read_TypedAndMergedWorkbook_ResolvesTypesAndCarriesMergedRanges
 
               - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-KeepsFormulaAndValue
@@ -79,6 +80,7 @@ sections:
                   guess, because inventing a reviewer's name is worse than stating none.
                 tests:
                   - ExcelOpenXmlReader_Read_LegacyCommentWorkbook_ReadsCommentWithAuthor
+                  - ExcelOpenXmlReader_Read_UnresolvedAuthors_YieldNullAuthorAndKeepText
 
               - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsThreadedComments
                 title: >-
@@ -92,6 +94,7 @@ sections:
                   attribution rather than a raw identifier that would read as a name without being one.
                 tests:
                   - ExcelOpenXmlReader_Read_ThreadedCommentWorkbook_ReadsCommentWithResolvedPerson
+                  - ExcelOpenXmlReader_Read_UnresolvedAuthors_YieldNullAuthorAndKeepText
                   - ExcelOpenXmlReader_Read_MultiReplyThread_KeepsEveryReplyInOrder
 
               - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-DeduplicatesThreadedAndLegacyComments
@@ -144,4 +147,38 @@ sections:
                   A corrupt or mislabeled file must reach the caller as a typed failure Core can turn into
                   an unreadable result, not as a raw parser fault that aborts a batch run.
                 tests:
-                  - ExcelOpenXmlReader_Read_InvalidPackageOrNullStream_ThrowsTypedException
+                  - ExcelOpenXmlReader_Read_InvalidPackage_ThrowsTypedException
+                  - ExcelOpenXmlReader_Read_NullStream_ThrowsArgumentNullException
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-RejectsMissingWorkbookPart
+                title: >-
+                  ExcelOpenXmlReader shall raise ExcelExtractionException for a valid package that has no
+                  workbook part.
+                justification: |
+                  A package without a workbook part has no sheets to read, and returning an empty workbook
+                  would report a complete extraction of nothing; a typed failure naming the missing part
+                  lets Core report the file as unreadable.
+                tests:
+                  - ExcelOpenXmlReader_Read_PackageWithoutWorkbookPart_ThrowsTypedException
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsInlineStrings
+                title: >-
+                  ExcelOpenXmlReader shall read an inline-string cell as its full text, concatenating
+                  rich-text runs.
+                justification: |
+                  Some producers write text directly in the cell instead of in the shared-string table;
+                  taking the whole inner text keeps that text complete and keeps a run-split value from
+                  being torn apart.
+                tests:
+                  - ExcelOpenXmlReader_Read_InlineStringCells_ResolveToFullText
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-MapsCoreProperties
+                title: >-
+                  ExcelOpenXmlReader shall map the package's OPC core properties into the workbook model's
+                  metadata with core-properties provenance.
+                justification: |
+                  The package's declared creator, title, and dates are what the document says about itself,
+                  so they are carried into the model as metadata, each field marked as coming from the core
+                  properties, for the output to report.
+                tests:
+                  - ExcelOpenXmlReader_Read_CorePropertiesWorkbook_MapsMetadata
