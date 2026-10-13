@@ -31,6 +31,8 @@ category-column label. `Render` returns the chart part markdown as a string.
 - **`CollectIndices`** (private) — the union of every point index the categories or any series declare,
   ascending, so a combination chart with differently indexed series drops nothing and a sparse cache
   stays sparse.
+- **`OneLine`** (private) — replaces line breaks with spaces so a title, axis title, series name, or
+  read-failure reason stays on the single heading, list item, or prose line it is written to.
 - **`Escape`** (private) — escapes the pipe and flattens line breaks so a cached label cannot break the
   column structure; cached values are never shortened.
 

@@ -248,3 +248,13 @@ sections:
                 tests:
                   - ExcelContentEmitter_Emit_SheetComments_ReportsCellQualifiedReviewComments
                   - ExcelContentEmitter_Emit_WorkbookWithoutComments_ReportsNoReviewComments
+
+              - id: DocDownExcel-Markdown-ExcelContentEmitter-ReportsImageSizeSkips
+                title: >-
+                  ExcelContentEmitter shall report a plain note when embedded images exceed a
+                  caller-supplied size limit and are not written.
+                justification: |
+                  A size-limited skip is an attempted step that did not finish, so the reader learns of it
+                  from a short note rather than assuming every picture was extracted.
+                tests:
+                  - ExcelContentEmitter_Emit_ImageOverSizeLimit_ReportsSizeSkipNote

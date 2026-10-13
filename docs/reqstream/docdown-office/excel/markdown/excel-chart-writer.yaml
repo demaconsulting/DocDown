@@ -57,3 +57,14 @@ sections:
                   without burying the sheet's cells under the plotted points.
                 tests:
                   - ExcelChartWriter_Describe_ReadableChart_NamesChartAndItsPart
+
+              - id: DocDownExcel-Markdown-ExcelChartWriter-KeepsLabelsOnOneLine
+                title: >-
+                  ExcelChartWriter shall keep a chart's title, axis titles, series names, and read-failure
+                  reason on the single line they are written to.
+                justification: |
+                  A cached label can carry a line break. Written into a heading, list item, or quoted name
+                  it would end that construct early and leak the remainder into the body, so line breaks
+                  are replaced with spaces.
+                tests:
+                  - ExcelChartWriter_Render_LineBreaksInLabels_StayOnOneLine

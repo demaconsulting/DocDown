@@ -65,3 +65,11 @@ Evidence for `DocDownExcel-Markdown-ExcelChartWriter-BoundsPlottedPoints`.
 
 Proves the one-line description names a readable chart and points at its own part. Evidence for
 `DocDownExcel-Markdown-ExcelChartWriter-DescribesChartUnderSheet`.
+
+#### Line breaks in labels stay on one line
+
+**Test**: `ExcelChartWriter_Render_LineBreaksInLabels_StayOnOneLine`
+
+Proves a title, axis titles, and a series name that carry line breaks render on single lines in the
+heading, axis bullets, series list, and description. Evidence for
+`DocDownExcel-Markdown-ExcelChartWriter-KeepsLabelsOnOneLine`.

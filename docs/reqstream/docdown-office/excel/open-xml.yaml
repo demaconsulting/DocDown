@@ -54,6 +54,8 @@ sections:
               - DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsThreadedComments
               - DocDownExcel-OpenXml-ExcelOpenXmlReader-DeduplicatesThreadedAndLegacyComments
               - DocDownExcel-OpenXml-ExcelOpenXmlReader-AttributesCommentsToSheet
+              - DocDownExcel-OpenXml-ExcelOpenXmlReader-CarriesMergedRanges
+              - DocDownExcel-OpenXml-ExcelOpenXmlReader-RejectsInvalidPackage
             tests:
               - ExcelOpenXmlReader_Read_TwoSheetWorkbook_ReturnsSheetsInOrderWithNames
 

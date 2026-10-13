@@ -21,8 +21,8 @@ sections:
                   dropped chart, in a quieter place. Shapes are read in drawing order, a grouped callout is
                   flattened because a reader looking at the sheet reads it no differently, a shape with no
                   text contributes nothing, and a shape's paragraphs join into one readable annotation.
-                  The linked test currently exercises only the emitter's rendering of shape text from a
-                  hand-built model, so coverage of this unit is indirect until tests over real drawing
-                  parts are added.
+                  A line break within a paragraph reads as a space so the words either side do not fuse.
                 tests:
                   - ExcelContentEmitter_Emit_ShapeText_WritesUnderTheSheet
+                  - ExcelDrawingTextReader_Collect_RealDrawing_ReadsShapesInOrderWithBreaksAsSpaces
+                  - ExcelDrawingTextReader_Collect_NoPartOrNoDrawing_ReturnsEmpty

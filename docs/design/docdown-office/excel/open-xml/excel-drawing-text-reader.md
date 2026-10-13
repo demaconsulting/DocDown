@@ -24,6 +24,8 @@ non-empty shape texts of a worksheet's drawing, in drawing order.
 - **`TextOf`** (private) — reads one shape's text, concatenating the runs within a paragraph so a label
   split across formatting runs is not torn apart, and joining paragraphs with a space so a multi-line
   callout stays one readable annotation rather than fragments a reader must reassemble.
+- **`LineOf`** (private) — reads one paragraph's text, appending each text element and reading a line break
+  as a space so the words either side of it do not fuse.
 
 ### Error Handling
 

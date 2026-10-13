@@ -33,6 +33,7 @@ sections:
                   quantity the workbook exists to carry.
                 tests:
                   - ExcelOpenXmlReader_Read_NumericCells_ReadVerbatim
+                  - ExcelOpenXmlReader_Read_TypedAndMergedWorkbook_ResolvesTypesAndCarriesMergedRanges
 
               - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-KeepsFormulaAndValue
                 title: >-
@@ -124,3 +125,23 @@ sections:
                 tests:
                   - ExcelOpenXmlReader_Read_MultiSheetCommentWorkbook_AttributesCommentsToOwningSheet
                   - ExcelOpenXmlReader_Read_WorkbookWithoutComments_YieldsNoComments
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-CarriesMergedRanges
+                title: >-
+                  ExcelOpenXmlReader shall carry each worksheet's declared merged ranges in document order.
+                justification: |
+                  A merge stores its value only in its anchor cell, so the ranges are carried to let the
+                  emitter note them beside the grid table, which a markdown table cannot span. A blank
+                  range is skipped rather than carried as an empty reference.
+                tests:
+                  - ExcelOpenXmlReader_Read_TypedAndMergedWorkbook_ResolvesTypesAndCarriesMergedRanges
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlReader-RejectsInvalidPackage
+                title: >-
+                  ExcelOpenXmlReader shall raise ExcelExtractionException for bytes that are not an Open XML
+                  package, and shall reject a null stream.
+                justification: |
+                  A corrupt or mislabeled file must reach the caller as a typed failure Core can turn into
+                  an unreadable result, not as a raw parser fault that aborts a batch run.
+                tests:
+                  - ExcelOpenXmlReader_Read_InvalidPackageOrNullStream_ThrowsTypedException

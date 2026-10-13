@@ -258,4 +258,34 @@ public class ExcelOpenXmlReaderTests
 
         Assert.All(model.Sheets, sheet => Assert.Empty(sheet.Comments));
     }
+
+    /// <summary>
+    ///     Proves shared-string, boolean, and decimal cells resolve to their text, TRUE or FALSE, and
+    ///     verbatim value, and that declared merged ranges are carried in order with blank ones skipped.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_TypedAndMergedWorkbook_ResolvesTypesAndCarriesMergedRanges()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.TypedAndMergedWorkbook());
+
+        var model = ExcelOpenXmlReader.Read(stream);
+
+        var sheet = Assert.Single(model.Sheets);
+        Assert.Equal(
+            ["Shared header", "TRUE", "FALSE", "3.14159"], sheet.Cells.Select(cell => cell.Value));
+        Assert.Equal(["A3:B3", "D4:E5"], sheet.MergedRanges);
+    }
+
+    /// <summary>
+    ///     Proves bytes that are not an Open XML package raise <see cref="ExcelExtractionException"/>
+    ///     and a null stream is rejected.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_InvalidPackageOrNullStream_ThrowsTypedException()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.LegacyXlsBytes());
+
+        Assert.Throws<ExcelExtractionException>(() => ExcelOpenXmlReader.Read(stream));
+        Assert.Throws<ArgumentNullException>(() => ExcelOpenXmlReader.Read(null!));
+    }
 }

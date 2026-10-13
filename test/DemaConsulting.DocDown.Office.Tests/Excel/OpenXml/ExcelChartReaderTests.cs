@@ -1,5 +1,7 @@
 using System.Text;
 using DemaConsulting.DocDown.Excel.OpenXml;
+using DemaConsulting.DocDown.Office.Tests.Excel.TestData;
+using DocumentFormat.OpenXml.Packaging;
 
 namespace DemaConsulting.DocDown.Office.Tests.Excel.OpenXml;
 
@@ -328,4 +330,31 @@ public class ExcelChartReaderTests
     /// <param name="xml">The chart XML.</param>
     /// <returns>The stream.</returns>
     private static Stream ToStream(string xml) => new MemoryStream(Encoding.UTF8.GetBytes(xml));
+
+    /// <summary>
+    ///     Proves a worksheet showing a chart yields it with its sheet name, part URI, and cached data, and
+    ///     that a missing part or a worksheet without a drawing yields no chart.
+    /// </summary>
+    [Fact]
+    public void ExcelChartReader_Collect_ChartWorkbook_ReturnsChartWithCachedData()
+    {
+        // Arrange: a workbook whose sheet anchors one chart, and one whose sheet has no drawing
+        using var chartStream = new MemoryStream(XlsxFixtures.ChartWorkbook());
+        using var chartDocument = SpreadsheetDocument.Open(chartStream, false);
+        using var plainStream = new MemoryStream(XlsxFixtures.TwoSheetWorkbook());
+        using var plainDocument = SpreadsheetDocument.Open(plainStream, false);
+
+        // Act
+        var charts = ExcelChartReader.Collect(chartDocument.WorkbookPart!.WorksheetParts.Single(), "Pressure");
+        var none = ExcelChartReader.Collect(plainDocument.WorkbookPart!.WorksheetParts.First(), "Plain");
+        var missing = ExcelChartReader.Collect(null, "Absent");
+
+        // Assert: the chart carries its sheet and title, and the others yield nothing
+        var chart = Assert.Single(charts);
+        Assert.Equal("Pressure", chart.SheetName);
+        Assert.Null(chart.ReadFailureReason);
+        Assert.Equal("Tank Pressure Trend", chart.Data?.Title);
+        Assert.Empty(none);
+        Assert.Empty(missing);
+    }
 }

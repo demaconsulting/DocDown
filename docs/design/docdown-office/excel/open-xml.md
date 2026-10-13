@@ -65,8 +65,8 @@ DocDown could not finish reading it.
 
 **The drawing-text reader.** `ExcelDrawingTextReader` reads the text of every shape in a worksheet's
 drawing, in drawing order, flattening group membership because a grouped callout is read no differently
-by a person looking at the sheet, joining a shape's paragraphs into one readable annotation, and
-skipping a shape that carries no text.
+by a person looking at the sheet, joining a shape's paragraphs into one readable annotation, reading a line
+break as a space, and skipping a shape that carries no text.
 
 **Adverse cases.** The reader translates only the conditions it can recognize better than the SDK — a
 package it cannot open and a missing workbook part — into `ExcelExtractionException`. Every other fault

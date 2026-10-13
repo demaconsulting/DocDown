@@ -21,6 +21,7 @@ sections:
                   measured quantity, so they are read alongside the values.
                 tests:
                   - ExcelChartReader_ReadChartData_SingleSeries_ReadsTitlesAxesAndValues
+                  - ExcelChartReader_Collect_ChartWorkbook_ReturnsChartWithCachedData
 
               - id: DocDownExcel-OpenXml-ExcelChartReader-PreservesSparseIndices
                 title: ExcelChartReader shall preserve a cache's declared point indices rather than assuming them dense.

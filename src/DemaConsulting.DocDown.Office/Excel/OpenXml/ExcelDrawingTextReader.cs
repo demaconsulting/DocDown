@@ -62,7 +62,7 @@ internal static class ExcelDrawingTextReader
     /// <returns>The shape's text, or an empty string when it carries none.</returns>
     /// <remarks>
     ///     Runs within a paragraph concatenate so a label split across formatting runs is not torn
-    ///     apart, and paragraphs join with a space so a multi-line callout stays one readable annotation
+    ///     apart, a line break within a paragraph reads as a space so its words do not fuse, and paragraphs join with a space so a multi-line callout stays one readable annotation
     ///     rather than fragments a reader must reassemble. Pure.
     /// </remarks>
     private static string TextOf(Xdr.Shape shape)
@@ -76,7 +76,7 @@ internal static class ExcelDrawingTextReader
         var builder = new StringBuilder();
         foreach (var paragraph in body.Elements<D.Paragraph>())
         {
-            var line = string.Concat(paragraph.Descendants<D.Text>().Select(run => run.Text)).Trim();
+            var line = LineOf(paragraph);
             if (line.Length == 0)
             {
                 continue;
@@ -91,5 +91,30 @@ internal static class ExcelDrawingTextReader
         }
 
         return builder.ToString();
+    }
+
+    /// <summary>
+    ///     Reads one paragraph's text, treating a line break as a space.
+    /// </summary>
+    /// <param name="paragraph">The paragraph to read.</param>
+    /// <returns>The trimmed paragraph text.</returns>
+    /// <remarks>Without the separator the words either side of a line break would fuse. Pure.</remarks>
+    private static string LineOf(D.Paragraph paragraph)
+    {
+        var builder = new StringBuilder();
+        foreach (var element in paragraph.Descendants())
+        {
+            switch (element)
+            {
+                case D.Text text:
+                    builder.Append(text.Text);
+                    break;
+                case D.Break:
+                    builder.Append(' ');
+                    break;
+            }
+        }
+
+        return builder.ToString().Trim();
     }
 }

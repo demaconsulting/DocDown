@@ -33,3 +33,5 @@ sections:
                   occurrences let the emitter link each picture inline under its worksheet section.
                 tests:
                   - ExcelOpenXmlReader_Read_ImageWorkbook_RecordsSheetAssociation
+                  - ExcelOpenXmlImageReader_Collect_TwoSheetsWithPictures_AttributesEachImageToItsSheet
+                  - ExcelOpenXmlImageReader_Collect_NoDrawingsOrNullPart_YieldsNothingOrThrows

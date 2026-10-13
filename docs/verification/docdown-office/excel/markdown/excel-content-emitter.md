@@ -197,3 +197,10 @@ commentary leaves the sheet listings entirely, so the inventory is the only plac
 workbook carries any; the zero case is asserted because a looked-for count that disappeared when it
 reached zero would leave a reader unable to tell "none found" from "not counted". Evidence for
 `DocDownExcel-Markdown-ExcelContentEmitter-InventoriesComments`.
+
+#### An oversized image is reported as a size-limited skip
+
+**Test**: `ExcelContentEmitter_Emit_ImageOverSizeLimit_ReportsSizeSkipNote`
+
+Proves an image larger than the caller's byte limit is not written and a note states that images exceeded
+the size limit. Evidence for `DocDownExcel-Markdown-ExcelContentEmitter-ReportsImageSizeSkips`.

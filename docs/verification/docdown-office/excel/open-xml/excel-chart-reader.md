@@ -69,3 +69,11 @@ never implies an author wrote it. The companion
 `ExcelChartReader_ReadChartData_DeletedAutoTitle_ReportsNoTitle` and
 `ExcelChartReader_ReadChartData_NoChartElement_YieldsEmptyModel` cover the deleted-title and no-chart
 shapes. Evidence for `DocDownExcel-OpenXml-ExcelChartReader-ReportsAutomaticTitle`.
+
+#### A worksheet's charts are collected with their cached data
+
+**Test**: `ExcelChartReader_Collect_ChartWorkbook_ReturnsChartWithCachedData`
+
+Proves a worksheet anchoring a chart yields it with its sheet name and cached title, and that a missing
+part or a worksheet with no drawing yields none. Additional evidence for
+`DocDownExcel-OpenXml-ExcelChartReader-ReadsCachedSeries`.

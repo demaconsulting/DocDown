@@ -139,3 +139,19 @@ and that a cell carrying both keeps the position its legacy entry held. The whol
 is pinned rather than only the trailing cell, because the fixture's threaded-only cell sorts last
 anyway and an assertion on it alone could pass by luck. Evidence for
 `DocDownExcel-OpenXml-ExcelOpenXmlReader-DeduplicatesThreadedAndLegacyComments`.
+
+#### Typed cells resolve and merged ranges are carried
+
+**Test**: `ExcelOpenXmlReader_Read_TypedAndMergedWorkbook_ResolvesTypesAndCarriesMergedRanges`
+
+Proves shared-string, boolean, and decimal cells resolve to their text, `TRUE` or `FALSE`, and verbatim
+value, and that declared merged ranges are carried in order while a blank range is skipped. Evidence for
+`DocDownExcel-OpenXml-ExcelOpenXmlReader-ReadsNumericValuesVerbatim` and
+`DocDownExcel-OpenXml-ExcelOpenXmlReader-CarriesMergedRanges`.
+
+#### An invalid package is rejected with a typed exception
+
+**Test**: `ExcelOpenXmlReader_Read_InvalidPackageOrNullStream_ThrowsTypedException`
+
+Proves bytes that are not an Open XML package raise `ExcelExtractionException` and a null stream raises
+`ArgumentNullException`. Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlReader-RejectsInvalidPackage`.

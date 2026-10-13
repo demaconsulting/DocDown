@@ -42,3 +42,12 @@ Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlImageReader-YieldsEmbeddedImages`
 Proves the yielded image records the tab index of the worksheet that references it, so the sheet
 association survives extraction. Evidence for
 `DocDownExcel-OpenXml-ExcelOpenXmlImageReader-RecordsSheetAssociation`.
+
+#### Images on separate sheets are attributed to their own sheets
+
+**Tests**: `ExcelOpenXmlImageReader_Collect_TwoSheetsWithPictures_AttributesEachImageToItsSheet`,
+`ExcelOpenXmlImageReader_Collect_NoDrawingsOrNullPart_YieldsNothingOrThrows`
+
+Prove a two-sheet workbook yields each image once with its own tab index and per-sheet reference, and a
+workbook without drawings yields nothing while a null part is rejected. Additional evidence for
+`DocDownExcel-OpenXml-ExcelOpenXmlImageReader-RecordsSheetAssociation`.
