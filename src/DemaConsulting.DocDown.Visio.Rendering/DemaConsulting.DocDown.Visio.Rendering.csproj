@@ -76,10 +76,10 @@
          and the PngCodec that encodes a Surface to PNG bytes. Unlike
          DemaConsulting.DocDown.PowerPoint.Rendering's CanvasNet.Pptx, CanvasNet.Vsdx has no
          CanvasNet.Charts-equivalent dependency, so only these two packages are referenced. Both
-         are pinned to the exact same prerelease (beta) version for the same reason
+         are pinned to the same exact version for the same reason
          DemaConsulting.DocDown.Pdf.Rendering pins CanvasNet.Pdf/CanvasNet and
          DemaConsulting.DocDown.PowerPoint.Rendering pins CanvasNet.Pptx/CanvasNet.Charts/CanvasNet:
-         a floating reference to a prerelease package could silently substitute an incompatible
+         a floating reference could silently substitute an incompatible
          API, and DemaConsulting.DocDown.Tool references all three rendering projects together, so
          a mismatched pin anywhere would fail restore with NU1107. Neither package carries a native
          asset for any runtime identifier — see docs/design/ots/canvasnetvsdx.md for the

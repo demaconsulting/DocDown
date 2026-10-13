@@ -23,7 +23,7 @@ to the same pinned version at restore time, rather than letting NuGet pick a pot
 transitive version of `CanvasNet.Charts` through `CanvasNet.Pptx` alone.
 
 **Version pinning.** Pinned to the same exact version as `CanvasNet.Pptx` and `CanvasNet`, for the
-same reproducibility reason: this is a pre-1.0, beta-labeled release, and an independently floating
+same reproducibility reason: an independently floating
 transitive reference could desynchronize from the version `CanvasNet.Pptx` was built and tested
 against.
 

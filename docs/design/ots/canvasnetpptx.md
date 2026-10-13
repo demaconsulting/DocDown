@@ -28,8 +28,7 @@ package. Its usage is confined to `SlideRenderer`: a stateless, per-call open-re
 sequence with no retained configuration and no process-level state of this package's own.
 
 **Version pinning.** The package reference is pinned to an exact version range rather than a
-floating minimum, for the same reason `DemaConsulting.DocDown.Pdf.Rendering` pins `CanvasNet.Pdf`, and because this
-is a pre-1.0, beta-labeled release whose API has not yet committed to semantic-versioning stability —
+floating minimum, for the same reason `DemaConsulting.DocDown.Pdf.Rendering` pins `CanvasNet.Pdf` —
 a floating reference could pick up a breaking change between builds.
 
 **Thread-safety.** `CanvasNet.Pptx` does not document its thread-safety either way. `SlideRenderer`

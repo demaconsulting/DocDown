@@ -31,9 +31,8 @@ stateless, per-call open-render-dispose sequence with no retained configuration 
 state of this package's own.
 
 **Version pinning.** The package reference is pinned to an exact version range rather than a floating
-minimum, for the same reason `DemaConsulting.DocDown.Pdf` pins PdfPig and additionally because
-this is a pre-1.0, beta-labeled release whose API has not yet committed to semantic-versioning
-stability — a floating reference could pick up a breaking change between builds.
+minimum, for the same reason `DemaConsulting.DocDown.Pdf` pins PdfPig — a floating reference could pick up a
+breaking change between builds.
 
 **Thread-safety.** `CanvasNet.Pdf` does not document its thread-safety either way. Rather than
 serializing calls behind a process-wide lock as the previous PDFium-based backend did, `PageRenderer`
