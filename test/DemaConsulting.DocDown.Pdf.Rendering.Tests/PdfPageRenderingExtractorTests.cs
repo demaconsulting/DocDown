@@ -172,6 +172,29 @@ public class PdfPageRenderingExtractorTests
     }
 
     /// <summary>
+    ///     Proves a parser fault in the delegated extraction surfaces as an unreadable outcome with no
+    ///     page rendered.
+    /// </summary>
+    [Fact]
+    public async Task PdfPageRenderingExtractor_ExtractAsync_MalformedDocument_ReportsUnreadableWithoutPages()
+    {
+        // Arrange: bytes that are not a PDF, with page rendering requested
+        using var temp = new TempScratch();
+        var engine = new DocDownBuilder().AddPdfRendering().Build();
+        var input = WriteFixture(temp, "broken.pdf", "%PDF-1.4 this is not a real document"u8.ToArray());
+        var scratch = Path.Combine(temp.Path, "out");
+
+        // Act
+        var result = await engine.ExtractAsync(input, scratch, RenderOptions(), Ct);
+
+        // Assert: the delegated fault is converted by Core, no page image exists, and the layout is intact
+        Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
+        Assert.NotNull(result.Failure);
+        Assert.Empty(result.PagePaths);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
     ///     Proves this backend records its own "no pages were produced" note when the requested
     ///     page range selects no page, without relying on Core.
     /// </summary>

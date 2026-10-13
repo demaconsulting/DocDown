@@ -91,6 +91,47 @@ sections:
             tests:
               - PdfPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsNoteWithoutThrowing
 
+          - id: DocDownPdfRendering-PdfPageRenderingExtractor-ReportsPageCountFailureAsNote
+            title: >-
+              PdfPageRenderingExtractor shall report the plain note "Pages could not be counted, so no
+              page images were rendered." and keep the delegated content when the page count cannot be
+              determined.
+            justification: |
+              The count runs before the per-page loop, so a fault there would otherwise abort an
+              extraction whose text, images, and metadata were already produced. Isolating it costs
+              only the page images, and the note keeps that loss visible instead of silent.
+            tests:
+              - PdfPageRenderingExtractor_ExtractAsync_PageCountFaults_ReportsNoteAndKeepsDelegatedContent
+
+          - id: DocDownPdfRendering-PdfPageRenderingExtractor-PropagatesUnreadableDocument
+            title: >-
+              PdfPageRenderingExtractor shall return an unreadable outcome without rendering any page
+              when the delegated managed extraction cannot read the document.
+            justification: |
+              A document the parser cannot read has no pages to rasterize, and Core converts the
+              delegated fault into a structured failure that still writes the full output layout.
+              Rendering after that failure would produce pages for a document reported as unreadable.
+            tests:
+              - PdfPageRenderingExtractor_ExtractAsync_MalformedDocument_ReportsUnreadableWithoutPages
+
+          - id: DocDownPdfRendering-PdfPageRenderingExtractor-DeclaresStableIdentity
+            title: >-
+              PdfPageRenderingExtractor shall expose the stable identity, supported format, and
+              priority used by the engine.
+            justification: |
+              Selection and reporting depend on a backend identity that does not change between
+              releases, so the surface is explicit and asserted rather than implied.
+            tests:
+              - PdfPageRenderingExtractor_Descriptor_DeclaresStableIdentity
+
+          - id: DocDownPdfRendering-PdfPageRenderingExtractor-RejectsNullRenderFunction
+            title: PdfPageRenderingExtractor shall reject a missing rasterization function at construction.
+            justification: |
+              A missing function would fail on the first page rendered, far from the mistake that caused
+              it, so the construction boundary refuses it at once.
+            tests:
+              - PdfPageRenderingExtractor_Construct_NullRenderFunction_Throws
+
           - id: DocDownPdfRendering-PdfPageRenderingExtractor-ReportsEmptySelectionAsNote
             title: >-
               PdfPageRenderingExtractor shall report the plain note "Page rendering was requested and

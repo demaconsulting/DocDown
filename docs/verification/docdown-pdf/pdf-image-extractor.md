@@ -102,6 +102,13 @@ in, with no note, because nothing was attempted that could not complete. Evidenc
 Proves the unit does not decode, write, count, or explain images when image extraction is disabled.
 Evidence for `DocDownPdf-PdfImageExtractor-HonorsSuppression`.
 
+#### An image the sink declines is dropped without a link
+
+**Test**: `PdfImageExtractor_AddImage_SinkReturnsEmptyPath_DropsImageWithoutLink`
+
+Proves a sink that returns an empty path leaves the image counted as found but not written and produces no
+link. Evidence for `DocDownPdf-PdfImageExtractor-DropsDeclinedImage`.
+
 #### A document with no images returns zero counts without a note
 
 **Test**: `PdfImageExtractor_Extract_NoImages_ReturnsZeroCountsWithoutNote`
@@ -113,4 +120,4 @@ supporting evidence for the inventory behavior consumed by `PdfDocumentExtractor
 
 **Test**: `PdfImageExtractor_Extract_NullSink_ThrowsArgumentNullException`
 
-Proves the sink is mandatory. This is a defensive test with no linked requirement.
+Proves the sink is mandatory. Evidence for `DocDownPdf-PdfImageExtractor-RejectsNullSink`.

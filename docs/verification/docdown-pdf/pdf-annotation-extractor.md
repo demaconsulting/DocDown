@@ -153,13 +153,14 @@ annotations, so a fault raised while converting one annotation is contained exac
 raised while reading the page's annotation list. Evidence for
 `DocDownPdf-PdfAnnotationExtractor-ContainsUnreadableAnnotations`.
 
-**Coverage limitation, stated plainly.** This scenario verifies the containment half of that
-requirement but not the note itself. PdfPig's lenient parser absorbs every malformed annotation shape
-that could be assembled here and simply reports no annotations for the page, so the guarded path
-that raises the note was not reachable from a constructible fixture. The note-raising code is
-therefore verified by inspection rather than by execution. It is retained rather than removed because
-its absence would turn a future parser fault into a silently incomplete review artifact, which is the
-one outcome the design rules out.
+#### An unreadable annotation is named in a note
+
+**Test**: `PdfAnnotationExtractor_Extract_UnreadableAnnotation_RecordsNoteNamingPage`
+
+Proves a page whose annotation dictionary defeats the parser (a rectangle holding non-numeric entries)
+yields no invented comment and records exactly one note stating how many pages could not be read and which.
+Together with the scenario above, this covers both the containment and the note halves of
+`DocDownPdf-PdfAnnotationExtractor-ContainsUnreadableAnnotations`.
 
 #### Null arguments are rejected
 
@@ -167,4 +168,4 @@ one outcome the design rules out.
 `PdfAnnotationExtractor_Extract_NullSink_ThrowsArgumentNullException`
 
 Prove a missing page list or sink is refused at the boundary rather than reported as an empty
-result. These are defensive tests with no linked requirement.
+result. Evidence for `DocDownPdf-PdfAnnotationExtractor-RejectsNullArguments`.

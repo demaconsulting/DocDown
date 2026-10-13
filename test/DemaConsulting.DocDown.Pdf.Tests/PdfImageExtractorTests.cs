@@ -271,6 +271,28 @@ public class PdfImageExtractorTests
     }
 
     /// <summary>
+    ///     Proves an image the sink declines to store (returning an empty path) is dropped without a link.
+    /// </summary>
+    [Fact]
+    public async Task PdfImageExtractor_AddImage_SinkReturnsEmptyPath_DropsImageWithoutLink()
+    {
+        // Arrange: a document with one image and a sink that declines to store it
+        var sink = new EmptyPathImageSink();
+
+        // Act: extract its images
+        using var document = PdfFixtures.Open(PdfFixtures.WithEmbeddedJpeg());
+        var pages = document.GetPages().ToList();
+        var result = await global::DemaConsulting.DocDown.Pdf.PdfImageExtractor.ExtractAsync(
+            pages, sink, new ExtractionOptions(), Ct);
+
+        // Assert: the image was offered to the sink but no link or written count results
+        Assert.Equal(1, sink.Offered);
+        Assert.Equal(1, result.Found);
+        Assert.Equal(0, result.Written);
+        Assert.Empty(result.Images);
+    }
+
+    /// <summary>
     ///     Returns the single note message recorded by the sink.
     /// </summary>
     /// <param name="sink">The sink whose notes are inspected.</param>
@@ -293,5 +315,64 @@ public class PdfImageExtractorTests
         var pages = document.GetPages().ToList();
         return await global::DemaConsulting.DocDown.Pdf.PdfImageExtractor.ExtractAsync(
             pages, sink, options ?? new ExtractionOptions(), Ct);
+    }
+}
+
+/// <summary>
+///     A sink that offers no storage: every image is declined with an empty path.
+/// </summary>
+/// <remarks>Only the image call is meaningful here; every other member is a no-op.</remarks>
+internal sealed class EmptyPathImageSink : IExtractionSink
+{
+    /// <summary>Gets the number of images offered to the sink.</summary>
+    public int Offered { get; private set; }
+
+    /// <inheritdoc/>
+    public async ValueTask<string> AddImageAsync(Stream content, ImageHint hint, CancellationToken cancellationToken)
+    {
+        await content.CopyToAsync(Stream.Null, cancellationToken).ConfigureAwait(false);
+        Offered++;
+        return string.Empty;
+    }
+
+    /// <inheritdoc/>
+    public ValueTask<string> AddPageAsync(int pageNumber, Stream pngContent, CancellationToken cancellationToken) =>
+        ValueTask.FromResult(string.Empty);
+
+    /// <inheritdoc/>
+    public ValueTask WriteContentAsync(string markdown, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+
+    /// <inheritdoc/>
+    public ValueTask<string> AddContentPartAsync(ContentPart part, string markdown, CancellationToken cancellationToken) =>
+        ValueTask.FromResult(string.Empty);
+
+    /// <inheritdoc/>
+    public void ReportDocumentInfo(DocumentInfo info)
+    {
+    }
+
+    /// <inheritdoc/>
+    public void ReportDocumentMetadata(DocumentMetadata metadata)
+    {
+    }
+
+    /// <inheritdoc/>
+    public void ReportNote(ExtractionNote note)
+    {
+    }
+
+    /// <inheritdoc/>
+    public void ReportReviewComment(DocumentComment comment)
+    {
+    }
+
+    /// <inheritdoc/>
+    public void ReportEnvironmentFact(EnvironmentFact fact)
+    {
+    }
+
+    /// <inheritdoc/>
+    public void ReportContentFeature(ContentFeature feature)
+    {
     }
 }

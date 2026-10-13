@@ -43,7 +43,7 @@ round-trip case that always passes.
 **Test**: `PdfPageRenderingExtractor_Descriptor_DeclaresStableIdentity`
 
 Proves the identifier, display name, supported PDF format, and priority stay stable for selection and
-reporting.
+reporting. Evidence for `DocDownPdfRendering-PdfPageRenderingExtractor-DeclaresStableIdentity`.
 
 #### Availability is reported unconditionally, without throwing
 
@@ -85,7 +85,16 @@ produces no page, still returns `Produced`, and does not throw. Evidence for
 **Test**: `PdfPageRenderingExtractor_ExtractAsync_PageCountFaults_ReportsNoteAndKeepsDelegatedContent`
 
 Proves a fault reading the page count is recorded as a note while the delegated managed content is
-still written, so one failed step does not discard output the delegate already produced.
+still written, so one failed step does not discard output the delegate already produced. Evidence for
+`DocDownPdfRendering-PdfPageRenderingExtractor-ReportsPageCountFailureAsNote`.
+
+#### A malformed document is reported unreadable and renders no page
+
+**Test**: `PdfPageRenderingExtractor_ExtractAsync_MalformedDocument_ReportsUnreadableWithoutPages`
+
+Proves a document the parser cannot read ends as an unreadable outcome with a failure, no page image, and the
+full output layout intact, so no page is rendered for a document reported as unreadable. Evidence for
+`DocDownPdfRendering-PdfPageRenderingExtractor-PropagatesUnreadableDocument`.
 
 #### An empty page selection is reported by this backend, not Core
 
@@ -101,7 +110,8 @@ Evidence for `DocDownPdfRendering-PdfPageRenderingExtractor-ReportsEmptySelectio
 **Test**: `PdfPageRenderingExtractor_Construct_NullRenderFunction_Throws`
 
 Proves a missing rasterization function is rejected where the mistake is made, at construction, rather
-than surfacing later as a null-reference fault during extraction.
+than surfacing later as a null-reference fault during extraction. Evidence for
+`DocDownPdfRendering-PdfPageRenderingExtractor-RejectsNullRenderFunction`.
 
 #### A distinctly named self-test case always passes
 

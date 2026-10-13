@@ -66,6 +66,22 @@ sections:
             tests:
               - PdfDocumentExtractor_ExtractAsync_DocumentWithMetadata_ReportsTitleAuthorAndPageCount
 
+          - id: DocDownPdf-PdfDocumentExtractor-ReportsDocumentMetadata
+            title: >-
+              PdfDocumentExtractor shall report the document's title, author, subject, keywords, creator,
+              producer, and creation and modification dates as self-reported metadata, normalizing each
+              parseable date to ISO-8601 UTC and omitting a date it cannot parse.
+            justification: |
+              The document information dictionary is the document's own account of itself. PDF encodes
+              dates in its own offset-bearing form, so they are normalized to one comparable form; a
+              date that cannot be parsed is omitted rather than guessed, because a wrong date is worse
+              than a missing one.
+            tests:
+              - PdfDocumentExtractor_ExtractAsync_DocumentWithMetadata_ReportsDocumentMetadata
+              - PdfDocumentExtractor_BuildDocumentMetadata_NoInformation_ReportsFieldsAbsent
+              - PdfDocumentExtractor_TryParsePdfDate_WellFormed_ParsesToIsoUtc
+              - PdfDocumentExtractor_TryParsePdfDate_Malformed_ReturnsFalse
+
           - id: DocDownPdf-PdfDocumentExtractor-ReportsEnvironmentFacts
             title: >-
               PdfDocumentExtractor shall record what parsed the document and that page rendering is

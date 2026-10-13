@@ -199,7 +199,14 @@ file, and leaves the layout present. Evidence for `DocDownPdfRendering-EmptySele
 
 Proves a faulting page-count function is caught once, records the single note
 `Pages could not be counted, so no page images were rendered.`, still returns `Produced`, and keeps the
-delegated managed content. This behavior is covered by a unit test but has no requirement linked to it yet.
+delegated managed content. Evidence for `DocDownPdfRendering-PageCountFailureReportedAsNote`.
+
+### A malformed document is reported unreadable and renders no page
+
+**Test**: `PdfPageRenderingExtractor_ExtractAsync_MalformedDocument_ReportsUnreadableWithoutPages`
+
+Proves a document the parser cannot read, with page rendering requested, ends as an unreadable outcome with a
+failure, no page file, and the layout present. Evidence for `DocDownPdfRendering-UnreadableDocumentRendersNoPages`.
 
 ### The rendered summary matches its committed golden
 

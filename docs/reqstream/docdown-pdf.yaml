@@ -106,6 +106,8 @@ sections:
           - DocDownPdf-PdfTextExtractor-LinksImages
           - DocDownPdf-PdfImageExtractor-ReportsImageHints
           - DocDownPdf-PdfImageExtractor-HonorsSuppression
+          - DocDownPdf-PdfImageExtractor-DropsDeclinedImage
+          - DocDownPdf-PdfImageExtractor-RejectsNullSink
           - DocDown-OTS-PdfPig-ImageExtraction
         tests:
           - DocDownPdf_Extract_DctImage_RoundTripsByteIdenticalAsPassthrough
@@ -150,20 +152,25 @@ sections:
           - DocDownPdf-PdfAnnotationExtractor-PreservesDocumentOrder
           - DocDownPdf-PdfAnnotationExtractor-ReportsNothingWhenAbsent
           - DocDownPdf-PdfAnnotationExtractor-ContainsUnreadableAnnotations
+          - DocDownPdf-PdfAnnotationExtractor-RejectsNullArguments
           - DocDownPdf-PdfDocumentExtractor-ReportsReviewComments
         tests:
           - DocDownPdf_Extract_AnnotatedPdf_WritesReviewCommentsArtifact
           - DocDownPdf_Extract_PdfWithoutAnnotations_WritesNoReviewCommentsArtifact
 
       - id: DocDownPdf-DocumentMetadata
-        title: The system shall report the document title, author, and page count.
+        title: >-
+          The system shall report the document title, author, and page count, and the document's other
+          declared properties with normalized dates.
         tags: [system]
         justification: |
           Downstream indexing and routing decisions are made on document metadata before any content
-          is read. Reporting what the document itself declares, and reporting nothing where it
-          declares nothing, lets those decisions be made on facts rather than guesses.
+          is read. Reporting what the document itself declares, with its dates normalized to one
+          form, and reporting nothing where it declares nothing, lets those decisions be made on facts
+          rather than guesses.
         children:
           - DocDownPdf-PdfDocumentExtractor-ReportsDocumentInfo
+          - DocDownPdf-PdfDocumentExtractor-ReportsDocumentMetadata
           - DocDown-OTS-PdfPig-DocumentMetadata
         tests:
           - DocDownPdf_Extract_MultiPagePdf_ReportsPageCountAndAllText

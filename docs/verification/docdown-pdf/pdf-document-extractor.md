@@ -64,6 +64,15 @@ report rendered-page support. Evidence for `DocDownPdf-PdfDocumentExtractor-Prob
 Proves the title, author, and page count recorded on the sink come from the source document.
 Evidence for `DocDownPdf-PdfDocumentExtractor-ReportsDocumentInfo`.
 
+#### Self-reported metadata is mapped with provenance
+
+**Tests**: `PdfDocumentExtractor_ExtractAsync_DocumentWithMetadata_ReportsDocumentMetadata`,
+`PdfDocumentExtractor_BuildDocumentMetadata_NoInformation_ReportsFieldsAbsent`
+
+Prove the declared title and author reach the self-reported metadata attributed to the PDF document
+information, and that a document with no information dictionary reports nothing and lists the interesting
+fields as absent. Evidence for `DocDownPdf-PdfDocumentExtractor-ReportsDocumentMetadata`.
+
 #### PDF date strings are parsed to ISO-8601 UTC or omitted
 
 **Tests**: `PdfDocumentExtractor_TryParsePdfDate_WellFormed_ParsesToIsoUtc` and
@@ -71,7 +80,7 @@ Evidence for `DocDownPdf-PdfDocumentExtractor-ReportsDocumentInfo`.
 
 Prove well-formed PDF `D:` dates, including defaulted fields and UTC offsets, normalize to ISO-8601 UTC
 and that malformed or impossible dates fail the parse so the metadata field is omitted rather than
-guessed. These are supporting tests for the metadata mapping; no requirement is linked to them.
+guessed. Evidence for `DocDownPdf-PdfDocumentExtractor-ReportsDocumentMetadata`.
 
 #### Parser and page-rendering environment facts are recorded
 
