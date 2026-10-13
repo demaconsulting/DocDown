@@ -1,3 +1,4 @@
+// cspell:ignore rels
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using A = DocumentFormat.OpenXml.Drawing;
@@ -659,6 +660,229 @@ public static class DocxFixtures
         SetBody(mainPart, body);
         SetProperties(document, title, "DocDown Test Suite");
     });
+
+    /// <summary>
+    ///     Builds a document whose single table cell holds a nested table with a pipe in one cell.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Used to prove a flattened nested table never splits its enclosing cell.</remarks>
+    public static byte[] DocumentWithNestedTableContainingPipe() => BuildDocx((document, mainPart) =>
+    {
+        var inner = new W.Table();
+        var innerRow = new W.TableRow();
+        innerRow.AppendChild(Cell("left|part"));
+        innerRow.AppendChild(Cell("right"));
+        inner.AppendChild(innerRow);
+
+        var outerCell = new W.TableCell();
+        outerCell.AppendChild(TextParagraph("outer"));
+        outerCell.AppendChild(inner);
+        outerCell.AppendChild(new W.Paragraph());
+
+        var outerRow = new W.TableRow();
+        outerRow.AppendChild(outerCell);
+        outerRow.AppendChild(Cell("beside"));
+        var table = new W.Table();
+        table.AppendChild(outerRow);
+
+        var body = new W.Body();
+        body.AppendChild(table);
+        SetBody(mainPart, body);
+        SetProperties(document, "Nested", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a two-section document whose headers carry identical text but different logo images.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Used to prove header deduplication compares images as well as text.</remarks>
+    public static byte[] DocumentWithSameHeaderTextDifferentImages() => BuildDocx((document, mainPart) =>
+    {
+        var body = new W.Body();
+        var firstId = AddHeaderWithImage(mainPart, ImagePartType.Png, PngBytes());
+        var secondId = AddHeaderWithImage(mainPart, ImagePartType.Emf, EmfBytes());
+
+        var firstParagraph = TextParagraph("First section body.");
+        firstParagraph.InsertAt(Compose(new W.ParagraphProperties(), SectionProperties(firstId, null)), 0);
+        body.AppendChild(firstParagraph);
+        body.AppendChild(TextParagraph("Second section body."));
+        body.AppendChild(SectionProperties(secondId, null));
+
+        SetBody(mainPart, body);
+        SetProperties(document, "Two Logos", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document with one external hyperlink whose target contains parentheses.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Used to prove a link destination cannot end its markdown link early.</remarks>
+    public static byte[] DocumentWithParenthesizedHyperlink() => BuildDocx((document, mainPart) =>
+    {
+        var relationship = mainPart.AddHyperlinkRelationship(new Uri("https://example.com/wiki/Topic_(draft)"), true);
+        var hyperlink = new W.Hyperlink { Id = relationship.Id };
+        hyperlink.AppendChild(Run("the topic"));
+        var paragraph = new W.Paragraph();
+        paragraph.AppendChild(hyperlink);
+
+        var body = new W.Body();
+        body.AppendChild(paragraph);
+        SetBody(mainPart, body);
+        SetProperties(document, "Links", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document with a line break inside one paragraph, a second paragraph holding a
+    ///     page break, and a final paragraph.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Used to prove a line break is a hard break and a page break becomes a page-break block.</remarks>
+    public static byte[] DocumentWithLineAndPageBreaks() => BuildDocx((document, mainPart) =>
+    {
+        var broken = new W.Paragraph();
+        var run = new W.Run();
+        run.AppendChild(new W.Text("first line") { Space = SpaceProcessingModeValues.Preserve });
+        run.AppendChild(new W.Break());
+        run.AppendChild(new W.Text("second line") { Space = SpaceProcessingModeValues.Preserve });
+        broken.AppendChild(run);
+
+        var paged = new W.Paragraph();
+        var pageRun = new W.Run();
+        pageRun.AppendChild(new W.Text("before page") { Space = SpaceProcessingModeValues.Preserve });
+        pageRun.AppendChild(new W.Break { Type = W.BreakValues.Page });
+        paged.AppendChild(pageRun);
+
+        var body = new W.Body();
+        body.AppendChild(broken);
+        body.AppendChild(paged);
+        body.AppendChild(TextParagraph("after page"));
+        SetBody(mainPart, body);
+        SetProperties(document, "Breaks", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document with one footnote reference and the matching footnote body.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Used to prove a footnote becomes a numbered marker and a Footnotes section entry.</remarks>
+    public static byte[] DocumentWithFootnote() => BuildDocx((document, mainPart) =>
+    {
+        var footnotesPart = mainPart.AddNewPart<FootnotesPart>();
+        var footnotes = new W.Footnotes();
+        var separator = new W.Footnote { Type = W.FootnoteEndnoteValues.Separator, Id = -1 };
+        separator.AppendChild(TextParagraph("separator"));
+        footnotes.AppendChild(separator);
+        var footnote = new W.Footnote { Id = 1 };
+        footnote.AppendChild(TextParagraph("The footnote body."));
+        footnotes.AppendChild(footnote);
+        footnotesPart.Footnotes = footnotes;
+
+        var paragraph = new W.Paragraph();
+        paragraph.AppendChild(Run("Claim with a note"));
+        var referenceRun = new W.Run();
+        referenceRun.AppendChild(new W.FootnoteReference { Id = 1 });
+        paragraph.AppendChild(referenceRun);
+
+        var body = new W.Body();
+        body.AppendChild(paragraph);
+        SetBody(mainPart, body);
+        SetProperties(document, "Footnoted", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a package that is a valid Open XML package but has no main document part.
+    /// </summary>
+    /// <returns>The package bytes.</returns>
+    /// <remarks>Used to prove the reader raises <c>WordExtractionException</c> rather than a null fault.</remarks>
+    public static byte[] PackageWithoutMainPart()
+    {
+        using var stream = new MemoryStream();
+        using (var archive = new System.IO.Compression.ZipArchive(
+            stream, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+        {
+            var types = archive.CreateEntry("[Content_Types].xml");
+            using (var writer = new StreamWriter(types.Open()))
+            {
+                writer.Write(
+                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                    + "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">"
+                    + "<Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>"
+                    + "</Types>");
+            }
+
+            var rels = archive.CreateEntry("_rels/.rels");
+            using (var writer = new StreamWriter(rels.Open()))
+            {
+                writer.Write(
+                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                    + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"/>");
+            }
+        }
+
+        return stream.ToArray();
+    }
+
+    /// <summary>
+    ///     Builds a document embedding two DrawingML charts.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Used to prove the chart note counts and pluralizes correctly.</remarks>
+    public static byte[] DocumentWithTwoCharts() => BuildDocx((document, mainPart) =>
+    {
+        var body = new W.Body();
+        for (var index = 0; index < 2; index++)
+        {
+            var chartPart = mainPart.AddNewPart<ChartPart>();
+            using (var stream = chartPart.GetStream(FileMode.Create, FileAccess.Write))
+            using (var writer = new StreamWriter(stream))
+            {
+                writer.Write(MinimalChartXml);
+            }
+
+            body.AppendChild(ChartParagraph(mainPart.GetIdOfPart(chartPart)));
+        }
+
+        SetBody(mainPart, body);
+        SetProperties(document, "Two Charts", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document whose core properties carry a subject, keywords, and a last-modified-by name.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Used to prove the reader maps the package core properties into the shared metadata.</remarks>
+    public static byte[] DocumentWithCoreProperties() => BuildDocx((document, mainPart) =>
+    {
+        var body = new W.Body();
+        body.AppendChild(TextParagraph("Body."));
+        SetBody(mainPart, body);
+        SetProperties(document, "Specification", "DocDown Test Suite");
+        document.PackageProperties.Subject = "Interface control";
+        document.PackageProperties.Keywords = "alpha, beta";
+        document.PackageProperties.LastModifiedBy = "Editor Person";
+    });
+
+    /// <summary>
+    ///     Adds a header part holding fixed text and one image, and returns its relationship id.
+    /// </summary>
+    /// <param name="mainPart">The main document part.</param>
+    /// <param name="type">The image part type.</param>
+    /// <param name="bytes">The image bytes.</param>
+    /// <returns>The relationship id of the added header part.</returns>
+    /// <remarks>Side effect: adds a header part and an image part.</remarks>
+    private static string AddHeaderWithImage(MainDocumentPart mainPart, PartTypeInfo type, byte[] bytes)
+    {
+        var headerPart = mainPart.AddNewPart<HeaderPart>();
+        var imagePart = headerPart.AddImagePart(type);
+        WritePart(imagePart, bytes);
+        var header = new W.Header();
+        header.AppendChild(TextParagraph("Company Header"));
+        var imageParagraph = new W.Paragraph();
+        imageParagraph.AppendChild(BuildDrawingRun(headerPart.GetIdOfPart(imagePart), "logo"));
+        header.AppendChild(imageParagraph);
+        headerPart.Header = header;
+        return mainPart.GetIdOfPart(headerPart);
+    }
 
     /// <summary>
     ///     Builds a table cell holding a single paragraph of text.

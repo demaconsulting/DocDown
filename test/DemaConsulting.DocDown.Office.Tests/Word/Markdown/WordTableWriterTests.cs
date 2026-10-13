@@ -53,6 +53,21 @@ public class WordTableWriterTests
     }
 
     /// <summary>
+    ///     Proves a hard-break run inside a cell becomes a single line break with no trailing spaces.
+    /// </summary>
+    [Fact]
+    public void WordTableWriter_Write_CellWithHardBreakRun_BecomesSingleBreak()
+    {
+        var table = new WordTableModel(
+            [[new WordTableCell([new WordInline("one\ntwo")])]],
+            FirstRowIsHeader: true, MergedCellCount: 0, NestedTableCount: 0);
+
+        var (markdown, _) = WordTableWriter.Write(table);
+
+        Assert.Contains("| one<br>two |", markdown, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves a cell's newline becomes a line break and its pipe is escaped.
     /// </summary>
     [Fact]

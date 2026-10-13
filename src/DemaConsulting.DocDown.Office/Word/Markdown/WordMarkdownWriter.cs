@@ -74,8 +74,8 @@ internal static class WordMarkdownWriter
     }
 
     /// <summary>
-    ///     Renders a block sequence to markdown, used for the body, one per-part section, and each
-    ///     document-control subsection.
+    ///     Renders a block sequence to markdown, used by the reader to render a header or footer part
+    ///     for duplicate detection.
     /// </summary>
     /// <param name="blocks">The blocks to render. Must not be null.</param>
     /// <param name="imagePaths">A map from an image source reference to the relative path the sink allocated. Must not be null.</param>
@@ -119,7 +119,8 @@ internal static class WordMarkdownWriter
                 continue;
             }
 
-            var text = Escape(inline.Text);
+            // A line break inside a run is a hard break in markdown: two trailing spaces, not a soft wrap
+            var text = Escape(inline.Text).Replace("\n", "  \n", StringComparison.Ordinal);
             if (inline.Italic)
             {
                 text = "*" + text + "*";
@@ -132,7 +133,7 @@ internal static class WordMarkdownWriter
 
             if (inline.Href is { Length: > 0 } href)
             {
-                text = "[" + text + "](" + href + ")";
+                text = "[" + text + "](" + EscapeHref(href) + ")";
             }
 
             builder.Append(text);
@@ -198,6 +199,33 @@ internal static class WordMarkdownWriter
             }
 
             builder.Append(character);
+        }
+
+        return builder.ToString();
+    }
+
+    /// <summary>
+    ///     Percent-encodes the characters that would end or corrupt a markdown link destination.
+    /// </summary>
+    /// <param name="href">The hyperlink target.</param>
+    /// <returns>The target with space, parentheses, angle brackets, and line breaks percent-encoded.</returns>
+    /// <remarks>Pure.</remarks>
+    private static string EscapeHref(string href)
+    {
+        var builder = new StringBuilder(href.Length);
+        foreach (var character in href)
+        {
+            switch (character)
+            {
+                case ' ': builder.Append("%20"); break;
+                case '(': builder.Append("%28"); break;
+                case ')': builder.Append("%29"); break;
+                case '<': builder.Append("%3C"); break;
+                case '>': builder.Append("%3E"); break;
+                case '\n': builder.Append("%0A"); break;
+                case '\r': builder.Append("%0D"); break;
+                default: builder.Append(character); break;
+            }
         }
 
         return builder.ToString();

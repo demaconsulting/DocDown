@@ -60,8 +60,8 @@ public class WordGoldenTests
     ///     Proves the summary for a document with merged cells and its flattening note matches its golden.
     /// </summary>
     [Fact]
-    public Task WordGolden_MergedCellsGap_MatchesCommittedGolden() =>
-        AssertGoldenAsync("summary-word-openxml-merged-cells-gap.txt", "merged.docx", DocxFixtures.DocumentWithMergedCells());
+    public Task WordGolden_MergedCellsFlattened_MatchesCommittedGolden() =>
+        AssertGoldenAsync("summary-word-openxml-merged-cells-flattened.txt", "merged.docx", DocxFixtures.DocumentWithMergedCells());
 
     /// <summary>
     ///     Proves the summary for the document-control scenario matches its golden.

@@ -972,7 +972,7 @@ reviews:
       # golden outputs
       - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-tables-and-images.txt"
       # golden outputs
-      - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-merged-cells-gap.txt"
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-merged-cells-flattened.txt"
       # golden outputs
       - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-document-control.txt"
       # golden outputs

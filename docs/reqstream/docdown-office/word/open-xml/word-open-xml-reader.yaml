@@ -72,7 +72,7 @@ sections:
                   A document under revision still needs one coherent extracted text flow. Keeping
                   insertions and dropping deletions yields that accepted-view reading.
                 tests:
-                  - WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewWithDiagnostic
+                  - WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewAndCountsChanges
 
               - id: DocDownWord-OpenXml-WordOpenXmlReader-DetectsPasswordProtected
                 title: >-

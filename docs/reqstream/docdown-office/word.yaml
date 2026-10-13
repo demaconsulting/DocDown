@@ -162,7 +162,7 @@ sections:
         children:
           - DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedView
         tests:
-          - WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewWithDiagnostic
+          - WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewAndCountsChanges
 
       - id: DocDownWord-ChartNotes
         title: >-
@@ -177,6 +177,7 @@ sections:
           - DocDownWord-Markdown-WordContentEmitter-ReportsChartNote
         tests:
           - DocDownWord_Extract_DocxWithChart_ReportsChartNote
+          - DocDownWord_Extract_DocxWithTwoCharts_ReportsPluralChartNote
 
       - id: DocDownWord-EmbeddedImages
         title: >-
@@ -265,6 +266,7 @@ sections:
           - DocDownWord-OpenXml-WordOpenXmlReader-DetectsPasswordProtected
         tests:
           - WordOpenXmlReader_Read_PasswordProtected_ThrowsWordExtractionException
+          - DocDownWord_Extract_ProtectedDocx_IsUnreadableWithPasswordExplanation
 
       - id: DocDownWord-DocumentMetadata
         title: >-
@@ -281,6 +283,8 @@ sections:
           - DocDownWord-OpenXml-WordOpenXmlReader-ReportsProducerPageCount
         tests:
           - WordOpenXmlReader_Read_Metadata_TitleAndAuthorSurfaced
+          - DocDownWord_Extract_DocxWithCoreProperties_WritesDocumentMetadata
+          - WordOpenXmlReader_Read_CoreProperties_MapsSharedMetadata
 
       - id: DocDownWord-MarkdownRendering
         title: >-
@@ -324,7 +328,8 @@ sections:
           - WordGolden_Simple_MatchesCommittedGolden
           - WordGolden_TablesAndImages_MatchesCommittedGolden
           - WordGolden_DocumentControl_MatchesCommittedGolden
-          - WordGolden_MergedCellsGap_MatchesCommittedGolden
+          - WordGolden_MergedCellsFlattened_MatchesCommittedGolden
+          - DocDownWord_Extract_SameDocumentTwice_ProducesIdenticalOutput
 
       - id: DocDownWord-SelfValidation
         title: The subsystem shall contribute self-validation cases describing its own extraction behavior.
@@ -338,3 +343,93 @@ sections:
           - DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests
         tests:
           - WordOpenXmlExtractor_SelfValidation_ReportsCases
+
+      - id: DocDownWord-Footnotes
+        title: >-
+          The subsystem shall carry a document's footnotes into the content as inline markers with a
+          Footnotes section.
+        tags: [system]
+        justification: |
+          A footnote is part of what the author wrote. Rendering its marker where it is referenced
+          and its body in a Footnotes section keeps the note connected to its anchor.
+        tests:
+          - WordOpenXmlReader_Read_Footnote_CollectsMarkerAndBody
+          - WordOpenXmlExtractor_Extract_Footnote_WritesMarkerAndFootnotesSection
+
+      - id: DocDownWord-MissingMainPart
+        title: >-
+          The subsystem shall report a package with no main document part as unreadable through
+          WordExtractionException rather than a raw parser exception.
+        tags: [system]
+        justification: |
+          A zip package that is not a Word document must not abort a batch run. Raising the
+          subsystem's own exception lets the extractor report the document as unreadable.
+        tests:
+          - WordOpenXmlReader_Read_MissingMainPart_ThrowsWordExtractionException
+          - WordOpenXmlExtractor_Extract_MissingMainPart_IsUnreadable
+
+      - id: DocDownWord-ArgumentAndCancellationHandling
+        title: >-
+          The subsystem shall reject null arguments and honor a cancelled token.
+        tags: [system]
+        justification: |
+          Callers need a fast, predictable failure for misuse and a prompt stop when the host cancels
+          the run, rather than a partial extraction.
+        tests:
+          - WordOpenXmlReader_Read_NullStream_ThrowsArgumentNullException
+          - WordOpenXmlExtractor_Extract_NullArguments_Throw
+          - WordOpenXmlExtractor_Extract_CancelledToken_ThrowsOperationCanceled
+          - WordOpenXmlImageReader_Resolve_NullArguments_Throw
+
+      - id: DocDownWord-BreakRendering
+        title: >-
+          The subsystem shall render a page break as a horizontal rule and a line break as a hard
+          line break.
+        tags: [system]
+        justification: |
+          A page break and a line break are structure the author placed. A soft break would merge
+          the lines when rendered, so a hard break is emitted to preserve the author's line layout.
+        tests:
+          - WordOpenXmlReader_Read_LineAndPageBreaks_RenderHardBreakAndPageBreakBlock
+          - WordOpenXmlExtractor_Extract_PageBreak_WritesHorizontalRule
+          - WordTableWriter_Write_CellWithHardBreakRun_BecomesSingleBreak
+
+      - id: DocDownWord-NestedTableEscaping
+        title: >-
+          The subsystem shall escape a pipe in the text of a flattened nested table.
+        tags: [system]
+        justification: |
+          A literal pipe in flattened cell text would split the outer table's cell and corrupt the row.
+        tests:
+          - WordOpenXmlReader_Read_NestedTableWithPipe_EscapesEveryPipeInFlattenedCell
+
+      - id: DocDownWord-HeaderImageDistinction
+        title: >-
+          The subsystem shall treat headers or footers with the same text but different images as
+          distinct when deduplicating.
+        tags: [system]
+        justification: |
+          Dropping a header whose text matches but whose image differs would silently lose the image.
+        tests:
+          - WordOpenXmlReader_Read_SameHeaderTextDifferentImages_KeepsBothHeaders
+
+      - id: DocDownWord-LinkDestinationEscaping
+        title: >-
+          The subsystem shall escape spaces and parentheses in a hyperlink destination.
+        tags: [system]
+        justification: |
+          An unescaped parenthesis or space ends the markdown link destination early and breaks the link.
+        tests:
+          - WordOpenXmlReader_Read_HyperlinkWithParentheses_EscapesDestination
+
+      - id: DocDownWord-ImageResolution
+        title: >-
+          The subsystem shall resolve images from body and header parts, ignoring relationships that are
+          missing or not images, and rank naming candidates.
+        tags: [system]
+        justification: |
+          Image naming and byte extraction must be correct for every part an image can come from.
+        tests:
+          - WordOpenXmlImageReader_Resolve_MissingOrNonImageRelationship_ReturnsNull
+          - WordOpenXmlImageReader_Resolve_HeaderScopedImage_ResolvesAgainstHeaderPart
+          - WordOpenXmlImageReader_Resolve_Candidates_RankAndGateAltText

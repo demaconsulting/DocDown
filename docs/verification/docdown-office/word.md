@@ -173,14 +173,104 @@ produces the expected layout. Evidence for `DocDownWord-LegacyFormatUnreadable`.
 
 - `WordGolden_Simple_MatchesCommittedGolden`
 - `WordGolden_TablesAndImages_MatchesCommittedGolden`
-- `WordGolden_MergedCellsGap_MatchesCommittedGolden`
+- `WordGolden_MergedCellsFlattened_MatchesCommittedGolden`
 - `WordGolden_DocumentControl_MatchesCommittedGolden`
 - `WordGolden_ReviewComments_MatchesCommittedGolden`
 
 Prove five representative extractions — a simple two-section document, a document with tables and
 images, one whose merged cells produce a flattening note, an engineering-style document with a
 Document Control section, and a document with reviewer comments — render a normalized `summary.txt`
-that is byte-identical to its committed golden. The golden test for merged cells and its golden file
-still carry the older "gap" name, although the behavior they pin is the flattening note. Evidence for
+that is byte-identical to its committed golden. Evidence for
 `DocDownWord-Determinism`, which the golden comparison supports as a one-run comparison of the
 normalized summary rather than a repeated-run comparison of every artifact.
+
+### Footnotes are carried into the content
+
+**Tests**:
+
+- `WordOpenXmlReader_Read_Footnote_CollectsMarkerAndBody`
+- `WordOpenXmlExtractor_Extract_Footnote_WritesMarkerAndFootnotesSection`
+
+Prove a footnote reference renders as an inline marker and its body appears under a Footnotes
+section. Evidence for `DocDownWord-Footnotes`.
+
+### A package without a main part is unreadable
+
+**Tests**:
+
+- `WordOpenXmlReader_Read_MissingMainPart_ThrowsWordExtractionException`
+- `WordOpenXmlExtractor_Extract_MissingMainPart_IsUnreadable`
+
+Prove a zip package lacking a main document part raises `WordExtractionException` at the reader and
+is reported unreadable by the extractor. Evidence for `DocDownWord-MissingMainPart`.
+
+### Null arguments and cancellation are honored
+
+**Tests**:
+
+- `WordOpenXmlReader_Read_NullStream_ThrowsArgumentNullException`
+- `WordOpenXmlExtractor_Extract_NullArguments_Throw`
+- `WordOpenXmlExtractor_Extract_CancelledToken_ThrowsOperationCanceled`
+- `WordOpenXmlImageReader_Resolve_NullArguments_Throw`
+
+Prove null arguments throw `ArgumentNullException` and a cancelled token throws
+`OperationCanceledException`. Evidence for `DocDownWord-ArgumentAndCancellationHandling`.
+
+### Breaks render as rules and hard line breaks
+
+**Tests**:
+
+- `WordOpenXmlReader_Read_LineAndPageBreaks_RenderHardBreakAndPageBreakBlock`
+- `WordOpenXmlExtractor_Extract_PageBreak_WritesHorizontalRule`
+- `WordTableWriter_Write_CellWithHardBreakRun_BecomesSingleBreak`
+
+Prove a line break renders as a hard break, a page break as a horizontal rule, and a hard break
+inside a table cell as one `<br>`. Evidence for `DocDownWord-BreakRendering`.
+
+### Flattened nested-table text escapes pipes
+
+**Test**: `WordOpenXmlReader_Read_NestedTableWithPipe_EscapesEveryPipeInFlattenedCell`
+
+Proves every pipe in a flattened nested cell is escaped. Evidence for
+`DocDownWord-NestedTableEscaping`.
+
+### Headers with different images stay distinct
+
+**Test**: `WordOpenXmlReader_Read_SameHeaderTextDifferentImages_KeepsBothHeaders`
+
+Proves headers with identical text but different image bytes are both kept. Evidence for
+`DocDownWord-HeaderImageDistinction`.
+
+### Hyperlink destinations are escaped
+
+**Test**: `WordOpenXmlReader_Read_HyperlinkWithParentheses_EscapesDestination`
+
+Proves parentheses in a destination are percent-encoded. Evidence for
+`DocDownWord-LinkDestinationEscaping`.
+
+### Images resolve from the correct part
+
+**Tests**:
+
+- `WordOpenXmlImageReader_Resolve_MissingOrNonImageRelationship_ReturnsNull`
+- `WordOpenXmlImageReader_Resolve_HeaderScopedImage_ResolvesAgainstHeaderPart`
+- `WordOpenXmlImageReader_Resolve_Candidates_RankAndGateAltText`
+
+Prove missing or non-image relationships resolve to nothing, header images resolve against the
+header part, and naming candidates are ranked with alt text gated. Evidence for
+`DocDownWord-ImageResolution`.
+
+### Protected, metadata, repeat-run, and plural chart cases
+
+**Tests**:
+
+- `DocDownWord_Extract_ProtectedDocx_IsUnreadableWithPasswordExplanation`
+- `DocDownWord_Extract_DocxWithCoreProperties_WritesDocumentMetadata`
+- `WordOpenXmlReader_Read_CoreProperties_MapsSharedMetadata`
+- `DocDownWord_Extract_SameDocumentTwice_ProducesIdenticalOutput`
+- `DocDownWord_Extract_DocxWithTwoCharts_ReportsPluralChartNote`
+
+Prove a protected document is unreadable with an explanation, core properties reach
+`metadata.json`, two extractions of one document are identical, and two charts yield a plural note.
+Evidence for `DocDownWord-ProtectedDocument`, `DocDownWord-DocumentMetadata`,
+`DocDownWord-Determinism`, and `DocDownWord-ChartNotes`.

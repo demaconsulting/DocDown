@@ -19,7 +19,7 @@ namespace DemaConsulting.DocDown.Word.Markdown;
 ///     The document's comments, author-attributed and location-hinted, reported to Core as review
 ///     comments for <c>review-comments.md</c> rather than rendered into <c>content.md</c>.
 /// </param>
-/// <param name="Footnotes">The footnote and endnote bodies, referenced from the body as <c>[^n]</c> and rendered in a <c>## Footnotes</c> section.</param>
+/// <param name="Footnotes">The footnote bodies, referenced from the body as <c>[^n]</c> and rendered in a <c>## Footnotes</c> section.</param>
 /// <param name="Title">The document title from <c>docProps/core.xml</c>, or <see langword="null"/> when blank or absent.</param>
 /// <param name="Author">The document author from <c>docProps/core.xml</c>, or <see langword="null"/> when blank or absent.</param>
 /// <param name="ProducerPageCount">

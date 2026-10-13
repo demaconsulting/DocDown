@@ -87,10 +87,13 @@ used per document. The important state is:
   preserves alignment by emitting empty continuation cells for merges, and counts merged and nested
   cells so the emitter can later state when markdown could not preserve the full table structure.
 - **`BuildCellContent()`** and **`FlattenNestedTable()`** (private) — flatten nested table content
-  into `<br>`-joined text so the outer grid remains renderable.
+  into text joined with an escaped pipe separator and spaces for line breaks, so the outer grid remains
+  renderable.
 - **`BuildDocumentControl()`** (private) — collects header and footer parts from every `w:sectPr`,
   renders each with page furniture stripped, deduplicates identical rendered content across
-  sections, and labels the surviving sections for markdown rendering.
+  sections, and labels the surviving sections for markdown rendering. The duplicate key combines the
+  rendered text with a SHA-256 fingerprint of any images, so headers with the same text but different
+  images stay distinct.
 - **`IsFurnitureInstruction()`** (private) — trims the instruction, splits on whitespace, and
   matches the first token against the furniture set. This is the authoritative signal for
   page-numbering furniture.

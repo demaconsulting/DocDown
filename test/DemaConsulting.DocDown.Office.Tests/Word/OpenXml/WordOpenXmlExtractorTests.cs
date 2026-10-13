@@ -161,6 +161,81 @@ public class WordOpenXmlExtractorTests
     }
 
     /// <summary>
+    ///     Proves a null source or null context is rejected with an argument-null exception.
+    /// </summary>
+    [Fact]
+    public async Task WordOpenXmlExtractor_Extract_NullArguments_Throw()
+    {
+        var extractor = new WordOpenXmlExtractor();
+        var source = DocumentSource.FromStream(new MemoryStream(DocxFixtures.CleanDocument()), "a.docx");
+
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await extractor.ExtractAsync(null!, null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await extractor.ExtractAsync(source, null!));
+    }
+
+    /// <summary>
+    ///     Proves an already-cancelled token stops the extraction with a cancellation exception.
+    /// </summary>
+    [Fact]
+    public async Task WordOpenXmlExtractor_Extract_CancelledToken_ThrowsOperationCanceled()
+    {
+        using var temp = new TempScratch();
+        using var cancelled = new CancellationTokenSource();
+        await cancelled.CancelAsync();
+        var source = DocumentSource.FromStream(new MemoryStream(DocxFixtures.CleanDocument()), "a.docx");
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+            await WordTestHarness.ExtractAsync(
+                new WordOpenXmlExtractor(), source, Path.Combine(temp.Path, "out"), new ExtractionOptions(),
+                CoreFormat.Docx, cancelled.Token));
+    }
+
+    /// <summary>
+    ///     Proves a page break in the document is written as a horizontal rule in the content.
+    /// </summary>
+    [Fact]
+    public async Task WordOpenXmlExtractor_Extract_PageBreak_WritesHorizontalRule()
+    {
+        using var temp = new TempScratch();
+        var scratch = await ExtractAsync(temp, "breaks.docx", DocxFixtures.DocumentWithLineAndPageBreaks());
+
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch.Folder, "content.md"), Ct);
+        Assert.Contains("first line  \nsecond line", content, StringComparison.Ordinal);
+        Assert.Contains("\n---\n", content, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch.Folder);
+    }
+
+    /// <summary>
+    ///     Proves a footnote reaches the content as a marker and a Footnotes section.
+    /// </summary>
+    [Fact]
+    public async Task WordOpenXmlExtractor_Extract_Footnote_WritesMarkerAndFootnotesSection()
+    {
+        using var temp = new TempScratch();
+        var scratch = await ExtractAsync(temp, "footnoted.docx", DocxFixtures.DocumentWithFootnote());
+
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch.Folder, "content.md"), Ct);
+        Assert.Contains("[^1]", content, StringComparison.Ordinal);
+        Assert.Contains("## Footnotes", content, StringComparison.Ordinal);
+        Assert.Contains("[^1]: The footnote body", content, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch.Folder);
+    }
+
+    /// <summary>
+    ///     Proves a package with no main part is reported as unreadable naming the missing part.
+    /// </summary>
+    [Fact]
+    public async Task WordOpenXmlExtractor_Extract_MissingMainPart_IsUnreadable()
+    {
+        using var temp = new TempScratch();
+        var scratch = await ExtractAsync(temp, "headless.docx", DocxFixtures.PackageWithoutMainPart());
+
+        Assert.Equal(ExtractionOutcome.Unreadable, scratch.Result.Outcome);
+        Assert.Contains("no main document part", scratch.Result.Failure!.Explanation, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch.Folder);
+    }
+
+    /// <summary>
     ///     Extracts a fixture through the Open XML backend and returns the folder and result.
     /// </summary>
     /// <param name="temp">The owning temporary folder.</param>
