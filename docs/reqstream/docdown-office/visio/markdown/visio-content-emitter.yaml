@@ -115,6 +115,17 @@ sections:
                 tests:
                   - VisioContentEmitter_Emit_MultiLineEndpointLabel_StaysOnOneEdgeLine
 
+              - id: DocDownVisio-Markdown-VisioContentEmitter-HonorsCancellation
+                title: >-
+                  VisioContentEmitter shall observe cancellation between pages and surface it as
+                  `OperationCanceledException` before writing content.
+                justification: |
+                  A drawing can have many pages, so emission checks the caller's token between pages and
+                  stops with the standard cancellation exception rather than writing a partial content
+                  file or disguising the cancellation as a failure.
+                tests:
+                  - VisioContentEmitter_Emit_CancelledToken_Throws
+
               - id: DocDownVisio-Markdown-VisioContentEmitter-OmitsEdgesBetweenUnnamedShapes
                 title: >-
                   VisioContentEmitter shall omit a connection whose endpoints are both unidentified

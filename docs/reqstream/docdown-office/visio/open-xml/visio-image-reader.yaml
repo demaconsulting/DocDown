@@ -15,14 +15,16 @@ sections:
               - id: DocDownVisio-OpenXml-VisioImageReader-YieldsEmbeddedImages
                 title: >-
                   VisioImageReader shall follow every internal image relationship to its media part and
-                  yield the bytes unchanged, deduplicated by package part.
+                  yield the bytes unchanged, deduplicated by package part (not by content bytes).
                 justification: |
                   A foreign-data image stores a complete image file in a media part, so the reader passes
                   its bytes through unchanged as a passthrough and yields each distinct media part once,
                   even when several pages share it, so a shared image is written and named once rather than
-                  duplicated.
+                  duplicated. Deduplication is by package part, not by content: identical bytes held in two
+                  different parts yield two images, and any byte-level deduplication is a sink concern.
                 tests:
                   - VisioImageReader_Collect_PageImageAndThumbnail_YieldsImageOnlyWithPage
+                  - VisioImageReader_Collect_SharedMediaPartAcrossPages_YieldedOnceWithBothPages
 
               - id: DocDownVisio-OpenXml-VisioImageReader-RecordsPageAssociation
                 title: >-
@@ -35,6 +37,7 @@ sections:
                   occurrences are kept so the emitter can link each image inline under its page section.
                 tests:
                   - VisioImageReader_Collect_PageImageAndThumbnail_YieldsImageOnlyWithPage
+                  - VisioImageReader_Collect_SharedMediaPartAcrossPages_YieldedOnceWithBothPages
 
               - id: DocDownVisio-OpenXml-VisioImageReader-FlagsTemplateFurniture
                 title: >-

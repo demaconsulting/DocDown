@@ -336,6 +336,25 @@ public class VisioContentEmitterTests
     }
 
     /// <summary>
+    ///     Proves an already-canceled token stops emission with <see cref="OperationCanceledException"/>
+    ///     before any content is written.
+    /// </summary>
+    [Fact]
+    public async Task VisioContentEmitter_Emit_CancelledToken_Throws()
+    {
+        // Arrange: a one-page drawing and a token that is already canceled
+        var model = new VisioDocumentModel([new VisioPageModel("P", [new VisioShapeModel("1", "A")], [])]);
+        var sink = new RecordingSink();
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+
+        // Act & Assert: cancellation is observed between pages and nothing is written
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await VisioContentEmitter.EmitAsync(
+            sink, new ExtractionOptions { IncludeEmbeddedImages = false }, model, cancellation.Token));
+        Assert.Empty(sink.ContentWrites);
+    }
+
+    /// <summary>
     ///     Proves a shape whose text is a bare callout number is omitted, and the omission is counted
     ///     in the content rather than left silent.
     /// </summary>

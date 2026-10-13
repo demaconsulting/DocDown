@@ -183,6 +183,32 @@ sections:
         tests:
           - VisioPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePng
 
+      - id: DocDownVisioRendering-CorruptPackageUnreadable
+        title: >-
+          The system shall report a corrupt Visio package as unreadable without rendering any page.
+        tags: [system]
+        justification: |
+          A damaged drawing cannot be rendered meaningfully, and an exception or a falsely
+          successful extraction would misinform the caller. The corrupt package ends as an
+          unreadable result with the full layout and no page images.
+        children:
+          - DocDownVisioRendering-VisioPageRenderingExtractor-PassesThroughUnreadable
+        tests:
+          - VisioPageRenderingExtractor_ExtractAsync_CorruptPackage_ReturnsUnreadableWithoutRendering
+
+      - id: DocDownVisioRendering-CancellationHonored
+        title: >-
+          The system shall surface cancellation as `OperationCanceledException` rather than an
+          unreadable result or a page note.
+        tags: [system]
+        justification: |
+          Cancellation is a caller decision, not a rendering fault, so it must reach the caller as the
+          standard exception and never be recorded as a failed page or an unreadable drawing.
+        children:
+          - DocDownVisioRendering-VisioPageRenderingExtractor-HonorsCancellation
+        tests:
+          - VisioPageRenderingExtractor_ExtractAsync_Cancelled_Propagates
+
       - id: DocDownVisioRendering-ConcurrentRendersDoNotInterfere
         title: The system shall produce correct output when rendering concurrently from multiple threads.
         tags: [system]

@@ -81,3 +81,25 @@ sections:
                   implied by absence.
                 tests:
                   - VisioOpenXmlExtractor_SelfTestCases_RoundTripPassesAndRenderingSkipped
+
+              - id: DocDownVisio-OpenXml-VisioOpenXmlExtractor-PropagatesCorruptPackageFault
+                title: >-
+                  VisioOpenXmlExtractor shall let a corrupt package's fault propagate to Core rather than
+                  swallowing it or reporting `Produced`, writing no content.
+                justification: |
+                  Core owns the translation of an adverse drawing into an unreadable result with the full
+                  layout written. An extractor that swallowed the fault, or reported Produced over a
+                  package it could not read, would present an empty extraction as a success.
+                tests:
+                  - VisioOpenXmlExtractor_ExtractAsync_CorruptPackage_ThrowsExtractionException
+
+              - id: DocDownVisio-OpenXml-VisioOpenXmlExtractor-HonorsCancellation
+                title: >-
+                  VisioOpenXmlExtractor shall surface cancellation as `OperationCanceledException`, never
+                  as an unreadable or produced result.
+                justification: |
+                  Cancellation is a caller decision, not a fault in the drawing. Observing the token while
+                  buffering the source and while emitting pages, and letting the exception propagate,
+                  lets a caller stop a long extraction and tell it apart from an unreadable document.
+                tests:
+                  - VisioOpenXmlExtractor_ExtractAsync_CancelledToken_Throws

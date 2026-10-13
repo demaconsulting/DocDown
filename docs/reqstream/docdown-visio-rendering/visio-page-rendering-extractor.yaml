@@ -34,6 +34,29 @@ sections:
             tests:
               - VisioPageRenderingExtractor_ExtractAsync_RenderRequested_WritesPagePng
 
+          - id: DocDownVisioRendering-VisioPageRenderingExtractor-PassesThroughUnreadable
+            title: >-
+              VisioPageRenderingExtractor shall not mask an unreadable managed result as `Produced`,
+              and shall attempt no page rasterization for a drawing the managed backend could not read.
+            justification: |
+              Rasterizing a drawing whose text, images, and metadata could not be read would produce
+              pages beside an extraction that is not usable. A corrupt package therefore ends the
+              extraction as unreadable, with the full layout written by Core, before any page is
+              rendered; the extractor also returns an `Unreadable` outcome from the delegate unchanged.
+            tests:
+              - VisioPageRenderingExtractor_ExtractAsync_CorruptPackage_ReturnsUnreadableWithoutRendering
+
+          - id: DocDownVisioRendering-VisioPageRenderingExtractor-HonorsCancellation
+            title: >-
+              VisioPageRenderingExtractor shall surface cancellation as `OperationCanceledException`
+              rather than an unreadable result or a per-page note.
+            justification: |
+              Cancellation is a caller decision, not a render fault. It is observed while buffering the
+              source and between pages and is deliberately excluded from the per-page fault
+              isolation, so the caller can stop a long render and is never told a healthy page failed.
+            tests:
+              - VisioPageRenderingExtractor_ExtractAsync_Cancelled_Propagates
+
           - id: DocDownVisioRendering-VisioPageRenderingExtractor-SkipsRasterizationWhenNotRequested
             title: >-
               VisioPageRenderingExtractor shall not rasterize any page when page rendering was not

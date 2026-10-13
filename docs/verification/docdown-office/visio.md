@@ -155,6 +155,21 @@ Proves an engine with the Visio subsystem registered returns an unreadable resul
 explanation that states plainly that the legacy binary format is unsupported. Evidence for
 `DocDownVisio-LegacyFormatRefusal`.
 
+### A corrupt package is refused as unreadable
+
+**Test**: `DocDownVisio_Extract_CorruptVsdx_ReturnsUnreadableWithExplanation`
+
+Proves an engine with the Visio subsystem registered returns an unreadable result for a `.vsdx` whose bytes
+are not an Open Packaging container, with a non-empty explanation, the full layout present, and no
+exception reaching the caller. Evidence for `DocDownVisio-CorruptPackageUnreadable`.
+
+### Cancellation propagates to the caller
+
+**Test**: `DocDownVisio_Extract_CancelledToken_PropagatesCancellation`
+
+Proves an already-canceled token surfaces from the engine as `OperationCanceledException` rather than an
+unreadable or produced result. Evidence for `DocDownVisio-CancellationHonored`.
+
 ### Self-validation cases are exposed and run
 
 **Test**: `VisioOpenXmlExtractor_SelfTestCases_RoundTripPassesAndRenderingSkipped`

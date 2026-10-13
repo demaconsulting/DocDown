@@ -86,8 +86,9 @@ no native asset.
 - **Reporting stays factual.** The content emitter reports looked-for counts for pages, labeled
   shapes, and connections, including zero. When DocDown attempted a step and could not complete it,
   it records a short note rather than inventing a judgment about the document.
-- **Unreadable failures are contained.** Packaging faults propagate to Core, which
-  converts them into `Unreadable` results with the full output layout still present.
+- **Unreadable failures are contained.** Packaging faults, including a corrupt package, propagate to
+  Core, which converts them into `Unreadable` results with the full output layout still present.
+  Cancellation is not a fault: it propagates to the caller as `OperationCanceledException`.
 
 ## Data Flow
 

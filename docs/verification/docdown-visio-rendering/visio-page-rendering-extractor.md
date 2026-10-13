@@ -101,6 +101,24 @@ records the single note "Page rendering was requested and a renderer was availab
 were produced.", independent of any note the delegated managed backend may have already recorded.
 Evidence for `DocDownVisioRendering-VisioPageRenderingExtractor-ReportsEmptySelectionAsNote`.
 
+#### A corrupt drawing is unreadable and nothing is rendered
+
+**Test**: `VisioPageRenderingExtractor_ExtractAsync_CorruptPackage_ReturnsUnreadableWithoutRendering`
+
+Proves a corrupt package ends as `Unreadable` with an explanation and the full layout, while an
+injected render function records zero calls and no page is produced. The managed delegate signals
+a corrupt package by throwing rather than returning `Unreadable`, so the delegate's `Unreadable`
+return itself is a defensive pass-through that no real input reaches; this scenario proves the
+observable behavior it guards. Evidence for
+`DocDownVisioRendering-VisioPageRenderingExtractor-PassesThroughUnreadable`.
+
+#### Cancellation propagates
+
+**Test**: `VisioPageRenderingExtractor_ExtractAsync_Cancelled_Propagates`
+
+Proves an already-canceled token surfaces as `OperationCanceledException` and no page is rasterized.
+Evidence for `DocDownVisioRendering-VisioPageRenderingExtractor-HonorsCancellation`.
+
 #### A null render function is rejected at construction
 
 **Test**: `VisioPageRenderingExtractor_Construct_NullRenderFunction_Throws`

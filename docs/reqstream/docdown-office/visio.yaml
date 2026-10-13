@@ -237,6 +237,36 @@ sections:
         tests:
           - DocDownVisio_Extract_LegacyVsd_ReturnsUnreadableFailure
 
+      - id: DocDownVisio-CorruptPackageUnreadable
+        title: >-
+          The subsystem shall report a corrupt Visio package as an unreadable result with a plain
+          explanation and the full output layout, without an exception reaching the caller.
+        tags: [system]
+        justification: |
+          A truncated or damaged `.vsdx` is an adverse input, not a programming error. The managed
+          backend lets the package fault propagate and Core converts it into a structured failure,
+          so the caller receives an explanation and the invariant layout instead of an exception or a
+          falsely successful empty extraction.
+        children:
+          - DocDownVisio-OpenXml-VisioOpenXmlExtractor-PropagatesCorruptPackageFault
+        tests:
+          - DocDownVisio_Extract_CorruptVsdx_ReturnsUnreadableWithExplanation
+
+      - id: DocDownVisio-CancellationHonored
+        title: >-
+          The subsystem shall honor cancellation by surfacing `OperationCanceledException` to the
+          caller rather than an unreadable or produced result.
+        tags: [system]
+        justification: |
+          Cancellation is a decision of the caller, not a property of the drawing. Reporting it as an
+          unreadable document would mislabel a healthy drawing, and reporting it as produced would
+          present partial output as complete, so it propagates as the standard exception.
+        children:
+          - DocDownVisio-OpenXml-VisioOpenXmlExtractor-HonorsCancellation
+          - DocDownVisio-Markdown-VisioContentEmitter-HonorsCancellation
+        tests:
+          - DocDownVisio_Extract_CancelledToken_PropagatesCancellation
+
       - id: DocDownVisio-SelfValidation
         title: The subsystem shall contribute self-validation cases describing its own extraction behavior.
         tags: [system]

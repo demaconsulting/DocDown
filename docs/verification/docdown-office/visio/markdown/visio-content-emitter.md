@@ -67,6 +67,13 @@ Proves a shape's multi-line text is kept inside its item and never truncated. Ev
 Proves an endpoint label whose text spans lines is collapsed so its edge occupies exactly one list
 line. Evidence for `DocDownVisio-Markdown-VisioContentEmitter-KeepsEdgesOnOneLine`.
 
+#### Cancellation stops emission
+
+**Test**: `VisioContentEmitter_Emit_CancelledToken_Throws`
+
+Proves an already-canceled token surfaces as `OperationCanceledException` before any content is
+written. Evidence for `DocDownVisio-Markdown-VisioContentEmitter-HonorsCancellation`.
+
 #### An edge between unnamed shapes is omitted and counted
 
 **Test**: `VisioContentEmitter_Emit_EdgeBetweenUnnamedShapes_OmittedAndCounted`

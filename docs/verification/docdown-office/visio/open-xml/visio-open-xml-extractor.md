@@ -60,3 +60,18 @@ output contract that reconciles cleanly. Evidence for
 Proves the topology round-trip case genuinely passes in the environment under test and the
 page-rendering case reports a skip with a reason rather than a failure. Evidence for
 `DocDownVisio-OpenXml-VisioOpenXmlExtractor-ContributesSelfTests`.
+
+#### A corrupt package faults to Core
+
+**Test**: `VisioOpenXmlExtractor_ExtractAsync_CorruptPackage_ThrowsExtractionException`
+
+Proves non-package bytes make the extractor throw `VisioExtractionException` with no content written,
+leaving Core to produce the unreadable result. Evidence for
+`DocDownVisio-OpenXml-VisioOpenXmlExtractor-PropagatesCorruptPackageFault`.
+
+#### Cancellation propagates
+
+**Test**: `VisioOpenXmlExtractor_ExtractAsync_CancelledToken_Throws`
+
+Proves an already-canceled token surfaces as `OperationCanceledException` with no content written.
+Evidence for `DocDownVisio-OpenXml-VisioOpenXmlExtractor-HonorsCancellation`.
