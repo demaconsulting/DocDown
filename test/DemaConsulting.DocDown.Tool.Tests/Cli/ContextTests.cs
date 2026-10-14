@@ -23,16 +23,14 @@ public class ContextTests
         var logFile = Path.Combine(Path.GetTempPath(), $"docdown-ctx-{Guid.NewGuid():N}.log");
         try
         {
-            using (var context = Context.Create(["--log", logFile]))
-            {
-                context.WriteLine("hello world");
+            using var context = Context.Create(["--log", logFile]);
+            context.WriteLine("hello world");
 
-                // AutoFlush means the line is on disk before Dispose; read with a shared handle
-                // because the writer still holds the file open.
-                using var stream = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var reader = new StreamReader(stream);
-                Assert.Contains("hello world", reader.ReadToEnd(), StringComparison.Ordinal);
-            }
+            // AutoFlush means the line is on disk before Dispose; read with a shared handle
+            // because the writer still holds the file open.
+            using var stream = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(stream);
+            Assert.Contains("hello world", reader.ReadToEnd(), StringComparison.Ordinal);
         }
         finally
         {

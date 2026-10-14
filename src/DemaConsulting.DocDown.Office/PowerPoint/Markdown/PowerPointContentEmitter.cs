@@ -310,7 +310,7 @@ internal static class PowerPointContentEmitter
         {
             if (imagePaths.TryGetValue(image.SourceRef, out var path))
             {
-                builder.Append("![").Append(AltText(image.AltText)).Append("](").Append(path).Append(")")
+                builder.Append("![").Append(AltText(image.AltText)).Append("](").Append(path).Append(')')
                     .Append('\n').Append('\n');
             }
         }

@@ -240,7 +240,7 @@ internal static class VisioContentEmitter
         {
             if (imagePaths.TryGetValue(image.SourceRef, out var path))
             {
-                builder.Append("![").Append(ImageLinkText.Alt(image.AltText)).Append("](").Append(path).Append(")")
+                builder.Append("![").Append(ImageLinkText.Alt(image.AltText)).Append("](").Append(path).Append(')')
                     .Append('\n').Append('\n');
             }
         }

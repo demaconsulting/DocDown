@@ -62,7 +62,7 @@ internal static class PdfImageExtractor
     ///     does not carry. The media type is non-null exactly for the rows whose bytes are a file, and
     ///     that is what makes "may this be passed through?" a lookup rather than a judgment call.
     /// </remarks>
-    private static readonly IReadOnlyDictionary<string, FilterClassification> FilterTable =
+    private static readonly Dictionary<string, FilterClassification> FilterTable =
         new Dictionary<string, FilterClassification>(StringComparer.Ordinal)
         {
             // A complete JPEG file: write it straight to .jpg, byte-identical

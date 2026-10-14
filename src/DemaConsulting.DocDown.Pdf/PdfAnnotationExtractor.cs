@@ -105,7 +105,7 @@ internal static class PdfAnnotationExtractor
     ///         is machinery rather than commentary.
     ///     </para>
     /// </remarks>
-    private static readonly IReadOnlySet<AnnotationType> CommentaryAnnotationTypes =
+    private static readonly HashSet<AnnotationType> CommentaryAnnotationTypes =
         new HashSet<AnnotationType>
         {
             // Purpose-built commentary
@@ -304,7 +304,7 @@ internal static class PdfAnnotationExtractor
     ///     incomplete about it. Side effect: records a note on the sink.
     /// </remarks>
     private static void ReportUnreadableAnnotationsNote(
-        IExtractionSink sink, IReadOnlyList<int> unreadablePages, int selectedPages)
+        IExtractionSink sink, List<int> unreadablePages, int selectedPages)
     {
         if (unreadablePages.Count == 0)
         {

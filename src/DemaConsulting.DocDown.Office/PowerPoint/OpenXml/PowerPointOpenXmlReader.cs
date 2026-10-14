@@ -182,7 +182,7 @@ internal static class PowerPointOpenXmlReader
     ///     without re-walking the package. An identifier the list does not name yields no attribution
     ///     rather than a guess. Read-only over the part.
     /// </remarks>
-    private static IReadOnlyDictionary<uint, string> LoadCommentAuthors(PresentationPart presentationPart)
+    private static Dictionary<uint, string> LoadCommentAuthors(PresentationPart presentationPart)
     {
         var names = new Dictionary<uint, string>();
         var list = presentationPart.CommentAuthorsPart?.CommentAuthorList;
@@ -237,7 +237,7 @@ internal static class PowerPointOpenXmlReader
     ///         A comment with no text is dropped, because it says nothing. Read-only over the part.
     ///     </para>
     /// </remarks>
-    private static IReadOnlyList<PowerPointCommentModel> ReadComments(
+    private static List<PowerPointCommentModel> ReadComments(
         SlidePart slidePart, IReadOnlyDictionary<uint, string> authorNames)
     {
         var comments = new List<PowerPointCommentModel>();

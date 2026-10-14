@@ -571,7 +571,7 @@ public sealed class DocDownEngine
     ///     Emitting the backend's facts first and then what was missing lets the summary explain a
     ///     incomplete result by its environment. Pure.
     /// </remarks>
-    private static IReadOnlyList<EnvironmentFact> FinalFacts(
+    private static List<EnvironmentFact> FinalFacts(
         ExtractionSink sink, IReadOnlyList<ExtractorCandidate> candidates, string? selectedId)
     {
         // Backend-reported facts come first, then the availability context for what was not selected

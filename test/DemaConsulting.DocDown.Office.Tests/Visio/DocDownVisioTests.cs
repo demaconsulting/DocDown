@@ -48,8 +48,8 @@ public class DocDownVisioTests
 
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         var images = Directory.GetFiles(Path.Combine(scratch, "images"));
-        Assert.Single(images);
-        Assert.EndsWith(".emf", images[0], StringComparison.Ordinal);
+        var image = Assert.Single(images);
+        Assert.EndsWith(".emf", image, StringComparison.Ordinal);
         Assert.Empty(result.Notes);
         ContractAssert.LayoutPresent(scratch);
     }

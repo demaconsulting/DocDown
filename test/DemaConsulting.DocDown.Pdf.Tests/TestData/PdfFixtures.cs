@@ -568,7 +568,7 @@ public static class PdfFixtures
     ///     kind of detail that silently rots and turns a real assertion into a parse error. Pure apart
     ///     from the allocation.
     /// </remarks>
-    private static byte[] Assemble(IReadOnlyList<(string Header, byte[]? Stream)> body)
+    private static byte[] Assemble(List<(string Header, byte[]? Stream)> body)
     {
         var bytes = new List<byte>();
         bytes.AddRange(Encoding.ASCII.GetBytes("%PDF-1.4\n"));

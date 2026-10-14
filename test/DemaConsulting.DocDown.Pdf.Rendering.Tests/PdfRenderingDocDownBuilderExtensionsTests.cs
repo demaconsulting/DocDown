@@ -28,8 +28,8 @@ public class PdfRenderingDocDownBuilderExtensionsTests
         var engine = new DocDownBuilder().AddPdfRendering().Build();
 
         // Assert: exactly the rendering extractor is registered
-        Assert.Single(engine.Extractors);
-        Assert.Equal("pdf-rendering", engine.Extractors[0].Id);
+        var extractor = Assert.Single(engine.Extractors);
+        Assert.Equal("pdf-rendering", extractor.Id);
     }
 
     /// <summary>

@@ -614,12 +614,10 @@ public class SummaryWriterTests
             await sink.AddImageAsync(two, new ImageHint("placed-two", "image/png", SourcePages: [2]), CancellationToken.None);
         }
 
-        using (var three = new MemoryStream([7, 8, 9], writable: false))
-        {
-            await sink.AddImageAsync(
-                three,
-                new ImageHint("template-only", "image/png", ReferencedByTemplate: true),
-                CancellationToken.None);
-        }
+        using var three = new MemoryStream([7, 8, 9], writable: false);
+        await sink.AddImageAsync(
+            three,
+            new ImageHint("template-only", "image/png", ReferencedByTemplate: true),
+            CancellationToken.None);
     }
 }

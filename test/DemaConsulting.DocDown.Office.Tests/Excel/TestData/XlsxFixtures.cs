@@ -756,7 +756,7 @@ public static class XlsxFixtures
     /// </summary>
     /// <param name="relationshipIds">The relationship id each frame cites, in drawing order.</param>
     /// <returns>The worksheet drawing.</returns>
-    private static Xdr.WorksheetDrawing BuildChartDrawing(IReadOnlyList<string> relationshipIds)
+    private static Xdr.WorksheetDrawing BuildChartDrawing(List<string> relationshipIds)
     {
         var worksheetDrawing = new Xdr.WorksheetDrawing();
         for (var index = 0; index < relationshipIds.Count; index++)

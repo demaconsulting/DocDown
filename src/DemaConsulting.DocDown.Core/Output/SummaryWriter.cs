@@ -279,7 +279,7 @@ public static class SummaryWriter
     /// <param name="phrases">The phrases to join; must not be empty.</param>
     /// <returns>The joined list (for example <c>a, b, and c</c>).</returns>
     /// <remarks>Prose, not data, so it reads as a sentence rather than a comma-separated field. Pure.</remarks>
-    private static string JoinList(IReadOnlyList<string> phrases) => phrases.Count switch
+    private static string JoinList(List<string> phrases) => phrases.Count switch
     {
         1 => phrases[0],
         2 => $"{phrases[0]} and {phrases[1]}",

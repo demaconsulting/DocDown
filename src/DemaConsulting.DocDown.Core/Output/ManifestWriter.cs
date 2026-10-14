@@ -165,7 +165,7 @@ public static class ManifestWriter
     ///     Order is preserved rather than sorted because the backend reported the features in the
     ///     order it judged most informative, and the summary renders the same order. Pure.
     /// </remarks>
-    private static IReadOnlyList<ManifestContentFeature> BuildContentFeatures(IReadOnlyList<ContentFeature> features)
+    private static List<ManifestContentFeature> BuildContentFeatures(IReadOnlyList<ContentFeature> features)
     {
         var mapped = new List<ManifestContentFeature>(features.Count);
         foreach (var feature in features)
@@ -180,7 +180,7 @@ public static class ManifestWriter
     /// <param name="images">The recorded images.</param>
     /// <returns>The manifest image DTOs in allocation order.</returns>
     /// <remarks>Each image appears once with its reference count, reflecting deduplication. Pure.</remarks>
-    private static IReadOnlyList<ManifestImage> BuildImages(IReadOnlyList<RecordedImage> images)
+    private static List<ManifestImage> BuildImages(IReadOnlyList<RecordedImage> images)
     {
         // Emit in allocation order so the manifest matches the file names
         var list = new List<ManifestImage>(images.Count);
@@ -201,7 +201,7 @@ public static class ManifestWriter
     /// <param name="pages">The recorded pages.</param>
     /// <returns>The manifest page DTOs in insertion order.</returns>
     /// <remarks>Maps each page back to its document page number. Pure.</remarks>
-    private static IReadOnlyList<ManifestPage> BuildPages(IReadOnlyList<RecordedPage> pages)
+    private static List<ManifestPage> BuildPages(IReadOnlyList<RecordedPage> pages)
     {
         // Preserve insertion order; page numbers are the stable identity
         var list = new List<ManifestPage>(pages.Count);
@@ -217,7 +217,7 @@ public static class ManifestWriter
     /// <param name="parts">The recorded parts.</param>
     /// <returns>The manifest part DTOs in ordinal order.</returns>
     /// <remarks>Lists each part with its stable ordinal so split content can be reassembled. Pure.</remarks>
-    private static IReadOnlyList<ManifestPart> BuildParts(IReadOnlyList<RecordedPart> parts)
+    private static List<ManifestPart> BuildParts(IReadOnlyList<RecordedPart> parts)
     {
         // Emit in call order, which is the dense ordinal order the sink assigned
         var list = new List<ManifestPart>(parts.Count);
@@ -237,7 +237,7 @@ public static class ManifestWriter
     ///     the comments in the order it walked the document and <c>review-comments.md</c> renders the
     ///     same order. Pure.
     /// </remarks>
-    private static IReadOnlyList<ManifestReviewComment> BuildReviewComments(IReadOnlyList<DocumentComment> comments)
+    private static List<ManifestReviewComment> BuildReviewComments(IReadOnlyList<DocumentComment> comments)
     {
         // Emit in report order so the manifest and review-comments.md describe the same review
         var list = new List<ManifestReviewComment>(comments.Count);
@@ -253,7 +253,7 @@ public static class ManifestWriter
     /// <param name="notes">The recorded notes in emission order.</param>
     /// <returns>The note messages in emission order.</returns>
     /// <remarks>Each note is a single plain-language message; the manifest carries the message only. Pure.</remarks>
-    private static IReadOnlyList<string> BuildNotes(IReadOnlyList<ExtractionNote> notes)
+    private static List<string> BuildNotes(IReadOnlyList<ExtractionNote> notes)
     {
         var list = new List<string>(notes.Count);
         foreach (var note in notes)

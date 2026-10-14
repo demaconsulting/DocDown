@@ -175,7 +175,7 @@ internal static class PdfTextExtractor
     ///     two-column page into two sequential columns rather than interleaved lines. Pure apart from
     ///     reading the page.
     /// </remarks>
-    private static IReadOnlyList<TextBlock> SegmentIntoReadingOrder(Page page)
+    private static List<TextBlock> SegmentIntoReadingOrder(Page page)
     {
         var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters).ToList();
         if (words.Count == 0)

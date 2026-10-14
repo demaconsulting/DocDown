@@ -199,8 +199,8 @@ internal static class ExcelContentEmitter
             LookedFor: true));
         sink.ReportContentFeature(new ContentFeature(
             "cached chart data points",
-            model.Sheets.Sum(sheet => sheet.Charts.Sum(chart =>
-                chart.Data?.Series.Sum(series => series.Points.Count) ?? 0)),
+            model.Sheets.Sum((ExcelSheetModel sheet) => sheet.Charts.Sum((ExcelChartModel chart) =>
+                chart.Data?.Series.Sum((ExcelChartSeries series) => series.Points.Count) ?? 0)),
             "cached chart data point",
             LookedFor: true));
 
@@ -482,7 +482,7 @@ internal static class ExcelContentEmitter
                 any = true;
             }
 
-            builder.Append("![").Append(ImageLinkText.Alt(image.AltText)).Append("](").Append(path).Append(")")
+            builder.Append("![").Append(ImageLinkText.Alt(image.AltText)).Append("](").Append(path).Append(')')
                 .Append('\n').Append('\n');
         }
     }

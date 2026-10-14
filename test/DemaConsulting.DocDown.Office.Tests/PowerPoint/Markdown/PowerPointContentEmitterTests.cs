@@ -366,8 +366,8 @@ public class PowerPointContentEmitterTests
 
         await PowerPointContentEmitter.EmitAsync(sink, new ExtractionOptions(), model, Ct);
 
-        Assert.Single(sink.Images);
-        Assert.Equal(ImageTransform.Passthrough, sink.Images[0].Hint.Transform);
+        var image = Assert.Single(sink.Images);
+        Assert.Equal(ImageTransform.Passthrough, image.Hint.Transform);
         Assert.Empty(sink.Notes);
     }
 

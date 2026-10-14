@@ -139,7 +139,7 @@ internal static class PowerPointOpenXmlImageReader
     ///     accumulators and emit order.
     /// </remarks>
     private static void RecordContainer(
-        OpenXmlPartContainer container, IReadOnlyDictionary<string, IReadOnlyList<ImageTextCandidate>> candidatesByUri,
+        OpenXmlPartContainer container, Dictionary<string, IReadOnlyList<ImageTextCandidate>> candidatesByUri,
         Dictionary<string, PartAccumulator> accumulators, List<string> emitOrder,
         int? slideOrdinal, bool referencedByTemplate)
     {

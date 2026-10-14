@@ -329,7 +329,7 @@ public class ExcelChartReaderTests
     /// </summary>
     /// <param name="xml">The chart XML.</param>
     /// <returns>The stream.</returns>
-    private static Stream ToStream(string xml) => new MemoryStream(Encoding.UTF8.GetBytes(xml));
+    private static MemoryStream ToStream(string xml) => new MemoryStream(Encoding.UTF8.GetBytes(xml));
 
     /// <summary>
     ///     Proves a worksheet showing a chart yields it with its sheet name, part URI, and cached data, and

@@ -714,7 +714,7 @@ public class ExcelContentEmitterTests
     /// <param name="columns">The number of columns.</param>
     /// <returns>The grid's cells in row-major order.</returns>
     /// <remarks>Column references use spreadsheet letters so wide grids exercise multi-letter columns.</remarks>
-    private static IReadOnlyList<ExcelCellModel> FullGrid(int rows, int columns)
+    private static List<ExcelCellModel> FullGrid(int rows, int columns)
     {
         var cells = new List<ExcelCellModel>();
         for (var row = 1; row <= rows; row++)

@@ -69,7 +69,7 @@ public class OfficeDocDownBuilderExtensionsTests
     {
         var engine = new DocDownBuilder().AddExcel().Build();
 
-        Assert.Single(engine.Extractors);
-        Assert.Equal("excel-openxml", engine.Extractors[0].Id);
+        var extractor = Assert.Single(engine.Extractors);
+        Assert.Equal("excel-openxml", extractor.Id);
     }
 }

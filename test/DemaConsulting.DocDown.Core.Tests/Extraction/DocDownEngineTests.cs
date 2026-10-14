@@ -490,10 +490,8 @@ public class DocDownEngineTests
                         context.CancellationToken);
                 }
 
-                using (var page = new MemoryStream([5, 6, 7, 8]))
-                {
-                    await context.Sink.AddPageAsync(1, page, context.CancellationToken);
-                }
+                using var page = new MemoryStream([5, 6, 7, 8]);
+                await context.Sink.AddPageAsync(1, page, context.CancellationToken);
 
                 return ExtractionOutcome.Produced;
             }

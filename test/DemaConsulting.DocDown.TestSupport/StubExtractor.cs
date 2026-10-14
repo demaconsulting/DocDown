@@ -44,6 +44,9 @@ public enum StubAvailabilityMode
 /// </remarks>
 public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
 {
+    /// <summary>The suffix appended to a stub's identifier to form its default display name.</summary>
+    private const string DisplayNameSuffix = " (stub)";
+
     /// <summary>Gets the extractor's stable, unique identifier.</summary>
     /// <remarks>Defaults to <c>stub</c>; override per test when several stubs coexist.</remarks>
     public string Id { get; init; } = "stub";
@@ -147,7 +150,7 @@ public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
         return new StubExtractor
         {
             Id = id,
-            DisplayName = id + " (stub)",
+            DisplayName = id + DisplayNameSuffix,
             SupportedFormats = formats,
             ProvidesRenderedPages = providesRenderedPages,
             AvailabilityMode = StubAvailabilityMode.Available
@@ -174,7 +177,7 @@ public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
         return new StubExtractor
         {
             Id = id,
-            DisplayName = id + " (stub)",
+            DisplayName = id + DisplayNameSuffix,
             SupportedFormats = formats,
             ProvidesRenderedPages = true,
             AvailabilityMode = StubAvailabilityMode.Unavailable,
@@ -199,7 +202,7 @@ public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
         return new StubExtractor
         {
             Id = id,
-            DisplayName = id + " (stub)",
+            DisplayName = id + DisplayNameSuffix,
             SupportedFormats = formats,
             AvailabilityMode = StubAvailabilityMode.ThrowingProbe
         };
@@ -223,7 +226,7 @@ public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
         return new StubExtractor
         {
             Id = id,
-            DisplayName = id + " (stub)",
+            DisplayName = id + DisplayNameSuffix,
             SupportedFormats = formats,
             AvailabilityMode = StubAvailabilityMode.Available,
             ExtractBehavior = FailingBehaviorAsync

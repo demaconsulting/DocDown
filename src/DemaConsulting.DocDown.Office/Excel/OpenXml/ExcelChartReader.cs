@@ -258,7 +258,7 @@ internal static class ExcelChartReader
     ///     its series rather than only the first plot's. A scatter or bubble series spells its values
     ///     <c>c:yVal</c> instead of <c>c:val</c>, so both are accepted. Pure.
     /// </remarks>
-    private static IReadOnlyList<ExcelChartSeries> ReadSeries(XElement? plotArea)
+    private static List<ExcelChartSeries> ReadSeries(XElement? plotArea)
     {
         if (plotArea is null)
         {

@@ -504,13 +504,11 @@ public class DocDownCoreTests
             await context.Sink.AddImageAsync(first, new ImageHint("photo", "image/jpeg"), context.CancellationToken);
         }
 
-        using (var second = new MemoryStream([11, 21, 31, 41], writable: false))
-        {
-            await context.Sink.AddImageAsync(
-                second,
-                new ImageHint("chart", "image/png", Transform: ImageTransform.DecodedToPng),
-                context.CancellationToken);
-        }
+        using var second = new MemoryStream([11, 21, 31, 41], writable: false);
+        await context.Sink.AddImageAsync(
+            second,
+            new ImageHint("chart", "image/png", Transform: ImageTransform.DecodedToPng),
+            context.CancellationToken);
 
         return ExtractionOutcome.Produced;
     }
@@ -536,10 +534,8 @@ public class DocDownCoreTests
                 context.CancellationToken);
         }
 
-        using (var reserved = new MemoryStream([15, 25, 35, 45], writable: false))
-        {
-            await context.Sink.AddImageAsync(reserved, new ImageHint("CON", "image/png"), context.CancellationToken);
-        }
+        using var reserved = new MemoryStream([15, 25, 35, 45], writable: false);
+        await context.Sink.AddImageAsync(reserved, new ImageHint("CON", "image/png"), context.CancellationToken);
 
         return ExtractionOutcome.Produced;
     }
@@ -565,13 +561,11 @@ public class DocDownCoreTests
                 context.CancellationToken);
         }
 
-        using (var template = new MemoryStream([13, 23, 33, 43], writable: false))
-        {
-            await context.Sink.AddImageAsync(
-                template,
-                new ImageHint("watermark", "image/png", ReferencedByTemplate: true),
-                context.CancellationToken);
-        }
+        using var template = new MemoryStream([13, 23, 33, 43], writable: false);
+        await context.Sink.AddImageAsync(
+            template,
+            new ImageHint("watermark", "image/png", ReferencedByTemplate: true),
+            context.CancellationToken);
 
         return ExtractionOutcome.Produced;
     }
