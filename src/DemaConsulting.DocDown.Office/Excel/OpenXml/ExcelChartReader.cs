@@ -153,7 +153,7 @@ internal static class ExcelChartReader
     ///     is flagged so the output can say the title was generated rather than authored. A deleted
     ///     title (<c>autoTitleDeleted</c>) yields no title at all. Pure.
     /// </remarks>
-    private static string? ResolveTitle(XElement? chart, IReadOnlyList<ExcelChartSeries> series, out bool isAutomatic)
+    private static string? ResolveTitle(XElement? chart, List<ExcelChartSeries> series, out bool isAutomatic)
     {
         isAutomatic = false;
         if (chart is null)

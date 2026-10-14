@@ -242,7 +242,7 @@ public sealed class PowerPointPageRenderingExtractor : IDocumentExtractor, ISelf
     private async ValueTask RenderSlidesAsync(
         byte[] bytes, IExtractionSink sink, ExtractionOptions options, CancellationToken cancellationToken)
     {
-        IReadOnlyList<int> pageNumbers;
+        List<int> pageNumbers;
         try
         {
             pageNumbers = SelectPageNumbers(bytes, options.Pages);

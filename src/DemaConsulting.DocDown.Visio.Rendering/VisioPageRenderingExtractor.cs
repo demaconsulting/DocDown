@@ -252,7 +252,7 @@ public sealed class VisioPageRenderingExtractor : IDocumentExtractor, ISelfValid
     private async ValueTask RenderPagesAsync(
         byte[] bytes, IExtractionSink sink, ExtractionOptions options, CancellationToken cancellationToken)
     {
-        IReadOnlyList<int> pageNumbers;
+        List<int> pageNumbers;
         try
         {
             pageNumbers = SelectPageNumbers(bytes, options.Pages);

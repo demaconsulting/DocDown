@@ -225,7 +225,7 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
     ///     falsely claiming the document had no images. Side effect: records on the sink.
     /// </remarks>
     private static void ReportContentFeatures(
-        IExtractionSink sink, ExtractionOptions options, IReadOnlyList<Page> pages,
+        IExtractionSink sink, ExtractionOptions options, List<Page> pages,
         PdfTextResult text, PdfImageResult images, IReadOnlyList<PdfReviewAnnotation> annotations)
     {
         sink.ReportContentFeature(new ContentFeature("pages", pages.Count, "page", LookedFor: true));

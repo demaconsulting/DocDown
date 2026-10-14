@@ -230,7 +230,7 @@ public sealed class PdfPageRenderingExtractor : IDocumentExtractor, ISelfValidat
     private async ValueTask RenderPagesAsync(
         byte[] bytes, IExtractionSink sink, ExtractionOptions options, CancellationToken cancellationToken)
     {
-        IReadOnlyList<int> pageNumbers;
+        List<int> pageNumbers;
         try
         {
             pageNumbers = SelectPageNumbers(bytes, options.Pages);

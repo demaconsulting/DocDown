@@ -106,7 +106,7 @@ internal static class PdfAnnotationExtractor
     ///     </para>
     /// </remarks>
     private static readonly HashSet<AnnotationType> CommentaryAnnotationTypes =
-        new HashSet<AnnotationType>
+        new()
         {
             // Purpose-built commentary
             AnnotationType.Text,
