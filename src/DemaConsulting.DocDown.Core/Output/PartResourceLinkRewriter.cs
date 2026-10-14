@@ -40,7 +40,8 @@ internal static class PartResourceLinkRewriter
     ///     Matches a Markdown link opener immediately followed by a root-relative resource-folder path.
     /// </summary>
     /// <remarks>
-    ///     The alt or text group accepts backslash-escaped characters (such as <c>\]</c>) so escaped\r\n    ///     brackets do not end the opener early. Group 1 captures the opener (<c>[text](</c> or <c>![alt](</c>) and group 2 captures the
+    ///     The alt or text group accepts backslash-escaped characters (such as <c>\]</c>) so escaped
+    ///     brackets do not end the opener early. Group 1 captures the opener (<c>[text](</c> or <c>![alt](</c>) and group 2 captures the
     ///     resource folder prefix; the replacement re-emits the opener, inserts the computed
     ///     <c>../</c> prefix, and re-emits the folder so only the path root moves. Anchoring to
     ///     <c>](</c> keeps the match to real link targets and never fires on prose that merely
