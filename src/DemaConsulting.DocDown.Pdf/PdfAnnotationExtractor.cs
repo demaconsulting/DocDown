@@ -106,8 +106,7 @@ internal static class PdfAnnotationExtractor
     ///     </para>
     /// </remarks>
     private static readonly HashSet<AnnotationType> CommentaryAnnotationTypes =
-        new()
-        {
+        [
             // Purpose-built commentary
             AnnotationType.Text,
             AnnotationType.FreeText,
@@ -129,7 +128,7 @@ internal static class PdfAnnotationExtractor
             AnnotationType.Caret,
             AnnotationType.Ink,
             AnnotationType.FileAttachment
-        };
+        ];
 
     /// <summary>The maximum number of page numbers named in the unreadable-annotations note.</summary>
     /// <remarks>
