@@ -5,8 +5,10 @@
 ### Purpose
 
 `WordTableWriter` renders a `WordTableModel` to a GitHub-flavored-markdown table, applying the
-table rules that preserve a Word grid as faithfully as markdown allows and returning the count of
-cells it had to flatten. Tables are where a Word extraction visibly beats a PDF extraction: Open
+table rules that lay a Word grid out as faithfully as markdown allows and returning a flattened-cell
+count for the table. The flattening itself (placing merged text, joining nested rows) is done by
+`WordOpenXmlReader` before the model reaches this unit; the writer renders the already-flattened
+grid. Tables are where a Word extraction visibly beats a PDF extraction: Open
 XML carries genuine row-and-column structure where PDF flattened it into concatenated runs.
 
 ### Data Model
@@ -37,9 +39,9 @@ content anywhere — signals the caller to skip the table entirely.
   6. **An empty table is skipped.** When no cell of any row carries rendered text, the writer
      returns an empty string instead of an empty shell.
 
-  Preconditions: `table` non-null. Postcondition: pure — no I/O, no shared state. The
-  flattened-cell count is what lets the emitter later state how much table structure markdown could
-  not preserve.
+  Preconditions: `table` non-null. Postcondition: pure — no I/O, no shared state. The returned
+  count reports how much structure the model records as flattened; it does not drive the
+  extraction note.
 - **`RenderCell()`** (private) — renders one cell of a row using `WordMarkdownWriter.RenderInlines()`,
   turns `\r\n` and `\n` into `<br>`, and trims. A cell beyond the row's own width is an empty
   string so the grid stays rectangular.
@@ -60,5 +62,6 @@ express is returned as a count. The writer performs no I/O.
 ### Callers
 
 `WordMarkdownWriter.AppendBlock()` for every `Table` block in the body and in each document-control
-subsection. The flattened-cell count is used downstream by `WordContentEmitter` when it decides
-whether a table-flattening note must be reported.
+subsection. `WordMarkdownWriter` discards the returned flattened-cell count; `WordContentEmitter`
+sums `MergedCellCount` and `NestedTableCount` from the model itself when it decides whether a
+table-flattening note must be reported.

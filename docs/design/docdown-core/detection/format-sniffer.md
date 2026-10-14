@@ -11,7 +11,8 @@ nor writes any output, and it never opens, unpacks, or parses the document.
 
 #### Data Model
 
-`FormatSniffer` is a `static class` holding one constant and two static tables. It is static because
+`FormatSniffer` is a `static class` holding one constant, one extension table, and one signature array.
+It is static because
 detection is a pure function of a stream and a name: no collaborator and no state remain, so there is
 nothing for an instance to carry.
 

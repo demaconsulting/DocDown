@@ -65,4 +65,27 @@ public class SelfTestAdapterTests
         Assert.Equal(TestOutcome.Failed, mapped.Outcome);
         Assert.Equal("boom", mapped.ErrorMessage);
     }
+
+    /// <summary>Proves an undefined status is rejected rather than silently mapped.</summary>
+    [Fact]
+    public void SelfTestAdapter_ToTestOutcome_UndefinedStatus_ThrowsArgumentOutOfRange()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => SelfTestAdapter.ToTestOutcome((SelfTestStatus)999));
+    }
+
+    /// <summary>Proves a null case is rejected.</summary>
+    [Fact]
+    public void SelfTestAdapter_ToTestResult_NullCase_ThrowsArgumentNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => SelfTestAdapter.ToTestResult(null!, SelfTestResult.Skipped("x")));
+    }
+
+    /// <summary>Proves a null result is rejected.</summary>
+    [Fact]
+    public void SelfTestAdapter_ToTestResult_NullResult_ThrowsArgumentNull()
+    {
+        var testCase = new SelfTestCase("core.example", "core", _ => SelfTestResult.Skipped("x"));
+
+        Assert.Throws<ArgumentNullException>(() => SelfTestAdapter.ToTestResult(testCase, null!));
+    }
 }

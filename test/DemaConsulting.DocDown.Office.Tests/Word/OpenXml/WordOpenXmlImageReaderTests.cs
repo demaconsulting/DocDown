@@ -42,6 +42,77 @@ public class WordOpenXmlImageReaderTests
     }
 
     /// <summary>
+    ///     Proves a null container or null candidate list is rejected.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlImageReader_Resolve_NullArguments_Throw()
+    {
+        using var document = Open(DocxFixtures.DocumentWithImage());
+        var mainPart = document.MainDocumentPart!;
+
+        Assert.Throws<ArgumentNullException>(() => WordOpenXmlImageReader.Resolve(null!, "rId1", []));
+        Assert.Throws<ArgumentNullException>(() => WordOpenXmlImageReader.Resolve(mainPart, "rId1", null!));
+    }
+
+    /// <summary>
+    ///     Proves a missing relationship id, or one that names a non-image part, yields no reference.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlImageReader_Resolve_MissingOrNonImageRelationship_ReturnsNull()
+    {
+        using var document = Open(DocxFixtures.DocumentWithHeaderLogo());
+        var mainPart = document.MainDocumentPart!;
+        var headerId = mainPart.GetIdOfPart(mainPart.HeaderParts.First());
+
+        Assert.Null(WordOpenXmlImageReader.Resolve(mainPart, null, []));
+        Assert.Null(WordOpenXmlImageReader.Resolve(mainPart, string.Empty, []));
+        Assert.Null(WordOpenXmlImageReader.Resolve(mainPart, headerId, []));
+    }
+
+    /// <summary>
+    ///     Proves an image scoped to a header part resolves against that part, not the main part.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlImageReader_Resolve_HeaderScopedImage_ResolvesAgainstHeaderPart()
+    {
+        using var document = Open(DocxFixtures.DocumentWithHeaderLogo());
+        var headerPart = document.MainDocumentPart!.HeaderParts.First();
+        var relationshipId = headerPart.GetIdOfPart(headerPart.ImageParts.First());
+
+        var image = WordOpenXmlImageReader.Resolve(headerPart, relationshipId, []);
+
+        Assert.NotNull(image);
+        Assert.Equal(DocxFixtures.PngBytes(), image.Bytes);
+    }
+
+    /// <summary>
+    ///     Proves a descriptive candidate outranks the media name and becomes alt text and description,
+    ///     while a contextual candidate names the file but is never asserted as alt text.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlImageReader_Resolve_Candidates_RankAndGateAltText()
+    {
+        using var document = Open(DocxFixtures.DocumentWithImage());
+        var mainPart = document.MainDocumentPart!;
+        var relationshipId = mainPart.GetIdOfPart(mainPart.ImageParts.First());
+
+        var described = WordOpenXmlImageReader.Resolve(
+            mainPart, relationshipId, [new ImageTextCandidate("Wiring", ImageTextSource.Description)]);
+        var contextual = WordOpenXmlImageReader.Resolve(
+            mainPart, relationshipId, [new ImageTextCandidate("Scope", ImageTextSource.Heading)]);
+        var bare = WordOpenXmlImageReader.Resolve(mainPart, relationshipId, []);
+
+        Assert.Equal("Wiring", described!.AltText);
+        Assert.Equal("description", described.DescriptionSource);
+        Assert.Equal("Scope", contextual!.PreferredName);
+        Assert.Null(contextual.AltText);
+        Assert.Equal("heading", contextual.DescriptionSource);
+        Assert.NotNull(bare!.PreferredName);
+        Assert.Null(bare.Description);
+        Assert.Equal(mainPart.ImageParts.First().Uri.ToString(), bare.SourceRef);
+    }
+
+    /// <summary>
     ///     Resolves the document's first image part through the production path.
     /// </summary>
     /// <param name="document">The opened document.</param>

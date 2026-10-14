@@ -131,3 +131,13 @@ sections:
               what keeps the loss visible.
             tests:
               - PdfAnnotationExtractor_Extract_DamagedAnnotationReference_KeepsOtherPagesComments
+              - PdfAnnotationExtractor_Extract_UnreadableAnnotation_RecordsNoteNamingPage
+
+          - id: DocDownPdf-PdfAnnotationExtractor-RejectsNullArguments
+            title: PdfAnnotationExtractor shall reject a missing page list or sink.
+            justification: |
+              A caller that passes no pages or no sink has made a programming error, and refusing it at
+              the boundary reports it at once rather than as a later fault or a silent empty result.
+            tests:
+              - PdfAnnotationExtractor_Extract_NullPages_ThrowsArgumentNullException
+              - PdfAnnotationExtractor_Extract_NullSink_ThrowsArgumentNullException

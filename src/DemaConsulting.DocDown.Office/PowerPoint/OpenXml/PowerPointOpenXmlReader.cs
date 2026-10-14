@@ -3,6 +3,7 @@ using DemaConsulting.DocDown.Core;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using D = DocumentFormat.OpenXml.Drawing;
+using Dgm = DocumentFormat.OpenXml.Drawing.Diagrams;
 using O21 = DocumentFormat.OpenXml.Office2021.PowerPoint.Comment;
 using P = DocumentFormat.OpenXml.Presentation;
 
@@ -148,8 +149,9 @@ internal static class PowerPointOpenXmlReader
     /// <param name="authorNames">The presentation's comment-author names, keyed by author identifier.</param>
     /// <returns>The slide model.</returns>
     /// <remarks>
-    ///     The title comes from the title placeholder; every other shape's paragraphs become body
-    ///     lines. The notes come from the notes slide's body placeholder. Read-only over the part.
+    ///     The title comes from the title placeholder; the text of every other shape, table cell,
+    ///     grouped shape, and SmartArt diagram becomes body lines, in shape-tree order. The notes come
+    ///     from the notes slide's body placeholder. Read-only over the part.
     /// </remarks>
     private static PowerPointSlideModel ReadSlide(
         SlidePart slidePart, int ordinal, IReadOnlyList<PowerPointSlideImageRef> imageRefs,
@@ -161,23 +163,7 @@ internal static class PowerPointOpenXmlReader
         var shapeTree = slidePart.Slide?.CommonSlideData?.ShapeTree;
         if (shapeTree is not null)
         {
-            foreach (var shape in shapeTree.Elements<P.Shape>())
-            {
-                var paragraphs = ReadShapeParagraphs(shape);
-                if (paragraphs.Count == 0)
-                {
-                    continue;
-                }
-
-                if (title is null && IsTitle(shape))
-                {
-                    title = string.Join(' ', paragraphs);
-                }
-                else
-                {
-                    lines.AddRange(paragraphs);
-                }
-            }
+            CollectShapeText(shapeTree, slidePart, ref title, lines);
         }
 
         var notes = ReadNotes(slidePart);
@@ -322,6 +308,109 @@ internal static class PowerPointOpenXmlReader
     }
 
     /// <summary>
+    ///     Collects the text of every shape under a shape tree or group shape, in tree order.
+    /// </summary>
+    /// <param name="container">The shape tree or group shape to walk.</param>
+    /// <param name="slidePart">The slide part, used to resolve SmartArt data parts.</param>
+    /// <param name="title">The slide title, set by the first title placeholder found.</param>
+    /// <param name="lines">The body lines to append to.</param>
+    /// <remarks>
+    ///     Plain shapes contribute their paragraphs, group shapes are walked recursively, and graphic
+    ///     frames contribute table rows or SmartArt node text. Read-only over the part.
+    /// </remarks>
+    private static void CollectShapeText(
+        OpenXmlCompositeElement container, SlidePart slidePart, ref string? title, List<string> lines)
+    {
+        foreach (var child in container.ChildElements)
+        {
+            switch (child)
+            {
+                case P.Shape shape:
+                    var paragraphs = ReadShapeParagraphs(shape);
+                    if (paragraphs.Count == 0)
+                    {
+                        break;
+                    }
+
+                    if (title is null && IsTitle(shape))
+                    {
+                        title = string.Join(' ', paragraphs);
+                    }
+                    else
+                    {
+                        lines.AddRange(paragraphs);
+                    }
+
+                    break;
+
+                case P.GroupShape group:
+                    CollectShapeText(group, slidePart, ref title, lines);
+                    break;
+
+                case P.GraphicFrame frame:
+                    lines.AddRange(ReadGraphicFrameText(frame, slidePart));
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Reads the text of a graphic frame: each table row as one line, and each SmartArt diagram's
+    ///     node paragraphs.
+    /// </summary>
+    /// <param name="frame">The graphic frame.</param>
+    /// <param name="slidePart">The slide part, used to resolve the SmartArt data part.</param>
+    /// <returns>The frame's non-blank lines in reading order.</returns>
+    /// <remarks>A table row joins its non-empty cells with a pipe separator. Read-only over the part.</remarks>
+    private static List<string> ReadGraphicFrameText(P.GraphicFrame frame, SlidePart slidePart)
+    {
+        var result = new List<string>();
+
+        foreach (var table in frame.Descendants<D.Table>())
+        {
+            foreach (var row in table.Elements<D.TableRow>())
+            {
+                var cells = new List<string>();
+                foreach (var cell in row.Elements<D.TableCell>())
+                {
+                    var cellText = string.Join(' ', cell.TextBody?.Elements<D.Paragraph>()
+                        .Select(ReadParagraph)
+                        .Where(text => text.Length > 0) ?? []);
+                    if (cellText.Length > 0)
+                    {
+                        cells.Add(cellText);
+                    }
+                }
+
+                if (cells.Count > 0)
+                {
+                    result.Add(string.Join(" | ", cells));
+                }
+            }
+        }
+
+        foreach (var ids in frame.Descendants<Dgm.RelationshipIds>())
+        {
+            if (ids.DataPart?.Value is { } relationshipId
+                && slidePart.TryGetPartById(relationshipId, out var part)
+                && part is DiagramDataPart dataPart
+                && dataPart.DataModelRoot is { } root)
+            {
+                foreach (var paragraph in root.Descendants<D.Paragraph>())
+                {
+                    var text = ReadParagraph(paragraph);
+                    if (text.Length > 0)
+                    {
+                        result.Add(text);
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
     ///     Reads a shape's paragraphs, one string per paragraph, dropping blank paragraphs.
     /// </summary>
     /// <param name="shape">The shape to read.</param>
@@ -338,13 +427,7 @@ internal static class PowerPointOpenXmlReader
 
         foreach (var paragraph in textBody.Elements<D.Paragraph>())
         {
-            var builder = new StringBuilder();
-            foreach (var text in paragraph.Descendants<D.Text>())
-            {
-                builder.Append(text.Text);
-            }
-
-            var line = builder.ToString().Trim();
+            var line = ReadParagraph(paragraph);
             if (line.Length > 0)
             {
                 paragraphs.Add(line);
@@ -352,6 +435,34 @@ internal static class PowerPointOpenXmlReader
         }
 
         return paragraphs;
+    }
+
+    /// <summary>
+    ///     Reads one paragraph's text, including field text, with a line break read as a space.
+    /// </summary>
+    /// <param name="paragraph">The paragraph to read.</param>
+    /// <returns>The trimmed paragraph text, empty when blank.</returns>
+    /// <remarks>
+    ///     Runs and fields contribute their text; an <c>a:br</c> contributes a single space so the
+    ///     words either side of a soft break do not run together. Pure.
+    /// </remarks>
+    private static string ReadParagraph(D.Paragraph paragraph)
+    {
+        var builder = new StringBuilder();
+        foreach (var element in paragraph.Descendants())
+        {
+            switch (element)
+            {
+                case D.Text text:
+                    builder.Append(text.Text);
+                    break;
+                case D.Break:
+                    builder.Append(' ');
+                    break;
+            }
+        }
+
+        return builder.ToString().Trim();
     }
 
     /// <summary>

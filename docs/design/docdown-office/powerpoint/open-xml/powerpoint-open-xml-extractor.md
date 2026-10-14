@@ -23,14 +23,14 @@ extraction.
 - **`SupportedFormats`** — `Pptx` only. The legacy binary `.ppt` format is not supported by DocDown.
 - **`PageRenderingApplicable`** — `true`; the backend participates in `.pptx` extraction requests
   even though rendered pages are not provided by this implementation.
-- **`Priority`** (`int`) — `10`; higher than the COM backend, so the managed backend is the default
-  for normal content extraction.
+- **`Priority`** (`int`) — `10`; higher than the PowerPoint.Rendering backend (`5`), so the managed backend is
+  the default for normal content extraction.
 
 ### Key Methods
 
 - **`ExtractorAvailability ProbeAvailability()`** — returns `Available()` unconditionally, performing
   no I/O. Postcondition: the available result leaves rendered-page support false. There is nothing to
-  probe: the Open XML SDK is a managed assembly shipped inside this package.
+  probe: the Open XML SDK is a managed assembly shipped inside this subsystem.
 - **`ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context)`** —
   reports two environment facts (`powerpoint.backend = Open XML SDK (managed)` and
   `powerpoint.pageRendering = not provided by this extractor`), buffers the source through
@@ -44,7 +44,8 @@ extraction.
     slide. Embedding a probe PowerPoint itself authored is what makes the case prove this deployment
     can read what the real application emits, rather than that a library agrees with itself.
   - `powerpoint.pageRendering`, which reports a reasoned skip because the managed backend does not
-    render slide images. A behavior this backend does not provide must not be reported as a pass or a
+    render slide images; rendering is provided by the optional `DemaConsulting.DocDown.PowerPoint.Rendering`
+    package. A behavior this backend does not provide must not be reported as a pass or a
     failure.
 - **`ReadSourceAsync`** (private) — copies the source into memory, because a stream-backed
   `DocumentSource` is not guaranteed seekable and the SDK's package reader must seek.
@@ -74,5 +75,5 @@ rule: a case reports every fault as a failed result rather than throwing.
 ### Callers
 
 The engine resolves and invokes this unit after selection. `PowerPointDocDownBuilderExtensions`
-constructs it, through a factory, when a host builds an engine. The COM backend also constructs and
-runs it by delegation.
+constructs it, through a factory, when a host builds an engine. The PowerPoint.Rendering package's
+`PowerPointPageRenderingExtractor` also constructs and runs it by delegation.

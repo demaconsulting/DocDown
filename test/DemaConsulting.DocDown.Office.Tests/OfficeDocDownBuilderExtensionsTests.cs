@@ -62,7 +62,7 @@ public class OfficeDocDownBuilderExtensionsTests
     /// <remarks>
     ///     The granularity is the stated reason the per-format methods survived the merge into a
     ///     single package, so it is worth a test: a service that only reads spreadsheets registers one
-    ///     backend, not six.
+    ///     backend, not all four formats
     /// </remarks>
     [Fact]
     public void AddExcel_Alone_RegistersOnlyTheExcelBackend()

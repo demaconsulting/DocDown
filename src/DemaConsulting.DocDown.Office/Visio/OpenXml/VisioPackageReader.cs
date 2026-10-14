@@ -47,6 +47,9 @@ internal static class VisioPackageReader
     /// <summary>The conventional part URI of the masters collection.</summary>
     private const string MastersPartUri = "/visio/masters/masters.xml";
 
+    /// <summary>The conventional URI of the document part, which holds the face-name table.</summary>
+    private const string DocumentPartUri = "/visio/document.xml";
+
     /// <summary>
     ///     The symbol-font code points this reader is prepared to recover, keyed by font name.
     /// </summary>
@@ -105,6 +108,7 @@ internal static class VisioPackageReader
             // Resolve the drawing's masters once, before any page is read: every page's shapes refer
             // to the same document-level master collection, so reading it per page would be waste
             var masterNames = ReadMasterNames(package);
+            var faceNames = ReadFaceNames(package);
 
             var pagesXml = LoadXml(pagesPart);
             var pages = new List<VisioPageModel>();
@@ -112,7 +116,7 @@ internal static class VisioPackageReader
             var pageIndex = 1;
             foreach (var pageElement in pagesXml.Descendants(VisioNamespace + "Page"))
             {
-                var (pageModel, contentsUri) = ReadPage(package, pagesPart, pageElement, masterNames);
+                var (pageModel, contentsUri) = ReadPage(package, pagesPart, pageElement, masterNames, faceNames);
                 if (contentsUri is { } uri)
                 {
                     pageIndexByContentsUri[uri] = pageIndex;
@@ -227,6 +231,49 @@ internal static class VisioPackageReader
     }
 
     /// <summary>
+    ///     Reads the drawing's face-name table from its document part.
+    /// </summary>
+    /// <param name="package">The opened package.</param>
+    /// <returns>The face-name-id-to-name map; empty when the drawing declares no document part or table.</returns>
+    /// <remarks>
+    ///     A character run's <c>Font</c> cell normally holds the id of an entry in the document's
+    ///     <c>FaceNames</c> table rather than the font's name, so this map is what lets a symbol
+    ///     font be recognized. The part is optional: a missing or unreadable one yields an empty map
+    ///     and the drawing is still read, merely without numeric font resolution.
+    /// </remarks>
+    private static IReadOnlyDictionary<string, string> ReadFaceNames(Package package)
+    {
+        var names = new Dictionary<string, string>(StringComparer.Ordinal);
+        var uri = new Uri(DocumentPartUri, UriKind.Relative);
+        if (!package.PartExists(uri))
+        {
+            return names;
+        }
+
+        XDocument document;
+        try
+        {
+            document = LoadXml(package.GetPart(uri));
+        }
+        catch (VisioExtractionException)
+        {
+            return names;
+        }
+
+        foreach (var face in document.Descendants(VisioNamespace + "FaceName"))
+        {
+            var id = face.Attribute("ID")?.Value;
+            var name = face.Attribute("Name")?.Value;
+            if (!string.IsNullOrEmpty(id) && !string.IsNullOrWhiteSpace(name))
+            {
+                names[id] = name;
+            }
+        }
+
+        return names;
+    }
+
+    /// <summary>
     ///     Finds the masters-collection part, by its conventional URI and then by content type.
     /// </summary>
     /// <param name="package">The opened package.</param>
@@ -252,9 +299,11 @@ internal static class VisioPackageReader
     /// <param name="pagesPart">The pages-collection part, whose relationships resolve the page-contents part.</param>
     /// <param name="pageElement">The <c>&lt;Page&gt;</c> element from the pages collection.</param>
     /// <param name="masterNames">The drawing's master-id-to-name map, used to classify text-less shapes.</param>
+    /// <param name="faceNames">The drawing's face-name-id-to-name map, used to resolve numeric font references.</param>
     /// <returns>The page model and the URI of its page-contents part, or <see langword="null"/> when it references none.</returns>
     private static (VisioPageModel Model, string? ContentsUri) ReadPage(
-        Package package, PackagePart pagesPart, XElement pageElement, IReadOnlyDictionary<string, string> masterNames)
+        Package package, PackagePart pagesPart, XElement pageElement,
+        IReadOnlyDictionary<string, string> masterNames, IReadOnlyDictionary<string, string> faceNames)
     {
         var name = pageElement.Attribute("Name")?.Value
             ?? pageElement.Attribute("NameU")?.Value
@@ -273,7 +322,7 @@ internal static class VisioPackageReader
         }
 
         var contentsXml = LoadXml(contentsPart);
-        var shapes = ReadShapes(contentsXml, masterNames);
+        var shapes = ReadShapes(contentsXml, masterNames, faceNames);
         var connections = ResolveConnections(contentsXml, shapes);
         return (new VisioPageModel(name, shapes, connections), contentsPart.Uri.ToString());
     }
@@ -284,21 +333,25 @@ internal static class VisioPackageReader
     /// </summary>
     /// <param name="contentsXml">The page-contents XML.</param>
     /// <param name="masterNames">The drawing's master-id-to-name map.</param>
+    /// <param name="faceNames">The drawing's face-name-id-to-name map.</param>
     /// <returns>The shapes, in document order.</returns>
     /// <remarks>
     ///     Every <c>&lt;Shape&gt;</c>, including those nested inside a group, is read; a shape's own
     ///     direct text is taken. A shape's <c>Master</c> attribute names the stencil master it came
     ///     from; a shape with no such attribute, or one naming a master the drawing does not declare,
-    ///     simply carries no master name rather than a guessed one.
+    ///     simply carries no master name rather than a guessed one. A repeated shape id keeps its first
+    ///     declaration and the later ones are dropped, so no shape is counted twice.
     /// </remarks>
     private static IReadOnlyList<VisioShapeModel> ReadShapes(
-        XDocument contentsXml, IReadOnlyDictionary<string, string> masterNames)
+        XDocument contentsXml, IReadOnlyDictionary<string, string> masterNames,
+        IReadOnlyDictionary<string, string> faceNames)
     {
         var shapes = new List<VisioShapeModel>();
+        var seenIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var shape in contentsXml.Descendants(VisioNamespace + "Shape"))
         {
             var id = shape.Attribute("ID")?.Value;
-            if (string.IsNullOrEmpty(id))
+            if (string.IsNullOrEmpty(id) || !seenIds.Add(id))
             {
                 continue;
             }
@@ -308,7 +361,7 @@ internal static class VisioPackageReader
                 ? resolved
                 : null;
 
-            shapes.Add(new VisioShapeModel(id, TextOf(shape), masterName));
+            shapes.Add(new VisioShapeModel(id, TextOf(shape, faceNames), masterName));
         }
 
         return shapes;
@@ -319,6 +372,7 @@ internal static class VisioPackageReader
     ///     symbol-font glyphs the drawing encoded as ordinary characters.
     /// </summary>
     /// <param name="shape">The shape element.</param>
+    /// <param name="faceNames">The drawing's face-name-id-to-name map.</param>
     /// <returns>The shape's text, or <see langword="null"/> when it carries none.</returns>
     /// <remarks>
     ///     Only the shape's direct <c>&lt;Text&gt;</c> child is read, so a group's label is not
@@ -328,7 +382,7 @@ internal static class VisioPackageReader
     ///     the Latin letter it decodes to. Runs are walked in document order so each character is
     ///     mapped, or left alone, according to the font actually in force for it. Pure.
     /// </remarks>
-    private static string? TextOf(XElement shape)
+    private static string? TextOf(XElement shape, IReadOnlyDictionary<string, string> faceNames)
     {
         var textElement = shape.Element(VisioNamespace + "Text");
         if (textElement is null)
@@ -337,7 +391,7 @@ internal static class VisioPackageReader
         }
 
         // Resolve the shape's own character-formatting rows so a run marker can name its font
-        var fontsByRow = CharacterFonts(shape);
+        var fontsByRow = CharacterFonts(shape, faceNames);
 
         // Walk the element's nodes in document order, tracking the run marker currently in force so
         // each text node is decoded under the font that actually applies to it
@@ -369,13 +423,17 @@ internal static class VisioPackageReader
     ///     Indexes a shape's <c>Character</c> section rows by index to the font each declares.
     /// </summary>
     /// <param name="shape">The shape whose character formatting is indexed.</param>
+    /// <param name="faceNames">The drawing's face-name-id-to-name map.</param>
     /// <returns>The row-index-to-font-name map; empty when the shape declares no character rows.</returns>
     /// <remarks>
     ///     Only rows that name a font explicitly are recorded. A themed or inherited font is left out
     ///     rather than resolved through the theme, because the mapping this feeds must act only on
-    ///     evidence the shape itself states. Pure.
+    ///     evidence the shape itself states. A numeric value is a reference into the drawing's
+    ///     <c>FaceNames</c> table and is resolved to the face name; a value the table does not
+    ///     declare is kept as written and so matches no symbol mapping. Pure.
     /// </remarks>
-    private static Dictionary<string, string> CharacterFonts(XElement shape)
+    private static Dictionary<string, string> CharacterFonts(
+        XElement shape, IReadOnlyDictionary<string, string> faceNames)
     {
         var fonts = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var section in shape.Elements(VisioNamespace + "Section"))
@@ -393,7 +451,8 @@ internal static class VisioPackageReader
                     ?.Attribute("V")?.Value;
                 if (index is not null && !string.IsNullOrEmpty(font))
                 {
-                    fonts[index] = font;
+                    // A Font cell usually holds a face-name id; resolve it, keeping a literal name or an unknown id as stated
+                    fonts[index] = faceNames.TryGetValue(font, out var faceName) ? faceName : font;
                 }
             }
         }

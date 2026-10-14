@@ -13,9 +13,8 @@ without a workbook obscuring which one was responsible. Every value, sheet name,
 models is synthetic.
 
 The note-only rule is exercised directly by the unreadable-chart scenario. The image scenarios prove the
-same emission path writes images, preserves zero counts when no images are present, and keeps a
-successfully written vector image silent; the image-size note branch shares that same reporting rule
-but has no dedicated Excel-specific test.
+same emission path writes images, preserves zero counts when no images are present, keeps a successfully
+written vector image silent, and reports an image over the caller's size limit as a skipped image.
 
 ### Test Environment
 
@@ -34,10 +33,13 @@ long or multi-line value is elided in the table with its full value verbatim in 
 elision note appears only when an elision occurred; when merged ranges are stated as a note; when each
 chart becomes a part after its sheet and is named under the sheet; when an unreadable chart records a
 short note and a chart with no cached data states that fact in its part; when shape text is written
-under the sheet; when images are linked inline only where a path was returned; when a workbook with no
+under the sheet (from a hand-built model); when each cell comment reaches the sink as a cell-qualified
+review comment and is never written into a sheet part, and comments and distinct authors are inventoried
+(zero when absent); when images are linked inline only where a path was returned; when a workbook with no
 images or no worksheets reports zero counts for the features it looked for; when a successfully written
 vector image records no vector-only note; when an empty worksheet states that it has no cell content;
-when a page-rendering request records no note; and when the content outline is reported from the model.
+when a page-rendering request records no note; when an image over the size limit is not written and is
+reported as a size-limited skip; and when the content outline is reported from the model.
 A missing part, a wrong note, a missing zero count, or a weakened listing is a failure.
 
 ### Test Scenarios
@@ -107,15 +109,17 @@ its own chart part stating the reason. Evidence for
 Proves an uncached chart states that no data table could be produced, with no sink note because the read
 completed. `ExcelContentEmitter_Emit_ChartBeyondBound_StatesTruncationInChartPart` proves a bounded
 chart states the omission in the chart part, and `ExcelContentEmitter_Emit_NoCharts_ReportsNoChartNotes`
-proves a chart-free workbook records no chart note. Evidence for
-`DocDownExcel-Markdown-ChartRendering`.
+proves a chart-free workbook records no chart note. These scenarios are supporting evidence for the
+subsystem-level requirement `DocDownExcel-Markdown-ChartRendering`, not for a unit requirement of this
+unit; they carry no unit-level requirement link.
 
 #### Shape text is written under the sheet
 
 **Test**: `ExcelContentEmitter_Emit_ShapeText_WritesUnderTheSheet`
 
-Proves a worksheet's drawing-shape text is written under the sheet. Evidence for
-`DocDownExcel-Markdown-ExcelContentEmitter-WritesShapeText`.
+Proves a worksheet's drawing-shape text, supplied in a hand-built model, is written under the sheet.
+Evidence for `DocDownExcel-Markdown-ExcelContentEmitter-WritesShapeText`. This test does not exercise
+`ExcelDrawingTextReader`.
 
 #### Images are linked inline from the sheet
 
@@ -193,3 +197,10 @@ commentary leaves the sheet listings entirely, so the inventory is the only plac
 workbook carries any; the zero case is asserted because a looked-for count that disappeared when it
 reached zero would leave a reader unable to tell "none found" from "not counted". Evidence for
 `DocDownExcel-Markdown-ExcelContentEmitter-InventoriesComments`.
+
+#### An oversized image is reported as a size-limited skip
+
+**Test**: `ExcelContentEmitter_Emit_ImageOverSizeLimit_ReportsSizeSkipNote`
+
+Proves an image larger than the caller's byte limit is not written and a note states that images exceeded
+the size limit. Evidence for `DocDownExcel-Markdown-ExcelContentEmitter-ReportsImageSizeSkips`.

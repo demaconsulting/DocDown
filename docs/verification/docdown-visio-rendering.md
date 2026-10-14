@@ -179,6 +179,16 @@ rendering was requested and a renderer was available but no pages were produced,
 backend itself from its own selected-page count. Evidence for
 `DocDownVisioRendering-EmptySelectionReportedAsNote`.
 
+### A corrupt drawing is unreadable and cancellation propagates
+
+**Tests**: `VisioPageRenderingExtractor_ExtractAsync_CorruptPackage_ReturnsUnreadableWithoutRendering`,
+`VisioPageRenderingExtractor_ExtractAsync_Cancelled_Propagates`
+
+Prove a corrupt package yields an unreadable result with the full layout and no rasterization, and that a
+canceled token reaches the caller as `OperationCanceledException` instead of an unreadable result or a page
+note. Evidence for `DocDownVisioRendering-CorruptPackageUnreadable` and
+`DocDownVisioRendering-CancellationHonored`.
+
 ### Concurrent renders do not interfere
 
 **Test**: `PageRenderer_Render_ConcurrentCalls_AllProduceValidPng`

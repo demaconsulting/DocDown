@@ -1,5 +1,7 @@
 using System.Text;
 using DemaConsulting.DocDown.Excel.OpenXml;
+using DemaConsulting.DocDown.Office.Tests.Excel.TestData;
+using DocumentFormat.OpenXml.Packaging;
 
 namespace DemaConsulting.DocDown.Office.Tests.Excel.OpenXml;
 
@@ -328,4 +330,131 @@ public class ExcelChartReaderTests
     /// <param name="xml">The chart XML.</param>
     /// <returns>The stream.</returns>
     private static Stream ToStream(string xml) => new MemoryStream(Encoding.UTF8.GetBytes(xml));
+
+    /// <summary>
+    ///     Proves a worksheet showing a chart yields it with its sheet name, part URI, and cached data, and
+    ///     that a missing part or a worksheet without a drawing yields no chart.
+    /// </summary>
+    [Fact]
+    public void ExcelChartReader_Collect_ChartWorkbook_ReturnsChartWithCachedData()
+    {
+        // Arrange: a workbook whose sheet anchors one chart, and one whose sheet has no drawing
+        using var chartStream = new MemoryStream(XlsxFixtures.ChartWorkbook());
+        using var chartDocument = SpreadsheetDocument.Open(chartStream, false);
+        using var plainStream = new MemoryStream(XlsxFixtures.TwoSheetWorkbook());
+        using var plainDocument = SpreadsheetDocument.Open(plainStream, false);
+
+        // Act
+        var charts = ExcelChartReader.Collect(chartDocument.WorkbookPart!.WorksheetParts.Single(), "Pressure");
+        var none = ExcelChartReader.Collect(plainDocument.WorkbookPart!.WorksheetParts.First(), "Plain");
+        var missing = ExcelChartReader.Collect(null, "Absent");
+
+        // Assert: the chart carries its sheet and title, and the others yield nothing
+        var chart = Assert.Single(charts);
+        Assert.Equal("Pressure", chart.SheetName);
+        Assert.Null(chart.ReadFailureReason);
+        Assert.Equal("Tank Pressure Trend", chart.Data?.Title);
+        Assert.Empty(none);
+        Assert.Empty(missing);
+    }
+
+    /// <summary>
+    ///     Proves a chart part that is not well-formed XML is kept as a chart with no data and a stated
+    ///     reason, and does not stop the other chart on the sheet from being read.
+    /// </summary>
+    [Fact]
+    public void ExcelChartReader_Collect_MalformedChartPart_RecordsReasonWithoutThrowing()
+    {
+        var charts = CollectCharts(["<c:chartSpace", TitledChartXml("Second")], [0, 1]);
+
+        Assert.Equal(2, charts.Count);
+        Assert.Null(charts[0].Data);
+        Assert.StartsWith("The chart part is not well-formed XML:", charts[0].ReadFailureReason, StringComparison.Ordinal);
+        Assert.Null(charts[1].ReadFailureReason);
+        Assert.Equal("Second", charts[1].Data?.Title);
+    }
+
+    /// <summary>
+    ///     Proves a chart drawn with the extended chart grammar is kept with no data and the named
+    ///     extended-chart reason.
+    /// </summary>
+    [Fact]
+    public void ExcelChartReader_Collect_ExtendedChartPart_RecordsExtendedChartReason()
+    {
+        var charts = CollectCharts([null], [0]);
+
+        var chart = Assert.Single(charts);
+        Assert.Null(chart.Data);
+        Assert.Equal(ExcelChartReader.ExtendedChartReason, chart.ReadFailureReason);
+    }
+
+    /// <summary>
+    ///     Proves charts are reported in the order the drawing's graphic frames lay them out, not in
+    ///     relationship order.
+    /// </summary>
+    [Fact]
+    public void ExcelChartReader_Collect_FramesInReverseOrder_ReturnsChartsInFrameOrder()
+    {
+        var charts = CollectCharts([TitledChartXml("Part one"), TitledChartXml("Part two")], [1, 0]);
+
+        Assert.Equal(["Part two", "Part one"], charts.Select(chart => chart.Data?.Title));
+    }
+
+    /// <summary>
+    ///     Proves two frames citing the same chart part yield that chart once.
+    /// </summary>
+    [Fact]
+    public void ExcelChartReader_Collect_TwoFramesCitingOnePart_ReturnsChartOnce()
+    {
+        var charts = CollectCharts([TitledChartXml("Shared")], [0, 0]);
+
+        var chart = Assert.Single(charts);
+        Assert.Equal("Shared", chart.Data?.Title);
+    }
+
+    /// <summary>
+    ///     Proves a chart part no frame cites is still reported, after the framed charts.
+    /// </summary>
+    [Fact]
+    public void ExcelChartReader_Collect_UnframedChartPart_IsReportedAfterFramedCharts()
+    {
+        var charts = CollectCharts([TitledChartXml("Orphan"), TitledChartXml("Framed")], [1]);
+
+        Assert.Equal(["Framed", "Orphan"], charts.Select(chart => chart.Data?.Title));
+    }
+
+    /// <summary>
+    ///     Proves a frame citing a relationship the package does not declare holds no chart and does
+    ///     not stop the sweep from reporting the real chart part.
+    /// </summary>
+    [Fact]
+    public void ExcelChartReader_Collect_FrameCitingUndeclaredRelationship_IsIgnored()
+    {
+        var charts = CollectCharts([TitledChartXml("Real")], [-1]);
+
+        var chart = Assert.Single(charts);
+        Assert.Equal("Real", chart.Data?.Title);
+    }
+
+    /// <summary>
+    ///     Builds a chart part XML whose authored title is the given text.
+    /// </summary>
+    /// <param name="title">The title text.</param>
+    /// <returns>The chart part XML.</returns>
+    private static string TitledChartXml(string title) =>
+        XlsxFixtures.ChartPartXml.Replace("Tank Pressure Trend", title, StringComparison.Ordinal);
+
+    /// <summary>
+    ///     Builds a workbook with the given chart parts and frames, then collects its sheet's charts.
+    /// </summary>
+    /// <param name="chartParts">The chart parts to relate; <see langword="null"/> is an extended chart part.</param>
+    /// <param name="frames">The part index each frame cites; <c>-1</c> cites an undeclared relationship.</param>
+    /// <returns>The collected charts.</returns>
+    private static IReadOnlyList<ExcelChartModel> CollectCharts(
+        IReadOnlyList<string?> chartParts, IReadOnlyList<int> frames)
+    {
+        using var stream = new MemoryStream(XlsxFixtures.ChartLayoutWorkbook(chartParts, frames));
+        using var document = SpreadsheetDocument.Open(stream, false);
+        return ExcelChartReader.Collect(document.WorkbookPart!.WorksheetParts.Single(), "Charts");
+    }
 }

@@ -10,8 +10,8 @@ turns an Open XML document into the backend-neutral model.
 
 The unit is driven directly, outside the engine, by opening a fixture stream and calling `Read()`
 against a fresh reader instance. This is the level at which the reader's contract lives: the
-returned `WordDocumentModel` is what the rest of the package works on, so asserting the model's
-shape names one reader behavior rather than one system outcome.
+returned `WordDocumentModel` is what the rest of the subsystem works on, so asserting the model's
+shape names one reader behavior rather than one subsystem outcome.
 
 The SDK is not mocked. Every fixture is a real `.docx` built at test time by the Open XML SDK
 writer in `TestData/DocxFixtures.cs`, so the unit is exercised against genuine documents rather
@@ -29,15 +29,20 @@ than against a simulation of one.
 ### Acceptance Criteria
 
 Per IEC 62304 §5.5.2, a `WordOpenXmlReader` test run passes when styled paragraphs, lists, and
-tables map into structured blocks; when a header carrying a revision and classification builds a
+tables map into structured blocks; when a table's first row is recognized as a header row when flagged with the
+spelling Word writes and is not recognized for a value outside the valid spellings; when a header carrying a
+revision and classification builds a
 Document Control section; when a footer carrying only page-number fields is omitted from that
 section and counted on the model; when an identical header shared across sections is emitted once;
 when tracked changes render in the accepted view; when a password-protected container raises
 `WordExtractionException`; when a comment's author and text are collected; when a comment's anchor
 resolves into a location hint naming its heading and quoting its text, degrading gracefully when
 the document anchors it partially or not at all; when title, author, and
-producer page count are surfaced from document metadata; and when image naming text is chosen from
-authored sources, captions, object names, or nearby headings according to the documented order.
+producer page count are surfaced from document metadata and omitted where undeclared; when core properties map
+into the shared metadata; when footnotes, line and page breaks, nested-table pipes, hyperlink destinations, and
+headers differing only by image are handled as documented; when a null stream is rejected and a package without
+a main part raises `WordExtractionException`; and when image naming text is chosen from authored sources,
+captions, object names, or nearby headings according to the documented order.
 
 ### Test Scenarios
 
@@ -47,6 +52,16 @@ authored sources, captions, object names, or nearby headings according to the do
 
 Proves the model's body carries a Heading 1 block, at least one bulleted list item, and a table
 with three rows. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-ReadsStructuredBlocks`.
+
+#### A table's header row is recognized from the flag's real spellings
+
+**Tests**: `WordOpenXmlReader_Read_HeaderRowValTrue_RecognizedAsHeaderRow`,
+`WordOpenXmlReader_Read_HeaderRowValMalformed_NotRecognizedAsHeaderRow`
+
+Prove a first row marked `w:tblHeader w:val="true"` — the spelling Word itself writes, which the SDK's typed
+accessor rejects — sets `FirstRowIsHeader` on the model's table, and that a row marked with a value outside
+the ST_OnOff spellings does not, so a malformed flag is never silently reported as a header row. Supporting
+evidence for the structured-block mapping above.
 
 #### A revision-and-classification header produces a Document Control section
 
@@ -75,10 +90,10 @@ least two. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-DeduplicatesHeade
 
 **Test**:
 
-`WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewWithDiagnostic`
+`WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewAndCountsChanges`
 
 Proves the flattened body text contains `inserted-text` and does not contain `removed-text`, so
-the accepted view is what reached the model. Evidence for
+the accepted view is what reached the model, and that both revisions are counted. Evidence for
 `DocDownWord-TrackedChangesAcceptedView` and
 `DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedView`.
 
@@ -116,7 +131,8 @@ Proves three comments anchored three different ways resolve independently: a bra
 a comment the document anchors nowhere yields a null `Location` rather than borrowing a neighbour's.
 A reader that resolved anchors by position rather than by id, or that invented a location for the
 unanchored comment, fails here. Evidence for
-`DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation`.
+`DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation` (independent resolution) and
+`DocDownWord-OpenXml-WordOpenXmlReader-DegradesCommentLocation`.
 
 #### The anchor snippet accumulator never grows past its stated bound
 
@@ -128,7 +144,7 @@ across calls can grow the accumulator past it. The final rendered `Location` alr
 the same bound regardless, so this invariant is otherwise unobservable from the public surface; the
 test reaches the private type through reflection, following this codebase's existing precedent for
 asserting an internal bound the public API cannot exercise directly. Evidence for
-`DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation`.
+`DocDownWord-OpenXml-WordOpenXmlReader-BoundsCommentSnippet`.
 
 #### A comment carrying no text is dropped, and a picture-only comment is counted
 
@@ -141,7 +157,8 @@ same document does, and that a comment whose only content is a drawing is likewi
 the dropped one is what makes the guard falsifiable: a reader that dropped the whole comments part
 would pass a test that only checked for absence. The split between dropped-silently and
 dropped-and-counted is asserted directly, because a wholly empty comment lost nothing while a drawn
-remark did. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-DropsTextlessComments`.
+remark did. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-DropsTextlessComments` (the empty-comment test)
+and `DocDownWord-OpenXml-WordOpenXmlReader-CountsUnreadableComments` (the picture-only test).
 
 #### The title and author metadata are surfaced
 
@@ -150,12 +167,26 @@ remark did. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-DropsTextlessCom
 Proves the model's `Title` is `Quarterly Report` and its `Author` is `DocDown Test Suite`.
 Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-SurfacesMetadata`.
 
+#### A document declaring no metadata reports nothing
+
+**Test**: `WordOpenXmlReader_Read_NoMetadata_ReportsNothing`
+
+Proves a document with no core or extended properties yields an empty title and author and no producer
+page count. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-OmitsUndeclaredMetadata`.
+
+#### Core properties map into the shared metadata
+
+**Test**: `WordOpenXmlReader_Read_CoreProperties_MapsSharedMetadata`
+
+Proves the title, subject, keywords, and last-modified-by core properties appear as fields of the shared
+document metadata. Evidence for `DocDownWord-DocumentMetadata`.
+
 #### The producer-stated page count is reported
 
 **Test**: `WordOpenXmlReader_Read_ProducerPageCount_FromExtendedProperties`
 
 Proves the model's `ProducerPageCount` is `7`. Evidence for
-`DocDownWord-OpenXml-WordOpenXmlReader-ReportsProducerPageCount`.
+`DocDownWord-OpenXml-WordOpenXmlReader-ReportsProducerPageCount` and `DocDownWord-ProducerPageCount`.
 
 #### An image's naming and description text is chosen from authored sources
 
@@ -183,3 +214,42 @@ Proves an adjacent caption whose figure number is a `SEQ` field result reads as
 Prove a nearby heading may seed the file name and manifest description while the alt text remains
 neutral, and that an image with no text source falls back to its media name. Evidence for
 `DocDownWord-OpenXml-WordOpenXmlReader-HeadingNamesButNeutralAlt`.
+
+#### A footnote is collected as a marker and a body
+
+**Test**: `WordOpenXmlReader_Read_Footnote_CollectsMarkerAndBody`
+
+Proves a footnote reference becomes an inline marker and its body is collected for the Footnotes
+section. Evidence for `DocDownWord-Footnotes`.
+
+#### A package without a main part raises a Word extraction exception
+
+**Test**: `WordOpenXmlReader_Read_MissingMainPart_ThrowsWordExtractionException`
+
+Proves a zip package lacking a main document part makes `Read()` throw `WordExtractionException`
+rather than a raw parser exception. Evidence for `DocDownWord-MissingMainPart`.
+
+#### A null stream is rejected
+
+**Test**: `WordOpenXmlReader_Read_NullStream_ThrowsArgumentNullException`
+
+Proves `Read(null)` throws `ArgumentNullException`. Evidence for
+`DocDownWord-ArgumentAndCancellationHandling`.
+
+#### Line and page breaks are read as break blocks
+
+**Test**: `WordOpenXmlReader_Read_LineAndPageBreaks_RenderHardBreakAndPageBreakBlock`
+
+Proves a line break becomes a hard break and a page break becomes a page-break block. Evidence for
+`DocDownWord-BreakRendering`.
+
+#### Nested-table pipes, hyperlink destinations, and same-text headers
+
+**Tests**: `WordOpenXmlReader_Read_NestedTableWithPipe_EscapesEveryPipeInFlattenedCell`,
+`WordOpenXmlReader_Read_HyperlinkWithParentheses_EscapesDestination`,
+`WordOpenXmlReader_Read_SameHeaderTextDifferentImages_KeepsBothHeaders`
+
+Prove every pipe in a flattened nested cell is escaped, parentheses in a hyperlink destination are
+escaped, and two headers with identical text but different images are both kept. Evidence for
+`DocDownWord-NestedTableEscaping`, `DocDownWord-LinkDestinationEscaping`, and
+`DocDownWord-HeaderImageDistinction`.

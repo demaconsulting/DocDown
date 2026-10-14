@@ -179,7 +179,9 @@ public static class ImageDimensions
         }
 
         width = LittleEndianInt32(bytes, 18);
-        height = Math.Abs(LittleEndianInt32(bytes, 22));
+        var rawHeight = LittleEndianInt32(bytes, 22);
+        // Math.Abs(int.MinValue) overflows; a top-down BMP stores a negative height, so negate through long
+        height = rawHeight == int.MinValue ? 0 : Math.Abs(rawHeight);
         return width > 0 && height > 0;
     }
 

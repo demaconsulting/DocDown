@@ -164,13 +164,7 @@ reviews:
       - "src/DemaConsulting.DocDown.Core/Output/ArtifactInventory.cs"                 # supporting type (D8)
       - "src/DemaConsulting.DocDown.Core/Output/MetadataWriter.cs"                    # supporting type (D8)
       - "test/DemaConsulting.DocDown.Core.Tests/Output/MetadataWriterTests.cs"        # supporting-type tests
-      - "src/DemaConsulting.DocDown.Core/Output/EmbeddedImageWriter.cs"               # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/ImageDimensions.cs"                   # supporting type (D8)
-      - "src/DemaConsulting.DocDown.Core/Output/ImageLinkText.cs"                     # supporting type (D8)
-      - "test/DemaConsulting.DocDown.Core.Tests/Output/ImageLinkTextTests.cs"          # supporting-type tests
       - "src/DemaConsulting.DocDown.Core/Output/PartResourceLinkRewriter.cs"          # supporting type (D8)
-      - "test/DemaConsulting.DocDown.Core.Tests/Output/EmbeddedImageWriterTests.cs"        # supporting-type tests
-      - "test/DemaConsulting.DocDown.Core.Tests/Output/ImageDimensionsTests.cs"           # supporting-type tests
       - "test/DemaConsulting.DocDown.Core.Tests/Output/PartResourceLinkRewriterTests.cs"  # supporting-type tests
 
   # DocDownCore-Detection-FormatSniffer Review (one per unit)
@@ -357,6 +351,51 @@ reviews:
       - "docs/verification/docdown-core/output/image-text-selector.md"               # unit verification
       - "src/DemaConsulting.DocDown.Core/Output/ImageTextSelector.cs"                # unit source
       - "test/DemaConsulting.DocDown.Core.Tests/Output/ImageTextSelectorTests.cs"    # unit tests
+
+  # DocDownCore-Output-EmbeddedImageWriter Review (one per unit)
+  - id: DocDownCore-Output-EmbeddedImageWriter
+    title: Review that DemaConsulting.DocDown.Core Output EmbeddedImageWriter Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/output.md"
+      - "docs/reqstream/docdown-core/output.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/output/embedded-image-writer.yaml"
+      - "docs/design/docdown-core/output/embedded-image-writer.md"
+      - "docs/verification/docdown-core/output/embedded-image-writer.md"
+      - "src/DemaConsulting.DocDown.Core/Output/EmbeddedImageWriter.cs"
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/EmbeddedImageWriterTests.cs"
+
+  # DocDownCore-Output-ImageDimensions Review (one per unit)
+  - id: DocDownCore-Output-ImageDimensions
+    title: Review that DemaConsulting.DocDown.Core Output ImageDimensions Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/output.md"
+      - "docs/reqstream/docdown-core/output.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/output/image-dimensions.yaml"
+      - "docs/design/docdown-core/output/image-dimensions.md"
+      - "docs/verification/docdown-core/output/image-dimensions.md"
+      - "src/DemaConsulting.DocDown.Core/Output/ImageDimensions.cs"
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/ImageDimensionsTests.cs"
+
+  # DocDownCore-Output-ImageLinkText Review (one per unit)
+  - id: DocDownCore-Output-ImageLinkText
+    title: Review that DemaConsulting.DocDown.Core Output ImageLinkText Implementation is Correct
+    context:
+      - "docs/design/docdown-core.md"
+      - "docs/reqstream/docdown-core.yaml"
+      - "docs/design/docdown-core/output.md"
+      - "docs/reqstream/docdown-core/output.yaml"
+    paths:
+      - "docs/reqstream/docdown-core/output/image-link-text.yaml"
+      - "docs/design/docdown-core/output/image-link-text.md"
+      - "docs/verification/docdown-core/output/image-link-text.md"
+      - "src/DemaConsulting.DocDown.Core/Output/ImageLinkText.cs"
+      - "test/DemaConsulting.DocDown.Core.Tests/Output/ImageLinkTextTests.cs"
 
   # TestSupport Review (D9 / formal-review M6)
   # Repo-level, un-prefixed id: DemaConsulting.DocDown.TestSupport is shared test infrastructure
@@ -712,6 +751,7 @@ reviews:
       - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/DocDownVisioRenderingTests.cs"  # integration
       - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/VisioRenderingGoldenTests.cs"   # golden tests
       - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/TestData/VsdxRenderingFixtures.cs"  # test fixtures
+      - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/TestData/StubExtractionContext.cs"  # test context stub
       - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/TestData/Png.cs"        # test PNG inspector
       - "src/DemaConsulting.DocDown.Visio.Rendering/NamespaceDoc.cs"              # namespace documentation
 
@@ -925,10 +965,11 @@ reviews:
       - "test/DemaConsulting.DocDown.Tool.Tests/SelfTest/SelfTestAdapterTests.cs"  # unit tests
 
   # === DocDownWord review-sets ===
-  # DocDownWord is the Word extraction system. Like DocDownTool it has more than one subsystem
-  # (Markdown, OpenXml) and one direct unit (WordDocDownBuilderExtensions). System sets follow
-  # the DocDownPdf shape; subsystem and unit-under-subsystem sets follow the DocDownCore shape, with
-  # the unit-under-subsystem sets carrying the four context entries the Context Files table requires.
+  # DocDownWord is the Word format subsystem of DemaConsulting.DocDown.Office. Like DocDownTool it has
+  # more than one child subsystem (Markdown, OpenXml) and one direct unit (WordDocDownBuilderExtensions).
+  # Its top-level sets follow the DocDownPdf shape; subsystem and unit-under-subsystem sets follow the
+  # DocDownCore shape, with the unit-under-subsystem sets carrying the four context entries the Context
+  # Files table requires.
   # Every .cs path is listed explicitly, never by glob, so a future unit source file cannot be
   # silently absorbed. The Markdown subsystem documents its supporting-type .cs files
   # inline, so those files are reviewed in the subsystem set (D8); OpenXml's only supporting-type
@@ -948,18 +989,18 @@ reviews:
       - "test/DemaConsulting.DocDown.Office.Tests/OfficeDocDownBuilderExtensionsTests.cs"  # direct unit tests
       - "test/DemaConsulting.DocDown.Office.Tests/OfficeProbeResourceTests.cs"         # the embedded probe documents
 
-  # DocDownWord-Architecture Review (one per system)
+  # DocDownWord-Architecture Review (one per format subsystem)
   - id: DocDownWord-Architecture
     title: Review that DemaConsulting.DocDown.Word Architecture Satisfies Requirements
     context:
       - "README.md"
       - "docs/user_guide/**/*.md"
     paths:
-      - "docs/reqstream/docdown-office/word.yaml"                                  # system requirements
+      - "docs/reqstream/docdown-office/word.yaml"                                  # subsystem requirements
       - "docs/design/introduction.md"                                       # design introduction
-      - "docs/design/docdown-office/word.md"                                       # system design
+      - "docs/design/docdown-office/word.md"                                       # subsystem design
       - "docs/verification/introduction.md"                                 # verification introduction
-      - "docs/verification/docdown-office/word.md"                                 # system verification
+      - "docs/verification/docdown-office/word.md"                                 # subsystem verification
       - "test/DemaConsulting.DocDown.Office.Tests/Word/DocDownWordTests.cs"        # integration tests
       - "test/DemaConsulting.DocDown.Office.Tests/Word/WordGoldenTests.cs"         # golden output tests
       - "test/DemaConsulting.DocDown.Office.Tests/Word/TestData/DocxFixtures.cs"   # generated test fixtures
@@ -970,13 +1011,13 @@ reviews:
       # golden outputs
       - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-tables-and-images.txt"
       # golden outputs
-      - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-merged-cells-gap.txt"
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-merged-cells-flattened.txt"
       # golden outputs
       - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-document-control.txt"
       # golden outputs
       - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/summary-word-openxml-review-comments.txt"
 
-  # DocDownWord-Design Review (one per system)
+  # DocDownWord-Design Review (one per format subsystem)
   - id: DocDownWord-Design
     title: Review that DemaConsulting.DocDown.Word Design is Consistent and Complete
     context:
@@ -984,22 +1025,22 @@ reviews:
     paths:
       - "docs/reqstream/docdown-office/word/platform-requirements.yaml"            # platform requirements
       - "docs/design/introduction.md"                                       # design introduction
-      - "docs/design/docdown-office/word.md"                                       # system design
-      - "docs/design/docdown-office/word/**/*.md"                                  # all system design documents
+      - "docs/design/docdown-office/word.md"                                       # subsystem design
+      - "docs/design/docdown-office/word/**/*.md"                                  # all subsystem design documents
       - "docs/design/ots.md"                                                # OTS overview
 
-  # DocDownWord-Verification Review (one per system)
+  # DocDownWord-Verification Review (one per format subsystem)
   - id: DocDownWord-Verification
     title: Review that DemaConsulting.DocDown.Word Verification is Consistent and Complete
     context:
       - "docs/reqstream/docdown-office/word.yaml"
     paths:
       - "docs/verification/introduction.md"                                 # verification introduction
-      - "docs/verification/docdown-office/word.md"                                 # system verification
+      - "docs/verification/docdown-office/word.md"                                 # subsystem verification
       - "docs/verification/docdown-office/word/**/*.md"                            # all verification documents
       - "docs/verification/ots.md"                                          # OTS overview
 
-  # DocDownWord-AllRequirements Review (one per system)
+  # DocDownWord-AllRequirements Review (one per format subsystem)
   - id: DocDownWord-AllRequirements
     title: Review that All DemaConsulting.DocDown.Word Requirements are Complete
     context:
@@ -1142,10 +1183,11 @@ reviews:
       - "test/DemaConsulting.DocDown.Office.Tests/Word/OpenXml/WordOpenXmlImageReaderTests.cs"  # unit tests
 
   # === DocDownExcel review-sets ===
-  # DocDownExcel is the Excel extraction system. Like DocDownWord it has more than one subsystem
-  # (Markdown, OpenXml) and one direct unit (ExcelDocDownBuilderExtensions). System sets follow the
-  # DocDownWord shape; subsystem and unit-under-subsystem sets follow the DocDownCore shape, with the
-  # unit-under-subsystem sets carrying the four context entries the Context Files table requires.
+  # DocDownExcel is the Excel format subsystem of DemaConsulting.DocDown.Office. Like DocDownWord it has
+  # more than one child subsystem (Markdown, OpenXml) and one direct unit (ExcelDocDownBuilderExtensions).
+  # Its top-level sets follow the DocDownWord shape; subsystem and unit-under-subsystem sets follow the
+  # DocDownCore shape, with the unit-under-subsystem sets carrying the four context entries the Context
+  # Files table requires.
   # Every .cs path is listed explicitly, never by glob, so a future unit source file cannot be silently
   # absorbed. Each subsystem documents its supporting-type .cs files inline, so those files are reviewed
   # in the subsystem set (D8): Markdown holds the diagnostic-code type, OpenXml holds the model,
@@ -1154,23 +1196,23 @@ reviews:
   # drawing-text reader have no dedicated test class; their source is covered in their unit sets and their
   # behavior is proved through the reader and emitter tests.
 
-  # DocDownExcel-Architecture Review (one per system)
+  # DocDownExcel-Architecture Review (one per format subsystem)
   - id: DocDownExcel-Architecture
     title: Review that DemaConsulting.DocDown.Excel Architecture Satisfies Requirements
     context:
       - "README.md"
       - "docs/user_guide/**/*.md"
     paths:
-      - "docs/reqstream/docdown-office/excel.yaml"                                 # system requirements
+      - "docs/reqstream/docdown-office/excel.yaml"                                 # subsystem requirements
       - "docs/design/introduction.md"                                       # design introduction
-      - "docs/design/docdown-office/excel.md"                                      # system design
+      - "docs/design/docdown-office/excel.md"                                      # subsystem design
       - "docs/verification/introduction.md"                                 # verification introduction
-      - "docs/verification/docdown-office/excel.md"                                # system verification
+      - "docs/verification/docdown-office/excel.md"                                # subsystem verification
       - "test/DemaConsulting.DocDown.Office.Tests/Excel/DocDownExcelTests.cs"      # integration tests
       - "test/DemaConsulting.DocDown.Office.Tests/Excel/TestData/XlsxFixtures.cs"  # generated test fixtures
       - "src/DemaConsulting.DocDown.Office/Excel/NamespaceDoc.cs"                  # namespace documentation
 
-  # DocDownExcel-Design Review (one per system)
+  # DocDownExcel-Design Review (one per format subsystem)
   - id: DocDownExcel-Design
     title: Review that DemaConsulting.DocDown.Excel Design is Consistent and Complete
     context:
@@ -1178,22 +1220,22 @@ reviews:
     paths:
       - "docs/reqstream/docdown-office/excel/platform-requirements.yaml"           # platform requirements
       - "docs/design/introduction.md"                                       # design introduction
-      - "docs/design/docdown-office/excel.md"                                      # system design
-      - "docs/design/docdown-office/excel/**/*.md"                                 # all system design documents
+      - "docs/design/docdown-office/excel.md"                                      # subsystem design
+      - "docs/design/docdown-office/excel/**/*.md"                                 # all subsystem design documents
       - "docs/design/ots.md"                                                # OTS overview
 
-  # DocDownExcel-Verification Review (one per system)
+  # DocDownExcel-Verification Review (one per format subsystem)
   - id: DocDownExcel-Verification
     title: Review that DemaConsulting.DocDown.Excel Verification is Consistent and Complete
     context:
       - "docs/reqstream/docdown-office/excel.yaml"
     paths:
       - "docs/verification/introduction.md"                                 # verification introduction
-      - "docs/verification/docdown-office/excel.md"                                # system verification
+      - "docs/verification/docdown-office/excel.md"                                # subsystem verification
       - "docs/verification/docdown-office/excel/**/*.md"                           # all verification documents
       - "docs/verification/ots.md"                                          # OTS overview
 
-  # DocDownExcel-AllRequirements Review (one per system)
+  # DocDownExcel-AllRequirements Review (one per format subsystem)
   - id: DocDownExcel-AllRequirements
     title: Review that All DemaConsulting.DocDown.Excel Requirements are Complete
     context:
@@ -1320,6 +1362,7 @@ reviews:
       - "docs/design/docdown-office/excel/open-xml/excel-open-xml-image-reader.md"       # unit design
       - "docs/verification/docdown-office/excel/open-xml/excel-open-xml-image-reader.md"  # unit verification
       - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelOpenXmlImageReader.cs"    # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Excel/OpenXml/ExcelOpenXmlImageReaderTests.cs"  # unit tests
 
   # DocDownExcel-OpenXml-ExcelChartReader Unit Review (unit under subsystem, four context entries)
   - id: DocDownExcel-OpenXml-ExcelChartReader
@@ -1351,36 +1394,38 @@ reviews:
       - "docs/design/docdown-office/excel/open-xml/excel-drawing-text-reader.md"       # unit design
       - "docs/verification/docdown-office/excel/open-xml/excel-drawing-text-reader.md"  # unit verification
       - "src/DemaConsulting.DocDown.Office/Excel/OpenXml/ExcelDrawingTextReader.cs"    # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Excel/OpenXml/ExcelDrawingTextReaderTests.cs"  # unit tests
 
   # === DocDownPowerPoint review-sets ===
-  # DocDownPowerPoint is the PowerPoint extraction system. Unlike DocDownWord and DocDownExcel it has two
-  # subsystems (Markdown, OpenXml) and one direct unit (PowerPointDocDownBuilderExtensions). System
-  # sets follow the DocDownWord shape; subsystem and unit-under-subsystem sets follow the DocDownExcel
-  # shape, with the unit-under-subsystem sets carrying the four context entries the Context Files table
-  # requires. Every .cs path is listed explicitly, never by glob, so a future unit source file cannot be
-  # silently absorbed. Each subsystem documents its supporting-type .cs files inline, so those files are
+  # DocDownPowerPoint is the PowerPoint format subsystem of DemaConsulting.DocDown.Office. Unlike
+  # DocDownWord and DocDownExcel it has two child subsystems (Markdown, OpenXml) and one direct unit
+  # (PowerPointDocDownBuilderExtensions). Its top-level sets follow the DocDownWord shape; subsystem and
+  # unit-under-subsystem sets follow the DocDownExcel shape, with the unit-under-subsystem sets carrying the
+  # four context entries the Context Files table requires. Every .cs path is listed explicitly, never by
+  # glob, so a future unit source file cannot be silently absorbed. Each subsystem documents its
+  # supporting-type .cs files inline, so those files are
   # reviewed in the subsystem set (D8): Markdown holds the diagnostic-code type; OpenXml holds the deck
   # model and the shared exception. PowerPointOpenXmlImageReader has no dedicated test class; its source
   # is covered in its unit set. The PowerPoint test project carries no golden directory and no non-.cs
   # data beyond .csproj, so — unlike Word — no golden entries are required.
 
-  # DocDownPowerPoint-Architecture Review (one per system)
+  # DocDownPowerPoint-Architecture Review (one per format subsystem)
   - id: DocDownPowerPoint-Architecture
     title: Review that DemaConsulting.DocDown.PowerPoint Architecture Satisfies Requirements
     context:
       - "README.md"
       - "docs/user_guide/**/*.md"
     paths:
-      - "docs/reqstream/docdown-office/powerpoint.yaml"                                       # system requirements
+      - "docs/reqstream/docdown-office/powerpoint.yaml"                                       # subsystem requirements
       - "docs/design/introduction.md"                                                  # design introduction
-      - "docs/design/docdown-office/powerpoint.md"                                            # system design
+      - "docs/design/docdown-office/powerpoint.md"                                            # subsystem design
       - "docs/verification/introduction.md"                                            # verification introduction
-      - "docs/verification/docdown-office/powerpoint.md"                                      # system verification
+      - "docs/verification/docdown-office/powerpoint.md"                                      # subsystem verification
       - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/DocDownPowerPointTests.cs"       # integration tests
       - "test/DemaConsulting.DocDown.Office.Tests/PowerPoint/TestData/PptxFixtures.cs"        # generated test fixtures
       - "src/DemaConsulting.DocDown.Office/PowerPoint/NamespaceDoc.cs"                        # namespace documentation
 
-  # DocDownPowerPoint-Design Review (one per system)
+  # DocDownPowerPoint-Design Review (one per format subsystem)
   - id: DocDownPowerPoint-Design
     title: Review that DemaConsulting.DocDown.PowerPoint Design is Consistent and Complete
     context:
@@ -1388,22 +1433,22 @@ reviews:
     paths:
       - "docs/reqstream/docdown-office/powerpoint/platform-requirements.yaml"                 # platform requirements
       - "docs/design/introduction.md"                                                  # design introduction
-      - "docs/design/docdown-office/powerpoint.md"                                            # system design
-      - "docs/design/docdown-office/powerpoint/**/*.md"                                    # all system design documents
+      - "docs/design/docdown-office/powerpoint.md"                                            # subsystem design
+      - "docs/design/docdown-office/powerpoint/**/*.md"                                 # all subsystem design documents
       - "docs/design/ots.md"                                                           # OTS overview
 
-  # DocDownPowerPoint-Verification Review (one per system)
+  # DocDownPowerPoint-Verification Review (one per format subsystem)
   - id: DocDownPowerPoint-Verification
     title: Review that DemaConsulting.DocDown.PowerPoint Verification is Consistent and Complete
     context:
       - "docs/reqstream/docdown-office/powerpoint.yaml"
     paths:
       - "docs/verification/introduction.md"                                            # verification introduction
-      - "docs/verification/docdown-office/powerpoint.md"                                      # system verification
+      - "docs/verification/docdown-office/powerpoint.md"                                      # subsystem verification
       - "docs/verification/docdown-office/powerpoint/**/*.md"                               # all verification documents
       - "docs/verification/ots.md"                                                     # OTS overview
 
-  # DocDownPowerPoint-AllRequirements Review (one per system)
+  # DocDownPowerPoint-AllRequirements Review (one per format subsystem)
   - id: DocDownPowerPoint-AllRequirements
     title: Review that All DemaConsulting.DocDown.PowerPoint Requirements are Complete
     context:
@@ -1515,34 +1560,35 @@ reviews:
       - "src/DemaConsulting.DocDown.Office/PowerPoint/OpenXml/PowerPointOpenXmlImageReader.cs"      # unit source
 
   # === DocDownVisio review-sets ===
-  # DocDownVisio is the Visio extraction system. It has two subsystems (Markdown, OpenXml) and one
-  # direct unit (VisioDocDownBuilderExtensions). System sets follow the DocDownWord shape; subsystem
-  # and unit-under-subsystem sets follow the DocDownExcel shape, with the unit-under-subsystem sets
-  # carrying the four context entries the Context Files table requires. Every .cs path is listed
-  # explicitly, never by glob, so a future unit source file cannot be silently absorbed. Each subsystem
-  # documents its supporting-type .cs files inline, so those files are reviewed in the subsystem set
-  # (D8): Markdown holds the diagnostic-code type; OpenXml holds the drawing model, the shared
+  # DocDownVisio is the Visio format subsystem of DemaConsulting.DocDown.Office. It has two child
+  # subsystems (Markdown, OpenXml) and one direct unit (VisioDocDownBuilderExtensions). Its top-level
+  # sets follow the DocDownWord shape; subsystem and unit-under-subsystem sets follow the DocDownExcel shape,
+  # with the unit-under-subsystem sets carrying the four context entries the Context Files table requires.
+  # Every .cs path is listed explicitly, never by glob, so a future unit source file cannot be silently
+  # absorbed. Each subsystem documents its supporting-type .cs files inline, so those files are reviewed in
+  # the subsystem set (D8): Markdown holds the diagnostic-code type; OpenXml holds the drawing model, the shared
   # exception, and the in-memory package synthesizer used by the self-test and fixtures. The Visio test
   # project carries no golden directory and no non-.cs data beyond .csproj, so — unlike Word — no
   # golden entries are required.
 
-  # DocDownVisio-Architecture Review (one per system)
+  # DocDownVisio-Architecture Review (one per format subsystem)
   - id: DocDownVisio-Architecture
     title: Review that DemaConsulting.DocDown.Visio Architecture Satisfies Requirements
     context:
       - "README.md"
       - "docs/user_guide/**/*.md"
     paths:
-      - "docs/reqstream/docdown-office/visio.yaml"                                       # system requirements
+      - "docs/reqstream/docdown-office/visio.yaml"                                       # subsystem requirements
       - "docs/design/introduction.md"                                            # design introduction
-      - "docs/design/docdown-office/visio.md"                                           # system design
+      - "docs/design/docdown-office/visio.md"                                           # subsystem design
       - "docs/verification/introduction.md"                                      # verification introduction
-      - "docs/verification/docdown-office/visio.md"                                     # system verification
+      - "docs/verification/docdown-office/visio.md"                                     # subsystem verification
       - "test/DemaConsulting.DocDown.Office.Tests/Visio/DocDownVisioTests.cs"           # integration tests
       - "test/DemaConsulting.DocDown.Office.Tests/Visio/TestData/VsdxFixtures.cs"       # generated test fixtures
+      - "test/DemaConsulting.DocDown.Office.Tests/Visio/TestData/StubExtractionContext.cs"  # test context stub
       - "src/DemaConsulting.DocDown.Office/Visio/NamespaceDoc.cs"                       # namespace documentation
 
-  # DocDownVisio-Design Review (one per system)
+  # DocDownVisio-Design Review (one per format subsystem)
   - id: DocDownVisio-Design
     title: Review that DemaConsulting.DocDown.Visio Design is Consistent and Complete
     context:
@@ -1550,22 +1596,22 @@ reviews:
     paths:
       - "docs/reqstream/docdown-office/visio/platform-requirements.yaml"                # platform requirements
       - "docs/design/introduction.md"                                           # design introduction
-      - "docs/design/docdown-office/visio.md"                                          # system design
-      - "docs/design/docdown-office/visio/**/*.md"                                     # all system design documents
+      - "docs/design/docdown-office/visio.md"                                          # subsystem design
+      - "docs/design/docdown-office/visio/**/*.md"                                     # all subsystem design documents
       - "docs/design/ots.md"                                                    # OTS overview
 
-  # DocDownVisio-Verification Review (one per system)
+  # DocDownVisio-Verification Review (one per format subsystem)
   - id: DocDownVisio-Verification
     title: Review that DemaConsulting.DocDown.Visio Verification is Consistent and Complete
     context:
       - "docs/reqstream/docdown-office/visio.yaml"
     paths:
       - "docs/verification/introduction.md"                                     # verification introduction
-      - "docs/verification/docdown-office/visio.md"                                    # system verification
+      - "docs/verification/docdown-office/visio.md"                                    # subsystem verification
       - "docs/verification/docdown-office/visio/**/*.md"                               # all verification documents
       - "docs/verification/ots.md"                                              # OTS overview
 
-  # DocDownVisio-AllRequirements Review (one per system)
+  # DocDownVisio-AllRequirements Review (one per format subsystem)
   - id: DocDownVisio-AllRequirements
     title: Review that All DemaConsulting.DocDown.Visio Requirements are Complete
     context:
@@ -1763,6 +1809,14 @@ reviews:
       - "docs/reqstream/ots/canvasnetpptx.yaml"                            # OTS requirements
       - "docs/design/ots/canvasnetpptx.md"                                 # OTS integration design
       - "docs/verification/ots/canvasnetpptx.md"                          # OTS verification
+
+  # OTS-CanvasNetVsdx Review (one per OTS item)
+  - id: OTS-CanvasNetVsdx
+    title: Review that CanvasNet.Vsdx Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/canvasnetvsdx.yaml"                            # OTS requirements
+      - "docs/design/ots/canvasnetvsdx.md"                                 # OTS integration design
+      - "docs/verification/ots/canvasnetvsdx.md"                          # OTS verification
 
   # OTS-CanvasNetCharts Review (one per OTS item)
   - id: OTS-CanvasNetCharts

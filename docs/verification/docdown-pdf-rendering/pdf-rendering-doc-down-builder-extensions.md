@@ -12,8 +12,10 @@ builder.
 Nothing is mocked: a real builder is used and a real engine is built from it, because the observable
 behavior under test is exactly what a host observes. The no-CanvasNet-type property is verified
 **structurally** by reflecting over every exported type's public members and failing if any signature
-type belongs to the CanvasNet.Pdf or CanvasNet assembly — a leak hidden inside a collection is caught
-as readily as a bare parameter.
+type belongs to the CanvasNet.Pdf or CanvasNet assembly. The check inspects the declared parameter,
+return, property, and field types of each member; it does not expand generic type arguments, so a
+CanvasNet type that appears only as a generic argument (for example inside a collection) is not
+detected by this test.
 
 ### Test Environment
 

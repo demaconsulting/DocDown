@@ -78,3 +78,40 @@ Proves extractor exceptions are contained by the engine.
 **Test**: `Extraction_SelfValidationSeam_Engine_ExposesCoreAndBackendCases`
 
 Proves the engine returns both built-in and backend-contributed self-tests through one interface.
+
+#### Core properties map to document metadata
+
+**Tests**: `OpcMetadataMapper_From_PopulatedProperties_MapsFieldsWithProvenanceAndIsoDates`,
+`OpcMetadataMapper_From_BlankValues_OmittedAsFieldsAndRecordedAbsent`,
+`OpcMetadataMapper_From_PopulatedInterestingField_NotRecordedAbsent`,
+`OpcMetadataMapper_From_UnspecifiedKindDate_TreatedAsUtc`,
+`OpcMetadataMapper_From_EmptyProperties_ProducesNoFields`,
+`OpcMetadataMapper_From_AllProperties_MapsEachInCanonicalOrder`,
+`OpcMetadataMapper_From_LocalKindDate_ConvertedToUtc`,
+`OpcMetadataMapper_From_NullProperties_ThrowsArgumentNullException`
+
+Proves the shared mapping from OPC core properties to `DocumentMetadata` records populated fields with
+provenance and ISO-8601 dates in canonical order, omits blank values while recording the interesting
+ones as absent, treats an unspecified-kind date as UTC, converts a local-kind date to UTC, yields no
+fields for an empty property set, and rejects a null property set. These tests are in
+`OpcMetadataMapperTests.cs`.
+
+#### Self-test resources load or fail loudly
+
+**Tests**: `Load_PresentResource_ReturnsResourceBytes`, `Load_MissingResource_ThrowsNamingTheResource`,
+`Load_MalformedArguments_Throw`
+
+Proves `SelfTestProbe.Load` returns the bytes of a present embedded resource, names a missing resource
+in its exception, and rejects malformed arguments instead of returning an empty probe. These tests are
+in `SelfTestProbeTests.cs`.
+
+#### Document sources describe and open their input
+
+**Tests**: `Extraction_DocumentSource_FileSource_RecordsIdentityAndOpensFreshStreams`,
+`Extraction_DocumentSource_MissingFile_NullSizeAndOpenReadThrows`,
+`Extraction_DocumentSource_StreamSource_RewindsAndLeavesCallerStreamOpen`,
+`Extraction_DocumentSource_NullOrEmptyArguments_Throw`
+
+Proves a file source records its name, path, and size and opens an independent stream per read, a missing
+file has an unknown size and fails only when opened, a stream source is rewound on each read and is never
+disposed on the caller

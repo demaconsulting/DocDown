@@ -79,6 +79,30 @@ public class ContextTests
         Assert.Throws<ArgumentException>(() => Context.Create(["--page-range", "3"]));
     }
 
+    /// <summary>Proves a page range whose first page exceeds its last page is rejected.</summary>
+    [Fact]
+    public void Context_Create_ReversedPageRange_ThrowsArgumentException()
+    {
+        Assert.Throws<ArgumentException>(() => Context.Create(["--page-range", "5-2"]));
+    }
+
+    /// <summary>Proves a single-page range (first equals last) is accepted.</summary>
+    [Fact]
+    public void Context_Create_SinglePageRange_IsAccepted()
+    {
+        using var context = Context.Create(["--page-range", "3-3"]);
+
+        Assert.Equal(0, context.ExitCode);
+    }
+
+    /// <summary>Proves an argument error message ends with the parameter-name suffix.</summary>
+    [Fact]
+    public void Context_Create_UnknownArgument_MessageEndsWithParameterArgsSuffix()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => Context.Create(["--bogus"]));
+
+        Assert.EndsWith("(Parameter 'args')", exception.Message, StringComparison.Ordinal);
+    }
     /// <summary>Proves a removed option is rejected as unsupported rather than silently ignored.</summary>
     [Fact]
     public void Context_Create_RemovedImagesOption_ThrowsArgumentException()

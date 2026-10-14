@@ -34,9 +34,12 @@ which reads the assembly's `AssemblyInformationalVersionAttribute` on each acces
 - **`RunListBackends`** (private) — prints each registered backend's identifier and display name,
   supported formats, and availability from `DocDownEngine.GetBackends()`, which returns an
   `IReadOnlyList<ExtractorCandidate>`.
-- **`BuildEngine`** (private) —
-  `new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().Build()`;
-  the one explicit, reflection-free registration chain the whole tool uses.
+- **`BuildEngine`** (internal, so tests can exercise the shipped chain) —
+  `new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().AddPowerPointRendering()
+  .AddVisioRendering().Build()`, which registers eight backends (`AddOffice` adds the Word, Excel,
+  PowerPoint, and Visio Open XML backends); the one explicit, reflection-free registration chain
+  the whole tool uses. `RunExtraction`, `RunListBackends`, and the `--validate` path (which passes
+  the engine to `Validation.Run(Context, DocDownEngine)`) all obtain their engine here.
 
 ### Error Handling
 
@@ -54,8 +57,9 @@ defect is surfaced rather than swallowed.
 - **Validation** — the `--validate` driver. See *Validation Design*.
 - **DemaConsulting.DocDown.Core** — `DocDownBuilder`, `DocDownEngine`, `ExtractionOptions`, `ExtractionResult`,
   `ExtractionOutcome`, and `ExtractorCandidate`.
-- **DemaConsulting.DocDown.Pdf**, **DemaConsulting.DocDown.Pdf.Rendering**, **DemaConsulting.DocDown.Word**, **DemaConsulting.DocDown.Visio**,
-  **DemaConsulting.DocDown.PowerPoint**, and **DemaConsulting.DocDown.Excel** — the explicit backend registration seams.
+- **DemaConsulting.DocDown.Pdf**, **DemaConsulting.DocDown.Pdf.Rendering**,
+  **DemaConsulting.DocDown.Office**, **DemaConsulting.DocDown.PowerPoint.Rendering**, and
+  **DemaConsulting.DocDown.Visio.Rendering** — the explicit backend registration seams.
 
 ### Callers
 

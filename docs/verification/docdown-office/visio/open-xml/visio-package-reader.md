@@ -75,6 +75,14 @@ Proves the pages come out in the order the drawing declares them. Evidence for
 Proves a shape id reused on another page does not cross-link, because each page's connectors resolve against
 only that page's shapes. Evidence for `DocDownVisio-OpenXml-VisioPackageReader-ScopesEdgesToOwnPage`.
 
+#### A repeated shape id keeps its first declaration
+
+**Test**: `VisioPackageReader_Read_DuplicateShapeId_KeepsFirstDeclaration`
+
+Proves a page that declares the same shape id twice yields the first declaration and drops the repeat,
+so the shape is neither double-counted nor given the later text. Evidence for
+`DocDownVisio-OpenXml-VisioPackageReader-DeduplicatesShapeIds`.
+
 #### Master names are resolved
 
 **Tests**: `VisioPackageReader_Read_MasterTypedSchematic_ResolvesMasterNames`,
@@ -94,6 +102,16 @@ covered because it is tested. Evidence for `DocDownVisio-OpenXml-VisioPackageRea
 Proves a Wingdings arrow byte is recovered to its Unicode equivalent only within a run whose font declares
 that symbol font, leaving text in other fonts unchanged. This exceeds the intent and is covered because it
 is tested. Evidence for `DocDownVisio-OpenXml-VisioPackageReader-RecoversSymbolFontGlyphs`.
+
+#### A numeric font reference is resolved through the face-name table
+
+**Tests**: `VisioPackageReader_Read_NumericFontRef_ResolvesFaceNameAndRecoversArrow`,
+`VisioPackageReader_Read_NonSymbolNumericFontRef_LeavesTextAlone`
+
+Prove a character row whose font is a face-name id resolves to the face name declared in
+`visio/document.xml`, so a Wingdings arrow named by id is recovered, while an id that resolves to an
+ordinary face or is not declared leaves the text exactly as authored. Evidence for
+`DocDownVisio-OpenXml-VisioPackageReader-ResolvesNumericFontRefs`.
 
 #### An empty page is yielded cleanly
 

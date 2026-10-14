@@ -72,7 +72,7 @@ sections:
                   A document under revision still needs one coherent extracted text flow. Keeping
                   insertions and dropping deletions yields that accepted-view reading.
                 tests:
-                  - WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewWithDiagnostic
+                  - WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewAndCountsChanges
 
               - id: DocDownWord-OpenXml-WordOpenXmlReader-DetectsPasswordProtected
                 title: >-
@@ -95,51 +95,77 @@ sections:
                   - WordOpenXmlReader_Read_Comment_CollectsAuthorAndText
 
               - id: DocDownWord-OpenXml-WordOpenXmlReader-DropsTextlessComments
-                title: >-
-                  WordOpenXmlReader shall drop a comment that carries no text, and shall count a
-                  comment whose only content is a picture or ink so the extraction can report it.
+                title: WordOpenXmlReader shall drop a comment that carries no text.
                 justification: |
                   Core refuses a review comment with a blank body, because an entry naming an author
                   and a location but saying nothing is a claim that a reviewer wrote nothing. Honoring
                   that invariant here — where every other backend already honors it — is what keeps a
                   single schema-valid empty comment from aborting the whole extraction and costing the
                   reader the document's text as well as its commentary. A wholly empty comment is
-                  dropped silently because there was nothing to read; a picture-only or ink-only
-                  comment is counted instead, because the document does carry a remark this reader
-                  cannot render, and a reader who is not told would believe the document had no such
-                  comment at all.
+                  dropped silently because there was nothing to read.
                 tests:
                   - WordOpenXmlReader_Read_EmptyComment_IsDroppedAndRealCommentSurvives
-                  - WordOpenXmlReader_Read_ImageOnlyComment_IsDroppedAndCounted
                   - DocDownWord_Extract_DocxWithEmptyComment_StillProducesContentAndRealComment
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-CountsUnreadableComments
+                title: >-
+                  WordOpenXmlReader shall count a comment whose only content is a picture or ink so the
+                  extraction can report it.
+                justification: |
+                  A picture-only or ink-only comment is a remark this reader cannot render. Counting it
+                  keeps a reader who is not told from believing the document had no such comment at
+                  all.
+                tests:
+                  - WordOpenXmlReader_Read_ImageOnlyComment_IsDroppedAndCounted
 
               - id: DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation
                 title: >-
                   WordOpenXmlReader shall resolve each comment's anchor into a location hint naming
-                  the nearest preceding heading and quoting a bounded snippet of the anchored text,
-                  degrading to whichever part is available and claiming no location when the document
-                  anchors the comment nowhere.
+                  the nearest preceding heading and quoting a snippet of the anchored text.
                 justification: |
                   A reviewer's remark reported away from the text it annotates is only actionable if
                   the reader can find that text again. Following the comment range and reference
-                  markers back to their heading and wording restores that connection, and bounding the
-                  quoted snippet keeps the hint a pointer rather than a second copy of the document.
-                  Degrading to a partial hint, or to none, keeps the reader from being pointed
-                  somewhere the comment was never attached.
+                  markers back to their heading and wording restores that connection.
                 tests:
                   - WordOpenXmlReader_Read_AnchoredComment_LocationNamesHeadingAndSnippet
                   - WordOpenXmlReader_Read_MultipleComments_LocationsResolveIndependently
 
-              - id: DocDownWord-OpenXml-WordOpenXmlReader-SurfacesMetadata
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-BoundsCommentSnippet
                 title: >-
-                  WordOpenXmlReader shall surface the document's declared title and author, and
-                  nothing where the document declares nothing.
+                  WordOpenXmlReader shall bound the quoted anchor snippet of a comment location hint.
                 justification: |
-                  Metadata drives downstream routing, and a blank value is a different claim from an
-                  absent one. Surfacing the declared title and author, and leaving a blank value
-                  unstated, keeps those decisions on facts.
+                  Bounding the quoted snippet keeps the hint a pointer rather than a second copy of the
+                  document, however large the anchored runs are.
+                tests:
+                  - WordOpenXmlReader_CommentAnchorAppendText_BoundsAccumulatorRegardlessOfRunSize
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-DegradesCommentLocation
+                title: >-
+                  WordOpenXmlReader shall degrade a comment location to whichever part is available and
+                  claim no location when the document anchors the comment nowhere.
+                justification: |
+                  Degrading to a partial hint, or to none, keeps the reader from being pointed somewhere
+                  the comment was never attached.
+                tests:
+                  - WordOpenXmlReader_Read_MultipleComments_LocationsResolveIndependently
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-SurfacesMetadata
+                title: WordOpenXmlReader shall surface the document's declared title and author.
+                justification: |
+                  Metadata drives downstream routing. Surfacing the declared title and author keeps
+                  those decisions on facts.
                 tests:
                   - WordOpenXmlReader_Read_Metadata_TitleAndAuthorSurfaced
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-OmitsUndeclaredMetadata
+                title: >-
+                  WordOpenXmlReader shall surface no title, author, or page count where the document
+                  declares none.
+                justification: |
+                  A blank value is a different claim from an absent one. Leaving undeclared metadata
+                  unstated keeps downstream decisions on facts.
+                tests:
+                  - WordOpenXmlReader_Read_NoMetadata_ReportsNothing
 
               - id: DocDownWord-OpenXml-WordOpenXmlReader-ReportsProducerPageCount
                 title: >-
@@ -154,12 +180,13 @@ sections:
 
               - id: DocDownWord-OpenXml-WordOpenXmlReader-ReusesDeduplicatedImagePath
                 title: >-
-                  WordOpenXmlReader shall reuse a single written path for an image that appears in
-                  both a header and the body.
+                  WordOpenXmlReader shall resolve an image that appears in both a header and the body to
+                  references with identical bytes, so the extraction stores a single image file.
                 justification: |
                   A logo that appears in the header and the body is one image, and writing it twice
-                  would waste space and imply two figures. Reusing the deduplicated path keeps one
-                  image one file and one link target.
+                  would waste space and imply two figures. The reader resolves every occurrence to
+                  its complete bytes; Core's content-keyed deduplication then keeps one image one
+                  file and one link target.
                 tests:
                   - WordOpenXmlReader_Read_HeaderWithLogo_ReusesDeduplicatedImagePath
 

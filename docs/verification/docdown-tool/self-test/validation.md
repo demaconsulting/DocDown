@@ -16,11 +16,13 @@ real, so the self-test union the driver runs is exactly the one the shipped tool
 - **Framework**: xUnit v3 under the .NET SDK, targeting net10.0, the single framework the tool ships on
 - **Filesystem**: a per-test `TempScratch` folder holds the requested results file
 - **Engine**: these are unit tests of the `Validation` unit, so they supply their own engine —
-  the managed PDF backends only. Every property asserted here (the header and its depth, the
+  the managed PDF backends only (`AddPdf` and `AddPdfRendering`). Every property asserted here (the
+  header and its depth, the
   results-file shapes, the pass/skip/fail accounting, the exit code) belongs to the unit rather than
-  to which backends happen to be registered, so none of them needs Microsoft Office driven. The
-  managed engine still produces every case shape the accounting must handle: a passing round trip,
-  an always-skipped page-rendering case, and a native-stack render.
+  to which backends happen to be registered, so none of them needs the larger Office backend set.
+  `Validation.Run(Context, DocDownEngine)` takes the engine as a parameter, which is what makes this
+  possible. The managed engine still produces every case shape the accounting must handle: a passing
+  round trip, an always-skipped page-rendering case, and a passing managed page render.
 - **Isolation**: each test owns its captured log and results file, and starts no application, so
   these tests share no state and run fully in parallel
 
@@ -70,3 +72,10 @@ rejected as an unsupported format with a non-zero exit. Evidence for
 
 Proves a run whose only non-passing result is a benign skip exits zero and reports no failure.
 Evidence for `DocDownTool-Validation-Outcome`.
+
+#### A failing case exits non-zero
+
+**Test**: `Validation_Run_FailingCase_ReportsFailureAndExitsNonZero`
+
+Proves a registered backend's failing self-test case is reported as a failure and makes the run exit
+non-zero. Evidence for `DocDownTool-Validation-FailureExitCode`.

@@ -54,7 +54,7 @@ public sealed class ExtractorRegistry
     /// <exception cref="ArgumentException">
     ///     Thrown when a factory returns <see langword="null"/>, produces an extractor with a null or
     ///     empty identifier, or produces two extractors that share an identifier — identifiers are the
-    ///     override key and the manifest key, so their uniqueness is a hard build-time invariant.
+    ///     lookup key and the manifest key, so their uniqueness is a hard build-time invariant.
     /// </exception>
     /// <remarks>
     ///     Invokes every factory exactly once here so any construction fault or duplicate identifier
@@ -80,13 +80,13 @@ public sealed class ExtractorRegistry
             var extractor = factory() ??
                 throw new ArgumentException("An extractor factory returned null.", nameof(factories));
 
-            // An extractor without a stable identifier cannot be overridden or recorded
+            // An extractor without a stable identifier cannot be looked up or recorded
             if (string.IsNullOrEmpty(extractor.Id))
             {
                 throw new ArgumentException("An extractor was registered with a null or empty identifier.", nameof(factories));
             }
 
-            // Identifiers are the override and manifest key, so a collision is a hard invariant failure
+            // Identifiers are the lookup and manifest key, so a collision is a hard invariant failure
             if (!seenIds.Add(extractor.Id))
             {
                 throw new ArgumentException($"Duplicate extractor identifier '{extractor.Id}'.", nameof(factories));
@@ -171,12 +171,12 @@ public sealed class ExtractorRegistry
     }
 
     /// <summary>
-    ///     Ensures availability has been probed and the candidate and diagnostic caches are populated.
+    ///     Ensures availability has been probed and the candidate cache is populated.
     /// </summary>
     /// <remarks>
     ///     Double-checks the cache under the lock so exactly one probe pass runs even when several
     ///     threads race to the first query. Each extractor's probe is contained so one misbehaving
-    ///     backend cannot fault the pass. Side effect: populates the caches; performs the extractors'
+    ///     backend cannot fault the pass. Side effect: populates the cache; performs the extractors'
     ///     (contractually cheap) probes.
     /// </remarks>
     private void EnsureProbed()

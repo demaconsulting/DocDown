@@ -1,11 +1,11 @@
 ---
-# Software System Requirements for DemaConsulting.DocDown.Excel
+# Software Subsystem Requirements for DemaConsulting.DocDown.Excel
 #
 # These requirements describe the externally visible behavior of the Excel extraction
-# package from the perspective of a host that registers it, without specifying
+# subsystem from the perspective of a host that registers it, without specifying
 # implementation details. Each decomposes into subsystem and unit requirements linked
-# below via children, and is proven by system-level or unit-level tests. DemaConsulting.DocDown.Excel
-# has two subsystems (Markdown, OpenXml) and one direct unit
+# below via children, and is proven by subsystem-level or unit-level tests. DemaConsulting.DocDown.Excel
+# has two child subsystems (Markdown, OpenXml) and one direct unit
 # (ExcelDocDownBuilderExtensions).
 #
 # A workbook, in this product's domain, is a prose and data container, not a picture, so
@@ -62,7 +62,7 @@ sections:
     requirements:
       - id: DocDownExcel-Registration
         title: >-
-          The system shall register its Excel backend through an explicit extension method without
+          The subsystem shall register its Excel backend through an explicit extension method without
           reflection or assembly scanning.
         tags: [system]
         justification: |
@@ -79,11 +79,11 @@ sections:
 
       - id: DocDownExcel-Extraction
         title: >-
-          The system shall extract each worksheet of a workbook as a structured content part, together
+          The subsystem shall extract each worksheet of a workbook as a structured content part, together
           with its charts, images, and metadata, into the DocDown output contract.
         tags: [system]
         justification: |
-          The package exists to turn a workbook into the invariant DocDown output layout so a
+          The subsystem exists to turn a workbook into the invariant DocDown output layout so a
           downstream agent sees the same artifact structure it sees for every other format. A workbook
           is a prose and data container, so extracting each worksheet as its own navigable part —
           rather than a single flattened flow — is what lets a cited fact keep the sheet identity the
@@ -98,7 +98,7 @@ sections:
 
       - id: DocDownExcel-VerbatimCellValues
         title: >-
-          The system shall preserve every cell's value verbatim, at full precision and full length,
+          The subsystem shall preserve every cell's value verbatim, at full precision and full length,
           never truncating a long prose block.
         tags: [system]
         justification: |
@@ -115,7 +115,7 @@ sections:
 
       - id: DocDownExcel-Formulas
         title: >-
-          The system shall keep the formula behind a computed cell alongside the cell's computed
+          The subsystem shall keep the formula behind a computed cell alongside the cell's computed
           value.
         tags: [system]
         justification: |
@@ -130,7 +130,7 @@ sections:
 
       - id: DocDownExcel-CellAddressing
         title: >-
-          The system shall preserve each worksheet's name and each cell's A1-style address so an
+          The subsystem shall preserve each worksheet's name and each cell's A1-style address so an
           extracted fact can be cited back to its origin.
         tags: [system]
         justification: |
@@ -146,7 +146,7 @@ sections:
 
       - id: DocDownExcel-WorksheetGridTable
         title: >-
-          The system shall render a dense rectangular worksheet region as a grid table in addition to
+          The subsystem shall render a dense rectangular worksheet region as a grid table in addition to
           the verbatim cell listing, eliding only in the table a value the table cannot carry and
           saying so.
         tags: [system]
@@ -166,7 +166,7 @@ sections:
 
       - id: DocDownExcel-Charts
         title: >-
-          The system shall surface each chart a worksheet shows as its own content part carrying the
+          The subsystem shall surface each chart a worksheet shows as its own content part carrying the
           data the chart cached as last plotted, or a plain statement of why no data table could be
           produced.
         tags: [system]
@@ -184,7 +184,7 @@ sections:
 
       - id: DocDownExcel-AttemptNotes
         title: >-
-          The system shall record a short plain note only when an attempted chart or image step could
+          The subsystem shall record a short plain note only when an attempted chart or image step could
           not be completed.
         tags: [system]
         justification: |
@@ -200,7 +200,7 @@ sections:
 
       - id: DocDownExcel-DrawingShapeText
         title: >-
-          The system shall extract the text of the drawing shapes floating over a worksheet under the
+          The subsystem shall extract the text of the drawing shapes floating over a worksheet under the
           sheet that carries them.
         tags: [system]
         justification: |
@@ -216,7 +216,7 @@ sections:
 
       - id: DocDownExcel-EmbeddedImages
         title: >-
-          The system shall write a workbook's embedded images into the images folder, link them from
+          The subsystem shall write a workbook's embedded images into the images folder, link them from
           the worksheet that shows them, and record which worksheet each belongs to.
         tags: [system]
         justification: |
@@ -232,7 +232,7 @@ sections:
 
       - id: DocDownExcel-EmptyWorkbookInventory
         title: >-
-          The system shall report zero-count content inventory entries for an empty workbook for the
+          The subsystem shall report zero-count content inventory entries for an empty workbook for the
           content kinds it explicitly looked for.
         tags: [system]
         justification: |
@@ -246,7 +246,7 @@ sections:
 
       - id: DocDownExcel-EmptyWorksheetContent
         title: >-
-          The system shall state in the worksheet part when a worksheet has no cell content, and shall
+          The subsystem shall state in the worksheet part when a worksheet has no cell content, and shall
           record no note for that fact.
         tags: [system]
         justification: |
@@ -260,7 +260,7 @@ sections:
 
       - id: DocDownExcel-NoPageRendering
         title: >-
-          The system shall not render a workbook to pages, and shall honor a page-rendering request
+          The subsystem shall not render a workbook to pages, and shall honor a page-rendering request
           against it as not applicable while otherwise remaining silent.
         tags: [system]
         justification: |
@@ -277,7 +277,7 @@ sections:
 
       - id: DocDownExcel-ContentOutline
         title: >-
-          The system shall report a content outline counting the model's worksheets, populated cells,
+          The subsystem shall report a content outline counting the model's worksheets, populated cells,
           formulas, images, charts, drawing annotations, and cached chart points, including zero counts
           for features it explicitly looked for.
         tags: [system]
@@ -295,11 +295,11 @@ sections:
 
       - id: DocDownExcel-LegacyFormatUnreadableExplanation
         title: >-
-          The system shall report a legacy binary Excel workbook as unreadable with a plain explanation
+          The subsystem shall report a legacy binary Excel workbook as unreadable with a plain explanation
           that the format is unsupported.
         tags: [system]
         justification: |
-          This package reads Open XML workbooks and nothing else, and DocDown does not support the
+          This subsystem reads Open XML workbooks and nothing else, and DocDown does not support the
           legacy binary Excel formats at all. A caller who hands the engine an `.xls` therefore deserves
           a plain statement of that fact with the full output layout still written — not an exception,
           not a silent omission, and not advice to install something that will never deliver support.
@@ -307,7 +307,7 @@ sections:
           - DocDownExcel_Extract_LegacyXls_IsUnreadableWithUnsupportedFormatExplanation
 
       - id: DocDownExcel-SelfValidation
-        title: The system shall contribute self-validation cases describing its own extraction behavior.
+        title: The subsystem shall contribute self-validation cases describing its own extraction behavior.
         tags: [system]
         justification: |
           An operator needs to confirm the backend actually works where it is deployed, not merely that

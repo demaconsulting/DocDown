@@ -17,14 +17,16 @@ about it.
 `PdfImageExtractor` is an `internal static class`. It holds no mutable shared state; all accounting
 lives for the duration of one call.
 
-- **`RawBytesMeaning`** (private `enum`) - classifies what an image stream's raw bytes actually are:
-  a complete image file, compressed samples, a containerless bitstream, or uncompressed samples.
+- **`RawBytesMeaning`** (private `enum`) - classifies what an image stream's raw bytes actually are,
+  with five members: `CompleteImageFile` (a self-describing file widely openable, such as JPEG),
+  `UndecodableImageFile` (a complete file in a format this extractor cannot decode, such as the JPEG
+  2000 codestream), `CompressedSamples`, `ContainerlessBitstream`, and `UncompressedSamples`.
 - **`FilterClassification`** (private `sealed record`) - one row of the filter table: the raw-byte
-  meaning and, when applicable, the media type of a verbatim image file.
+  meaning and, when the bytes are a file, the media type of a verbatim image file.
 - **`EncodedImage`** (private `readonly record struct`) - the bytes, media type, and transform chosen
   for one written image.
 - **`ImageAccounting`** (private `sealed class`) - running counts and bounded ordered item lists for
-  undecodable images, size-limited skips, and images that defeated a PNG request.
+  undecodable images (also grouped by encoding name) and for size-limited skips.
 - **`PdfExtractedImage`** (`internal sealed record`) - one written image: its source page, relative
   path, and stable reference.
 - **`PdfImageResult`** (`internal sealed record`) - the written images together with the `Found` and
@@ -39,8 +41,10 @@ lives for the duration of one call.
   it walks the selected pages in document order, counts every image found, writes each deliverable
   image through the sink, emits plain notes for incomplete attempts, and returns the written-image
   list with exact counts. Preconditions: all arguments non-null.
-- **`WriteImageAsync`** (private) - applies dimension and byte limits, classifies the image filter,
-  chooses the encoding, writes the image through the sink, and records a note condition when needed.
+- **`WriteImageAsync`** (private) - applies the dimension limit, classifies the image filter,
+  chooses the encoding, applies the byte limit to the chosen payload, and writes the image through
+  the sink. An image the sink declines to store (it returns an empty path) is dropped silently: it
+  is not linked and is not counted as written, and no note is recorded for it.
 - **`Classify`** (private) - looks up the filter-handling table. Unlisted filters are treated
   conservatively as sample data rather than as a verbatim file.
 - **`Encode`** (private) - passes through only those rows whose raw bytes are already a complete
@@ -48,7 +52,8 @@ lives for the duration of one call.
 - **`FilterNameOf`** (private) - reads the effective PDF filter name from the image dictionary.
 - **`DescribeImage`** (private) - builds a stable reference such as `page 2 image 3`.
 - **`ReportAccountingNotes`** and helpers (private) - emit one-sentence notes for undecodable
-  encodings and size-limit skips.
+  encodings and for size-limit skips, each naming the "n of m" count and a bounded list of affected
+  images.
 
 ### Filter handling
 
@@ -68,8 +73,8 @@ complete; notes are reserved for incomplete attempts.
 ### Error Handling
 
 Null arguments are rejected with `ArgumentNullException` as caller errors. No image condition raises
-an exception after the walk starts. An image that cannot be decoded, exceeds a caller-supplied size
-limit, or cannot honor a requested PNG output mode is recorded as a note and the walk continues.
+an exception after the walk starts. An image that cannot be decoded or exceeds a caller-supplied size
+limit is recorded in the accounting, reported as a note, and the walk continues.
 Cancellation is observed per page and propagates.
 
 ### Dependencies

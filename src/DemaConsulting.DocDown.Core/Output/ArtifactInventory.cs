@@ -19,9 +19,9 @@ namespace DemaConsulting.DocDown.Core;
 ///     <para>
 ///         The inventory is deliberately <strong>file-only</strong>. Directories are never
 ///         inventoried, because a directory holds no data: an empty <c>images/</c> left behind by a
-///         previous run is neither an unlisted artifact to report nor content to destroy. Keeping
-///         the predicate file-only is what makes it byte-for-byte the same proposition as the
-///         unlisted-file check, which enumerates files.
+///         previous run is neither unaccounted content to refuse nor content to destroy. Keeping
+///         the predicate file-only is what makes it the same proposition as the
+///         unaccounted-content check, which enumerates files.
 ///     </para>
 ///     <para>
 ///         All members are pure except <see cref="EnumerateFiles"/>, which performs read-only

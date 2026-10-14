@@ -21,6 +21,9 @@ input-files:
   - docs/verification/docdown-core/output/summary-writer.md
   - docs/verification/docdown-core/output/manifest-writer.md
   - docs/verification/docdown-core/output/image-text-selector.md
+  - docs/verification/docdown-core/output/embedded-image-writer.md
+  - docs/verification/docdown-core/output/image-dimensions.md
+  - docs/verification/docdown-core/output/image-link-text.md
   - docs/verification/docdown-pdf.md
   - docs/verification/docdown-pdf/pdf-document-extractor.md
   - docs/verification/docdown-pdf/pdf-text-extractor.md

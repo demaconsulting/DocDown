@@ -34,8 +34,9 @@ encoding propagate so the extractor can isolate it per page and turn it into a p
 
 ### Dependencies
 
-- **CanvasNet.Pdf** (OTS) — `PdfDocument.Open`, `GetPageInfo`, and `Render`, which rasterize the page
-  into a `Surface`. See *CanvasNet.Pdf* under the OTS integration design.
+- **CanvasNet.Pdf** (OTS) — `PdfDocument.Open`, `PageCount`, and `Render`, which rasterize the page
+  into a `Surface` (`Render` reads the page's size internally; this unit does not call `GetPageInfo`
+  itself). See *CanvasNet.Pdf* under the OTS integration design.
 - **CanvasNet** (OTS) — `PngCodec.Save`, which encodes the rendered `Surface` to PNG bytes. See
   *CanvasNet* under the OTS integration design.
 

@@ -762,7 +762,7 @@ public class DocDownPdfTests
         Assert.Equal(2, cases.Count);
         Assert.Contains(results, result => result.Status == SelfTestStatus.Passed);
         var skipped = Assert.Single(results, result => result.Status == SelfTestStatus.Skipped);
-        Assert.Contains("renderedPages", skipped.Message, StringComparison.Ordinal);
+        Assert.Contains("Pdf.Rendering package", skipped.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(results, result => result.Status == SelfTestStatus.Failed);
     }
 

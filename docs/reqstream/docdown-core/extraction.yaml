@@ -27,6 +27,7 @@ sections:
               - DocDownCore-Extraction-DocDownBuilder-RejectNullArguments
               - DocDownCore-Extraction-ExtractorRegistry-DescriptorExposure
               - DocDownCore-Extraction-ExtractorRegistry-LookupById
+              - DocDownCore-Extraction-ExtractorRegistry-ConstructionValidation
             tests:
               - Extraction_ExplicitRegistration_RegisteredBackends_AppearInEngine
 
@@ -76,6 +77,8 @@ sections:
               - DocDownCore-Extraction-DocDownEngine-FailureArtifacts
               - DocDownCore-Extraction-DocDownEngine-Cancellation
               - DocDownCore-Extraction-DocDownEngine-RejectNullArguments
+              - DocDownCore-Extraction-DocumentSource-FileSource
+              - DocDownCore-Extraction-DocumentSource-StreamSource
             tests:
               - Extraction_Orchestration_TextDocument_RunsPipelineEndToEnd
 
@@ -120,6 +123,7 @@ sections:
               self-test seam lets them run both Core and backend checks together.
             children:
               - DocDownCore-Extraction-DocDownEngine-SelfTestCases
+              - DocDownCore-Extraction-SelfTestProbe-LoadsEmbeddedResource
             tests:
               - Extraction_SelfValidationSeam_Engine_ExposesCoreAndBackendCases
 

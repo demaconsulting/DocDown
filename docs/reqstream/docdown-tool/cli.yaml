@@ -54,6 +54,8 @@ sections:
             children:
               - DocDownTool-Context-UnknownArgument
               - DocDownTool-Context-OptionValidation
+              - DocDownTool-Context-PageRangeOrder
+              - DocDownTool-Context-ErrorMessageParameter
               - DocDownTool-Context-Depth
             tests:
               - Context_Create_UnknownArgument_ThrowsArgumentException

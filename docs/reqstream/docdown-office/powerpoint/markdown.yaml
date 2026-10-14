@@ -21,8 +21,8 @@ sections:
               decision in one path, driven only by the model, is what makes each mapping decision
               testable from a hand-built model with no deck behind it, and what keeps the output
               contract from acquiring a second, divergent implementation. The same path serves the
-              managed backend and the COM backend, so a deck's content reads identically whether or
-              not it was rendered.
+              managed backend and the optional PowerPoint.Rendering package (which delegates to it),
+              so a deck's content reads identically whether or not it was rendered.
             children:
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesTitle
               - DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesSlideText

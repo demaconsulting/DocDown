@@ -204,6 +204,69 @@ public class VisioPageRenderingExtractorTests
     }
 
     /// <summary>
+    ///     Proves a corrupt drawing is reported as unreadable with the full layout, and that no page
+    ///     rasterization is ever attempted for it.
+    /// </summary>
+    /// <remarks>
+    ///     The delegated managed backend faults on a corrupt package and Core converts that into an
+    ///     unreadable result; this backend must not mask it as <c>Produced</c> or render over it. The
+    ///     recording render function proves rasterization was never reached.
+    /// </remarks>
+    [Fact]
+    public async Task VisioPageRenderingExtractor_ExtractAsync_CorruptPackage_ReturnsUnreadableWithoutRendering()
+    {
+        // Arrange: a rendering backend with a counting render function, and non-package bytes
+        using var temp = new TempScratch();
+        var renderCalls = 0;
+        var engine = new DocDownBuilder()
+            .AddExtractor(() => new VisioPageRenderingExtractor((_, _, _) =>
+            {
+                renderCalls++;
+                return [];
+            }))
+            .Build();
+        var input = WriteFixture(temp, "corrupt.vsdx", "this is not a zip package"u8.ToArray());
+        var scratch = Path.Combine(temp.Path, "out");
+
+        // Act
+        var result = await engine.ExtractAsync(input, scratch, RenderOptions(), Ct);
+
+        // Assert: unreadable with an explanation, the layout still written, and nothing rendered
+        Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
+        Assert.NotNull(result.Failure);
+        Assert.False(string.IsNullOrWhiteSpace(result.Failure.Explanation));
+        Assert.Equal(0, renderCalls);
+        Assert.Empty(result.PagePaths);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
+    ///     Proves an already-canceled token propagates as <see cref="OperationCanceledException"/>
+    ///     rather than becoming an unreadable result, and no page is rendered.
+    /// </summary>
+    [Fact]
+    public async Task VisioPageRenderingExtractor_ExtractAsync_Cancelled_Propagates()
+    {
+        // Arrange: a valid drawing, a counting render function, and a token that is already canceled
+        var renderCalls = 0;
+        var extractor = new VisioPageRenderingExtractor((_, _, _) =>
+        {
+            renderCalls++;
+            return [];
+        });
+        var sink = new RecordingSink();
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+        var context = new StubExtractionContext(RenderOptions(), sink, cancellation.Token);
+        using var stream = new MemoryStream(VsdxRenderingFixtures.Probe());
+        var source = DocumentSource.FromStream(stream, "probe.vsdx");
+
+        // Act & Assert: the cancellation reaches the caller and rasterization never ran
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await extractor.ExtractAsync(source, context));
+        Assert.Equal(0, renderCalls);
+    }
+
+    /// <summary>
     ///     Proves the extractor contributes a render round-trip self-test that always passes.
     /// </summary>
     [Fact]

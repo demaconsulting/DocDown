@@ -38,11 +38,12 @@ sections:
                   - ExtractorRegistry_GetCandidates_RepeatedCalls_ProbesOnce
 
               - id: DocDownCore-Extraction-ExtractorRegistry-ProbeFailureContainment
-                title: ExtractorRegistry shall treat a failing availability probe as an unavailable backend.
+                title: ExtractorRegistry shall treat a probe that throws or returns null as an unavailable backend.
                 justification: |
                   Availability probing must not crash the engine just because one backend misbehaves.
                 tests:
                   - ExtractorRegistry_GetCandidates_ThrowingProbe_ContainedAsUnavailable
+                  - ExtractorRegistry_GetCandidates_NullProbeResult_ContainedAsUnavailable
                   - ExtractorRegistry_GetCandidates_UnavailableBackend_PreservesReason
 
               - id: DocDownCore-Extraction-ExtractorRegistry-RefreshAvailability
@@ -60,3 +61,22 @@ sections:
                   unavailable ones.
                 tests:
                   - ExtractorRegistry_GetCandidates_MixedAvailability_YieldsOneCandidatePerExtractor
+
+          - title: ExtractorRegistry Construction Requirements
+            requirements:
+              - id: DocDownCore-Extraction-ExtractorRegistry-ConstructionValidation
+                title: >-
+                  ExtractorRegistry shall reject a null factory list, a null factory, a factory that returns
+                  null, a null or empty identifier, and duplicate identifiers, and shall invoke each factory once.
+                justification: |
+                  Registration errors are programming errors that should fail at construction rather than
+                  surface later as selection failures.
+                tests:
+                  - ExtractorRegistry_Construct_NullFactoryList_ThrowsArgumentNullException
+                  - ExtractorRegistry_Construct_EmptyFactoryList_YieldsEmptyRegistry
+                  - ExtractorRegistry_Construct_NullFactoryElement_ThrowsArgumentNullException
+                  - ExtractorRegistry_Construct_FactoryReturnsNull_ThrowsArgumentException
+                  - ExtractorRegistry_Construct_EmptyIdentifier_ThrowsArgumentException
+                  - ExtractorRegistry_Construct_NullIdentifier_ThrowsArgumentException
+                  - ExtractorRegistry_Construct_Factory_IsMaterializedExactlyOnce
+                  - ExtractorRegistry_Construct_DuplicateIds_ThrowsArgumentException

@@ -53,6 +53,40 @@ public class WordTableWriterTests
     }
 
     /// <summary>
+    ///     Proves a hard-break run inside a cell becomes a single line break with no trailing spaces.
+    /// </summary>
+    [Fact]
+    public void WordTableWriter_Write_CellWithHardBreakRun_BecomesSingleBreak()
+    {
+        var table = new WordTableModel(
+            [[new WordTableCell([new WordInline("one\ntwo")])]],
+            FirstRowIsHeader: true, MergedCellCount: 0, NestedTableCount: 0);
+
+        var (markdown, _) = WordTableWriter.Write(table);
+
+        Assert.Contains("| one<br>two |", markdown, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves a CRLF inside a cell becomes a single line break with no carriage return left behind.
+    /// </summary>
+    [Fact]
+    public void WordTableWriter_Write_CellWithCrLf_BecomesSingleBreakWithoutCarriageReturn()
+    {
+        // Arrange: a single cell holding a CRLF
+        var table = new WordTableModel(
+            [[new WordTableCell([new WordInline("one\r\ntwo")])]],
+            FirstRowIsHeader: true, MergedCellCount: 0, NestedTableCount: 0);
+
+        // Act
+        var (markdown, _) = WordTableWriter.Write(table);
+
+        // Assert: one break, no control character
+        Assert.Contains("| one<br>two |", markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain('\r', markdown);
+    }
+
+    /// <summary>
     ///     Proves a cell's newline becomes a line break and its pipe is escaped.
     /// </summary>
     [Fact]

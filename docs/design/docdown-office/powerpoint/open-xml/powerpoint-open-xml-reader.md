@@ -29,7 +29,7 @@ author by an identifier resolved through the presentation's `commentAuthors.xml`
 The **modern** grammar — the persona-based, cloud-synced comments that current PowerPoint writes — is
 deliberately **not** read. This is a scope choice, not a tooling limit, and the distinction matters
 because an earlier revision of this document claimed the opposite. `DocumentFormat.OpenXml 3.5.1`,
-the SDK this package is built on, *does* expose both the part and its grammar: `SlidePart.commentParts`
+the SDK this subsystem is built on, *does* expose both the part and its grammar: `SlidePart.commentParts`
 yields `PowerPointCommentPart`, whose `CommentList` is typed over the
 `DocumentFormat.OpenXml.Office2021.PowerPoint.Comment` namespace. Nothing here needs raw relationship
 access or guesswork about an unversioned grammar.
@@ -49,6 +49,15 @@ modern persona comments contributes no comments to `review-comments.md`, and say
 know carries remarks reads the note, not a fault. The same statement appears in the reader's own XML
 documentation so it is visible at the call site.
 
+### Shape text coverage
+
+`ReadSlide` walks the slide's shape tree in tree order through `CollectShapeText`. Plain shapes contribute
+their paragraphs, group shapes (`P.GroupShape`) are walked recursively, and graphic frames contribute the
+rows of a table (each row becomes one line, with its non-empty cells joined by a pipe separator) and the
+paragraphs of a SmartArt diagram's data part. A line break (`a:br`) inside a paragraph reads as a single
+space, and field text (`a:fld`) is carried as its text, so neither joins words together or disappears.
+Charts and other graphic-frame content are not read as text.
+
 ### Key Methods
 
 - **`PowerPointDeckModel Read(Stream stream)`** — opens the package read-only, walks the
@@ -59,10 +68,11 @@ documentation so it is visible at the call site.
   maps the OPC core properties to deck metadata. Precondition: `stream` is non-null, readable, and
   seekable. Throws `PowerPointExtractionException` when the package cannot be opened or carries no
   presentation part.
-- **`ReadSlide`** (private) — reads one slide: the title from the title placeholder, every other
-  shape's paragraphs as body lines, the speaker notes, and the reviewer comments; returns the slide
-  model with its ordinal
-  and image references.
+- **`ReadSlide`** (private) — reads one slide: the title from the first title placeholder, the text of every
+  other shape, table, group shape, and SmartArt diagram as body lines (through `CollectShapeText`), the
+  speaker notes, and the reviewer comments; returns the slide model with its ordinal and image references.
+- **`CollectShapeText`** / **`ReadGraphicFrameText`** (private) — walk a shape tree or group shape in tree
+  order, recursing into group shapes, reading table rows and SmartArt node paragraphs from graphic frames.
 - **`LoadCommentAuthors`** (private) — reads `PresentationPart.CommentAuthorsPart` into a map of
   author identifier to display name, up front, so every comment resolves its author without
   re-walking the package. A deck with no comment-authors part yields an empty map.
@@ -76,16 +86,11 @@ documentation so it is visible at the call site.
   attribution rather than a bare number. A comment with no text is dropped because it says nothing. A
   slide with no comments part yields no comments rather than an error. Modern persona comments are not
   read; see the stated scope limitation above.
-- **`ReadComments`** (private) — reads `SlidePart.SlideCommentsPart` in declared order, resolving each
-  comment's author identifier against that map. An identifier the list does not name yields no
-  attribution rather than a bare number. A comment with no text is dropped because it says nothing. A
-  slide with no comments part yields no comments rather than an error. Modern persona comments are not
-  read; see the stated scope limitation above.
 - **`ReadNotes`** (private) — reads the speaker notes from the notes slide's body placeholder only, so
   slide-number and date furniture on the notes slide do not contaminate the narration; returns null
   when the slide has no notes.
-- **`ReadShapeParagraphs`** (private) — concatenates each paragraph's text runs into one line and
-  drops blank paragraphs, so a run-split line reads as one line.
+- **`ReadShapeParagraphs`** / **`ReadParagraph`** (private) — concatenate each paragraph's text runs and
+  field text into one line, read a line break as a space, and drop blank paragraphs.
 - **`IsTitle`** / **`IsBody`** / **`PlaceholderType`** (private) — classify a shape by its
   placeholder type, separating the title placeholder from the body shapes and identifying the notes
   body placeholder.
@@ -111,4 +116,5 @@ genuinely blank paragraphs and notes-slide furniture.
 ### Callers
 
 `PowerPointOpenXmlExtractor.ExtractAsync` calls `Read` after buffering the source. The self-test
-round-trip case and the COM backend's delegated managed run reach it through the same extractor.
+round-trip case and the PowerPoint.Rendering package's delegated managed run reach it through the same
+extractor.

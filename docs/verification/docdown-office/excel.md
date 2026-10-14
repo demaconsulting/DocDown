@@ -1,24 +1,25 @@
 # DemaConsulting.DocDown.Excel Verification Design
 
-This document describes the system-level verification strategy for `DemaConsulting.DocDown.Excel`, the Excel extraction
-package.
+This document describes the subsystem-level verification strategy for `DemaConsulting.DocDown.Excel`, the Excel extraction
+subsystem.
 
 ## Verification Approach
 
-`DemaConsulting.DocDown.Excel` is verified through system-level integration tests in `DocDownExcelTests.cs` and unit
+`DemaConsulting.DocDown.Excel` is verified through subsystem-level integration tests in `DocDownExcelTests.cs` and unit
 tests per unit, all in `DemaConsulting.DocDown.Office.Tests`, running on xUnit v3 across net8.0,
 net9.0, and net10.0.
 
-### Every extraction test reconciles against the filesystem
+### Extraction tests reconcile against the filesystem
 
-Every scenario that performs an extraction ends with layout assertions proving the invariant output
-folders and files are present. This is the highest-value assertion available to this package: it makes a
-dishonest extraction a test failure rather than a review finding, and it applies to `Produced` and
-`Unreadable` outcomes alike.
+Most scenarios that perform an extraction end with layout assertions proving the invariant output
+folders and files are present; the exceptions are `DocDownExcel_Extract_Xlsx_SelectsOpenXml` and
+`DocDownExcel_Extract_PreservesLongProseAndFormulas`, which assert selection and content only. This is the
+highest-value assertion available to this subsystem: it makes a dishonest extraction a test failure
+rather than a review finding, and it applies to `Produced` and `Unreadable` outcomes alike.
 
 ### One backend, one reader, one emitter
 
-The package ships one backend: the managed Open XML reader. It reads a workbook into the reader-neutral
+The subsystem ships one backend: the managed Open XML reader. It reads a workbook into the reader-neutral
 model and drives the content emitter, so every mapping decision is made in exactly one place and can be
 proved from a hand-built model with no workbook behind it. A legacy binary `.xls` has no reader here
 and none anywhere in DocDown, so the request ends as a structured `Unreadable` result with a plain
@@ -45,7 +46,7 @@ Every workbook the suite uses is built at test time by the Open XML SDK writer i
 extension drives format detection, because the selection path never opens the file: no registered
 backend supports the format. No fixture is committed.
 The one committed binary is the backend's self-test probe: a real workbook authored in Microsoft
-Excel, embedded in the package so the self-test reads what that application emits.
+Excel, embedded in the subsystem so the self-test reads what that application emits.
 The suite's own fixtures stay generated, so no sample workbook of unknown provenance or licensing is
 committed. Every value,
 sheet name, chart series, and annotation in the fixtures is synthetic.
@@ -61,16 +62,17 @@ sheet name, chart series, and annotation in the fixtures is synthetic.
 - **Mocking**: none for the integration scenarios — every test drives the real engine and the real Open
   XML backend; the emitter and chart units are additionally exercised from hand-built models through a
   recording sink
-- **Determinism**: a fixed timestamp is injected so repeated runs are byte-comparable
+- **Determinism**: `FixedOptions()` returns default `ExtractionOptions`; no timestamp is injected, and the
+  suite makes no byte-comparison of repeated runs
 - **Isolation**: each test owns its temporary folder and cleans it on dispose
 
 ## Acceptance Criteria
 
-Per IEC 62304 §5.7.2, a system-level test run passes when:
+Per IEC 62304 §5.7.2, a subsystem-level test run passes when:
 
 - Every scenario below passes on every operating system and runtime in the CI matrix, with no
   unexpected exception, wrong exception type, or wrong return value.
-- Every extraction scenario produces the expected DocDown layout.
+- Every extraction scenario except the two noted above produces the expected DocDown layout.
 - Every readable workbook completes with `ExtractionOutcome.Produced`, and the legacy binary `.xls`
   scenario completes with `ExtractionOutcome.Unreadable` and the expected plain explanation.
 - Every cell value reaches the output verbatim at full length and full precision; a long prose value is
@@ -86,7 +88,7 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 
 ## Test Scenarios
 
-Each scenario corresponds to one or more system requirements and names the real test method that
+Each scenario corresponds to one or more subsystem requirements and names the real test method that
 provides the evidence. Platform requirements are covered by the source-filtered runs of the selection
 scenario.
 
@@ -102,7 +104,8 @@ resulting engine and registers nothing else. Evidence for `DocDownExcel-Registra
 **Test**: `DocDownExcel_Extract_Xlsx_SelectsOpenXml`
 
 Proves the managed Open XML backend is selected for a modern workbook and reports page rendering not
-applicable. This is also the anchor for the platform requirements. Evidence for
+applicable; it asserts extractor selection only. This is the anchor for the platform requirements, so
+a source-filtered result shows the selection path ran on that platform and no more. Evidence for
 `DocDownExcel-Extraction` and, under source filters, the six `DocDownExcel-Platform-*` requirements.
 
 ### Each worksheet becomes its own content part
@@ -165,8 +168,10 @@ produced, with no note because the read completed. Evidence for `DocDownExcel-Ch
 
 **Test**: `ExcelContentEmitter_Emit_ShapeText_WritesUnderTheSheet`
 
-Proves the text of a callout drawn over a worksheet — text that lives in no cell — is written under the
-sheet. Evidence for `DocDownExcel-DrawingShapeText`.
+Proves the text of a callout carried by a hand-built model — text that lives in no cell — is written under
+the sheet. This exercises the emitter only; reading real drawing shapes is proven separately by the
+`ExcelDrawingTextReaderTests` unit tests, which are linked to `DocDownExcel-OpenXml-ShapeReading`.
+Evidence for `DocDownExcel-DrawingShapeText`.
 
 ### Embedded images are written and linked from the sheet
 
@@ -229,7 +234,7 @@ about missing work. Evidence for `DocDownExcel-ContentOutline`.
 
 **Test**: `DocDownExcel_Extract_LegacyXls_IsUnreadableWithUnsupportedFormatExplanation`
 
-Proves an engine with the Excel package registered reports an `.xls` request as unreadable with a plain
+Proves an engine with the Excel subsystem registered reports an `.xls` request as unreadable with a plain
 unsupported-format explanation, names the detected format, and gives no installation instruction.
 Evidence for `DocDownExcel-LegacyFormatUnreadableExplanation`.
 

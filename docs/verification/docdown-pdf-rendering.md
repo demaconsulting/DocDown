@@ -19,7 +19,7 @@ image structure rather than the directory listing.
 
 ### Every extraction scenario confirms the invariant layout
 
-Every scenario that performs an extraction ends with `ContractAssert.LayoutPresent`, proving the
+Every scenario that performs an extraction asserts `ContractAssert.LayoutPresent`, proving the
 standard DocDown output layout exists on disk. This applies to the clean render, the two selection
 scenarios, the page-range and DPI scenarios, and the forced page-failure unit scenario, so a missing
 core artifact or silently missing `pages/` output becomes a test failure rather than a review
@@ -59,7 +59,9 @@ project.
 - **Filesystem**: a per-test `TempScratch` folder holds both the generated input and the output
 - **Inputs**: PDFs generated at test time, plus the embedded `Resources/probe.pdf` the self-test
   reads; no committed binary test fixtures and no network access
-- **Determinism**: the run-varying timestamp line is normalized so repeated runs are byte-comparable
+- **Determinism**: only the golden-summary test normalizes the run-varying timestamp and machine-specific
+  lines so repeated runs are byte-comparable; the determinism scenario compares the page images of two runs,
+  which carry no timestamp, so no clock control is needed
 - **Isolation**: each test owns its temporary folder and cleans it on dispose
 
 ## Acceptance Criteria
@@ -69,14 +71,15 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 - Every scenario below passes on every operating system and runtime in the CI matrix, with no
   unexpected exception, wrong exception type, or wrong return value.
 - The rendered page is a valid PNG of plausible dimensions, not merely a file that exists.
-- Every extraction scenario ends with `ContractAssert.LayoutPresent`.
+- Every extraction scenario asserts `ContractAssert.LayoutPresent`.
 - No successful render scenario emits notes; a forced per-page fault emits the plain note
   `Page N could not be rasterized.` and still returns `Produced`.
 - The rendering backend is selected whenever page rendering is requested, and never when it is not.
-- The availability probe is cheap, non-throwing, and unconditionally reports rendered-page support.
+- The availability probe is a constant that performs no I/O, never throws, and unconditionally reports
+  rendered-page support.
 - Each of the six platform requirements is satisfied by a source-filtered result from the matching
   operating system or runtime; a result from another platform does not count.
-- Two renders of the same document with a fixed timestamp produce byte-identical page images.
+- Two renders of the same document produce byte-identical page images (the PNG bytes carry no timestamp).
 
 ## Test Scenarios
 
@@ -130,11 +133,11 @@ Proves only the in-range pages are rasterized, named by their document page numb
 Proves the requested DPI controls the raster: a higher-DPI render is strictly larger in both
 dimensions than a lower-DPI render of the same document. Evidence for `DocDownPdfRendering-HonorsDpi`.
 
-### Availability reporting is unconditional, cheap, and honest
+### Availability reporting is unconditional, constant, and honest
 
 **Test**: `PdfPageRenderingExtractor_ProbeAvailability_AnyEnvironment_ReportsUnconditionallyAvailable`
 
-Proves the extractor always reports rendered-page support, cheaply and without throwing, since
+Proves the extractor always reports rendered-page support, as a constant with no I/O and without throwing, since
 CanvasNet.Pdf is fully managed and carries no runtime-identifier-specific asset. Evidence for
 `DocDownPdfRendering-ReportsRenderedPagesAvailability` and `DocDownPdfRendering-ProbeCheapAndSafe`.
 
@@ -177,6 +180,41 @@ surface. Evidence for `DocDownPdfRendering-Registration`.
 
 **Test**: `PdfPageRenderingExtractor_GetSelfTestCases_AnyEnvironment_PassesRenderCase`
 
-Proves the backend contributes a distinctly named render round-trip case that rasterizes a document it
-builds itself and passes in every environment, since CanvasNet.Pdf carries no environment-dependent
-failure mode. Evidence for `DocDownPdfRendering-SelfValidation`.
+Proves the backend contributes a distinctly named render round-trip case that rasterizes the embedded
+`Resources/probe.pdf` (not a document it builds itself) and passes in every environment, since
+CanvasNet.Pdf carries no environment-dependent failure mode. Evidence for
+`DocDownPdfRendering-SelfValidation`.
+
+### An empty page selection becomes a single note
+
+**Test**: `PdfPageRenderingExtractor_ExtractAsync_PageRangeSelectsNoPage_ReportsEmptyPagesNote`
+
+Proves a requested page range that selects no page (the generated document has one page; the test requests
+pages 5 to 6) still completes as `Produced`, records the single note
+`Page rendering was requested and a renderer was available, but no pages were produced.`, writes no page
+file, and leaves the layout present. Evidence for `DocDownPdfRendering-EmptySelectionReportedAsNote`.
+
+### A page-count fault becomes a single note and preserves delegated content
+
+**Test**: `PdfPageRenderingExtractor_ExtractAsync_PageCountFaults_ReportsNoteAndKeepsDelegatedContent`
+
+Proves a faulting page-count function is caught once, records the single note
+`Pages could not be counted, so no page images were rendered.`, still returns `Produced`, and keeps the
+delegated managed content. Evidence for `DocDownPdfRendering-PageCountFailureReportedAsNote`.
+
+### A malformed document is reported unreadable and renders no page
+
+**Test**: `PdfPageRenderingExtractor_ExtractAsync_MalformedDocument_ReportsUnreadableWithoutPages`
+
+Proves a document the parser cannot read, with page rendering requested, ends as an unreadable outcome with a
+failure, no page file, and the layout present. Evidence for `DocDownPdfRendering-UnreadableDocumentRendersNoPages`.
+
+### The rendered summary matches its committed golden
+
+**Test**: `PdfRenderingGolden_Summary_SimpleRenderedPdf_MatchesCommittedGolden`
+
+Renders a generated one-page PDF through the real backend and compares the resulting `summary.txt`, byte
+for byte, against the committed golden `summary-pdf-rendering-simple.txt` after normalizing the
+machine-specific lines (timestamp, scratch folder, source document, and the three host environment
+lines). Regeneration requires `DOCDOWN_UPDATE_GOLDEN=1` and is refused in CI. This is regression evidence
+for the whole report shape and is not linked to a single requirement.

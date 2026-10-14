@@ -200,4 +200,78 @@ public class PowerPointOpenXmlReaderTests
 
         Assert.All(model.Slides, slide => Assert.Empty(slide.Comments));
     }
+
+    /// <summary>
+    ///     Proves text inside a table is read, one line per row with its cells joined by a pipe.
+    /// </summary>
+    [Fact]
+    public void PowerPointOpenXmlReader_Read_DeckWithTable_ReadsRowsAsLines()
+    {
+        using var stream = new MemoryStream(PptxFixtures.DeckWithTable());
+
+        var model = PowerPointOpenXmlReader.Read(stream);
+
+        Assert.Equal(["Name | Value", "Alpha | 42"], Assert.Single(model.Slides).TextLines);
+    }
+
+    /// <summary>
+    ///     Proves text inside a group shape is read, including a group nested inside another group.
+    /// </summary>
+    [Fact]
+    public void PowerPointOpenXmlReader_Read_DeckWithGroupedShapes_ReadsNestedGroupText()
+    {
+        using var stream = new MemoryStream(PptxFixtures.DeckWithGroupedShapes());
+
+        var model = PowerPointOpenXmlReader.Read(stream);
+
+        Assert.Equal(["Grouped text", "Nested text"], Assert.Single(model.Slides).TextLines);
+    }
+
+    /// <summary>
+    ///     Proves the node text of a SmartArt diagram is read from its diagram data part.
+    /// </summary>
+    [Fact]
+    public void PowerPointOpenXmlReader_Read_DeckWithSmartArt_ReadsNodeText()
+    {
+        using var stream = new MemoryStream(PptxFixtures.DeckWithSmartArt());
+
+        var model = PowerPointOpenXmlReader.Read(stream);
+
+        Assert.Equal(["Plan", "Build"], Assert.Single(model.Slides).TextLines);
+    }
+
+    /// <summary>
+    ///     Proves a soft line break reads as a space and field text is carried into the line, so words
+    ///     either side of a break neither run together nor vanish.
+    /// </summary>
+    [Fact]
+    public void PowerPointOpenXmlReader_Read_DeckWithBreakAndField_KeepsBreakAndFieldText()
+    {
+        using var stream = new MemoryStream(PptxFixtures.DeckWithBreakAndField());
+
+        var model = PowerPointOpenXmlReader.Read(stream);
+
+        Assert.Equal("First part second part7", Assert.Single(Assert.Single(model.Slides).TextLines));
+    }
+
+    /// <summary>
+    ///     Proves bytes that are not an Open XML package are wrapped as a
+    ///     <see cref="PowerPointExtractionException"/> so Core sees a structured failure.
+    /// </summary>
+    [Fact]
+    public void PowerPointOpenXmlReader_Read_CorruptPackage_ThrowsExtractionException()
+    {
+        using var stream = new MemoryStream(PptxFixtures.CorruptPptxBytes());
+
+        Assert.Throws<PowerPointExtractionException>(() => PowerPointOpenXmlReader.Read(stream));
+    }
+
+    /// <summary>
+    ///     Proves a null stream is rejected with an argument exception.
+    /// </summary>
+    [Fact]
+    public void PowerPointOpenXmlReader_Read_NullStream_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() => PowerPointOpenXmlReader.Read(null!));
+    }
 }

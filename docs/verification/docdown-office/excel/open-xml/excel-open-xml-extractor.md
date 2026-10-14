@@ -6,7 +6,7 @@ backend the engine selects and invokes for an `.xlsx`.
 ### Verification Approach
 
 `ExcelOpenXmlExtractor` is verified through unit tests in `OpenXml/ExcelOpenXmlExtractorTests.cs` and
-the system-level scenario in `DocDownExcelTests.cs`, in `DemaConsulting.DocDown.Office.Tests`. The
+the subsystem-level scenario in `DocDownExcelTests.cs`, in `DemaConsulting.DocDown.Office.Tests`. The
 extractor surface and the probe are asserted directly against the constructed extractor; the self-test
 cases are enumerated and run; and the orchestration is proved through a real end-to-end extraction that
 selects the backend and produces the contract layout.
@@ -46,7 +46,7 @@ supported surface. Evidence for `DocDownExcel-OpenXml-ExcelOpenXmlExtractor-Repo
 **Test**: `ExcelOpenXmlExtractor_ProbeAvailability_AlwaysAvailable`
 
 Proves the probe reports available, gives no unavailable reason, and claims no rendered pages,
-performing no I/O, because the SDK is a managed assembly shipped inside the package. Evidence for
+performing no I/O, because the SDK is a managed assembly shipped inside the subsystem. Evidence for
 `DocDownExcel-OpenXml-ExcelOpenXmlExtractor-ProbesUnconditionally`.
 
 #### The backend orchestrates a real extraction

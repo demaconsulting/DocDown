@@ -18,7 +18,7 @@ properties:
   deliberate zero for a looked-for feature; notes describe only attempted extraction steps that could
   not be completed.
 
-The subsystem contains seven documented units:
+The subsystem contains ten documented units:
 
 - **ScratchFolder** — owns the output directory and enforces path safety. See _ScratchFolder Design_.
 - **ExtractionSink** — concrete `IExtractionSink`; allocates paths, writes images and pages, buffers
@@ -30,10 +30,15 @@ The subsystem contains seven documented units:
 - **ManifestWriter** — serializes `manifest.json`. See _ManifestWriter Design_.
 - **ImageTextSelector** — shared image-text ranking policy used by backends when they derive image
   labels. See _ImageTextSelector Design_.
+- **EmbeddedImageWriter** — shared sink-write pipeline of the Open XML backends: content deduplication, size
+  limits, merged referrers, and the accounting each backend turns into notes. See _EmbeddedImageWriter Design_.
+- **ImageDimensions** — reads raster pixel size from PNG, JPEG, GIF, and BMP headers without decoding. See
+  _ImageDimensions Design_.
+- **ImageLinkText** — produces the honest, link-safe alt text of an inline image link. See _ImageLinkText Design_.
 
-`MetadataWriter` and `ArtifactInventory` are helper types documented inline here. `MetadataWriter`
-always writes `metadata.json`; `ArtifactInventory` defines which files a prior manifest accounts for
-so `ScratchFolder` can clean only proven DocDown output.
+`MetadataWriter`, `ArtifactInventory`, and `PartResourceLinkRewriter` are helper types documented inline
+here. `MetadataWriter` always writes `metadata.json`; `ArtifactInventory` defines which files a prior
+manifest accounts for so `ScratchFolder` can clean only proven DocDown output.
 
 ### Interfaces
 
@@ -47,8 +52,7 @@ The subsystem exposes:
   `IsReservedDeviceName`, and `ValidateTotalPathLength`.
 
 The engine drives `ContentWriter`, `ReviewCommentsWriter`, `MetadataWriter`, `ManifestWriter`, and
-`SummaryWriter`; extractors
-touch only `IExtractionSink`.
+`SummaryWriter`; extractors touch only `IExtractionSink`.
 
 ### Design
 
@@ -57,9 +61,10 @@ later allocation. `CleanIfDocDownFolder` is the default reuse mode: it deletes o
 manifest written for that same folder accounts for, using `ArtifactInventory`, and refuses whenever
 anything about that proof fails. `Overwrite` is the explicit mode for unconditional replacement.
 
-`ExtractionSink` routes all binary writes through `ScratchFolder`, deduplicates identical images by
+`ExtractionSink` writes binary files to paths validated by `ScratchFolder.Combine`, deduplicates
+identical images by
 content key, allocates page and part paths in Core, and records the extractor's document info,
-self-reported metadata, content features, notes, and environment facts.
+self-reported metadata, content features, notes, review comments, and environment facts.
 
 `ContentWriter` decides the shape of `content.md`: a single flow, or an index over part files.
 `ReviewCommentsWriter` writes `review-comments.md` only when the document carries reviewer comments,
@@ -86,8 +91,14 @@ chapters:
 - **`ContentPart`** and **`ContentPartKind`** — buffered content part identity.
 - **`ExtractionEnvironment`** and **`EnvironmentFact`** — runtime context for the run.
 - **`MetadataWriter`** — static helper that writes `metadata.json` with per-field provenance.
-- **`ArtifactInventory`** — static helper used by `ScratchFolder` to decide which prior files may be
-  deleted safely.
+- **`ArtifactInventory`** — internal static helper used by `ScratchFolder` to decide which prior files
+  may be deleted safely.
+- **`EmbeddedImage`** and **`EmbeddedImageWriteResult`** — the image reference and accounting types of
+  `EmbeddedImageWriter`, documented in _EmbeddedImageWriter Design_. `ImageHint` is declared in the same
+  source file.
+- **`PartResourceLinkRewriter`** — internal pure helper used by `ContentWriter` to rewrite
+  root-relative `images/` and `pages/` link targets so they resolve from a part file under `parts/`.
+  See _ContentWriter Design_.
 - **`ExtractionManifest`** and **`DocDownJsonContext`** — the manifest DTO graph and source-generated
   JSON context.
 - **`ScratchFolderException`** — typed refusal returned when a folder or path is unsafe.

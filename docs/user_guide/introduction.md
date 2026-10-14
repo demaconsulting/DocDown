@@ -93,7 +93,10 @@ return 0;
 ```
 
 Swap `AddWord()` for `AddExcel()`, `AddPdf()`, `AddPowerPoint()`, or `AddVisio()` — one call per
-format package you reference. Nothing else changes.
+format you read. To register all four Office formats (Word, Excel, PowerPoint, and Visio) in one call,
+use `AddOffice()` from the `DemaConsulting.DocDown.Office` namespace. Page images come from the
+optional rendering packages through `AddPdfRendering()`, `AddPowerPointRendering()`, and
+`AddVisioRendering()`. Nothing else changes.
 
 ## Command-line user
 
@@ -303,10 +306,11 @@ Formats DocDown recognizes but does not extract today:
 
 ## Installing the packages
 
-Install the libraries using the .NET CLI:
+Install the libraries using the .NET CLI. Reference only the format packages you read; each brings
+`DemaConsulting.DocDown.Core` with it, so you do not add Core yourself unless you are building a
+backend of your own:
 
 ```bash
-dotnet add package DemaConsulting.DocDown.Core
 dotnet add package DemaConsulting.DocDown.Pdf
 ```
 
@@ -318,18 +322,11 @@ assets and is runtime-identifier agnostic like the rest of the library:
 dotnet add package DemaConsulting.DocDown.Pdf.Rendering
 ```
 
-To extract Word documents, add the Word package. Its Open XML backend is fully managed and reads a
-`.docx` on every platform with no native dependency. The legacy binary `.doc` format is not
-supported by DocDown; it is recognized and refused with a plain explanation:
-
-```bash
-dotnet add package DemaConsulting.DocDown.Office
-```
-
-To extract Excel workbooks, PowerPoint presentations, or Visio drawings, add the matching packages.
-All three extract content on every platform with no native dependency: Excel reads `.xlsx`,
-PowerPoint reads `.pptx`, and Visio reads `.vsdx` and `.vsdm`. The legacy binary `.xls`, `.ppt`, and
-`.vsd` formats are not supported; each is recognized and refused with an explanation:
+To extract Word documents, Excel workbooks, PowerPoint presentations, or Visio drawings, add the
+Office package. It ships all four format backends, reads every format on every platform with no native
+dependency, and registers them together through `AddOffice()` (or one at a time through `AddWord()`,
+`AddExcel()`, `AddPowerPoint()`, and `AddVisio()`). The legacy binary `.doc`, `.xls`, `.ppt`, and
+`.vsd` formats are not supported by DocDown; each is recognized and refused with a plain explanation:
 
 ```bash
 dotnet add package DemaConsulting.DocDown.Office
@@ -803,7 +800,7 @@ A few things are worth knowing:
 - **`--dpi` (or `PageRenderDpi`) controls resolution.** A higher DPI produces a larger, more
   detailed page image and a larger file. The default is 150.
 - **A failed page is not fatal to the whole extraction.** Other pages still render, and a note
-  identifies the page that could not be exported, leaving the managed content untouched.
+  identifies the page that could not be rasterized, leaving the managed content untouched.
 - **Fully managed, like the rest of the library.** `DemaConsulting.DocDown.Visio.Rendering` depends
   on the `DemaConsulting.CanvasNet.Vsdx`/`DemaConsulting.CanvasNet` packages, which carry no native
   assets, so a reference works the same way on every supported platform and there is no
@@ -934,7 +931,7 @@ The tool provides the standard DEMA command-line vocabulary plus DocDown's extra
 | `--input <file>` | Document to extract (required for extraction) |
 | `--scratch <dir>` | Scratch folder to write the extraction into (required) |
 | `--pages` / `--no-pages` | Request or disable rendered page images |
-| `--page-range <a-b>` | Restrict extraction to a page range |
+| `--page-range <a-b>` | Restrict extraction to a page range; `a` must not exceed `b` |
 | `--dpi <#>` | Page render DPI (range 36-1200) |
 | `--no-images` | Do not extract embedded images |
 | `--max-image-dim <#>` | Skip images exceeding this pixel dimension |
@@ -942,7 +939,7 @@ The tool provides the standard DEMA command-line vocabulary plus DocDown's extra
 | `--overwrite <clean\|overwrite>` | Scratch folder policy (`clean` is the default) |
 | `--list-backends` | List registered backends with formats and availability |
 | `--validate` | Run self-validation |
-| `--results <file>` | Write validation results to a `.trx` or `.xml` file |
+| `--results <file>`, `--result <file>` | Write validation results to a `.trx` or `.xml` file |
 | `-v`, `--version` | Display version information |
 | `-?`, `-h`, `--help` | Display help |
 | `--silent` | Suppress console output |

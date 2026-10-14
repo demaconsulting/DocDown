@@ -38,6 +38,15 @@ the package thumbnail excluded. Evidence for `DocDownVisio-OpenXml-VisioImageRea
 `DocDownVisio-OpenXml-VisioImageReader-RecordsPageAssociation`, and
 `DocDownVisio-OpenXml-VisioImageReader-ExcludesThumbnail`.
 
+#### A media part shared across pages is yielded once
+
+**Test**: `VisioImageReader_Collect_SharedMediaPartAcrossPages_YieldedOnceWithBothPages`
+
+Proves one media part referenced by two pages is yielded as a single image carrying both page numbers, and
+is linked inline from each page. Deduplication is by package part, not by content bytes. Evidence for
+`DocDownVisio-OpenXml-VisioImageReader-YieldsEmbeddedImages` and
+`DocDownVisio-OpenXml-VisioImageReader-RecordsPageAssociation`.
+
 #### A master image is flagged as template furniture
 
 **Test**: `VisioImageReader_Collect_MasterImage_FlagsTemplateWithoutPage`

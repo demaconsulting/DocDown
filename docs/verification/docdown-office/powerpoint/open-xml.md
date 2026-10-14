@@ -8,7 +8,7 @@ into the model, and the image reader that resolves the deck's embedded images.
 
 The OpenXml subsystem is verified through unit tests in
 `OpenXml/PowerPointOpenXmlExtractorTests.cs` and `OpenXml/PowerPointOpenXmlReaderTests.cs`, plus the
-system-level scenarios in `DocDownPowerPointTests.cs`, all in `DemaConsulting.DocDown.Office.Tests`.
+subsystem-level scenarios in `DocDownPowerPointTests.cs`, all in `DemaConsulting.DocDown.Office.Tests`.
 
 The reader is exercised against real generated decks from `TestData/PptxFixtures.cs`, not a
 simulation, because its contract is the faithful translation of a genuine `.pptx` into the model: the
@@ -24,7 +24,7 @@ through the reader that drives it and the emitter scenarios that render its inli
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
 - **Inputs**: PresentationML decks generated at test time by `TestData/PptxFixtures.cs`; every title,
   body line, speaker note, and image name in them is synthetic
-- **Filesystem**: a per-test `TempScratch` folder for the system-level scenarios; none for the reader
+- **Filesystem**: a per-test `TempScratch` folder for the subsystem-level scenarios; none for the reader
   scenarios, which read a generated deck from memory
 - **Mocking**: none; the SDK is exercised against real decks and the sink is Core's real writer
   through the engine
@@ -37,9 +37,13 @@ matches the supported contract, the probe is unconditional and reports available
 support, and the self-tests report a passing round trip and a skipped page-rendering case; when the
 reader returns the slides in presentation order with their ordinals and titles, extracts each slide's
 body text separate from its title, reads the speaker notes from the notes body placeholder, and yields
-null notes for a notes-less deck; and when the image reader yields an embedded image and records its
+null notes for a notes-less deck; when it reads a legacy slide comment with its author resolved, keeps
+comments with their slide, yields none for a deck with no comments part, and counts modern comments
+without reading them; and when the image reader yields an embedded image and records its
 slide association. Any wrong descriptor field, reordered or dropped slide, misread or truncated notes,
-or lost slide association is a failure.
+or lost slide association is a failure. Text held in tables, group shapes, and SmartArt diagrams, line
+breaks and field text, corrupt-deck wrapping, and cancellation are each covered by a scenario in the unit
+verification chapters.
 
 ### Test Scenarios
 

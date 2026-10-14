@@ -50,6 +50,19 @@ The instance is immutable after construction. All run-specific facts live in loc
   A range wider than the document yields the pages that exist.
 - **`ReportDocumentInfo`** (private) - records title, author, total page count, and selected part
   count. Blank metadata values are normalized to absent rather than reported as empty strings.
+- **`BuildDocumentMetadata`** (internal static) - maps the PDF document-information dictionary to
+  the `DocumentMetadata` written to `metadata.json`, with provenance
+  `MetadataProvenance.PdfDocumentInformation`. Populated `title`, `author`, `subject`, `keywords`,
+  `creator`, and `producer` values are recorded trimmed; `created` and `modified` are recorded as
+  ISO-8601 UTC. Of the `InterestingPdfFields`, those that produced no populated field are listed as
+  absent. A missing information dictionary yields no fields and all four interesting fields absent.
+  Pure and side-effect free; it is internal so unit tests can reach it directly.
+- **`TryParsePdfDate`** (internal static) - parses a PDF `D:` date string (optional `D:` prefix) into
+  `yyyy-MM-ddTHH:mm:ssZ`. Only the four-digit year is mandatory; month and day default to 1 and
+  time fields to 0. An optional trailing `Z` or signed `+`/`-` offset (hours with optional minutes)
+  is applied to convert to UTC. A present but non-numeric or half field, an unexpected offset
+  character, an out-of-range offset, or an impossible date fails the parse so the date field is
+  omitted rather than guessed. Pure.
 - **`ReportContentFeatures`** (private) - records the `pages`, `headings`, `paragraphs`, and, when
   honestly known, `inline images` content features from the same extraction pass that produced the
   markdown and images, together with `comments` and `distinct comment authors` counted from the

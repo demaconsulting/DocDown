@@ -1,6 +1,7 @@
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using D = DocumentFormat.OpenXml.Drawing;
+using Dgm = DocumentFormat.OpenXml.Drawing.Diagrams;
 using O21 = DocumentFormat.OpenXml.Office2021.PowerPoint.Comment;
 using P = DocumentFormat.OpenXml.Presentation;
 
@@ -153,6 +154,196 @@ public static class PptxFixtures
         var slideIdList = presentationPart.Presentation!.SlideIdList!;
         slideIdList.AppendChild(new P.SlideId { Id = 256U, RelationshipId = presentationPart.GetIdOfPart(slidePart) });
     });
+
+    /// <summary>
+    ///     Builds a single-slide deck whose title is followed by a body shape with a soft line break and a
+    ///     field, so line-break and field text can be proven to survive reading.
+    /// </summary>
+    /// <returns>The deck bytes.</returns>
+    public static byte[] DeckWithBreakAndField() => Build(presentationPart =>
+    {
+        AddShapeSlide(presentationPart, 256U, (tree, _) =>
+        {
+            var shape = TextShape(3U, "Body", P.PlaceholderValues.Body, ["unused"]);
+            var paragraph = shape.TextBody!.Elements<D.Paragraph>().Single();
+            paragraph.RemoveAllChildren();
+            paragraph.AppendChild(With(new D.Run(), new D.Text("First part")));
+            paragraph.AppendChild(new D.Break());
+            paragraph.AppendChild(With(new D.Run(), new D.Text("second part")));
+            paragraph.AppendChild(With(
+                new D.Field { Id = "{00000000-0000-0000-0000-000000000001}", Type = "datetime" }, new D.Text("7")));
+            tree.AppendChild(shape);
+        });
+    });
+
+    /// <summary>
+    ///     Builds a single-slide deck whose body is a two-row, two-column table.
+    /// </summary>
+    /// <returns>The deck bytes.</returns>
+    public static byte[] DeckWithTable() => Build(presentationPart =>
+    {
+        AddShapeSlide(presentationPart, 256U, (tree, _) =>
+        {
+            var table = new D.Table(new D.TableProperties(), new D.TableGrid(new D.GridColumn { Width = 1000L }, new D.GridColumn { Width = 1000L }));
+            table.AppendChild(TableRow("Name", "Value"));
+            table.AppendChild(TableRow("Alpha", "42"));
+            tree.AppendChild(GraphicFrame(
+                4U, "Table", With(new D.GraphicData { Uri = "http://schemas.openxmlformats.org/drawingml/2006/table" }, table)));
+        });
+    });
+
+    /// <summary>
+    ///     Builds a single-slide deck whose body is a group shape holding a text shape and, nested one level
+    ///     deeper, a second group holding another text shape.
+    /// </summary>
+    /// <returns>The deck bytes.</returns>
+    public static byte[] DeckWithGroupedShapes() => Build(presentationPart =>
+    {
+        AddShapeSlide(presentationPart, 256U, (tree, _) =>
+        {
+            var inner = NewGroup(6U);
+            inner.AppendChild(TextShape(7U, "Inner", P.PlaceholderValues.Body, ["Nested text"]));
+            var outer = NewGroup(4U);
+            outer.AppendChild(TextShape(5U, "Grouped", P.PlaceholderValues.Body, ["Grouped text"]));
+            outer.AppendChild(inner);
+            tree.AppendChild(outer);
+        });
+    });
+
+    /// <summary>
+    ///     Builds a single-slide deck whose body is a SmartArt diagram with two node texts.
+    /// </summary>
+    /// <returns>The deck bytes.</returns>
+    public static byte[] DeckWithSmartArt() => Build(presentationPart =>
+    {
+        AddShapeSlide(presentationPart, 256U, (tree, slidePart) =>
+        {
+            var dataPart = slidePart.AddNewPart<DiagramDataPart>();
+            var points = new Dgm.PointList();
+            foreach (var (id, text) in new[] { ("{00000000-0000-0000-0000-000000000011}", "Plan"), ("{00000000-0000-0000-0000-000000000012}", "Build") })
+            {
+                points.AppendChild(With(
+                    new Dgm.Point { ModelId = id },
+                    With(new Dgm.TextBody(), new D.BodyProperties(), new D.ListStyle(), TextParagraph(text))));
+            }
+
+            dataPart.DataModelRoot = With(new Dgm.DataModelRoot(), points);
+            var relationshipIds = new Dgm.RelationshipIds { DataPart = slidePart.GetIdOfPart(dataPart) };
+            tree.AppendChild(GraphicFrame(
+                4U, "Diagram", With(new D.GraphicData { Uri = "http://schemas.openxmlformats.org/drawingml/2006/diagram" }, relationshipIds)));
+        });
+    });
+
+    /// <summary>
+    ///     Builds a deck whose bytes are not an Open XML package.
+    /// </summary>
+    /// <returns>Placeholder bytes that no package reader can open.</returns>
+    public static byte[] CorruptPptxBytes() => "This is not a zip package, so no presentation can be opened from it."u8.ToArray();
+
+    /// <summary>
+    ///     Appends the given children to a parent element and returns it.
+    /// </summary>
+    /// <typeparam name="T">The parent element type.</typeparam>
+    /// <param name="parent">The parent element.</param>
+    /// <param name="children">The children to append, in order.</param>
+    /// <returns>The same parent element.</returns>
+    private static T With<T>(T parent, params OpenXmlElement[] children)
+        where T : OpenXmlCompositeElement
+    {
+        foreach (var child in children)
+        {
+            parent.AppendChild(child);
+        }
+
+        return parent;
+    }
+
+    /// <summary>
+    ///     Builds a paragraph holding one text run.
+    /// </summary>
+    /// <param name="text">The run text.</param>
+    /// <returns>The paragraph.</returns>
+    private static D.Paragraph TextParagraph(string text) =>
+        With(new D.Paragraph(), With(new D.Run(), new D.Text(text)));
+
+    /// <summary>
+    ///     Adds a titled slide and lets the caller append further shapes to its shape tree.    /// </summary>
+    /// <param name="presentationPart">The presentation part.</param>
+    /// <param name="slideId">The unique slide identifier.</param>
+    /// <param name="addShapes">The action that appends shapes, given the tree and the slide part.</param>
+    private static void AddShapeSlide(
+        PresentationPart presentationPart, uint slideId, Action<P.ShapeTree, SlidePart> addShapes)
+    {
+        var slidePart = presentationPart.AddNewPart<SlidePart>();
+        var shapeTree = new P.ShapeTree();
+        shapeTree.AppendChild(GroupShapeProperties());
+        shapeTree.AppendChild(TextShape(2U, "Title", P.PlaceholderValues.Title, ["Shapes"]));
+        addShapes(shapeTree, slidePart);
+
+        var commonSlideData = new P.CommonSlideData();
+        commonSlideData.AppendChild(shapeTree);
+        var slide = new P.Slide();
+        slide.AppendChild(commonSlideData);
+        slidePart.Slide = slide;
+
+        presentationPart.Presentation!.SlideIdList!.AppendChild(
+            new P.SlideId { Id = slideId, RelationshipId = presentationPart.GetIdOfPart(slidePart) });
+    }
+
+    /// <summary>
+    ///     Builds an empty group shape with the mandatory properties.
+    /// </summary>
+    /// <param name="id">The group's drawing id.</param>
+    /// <returns>The group shape.</returns>
+    private static P.GroupShape NewGroup(uint id)
+    {
+        var properties = new P.NonVisualGroupShapeProperties(
+            new P.NonVisualDrawingProperties { Id = id, Name = $"Group {id}" },
+            new P.NonVisualGroupShapeDrawingProperties(),
+            new P.ApplicationNonVisualDrawingProperties());
+        var group = new P.GroupShape();
+        group.AppendChild(properties);
+        group.AppendChild(new P.GroupShapeProperties());
+        return group;
+    }
+
+    /// <summary>
+    ///     Builds a graphic frame around the given graphic data.
+    /// </summary>
+    /// <param name="id">The frame's drawing id.</param>
+    /// <param name="name">The frame's name.</param>
+    /// <param name="data">The graphic data to host.</param>
+    /// <returns>The graphic frame.</returns>
+    private static P.GraphicFrame GraphicFrame(uint id, string name, D.GraphicData data)
+    {
+        var frame = new P.GraphicFrame();
+        frame.AppendChild(new P.NonVisualGraphicFrameProperties(
+            new P.NonVisualDrawingProperties { Id = id, Name = name },
+            new P.NonVisualGraphicFrameDrawingProperties(),
+            new P.ApplicationNonVisualDrawingProperties()));
+        frame.AppendChild(new P.Transform());
+        frame.AppendChild(With(new D.Graphic(), data));
+        return frame;
+    }
+
+    /// <summary>
+    ///     Builds a table row of single-paragraph cells.
+    /// </summary>
+    /// <param name="cells">The cell texts.</param>
+    /// <returns>The table row.</returns>
+    private static D.TableRow TableRow(params string[] cells)
+    {
+        var row = new D.TableRow { Height = 370840L };
+        foreach (var cell in cells)
+        {
+            row.AppendChild(With(
+                new D.TableCell(),
+                With(new D.TextBody(), new D.BodyProperties(), new D.ListStyle(), TextParagraph(cell)),
+                new D.TableCellProperties()));
+        }
+
+        return row;
+    }
 
     /// <summary>
     ///     Builds a picture shape referencing an embedded image part, with an authored description.

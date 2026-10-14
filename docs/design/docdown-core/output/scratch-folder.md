@@ -34,16 +34,16 @@ convenience wrapper.
 - **`IsReservedDeviceName`** — reserved-name detection applied on every platform.
 - **`Slugify`** — deterministic ASCII-safe slug generation.
 - **`ValidateTotalPathLength`** — explicit total-path-length refusal.
-- **`WriteTextAsync`** — deterministic `
-`, no-BOM text writer used by Output writers.
+- **`WriteTextAsync`** — deterministic `\n`, no-BOM text writer used by Output writers.
 
 #### CleanIfDocDownFolder deletes only what it can prove
 
 `CleanIfDocDownFolder` is the default mode, so it refuses whenever proof is incomplete. Before any
 file is deleted it requires all of the following:
 
-1. `manifest.json` exists, is reasonably small, deserializes through `DocDownJsonContext`, and names
-   DocDown with one of the supported schema versions.
+1. `manifest.json` exists, is at most 8 MiB, deserializes through `DocDownJsonContext`, and proves
+   DocDown identity: `schemaVersion` is one of the supported versions (ordinal comparison),
+   `tool.name` is DocDown's tool name, and `source` is present.
 2. The manifest's recorded `scratchFolder` names this same folder.
 3. Every file currently present is accounted for by `ArtifactInventory` from that manifest.
 4. Every accounted path resolves inside the folder through `SafePathCombine`.
@@ -57,7 +57,12 @@ unconditional replacement.
 
 Every refusal is surfaced as `ScratchFolderException`, including traversal attempts,
 reserved-device-name components, over-length paths, failed destructive-reuse proof, and low-level I/O
-faults while preparing the folder.
+faults while preparing the folder. The exception's `Reason` is a short, stable code:
+`scratchFolderIoError`, `invalidPathComponent`, `subfolderCreateFailed`, `pathEscapesScratchFolder`,
+`pathTooLong`, `reservedDeviceName`, `unknownScratchFolderMode`, `scratchFolderNotDocDown`,
+`scratchFolderPathMismatch`, `scratchFolderUnaccountedContent`, `scratchFolderManifestPathEscapes`, and
+`scratchFolderChangedDuringPreparation`. A null or empty path argument to `Prepare`, `Combine`, or
+`EnsureSubfolder` is a caller bug and throws `ArgumentException` rather than `ScratchFolderException`.
 
 #### Dependencies
 

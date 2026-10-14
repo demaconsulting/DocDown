@@ -1,3 +1,4 @@
+using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.Excel.OpenXml;
 using DemaConsulting.DocDown.Office.Tests.Excel.TestData;
 
@@ -257,5 +258,124 @@ public class ExcelOpenXmlReaderTests
         var model = ExcelOpenXmlReader.Read(stream);
 
         Assert.All(model.Sheets, sheet => Assert.Empty(sheet.Comments));
+    }
+
+    /// <summary>
+    ///     Proves shared-string, boolean, and decimal cells resolve to their text, TRUE or FALSE, and
+    ///     verbatim value, and that declared merged ranges are carried in order with blank ones skipped.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_TypedAndMergedWorkbook_ResolvesTypesAndCarriesMergedRanges()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.TypedAndMergedWorkbook());
+
+        var model = ExcelOpenXmlReader.Read(stream);
+
+        var sheet = Assert.Single(model.Sheets);
+        Assert.Equal(
+            ["Shared header", "TRUE", "FALSE", "3.14159"], sheet.Cells.Select(cell => cell.Value));
+        Assert.Equal(["A3:B3", "D4:E5"], sheet.MergedRanges);
+    }
+
+    /// <summary>
+    ///     Proves bytes that are not an Open XML package raise <see cref="ExcelExtractionException"/>.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_InvalidPackage_ThrowsTypedException()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.LegacyXlsBytes());
+
+        Assert.Throws<ExcelExtractionException>(() => ExcelOpenXmlReader.Read(stream));
+    }
+
+    /// <summary>
+    ///     Proves a null stream is rejected with an argument exception, not a typed workbook failure.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_NullStream_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => ExcelOpenXmlReader.Read(null!));
+    }
+
+    /// <summary>
+    ///     Proves a valid package with no workbook part raises <see cref="ExcelExtractionException"/>
+    ///     naming the missing part.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_PackageWithoutWorkbookPart_ThrowsTypedException()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.NoWorkbookPartBytes());
+
+        var exception = Assert.Throws<ExcelExtractionException>(() => ExcelOpenXmlReader.Read(stream));
+
+        Assert.Contains("no workbook part", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves inline-string cells resolve to their full text, with rich-text runs concatenated.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_InlineStringCells_ResolveToFullText()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.InlineStringWorkbook());
+
+        var model = ExcelOpenXmlReader.Read(stream);
+
+        var sheet = Assert.Single(model.Sheets);
+        Assert.Equal(["Plain inline text", "Rich text"], sheet.Cells.Select(cell => cell.Value));
+    }
+
+    /// <summary>
+    ///     Proves error and date-serial cells are read exactly as stored.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_ErrorAndDateSerialCells_ReadAsStored()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.ErrorAndDateSerialWorkbook());
+
+        var model = ExcelOpenXmlReader.Read(stream);
+
+        var sheet = Assert.Single(model.Sheets);
+        Assert.Equal(["#DIV/0!", "45292.5", "#N/A"], sheet.Cells.Select(cell => cell.Value));
+    }
+
+    /// <summary>
+    ///     Proves a legacy author index and a threaded person identifier that name nobody yield no
+    ///     attribution, while the comment text is still reported.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_UnresolvedAuthors_YieldNullAuthorAndKeepText()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.UnresolvedAuthorWorkbook());
+
+        var model = ExcelOpenXmlReader.Read(stream);
+
+        var comments = Assert.Single(model.Sheets).Comments;
+        Assert.Equal(2, comments.Count);
+        Assert.Equal("B7", comments[0].Reference);
+        Assert.Null(comments[0].Author);
+        Assert.Equal("Legacy remark with an unlisted author.", comments[0].Text);
+        Assert.Equal("C3", comments[1].Reference);
+        Assert.Null(comments[1].Author);
+        Assert.Equal("Threaded remark with an unlisted person.", comments[1].Text);
+    }
+
+    /// <summary>
+    ///     Proves the package's core properties are mapped into the workbook model's metadata with
+    ///     OPC core-properties provenance.
+    /// </summary>
+    [Fact]
+    public void ExcelOpenXmlReader_Read_CorePropertiesWorkbook_MapsMetadata()
+    {
+        using var stream = new MemoryStream(XlsxFixtures.CorePropertiesWorkbook());
+
+        var model = ExcelOpenXmlReader.Read(stream);
+
+        Assert.NotNull(model.Metadata);
+        var fields = model.Metadata.Fields.ToDictionary(field => field.Name, field => field.Value);
+        Assert.Equal("Dana Reyes", fields["creator"]);
+        Assert.Equal("Quarterly figures", fields["title"]);
+        Assert.Equal("2024-03-05T10:30:00Z", fields["created"]);
+        Assert.All(model.Metadata.Fields, field => Assert.Equal(MetadataProvenance.OpcCoreProperties, field.Source));
     }
 }

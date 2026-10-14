@@ -32,8 +32,7 @@ handed to the sink unchanged and labeled as a passthrough; when a compressed-sam
 handed over as PNG and labeled as decoded to PNG; when a JPEG 2000 codestream is written unchanged
 as `image/jp2` with no extra note; when each written image records truthful provenance fields; when
 an undecodable encoding produces a plain note naming the encoding and count; when size-based skips
-produce their own note; when an unhonored PNG request produces a plain note naming the responsible
-encodings and an honored request produces none; when disabled image extraction attempts nothing; and
+produce their own note; when disabled image extraction attempts nothing; and
 when an image-free document returns zero counts without a note. Any mismatched media type,
 misreported transform, silent image loss, or conflation of note categories is a failure.
 
@@ -103,6 +102,13 @@ in, with no note, because nothing was attempted that could not complete. Evidenc
 Proves the unit does not decode, write, count, or explain images when image extraction is disabled.
 Evidence for `DocDownPdf-PdfImageExtractor-HonorsSuppression`.
 
+#### An image the sink declines is dropped without a link
+
+**Test**: `PdfImageExtractor_AddImage_SinkReturnsEmptyPath_DropsImageWithoutLink`
+
+Proves a sink that returns an empty path leaves the image counted as found but not written and produces no
+link. Evidence for `DocDownPdf-PdfImageExtractor-DropsDeclinedImage`.
+
 #### A document with no images returns zero counts without a note
 
 **Test**: `PdfImageExtractor_Extract_NoImages_ReturnsZeroCountsWithoutNote`
@@ -114,4 +120,4 @@ supporting evidence for the inventory behavior consumed by `PdfDocumentExtractor
 
 **Test**: `PdfImageExtractor_Extract_NullSink_ThrowsArgumentNullException`
 
-Proves the sink is mandatory. This is a defensive test with no linked requirement.
+Proves the sink is mandatory. Evidence for `DocDownPdf-PdfImageExtractor-RejectsNullSink`.

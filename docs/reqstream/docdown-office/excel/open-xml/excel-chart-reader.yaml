@@ -21,6 +21,7 @@ sections:
                   measured quantity, so they are read alongside the values.
                 tests:
                   - ExcelChartReader_ReadChartData_SingleSeries_ReadsTitlesAxesAndValues
+                  - ExcelChartReader_Collect_ChartWorkbook_ReturnsChartWithCachedData
 
               - id: DocDownExcel-OpenXml-ExcelChartReader-PreservesSparseIndices
                 title: ExcelChartReader shall preserve a cache's declared point indices rather than assuming them dense.
@@ -61,3 +62,51 @@ sections:
                   rather than implying an author wrote it.
                 tests:
                   - ExcelChartReader_ReadChartData_AutomaticTitle_ReportsSeriesNameAsGenerated
+
+              - id: DocDownExcel-OpenXml-ExcelChartReader-ReportsUnreadableChart
+                title: >-
+                  ExcelChartReader shall keep a chart whose part cannot be parsed or read, with no data and
+                  a stated reason, without throwing.
+                justification: |
+                  A malformed chart part must neither abort an otherwise readable workbook nor disappear,
+                  so the failure becomes a reason carried on the chart for the emitter to report. The
+                  reason names an XML failure or a failure to read the part from the package; the tests
+                  cover the XML failure.
+                tests:
+                  - ExcelChartReader_Collect_MalformedChartPart_RecordsReasonWithoutThrowing
+
+              - id: DocDownExcel-OpenXml-ExcelChartReader-ReportsExtendedChart
+                title: >-
+                  ExcelChartReader shall keep a chart drawn with the extended chart grammar, with no data
+                  and a reason that names the extended chart format.
+                justification: |
+                  An extended chart (waterfall, funnel, tree map, and similar) caches its data under a
+                  grammar the reader does not implement; keeping the chart with that stated reason is
+                  honest, where dropping it would report a complete extraction that omitted the chart.
+                tests:
+                  - ExcelChartReader_Collect_ExtendedChartPart_RecordsExtendedChartReason
+
+              - id: DocDownExcel-OpenXml-ExcelChartReader-OrdersByFrameAndSweepsOrphans
+                title: >-
+                  ExcelChartReader shall report a worksheet's charts in graphic-frame order, once each,
+                  followed by any chart part no frame cites.
+                justification: |
+                  A reader sees charts in the order the drawing lays them out, not in relationship order,
+                  so the frames set the order; a part cited twice is one chart, a frame naming an
+                  undeclared relationship holds no chart, and an unreferenced chart part is still reported
+                  after the framed ones so it is not lost.
+                tests:
+                  - ExcelChartReader_Collect_FramesInReverseOrder_ReturnsChartsInFrameOrder
+                  - ExcelChartReader_Collect_TwoFramesCitingOnePart_ReturnsChartOnce
+                  - ExcelChartReader_Collect_UnframedChartPart_IsReportedAfterFramedCharts
+                  - ExcelChartReader_Collect_FrameCitingUndeclaredRelationship_IsIgnored
+
+              - id: DocDownExcel-OpenXml-ExcelChartReader-ReadsLiteralValues
+                title: >-
+                  ExcelChartReader shall read a series' literal values when the chart carries them in place
+                  of a cached range.
+                justification: |
+                  Values typed directly into a chart exist nowhere else in the workbook, so they are read
+                  as the series points with no source range claimed.
+                tests:
+                  - ExcelChartReader_ReadChartData_LiteralValues_ReadsPoints

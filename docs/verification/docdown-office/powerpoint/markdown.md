@@ -6,7 +6,7 @@ projection of a deck model onto the output contract.
 ### Verification Approach
 
 The Markdown subsystem is verified through unit tests in
-`Markdown/PowerPointContentEmitterTests.cs` and complementary system-level scenarios in
+`Markdown/PowerPointContentEmitterTests.cs` and complementary subsystem-level scenarios in
 `DocDownPowerPointTests.cs`, all in `DemaConsulting.DocDown.Office.Tests`.
 
 The emitter is exercised from hand-built deck models through a recording sink, with no deck and no
@@ -29,7 +29,9 @@ split. Building the model by hand is what lets each mapping decision be proved i
 Per IEC 62304 §5.6.2, a Markdown subsystem test run passes when the emitter writes each slide's title,
 body text, and speaker notes; links a slide's images inline only when a path was returned; writes an
 EMF or WMF image unchanged with no PowerPoint-specific note; reports the content outline including the
-speaker-notes count stated even when it is zero; writes empty content plus zero-count inventory for an
+speaker-notes count stated even when it is zero; reports slide comments as review comments (not content),
+inventories comments and their authors, and states a short note for unread modern comments; writes empty
+content plus zero-count inventory for an
 empty deck; and writes the deck as a single flow or one part per slide with links resolving on disk.
 Any silent content loss, dangling link, or wrong inventory count is a failure.
 

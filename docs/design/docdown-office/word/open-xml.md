@@ -31,7 +31,7 @@ document as a whole).
 **The extractor descriptor.** `WordOpenXmlExtractor` declares `Id = "word-openxml"`,
 `DisplayName = "Word (Open XML SDK)"`, `SupportedFormats = [Docx]`, and `Priority = 10`.
 `ProbeAvailability()` returns `ExtractorAvailability.Available()` unconditionally, with no I/O:
-the SDK is a managed assembly shipped inside this package, so if the type can be constructed the
+the SDK is a managed assembly shipped inside this subsystem, so if the type can be constructed the
 extractor can run.
 
 **The extraction path.** `ExtractAsync()` reports two environment facts,
@@ -40,10 +40,10 @@ extractor can run.
 read-only `MemoryStream`, builds a fresh `WordOpenXmlReader`, and hands the resulting model to
 `WordContentEmitter`. Normal completion returns `ExtractionOutcome.Produced`.
 
-**The self-test set.** Two cases are exposed: `word.openxml.parseRoundTrip`, which reads the
-embedded document authored in Microsoft Word with the reader, and passes
+**The self-test set.** Two cases are exposed: `word.openxml.parseRoundTrip`, which reads the embedded document authored
+in Microsoft Word, and passes
 when the body contains content; and `word.pageRendering`, which reports a skip with a reason
-because this package does not attempt page rendering.
+because this subsystem does not attempt page rendering.
 
 **The reader.** `WordOpenXmlReader` opens the package read-only, walks the body once, and produces
 the model. It handles styled paragraphs (`Heading 1` through `Heading 9`, `Title`, and
@@ -60,16 +60,24 @@ parts are omitted from the rendered section instead of being surfaced as content
 
 **The image reader.** `WordOpenXmlImageReader` resolves a drawing's `r:embed` relationship within
 its containing part, returning a `WordImageRef` that carries the complete part bytes, content
-type, selected name or description text, and source URI. The same helper also enumerates package
-image parts for tests, always pairing the bytes with a passthrough image hint.
+type, selected name or description text, and source URI. A relationship that does not resolve to an
+image part yields `null`. It builds no image hint: the passthrough `ImageHint` is built by
+`WordContentEmitter.HintFor()` when the emitter adds the image through the sink.
 
 **Adverse cases.** The subsystem deliberately translates only the conditions it can name more
 clearly than the SDK. The OLE compound-file signature that fronts a password-protected `.docx`
-becomes a plain `WordExtractionException`. Other faults such as malformed packages, truncated
+becomes a plain `WordExtractionException`, as does a package with no main document part. Other faults
+such as malformed packages, truncated
 parts, or missing relationships propagate to Core, which renders them as unreadable output.
 Translating everything locally would duplicate Core's failure machinery and discard the SDK's own
 explanation.
 
+**The exception type.** `WordExtractionException` is a public sealed exception (declared in
+`WordOpenXmlReader.cs`) with the standard three constructors. It is the one type this subsystem
+raises intentionally, and it is public so Core and hosts can recognize it by type; only the reader
+throws it.
+
 **Self-containment.** No Open XML SDK type reaches the host-facing surface. The extractor is public
-because a host registers it indirectly, but its public members name Core types only; the reader and
-image reader stay internal and are exposed to tests through `InternalsVisibleTo`.
+because a host registers it indirectly, but its public members name Core types only. The reader and
+image reader stay internal and are exposed to tests through `InternalsVisibleTo`;
+`WordExtractionException` is the other public type.

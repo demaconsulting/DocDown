@@ -37,6 +37,7 @@ sections:
               - DocDownExcel-Markdown-ExcelContentEmitter-StaysSilentOnPageRequest
               - DocDownExcel-Markdown-ExcelContentEmitter-ReportsContentFeatures
               - DocDownExcel-Markdown-ExcelContentEmitter-ReportsReviewComments
+              - DocDownExcel-Markdown-ExcelContentEmitter-ReportsImageSizeSkips
               - DocDownExcel-Markdown-ExcelContentEmitter-InventoriesComments
             tests:
               - ExcelContentEmitter_Emit_TwoSheets_WritesTitledSheetParts
@@ -56,5 +57,6 @@ sections:
               - DocDownExcel-Markdown-ExcelChartWriter-StatesUnreadableAndUncached
               - DocDownExcel-Markdown-ExcelChartWriter-BoundsPlottedPoints
               - DocDownExcel-Markdown-ExcelChartWriter-DescribesChartUnderSheet
+              - DocDownExcel-Markdown-ExcelChartWriter-KeepsLabelsOnOneLine
             tests:
               - ExcelChartWriter_Render_SingleSeries_RendersLabelingAndTable

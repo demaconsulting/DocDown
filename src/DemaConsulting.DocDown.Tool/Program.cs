@@ -227,13 +227,14 @@ internal static class Program
     /// <summary>Builds the engine with every backend package registered explicitly.</summary>
     /// <returns>A configured engine.</returns>
     /// <remarks>
-    ///     Registration is explicit and reflection-free, which keeps single-file publish viable. The
+    ///     Registration is explicit and reflection-free, which keeps single-file publish viable.
+    ///     Internal so tests can exercise the exact chain the tool ships. The
     ///     managed PDF, Word, Excel, PowerPoint, and Visio Open XML/Open Packaging backends serve
     ///     every extraction. Page rendering for PDF, PowerPoint, and Visio is each served solely by
     ///     its own fully-managed rendering backend — <c>pdf-rendering</c>, <c>powerpoint-rendering</c>,
-    ///     and <c>visio-rendering</c> — since no COM path exists for any of the three formats.
+    ///     and <c>visio-rendering</c> — since all three are produced without any native or COM dependency.
     /// </remarks>
-    private static DocDownEngine BuildEngine() =>
+    internal static DocDownEngine BuildEngine() =>
         new DocDownBuilder().AddPdf().AddPdfRendering().AddOffice().AddPowerPointRendering().AddVisioRendering()
             .Build();
 }

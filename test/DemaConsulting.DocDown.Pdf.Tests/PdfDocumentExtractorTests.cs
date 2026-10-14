@@ -84,6 +84,41 @@ public class PdfDocumentExtractorTests
     }
 
     /// <summary>
+    ///     Proves the declared title and author reach the self-reported metadata with PDF provenance.
+    /// </summary>
+    [Fact]
+    public async Task PdfDocumentExtractor_ExtractAsync_DocumentWithMetadata_ReportsDocumentMetadata()
+    {
+        // Arrange: a fixture whose metadata the builder recorded
+        var sink = new RecordingSink();
+
+        // Act: extract through a recording sink
+        await ExtractAsync(PdfFixtures.MultiPage(3), sink);
+
+        // Assert: title and author are reported verbatim and attributed to the document information
+        var metadata = Assert.Single(sink.DocumentMetadata);
+        Assert.Contains(
+            metadata.Fields,
+            field => field.Name == "title" && field.Value == "DocDown Multi Page"
+                && field.Source == MetadataProvenance.PdfDocumentInformation);
+        Assert.Contains(metadata.Fields, field => field.Name == "author" && field.Value == "DocDown Test Suite");
+    }
+
+    /// <summary>
+    ///     Proves a document with no information dictionary reports its interesting fields as absent.
+    /// </summary>
+    [Fact]
+    public void PdfDocumentExtractor_BuildDocumentMetadata_NoInformation_ReportsFieldsAbsent()
+    {
+        // Act: map a missing information dictionary
+        var metadata = PdfDocumentExtractor.BuildDocumentMetadata(null);
+
+        // Assert: nothing is invented, and the four interesting fields are listed as absent
+        Assert.Empty(metadata.Fields);
+        Assert.Equal(["title", "author", "subject", "keywords"], metadata.AbsentInteresting);
+    }
+
+    /// <summary>
     ///     Proves the extractor records the parser and the absence of page rendering as environment facts.
     /// </summary>
     [Fact]

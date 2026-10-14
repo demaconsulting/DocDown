@@ -210,6 +210,125 @@ public class ExtractorRegistryTests
     }
 
     /// <summary>
+    ///     Proves a null factory list is rejected at construction time.
+    /// </summary>
+    [Fact]
+    public void ExtractorRegistry_Construct_NullFactoryList_ThrowsArgumentNullException()
+    {
+        // Act / Assert: the registry needs a list to materialize
+        Assert.Throws<ArgumentNullException>(() => new ExtractorRegistry(null!));
+    }
+
+    /// <summary>
+    ///     Proves an empty factory list yields an empty but usable registry.
+    /// </summary>
+    [Fact]
+    public void ExtractorRegistry_Construct_EmptyFactoryList_YieldsEmptyRegistry()
+    {
+        // Act: construct from no factories
+        var registry = new ExtractorRegistry([]);
+
+        // Assert: nothing is registered and enumeration is empty rather than faulting
+        Assert.Empty(registry.Descriptors);
+        Assert.Empty(registry.GetCandidates());
+    }
+
+    /// <summary>
+    ///     Proves a null factory element is rejected at construction time.
+    /// </summary>
+    [Fact]
+    public void ExtractorRegistry_Construct_NullFactoryElement_ThrowsArgumentNullException()
+    {
+        // Arrange: a factory list holding a null entry
+        var factories = new List<Func<IDocumentExtractor>> { null! };
+
+        // Act / Assert: a null factory cannot produce an extractor
+        Assert.Throws<ArgumentNullException>(() => new ExtractorRegistry(factories));
+    }
+
+    /// <summary>
+    ///     Proves a factory that returns null is rejected at construction time.
+    /// </summary>
+    [Fact]
+    public void ExtractorRegistry_Construct_FactoryReturnsNull_ThrowsArgumentException()
+    {
+        // Arrange: a factory that yields no extractor
+        var factories = new List<Func<IDocumentExtractor>> { () => null! };
+
+        // Act / Assert: a null-producing factory violates the registration contract
+        Assert.Throws<ArgumentException>(() => new ExtractorRegistry(factories));
+    }
+
+    /// <summary>
+    ///     Proves an extractor with an empty identifier is rejected at construction time.
+    /// </summary>
+    [Fact]
+    public void ExtractorRegistry_Construct_EmptyIdentifier_ThrowsArgumentException()
+    {
+        // Arrange: an extractor with no usable identifier
+        var factories = Factories(new StubExtractor { Id = string.Empty });
+
+        // Act / Assert: identifiers are the lookup and manifest key, so an empty one is refused
+        Assert.Throws<ArgumentException>(() => new ExtractorRegistry(factories));
+    }
+
+    /// <summary>
+    ///     Proves an availability probe that returns null is contained as an unavailable candidate.
+    /// </summary>
+    [Fact]
+    public void ExtractorRegistry_GetCandidates_NullProbeResult_ContainedAsUnavailable()
+    {
+        // Arrange: a registry with a backend whose availability probe returns null
+        var registry = new ExtractorRegistry(Factories(new NullProbeExtractor("null-probe")));
+
+        // Act: enumerate candidates, forcing the probe pass
+        var candidate = Assert.Single(registry.GetCandidates());
+
+        // Assert: the null result is surfaced as ordinary unavailability with a stable reason
+        Assert.False(candidate.Availability.IsAvailable);
+        Assert.Equal("availability probe failed: returned null", candidate.Availability.UnavailableReason);
+    }
+
+    /// <summary>
+    ///     Proves an extractor with a null identifier is rejected at construction time.
+    /// </summary>
+    [Fact]
+    public void ExtractorRegistry_Construct_NullIdentifier_ThrowsArgumentException()
+    {
+        // Arrange: an extractor whose identifier is null
+        var factories = Factories(new NullProbeExtractor(null!));
+
+        // Act / Assert: a null identifier cannot be looked up or recorded, so it is refused
+        Assert.Throws<ArgumentException>(() => new ExtractorRegistry(factories));
+    }
+
+    /// <summary>
+    ///     Proves each factory is invoked exactly once during construction.
+    /// </summary>
+    [Fact]
+    public void ExtractorRegistry_Construct_Factory_IsMaterializedExactlyOnce()
+    {
+        // Arrange: a factory that counts its invocations
+        var calls = 0;
+        var factories = new List<Func<IDocumentExtractor>>
+        {
+            () =>
+            {
+                calls++;
+                return StubExtractor.Available("once", [DocumentFormat.Text]);
+            }
+        };
+
+        // Act: construct and then read the registry repeatedly
+        var registry = new ExtractorRegistry(factories);
+        _ = registry.Descriptors;
+        _ = registry.Resolve("once");
+
+        // Assert: the factory ran only at construction
+        Assert.Equal(1, calls);
+    }
+
+    /// <summary>
     ///     Wraps ready extractor instances as the factory list the registry constructor expects.
     /// </summary>
     /// <param name="extractors">The extractor instances to wrap.</param>
@@ -253,6 +372,37 @@ public class ExtractorRegistryTests
             ProbeCount++;
             return ExtractorAvailability.Available();
         }
+
+        /// <inheritdoc />
+        public ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context) =>
+            ValueTask.FromResult(ExtractionOutcome.Produced);
+    }
+
+    /// <summary>
+    ///     An extractor whose availability probe returns null, which the registry must contain.
+    /// </summary>
+    private sealed class NullProbeExtractor : IDocumentExtractor
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="NullProbeExtractor"/> class.
+        /// </summary>
+        /// <param name="id">The extractor identifier, which may be null to exercise validation.</param>
+        public NullProbeExtractor(string id) => Id = id;
+
+        /// <inheritdoc />
+        public string Id { get; }
+
+        /// <inheritdoc />
+        public string DisplayName => "null probe";
+
+        /// <inheritdoc />
+        public IReadOnlyCollection<DocumentFormat> SupportedFormats => [DocumentFormat.Text];
+
+        /// <inheritdoc />
+        public int Priority => 0;
+
+        /// <inheritdoc />
+        public ExtractorAvailability ProbeAvailability() => null!;
 
         /// <inheritdoc />
         public ValueTask<ExtractionOutcome> ExtractAsync(DocumentSource source, IExtractionContext context) =>

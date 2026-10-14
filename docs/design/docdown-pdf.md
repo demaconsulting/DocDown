@@ -22,7 +22,7 @@ The system is flat: it has no subsystems. Five units divide the work.
   places image links under the page they came from, and counts the headings and paragraphs it wrote.
 - **PdfImageExtractor** writes embedded images through the sink, chooses whether each image is
   passed through or decoded to PNG, counts every image found before any decision is taken, and
-  emits plain notes for undecodable images, size-limit skips, and PNG requests it could not honor.
+  emits plain notes for undecodable images and size-limit skips.
 - **PdfAnnotationExtractor** reads the reviewer commentary a PDF carries as annotations, applies a
   documented list of annotation types that count as commentary, skips annotations carrying no text,
   resolves each remark's author from the annotation dictionary, and returns the author, body, and
@@ -98,10 +98,12 @@ separate `DemaConsulting.DocDown.Pdf.Rendering` package.
    emits a plain note when an attempted image step could not complete.
 5. `PdfTextExtractor` renders the selected pages to markdown, emits page markers, places image
    links, and returns the heading and paragraph counts from the same rendering pass.
-6. `PdfDocumentExtractor` writes the markdown and reports the content inventory.
-7. It asks `PdfAnnotationExtractor` to read the same selected pages' annotations, reports each
-   remark as a review comment located by its page, and returns `ExtractionOutcome.Produced`. Core
-   writes `review-comments.md` only when at least one remark was reported.
+6. `PdfDocumentExtractor` writes the markdown, then asks `PdfAnnotationExtractor` to read the same
+   selected pages' annotations once, and reports the content inventory, including the comment
+   counts, from the results already gathered.
+7. It reports each remark as a review comment located by its page and returns
+   `ExtractionOutcome.Produced`. Core writes `review-comments.md` only when at least one remark was
+   reported.
 8. If the parser faults while opening or reading the document, Core converts that fault into
    `ExtractionOutcome.Unreadable` and writes the standard summary and manifest layout.
 

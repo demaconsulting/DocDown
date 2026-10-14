@@ -19,9 +19,8 @@ namespace DemaConsulting.DocDown.PowerPoint.OpenXml;
 ///         invisible to any renderer. This backend therefore always extracts, from the file itself,
 ///         the text of every slide, the slide title where one exists, the speaker notes, the deck's
 ///         embedded images, and the slide order. It is 100% managed and deliberately does not render
-///         slide images: rasterizing a slide needs a renderer this package does not ship in managed
-///         code. Rendering is delivered by the separate COM backend when Microsoft PowerPoint is
-///         available.
+///         slide images: rasterizing a slide needs a renderer this subsystem does not ship in managed
+///         code. Rendering is delivered by the separate PowerPoint.Rendering package.
 ///     </para>
 ///     <para>
 ///         Because nothing about this backend is environment-dependent, <see cref="ProbeAvailability"/>
@@ -65,7 +64,7 @@ public sealed class PowerPointOpenXmlExtractor : IDocumentExtractor, ISelfValida
     /// <inheritdoc />
     /// <remarks>
     ///     Always available, without rendered pages. The Open XML SDK is a managed assembly that
-    ///     ships inside this package. Performs no I/O and cannot throw.
+    ///     ships inside this subsystem. Performs no I/O and cannot throw.
     /// </remarks>
     public ExtractorAvailability ProbeAvailability() => ExtractorAvailability.Available();
 
@@ -102,14 +101,14 @@ public sealed class PowerPointOpenXmlExtractor : IDocumentExtractor, ISelfValida
     ///     read the deck authored in Microsoft PowerPoint and embedded here, and that slide
     ///     rendering is genuinely not provided rather
     ///     than merely untested. The rendering case reports as skipped with a reason, because a
-    ///     behavior this package's managed backend does not provide must not be reported as a
+    ///     behavior this subsystem's managed backend does not provide must not be reported as a
     ///     failure.
     /// </remarks>
     public IEnumerable<SelfTestCase> GetSelfTestCases() =>
     [
         new SelfTestCase("powerpoint.openxml.parseRoundTrip", Id, RunParseRoundTrip),
         new SelfTestCase("powerpoint.pageRendering", Id, static _ => SelfTestResult.Skipped(
-            "This extractor does not render slide images; slide rendering needs the COM backend."))
+            "This extractor does not render slide images; slide rendering needs the PowerPoint.Rendering package."))
     ];
 
     /// <summary>

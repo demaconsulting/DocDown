@@ -34,7 +34,9 @@ path.
 Per IEC 62304 §5.5.2, a `WordContentEmitter` unit test run passes when the emitted content reaches
 the sink as one continuous flow; when the content inventory reports looked-for
 counts, including zero text blocks for an empty document and distinct comment-author counts for
-reviewed drafts; when every comment on the model reaches the sink as a review comment carrying its
+reviewed drafts, with an unattributed comment counted as a comment but not as an author; when an image
+reference yields a hint claiming a passthrough with unknown pixel dimensions; when every comment on the
+model reaches the sink as a review comment carrying its
 author, body, and location hint, and reaches the content flow not at all; when a comment carrying no
 text produces neither a review comment nor an exception, and a picture-only comment produces a
 short note; when document metadata is
@@ -99,6 +101,21 @@ therefore do not appear in `review-comments.md`. A comment nobody typed into rai
 nothing was lost there; a drawn remark did carry something this backend cannot render, which is the
 narrow attempted-and-incomplete case a note exists for. Evidence for
 `DocDownWord-Markdown-WordContentEmitter-ReportsImageOnlyCommentsNote`.
+
+#### An unattributed comment is not counted as an author
+
+**Test**: `WordContentEmitter_Emit_UnattributedComment_NotCountedAsAuthor`
+
+Proves a model with one attributed and one unattributed comment reports two comments but one distinct comment
+author, because the document names nobody for the second. Supporting evidence for the content inventory.
+
+#### An image hint claims a passthrough with unknown dimensions
+
+**Test**: `WordContentEmitter_HintFor_ImageRef_ClaimsPassthroughWithUnknownDimensions`
+
+Proves the hint built for an image reference carries the passthrough transform, null width and height
+(an Open XML image part holds a complete file and `wp:extent` is a display size, not a pixel count), and the
+reference's source path and description. Supporting evidence for the image handoff to the sink.
 
 #### Charts are surfaced as a short note
 

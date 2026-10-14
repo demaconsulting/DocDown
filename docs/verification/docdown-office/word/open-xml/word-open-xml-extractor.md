@@ -30,8 +30,10 @@ priority, supported format, and managed availability are reported correctly; whe
 written unchanged; when a merged-cell document produces a table-flattening note; when an empty
 document produces zero text blocks in the content inventory and no separate note; when an
 image-bearing document's inline links resolve on disk; when a header logo identical to a body image
-reuses one written image path; and when the extractor contributes exactly two self-test cases with
-one passing round trip and one skipped page-rendering case.
+reuses one written image path; when null arguments are rejected and a cancelled token stops the
+extraction; when a package without a main part is reported unreadable; when a footnote and a page break
+reach the content; and when the extractor contributes exactly two self-test cases with one passing round trip and
+one skipped page-rendering case.
 
 ### Test Scenarios
 
@@ -41,7 +43,9 @@ one passing round trip and one skipped page-rendering case.
 
 Proves the identity is `word-openxml`, the priority is 10, `.docx` is supported, and the
 availability report states the extractor is available while page rendering is not provided here.
-Evidence for `DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsManagedAvailability`.
+Evidence for `DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsSupportedFormatAndPriority`,
+`DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsManagedAvailability`, and
+`DocDownWord-OpenXml-WordOpenXmlExtractor-ReportsPageRenderingNotProvided`.
 
 #### A vector image is written as-is
 
@@ -78,8 +82,20 @@ backend writes. Evidence for `DocDownWord-Markdown-WordContentEmitter-EmitsModel
 
 **Test**: `WordOpenXmlReader_Read_HeaderWithLogo_ReusesDeduplicatedImagePath`
 
-Proves a logo that appears in both the header and the body is written once rather than twice.
-Supporting evidence for the shared image-provenance path.
+Proves a logo that appears in both the header and the body is written once rather than twice, by
+extracting a document end to end; the single stored file is the result of Core's content-keyed
+image deduplication, not of reader-level logic. The test is named for the reader but lives in the
+extractor's test file and drives the whole engine. Evidence for
+`DocDownWord-OpenXml-WordOpenXmlReader-ReusesDeduplicatedImagePath`.
+
+#### A page-rendering request is reported with a reasoned note
+
+**Test**: `WordOpenXmlExtractor_Extract_PagesRequested_ReportsReasonedNote`
+
+Proves a run with page rendering requested still returns `Produced`, reports notes stating that page
+rendering was requested and that pages were not rendered, and keeps installation advice out of the
+summary. Supporting evidence for the extractor's statement that page rendering is not provided; it is
+not linked to a requirement.
 
 #### Self-test cases run and report honestly
 
@@ -87,4 +103,34 @@ Supporting evidence for the shared image-provenance path.
 
 Proves the backend contributes exactly two cases under its category, that one result is passed and
 one is skipped, and that no case fails. Evidence for
-`DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests`.
+`DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSelfTests` (the passing round trip) and
+`DocDownWord-OpenXml-WordOpenXmlExtractor-ContributesSkippedPageRenderingSelfTest` (the skipped case).
+
+#### Null arguments are rejected
+
+**Test**: `WordOpenXmlExtractor_Extract_NullArguments_Throw`
+
+Proves a null source or context makes `Extract` throw `ArgumentNullException`. Evidence for
+`DocDownWord-ArgumentAndCancellationHandling`.
+
+#### A cancelled token stops the extraction
+
+**Test**: `WordOpenXmlExtractor_Extract_CancelledToken_ThrowsOperationCanceled`
+
+Proves an already-cancelled token makes `Extract` throw `OperationCanceledException`. Evidence for
+`DocDownWord-CancellationHandling`.
+
+#### A package without a main part is unreadable
+
+**Test**: `WordOpenXmlExtractor_Extract_MissingMainPart_IsUnreadable`
+
+Proves a zip package lacking a main document part is reported `Unreadable` rather than surfacing a raw
+parser exception. Evidence for `DocDownWord-MissingMainPart`.
+
+#### Footnotes and page breaks reach the content
+
+**Tests**: `WordOpenXmlExtractor_Extract_Footnote_WritesMarkerAndFootnotesSection`,
+`WordOpenXmlExtractor_Extract_PageBreak_WritesHorizontalRule`
+
+Prove a footnote is written as an inline marker with a Footnotes section and a page break is written as
+a horizontal rule. Evidence for `DocDownWord-Footnotes` and `DocDownWord-BreakRendering`.

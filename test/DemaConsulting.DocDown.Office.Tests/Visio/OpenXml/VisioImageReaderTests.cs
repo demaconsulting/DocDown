@@ -63,6 +63,54 @@ public class VisioImageReaderTests
     }
 
     /// <summary>
+    ///     Proves a media part shared by two pages is yielded once, with both pages recorded, and is
+    ///     linked from each page. Deduplication is by package part, not by content bytes.
+    /// </summary>
+    [Fact]
+    public void VisioImageReader_Collect_SharedMediaPartAcrossPages_YieldedOnceWithBothPages()
+    {
+        using var stream = BuildSharedImagePackage();
+        using var package = Package.Open(stream, FileMode.Open, FileAccess.Read);
+
+        var collection = VisioImageReader.Collect(
+            package,
+            new Dictionary<string, int> { [PageContentsUri] = 1, ["/visio/pages/page2.xml"] = 2 });
+
+        // One part, one image, associated with every page that references it
+        var image = Assert.Single(collection.Images);
+        Assert.Equal([1, 2], image.SourcePages);
+        Assert.False(image.ReferencedByTemplate);
+
+        // Each page still links the shared image inline
+        Assert.Equal(image.SourceRef, Assert.Single(collection.PageImageRefs[1]).SourceRef);
+        Assert.Equal(image.SourceRef, Assert.Single(collection.PageImageRefs[2]).SourceRef);
+    }
+
+    /// <summary>
+    ///     Builds an in-memory Visio-shaped package whose two pages both reference one media part.
+    /// </summary>
+    /// <returns>A seekable stream over the package bytes, positioned at the start.</returns>
+    private static MemoryStream BuildSharedImagePackage()
+    {
+        var stream = new MemoryStream();
+        using (var package = Package.Open(stream, FileMode.Create, FileAccess.ReadWrite))
+        {
+            var media = package.CreatePart(new Uri("/visio/media/image1.png", UriKind.Relative), "image/png");
+            WriteBytes(media, [1, 2, 3, 4]);
+
+            foreach (var uri in new[] { PageContentsUri, "/visio/pages/page2.xml" })
+            {
+                var page = package.CreatePart(new Uri(uri, UriKind.Relative), "application/vnd.ms-visio.page+xml");
+                WriteBytes(page, "<xml/>"u8.ToArray());
+                page.CreateRelationship(media.Uri, TargetMode.Internal, ImageRelationshipType);
+            }
+        }
+
+        stream.Position = 0;
+        return stream;
+    }
+
+    /// <summary>
     ///     Builds an in-memory Visio-shaped package with a page that references an embedded PNG under
     ///     <c>visio/media</c> and a package thumbnail under <c>docProps</c>.
     /// </summary>

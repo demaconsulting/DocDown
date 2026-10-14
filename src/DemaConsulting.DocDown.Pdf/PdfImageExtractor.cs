@@ -35,9 +35,8 @@ namespace DemaConsulting.DocDown.Pdf;
 ///         file against the embedded source bytes, one that is falsifiable rather than decorative. A
 ///         <c>JPXDecode</c> stream is a JPEG 2000 codestream; this library takes no JPEG 2000
 ///         decoder, so the bytes are written unchanged as <c>.jp2</c> and likewise labeled a
-///         passthrough. When the caller explicitly requests PNG, any image that must remain in its
-///         source encoding is called out with a plain note rather than hidden behind a mislabeled
-///         file.
+///         passthrough. Each passthrough image keeps its source encoding and is labeled as such, never
+///         hidden behind a mislabeled file.
 ///     </para>
 ///     <para>
 ///         Encodings that are neither container nor decodable — <c>JBIG2Decode</c> and, where the
@@ -102,7 +101,7 @@ internal static class PdfImageExtractor
     private const string DctDecodeFilter = "DCTDecode";
 
     /// <summary>The PDF filter name whose stored stream is a JPEG 2000 codestream.</summary>
-    /// <remarks>Named once so the passthrough decision and the forced-PNG note agree.</remarks>
+    /// <remarks>Named once so the passthrough decision and the filter classification agree.</remarks>
     private const string JpxDecodeFilter = "JPXDecode";
 
     /// <summary>The name used for an image whose dictionary declares no filter at all.</summary>
@@ -187,8 +186,7 @@ internal static class PdfImageExtractor
     /// <remarks>
     ///     Applies the size limits first — a skip for size is a different fact from a decode failure
     ///     and must not be conflated with one — then classifies the filter and chooses the
-    ///     encoding. A written image may still defeat a forced-PNG request, which is recorded as a
-    ///     note rather than by mislabeling the written file. Side effect: writes through the sink and
+    ///     encoding. Side effect: writes through the sink and
     ///     mutates <paramref name="accounting"/>.
     /// </remarks>
     private static async ValueTask<PdfExtractedImage?> WriteImageAsync(

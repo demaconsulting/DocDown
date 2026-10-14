@@ -227,7 +227,7 @@ internal static class WordContentEmitter
     /// <remarks>
     ///     When images are suppressed nothing is written and Core records the suppression itself. A
     ///     force-PNG request is recorded as a note when files were written in their source encoding,
-    ///     because this package ships no imaging stack and therefore cannot re-encode them. Side
+    ///     because this subsystem ships no imaging stack and therefore cannot re-encode them. Side
     ///     effect: writes images and records reports on the sink.
     /// </remarks>
     private static async ValueTask<Dictionary<string, string>> WriteImagesAsync(
@@ -248,8 +248,6 @@ internal static class WordContentEmitter
             return paths;
         }
 
-        var writtenPaths = new HashSet<string>(StringComparer.Ordinal);
-
         foreach (var image in images)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -265,8 +263,6 @@ internal static class WordContentEmitter
             {
                 paths[sourceRef] = path;
             }
-
-            writtenPaths.Add(path);
         }
 
         return paths;
@@ -386,8 +382,10 @@ internal static class WordContentEmitter
     private static void ReportChartsNote(IExtractionSink sink, int count)
     {
         var counted = count.ToString(CultureInfo.InvariantCulture);
+        var noun = count == 1 ? "chart" : "charts";
+        var possessive = count == 1 ? "its title and plotted values do" : "their titles and plotted values do";
         sink.ReportNote(new ExtractionNote(
-            $"The document embeds {counted} charts, but this extractor does not read chart parts, so their titles and plotted values do not appear in the extracted content."));
+            $"The document embeds {counted} {noun}, but this extractor does not read chart parts, so {possessive} not appear in the extracted content."));
     }
 
     /// <summary>

@@ -7,7 +7,7 @@ using DemaConsulting.DocDown.TestSupport;
 namespace DemaConsulting.DocDown.Office.Tests.PowerPoint;
 
 /// <summary>
-///     System-level integration tests for the DocDown PowerPoint extraction system, driven end to
+///     Subsystem-level integration tests for the DocDown PowerPoint extraction subsystem, driven end to
 ///     end through <see cref="DocDownEngine"/> against decks generated at test time.
 /// </summary>
 /// <remarks>
@@ -28,9 +28,12 @@ public class DocDownPowerPointTests
     public async Task DocDownPowerPoint_Extract_Pptx_SelectsOpenXml()
     {
         using var temp = new TempScratch();
-        var (_, result) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithNotes(), FixedOptions());
+        var (scratch, result) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithNotes(), FixedOptions());
 
         Assert.Equal("powerpoint-openxml", result.SelectedExtractor?.Id);
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Empty(result.Notes);
+        ContractAssert.LayoutPresent(scratch);
     }
 
     /// <summary>
@@ -48,6 +51,8 @@ public class DocDownPowerPointTests
         Assert.Single(images);
         Assert.EndsWith(".png", images[0], StringComparison.Ordinal);
         Assert.Empty(result.Notes);
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        Assert.Contains("images/" + Path.GetFileName(images[0]), content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
 
@@ -147,6 +152,48 @@ public class DocDownPowerPointTests
     }
 
     /// <summary>
+    ///     Proves a deck's legacy review comments reach the review-comments artifact, qualified by
+    ///     slide, and are counted in the content outline, end to end.
+    /// </summary>
+    [Fact]
+    public async Task DocDownPowerPoint_Extract_DeckWithComment_WritesReviewComments()
+    {
+        using var temp = new TempScratch();
+        var (scratch, result) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithComment(), FixedOptions());
+
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        var reviewComments = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        Assert.Contains("Dana Reyes", reviewComments, StringComparison.Ordinal);
+        Assert.Contains("Slide 1", reviewComments, StringComparison.Ordinal);
+        Assert.Contains("Tighten this claim", reviewComments, StringComparison.Ordinal);
+
+        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        Assert.Contains("1 comment", summary, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
+    ///     Proves a deck whose only comments are modern persona comments records an extraction note
+    ///     naming the unread comments, rather than reading as a deck nobody commented on.
+    /// </summary>
+    [Fact]
+    public async Task DocDownPowerPoint_Extract_DeckWithModernComments_ReportsUnreadCommentsNote()
+    {
+        using var temp = new TempScratch();
+        var (scratch, result) = await ExtractAsync(
+            temp, "deck.pptx", PptxFixtures.DeckWithModernComments(), FixedOptions());
+
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        var note = Assert.Single(result.Notes);
+        Assert.Contains("1 modern", note.Message, StringComparison.Ordinal);
+        Assert.Contains("does not read", note.Message, StringComparison.Ordinal);
+
+        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        Assert.Contains("modern (persona-based, cloud-synced) comment", summary, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
     ///     Proves a legacy binary deck fails as unreadable with a structured explanation that states
     ///     plainly the format is unsupported and never instructs an installation.
     /// </summary>
@@ -177,7 +224,7 @@ public class DocDownPowerPointTests
     }
 
     /// <summary>
-    ///     Extracts a fixture through the full PowerPoint system and returns the folder and result.
+    ///     Extracts a fixture through the full PowerPoint subsystem and returns the folder and result.
     /// </summary>
     private static async Task<(string Folder, ExtractionResult Result)> ExtractAsync(
         TempScratch temp, string name, byte[] bytes, ExtractionOptions options)

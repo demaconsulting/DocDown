@@ -48,3 +48,26 @@ sections:
                   reader still needs the result to state that absence honestly.
                 tests:
                   - ContentWriter_WriteAsync_EmptyFlow_WritesFileButReportsAbsent
+
+              - id: DocDownCore-Output-ContentWriter-PartLinksRewritten
+                title: >-
+                  ContentWriter shall rewrite image and page links inside part files so they resolve
+                  from the part's own folder, and leave external, anchor, and already-relative links alone.
+                justification: |
+                  Backends write links relative to the output root. Part files live in a subfolder, so
+                  the links must be rewritten or they point at nothing.
+                tests:
+                  - ContentWriter_WriteAsync_PartImageLink_ResolvesOnDiskInIndexLayout
+                  - ContentWriter_WriteAsync_SingleFlowImageLink_ResolvesFromRootUnchanged
+                  - PartResourceLinkRewriter_Rewrite_ImageLinkInFlatPart_PrefixesOneParent
+                  - PartResourceLinkRewriter_Rewrite_AltTextWithEscapedBracket_PrefixesOneParent
+                  - PartResourceLinkRewriter_Rewrite_PageLinkPlainForm_PrefixesOneParent
+                  - PartResourceLinkRewriter_Rewrite_ExternalUrl_LeftUntouched
+                  - PartResourceLinkRewriter_Rewrite_MailtoLink_LeftUntouched
+                  - PartResourceLinkRewriter_Rewrite_AnchorLink_LeftUntouched
+                  - PartResourceLinkRewriter_Rewrite_AlreadyRelativeTarget_LeftUntouched
+                  - PartResourceLinkRewriter_Rewrite_RootLevelPart_ReturnsVerbatim
+                  - PartResourceLinkRewriter_Rewrite_NestedPart_PrefixesPerLevel
+                  - PartResourceLinkRewriter_Rewrite_MultipleLinks_RewritesEach
+                  - PartResourceLinkRewriter_Rewrite_NullMarkdown_ThrowsArgumentNullException
+                  - PartResourceLinkRewriter_Rewrite_NullPartPath_ThrowsArgumentNullException

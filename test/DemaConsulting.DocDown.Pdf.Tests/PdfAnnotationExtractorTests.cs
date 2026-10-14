@@ -298,6 +298,28 @@ public class PdfAnnotationExtractorTests
     }
 
     /// <summary>
+    ///     Proves a page whose annotation dictionary defeats the parser is named in a note.
+    /// </summary>
+    /// <remarks>
+    ///     The annotation's rectangle holds non-numeric entries, which the parser rejects while the
+    ///     page's annotations are walked, so the fault is contained to the page and reported as data.
+    /// </remarks>
+    [Fact]
+    public void PdfAnnotationExtractor_Extract_UnreadableAnnotation_RecordsNoteNamingPage()
+    {
+        // Arrange: a one-page document whose only annotation carries a malformed rectangle
+        var sink = new RecordingSink();
+        var bytes = PdfFixtures.WithRawAnnotation("<< /Type /Annot /Subtype /Text /Rect [a b c d] /Contents (x) >>");
+
+        // Act: read its annotations
+        var comments = Extract(bytes, sink);
+
+        // Assert: no comment is invented, and one note states which page could not be read
+        Assert.Empty(comments);
+        var note = Assert.Single(sink.Notes);
+        Assert.Contains("Annotations could not be read on 1 of 1", note.Message, StringComparison.Ordinal);
+    }
+    /// <summary>
     ///     Proves the extractor rejects a missing page list rather than reporting an empty result.
     /// </summary>
     [Fact]

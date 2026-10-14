@@ -6,7 +6,7 @@ using DemaConsulting.DocDown.TestSupport;
 namespace DemaConsulting.DocDown.Office.Tests.Excel;
 
 /// <summary>
-///     System-level integration tests for the DocDown Excel extraction system, driven end to end
+///     Subsystem-level integration tests for the DocDown Excel extraction subsystem, driven end to end
 ///     through <see cref="DocDownEngine"/> against workbooks generated at test time.
 /// </summary>
 /// <remarks>
@@ -168,7 +168,7 @@ public class DocDownExcelTests
     }
 
     /// <summary>
-    ///     Extracts a fixture through the full Excel system and returns the folder and result.
+    ///     Extracts a fixture through the full Excel subsystem and returns the folder and result.
     /// </summary>
     private static async Task<(string Folder, ExtractionResult Result)> ExtractAsync(
         TempScratch temp, string name, byte[] bytes, ExtractionOptions options)

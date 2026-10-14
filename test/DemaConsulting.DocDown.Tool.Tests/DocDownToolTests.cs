@@ -100,11 +100,8 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
     [Fact]
     public void DocDownTool_Build_DefaultEngine_RegistersBackendsExplicitly()
     {
-        // Arrange & Act: the same one-liner the tool uses to build its engine
-        var engine = new DocDownBuilder()
-            .AddPdf().AddPdfRendering().AddWord().AddVisio().AddPowerPoint().AddExcel().AddPowerPointRendering()
-            .AddVisioRendering()
-            .Build();
+        // Arrange & Act: build the engine through the tool's own entry point, so drift cannot go unseen
+        var engine = Program.BuildEngine();
         var backends = engine.GetBackends();
 
         // Assert: every backend package's extractors are registered explicitly

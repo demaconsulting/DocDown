@@ -67,9 +67,16 @@ internal static class VisioPackageBuilder
     ///     The masters to declare in <c>visio/masters/masters.xml</c>, or <see langword="null"/> for
     ///     a drawing that declares no masters part at all — which a real drawing may legitimately do.
     /// </param>
+    /// <param name="faceNames">
+    ///     The face-name id-to-name table to declare in the document part, or <see langword="null"/>
+    ///     for a drawing with no table; a character run's numeric <c>Font</c> value refers into it.
+    /// </param>
     /// <returns>The bytes of a well-formed Visio Open Packaging drawing.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="pages"/> is <see langword="null"/>.</exception>
-    public static byte[] Build(IReadOnlyList<VisioBuildPage> pages, IReadOnlyList<VisioBuildMaster>? masters = null)
+    public static byte[] Build(
+        IReadOnlyList<VisioBuildPage> pages,
+        IReadOnlyList<VisioBuildMaster>? masters = null,
+        IReadOnlyDictionary<string, string>? faceNames = null)
     {
         ArgumentNullException.ThrowIfNull(pages);
 
@@ -77,7 +84,18 @@ internal static class VisioPackageBuilder
         using (var package = Package.Open(stream, FileMode.Create))
         {
             var documentPart = package.CreatePart(new Uri("/visio/document.xml", UriKind.Relative), DocumentContentType);
-            WriteXml(documentPart, new XDocument(new XElement(VisioNamespace + "VisioDocument")));
+            var documentRoot = new XElement(VisioNamespace + "VisioDocument");
+            if (faceNames is { Count: > 0 })
+            {
+                documentRoot.Add(new XElement(
+                    VisioNamespace + "FaceNames",
+                    faceNames.Select(face => new XElement(
+                        VisioNamespace + "FaceName",
+                        new XAttribute("ID", face.Key),
+                        new XAttribute("Name", face.Value)))));
+            }
+
+            WriteXml(documentPart, new XDocument(documentRoot));
             package.CreateRelationship(documentPart.Uri, TargetMode.Internal, DocumentRelationship, "rId1");
 
             // Write the masters collection only when the caller declares masters, so the no-masters

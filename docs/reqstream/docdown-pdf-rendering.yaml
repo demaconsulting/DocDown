@@ -61,6 +61,8 @@ sections:
           - DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-ReturnsBuilderForChaining
           - DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-RejectsNullBuilder
           - DocDownPdfRendering-PdfRenderingDocDownBuilderExtensions-NoCanvasNetTypeOnSurface
+          - DocDownPdfRendering-PdfPageRenderingExtractor-DeclaresStableIdentity
+          - DocDownPdfRendering-PdfPageRenderingExtractor-RejectsNullRenderFunction
         tests:
           - AddPdfRendering_OnBuilder_RegistersRenderingExtractor
 
@@ -149,6 +151,33 @@ sections:
           - DocDownPdfRendering-PdfPageRenderingExtractor-ReportsPageFailuresAsNotes
         tests:
           - PdfPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsNoteWithoutThrowing
+
+      - id: DocDownPdfRendering-PageCountFailureReportedAsNote
+        title: >-
+          The system shall report, as a single plain note, when the page count cannot be determined,
+          and keep the delegated content.
+        tags: [system]
+        justification: |
+          A fault while counting pages must cost only the page images. The text, images, and metadata
+          already produced stand, and the note states what is missing.
+        children:
+          - DocDownPdfRendering-PdfPageRenderingExtractor-ReportsPageCountFailureAsNote
+        tests:
+          - PdfPageRenderingExtractor_ExtractAsync_PageCountFaults_ReportsNoteAndKeepsDelegatedContent
+
+      - id: DocDownPdfRendering-UnreadableDocumentRendersNoPages
+        title: >-
+          The system shall render no page and report an unreadable outcome when the managed extraction
+          cannot read the document.
+        tags: [system]
+        justification: |
+          An unreadable document has no pages to rasterize. The delegated fault reaches Core unchanged
+          so the structured failure and the full output layout are produced exactly as for the managed
+          backend.
+        children:
+          - DocDownPdfRendering-PdfPageRenderingExtractor-PropagatesUnreadableDocument
+        tests:
+          - PdfPageRenderingExtractor_ExtractAsync_MalformedDocument_ReportsUnreadableWithoutPages
 
       - id: DocDownPdfRendering-EmptySelectionReportedAsNote
         title: >-

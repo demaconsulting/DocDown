@@ -7,25 +7,26 @@ and the image, chart, and drawing-text readers that resolve the drawing layer.
 ### Verification Approach
 
 The OpenXml subsystem is verified through unit tests in `OpenXml/ExcelOpenXmlExtractorTests.cs`,
-`OpenXml/ExcelOpenXmlReaderTests.cs`, and `OpenXml/ExcelChartReaderTests.cs`, plus the system-level
+`OpenXml/ExcelOpenXmlReaderTests.cs`, `OpenXml/ExcelOpenXmlImageReaderTests.cs`,
+`OpenXml/ExcelChartReaderTests.cs`, and `OpenXml/ExcelDrawingTextReaderTests.cs`, plus the subsystem-level
 scenarios in `DocDownExcelTests.cs`, all in `DemaConsulting.DocDown.Office.Tests`.
 
-The reader units are exercised against **real generated workbooks** from `TestData/XlsxFixtures.cs`,
-not a simulation, because their contract is the faithful translation of a genuine `.xlsx` into the
-model: verbatim cell values, formulas, sheet identity, embedded images and their sheet association, and
-charts' cached series. The extractor surface — its identity, priority, supported format,
-page-rendering flag, and unconditional probe — is asserted directly, and its self-test cases are run to
-prove the round-trip case passes and the page-rendering case skips. The image reader and the
-drawing-text reader carry no dedicated test class; their behavior is proved through the reader that
-drives them and the emitter scenarios that render their output, because their observable contract is
-what reaches the model and the sink.
+The reader units are exercised against workbooks that `TestData/XlsxFixtures.cs` builds at test time with
+the Open XML SDK, not a simulation, because their contract is the faithful translation of an `.xlsx`
+package into the model: verbatim cell values, formulas, sheet identity, embedded images and their sheet
+association, shape text, and charts' cached series. The packages, parts, and relationships are real SDK
+output, but the content of each chart part is XML written by hand in the fixture, not a part a
+spreadsheet application generated. The chart parsing rules are also driven with hand-written chart XML and
+no package around it. The extractor surface — its identity, priority, supported format, page-rendering
+flag, and unconditional probe — is asserted directly, and its self-test cases are run to prove the
+round-trip case passes and the page-rendering case skips.
 
 ### Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
 - **Inputs**: SpreadsheetML workbooks generated at test time by `TestData/XlsxFixtures.cs`; every
   value, sheet name, chart series, and image in them is synthetic
-- **Filesystem**: a per-test `TempScratch` folder for the system-level scenarios; none for the reader
+- **Filesystem**: a per-test `TempScratch` folder for the subsystem-level scenarios; none for the reader
   scenarios, which read a generated workbook from memory
 - **Mocking**: none; the SDK is exercised against real workbooks and the sink is Core's real writer
   through the engine
@@ -39,11 +40,13 @@ the probe reports available unconditionally with no unavailable reason and no re
 self-tests report a passing round trip and a skipped page-rendering case; when the reader preserves
 every cell's value verbatim at full length and precision, keeps a formula alongside its value and
 address, returns the worksheets in order with their names, and yields an empty sheet as a sheet with no
-cells; when the image reader yields an embedded image and records its sheet association; and when the
+cells; when the image reader yields an embedded image, once even when two sheets share its part, and records its
+sheet association; when the drawing-text reader reads shape text in drawing order; and when the
 chart reader recovers a chart's titles, axes, and cached series, preserves sparse indices, reads every
 series, keeps a series reference when the cache is missing, and reports an automatic title as
 generated. Any wrong surface field, truncated value, dropped formula, lost sheet association, or
-misread chart cache is a failure.
+misread chart cache is a failure. A chart part that cannot be parsed or that uses the extended chart format
+must be kept with a stated reason rather than dropped or thrown.
 
 ### Test Scenarios
 

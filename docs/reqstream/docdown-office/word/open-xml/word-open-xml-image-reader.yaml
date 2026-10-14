@@ -1,9 +1,9 @@
 ---
 # Software Unit Requirements for WordOpenXmlImageReader
 #
-# WordOpenXmlImageReader resolves a document's embedded image parts and yields each one's bytes
-# with an honest transform hint: a passthrough transform, unstated pixel dimensions, and the
-# part's own media type.
+# WordOpenXmlImageReader resolves a drawing's embedded image part to a reference carrying the
+# part's complete bytes, its own media type, its source part URI, and the selected naming text. The
+# passthrough image hint built from that reference belongs to WordContentEmitter.
 
 sections:
   - title: DocDownWord Requirements
@@ -14,23 +14,24 @@ sections:
             requirements:
               - id: DocDownWord-OpenXml-WordOpenXmlImageReader-YieldsPassthroughImages
                 title: >-
-                  WordOpenXmlImageReader shall yield an embedded image's bytes unchanged with a
-                  passthrough transform hint.
+                  WordOpenXmlImageReader shall resolve an embedded image to its complete part bytes,
+                  unchanged, so the image can be written with a passthrough transform.
                 justification: |
-                  An Open XML image part is already a complete image file, so the honest transform
-                  is to pass the bytes through unchanged. Marking the hint passthrough records that
-                  no re-encoding took place.
+                  An Open XML image part is already a complete image file, so the honest result is
+                  its bytes unchanged. The reference never decodes or re-encodes them, which is what
+                  lets the emitter declare the passthrough transform truthfully.
                 tests:
                   - WordOpenXmlImageReader_Read_Png_YieldsPassthroughWithNullDimensions
 
               - id: DocDownWord-OpenXml-WordOpenXmlImageReader-RecordsPassthroughProvenance
                 title: >-
-                  WordOpenXmlImageReader shall leave the pixel dimensions unstated because the stored
-                  extent is a display size.
+                  WordOpenXmlImageReader shall return a reference that carries no pixel dimensions
+                  because the stored extent is a display size.
                 justification: |
                   A drawing's stored extent is a display size in EMUs, not a pixel count, so
-                  reporting it as pixel dimensions would be false. Leaving the dimensions unstated
-                  keeps the machine-readable record true to what the document actually declares.
+                  reporting it as pixel dimensions would be false. The reference therefore carries
+                  only bytes, media type, source URI, and naming text, which keeps the
+                  machine-readable record true to what the document actually declares.
                 tests:
                   - WordOpenXmlImageReader_Read_Png_YieldsPassthroughWithNullDimensions
 
@@ -41,3 +42,35 @@ sections:
                   type. Reporting it truthfully preserves the document's stored image format.
                 tests:
                   - WordOpenXmlImageReader_Read_Emf_ReportsVectorMediaType
+
+              - id: DocDownWord-OpenXml-WordOpenXmlImageReader-ResolvesPartScopedImages
+                title: >-
+                  WordOpenXmlImageReader shall resolve an image relationship against the part that owns
+                  it, including a header part.
+                justification: |
+                  An image in a header is related to the header part, not the main part. Resolving
+                  against the owning part is what yields the image's bytes for every part an image can
+                  come from.
+                tests:
+                  - WordOpenXmlImageReader_Resolve_HeaderScopedImage_ResolvesAgainstHeaderPart
+
+              - id: DocDownWord-OpenXml-WordOpenXmlImageReader-IgnoresInvalidRelationships
+                title: >-
+                  WordOpenXmlImageReader shall resolve a missing relationship id, or one naming a
+                  non-image part, to no reference.
+                justification: |
+                  A dangling or non-image relationship must not abort the extraction or produce a bogus
+                  image, so it resolves to nothing and the rest of the document stays readable.
+                tests:
+                  - WordOpenXmlImageReader_Resolve_MissingOrNonImageRelationship_ReturnsNull
+
+              - id: DocDownWord-OpenXml-WordOpenXmlImageReader-RanksNamingCandidates
+                title: >-
+                  WordOpenXmlImageReader shall rank naming candidates and assert a candidate as alt text
+                  only when it is an authored description.
+                justification: |
+                  A descriptive candidate outranks the media name, while a contextual candidate such as
+                  a heading may name the file but must not be asserted as a description the document
+                  never gave.
+                tests:
+                  - WordOpenXmlImageReader_Resolve_Candidates_RankAndGateAltText

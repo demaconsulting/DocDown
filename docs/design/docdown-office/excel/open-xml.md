@@ -32,7 +32,7 @@ of a worksheet's drawing layer — the image reader (`ExcelOpenXmlImageReader`),
 `DisplayName = "Excel (Open XML SDK)"`, `SupportedFormats = [Xlsx]`, and `Priority = 10`.
 `PageRenderingApplicable` is `false` because a workbook is non-paginated. `ProbeAvailability` returns
 `ExtractorAvailability.Available()` unconditionally, with no I/O: there is nothing to probe because the
-SDK is a managed assembly shipped inside this package.
+SDK is a managed assembly shipped inside this subsystem.
 
 **The self-test set.** Two cases are exposed: an `excel.openxml.parseRoundTrip` case that reads the
 embedded workbook authored in Microsoft Excel, reads it with the reader, and
@@ -65,16 +65,22 @@ DocDown could not finish reading it.
 
 **The drawing-text reader.** `ExcelDrawingTextReader` reads the text of every shape in a worksheet's
 drawing, in drawing order, flattening group membership because a grouped callout is read no differently
-by a person looking at the sheet, joining a shape's paragraphs into one readable annotation, and
-skipping a shape that carries no text.
+by a person looking at the sheet, joining a shape's paragraphs into one readable annotation, reading a line
+break as a space, and skipping a shape that carries no text.
 
 **Adverse cases.** The reader translates only the conditions it can recognize better than the SDK — a
 package it cannot open and a missing workbook part — into `ExcelExtractionException`. Every other fault
 propagates to Core, which converts it into a structured `Unreadable` result with the full layout still
 written.
 
-**Self-containment.** No SDK type reaches the public surface: `ExcelOpenXmlExtractor` is public but its
+**Error handling.** At subsystem level the extractor passes reader faults through unchanged; it does not catch
+them. Cancellation is observed by the extractor and the emitter, and a null source or context is rejected with
+`ArgumentNullException`. A chart part that cannot be parsed is not an error: it is returned with a read-failure
+reason and reported by the emitter as a note. No SDK type reaches the public surface: `ExcelOpenXmlExtractor` is public
+but its
 public members name Core types only; the reader and the focused readers are internal, exposed to the
 test project through `InternalsVisibleTo`. The subsystem's supporting-type source files define the model
-records (`ExcelWorkbookModel`, `ExcelSheetModel`, `ExcelCellModel`, `ExcelSheetImageRef`), the chart
-model records (`ExcelChartData`, `ExcelChartSeries`, `ExcelChartPoint`), and `ExcelExtractionException`.
+records (`ExcelWorkbookModel`, `ExcelSheetModel`, `ExcelCellModel`, `ExcelSheetImageRef`,
+`ExcelCommentModel`), the chart model records (`ExcelChartModel`, `ExcelChartData`, `ExcelChartSeries`,
+`ExcelChartPoint`), the image reader's `ExcelImageCollection` result, and `ExcelExtractionException`,
+which is the one public type besides the extractor and carries no SDK type.

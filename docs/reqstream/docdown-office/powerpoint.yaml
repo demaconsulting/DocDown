@@ -1,70 +1,31 @@
 ---
-# Software System Requirements for DemaConsulting.DocDown.PowerPoint
+# Software Subsystem Requirements for DemaConsulting.DocDown.PowerPoint
 #
-# These requirements describe the externally visible behavior of the PowerPoint extraction package
+# These requirements describe the externally visible behavior of the PowerPoint extraction subsystem
 # from the perspective of a host that registers it, without specifying implementation details. Each
 # decomposes into subsystem and unit requirements linked below via children, and is proven by
-# system-level tests or the closest package-level evidence available in
-# DemaConsulting.DocDown.Office.Tests. DemaConsulting.DocDown.PowerPoint has two subsystems (Markdown, OpenXml) and
-# one direct unit (PowerPointDocDownBuilderExtensions).
+# subsystem-level tests or the closest package-level evidence available in
+# DemaConsulting.DocDown.Office.Tests. DemaConsulting.DocDown.PowerPoint has two child subsystems (Markdown, OpenXml)
+# and one direct unit (PowerPointDocDownBuilderExtensions).
 #
 # A slide is a visual composition, but a deck also carries content that no render can supply. These
 # requirements describe a single obligation: always extract, from the file itself, the slide text,
 # the slide title where one exists, the speaker notes, the slide order, the embedded images, and the
-# document metadata. Reporting follows the governing principle for this system: DocDown reports what
+# document metadata. Reporting follows the governing principle for this subsystem: DocDown reports what
 # it extracted and where it wrote it. The content inventory states what was looked for, including
 # counted zeros, and a short plain note is used only when DocDown attempted a step and could not
 # complete it.
 #
-# SUPERSEDED REQUIREMENT: DocDownPowerPoint-SpeakerNotesAbsenceGap required a deck carrying no speaker
-# notes to be reported as a counted gap. That requirement was authored as a statement of intent before
-# the repository owner established the governing principle that DocDown reports what was extracted and
-# where, and makes no acceptability judgement about the content: a shortfall report must describe what
-# DocDown could not do, never what the document does not contain. A deck with no notes cost the
-# extraction nothing — every notes slide was read. The requirement is therefore superseded (not
-# satisfied) by DocDownPowerPoint-SpeakerNotesAbsenceInventory, which places the same distinction in
-# the content inventory as a counted zero.
-#
-# SUPERSEDED REQUIREMENT: DocDownPowerPoint-EmptyDeck required a deck with no slides to be reported as
-# an extraction shortfall. That requirement is superseded (not satisfied) by
-# DocDownPowerPoint-EmptyDeckInventory, because an empty deck is now reported by an empty content file
-# plus zero-count inventory entries rather than by a separate shortfall classification.
-#
-# SUPERSEDED REQUIREMENT: DocDownPowerPoint-Charts required charts this backend does not read to be
-# reported separately. That requirement is superseded (not satisfied) with no replacement, because
-# chart-specific reporting was removed when this system was reduced to the two governing reporting
-# forms: content inventory and plain notes about attempted steps that could not be completed.
-#
-# SUPERSEDED REQUIREMENT: DocDownPowerPoint-VectorImages required an informational caveat to be
-# recorded for EMF or WMF images. That requirement is superseded (not satisfied) by
-# DocDownPowerPoint-VectorImagePassthrough, because vector metafile bytes are now written as found
-# with no PowerPoint-specific note.
-#
-# SUPERSEDED REQUIREMENT: DocDownPowerPoint-DeclaredCapabilities required the backends to negotiate
-# over declared capability sets. That requirement is superseded (not satisfied) by
-# DocDownPowerPoint-BackendSelectionSurface, because selection now turns on explicit backend identity,
-# supported format, priority, page-rendering applicability, and the availability probe's
-# rendered-page support flag rather than a capability set.
-#
-# SUPERSEDED REQUIREMENT: DocDownPowerPoint-SlideRenderNotes required this system's own rendering
-# backend to record a plain note naming any slide it could not render, and continue with the
-# remaining slides. That requirement is superseded (not satisfied) because this system no longer
-# renders slides itself at all: rendering, and the honesty of its per-slide failures, is now entirely
-# DocDownPowerPoint.Rendering's concern, governed by docs/reqstream/docdown-powerpoint-rendering.yaml.
-#
-# SUPERSEDED REQUIREMENT: DocDownPowerPoint-RenderingAvailability required this system to report its
-# own rendering backend as unavailable, with a declarative reason that instructs no installation,
-# where Microsoft PowerPoint could not be reached. That requirement is superseded (not satisfied)
-# because this system's own backend never renders pages at all now, so rendering availability honesty
-# is entirely DocDownPowerPoint.Rendering's concern, governed by
-# docs/reqstream/docdown-powerpoint-rendering.yaml.
+# Earlier requirements about counted gaps, charts, vector-image caveats, declared capability sets, and
+# this subsystem's own slide rendering were retired (see version control history); rendering is now
+# governed by docs/reqstream/docdown-powerpoint-rendering.yaml.
 
 sections:
   - title: DocDownPowerPoint Requirements
     requirements:
       - id: DocDownPowerPoint-Registration
         title: >-
-          The system shall register its PowerPoint backend through an explicit extension method
+          The subsystem shall register its PowerPoint backend through an explicit extension method
           without reflection or assembly scanning.
         tags: [system]
         justification: |
@@ -82,7 +43,7 @@ sections:
 
       - id: DocDownPowerPoint-BackendSelectionSurface
         title: >-
-          The system shall expose backend selection through explicit backend identities, supported
+          The subsystem shall expose backend selection through explicit backend identities, supported
           formats, stable priorities, page-rendering applicability, and availability results that
           state whether rendered pages are provided.
         tags: [system]
@@ -100,11 +61,12 @@ sections:
 
       - id: DocDownPowerPoint-Extraction
         title: >-
-          The system shall extract each slide of a deck as content — its title, text, and speaker
-          notes — along with its images and metadata, into the DocDown output contract.
+          The subsystem shall extract each slide of a deck as content — its title, text, speaker
+          notes, and reviewer comments — along with its images and metadata, into the DocDown output
+          contract.
         tags: [system]
         justification: |
-          The package exists to turn a deck into the invariant DocDown output layout so a downstream
+          The subsystem exists to turn a deck into the invariant DocDown output layout so a downstream
           agent sees the same artifact structure it sees for every other format. A deck carries
           content that never appears in any render, so extracting each slide's text, title, and
           speaker notes from the file itself — rather than relying on a picture of the slide — is
@@ -117,21 +79,32 @@ sections:
           - DocDownPowerPoint_Extract_Pptx_SelectsOpenXml
 
       - id: DocDownPowerPoint-SlideText
-        title: The system shall extract the text of every slide.
+        title: >-
+          The subsystem shall extract the text of every slide, including text held in tables, grouped
+          shapes, and SmartArt diagrams.
         tags: [system]
         justification: |
           The words on a slide are its assertions, and they are recoverable from the file with no
           rendering. A backend that captured only a picture of each slide would leave that text
           unsearchable and impossible to cite, so the text of every slide is extracted from the file
-          itself as the guaranteed outcome that no environment can take away.
+          itself as the guaranteed outcome that no environment can take away. Text is not confined to
+          plain shapes: tables, grouped shapes, and SmartArt diagrams carry assertions too, and a
+          reader that walked only plain shapes would drop them without saying so.
         children:
           - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExtractsBodyText
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsTableText
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsGroupedShapeText
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsSmartArtText
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsBreakAndFieldText
           - DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesSlideText
         tests:
           - PowerPointOpenXmlReader_Read_Slide_ExtractsBodyTextLines
+          - PowerPointOpenXmlReader_Read_DeckWithTable_ReadsRowsAsLines
+          - PowerPointOpenXmlReader_Read_DeckWithGroupedShapes_ReadsNestedGroupText
+          - PowerPointOpenXmlReader_Read_DeckWithSmartArt_ReadsNodeText
 
       - id: DocDownPowerPoint-SlideTitle
-        title: The system shall extract each slide's title where one exists.
+        title: The subsystem shall extract each slide's title where one exists.
         tags: [system]
         justification: |
           A slide's title names what the slide is about, and a reader navigates and cites a deck by
@@ -144,7 +117,7 @@ sections:
           - PowerPointContentEmitter_Emit_WritesTitleBodyAndNotes
 
       - id: DocDownPowerPoint-SpeakerNotes
-        title: The system shall always extract the speaker notes attached to each slide.
+        title: The subsystem shall always extract the speaker notes attached to each slide.
         tags: [system]
         justification: |
           Speaker notes hold the narration, the caveats, and the argument the slide only gestures at,
@@ -159,7 +132,7 @@ sections:
 
       - id: DocDownPowerPoint-SpeakerNotesAbsenceInventory
         title: >-
-          The system shall state the number of slides carrying speaker notes in the content
+          The subsystem shall state the number of slides carrying speaker notes in the content
           inventory, including a count of zero, so a reader can tell a deck that has no notes apart
           from notes that were not looked for.
         tags: [system]
@@ -176,7 +149,7 @@ sections:
           - DocDownPowerPoint_Extract_DeckWithoutNotes_ReportsZeroNotesInSummaryAndManifest
 
       - id: DocDownPowerPoint-SlideOrder
-        title: The system shall preserve the slides in presentation order.
+        title: The subsystem shall preserve the slides in presentation order.
         tags: [system]
         justification: |
           A deck's argument is sequential: the order the presenter chose is part of the meaning, and
@@ -190,14 +163,14 @@ sections:
 
       - id: DocDownPowerPoint-PageRendering
         title: >-
-          The system's own backend shall never render a slide to an image itself, and shall always
+          The subsystem's own backend shall never render a slide to an image itself, and shall always
           state plainly that rendered pages are not provided.
         tags: [system]
         justification: |
-          What a slide means is largely how it looks, but this system's content path is the
+          What a slide means is largely how it looks, but this subsystem's content path is the
           guaranteed, deterministic read of a deck's file-level content and never opens an external
           application. Rendered slide images are a separate, opt-in concern delivered entirely by the
-          DocDownPowerPoint.Rendering package; this system's own backend states plainly, on every
+          DocDownPowerPoint.Rendering package; this subsystem's own backend states plainly, on every
           extraction, that it provides no rendered pages rather than ever fabricating one.
         children:
           - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ReportsPageRenderingNotProvided
@@ -206,7 +179,7 @@ sections:
 
       - id: DocDownPowerPoint-EmbeddedImages
         title: >-
-          The system shall write a deck's embedded images into the images folder, link them from the
+          The subsystem shall write a deck's embedded images into the images folder, link them from the
           slide that shows them, and record which slide each belongs to.
         tags: [system]
         justification: |
@@ -222,13 +195,13 @@ sections:
 
       - id: DocDownPowerPoint-VectorImagePassthrough
         title: >-
-          The system shall write an EMF or WMF embedded image unchanged as extracted content, with
+          The subsystem shall write an EMF or WMF embedded image unchanged as extracted content, with
           no PowerPoint-specific note.
         tags: [system]
         justification: |
           A vector metafile's stored bytes are already the extracted image file, so writing them
           through loses nothing the deck carried. Because the extraction completed exactly what the
-          deck supplied, this system records no additional PowerPoint-specific note for that case.
+          deck supplied, this subsystem records no additional PowerPoint-specific note for that case.
         children:
           - DocDownPowerPoint-Markdown-PowerPointContentEmitter-WritesVectorImagesWithoutNote
         tests:
@@ -236,7 +209,7 @@ sections:
 
       - id: DocDownPowerPoint-EmptyDeckInventory
         title: >-
-          The system shall describe a deck with no slides by writing empty content and zero-count
+          The subsystem shall describe a deck with no slides by writing empty content and zero-count
           inventory entries for the looked-for document structure.
         tags: [system]
         justification: |
@@ -250,27 +223,69 @@ sections:
 
       - id: DocDownPowerPoint-ContentOutline
         title: >-
-          The system shall report an outline of what the content contains — slides, slide titles,
-          sets of speaker notes, and inline images — counted from the model.
+          The subsystem shall report an outline of what the content contains — slides, slide titles,
+          sets of speaker notes, inline images, comments, and distinct comment authors — counted from
+          the model.
         tags: [system]
         justification: |
           A character count says nothing about whether the deck's speaker notes — the half no
           rendered slide image can supply — are present in the text, nor how many slides carry a
-          title worth navigating by. Counting each content kind from the model the reader built gives
-          a reader an honest shape of the deck before reading a single slide.
+          title worth navigating by, nor whether reviewers left commentary. Counting each content
+          kind from the model the reader built gives a reader an honest shape of the deck before
+          reading a single slide.
         children:
           - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsContentFeatures
+          - DocDownPowerPoint-Markdown-PowerPointContentEmitter-InventoriesComments
         tests:
           - PowerPointContentEmitter_Emit_Deck_ReportsContentFeaturesIncludingSpeakerNotes
           - DocDownPowerPoint_Extract_DeckWithNotes_ReportsSpeakerNotesInventory
+          - DocDownPowerPoint_Extract_DeckWithComment_WritesReviewComments
+
+      - id: DocDownPowerPoint-ReviewComments
+        title: >-
+          The subsystem shall extract each slide's legacy reviewer comments, with their resolved
+          authors, into the review-comments artifact qualified by slide number, and keep them out of
+          the slide text.
+        tags: [system]
+        justification: |
+          A reviewer's remark is commentary about the deck rather than part of it, and in a draft it
+          is often the most valuable content while being the least visible from a rendered slide.
+          Reporting each comment with its author and the slide it was made on lets a reader act on
+          it, and keeping it out of the slide text stops a consumer mistaking a reviewer's words for
+          the author's.
+        children:
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsSlideComments
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ResolvesCommentAuthors
+          - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsReviewComments
+        tests:
+          - DocDownPowerPoint_Extract_DeckWithComment_WritesReviewComments
+
+      - id: DocDownPowerPoint-ModernCommentsNote
+        title: >-
+          The subsystem shall state in an extraction note the number of modern persona-based comments
+          it does not read and the number of slides carrying them, and shall record no note for a deck
+          without them.
+        tags: [system]
+        justification: |
+          Modern comments are not read, because resolving their authors could not be validated. A deck
+          whose comments are all modern would otherwise read as a deck nobody commented on, which
+          states something untrue about the document. Counting them and saying so in the output makes
+          the boundary visible to whoever holds the output, so an absence caused by the extractor is
+          reported rather than rendered as an absence in the document.
+        children:
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExcludesModernPersonaComments
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-CountsModernPersonaComments
+          - DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsModernCommentsNote
+        tests:
+          - DocDownPowerPoint_Extract_DeckWithModernComments_ReportsUnreadCommentsNote
 
       - id: DocDownPowerPoint-LegacyFormatRefusal
         title: >-
-          The system shall refuse a legacy binary PowerPoint deck with an unreadable result carrying
+          The subsystem shall refuse a legacy binary PowerPoint deck with an unreadable result carrying
           a plain explanation, and without an exception reaching the caller.
         tags: [system]
         justification: |
-          This package reads Open XML presentations and nothing else, and DocDown does not support the
+          This subsystem reads Open XML presentations and nothing else, and DocDown does not support the
           legacy binary formats at all. A caller who hands the engine a `.ppt` therefore deserves a
           plain statement of that fact with the full output layout still written — not an exception,
           and not an instruction pointing at an environment that cannot deliver the capability.
@@ -278,7 +293,7 @@ sections:
           - DocDownPowerPoint_Extract_LegacyPpt_FailsWithUnsupportedFormatExplanation
 
       - id: DocDownPowerPoint-SelfValidation
-        title: The system shall contribute self-validation cases describing its own extraction behavior.
+        title: The subsystem shall contribute self-validation cases describing its own extraction behavior.
         tags: [system]
         justification: |
           An operator needs to confirm the backends actually work where they are deployed, not merely
@@ -287,5 +302,6 @@ sections:
           runs the self-test tool.
         children:
           - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ContributesSelfTests
+          - DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ExplainsRenderingSkip
         tests:
           - PowerPointOpenXmlExtractor_SelfTestCases_RoundTripPassesAndRenderingSkipped

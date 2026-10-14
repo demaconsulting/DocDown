@@ -406,6 +406,72 @@ public class ExtractionSinkTests
     }
 
     /// <summary>
+    ///     Proves an image added with no reported transform is recorded as a passthrough.
+    /// </summary>
+    [Fact]
+    public async Task ExtractionSink_AddImageAsync_NoTransformReported_RecordsPassthrough()
+    {
+        // Arrange: a sink over a prepared scratch folder
+        using var temp = new TempScratch();
+        var sink = NewSink(temp, new ExtractionOptions());
+
+        // Act: add an image whose hint carries no transform
+        await AddImageAsync(sink, [1, 2, 3], "image/png");
+
+        // Assert: the recorded provenance is the honest default
+        Assert.Equal(ImageTransform.Passthrough, Assert.Single(sink.Images).Transform);
+    }
+
+    /// <summary>
+    ///     Proves a transform reported by the extractor is preserved verbatim on the image record.
+    /// </summary>
+    [Fact]
+    public async Task ExtractionSink_AddImageAsync_DecodedToPngReported_RecordsTransform()
+    {
+        // Arrange: a sink over a prepared scratch folder
+        using var temp = new TempScratch();
+        var sink = NewSink(temp, new ExtractionOptions());
+        using var stream = new MemoryStream([4, 5, 6], writable: false);
+
+        // Act: add an image the extractor decoded and re-encoded
+        await sink.AddImageAsync(
+            stream, new ImageHint("image", "image/png", Transform: ImageTransform.DecodedToPng), Ct);
+
+        // Assert: the claim is recorded as reported
+        Assert.Equal(ImageTransform.DecodedToPng, Assert.Single(sink.Images).Transform);
+    }
+
+    /// <summary>
+    ///     Proves the descriptive text, its provenance, the source reference, and the template flag are
+    ///     recorded on the image record.
+    /// </summary>
+    [Fact]
+    public async Task ExtractionSink_AddImageAsync_DescriptionAndReferrers_AreRecorded()
+    {
+        // Arrange: a sink over a prepared scratch folder
+        using var temp = new TempScratch();
+        var sink = NewSink(temp, new ExtractionOptions());
+        using var stream = new MemoryStream([7, 8, 9], writable: false);
+
+        // Act: add an image with description, provenance, a source reference, pages, and a template flag
+        await sink.AddImageAsync(
+            stream,
+            new ImageHint(
+                "image", "image/png", SourcePage: 2, SourceRef: "slide2/pic1", Description: "A bar chart",
+                DescriptionSource: "altText", SourcePages: [2, 3], ReferencedByTemplate: true),
+            Ct);
+
+        // Assert: every attribute survives on the stored record
+        var image = Assert.Single(sink.Images);
+        Assert.Equal("A bar chart", image.Description);
+        Assert.Equal("altText", image.DescriptionSource);
+        Assert.Equal("slide2/pic1", image.SourceRef);
+        Assert.Equal(2, image.SourcePage);
+        Assert.Contains(3, image.SourcePages);
+        Assert.True(image.ReferencedByTemplate);
+    }
+
+    /// <summary>
     ///     Creates a real sink over a prepared scratch folder.
     /// </summary>
     /// <param name="temp">The owning temporary folder.</param>

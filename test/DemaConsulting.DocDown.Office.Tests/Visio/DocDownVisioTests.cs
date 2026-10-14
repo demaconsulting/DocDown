@@ -6,7 +6,7 @@ using DemaConsulting.DocDown.Visio;
 namespace DemaConsulting.DocDown.Office.Tests.Visio;
 
 /// <summary>
-///     System-level integration tests for the DocDown Visio extraction system, driven end to end
+///     Subsystem-level integration tests for the DocDown Visio extraction subsystem, driven end to end
 ///     through <see cref="DocDownEngine"/> against drawings generated at test time.
 /// </summary>
 /// <remarks>
@@ -152,7 +152,45 @@ public class DocDownVisioTests
     }
 
     /// <summary>
-    ///     Extracts a fixture through the full Visio system and returns the folder and result.
+    ///     Proves a corrupt <c>.vsdx</c> yields an unreadable result with a plain explanation and the
+    ///     full layout, rather than an exception reaching the caller.
+    /// </summary>
+    [Fact]
+    public async Task DocDownVisio_Extract_CorruptVsdx_ReturnsUnreadableWithExplanation()
+    {
+        // Arrange: bytes that are not an Open Packaging container, under a .vsdx name
+        using var temp = new TempScratch();
+        var (scratch, result) = await ExtractAsync(
+            temp, "corrupt.vsdx", "this is not a zip package"u8.ToArray(), FixedOptions());
+
+        // Assert: Core converted the extractor's fault into a structured failure
+        Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
+        Assert.NotNull(result.Failure);
+        Assert.False(string.IsNullOrWhiteSpace(result.Failure.Explanation));
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
+    ///     Proves an already-canceled token propagates as <see cref="OperationCanceledException"/>
+    ///     through the engine instead of being reported as an unreadable drawing.
+    /// </summary>
+    [Fact]
+    public async Task DocDownVisio_Extract_CancelledToken_PropagatesCancellation()
+    {
+        // Arrange: a valid drawing and a token that is already canceled
+        using var temp = new TempScratch();
+        var engine = new DocDownBuilder().AddVisio().Build();
+        var input = WriteFixture(temp, "wash.vsdx", VsdxFixtures.WashSystem());
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+
+        // Act & Assert: the caller sees the cancellation, not a failure result
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await engine.ExtractAsync(
+            DocumentSource.FromFile(input), Path.Combine(temp.Path, "out"), FixedOptions(), cancellation.Token));
+    }
+
+    /// <summary>
+    ///     Extracts a fixture through the full Visio subsystem and returns the folder and result.
     /// </summary>
     private static async Task<(string Folder, ExtractionResult Result)> ExtractAsync(
         TempScratch temp, string name, byte[] bytes, ExtractionOptions options)

@@ -10,7 +10,7 @@ namespace DemaConsulting.DocDown.PowerPoint;
 ///     <para>
 ///         DocDown registers backends explicitly rather than by reflection or assembly scanning, so a
 ///         host's dependency graph is exactly what its code says it is. This class is that explicit
-///         seam for the PowerPoint package: <see cref="AddPowerPoint"/> registers the managed Open
+///         seam for the PowerPoint subsystem: <see cref="AddPowerPoint"/> registers the managed Open
 ///         XML backend — the guaranteed content path that always extracts slide text, titles,
 ///         speaker notes, and slide order.
 ///     </para>

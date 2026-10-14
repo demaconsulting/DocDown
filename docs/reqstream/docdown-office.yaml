@@ -23,6 +23,7 @@ sections:
         tests:
           - AddOffice_OnBuilder_RegistersEveryOfficeBackend
           - AddOffice_ReturnsSameBuilderForChaining
+          - AddOffice_NullBuilder_Throws
           - AddExcel_Alone_RegistersOnlyTheExcelBackend
 
       - id: DocDownOffice-SelfTestProbes

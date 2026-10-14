@@ -14,10 +14,11 @@ namespace DemaConsulting.DocDown.Office.Tests.Word;
 /// <remarks>
 ///     <para>
 ///         These make the generated artifact a reviewable artifact, following the Core golden
-///         precedent. The runs use a fixed timestamp and the single managed Open XML backend, so the
-///         only machine-specific lines are the absolute scratch path, the temporary source path, and
-///         the three host-environment lines (operating system, runtime, runtime identifier); each is
-///         replaced with a fixed placeholder before comparison. Everything else — the backend block,
+///         precedent. The runs use the single managed Open XML backend, so the only run-varying or
+///         machine-specific lines are the extraction timestamp, the absolute scratch path, the
+///         temporary source path, and the three host-environment lines (operating system, runtime,
+///         runtime identifier); each is replaced with a fixed placeholder before comparison. Everything
+///         else — the backend block,
 ///         the extractor-reported environment facts, the layout, and the extraction notes — is
 ///         deterministic and byte-compared.
 ///     </para>
@@ -60,8 +61,8 @@ public class WordGoldenTests
     ///     Proves the summary for a document with merged cells and its flattening note matches its golden.
     /// </summary>
     [Fact]
-    public Task WordGolden_MergedCellsGap_MatchesCommittedGolden() =>
-        AssertGoldenAsync("summary-word-openxml-merged-cells-gap.txt", "merged.docx", DocxFixtures.DocumentWithMergedCells());
+    public Task WordGolden_MergedCellsFlattened_MatchesCommittedGolden() =>
+        AssertGoldenAsync("summary-word-openxml-merged-cells-flattened.txt", "merged.docx", DocxFixtures.DocumentWithMergedCells());
 
     /// <summary>
     ///     Proves the summary for the document-control scenario matches its golden.

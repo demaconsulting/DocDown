@@ -443,9 +443,9 @@ internal sealed class Context : IDisposable
                 || !int.TryParse(parts[0], out var first)
                 || !int.TryParse(parts[1], out var last)
                 || first < 1
-                || last < 1)
+                || last < first)
             {
-                throw new ArgumentException($"{arg} requires a page range in the form 'a-b' with pages >= 1", nameof(arg));
+                throw new ArgumentException($"{arg} requires a page range in the form 'a-b' with 1 <= a <= b", nameof(arg));
             }
 
             return new PageRange(first, last);

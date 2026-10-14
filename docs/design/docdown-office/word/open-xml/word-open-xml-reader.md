@@ -27,7 +27,7 @@ used per document. The important state is:
   hint when the document offered no descriptive text, and as the section half of a comment's
   location hint.
 - **`_commentAnchors`** and **`_openCommentRanges`** — the per-read anchor table keyed by comment
-  id, and the stack of comment ranges currently bracketing run text.
+  id, and the list of comment ranges currently bracketing run text.
 - **`SnippetMaxLength`** — the 60-character bound on a comment's quoted snippet, which keeps the
   location hint a pointer into the document rather than a second copy of it.
 - **`OleCompoundFileSignature`** — the eight bytes `D0 CF 11 E0 A1 B1 1A E1` that front an OLE
@@ -47,7 +47,7 @@ used per document. The important state is:
   footnotes, title and author from `docProps/core.xml`, producer page count from `docProps/app.xml`,
   metadata, and the counts observed during the walk.
 - **`AppendBodyElement()`** (private) — dispatches on the body element. A paragraph becomes a
-  heading, list item, paragraph, image, and-or page break through `AppendParagraph()`; a table
+  heading, list item, paragraph, image, or page break through `AppendParagraph()`; a table
   becomes a `Table` block through `BuildTable()`, or increments `_emptyTables` when no visible
   content survived.
 - **`AppendParagraph()`** and **`WalkContainer()`** (private) — the recursive workhorses. They
@@ -87,10 +87,13 @@ used per document. The important state is:
   preserves alignment by emitting empty continuation cells for merges, and counts merged and nested
   cells so the emitter can later state when markdown could not preserve the full table structure.
 - **`BuildCellContent()`** and **`FlattenNestedTable()`** (private) — flatten nested table content
-  into `<br>`-joined text so the outer grid remains renderable.
+  into text joined with an escaped pipe separator and spaces for line breaks, so the outer grid remains
+  renderable.
 - **`BuildDocumentControl()`** (private) — collects header and footer parts from every `w:sectPr`,
   renders each with page furniture stripped, deduplicates identical rendered content across
-  sections, and labels the surviving sections for markdown rendering.
+  sections, and labels the surviving sections for markdown rendering. The duplicate key combines the
+  rendered text with a SHA-256 fingerprint of any images, so headers with the same text but different
+  images stay distinct.
 - **`IsFurnitureInstruction()`** (private) — trims the instruction, splits on whitespace, and
   matches the first token against the furniture set. This is the authoritative signal for
   page-numbering furniture.
@@ -114,10 +117,10 @@ never swallows adverse conditions and never rewrites the document's content to h
   `WordOpenXmlImageReader`.
 - **`WordOpenXmlImageReader`** — blip resolution and image-text selection.
 - **`WordDocumentModel` and the Markdown subsystem record types** — the model this unit populates.
-- **`WordExtractionException`** — the encrypted-document surface.
+- **`WordExtractionException`** — the exception type it raises for encrypted or main-part-less packages.
 
 ### Callers
 
 `WordOpenXmlExtractor.ExtractAsync()` uses this unit for every extraction, and the same class's
-parse round-trip self-test case uses it against an in-memory probe document. Tests construct
+parse round-trip self-test case uses it against the embedded probe document. Tests construct
 additional instances directly through `InternalsVisibleTo`.

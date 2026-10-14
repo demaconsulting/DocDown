@@ -1,18 +1,18 @@
 # DemaConsulting.DocDown.Visio Verification Design
 
-This document describes the system-level verification strategy for `DemaConsulting.DocDown.Visio`, the Visio
-extraction package.
+This document describes the subsystem-level verification strategy for `DemaConsulting.DocDown.Visio`, the Visio
+extraction subsystem.
 
 ## Verification Approach
 
-`DemaConsulting.DocDown.Visio` is verified through system-level integration tests in `DocDownVisioTests.cs` and
+`DemaConsulting.DocDown.Visio` is verified through subsystem-level integration tests in `DocDownVisioTests.cs` and
 unit tests per unit, all in `DemaConsulting.DocDown.Office.Tests`, running on xUnit v3 across
 net8.0, net9.0, and net10.0.
 
 ### Every extraction test reconciles against the filesystem
 
 Every scenario that performs an extraction ends with layout assertions proving the invariant output
-folders and files are present on disk. This is the highest-value assertion available to this package:
+folders and files are present on disk. This is the highest-value assertion available to this subsystem:
 it makes a dishonest extraction a test failure rather than a review finding, and it applies to
 `Produced` and `Unreadable` outcomes alike. The layout assertions cover the legacy `.vsd` refusal
 scenario, so the full-layout claim on an unreadable result is machine-checked alongside the
@@ -21,7 +21,7 @@ written into `summary.txt` and `manifest.json`, and the exact set of notes the r
 
 ### One reader, one emitter
 
-The package ships one backend. The managed Open Packaging backend reads a drawing into the
+The subsystem ships one backend. The managed Open Packaging backend reads a drawing into the
 reader-neutral model and drives the content emitter, so every mapping decision is made in exactly
 one place and can be proved from a hand-built model with no drawing behind it. Rendered page images
 are a separate, opt-in concern provided by `DemaConsulting.DocDown.Visio.Rendering` and verified there.
@@ -50,7 +50,7 @@ Every drawing the suite's tests use is built at test time by the in-memory Visio
 extension drives format detection, because the selection path never opens the file: no registered
 backend supports the format. No test fixture is committed.
 The one committed binary is the backend's self-test probe: a real drawing authored in Microsoft
-Visio, embedded in the package so the self-test reads what that application emits.
+Visio, embedded in the subsystem so the self-test reads what that application emits.
 The suite's own fixtures stay generated, so every page
 name, shape name, master name, and image payload in the fixtures is synthetic.
 
@@ -68,7 +68,7 @@ name, shape name, master name, and image payload in the fixtures is synthetic.
 
 ## Acceptance Criteria
 
-Per IEC 62304 §5.7.2, a system-level test run passes when:
+Per IEC 62304 §5.7.2, a subsystem-level test run passes when:
 
 - Every scenario below passes on every operating system and runtime in the CI matrix, with no
   unexpected exception, wrong exception type, or wrong return value.
@@ -90,7 +90,7 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 
 ## Test Scenarios
 
-Each scenario corresponds to one system requirement and names the real test method that evidences
+Each scenario corresponds to one subsystem requirement and names the real test method that evidences
 it. Platform requirements are covered by the source-filtered runs of the selection scenario.
 
 ### The default engine registers the managed Visio backend
@@ -144,16 +144,31 @@ it cites no Visio requirement.
 **Tests**: `DocDownVisio_Extract_PageWithVectorImage_ProducesLayoutAndEmfImage`,
 `VisioContentEmitter_Emit_WithRasterImages_WritesThroughSink`
 
-Prove embedded images are written through the sink into the output layout for both system and unit
+Prove embedded images are written through the sink into the output layout for both subsystem and unit
 scenarios. Evidence for `DocDownVisio-EmbeddedImages`.
 
 ### A legacy binary drawing is refused as unreadable
 
 **Test**: `DocDownVisio_Extract_LegacyVsd_ReturnsUnreadableFailure`
 
-Proves an engine with the Visio package registered returns an unreadable result for `.vsd`, with an
+Proves an engine with the Visio subsystem registered returns an unreadable result for `.vsd`, with an
 explanation that states plainly that the legacy binary format is unsupported. Evidence for
 `DocDownVisio-LegacyFormatRefusal`.
+
+### A corrupt package is refused as unreadable
+
+**Test**: `DocDownVisio_Extract_CorruptVsdx_ReturnsUnreadableWithExplanation`
+
+Proves an engine with the Visio subsystem registered returns an unreadable result for a `.vsdx` whose bytes
+are not an Open Packaging container, with a non-empty explanation, the full layout present, and no
+exception reaching the caller. Evidence for `DocDownVisio-CorruptPackageUnreadable`.
+
+### Cancellation propagates to the caller
+
+**Test**: `DocDownVisio_Extract_CancelledToken_PropagatesCancellation`
+
+Proves an already-canceled token surfaces from the engine as `OperationCanceledException` rather than an
+unreadable or produced result. Evidence for `DocDownVisio-CancellationHonored`.
 
 ### Self-validation cases are exposed and run
 

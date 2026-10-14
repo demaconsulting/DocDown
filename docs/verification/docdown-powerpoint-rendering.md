@@ -62,7 +62,8 @@ project.
 - **Filesystem**: a per-test `TempScratch` folder holds the extraction output
 - **Inputs**: the embedded `Resources/probe.pptx` the self-test reads, loaded through
   `SelfTestProbe.Load`; no other committed binary test fixtures and no network access
-- **Determinism**: the run-varying timestamp line is normalized so repeated runs are byte-comparable
+- **Determinism**: for the golden test, the run-varying timestamp and machine-specific lines are normalized
+  so repeated runs are byte-comparable
 - **Isolation**: each test owns its temporary folder and cleans it on dispose
 
 ## Acceptance Criteria
@@ -77,6 +78,9 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
   `Slide N could not be rasterized.` and still returns `Produced`; a forced slide-count fault emits
   the single note `Slides could not be counted, so no slide images were rendered.` and keeps the
   delegated managed content.
+- A requested page range that selects no slide emits the single note
+  `Page rendering was requested and a renderer was available, but no pages were produced.`, writes no page
+  file, and still returns `Produced`.
 - A page-renderer (this backend) is selected whenever page rendering is requested, and it is not
   selected when it is not.
 - The availability probe is cheap, non-throwing, and unconditionally reports rendered-page support.
@@ -172,6 +176,26 @@ Proves a faulting slide-count function is caught once, records the single note
 `Slides could not be counted, so no slide images were rendered.`, still returns `Produced`, and keeps
 the delegated managed content the base extractor already wrote. Evidence for
 `DocDownPowerPointRendering-SlideCountFailureReportedAsNote`.
+
+### An empty slide selection becomes a single note
+
+**Test**: `PowerPointPageRenderingExtractor_ExtractAsync_PageRangeSelectsNoSlide_ReportsEmptyPagesNote`
+
+Proves a requested page range that selects no slide (the probe deck has two slides; the test requests
+slides 5 to 6) still completes as `Produced`, records the single note
+`Page rendering was requested and a renderer was available, but no pages were produced.` from this
+backend's own knowledge of the selection, writes no page file, and leaves the layout present. Evidence for
+`DocDownPowerPointRendering-EmptySelectionReportedAsNote`.
+
+### The rendered summary matches its committed golden
+
+**Test**: `PowerPointRenderingGolden_Summary_ProbePresentation_MatchesCommittedGolden`
+
+Renders the embedded probe presentation through the real backend and compares the resulting `summary.txt`,
+byte for byte, against the committed golden `summary-powerpoint-rendering-probe.txt`. The
+machine-specific lines (timestamp, scratch folder, source document, and the three host environment lines)
+are normalized first. Regeneration requires `DOCDOWN_UPDATE_GOLDEN=1` and is refused in CI. This is
+regression evidence for the whole report shape and is not linked to a single requirement.
 
 ### Concurrent renders do not interfere
 

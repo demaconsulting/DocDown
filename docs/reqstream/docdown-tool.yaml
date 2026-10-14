@@ -157,6 +157,7 @@ sections:
           and a non-zero exit — keeps the tool usable and its failures easy to script.
         children:
           - DocDownTool-Program-ExpectedErrors
+          - DocDownTool-Program-RequiredOptions
           - DocDownTool-Cli-ArgumentValidation
         tests:
           - DocDownTool_BadArgument_WritesErrorAndExitsNonZero

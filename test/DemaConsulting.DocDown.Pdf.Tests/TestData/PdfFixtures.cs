@@ -532,6 +532,32 @@ public static class PdfFixtures
     }
 
     /// <summary>
+    ///     Assembles a one-page PDF whose only annotation is the supplied raw dictionary text.
+    /// </summary>
+    /// <param name="annotationDictionary">The annotation dictionary, as PDF syntax, to embed as object 5.</param>
+    /// <returns>The bytes of the document.</returns>
+    /// <remarks>
+    ///     Lets a test hand the parser a dictionary whose entries are malformed in a chosen way.
+    /// </remarks>
+    public static byte[] WithRawAnnotation(string annotationDictionary)
+    {
+        var text = "BT /F1 18 Tf 72 700 Td (Raw annotation page.) Tj ET\n"u8.ToArray();
+
+        var body = new List<(string Header, byte[]? Stream)>
+        {
+            ("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n", null),
+            ("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n", null),
+            ("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R "
+             + "/Resources << /Font << /F1 8 0 R >> >> /Annots [5 0 R] >>\nendobj\n", null),
+            ("5 0 obj\n" + annotationDictionary + "\nendobj\n", null),
+            ($"6 0 obj\n<< /Length {text.Length.ToString(CultureInfo.InvariantCulture)} >>\nstream\n", text),
+            ("8 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n", null)
+        };
+
+        return Assemble(body);
+    }
+
+    /// <summary>
     ///     Assembles a PDF from pre-formatted objects, computing the cross-reference offsets.
     /// </summary>
     /// <param name="body">Each object's header text and optional stream payload, in object order.</param>

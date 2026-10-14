@@ -129,3 +129,41 @@ sections:
                 tests:
                   - DocDownEngine_ExtractAsync_ImagesAndPages_ProducesBothArtifacts
                   - DocDownEngine_ExtractAsync_BackendThrows_ReturnsUnreadableLayout
+
+          - title: DocumentSource Requirements
+            requirements:
+              - id: DocDownCore-Extraction-DocumentSource-FileSource
+                title: >-
+                  DocumentSource shall describe a file-backed document by name, path, and size, defer
+                  a missing file to the read, and open an independent stream on each read.
+                justification: |
+                  The engine and backends read the same source more than once. A missing file is an
+                  extraction problem to report, not a construction error.
+                tests:
+                  - Extraction_DocumentSource_FileSource_RecordsIdentityAndOpensFreshStreams
+                  - Extraction_DocumentSource_MissingFile_NullSizeAndOpenReadThrows
+
+              - id: DocDownCore-Extraction-DocumentSource-StreamSource
+                title: >-
+                  DocumentSource shall rewind a caller-supplied stream on each read without disposing
+                  it, and reject missing arguments.
+                justification: |
+                  The caller owns a supplied stream, so the library must not close it and must be able
+                  to read it from the start repeatedly.
+                tests:
+                  - Extraction_DocumentSource_StreamSource_RewindsAndLeavesCallerStreamOpen
+                  - Extraction_DocumentSource_NullOrEmptyArguments_Throw
+
+          - title: SelfTestProbe Requirements
+            requirements:
+              - id: DocDownCore-Extraction-SelfTestProbe-LoadsEmbeddedResource
+                title: >-
+                  SelfTestProbe shall load an embedded resource's bytes, name the resource when it is
+                  missing, and reject malformed arguments.
+                justification: |
+                  Self-test cases depend on embedded sample documents. A missing resource must fail with
+                  a message that identifies it.
+                tests:
+                  - Load_PresentResource_ReturnsResourceBytes
+                  - Load_MissingResource_ThrowsNamingTheResource
+                  - Load_MalformedArguments_Throw

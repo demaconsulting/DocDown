@@ -38,7 +38,8 @@ The subsystem exposes the public backend contract and the engine facade:
 - **`ExtractorSelector.Select`** — the pure selection function, exposed for direct testing.
 
 It consumes `FormatDetection` from Detection and the Output subsystem's `ScratchFolder`,
-`ExtractionSink`, `ContentWriter`, `MetadataWriter`, `ManifestWriter`, and `SummaryWriter`.
+`ExtractionSink`, `ContentWriter`, `ReviewCommentsWriter`, `MetadataWriter`, `ManifestWriter`, and
+`SummaryWriter`.
 Backends receive only a `DocumentSource` and an `IExtractionContext`; they never see a scratch path.
 
 ### Design
@@ -77,13 +78,55 @@ The subsystem defines the following supporting types inline rather than as separ
 - **`ExtractorDescriptor`** — immutable snapshot of extractor identity, supported formats,
   priority, and page-rendering applicability.
 - **`ExtractorCandidate`** — descriptor paired with current availability.
-- **`ExtractionOptions`** — render-pages, page-range, image-limit, and scratch-mode
-  options; cloned before use.
+- **`ExtractionOptions`** — mutable request configuration, cloned before use, with these members:
+
+  | Member | Default | Meaning |
+  | --- | --- | --- |
+  | `RenderPages` | `false` | Ask for rasterized page images from a backend that can render. |
+  | `Pages` | `null` | Optional inclusive `PageRange` for backends that support page selection. |
+  | `IncludeEmbeddedImages` | `true` | When `false`, nothing is written to `images/` and a note says so. |
+  | `MaxImageDimensionPx` | `null` | Optional pixel-dimension limit; images beyond it are skipped, not written. |
+  | `MaxImageBytes` | `null` | Optional byte-size limit; larger images are skipped, not written. |
+  | `PageRenderDpi` | `150` | Resolution used when pages are rendered. |
+  | `ScratchFolder` | `CleanIfDocDownFolder` | The `ScratchFolderMode` for the output folder. |
+
+  The numeric options are not validated. A non-positive size limit skips every image that reports a size,
+  and a non-positive `PageRenderDpi` is passed to the renderer as given.
+
+  `Clone` makes a shallow member-wise copy, which suffices because every member is a value or an
+  immutable value, so a caller's later changes never affect a run in flight. The setters do not
+  validate ranges.
 - **`ExtractionOutcome`** — `Produced` or `Unreadable`.
 - **`ExtractionFailure`** — prose `Summary` and `Explanation` for an unreadable result.
 - **`ExtractionResult`** — returned outcome, paths, detected format, selected extractor, failure,
   environment, and notes.
 - **`ScratchFolderMode`** — `CleanIfDocDownFolder` or `Overwrite`.
-- **`PageRange`**, **`DocumentSource`**,
-  **`DocumentInfo`**, **`ISelfValidating`**, **`SelfTestCase`**, **`SelfTestContext`**,
-  **`SelfTestResult`**, and **`SelfTestStatus`**.
+- **`PageRange`** — an inclusive first/last page pair with `Contains` and `Count`.
+- **`DocumentSource`** — a file- or stream-backed document input created by `FromFile` or
+  `FromStream`, exposing `FileName`, `Path`, `SizeBytes`, and `OpenRead`. Construction performs no I/O
+  that can fail: a file's size is recorded best-effort (unknown when the file is missing) and a read
+  error surfaces at `OpenRead`, where the engine converts it into an unreadable result. A stream is
+  caller-owned: `OpenRead` rewinds a seekable stream and returns a wrapper whose disposal never closes
+  the caller's stream.
+- **`DocumentInfo`** — the title, author, page count, and part count a backend reports for the
+  manifest's `document` block; every member is nullable so an unknown value is never guessed.
+- **`DocumentMetadata`**, **`DocumentMetadataField`**, and **`MetadataProvenance`** — what a document
+  asserts about itself: the populated fields (name, verbatim value, and provenance
+  `OpcCoreProperties` or `PdfDocumentInformation`) plus the names of interesting fields the document
+  left blank. `MetadataWriter` serializes them to `metadata.json`.
+- **`OpcCoreProperties`** and **`OpcMetadataMapper`** — `OpcCoreProperties` is a backend-neutral
+  snapshot of an Open Packaging Conventions core-property bag, needed because the Open XML SDK and
+  `System.IO.Packaging` expose unrelated property types. `OpcMetadataMapper.From` maps it to a
+  `DocumentMetadata` for every OPC backend, applying one set of rules: blank values are omitted, the
+  interesting fields `title`, `subject`, `keywords`, `category`, and `contentStatus` are recorded as
+  absent when blank, dates are normalized to ISO-8601 UTC, every value carries the
+  `OpcCoreProperties` provenance, and field order is fixed so output is deterministic. It throws
+  `ArgumentNullException` for a null bag.
+- **`SelfTestProbe`** — `SelfTestProbe.Load(assembly, resourceName)` reads a backend's embedded
+  self-test probe document from its own assembly manifest, so a self-test extracts a document authored
+  in the real application. It is public so that every backend package can call it. It throws
+  `ArgumentNullException` or `ArgumentException` for bad arguments and `InvalidOperationException`
+  naming the available resources when the probe is missing.
+- **`ISelfValidating`**, **`SelfTestCase`**, **`SelfTestContext`**, **`SelfTestResult`**, and
+  **`SelfTestStatus`** — the dependency-free self-test model Core exposes and the Tool maps into its
+  results format.

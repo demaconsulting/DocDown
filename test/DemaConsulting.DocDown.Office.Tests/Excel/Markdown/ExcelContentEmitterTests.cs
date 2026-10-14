@@ -744,4 +744,31 @@ public class ExcelContentEmitterTests
 
         return letters;
     }
+
+    /// <summary>
+    ///     Proves an image larger than the caller's byte limit is not written and the emitter reports a
+    ///     plain note stating the size-limit skip.
+    /// </summary>
+    [Fact]
+    public async Task ExcelContentEmitter_Emit_ImageOverSizeLimit_ReportsSizeSkipNote()
+    {
+        // Arrange: a three-byte image against a two-byte limit
+        var model = new ExcelWorkbookModel(
+            [new ExcelSheetModel(
+                "S",
+                [new ExcelCellModel("A1", "x", null)],
+                [],
+                [new ExcelSheetImageRef("/xl/media/image1.png", "photo")])],
+            [new EmbeddedImage([1, 2, 3], "image/png", "photo", "/xl/media/image1.png")]);
+        var sink = new RecordingSink();
+
+        // Act: emit with a caller-supplied size limit
+        await ExcelContentEmitter.EmitAsync(sink, new ExtractionOptions { MaxImageBytes = 2 }, model, Ct);
+
+        // Assert: nothing was written and the skip is stated as a note
+        Assert.Empty(sink.Images);
+        Assert.Contains(
+            sink.Notes,
+            note => note.Message.Contains("exceeded caller-supplied size limits", StringComparison.Ordinal));
+    }
 }

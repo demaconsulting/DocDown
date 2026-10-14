@@ -64,7 +64,7 @@ package DocDownVisioRendering {
     }
 }
 
-// DocDownTool is the third system: the docdown command-line tool. It has two subsystems
+// DocDownTool is the command-line tool system. It has two subsystems
 // (Cli, SelfTest) and one direct unit (Program), so it carries a system view plus a view
 // per subsystem.
 package DocDownTool {

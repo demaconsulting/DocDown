@@ -6,7 +6,7 @@
 
 `VisioOpenXmlExtractor` is the managed backend the engine selects for ordinary content extraction.
 Its single responsibility is orchestration: identify the modern Visio drawings it reads, probe
-available everywhere the package can load, record the managed-path environment facts, buffer and
+available everywhere the subsystem can load, record the managed-path environment facts, buffer and
 open the drawing, hand the stream to the reader, delegate emission to the shared emitter, and
 contribute self-tests that describe its own behavior.
 
@@ -40,8 +40,10 @@ environment there, so one instance can be registered once and reused across conc
 
 ### Error Handling
 
-Null arguments are rejected with `ArgumentNullException`. Any fault from the reader propagates to
-Core, which converts it into an unreadable result with the full layout still written; the extractor
+Null arguments are rejected with `ArgumentNullException`. Any fault from the reader, including a
+corrupt package, propagates to Core, which converts it into an unreadable result with the full layout
+still written; cancellation is observed while buffering the source and propagates as
+`OperationCanceledException` (the emitter additionally observes it between pages); the extractor
 itself writes no bytes outside the sink. The self-test reports every fault as data rather than
 throwing at its caller.
 

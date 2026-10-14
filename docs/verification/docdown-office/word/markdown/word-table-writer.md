@@ -1,7 +1,8 @@
 ## WordTableWriter Verification Design
 
 This document describes the unit-level verification strategy for `WordTableWriter`, the unit that
-renders a table model as a GitHub-Flavored-Markdown table and counts every cell it flattens.
+renders a table model as a GitHub-Flavored-Markdown table and returns the flattened-cell count the
+model records.
 
 ### Verification Approach
 
@@ -15,8 +16,10 @@ carrying a newline and a pipe, an all-empty table, or a table declaring merged a
 counts — so a failure names one table rule rather than one document.
 
 Both return values are asserted. The rendered markdown proves the shape reached the output, and the
-flattened count is asserted separately because it is what the emitter later uses when it decides
-whether to report a table-flattening note.
+flattened count is asserted separately because it is the writer's second return value. The count
+reports the model's declared merged and nested totals; the flattening itself is performed by
+`WordOpenXmlReader`, and the emitter's table-flattening note is computed from the model rather than
+from this return value.
 
 ### Test Environment
 
@@ -33,7 +36,8 @@ Per IEC 62304 §5.5.2, a `WordTableWriter` unit test run passes when a full tabl
 row, delimiter row, and body as GFM; when a row shorter than the widest is padded to the column
 count with empty cells; when a pipe within a cell is escaped and a newline is converted to a line
 break so the cell stays within one grid cell; when a table whose cells hold no content renders as
-an empty string; and when the flattened count returned equals the sum of the model's merged-cell
+an empty string; when a hard-break run inside a cell becomes a single line break; and when the flattened
+count returned equals the sum of the model's merged-cell
 count and its nested-table count.
 
 ### Test Scenarios
@@ -75,3 +79,10 @@ table entirely. Evidence for `DocDownWord-Markdown-WordTableWriter-SkipsEmptyTab
 Proves a table declaring two merged cells and one nested table returns a flattened count of three —
 the sum of merges and nested tables. Evidence for
 `DocDownWord-Markdown-WordTableWriter-FlattensMergedAndNested`.
+
+#### A hard-break run inside a cell becomes a single break
+
+**Test**: `WordTableWriter_Write_CellWithHardBreakRun_BecomesSingleBreak`
+
+Proves a cell holding a hard-break run renders one `<br>`, so the break stays inside its grid cell.
+Supporting evidence for `DocDownWord-BreakRendering`.

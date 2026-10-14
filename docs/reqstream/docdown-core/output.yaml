@@ -117,6 +117,9 @@ sections:
               - MetadataWriter_Render_AbsentInteresting_EmitsAbsentArrayAndNote
               - OpcMetadataMapper_From_PopulatedProperties_MapsFieldsWithProvenanceAndIsoDates
               - OpcMetadataMapper_From_BlankValues_OmittedAsFieldsAndRecordedAbsent
+              - OpcMetadataMapper_From_AllProperties_MapsEachInCanonicalOrder
+              - OpcMetadataMapper_From_LocalKindDate_ConvertedToUtc
+              - OpcMetadataMapper_From_NullProperties_ThrowsArgumentNullException
               - SummaryWriter_WriteAsync_PdfShapedMetadata_InlinesHumanAuthorNotApplication
               - SummaryWriter_WriteAsync_OpcShapedMetadata_FallsBackToCreatorAsAuthor
 
@@ -129,7 +132,7 @@ sections:
               Counted features make the extracted structure discoverable without reading the full
               markdown.
             children:
-              - DocDownCore-Output-ExtractionSink-RecordsReports
+              - DocDownCore-Output-ExtractionSink-RecordsContentFeatures
               - DocDownCore-Output-SummaryWriter-GistAndInventory
             tests:
               - ExtractionSink_ReportContentFeature_RepeatedLabels_AccumulateAndDropZeroCounts
@@ -148,6 +151,7 @@ sections:
               - DocDownCore-Output-ContentWriter-PartIndex
               - DocDownCore-Output-ContentWriter-PageMarkers
               - DocDownCore-Output-ContentWriter-AbsenceExplained
+              - DocDownCore-Output-ContentWriter-PartLinksRewritten
               - DocDownCore-Output-ExtractionSink-AllocatesPartPaths
             tests:
               - Output_ContentDocument_TextWritten_ProducesContentMd
@@ -161,6 +165,12 @@ sections:
               - DocDownCore-Output-ExtractionSink-AllocatesImagePaths
               - DocDownCore-Output-ExtractionSink-ImageDeduplication
               - DocDownCore-Output-ExtractionSink-ImageSuppression
+              - DocDownCore-Output-EmbeddedImageWriter-WritesDeduplicated
+              - DocDownCore-Output-EmbeddedImageWriter-MergesReferrers
+              - DocDownCore-Output-EmbeddedImageWriter-CountsVectorMetafiles
+              - DocDownCore-Output-EmbeddedImageWriter-SkipsOversized
+              - DocDownCore-Output-ImageDimensions-ReadsHeaders
+              - DocDownCore-Output-ImageLinkText-SafeAltText
               - DocDownCore-Output-SummaryWriter-ImageSummary
               - DocDownCore-Output-ImageTextSelector-RanksBySource
               - DocDownCore-Output-ImageTextSelector-GatesByConfidence

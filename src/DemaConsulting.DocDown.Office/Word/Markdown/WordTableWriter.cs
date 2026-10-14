@@ -4,7 +4,7 @@ namespace DemaConsulting.DocDown.Word.Markdown;
 
 /// <summary>
 ///     Renders a <see cref="WordTableModel"/> to a GitHub-flavored-markdown table, applying the
-///     seven table rules and returning the count of cells it had to flatten.
+///     table rules and returning the count of cells it had to flatten.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -91,7 +91,10 @@ internal static class WordTableWriter
 
         var content = WordMarkdownWriter.RenderInlines(row[column].Content);
         return content
+            .Replace("\r  \n", "<br>", StringComparison.Ordinal)
+            .Replace("  \n", "<br>", StringComparison.Ordinal)
             .Replace("\r\n", "<br>", StringComparison.Ordinal)
+            .Replace("\r", "<br>", StringComparison.Ordinal)
             .Replace("\n", "<br>", StringComparison.Ordinal)
             .Trim();
     }

@@ -74,8 +74,8 @@ are outside the scope of this integration.
 ### Integration Pattern
 
 **Build-time only, never a shipped dependency.** The package is referenced with
-`PrivateAssets="All"` in each of the seven packable libraries — `Core`, `Pdf`, `Pdf.Rendering`,
-`Word`, `Visio`, `PowerPoint`, and `Excel`. It contributes MSBuild targets and nothing else, so
+`PrivateAssets="All"` in each of the six packable libraries — `Core`, `Pdf`, `Pdf.Rendering`,
+`Office`, `PowerPoint.Rendering`, and `Visio.Rendering`. It contributes MSBuild targets and nothing else, so
 it does not appear in any produced `.nuspec` dependency list and does not flow to consumers. What
 *does* flow to consumers is the generated Markdown, as package content rather than as a
 dependency.

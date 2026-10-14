@@ -10,7 +10,7 @@ namespace DemaConsulting.DocDown.Visio;
 ///     <para>
 ///         DocDown registers backends explicitly rather than by reflection or assembly scanning, so a
 ///         host's dependency graph is exactly what its code says it is. This class is that explicit
-///         seam for the Visio package: <see cref="AddVisio"/> registers the managed Open Packaging
+///         seam for the Visio subsystem: <see cref="AddVisio"/> registers the managed Open Packaging
 ///         backend — the guaranteed content path that always recovers page names, shape text, and
 ///         the directed connector topology.
 ///     </para>

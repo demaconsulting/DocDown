@@ -13,8 +13,8 @@ here and is testable from a hand-built model with no deck and no Open XML SDK be
 
 The subsystem exists because reading a deck and reporting what was read are separate concerns. Holding
 the whole projection apart from the reader is what makes every mapping decision provable from a
-hand-built model, and it is what lets the COM backend reuse the exact same emission by delegation, so
-a deck's content reads identically whether or not it was rendered.
+hand-built model, and it is what lets the PowerPoint.Rendering package reuse the exact same emission by
+delegation, so a deck's content reads identically whether or not it was rendered.
 
 ### Interfaces
 
@@ -28,15 +28,24 @@ a deck's content reads identically whether or not it was rendered.
 
 **The deck model.** `PowerPointDeckModel` is the cross-reader contract: the slides in presentation
 order, the deduplicated embedded images, and the deck metadata. Each `PowerPointSlideModel` carries
-its 1-based ordinal, its title or null, its body text lines, its speaker notes or null, and the images
-it references in reading order. These model records are defined by the OpenXml subsystem and are the
-agreement both backends share.
+its 1-based ordinal, its title or null, its body text lines, its speaker notes or null, the images
+it references in reading order, and the reviewer comments attached to it. The deck model also carries
+the modern-comment counts (`ModernCommentCount`, `ModernCommentSlideCount`). These model records are
+defined by the OpenXml subsystem and are the agreement both backends share.
 
 **The content emitter.** `PowerPointContentEmitter` is the single emission path. It writes the embedded
 images first so each slide can link its pictures inline, writes one section per slide carrying its
 title, body text, and speaker notes in presentation order, reports the document information and
-captured metadata, and reports the content inventory. A deck with no slides becomes an empty
-`content.md` plus zero-count inventory entries for the looked-for document structure.
+captured metadata, reports each slide comment to the sink as a review comment located `Slide {n}`
+(Core collects them into `review-comments.md`; they never enter `content.md`), and reports the content
+inventory. A deck with no slides becomes an empty `content.md` plus the captured metadata (when present)
+and zero-count inventory entries for the looked-for document structure; that early path reports no image
+notes, review comments, or modern-comments note.
+
+**The comment inventory and modern-comments note.** The inventory states the comment and distinct
+comment-author counts even at zero. A deck carrying modern persona-based comments, which the reader counts
+but does not read, additionally records one extraction note naming how many such comments sit on how many
+slides and stating that they do not appear in `review-comments.md`; nothing is reported when there are none.
 
 **The speaker-notes accounting.** The emitter counts the slides that carry speaker notes and reports
 that count in the content inventory, marked as looked for. A deck carrying none therefore reads

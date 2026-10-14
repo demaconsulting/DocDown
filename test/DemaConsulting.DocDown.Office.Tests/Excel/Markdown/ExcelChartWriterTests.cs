@@ -236,4 +236,29 @@ public class ExcelChartWriterTests
     /// <returns>The chart model.</returns>
     private static ExcelChartModel Chart(ExcelChartData data) =>
         new("/xl/charts/chart1.xml", "Results", data, null);
+
+    /// <summary>
+    ///     Proves line breaks in a title, series name, axis title, and read-failure reason cannot end
+    ///     the heading, list item, or prose line they are written into.
+    /// </summary>
+    [Fact]
+    public void ExcelChartWriter_Render_LineBreaksInLabels_StayOnOneLine()
+    {
+        // Arrange: a chart whose title, axis titles, and series name carry line breaks
+        var chart = Chart(new ExcelChartData(
+            "Tank\nPressure", TitleIsAutomatic: false, ["line"], "Time\r\n(min)", "Pressure\n(kPa)",
+            [new ExcelChartPoint(0, "0")], null,
+            [new ExcelChartSeries("Vessel\nA", null, null, 1, [new ExcelChartPoint(0, "1")])]));
+
+        // Act: render the chart part and describe it
+        var markdown = ExcelChartWriter.Render(chart);
+        var description = ExcelChartWriter.Describe(chart);
+
+        // Assert: each label stays on a single line
+        Assert.Contains("# Tank Pressure\n", markdown, StringComparison.Ordinal);
+        Assert.Contains("- Category axis: Time (min)\n", markdown, StringComparison.Ordinal);
+        Assert.Contains("- Value axis: Pressure (kPa)\n", markdown, StringComparison.Ordinal);
+        Assert.Contains("  - Vessel A: 1 cached point", markdown, StringComparison.Ordinal);
+        Assert.Contains("'Tank Pressure'", description, StringComparison.Ordinal);
+    }
 }

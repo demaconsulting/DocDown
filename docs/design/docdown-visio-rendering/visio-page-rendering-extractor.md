@@ -54,7 +54,9 @@ depending on CanvasNet.Vsdx actually failing.
 ### Error Handling
 
 If the delegated managed extraction reports `Unreadable`, this unit returns `Unreadable` unchanged
-and does not attempt page rendering. A page-count fault is caught separately: the sink already has
+and does not attempt page rendering. In practice the managed backend signals a corrupt package by
+throwing, so the fault propagates to Core unmasked and no page is rendered either way. A page-count
+fault is caught separately: the sink already has
 the delegated content, so it is reported as a single note and the extraction still returns
 `Produced`. When the page count succeeds but selects zero pages to render — an empty drawing, or a
 page range matching nothing — this unit reports that outcome itself, rather than relying on Core to

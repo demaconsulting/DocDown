@@ -1,17 +1,17 @@
 # DemaConsulting.DocDown.PowerPoint Verification Design
 
-This document describes the system-level verification strategy for `DemaConsulting.DocDown.PowerPoint`, the
-PowerPoint extraction package.
+This document describes the subsystem-level verification strategy for `DemaConsulting.DocDown.PowerPoint`, the
+PowerPoint extraction subsystem.
 
 ## Verification Approach
 
-`DemaConsulting.DocDown.PowerPoint` is verified through system-level integration tests in `DocDownPowerPointTests.cs`
+`DemaConsulting.DocDown.PowerPoint` is verified through subsystem-level integration tests in `DocDownPowerPointTests.cs`
 and unit tests per unit in `DemaConsulting.DocDown.Office.Tests`.
 
 ### Every extraction test reconciles against the filesystem
 
 Every scenario that performs an extraction ends with layout assertions proving the invariant output
-folders and files are present on disk. This is the highest-value assertion available to this package:
+folders and files are present on disk. This is the highest-value assertion available to this subsystem:
 it makes a dishonest extraction a test failure rather than a review finding, and it applies to both
 clean `Produced` runs and `Unreadable` runs. The legacy `.ppt` refusal scenario is checked the same
 way, so the structured unreadable layout is verified alongside successful modern-deck extractions.
@@ -20,7 +20,7 @@ Beyond the layout, each scenario asserts the extraction outcome, the inventory c
 
 ### One reader, one emitter
 
-The package ships one backend. The managed Open XML backend reads a deck into the reader-neutral
+The subsystem ships one backend. The managed Open XML backend reads a deck into the reader-neutral
 model and drives the content emitter, so every mapping decision is made in exactly one place and can
 be proved from a hand-built model with no deck behind it. Rendered slide images are a separate,
 opt-in concern provided by `DemaConsulting.DocDown.PowerPoint.Rendering` and verified there.
@@ -43,7 +43,7 @@ The legacy `.ppt` scenario writes a placeholder byte sequence whose extension dr
 because the selection path never opens the file: no registered backend supports the format. No
 fixture is committed.
 The one committed binary is the backend's self-test probe: a real deck authored in Microsoft
-PowerPoint, embedded in the package so the self-test reads what that application emits.
+PowerPoint, embedded in the subsystem so the self-test reads what that application emits.
 The suite's own fixtures stay generated. No `.pptx` or
 `.ppt` beyond that probe is committed, so every slide title, body line, speaker note,
 image name, and rendered payload in the fixtures is synthetic.
@@ -63,7 +63,7 @@ image name, and rendered payload in the fixtures is synthetic.
 
 ## Acceptance Criteria
 
-Per IEC 62304 §5.7.2, a system-level test run passes when:
+Per IEC 62304 §5.7.2, a subsystem-level test run passes when:
 
 - Every scenario below passes on every operating system and runtime in the CI matrix, with no
   unexpected exception or wrong return value.
@@ -81,7 +81,7 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 
 ## Test Scenarios
 
-Each scenario corresponds to one system requirement and names the real test method that evidences it.
+Each scenario corresponds to one subsystem requirement and names the real test method that evidences it.
 
 ### The default engine registers the managed PowerPoint backend
 
@@ -108,10 +108,13 @@ produced, and the run completes as `Produced` with no notes recorded. Evidence f
 
 ### Slide body text is extracted
 
-**Test**: `PowerPointOpenXmlReader_Read_Slide_ExtractsBodyTextLines`
+**Tests**: `PowerPointOpenXmlReader_Read_Slide_ExtractsBodyTextLines`,
+`PowerPointOpenXmlReader_Read_DeckWithTable_ReadsRowsAsLines`,
+`PowerPointOpenXmlReader_Read_DeckWithGroupedShapes_ReadsNestedGroupText`,
+`PowerPointOpenXmlReader_Read_DeckWithSmartArt_ReadsNodeText`
 
-Proves a slide's body text lines are extracted from the file, separate from its title. Evidence for
-`DocDownPowerPoint-SlideText`.
+Prove a slide's body text lines are extracted from the file, separate from its title, including text held
+in tables, grouped shapes, and SmartArt diagrams. Evidence for `DocDownPowerPoint-SlideText`.
 
 ### Slide titles are extracted and written
 
@@ -157,7 +160,7 @@ separate, opt-in concern delivered entirely by `DemaConsulting.DocDown.PowerPoin
 **Test**: `DocDownPowerPoint_Extract_DeckWithImage_WritesEmbeddedImage`
 
 Proves a deck's embedded image is written to `images/` and the extraction reconciles cleanly, with
-the slide association recorded. Evidence for `DocDownPowerPoint-EmbeddedImages`.
+the slide association recorded as an `images/` link in `content.md`. Evidence for `DocDownPowerPoint-EmbeddedImages`.
 
 ### A vector image is written unchanged
 
@@ -176,17 +179,33 @@ document structure. Evidence for `DocDownPowerPoint-EmptyDeckInventory`.
 ### The content outline is reported from the model
 
 **Tests**: `PowerPointContentEmitter_Emit_Deck_ReportsContentFeaturesIncludingSpeakerNotes`,
-`DocDownPowerPoint_Extract_DeckWithNotes_ReportsSpeakerNotesInventory`
+`DocDownPowerPoint_Extract_DeckWithNotes_ReportsSpeakerNotesInventory`,
+`DocDownPowerPoint_Extract_DeckWithComment_WritesReviewComments`
 
-Prove the outline counts — slides, slide titles, sets of speaker notes, and inline images — are
-reported from the model and reach the end-to-end artifacts. Evidence for
+Prove the outline counts — slides, slide titles, sets of speaker notes, inline images, comments, and
+distinct comment authors — are reported from the model and reach the end-to-end artifacts. Evidence for
 `DocDownPowerPoint-ContentOutline`.
+
+### Reviewer comments reach the review-comments artifact
+
+**Test**: `DocDownPowerPoint_Extract_DeckWithComment_WritesReviewComments`
+
+Proves a legacy slide comment is written to `review-comments.md` with its resolved author and a
+`Slide 1` location, and is counted in the summary. Evidence for `DocDownPowerPoint-ReviewComments`.
+
+### Unread modern comments are stated in a note
+
+**Test**: `DocDownPowerPoint_Extract_DeckWithModernComments_ReportsUnreadCommentsNote`
+
+Proves a deck whose only comments are modern persona comments records one extraction note naming the
+count of unread comments, and that the note reaches `summary.txt`. The emitter's no-note case for a deck
+without modern comments is proved at unit level. Evidence for `DocDownPowerPoint-ModernCommentsNote`.
 
 ### A legacy binary deck is refused with a plain explanation
 
 **Test**: `DocDownPowerPoint_Extract_LegacyPpt_FailsWithUnsupportedFormatExplanation`
 
-Proves an engine with the PowerPoint package registered completes a `.ppt` request as `Unreadable`
+Proves an engine with the PowerPoint subsystem registered completes a `.ppt` request as `Unreadable`
 with a plain explanation stating that DocDown does not support the legacy binary Office formats, with
 no installation instruction. Evidence for `DocDownPowerPoint-LegacyFormatRefusal`.
 

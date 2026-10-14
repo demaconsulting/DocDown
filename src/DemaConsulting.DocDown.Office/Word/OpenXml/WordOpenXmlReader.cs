@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.Word.Markdown;
@@ -867,7 +868,8 @@ internal sealed class WordOpenXmlReader
             foreach (var cell in row.Elements<W.TableCell>())
             {
                 var (content, _) = BuildCellContent(part, cell);
-                var text = WordMarkdownWriter.RenderInlines(content.Content).Replace("\n", " ", StringComparison.Ordinal).Trim();
+                var text = WordMarkdownWriter.RenderInlines(content.Content).Replace("  \n", " ", StringComparison.Ordinal)
+                    .Replace("\n", " ", StringComparison.Ordinal).Trim();
                 if (text.Length > 0)
                 {
                     cellTexts.Add(text);
@@ -876,7 +878,8 @@ internal sealed class WordOpenXmlReader
 
             if (cellTexts.Count > 0)
             {
-                lines.Add(string.Join(" | ", cellTexts));
+                // The separator is escaped: a bare pipe would split the enclosing table cell
+                lines.Add(string.Join(" \\| ", cellTexts));
             }
         }
 
@@ -929,7 +932,7 @@ internal sealed class WordOpenXmlReader
                 continue;
             }
 
-            var key = (isHeader ? "H|" : "F|") + WordMarkdownWriter.WriteBlocks(blocks, empty);
+            var key = (isHeader ? "H|" : "F|") + WordMarkdownWriter.WriteBlocks(blocks, empty) + ImageFingerprint(blocks);
             if (!seen.Add(key))
             {
                 continue;
@@ -943,6 +946,29 @@ internal sealed class WordOpenXmlReader
         AddLabeledSections(sections, "Footer", footerSurvivors);
 
         return (sections, found, emptyParts, furnitureParts);
+    }
+
+    /// <summary>
+    ///     Builds a content fingerprint of the images in a block sequence.
+    /// </summary>
+    /// <param name="blocks">The blocks to fingerprint.</param>
+    /// <returns>A string identifying each image by content hash in order, empty when there are none.</returns>
+    /// <remarks>
+    ///     The rendered text of a header or footer omits images, so two parts differing only in a logo
+    ///     would otherwise collapse to one. Pure.
+    /// </remarks>
+    private static string ImageFingerprint(IReadOnlyList<WordBlock> blocks)
+    {
+        var builder = new StringBuilder();
+        foreach (var block in blocks)
+        {
+            if (block is { Kind: WordBlockKind.Image, Image: { } image })
+            {
+                builder.Append("|IMG:").Append(Convert.ToHexString(SHA256.HashData(image.Bytes)));
+            }
+        }
+
+        return builder.ToString();
     }
 
     /// <summary>
@@ -967,10 +993,7 @@ internal sealed class WordOpenXmlReader
             switch (element)
             {
                 case W.Paragraph paragraph:
-                    var before = blocks.Count;
-                    var seenFurniture = AppendParagraphTrackingFurniture(blocks, part, paragraph);
-                    hadFurnitureField |= seenFurniture;
-                    _ = before;
+                    hadFurnitureField |= AppendParagraphTrackingFurniture(blocks, part, paragraph);
                     break;
 
                 case W.Table table:

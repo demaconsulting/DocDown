@@ -215,6 +215,83 @@ public class ExtractionTests
     }
 
     /// <summary>
+    ///     Proves a file-backed source records its name, path, and size and opens a fresh stream each time.
+    /// </summary>
+    [Fact]
+    public void Extraction_DocumentSource_FileSource_RecordsIdentityAndOpensFreshStreams()
+    {
+        // Arrange: a file on disk
+        using var temp = new TempScratch();
+        var path = temp.CreateFile("note.txt", "hello");
+
+        // Act: build the source and open it twice
+        var source = DocumentSource.FromFile(path);
+        using var first = source.OpenRead();
+        using var second = source.OpenRead();
+
+        // Assert: identity is recorded and the two streams are independent and fully readable
+        Assert.Equal("note.txt", source.FileName);
+        Assert.Equal(path, source.Path);
+        Assert.Equal(5, source.SizeBytes);
+        Assert.NotSame(first, second);
+        Assert.Equal("hello", new StreamReader(first).ReadToEnd());
+        Assert.Equal("hello", new StreamReader(second).ReadToEnd());
+    }
+
+    /// <summary>
+    ///     Proves a missing file is not an error at construction and surfaces only when opened.
+    /// </summary>
+    [Fact]
+    public void Extraction_DocumentSource_MissingFile_NullSizeAndOpenReadThrows()
+    {
+        // Arrange / Act: a source for a file that does not exist
+        using var temp = new TempScratch();
+        var source = DocumentSource.FromFile(Path.Combine(temp.Path, "absent.txt"));
+
+        // Assert: size is unknown and the read error is deferred to OpenRead
+        Assert.Null(source.SizeBytes);
+        Assert.Throws<FileNotFoundException>(() => source.OpenRead());
+    }
+
+    /// <summary>
+    ///     Proves a stream source rewinds on each open and never disposes the caller-owned stream.
+    /// </summary>
+    [Fact]
+    public void Extraction_DocumentSource_StreamSource_RewindsAndLeavesCallerStreamOpen()
+    {
+        // Arrange: a caller-owned seekable stream whose position was moved
+        using var content = new MemoryStream("abcdef"u8.ToArray());
+        content.Position = 4;
+        var source = DocumentSource.FromStream(content, "memory.txt");
+
+        // Act: open, read, and dispose the returned stream
+        string text;
+        using (var opened = source.OpenRead())
+        {
+            text = new StreamReader(opened).ReadToEnd();
+        }
+
+        // Assert: reading began at the start, size and name were recorded, and the stream stays usable
+        Assert.Equal("abcdef", text);
+        Assert.Equal(6, source.SizeBytes);
+        Assert.Equal("memory.txt", source.FileName);
+        Assert.Null(source.Path);
+        Assert.True(content.CanRead);
+    }
+
+    /// <summary>
+    ///     Proves the source factories reject missing arguments.
+    /// </summary>
+    [Fact]
+    public void Extraction_DocumentSource_NullOrEmptyArguments_Throw()
+    {
+        // Act / Assert: each factory refuses an unusable argument
+        Assert.Throws<ArgumentException>(() => DocumentSource.FromFile(string.Empty));
+        Assert.Throws<ArgumentNullException>(() => DocumentSource.FromStream(null!, "a.txt"));
+        Assert.Throws<ArgumentException>(() => DocumentSource.FromStream(new MemoryStream(), string.Empty));
+    }
+
+    /// <summary>
     ///     Creates an available candidate for selector tests.
     /// </summary>
     /// <param name="id">The candidate identifier.</param>

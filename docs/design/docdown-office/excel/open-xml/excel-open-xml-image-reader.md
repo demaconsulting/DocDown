@@ -11,7 +11,8 @@ extraction and the emitter can link each picture inline under its sheet.
 
 ### Data Model
 
-`ExcelOpenXmlImageReader` is an `internal static class`. It returns an `ExcelImageCollection`: the distinct
+`ExcelOpenXmlImageReader` is an `internal static class`. It returns an `ExcelImageCollection` (a record
+defined in this unit's source file, carrying the two parts that follow): the distinct
 embedded images, each carrying its complete bytes, content type, naming candidates, and every referring
 worksheet's tab index; and a map from a 1-based worksheet tab index to the images that sheet shows, in
 drawing order. A private `PartAccumulator` gathers one distinct part's referrers while walking the

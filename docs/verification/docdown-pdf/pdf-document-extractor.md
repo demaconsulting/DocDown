@@ -55,7 +55,7 @@ surface. Evidence for `DocDownPdf-PdfDocumentExtractor-DescribesSupportedContrac
 **Test**: `PdfDocumentExtractor_ProbeAvailability_ManagedOnlyBackend_ReportsAvailableWithoutIo`
 
 Proves repeated probes stay within budget, report the backend available, do not throw, and do not
-report rendered-page support. Evidence for `DocDownPdf-PdfDocumentExtractor-ProbesManagedAvailability`.
+report rendered-page support. Evidence for `DocDownPdf-PdfDocumentExtractor-ProbeIsCheapAndSafe`.
 
 #### Document metadata is reported from the document
 
@@ -63,6 +63,24 @@ report rendered-page support. Evidence for `DocDownPdf-PdfDocumentExtractor-Prob
 
 Proves the title, author, and page count recorded on the sink come from the source document.
 Evidence for `DocDownPdf-PdfDocumentExtractor-ReportsDocumentInfo`.
+
+#### Self-reported metadata is mapped with provenance
+
+**Tests**: `PdfDocumentExtractor_ExtractAsync_DocumentWithMetadata_ReportsDocumentMetadata`,
+`PdfDocumentExtractor_BuildDocumentMetadata_NoInformation_ReportsFieldsAbsent`
+
+Prove the declared title and author reach the self-reported metadata attributed to the PDF document
+information, and that a document with no information dictionary reports nothing and lists the interesting
+fields as absent. Evidence for `DocDownPdf-PdfDocumentExtractor-ReportsDocumentMetadata`.
+
+#### PDF date strings are parsed to ISO-8601 UTC or omitted
+
+**Tests**: `PdfDocumentExtractor_TryParsePdfDate_WellFormed_ParsesToIsoUtc` and
+`PdfDocumentExtractor_TryParsePdfDate_Malformed_ReturnsFalse` (in `PdfDateParsingTests.cs`)
+
+Prove well-formed PDF `D:` dates, including defaulted fields and UTC offsets, normalize to ISO-8601 UTC
+and that malformed or impossible dates fail the parse so the metadata field is omitted rather than
+guessed. Evidence for `DocDownPdf-PdfDocumentExtractor-ReportsDocumentMetadata`.
 
 #### Parser and page-rendering environment facts are recorded
 
@@ -82,9 +100,9 @@ actually extracted. Evidence for `DocDownPdf-PdfDocumentExtractor-HonorsPageRang
 
 **Test**: `PdfDocumentExtractor_ExtractAsync_AnnotatedDocument_ReportsReviewComments`
 
-Proves every remark the annotated fixture carries reaches the sink through the review-comment
-channel, each located as `Page {n}`. The location wording is asserted here, not at the annotation
-extractor, because this unit owns it. Evidence for
+Proves every commentary annotation with non-blank text that the annotated fixture carries reaches
+the sink through the review-comment channel, each located as `Page {n}`. The location wording is
+asserted here, not at the annotation extractor, because this unit owns it. Evidence for
 `DocDownPdf-PdfDocumentExtractor-ReportsReviewComments`.
 
 #### A page range restricts reviewer comments along with the content

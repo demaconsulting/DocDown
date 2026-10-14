@@ -57,5 +57,6 @@ sections:
               readers.
             children:
               - DocDownCore-Detection-FormatSniffer-StreamPositionRestored
+              - DocDownCore-Detection-FormatSniffer-RejectsInvalidStreams
             tests:
               - Detection_NonDestructiveInspection_SeekableStream_RestoresStreamPosition

@@ -185,9 +185,80 @@ public class DocDownWordTests
 
         // Assert: the chart is counted and explained rather than silently absent
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
-        Assert.Contains(result.Notes, note => note.Message.Contains("1 charts", StringComparison.Ordinal));
+        Assert.Contains(result.Notes, note => note.Message.Contains("embeds 1 chart,", StringComparison.Ordinal));
         Assert.Contains(result.Notes, note => note.Message.Contains("does not read chart parts", StringComparison.Ordinal));
         ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
+    ///     Proves a document embedding two charts reports one note with the plural count.
+    /// </summary>
+    [Fact]
+    public async Task DocDownWord_Extract_DocxWithTwoCharts_ReportsPluralChartNote()
+    {
+        using var temp = new TempScratch();
+        var (scratch, result) = await ExtractAsync(temp, "charted2.docx", DocxFixtures.DocumentWithTwoCharts());
+
+        Assert.Contains(result.Notes, note => note.Message.Contains("embeds 2 charts,", StringComparison.Ordinal));
+        Assert.Contains(result.Notes, note => note.Message.Contains("their titles", StringComparison.Ordinal));
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
+    ///     Proves a password-protected document is reported as unreadable with an explanation naming the
+    ///     protection, and the full output layout is still written.
+    /// </summary>
+    [Fact]
+    public async Task DocDownWord_Extract_ProtectedDocx_IsUnreadableWithPasswordExplanation()
+    {
+        using var temp = new TempScratch();
+        var (scratch, result) = await ExtractAsync(temp, "locked.docx", DocxFixtures.PasswordProtected());
+
+        Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
+        Assert.NotNull(result.Failure);
+        Assert.Contains("password-protected", result.Failure.Explanation, StringComparison.OrdinalIgnoreCase);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
+    ///     Proves a document's declared core properties reach <c>metadata.json</c>.
+    /// </summary>
+    [Fact]
+    public async Task DocDownWord_Extract_DocxWithCoreProperties_WritesDocumentMetadata()
+    {
+        using var temp = new TempScratch();
+        var (scratch, _) = await ExtractAsync(temp, "props.docx", DocxFixtures.DocumentWithCoreProperties());
+
+        var metadata = await File.ReadAllTextAsync(Path.Combine(scratch, "metadata.json"), Ct);
+        Assert.Contains("Interface control", metadata, StringComparison.Ordinal);
+        Assert.Contains("Editor Person", metadata, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
+    ///     Proves extracting the same document twice produces a byte-identical content document and
+    ///     image set, so output is deterministic across runs.
+    /// </summary>
+    [Fact]
+    public async Task DocDownWord_Extract_SameDocumentTwice_ProducesIdenticalOutput()
+    {
+        using var first = new TempScratch();
+        using var second = new TempScratch();
+        var bytes = DocxFixtures.CleanDocument();
+
+        var (firstFolder, _) = await ExtractAsync(first, "clean.docx", bytes);
+        var (secondFolder, _) = await ExtractAsync(second, "clean.docx", bytes);
+
+        foreach (var name in new[] { "content.md", "metadata.json" })
+        {
+            Assert.Equal(
+                await File.ReadAllBytesAsync(Path.Combine(firstFolder, name), Ct),
+                await File.ReadAllBytesAsync(Path.Combine(secondFolder, name), Ct));
+        }
+
+        var firstImages = Directory.GetFiles(Path.Combine(firstFolder, "images")).Select(Path.GetFileName).Order().ToList();
+        var secondImages = Directory.GetFiles(Path.Combine(secondFolder, "images")).Select(Path.GetFileName).Order().ToList();
+        Assert.Equal(firstImages, secondImages);
     }
 
     /// <summary>
@@ -211,7 +282,7 @@ public class DocDownWordTests
     ///     that the format is unsupported.
     /// </summary>
     /// <remarks>
-    ///     This package reads Open XML documents and nothing else, so a <c>.doc</c> has no reader
+    ///     This subsystem reads Open XML documents and nothing else, so a <c>.doc</c> has no reader
     ///     here and never will. The value of the test is the shape of the refusal: a structured
     ///     failure with the full output layout still written and no exception reaching the caller —
     ///     never a silent omission and never an install directive the reader cannot act on.
@@ -241,7 +312,7 @@ public class DocDownWordTests
     }
 
     /// <summary>
-    ///     Extracts a fixture through the full Word system and returns the folder and result.
+    ///     Extracts a fixture through the full Word subsystem and returns the folder and result.
     /// </summary>
     /// <param name="temp">The owning temporary folder.</param>
     /// <param name="name">The fixture file name.</param>
@@ -258,7 +329,7 @@ public class DocDownWordTests
     }
 
     /// <summary>
-    ///     Creates options carrying the fixed timestamp for reproducible output.
+    ///     Creates default extraction options.
     /// </summary>
     /// <returns>The options.</returns>
     private static ExtractionOptions FixedOptions() => new();

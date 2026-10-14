@@ -43,10 +43,9 @@ not-executed, and surface the rendering backend's own self-test without reportin
 - **Rendering**: these are the suite's only `--validate` runs through the real command line. Every
   render case they exercise is fully managed, so no Microsoft application is required or started.
   Unit-level assertions about `--validate` use a managed engine instead.
-- **Concurrency**: the two runs share a class fixture, so xUnit already runs them one at a time; a
-  session-scoped harness gate covers the three target-framework processes, which the framework
-  cannot reach. The queue is two runs per assembly, so a run waits seconds rather than minutes. The
-  gate is the suite's, not the tool's: a user runs `--validate` once and contends with nothing.
+- **Concurrency**: the two `--validate` runs share a class fixture, so xUnit runs them one at a time
+  within the class. Every self-test case exercised is fully managed, so runs may overlap freely;
+  there is no harness gate and no single-instance application to serialize.
 
 ## Acceptance Criteria
 
@@ -59,8 +58,9 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
   the produced summary and manifest.
 - An unreadable input writes the explanation for the unreadable outcome, with no stack trace, and
   exits non-zero.
-- The default engine registers exactly the PDF, PDF-rendering, Word, Visio, PowerPoint, and Excel
-  backends through the explicit builder seams.
+- The registration chain the test builds registers exactly eight backends: PDF, PDF-rendering, Word,
+  Visio, PowerPoint, Excel, PowerPoint-rendering, and Visio-rendering. The test lists the individual
+  `Program.BuildEngine` itself, so the test verifies the chain the tool ships.
 - `docdown --validate --results <file>.trx` and `--results <file>.xml` produce well-formed TRX and
   JUnit that re-parse, include `core.layout-invariance` and `core.manifest-schema`, and record the
   always-skipped page-rendering case as not-executed, distinct from a failure.
@@ -71,7 +71,7 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 - The standard version and help commands print their expected output, and an unrecognized argument
   exits non-zero with a message and no stack trace.
 - The tool project is configured to pack as a .NET tool with the command name `docdown`.
-- Each of the six platform requirements is satisfied by a source-filtered result from the matching
+- Each of the four platform requirements is satisfied by a source-filtered result from the matching
   operating system or runtime.
 
 ## Test Scenarios
@@ -83,7 +83,7 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
 Proves the primary path: a generated PDF extracts cleanly, the tool reports that the output layout
 was produced, the tool prints a fully qualified `summary.txt` path that exists on disk, and the
 process exits zero. This is also the anchor for the platform requirements. Evidence for
-`DocDownTool-Extraction` and, under source filters, the six `DocDownTool-Platform-*` requirements.
+`DocDownTool-Extraction` and, under source filters, the four `DocDownTool-Platform-*` requirements.
 
 ### A produced extraction reports recorded notes
 
@@ -104,8 +104,9 @@ stack trace reaching the output. Evidence for `DocDownTool-StructuredFailure`.
 
 **Test**: `DocDownTool_Build_DefaultEngine_RegistersBackendsExplicitly`
 
-Proves the one-liner the tool uses to build its engine registers the expected backend set, with no
-reflection. Evidence for `DocDownTool-ExplicitRegistration`.
+Proves the engine built by the internal `Program.BuildEngine` registers the expected eight-backend
+set with no reflection, so a change to the tool's own chain is detected by this test. Evidence for
+`DocDownTool-ExplicitRegistration`.
 
 ### Self-validation produces well-formed TRX and JUnit
 

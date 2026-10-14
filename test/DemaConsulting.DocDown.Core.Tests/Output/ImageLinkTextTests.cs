@@ -72,7 +72,6 @@ public class ImageLinkTextTests
 
         Assert.DoesNotContain('\n', result);
         Assert.DoesNotContain('\r', result);
-        Assert.Contains("first", result, StringComparison.Ordinal);
-        Assert.Contains("second", result, StringComparison.Ordinal);
+        Assert.Equal("first second", result);
     }
 }

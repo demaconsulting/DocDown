@@ -26,6 +26,7 @@ sections:
               - DocDownTool-Validation-RunsUnion
               - DocDownTool-Validation-WritesResults
               - DocDownTool-Validation-Outcome
+              - DocDownTool-Validation-FailureExitCode
             tests:
               - DocDownTool_Validate_ResultsTrx_ProducesWellFormedTrx
               - DocDownTool_Validate_RenderingSelfTestCase_IsRecordedAndPasses
@@ -43,5 +44,6 @@ sections:
               - DocDownTool-SelfTestAdapter-MapsOutcomes
               - DocDownTool-SelfTestAdapter-SkippedIsNotExecuted
               - DocDownTool-SelfTestAdapter-PreservesMetadata
+              - DocDownTool-SelfTestAdapter-RejectsInvalidInput
             tests:
               - SelfTestAdapter_ToTestOutcome_Skipped_ReturnsNotExecuted

@@ -358,9 +358,9 @@ public static class SummaryWriter
     ///         different thing: in a full install they are eight near-identical "available" lines
     ///         that spend a paste-in reader's token budget describing code that never executed. Only
     ///         the ones reporting an <em>un</em>availability are kept, because those can explain a
-    ///         gap; the rest are collapsed into a single counted line pointing at
-    ///         <c>manifest.json</c>, which carries every fact unconditionally. Nothing is lost, only
-    ///         relocated.
+    ///         gap; the rest are collapsed into a single counted line that points at
+    ///         <c>docdown --list-backends</c>. The manifest records only the backend that ran, so it is
+    ///         not the pointer for the backends that did not.
     ///     </para>
     /// </remarks>
     private static void AppendEnvironment(StringBuilder builder, ExtractionEnvironment environment)

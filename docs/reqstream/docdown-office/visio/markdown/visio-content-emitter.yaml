@@ -104,6 +104,28 @@ sections:
                 tests:
                   - VisioContentEmitter_Emit_MultiLineShapeText_StaysInsideItsListItem
 
+              - id: DocDownVisio-Markdown-VisioContentEmitter-KeepsEdgesOnOneLine
+                title: >-
+                  VisioContentEmitter shall keep each connection on a single list line, collapsing
+                  line breaks in an endpoint label to spaces.
+                justification: |
+                  An edge is one list item; a shape's own multi-line text used as an endpoint label
+                  would otherwise split the line and corrupt the list, so the label's lines are
+                  joined with single spaces and nothing is truncated.
+                tests:
+                  - VisioContentEmitter_Emit_MultiLineEndpointLabel_StaysOnOneEdgeLine
+
+              - id: DocDownVisio-Markdown-VisioContentEmitter-HonorsCancellation
+                title: >-
+                  VisioContentEmitter shall observe cancellation between pages and surface it as
+                  `OperationCanceledException` before writing content.
+                justification: |
+                  A drawing can have many pages, so emission checks the caller's token between pages and
+                  stops with the standard cancellation exception rather than writing a partial content
+                  file or disguising the cancellation as a failure.
+                tests:
+                  - VisioContentEmitter_Emit_CancelledToken_Throws
+
               - id: DocDownVisio-Markdown-VisioContentEmitter-OmitsEdgesBetweenUnnamedShapes
                 title: >-
                   VisioContentEmitter shall omit a connection whose endpoints are both unidentified

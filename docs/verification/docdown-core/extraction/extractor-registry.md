@@ -12,14 +12,15 @@ identifier resolution, and probe containment directly observable without filesys
 
 - **Framework**: xUnit v3 under the .NET SDK
 - **Targets**: net8.0, net9.0, and net10.0
-- **Backends**: `StubExtractor` instances, including throwing and unavailable probes
+- **Backends**: StubExtractor instances, including throwing and unavailable probes, plus a local test
+  double whose probe returns null
 - **Filesystem**: N/A - registry tests are fully in memory
 
 #### Acceptance Criteria
 
 Per IEC 62304 §5.5.2, `ExtractorRegistry` passes when descriptors remain in registration order,
-identifiers resolve as documented, availability is probed once and cached until refreshed, throwing
-or null-like probe behavior is contained as unavailability, and exactly one candidate is returned per
+identifiers resolve as documented, availability is probed once and cached until refreshed, a probe
+that throws or returns null is contained as unavailability, and exactly one candidate is returned per
 registered extractor.
 
 #### Test Scenarios
@@ -42,11 +43,32 @@ registered extractor.
 ##### Probe failures are contained as unavailability
 
 **Tests**: `ExtractorRegistry_GetCandidates_ThrowingProbe_ContainedAsUnavailable`,
+`ExtractorRegistry_GetCandidates_NullProbeResult_ContainedAsUnavailable`,
 `ExtractorRegistry_GetCandidates_UnavailableBackend_PreservesReason`
 
 ##### Availability is re-probed after refresh
 
 **Test**: `ExtractorRegistry_RefreshAvailability_AfterCaching_ReprobesOnNextEnumeration`
+
+##### Duplicate identifiers are rejected
+
+**Test**: `ExtractorRegistry_Construct_DuplicateIds_ThrowsArgumentException`
+
+Proves a registry constructed over two extractors that share an identifier is refused rather than
+silently shadowing one of them.
+
+##### Construction validates its factories
+
+**Tests**: `ExtractorRegistry_Construct_NullFactoryList_ThrowsArgumentNullException`,
+`ExtractorRegistry_Construct_EmptyFactoryList_YieldsEmptyRegistry`,
+`ExtractorRegistry_Construct_NullFactoryElement_ThrowsArgumentNullException`,
+`ExtractorRegistry_Construct_FactoryReturnsNull_ThrowsArgumentException`,
+`ExtractorRegistry_Construct_EmptyIdentifier_ThrowsArgumentException`,
+`ExtractorRegistry_Construct_NullIdentifier_ThrowsArgumentException`,
+`ExtractorRegistry_Construct_Factory_IsMaterializedExactlyOnce`
+
+Proves a null list, a null factory, a factory returning null, and a null or empty identifier are refused, an empty
+list yields an empty registry, and each factory runs exactly once.
 
 ##### One candidate is yielded per extractor
 

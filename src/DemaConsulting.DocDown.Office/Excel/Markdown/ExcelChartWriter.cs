@@ -64,7 +64,7 @@ internal static class ExcelChartWriter
         if (chart.Data is not { } data)
         {
             builder.Append("_This chart could not be read: ")
-                .Append(chart.ReadFailureReason ?? "no reason was recorded.").Append("_\n");
+                .Append(OneLine(chart.ReadFailureReason ?? "no reason was recorded.")).Append("_\n");
             builder.Append('\n').Append("Chart part: `").Append(chart.PartUri).Append("`, on worksheet ")
                 .Append(Quoted(chart.SheetName)).Append(".\n");
             return builder.ToString();
@@ -126,7 +126,7 @@ internal static class ExcelChartWriter
     /// <returns>The chart's title, or a sheet-qualified fallback when it has none.</returns>
     /// <remarks>A titleless chart still needs a heading a reader can navigate by, so its worksheet names it. Pure.</remarks>
     private static string Heading(ExcelChartModel chart) =>
-        chart.Data?.Title is { Length: > 0 } title ? title : $"Chart on {chart.SheetName}";
+        OneLine(chart.Data?.Title is { Length: > 0 } title ? title : $"Chart on {chart.SheetName}");
 
     /// <summary>
     ///     Appends the chart's context: what kind of plot it is, where it lives, and what its axes measure.
@@ -158,17 +158,17 @@ internal static class ExcelChartWriter
 
         if (data.CategoryAxisTitle is { Length: > 0 } categoryAxis)
         {
-            builder.Append("- Category axis: ").Append(categoryAxis).Append('\n');
+            builder.Append("- Category axis: ").Append(OneLine(categoryAxis)).Append('\n');
         }
 
         if (data.ValueAxisTitle is { Length: > 0 } valueAxis)
         {
-            builder.Append("- Value axis: ").Append(valueAxis).Append('\n');
+            builder.Append("- Value axis: ").Append(OneLine(valueAxis)).Append('\n');
         }
 
         if (data.CategoryFormatCode is { Length: > 0 } categoryFormat)
         {
-            builder.Append("- Category number format: `").Append(categoryFormat).Append("`\n");
+            builder.Append("- Category number format: `").Append(OneLine(categoryFormat)).Append("`\n");
         }
     }
 
@@ -194,7 +194,7 @@ internal static class ExcelChartWriter
         for (var index = 0; index < data.Series.Count; index++)
         {
             var series = data.Series[index];
-            builder.Append("  - ").Append(SeriesLabel(series, index))
+            builder.Append("  - ").Append(OneLine(SeriesLabel(series, index)))
                 .Append(": ").Append(series.Points.Count.ToString(CultureInfo.InvariantCulture))
                 .Append(series.Points.Count == 1 ? " cached point" : " cached points");
 
@@ -207,12 +207,12 @@ internal static class ExcelChartWriter
 
             if (series.FormatCode is { Length: > 0 } format)
             {
-                builder.Append(", number format `").Append(format).Append('`');
+                builder.Append(", number format `").Append(OneLine(format)).Append('`');
             }
 
             if (series.SourceReference is { Length: > 0 } source)
             {
-                builder.Append(", source `").Append(source).Append('`');
+                builder.Append(", source `").Append(OneLine(source)).Append('`');
             }
 
             builder.Append('\n');
@@ -345,7 +345,7 @@ internal static class ExcelChartWriter
     /// <param name="value">The name to quote.</param>
     /// <returns>The quoted name.</returns>
     /// <remarks>Single quotes match the worksheet naming used elsewhere in this backend's prose. Pure.</remarks>
-    private static string Quoted(string value) => $"'{value}'";
+    private static string Quoted(string value) => $"'{OneLine(value)}'";
 
     /// <summary>
     ///     Escapes the characters a markdown table cell cannot carry.
@@ -360,6 +360,20 @@ internal static class ExcelChartWriter
     private static string Escape(string value) =>
         value.Replace("|", "\\|", StringComparison.Ordinal)
             .Replace("\r\n", " ", StringComparison.Ordinal)
+            .Replace("\n", " ", StringComparison.Ordinal)
+            .Replace("\r", " ", StringComparison.Ordinal);
+
+    /// <summary>
+    ///     Flattens line breaks so a title, label, or reason stays on the single markdown line it is written to.
+    /// </summary>
+    /// <param name="value">The text to flatten.</param>
+    /// <returns>The text with each line break replaced by a space.</returns>
+    /// <remarks>
+    ///     A cached title or series name may carry a line break; written into a heading, list item, or quoted
+    ///     name it would end the construct early and leak the rest as body text. Pure.
+    /// </remarks>
+    private static string OneLine(string value) =>
+        value.Replace("\r\n", " ", StringComparison.Ordinal)
             .Replace("\n", " ", StringComparison.Ordinal)
             .Replace("\r", " ", StringComparison.Ordinal);
 }

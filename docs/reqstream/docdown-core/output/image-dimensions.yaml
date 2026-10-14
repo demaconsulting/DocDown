@@ -1,0 +1,28 @@
+---
+# Software Unit Requirements for ImageDimensions
+#
+# ImageDimensions reads the pixel size of a raster image from its header bytes without decoding it,
+# so the Open XML backends can enforce a dimension limit without an imaging library.
+
+sections:
+  - title: DocDownCore Requirements
+    sections:
+      - title: Output Requirements
+        sections:
+          - title: ImageDimensions Requirements
+            requirements:
+              - id: DocDownCore-Output-ImageDimensions-ReadsHeaders
+                title: >-
+                  ImageDimensions shall read the pixel width and height from PNG, JPEG, GIF, and BMP
+                  headers and report failure, rather than throw, for non-raster or malformed data.
+                justification: |
+                  Dimension limits are enforced on untrusted bytes, so header parsing must be safe for
+                  truncated input and for hostile header values such as a minimum-integer BMP height.
+                tests:
+                  - ImageDimensions_TryRead_Png_ReadsWidthAndHeight
+                  - ImageDimensions_TryRead_Jpeg_ReadsWidthAndHeight
+                  - ImageDimensions_TryRead_Gif_ReadsWidthAndHeight
+                  - ImageDimensions_TryRead_Bmp_ReadsWidthAndAbsoluteHeight
+                  - ImageDimensions_TryRead_BmpMinValueHeight_ReturnsFalseWithoutThrowing
+                  - ImageDimensions_TryRead_NonRaster_ReturnsFalse
+                  - ImageDimensions_TryRead_Truncated_ReturnsFalse

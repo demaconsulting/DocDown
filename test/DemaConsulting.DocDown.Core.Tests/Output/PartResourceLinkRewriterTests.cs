@@ -32,6 +32,22 @@ public class PartResourceLinkRewriterTests
     }
 
     /// <summary>
+    ///     Proves an image link whose alt text contains an escaped closing bracket is still rewritten.
+    /// </summary>
+    [Fact]
+    public void PartResourceLinkRewriter_Rewrite_AltTextWithEscapedBracket_PrefixesOneParent()
+    {
+        // Arrange: the alt text carries the escapes that ImageLinkText.Alt produces
+        var markdown = "![" + ImageLinkText.Alt("a]b \\ c") + "](images/0001-image.png)\n";
+
+        // Act: rewrite for a flat part path
+        var result = PartResourceLinkRewriter.Rewrite(markdown, "parts/0001-sheet-charts.md");
+
+        // Assert: the escaped bracket does not end the opener early, so the target is rewritten
+        Assert.Equal("![a\\]b \\\\ c](../images/0001-image.png)\n", result);
+    }
+
+    /// <summary>
     ///     Proves a plain link to <c>pages/…</c> is rewritten just like the image form.
     /// </summary>
     [Fact]

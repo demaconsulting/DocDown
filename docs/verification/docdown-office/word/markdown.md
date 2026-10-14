@@ -15,7 +15,7 @@ The Markdown subsystem is verified through unit tests exercising its three units
 The writer units are tested against hand-built models with no document behind them, because the
 subsystem's contract is the projection from a model onto markdown. The content emitter is tested at
 two levels: directly through a `RecordingSink` for inventory, metadata, and note decisions, and
-through real extractions for split-output and end-to-end note behavior.
+through real extractions for end-to-end content and note behavior.
 
 ### Test Environment
 
@@ -33,9 +33,10 @@ through real extractions for split-output and end-to-end note behavior.
 Per IEC 62304 §5.6.2, a Markdown subsystem test run passes when the writer renders every block kind
 the model carries; when the table writer emits a header-and-delimiter GFM table, pads short rows,
 escapes pipes, converts newlines within a cell, skips an empty table, and returns the count of
-merged and nested cells it flattened; and when the emitter writes the model's content in the
-requested split form, reports the content inventory, reports metadata once when present, and emits
-only the notes implied by incomplete steps in the model or options.
+merged and nested cells the model records as flattened; and when the emitter writes the model's
+content as one continuous flow, reports the content inventory, reports metadata once when present,
+and emits only the notes implied by incomplete steps in the model (unread charts, flattened table
+structure, and comments whose only content is a picture or ink).
 
 ### Test Scenarios
 

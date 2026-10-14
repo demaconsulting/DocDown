@@ -15,7 +15,10 @@ image-to-page association survives extraction and an image is citable back to th
 document-properties path prefix (where the thumbnail lives), and the masters path marker. It returns a
 `VisioImageCollection` — the distinct images in package-part order, each carrying every referring page, and
 the per-page ordered image references used for inline linking. A private `PartAccumulator` gathers each
-distinct media part's referring pages and its template flag while the package is walked.
+distinct media part's referring pages and its template flag while the package is walked. "Distinct" means
+distinct by package part, not by content bytes: a part shared by several pages is yielded once with every
+referring page, while identical bytes stored in two different parts yield two images, and any byte-level
+deduplication is left to the sink.
 
 ### Key Methods
 

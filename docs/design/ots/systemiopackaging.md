@@ -48,12 +48,13 @@ package reference because its own source names the type. It would also arrive tr
 whose code calls an API declares that API rather than inheriting it by accident.
 
 **Version resolution — different per target framework.** Because the package is part of the .NET
-runtime component family, the version referenced depends on the target framework:
+runtime component family, the version referenced depends on the target framework: the Office project
+declares one exact-version reference for `net10.0` and a different exact-version reference for the
+other target frameworks (`net8.0` and `net9.0`), each selected by a target-framework condition on the
+`PackageReference`. See `src/DemaConsulting.DocDown.Office/DemaConsulting.DocDown.Office.csproj` for
+the current versions.
 
-- `net8.0` and `net9.0` — `System.IO.Packaging 8.0.1`
-- `net10.0` — `System.IO.Packaging 10.0.2`
-
-Both are the runtime-family builds current for their respective TFMs, pinned to exact versions per
+Both are runtime-family builds current for their respective TFMs, pinned to exact versions per
 TFM in the Office project so restore is deterministic and cannot drift with the SDK's own graph.
 
 **Native assets.** None. The Office package's build output contains no `runtimes/` folder and no

@@ -18,16 +18,16 @@ public sealed record ValidationRun(int ExitCode, string Log, string ResultsPath)
 /// <remarks>
 ///     <para>
 ///         These are the only validation runs in the suite that go through the real command line over
-///         the shipped engine, which on Windows means genuinely launching Microsoft Visio and
-///         rasterizing a page. That is the point of it: the COM render case must actually run and
-///         pass here, not be skipped or tolerated. Everything the <c>Validation</c> unit can be
+///         the shipped engine, which means genuinely rendering pages through the managed rendering
+///         backends. That is the point of it: the render cases must actually run and pass here,
+///         not be skipped or tolerated. Everything the <c>Validation</c> unit can be
 ///         asked on its own — the header, the results-file shapes, the exit code — is proven in
-///         <c>ValidationTests</c> over a managed engine that starts no application at all.
+///         <c>ValidationTests</c> over a managed engine that starts no Office backend at all.
 ///     </para>
 ///     <para>
 ///         Two runs are kept rather than one because each proves a distinct path from the command
 ///         line through to a serializer, and neither serializer is reachable from the other's run.
-///         Each is created lazily, so a test selection that touches neither starts no application.
+///         Each is created lazily, so a test selection that touches neither runs no validation.
 ///     </para>
 ///     <para>
 ///         xUnit runs a class's tests one at a time, so the two runs never overlap within a process;

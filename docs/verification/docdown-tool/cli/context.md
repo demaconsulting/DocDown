@@ -87,6 +87,21 @@ Prove an unrecognized argument raises an argument fault, including the removed `
 Prove a page range that is not two numbers and an unrecognized scratch-policy token are each
 rejected with an argument fault at parse time. Evidence for `DocDownTool-Context-OptionValidation`.
 
+#### A reversed page range is rejected
+
+**Tests**: `Context_Create_ReversedPageRange_ThrowsArgumentException`,
+`Context_Create_SinglePageRange_IsAccepted`
+
+Prove a range such as `5-2` is rejected at parse time while a single-page range such as `3-3` is
+accepted. Evidence for `DocDownTool-Context-PageRangeOrder`.
+
+#### An argument fault carries the parameter-name suffix
+
+**Test**: `Context_Create_UnknownArgument_MessageEndsWithParameterArgsSuffix`
+
+Proves the argument exception message for an unknown argument ends with the `(Parameter 'args')`
+suffix. Evidence for `DocDownTool-Context-ErrorMessageParameter`.
+
 #### An out-of-range heading depth is rejected
 
 **Test**: `Context_Create_DepthOutOfRange_ThrowsArgumentException`

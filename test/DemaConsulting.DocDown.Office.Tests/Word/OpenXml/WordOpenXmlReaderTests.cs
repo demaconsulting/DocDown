@@ -69,7 +69,7 @@ public class WordOpenXmlReaderTests
     ///     Proves tracked changes are rendered in the accepted view and counted.
     /// </summary>
     [Fact]
-    public void WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewWithDiagnostic()
+    public void WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewAndCountsChanges()
     {
         var model = Read(DocxFixtures.DocumentWithTrackedChanges());
 
@@ -266,6 +266,139 @@ public class WordOpenXmlReaderTests
 
         Assert.Equal("Quarterly Report", model.Title);
         Assert.Equal("DocDown Test Suite", model.Author);
+    }
+
+    /// <summary>
+    ///     Proves a document that declares no title, author, or page count yields none of them rather
+    ///     than an invented value.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_NoMetadata_ReportsNothing()
+    {
+        var model = Read(DocxFixtures.DocumentWithoutMetadata());
+
+        Assert.True(string.IsNullOrEmpty(model.Title));
+        Assert.True(string.IsNullOrEmpty(model.Author));
+        Assert.Null(model.ProducerPageCount);
+    }
+
+    /// <summary>
+    ///     Proves a nested table flattened into a cell joins its cells with an escaped pipe, so the
+    ///     separator cannot split the enclosing cell, and escapes a pipe inside a cell's own text.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_NestedTableWithPipe_EscapesEveryPipeInFlattenedCell()
+    {
+        var model = Read(DocxFixtures.DocumentWithNestedTableContainingPipe());
+
+        var table = Assert.Single(model.Body, block => block.Kind == WordBlockKind.Table).Table!;
+        Assert.Equal(1, table.NestedTableCount);
+        var (markdown, _) = WordTableWriter.Write(table);
+        var dataLine = markdown.Split('\n')[0];
+
+        // The enclosing row has two cells: header | cell | cell | → exactly three unescaped pipes
+        var unescaped = dataLine.Where((character, index) =>
+            character == '|' && (index == 0 || dataLine[index - 1] != '\\')).Count();
+        Assert.Equal(3, unescaped);
+        Assert.Contains("left\\|part \\| right", dataLine, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves two headers with identical text but different images are both kept in Document Control.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_SameHeaderTextDifferentImages_KeepsBothHeaders()
+    {
+        var model = Read(DocxFixtures.DocumentWithSameHeaderTextDifferentImages());
+
+        Assert.Equal(2, model.DocumentControl.Count);
+        Assert.Equal("Header (1)", model.DocumentControl[0].Label);
+        Assert.Equal("Header (2)", model.DocumentControl[1].Label);
+    }
+
+    /// <summary>
+    ///     Proves a hyperlink target containing parentheses is percent-encoded so it cannot end its
+    ///     markdown link early.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_HyperlinkWithParentheses_EscapesDestination()
+    {
+        var model = Read(DocxFixtures.DocumentWithParenthesizedHyperlink());
+
+        var inline = Assert.Single(Assert.Single(model.Body).Inlines!);
+        Assert.Equal("https://example.com/wiki/Topic_(draft)", inline.Href);
+        Assert.Equal(
+            "[the topic](https://example.com/wiki/Topic_%28draft%29)",
+            WordMarkdownWriter.RenderInlines([inline]));
+    }
+
+    /// <summary>
+    ///     Proves a line break renders as a hard markdown break, and a page break becomes a page-break block.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_LineAndPageBreaks_RenderHardBreakAndPageBreakBlock()
+    {
+        var model = Read(DocxFixtures.DocumentWithLineAndPageBreaks());
+
+        var first = WordMarkdownWriter.RenderInlines(model.Body[0].Inlines);
+        Assert.Equal("first line  \nsecond line", first);
+
+        Assert.Equal(WordBlockKind.PageBreak, model.Body[2].Kind);
+        Assert.Equal(4, model.Body.Count);
+        Assert.Contains("---", WordMarkdownWriter.Write(model, new Dictionary<string, string>()), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves a footnote reference becomes a numbered marker and the body is collected, skipping
+    ///     the separator footnote.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_Footnote_CollectsMarkerAndBody()
+    {
+        var model = Read(DocxFixtures.DocumentWithFootnote());
+
+        var body = Assert.Single(model.Footnotes);
+        Assert.Equal("The footnote body.", WordMarkdownWriter.RenderPlainText(body));
+        var paragraph = Assert.Single(model.Body).Inlines!;
+        Assert.Contains(paragraph, inline => inline is { Raw: true, Text: "[^1]" });
+        Assert.Contains("[^1]: ", WordMarkdownWriter.Write(model, new Dictionary<string, string>()), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves a package with no main document part raises a Word extraction exception.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_MissingMainPart_ThrowsWordExtractionException()
+    {
+        using var stream = new MemoryStream(DocxFixtures.PackageWithoutMainPart());
+
+        var exception = Assert.Throws<WordExtractionException>(() => new WordOpenXmlReader().Read(stream));
+        Assert.Contains("no main document part", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves a null stream is rejected with an argument-null exception.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_NullStream_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => new WordOpenXmlReader().Read(null!));
+    }
+
+    /// <summary>
+    ///     Proves the core properties are mapped into the shared document metadata.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_CoreProperties_MapsSharedMetadata()
+    {
+        var model = Read(DocxFixtures.DocumentWithCoreProperties());
+
+        Assert.NotNull(model.Metadata);
+        var fields = model.Metadata.Fields.ToDictionary(field => field.Name, field => field.Value);
+        Assert.Equal("Specification", fields["title"]);
+        Assert.Equal("Interface control", fields["subject"]);
+        Assert.Equal("alpha, beta", fields["keywords"]);
+        Assert.Equal("Editor Person", fields["lastModifiedBy"]);
     }
 
     /// <summary>

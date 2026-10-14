@@ -65,6 +65,37 @@ Proves reported comments are retained verbatim in the order the backend reported
 comment with nothing to say or nowhere to point is refused at the boundary where the defective caller
 can still be identified rather than being rendered into a meaningless entry.
 
+##### Invalid page numbers, features, and notes are refused
+
+**Tests**: `ExtractionSink_AddPageAsync_ZeroPageNumber_ThrowsArgumentOutOfRange`,
+`ExtractionSink_ReportContentFeature_InvalidFeature_Throws`,
+`ExtractionSink_ReportNote_BlankMessage_ThrowsArgumentException`
+
+Proves a zero page number, an invalid content feature, and a blank note are rejected at the boundary
+with the documented exceptions rather than recorded.
+
+##### Repeated feature labels accumulate and zero counts are dropped
+
+**Test**: `ExtractionSink_ReportContentFeature_RepeatedLabels_AccumulateAndDropZeroCounts`
+
+Proves repeated reports of one feature label accumulate into one counted entry and that a zero count is
+dropped unless the backend marked the feature as looked for.
+
 ##### Hostile preferred names stay contained
 
 **Test**: `ExtractionSink_AddImageAsync_HostilePreferredName_StaysContained`
+
+##### Image transform provenance is recorded
+
+**Tests**: `ExtractionSink_AddImageAsync_NoTransformReported_RecordsPassthrough`,
+`ExtractionSink_AddImageAsync_DecodedToPngReported_RecordsTransform`
+
+Proves an image added with no reported transform is recorded as a passthrough and a reported transform is
+preserved verbatim.
+
+##### Image description and referrer metadata are recorded
+
+**Test**: `ExtractionSink_AddImageAsync_DescriptionAndReferrers_AreRecorded`
+
+Proves the description, its provenance, the source reference, the source pages, and the template flag
+survive on the stored image record.

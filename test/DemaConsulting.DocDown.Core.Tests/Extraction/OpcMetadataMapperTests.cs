@@ -90,6 +90,53 @@ public class OpcMetadataMapperTests
         Assert.Equal(["title", "subject", "keywords", "category", "contentStatus"], metadata.AbsentInteresting);
     }
 
+    /// <summary>
+    ///     Proves every core property is mapped, in the fixed canonical field order, with trimmed values.
+    /// </summary>
+    [Fact]
+    public void OpcMetadataMapper_From_AllProperties_MapsEachInCanonicalOrder()
+    {
+        var properties = new OpcCoreProperties(
+            " Ada ", "Charles", new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc),
+            new DateTime(2026, 2, 3, 4, 5, 6, DateTimeKind.Utc), "7", "Title", "Subject", "k1; k2", "Category",
+            "Draft", "Description", new DateTime(2026, 3, 4, 5, 6, 7, DateTimeKind.Utc), "1.2", "en-US", "id-1");
+
+        var metadata = OpcMetadataMapper.From(properties);
+
+        Assert.Equal(
+            [
+                "creator", "lastModifiedBy", "created", "modified", "revision", "title", "subject", "keywords",
+                "category", "contentStatus", "description", "lastPrinted", "version", "language", "identifier"
+            ],
+            metadata.Fields.Select(field => field.Name));
+        Assert.Equal("Ada", Value(metadata, "creator"));
+        Assert.Equal("2026-03-04T05:06:07Z", Value(metadata, "lastPrinted"));
+        Assert.Equal("en-US", Value(metadata, "language"));
+        Assert.Empty(metadata.AbsentInteresting);
+    }
+
+    /// <summary>
+    ///     Proves a UTC-kind date and a local-kind date denoting the same instant normalize identically.
+    /// </summary>
+    [Fact]
+    public void OpcMetadataMapper_From_LocalKindDate_ConvertedToUtc()
+    {
+        var utc = new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc);
+
+        var metadata = OpcMetadataMapper.From(Empty() with { Created = utc.ToLocalTime() });
+
+        Assert.Equal("2026-06-01T12:00:00Z", Value(metadata, "created"));
+    }
+
+    /// <summary>
+    ///     Proves a null property bag is rejected at the call site.
+    /// </summary>
+    [Fact]
+    public void OpcMetadataMapper_From_NullProperties_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => OpcMetadataMapper.From(null!));
+    }
+
     /// <summary>Builds an all-null core-property snapshot to specialize per test with a <c>with</c> expression.</summary>
     /// <returns>An <see cref="OpcCoreProperties"/> with every member null.</returns>
     /// <remarks>Keeps each test terse by naming only the properties it exercises.</remarks>

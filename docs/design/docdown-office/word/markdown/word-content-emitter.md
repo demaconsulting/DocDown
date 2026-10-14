@@ -5,7 +5,7 @@
 ### Purpose
 
 `WordContentEmitter` emits a rendered `WordDocumentModel` through the extraction sink, applying the
-package's reporting policy in one place. It writes content, images, `DocumentInfo`, content
+subsystem's reporting policy in one place. It writes content, images, `DocumentInfo`, content
 inventory, reviewer comments, metadata, and short extraction notes derived from the model. Nothing
 is omitted silently.
 
@@ -16,10 +16,9 @@ quietly diverge from the first.
 
 ### Data Model
 
-`WordContentEmitter` is an `internal static class` with no state. Two private path constants —
-`ContentTarget = "content.md"` and `ImagesTarget = "images/"` — define the content and image layout
-it writes through the sink. The unit reads only the shared `WordDocumentModel`,
-`ExtractionOptions`, and image references passed in.
+`WordContentEmitter` is an `internal static class` with no state. The unit reads only the shared
+`WordDocumentModel`, `ExtractionOptions`, and image references passed in; it writes one `content.md`
+and each image through the sink, which owns the layout and allocates the image paths.
 
 ### Key Methods
 
@@ -38,7 +37,8 @@ it writes through the sink. The unit reads only the shared `WordDocumentModel`,
 - **`WriteImagesAsync()`** (private) — returns immediately when embedded images are suppressed.
   Otherwise it walks the model's image references in document order, adds each through the sink,
   and records the returned path by source reference. Images are written in whatever format the
-  document stored them in; nothing is re-encoded, so there is nothing to report here.
+  document stored them in; nothing is re-encoded, so there is nothing to report here. The hint
+  attached to each image comes from `HintFor()`, which is where the passthrough claim is made.
 - **`WriteContentAsync()`** (private) — writes the whole document as one `content.md`. A Word
   document is one continuous flow, so splitting it at headings would invent a structure the
   document does not assert.
@@ -62,7 +62,9 @@ it writes through the sink. The unit reads only the shared `WordDocumentModel`,
   the document rather than part of it.
 - **`ReportExtractionNotes()`** (private) — emits only the incomplete-step notes the current design
   allows: charts whose chart parts were not read, merged or nested table structure flattened for
-  markdown, and comments whose only content was a picture or ink.
+  markdown, and comments whose only content was a picture or ink. The flattened total is summed
+  from the model's `MergedCellCount` and `NestedTableCount` over every body and document-control
+  table; it does not use the count `WordTableWriter.Write()` returns.
 - **`ReportImageOnlyCommentsNote()`** (private) — states, when `CommentsWithUnreadableContent` is
   non-zero, how many comments carry only a picture or ink and therefore do not appear in
   `review-comments.md`. This is the narrow case a note exists for: the reviewer did leave a remark,
@@ -74,15 +76,14 @@ it writes through the sink. The unit reads only the shared `WordDocumentModel`,
 ### Error Handling
 
 Every null argument to `EmitAsync()` is rejected with `ArgumentNullException`. Cancellation is
-observed between images and between parts. No condition of the model raises an exception here:
+observed before each image is added and before the content is written. No condition of the model raises an exception here:
 every incomplete step that must be surfaced becomes a note, and every empty-but-looked-for category
 becomes a zero-count inventory entry. The unit performs no filesystem I/O of its own.
 
 ### Dependencies
 
 - **DemaConsulting.DocDown.Core** — `IExtractionSink`, `ExtractionOptions`, `DocumentInfo`, `ContentFeature`,
-  `ImageHint`, `ImageTransform`, `ContentPart`, `ContentPartKind`, `DocumentComment`, and
-  `ExtractionNote`.
+  `ImageHint`, `ImageTransform`, `DocumentComment`, `DocumentMetadata`, and `ExtractionNote`.
 - **`WordDocumentModel`, `WordBlock`, `WordImageRef`, `WordTableModel`, and
   `WordDocumentControlSection`** — the model and its supporting records.
 - **`WordMarkdownWriter` and `WordTableWriter`** — the rendering helpers used for content and
@@ -90,6 +91,6 @@ becomes a zero-count inventory entry. The unit performs no filesystem I/O of its
 
 ### Callers
 
-`WordOpenXmlExtractor.ExtractAsync()` calls this unit after it has produced a model.
-`WordOpenXmlImageReader.Read()` also reuses `HintFor()` so tests can observe the same image
-provenance a real extraction would report.
+`WordOpenXmlExtractor.ExtractAsync()` calls this unit after it has produced a model. Tests also call
+`HintFor()` directly to observe the passthrough provenance a real extraction reports; nothing in
+`WordOpenXmlImageReader` depends on this unit.

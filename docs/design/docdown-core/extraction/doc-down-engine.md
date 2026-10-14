@@ -38,12 +38,27 @@ concurrent extractions targeting different scratch folders.
     6. select one extractor;
     7. invoke the backend with only `DocumentSource` and `IExtractionContext`;
     8. add any Core-derived notes;
-    9. write `content.md`, `manifest.json`, `metadata.json`, and `summary.txt` in that order;
+    9. write `content.md` through `ContentWriter`, then `review-comments.md` through
+       `ReviewCommentsWriter` (only when comments were reported), then `manifest.json`,
+       `metadata.json`, and `summary.txt` in that order;
     10. return the immutable `ExtractionResult`.
+  - *Failure path*: an unreadable source, an unrecognized format, a selection failure, or a backend
+    exception is returned as an `Unreadable` result through the same serialization steps, except that
+    `content.md` is not written.
+    `ReviewCommentsWriter` still runs, because a backend may have reported comments before the step
+    that failed; it writes nothing when none were reported.
+- **`Extractors`** — the descriptors of the registered extractors, in registration order, without
+  probing availability.
 - **`GetBackends()`** — returns each registered `ExtractorCandidate` using cached availability.
 - **`RefreshAvailability()`** — clears cached availability.
 - **`GetSelfTestCases()`** — returns Core's two built-in cases,
-  `core.layout-invariance` and `core.manifest-schema`, followed by any backend-contributed cases.
+  `core.layout-invariance` and `core.manifest-schema`, in category `core`, followed by the cases
+  contributed by each registered `ISelfValidating` extractor in registration order. Each Core case
+  runs a trivial extraction through the real pipeline with an in-process stub extractor in a unique
+  case folder, applies its assertion, and always removes the folder afterwards. A backend whose cached
+  probe reports it unavailable has its cases wrapped so they return `Skipped` with a reason naming the
+  backend rather than running, and a backend that throws while enumerating its cases contributes none,
+  so one misbehaving backend cannot break the suite.
 
 #### Page rendering is a request, not a guarantee
 
@@ -53,6 +68,9 @@ concurrent extractions targeting different scratch folders.
   this environment, the engine still returns `Produced` when extraction succeeded and records a note
   stating that pages were requested but not rendered.
 - If page rendering does not apply to the selected format, the request is honored with silence.
+
+Separately, when the caller sets `IncludeEmbeddedImages` to `false`, the engine records a note that
+embedded image extraction was disabled by the caller and no images were written.
 
 A page-rendering backend that produces zero page images is responsible for explaining that outcome
 itself, using only its own local knowledge (for example, the page or slide count it selected to

@@ -14,12 +14,10 @@ sections:
             requirements:
               - id: DocDownExcel-OpenXml-ExcelOpenXmlImageReader-YieldsEmbeddedImages
                 title: >-
-                  ExcelOpenXmlImageReader shall yield each embedded image's bytes unchanged, deduplicated
-                  by package part.
+                  ExcelOpenXmlImageReader shall yield each embedded image's bytes unchanged.
                 justification: |
                   An Open XML image part stores a complete image file byte-for-byte, so the honest
-                  transform is to pass the bytes through unchanged; deduplicating by package-part identity
-                  yields an image reused across sheets once, and the sink deduplicates again by content.
+                  transform is to pass the bytes through unchanged.
                 tests:
                   - ExcelOpenXmlReader_Read_ImageWorkbook_ExtractsEmbeddedImage
 
@@ -33,3 +31,15 @@ sections:
                   occurrences let the emitter link each picture inline under its worksheet section.
                 tests:
                   - ExcelOpenXmlReader_Read_ImageWorkbook_RecordsSheetAssociation
+                  - ExcelOpenXmlImageReader_Collect_TwoSheetsWithPictures_AttributesEachImageToItsSheet
+                  - ExcelOpenXmlImageReader_Collect_NoDrawingsOrNullPart_YieldsNothingOrThrows
+
+              - id: DocDownExcel-OpenXml-ExcelOpenXmlImageReader-DeduplicatesSharedParts
+                title: >-
+                  ExcelOpenXmlImageReader shall yield an image part shown on several worksheets once,
+                  recording every worksheet that shows it.
+                justification: |
+                  Deduplicating by package-part identity yields an image reused across sheets once while
+                  its referrers keep every sheet that shows it; the sink deduplicates again by content.
+                tests:
+                  - ExcelOpenXmlImageReader_Collect_ImagePartSharedByTwoSheets_YieldsOneImageWithBothSheets

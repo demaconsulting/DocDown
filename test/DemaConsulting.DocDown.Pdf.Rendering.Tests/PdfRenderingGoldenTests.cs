@@ -13,9 +13,9 @@ namespace DemaConsulting.DocDown.Pdf.Rendering.Tests;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The run uses a fixed timestamp and a synthetic PDF fixture, so the only machine-specific
-///         lines are the absolute scratch path, the temporary source path, and the three host
-///         environment lines. Each of those lines is normalized away before comparison; everything
+///         The run uses a synthetic PDF fixture, so the only machine-specific lines are the
+///         extraction timestamp, the absolute scratch path, the temporary source path, and the three
+///         host environment lines. Each of those lines is normalized away before comparison; everything
 ///         else is compared byte for byte.
 ///     </para>
 ///     <para>

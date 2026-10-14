@@ -33,6 +33,10 @@ is correct. It performs no filesystem I/O; the caller hands it a seekable stream
 - **Master reading** (private) — reads `visio/masters/masters.xml` into a name map, falling back to
   the master's universal name where only that is present, and carrying no master name for a shape
   with no master, a dangling reference, or a drawing with no masters part.
+- **Face-name reading** (private) — reads the optional `visio/document.xml` `FaceNames` table into an
+  id-to-name map so a numeric character `Font` value resolves to its face name before symbol-font
+  recovery is decided; a missing or unreadable part yields an empty map, and an undeclared id is kept
+  as written.
 
 ### Error Handling
 
@@ -44,7 +48,8 @@ than throwing.
 
 ### Dependencies
 
-- **DemaConsulting.DocDown.Core** — `DocumentMetadata`, mapped from the OPC core properties.
+- **DemaConsulting.DocDown.Core** — `DocumentMetadata`, mapped from the OPC core properties through
+  `OpcCoreProperties` and `OpcMetadataMapper`.
 - **System.IO.Packaging** — the OPC container reader.
 - **System.Xml** — the `XDocument` reader for pages, shapes, connectors, and masters.
 - **VisioDocumentModel** — the model records it populates.

@@ -39,6 +39,7 @@ sections:
                   A rendered page file should map back to the source page without guesswork.
                 tests:
                   - ExtractionSink_AddPageAsync_PageNumber_NamesFileByDocumentPage
+                  - ExtractionSink_AddPageAsync_ZeroPageNumber_ThrowsArgumentOutOfRange
 
               - id: DocDownCore-Output-ExtractionSink-AllocatesPartPaths
                 title: ExtractionSink shall allocate dense ordinal-kind-slug paths for content parts.
@@ -58,13 +59,27 @@ sections:
 
               - id: DocDownCore-Output-ExtractionSink-RecordsReports
                 title: >-
-                  ExtractionSink shall record document metadata, environment facts, notes, and
-                  counted content features for later serialization.
+                  ExtractionSink shall record document metadata, environment facts, and notes for
+                  later serialization and reject a blank note.
                 justification: |
                   The later writers consume the sink's recorded state rather than re-reading the
                   document or reconstructing extractor decisions.
                 tests:
                   - ExtractionSink_Reports_RecordedForLaterSerialization
+                  - ExtractionSink_ReportNote_BlankMessage_ThrowsArgumentException
+
+              - id: DocDownCore-Output-ExtractionSink-RecordsContentFeatures
+                title: >-
+                  ExtractionSink shall accumulate counted content features by label, keep a
+                  looked-for-but-absent feature, and reject an invalid feature.
+                justification: |
+                  Content features state what the document does or does not contain. Accumulation by
+                  label keeps repeated reports honest, a looked-for zero keeps an absence the backend
+                  checked for visible, and an invalid feature cannot be rendered truthfully.
+                tests:
+                  - ExtractionSink_ReportContentFeature_RepeatedLabels_AccumulateAndDropZeroCounts
+                  - ExtractionSink_ReportContentFeature_LookedForZero_IsReported
+                  - ExtractionSink_ReportContentFeature_InvalidFeature_Throws
 
               - id: DocDownCore-Output-ExtractionSink-RecordsReviewComments
                 title: >-
@@ -81,8 +96,6 @@ sections:
                   - ExtractionSink_ReportReviewComment_BlankBody_ThrowsArgumentException
                   - ExtractionSink_ReportReviewComment_BlankLocation_ThrowsArgumentException
                   - ExtractionSink_ReportReviewComment_NullComment_ThrowsArgumentNullException
-                  - ExtractionSink_ReportContentFeature_RepeatedLabels_AccumulateAndDropZeroCounts
-                  - ExtractionSink_ReportContentFeature_LookedForZero_IsReported
 
               - id: DocDownCore-Output-ExtractionSink-ImageTransformRecorded
                 title: >-
@@ -92,6 +105,8 @@ sections:
                   Only the extractor knows whether image bytes were passed through unchanged or
                   were decoded and re-encoded before reaching the sink.
                 tests:
+                  - ExtractionSink_AddImageAsync_NoTransformReported_RecordsPassthrough
+                  - ExtractionSink_AddImageAsync_DecodedToPngReported_RecordsTransform
                   - Output_ImageProvenance_MixedTransforms_ManifestRecordsEachHonestly
 
               - id: DocDownCore-Output-ExtractionSink-ImageDescriptionRecorded
@@ -102,4 +117,5 @@ sections:
                   Per-image descriptive text and referrer metadata originate with the extractor and
                   must remain attached to the stored image record.
                 tests:
+                  - ExtractionSink_AddImageAsync_DescriptionAndReferrers_AreRecorded
                   - ManifestWriter_WriteAsync_ImageMetadata_SerializesReferrersTemplateAndDescription

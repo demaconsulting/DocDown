@@ -6,7 +6,7 @@
 
 `WordDocDownBuilderExtensions` is the registration seam: the one explicit call that adds the Word
 backend to a `DocDownBuilder`. Its single responsibility is to be the one visible edge from a host
-to this package.
+to this subsystem.
 
 That edge matters more than its size suggests. DocDown registers backends explicitly rather than by
 reflection or assembly scanning, so a host's set of active backends is a property of its own code
@@ -17,7 +17,7 @@ either upheld or lost.
 
 `WordDocDownBuilderExtensions` is a `public static class` with no state. It carries no Open XML SDK
 type on its public surface — the `using DemaConsulting.DocDown.Word.OpenXml;` directive references only this
-package's own extractor type — so a host can reference the surface it configures without the SDK's
+subsystem's own extractor type — so a host can reference the surface it configures without the SDK's
 types entering its own compilation. Its member is thread-safe; the builder it mutates is not.
 
 ### Key Methods
@@ -27,7 +27,7 @@ types entering its own compilation. Its member is thread-safe; the builder it mu
   Precondition: `builder` non-null. Postcondition: exactly one further extractor is registered, and
   the builder returned is the one passed in.
 
-  There is deliberately no second registration method. The package ships one backend, and a call
+  There is deliberately no second registration method. The subsystem ships one backend, and a call
   that registered a subset of one backend would be an affordance with nothing behind it.
 
 The method registers a factory rather than an instance, so construction is deferred to
@@ -48,5 +48,7 @@ input or output and constructs nothing.
 
 ### Callers
 
-A host application, once, when configuring an engine. `DemaConsulting.DocDown.Tool` calls `AddWord` alongside its
-other extractor registrations. Nothing inside this package calls it.
+A host application, once, when configuring an engine: either directly, or indirectly through
+`AddOffice()` in the `DemaConsulting.DocDown.Office` package, which calls `AddWord()` among its format
+registrations. `DemaConsulting.DocDown.Tool` registers Word through `AddOffice()`. Nothing inside
+this subsystem calls it.

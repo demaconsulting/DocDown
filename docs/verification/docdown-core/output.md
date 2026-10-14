@@ -80,3 +80,27 @@ summary layout block, and is serialized into the manifest alongside the claimed 
 
 Proves the pipeline writes every referring page into `sourcePages`, aliases its first entry as
 `sourcePage`, and marks a template-only image with `referencedByTemplate`.
+
+#### The metadata artifact is always written
+
+**Tests**: `Output_ArtifactLayout_SuccessfulWrite_CreatesRootArtifacts` (asserts `metadata.json` is among
+the root artifacts), `MetadataWriter_WriteAsync_ReportedMetadata_WritesFile`,
+`MetadataWriter_WriteAsync_NoReportedMetadata_WritesSparseFile`
+
+Proves `metadata.json` exists for every run, carrying populated fields with their provenance when the
+backend reported metadata and a sparse form when it did not. The `MetadataWriter_Render_*` tests cover
+the rendered shape (value-and-source objects, the absent array, and the explanatory notes).
+
+#### The supporting helpers are verified by their own test files
+
+**Tests**: `PartResourceLinkRewriter_Rewrite_ImageLinkInFlatPart_PrefixesOneParent`,
+`PartResourceLinkRewriter_Rewrite_AltTextWithEscapedBracket_PrefixesOneParent`,
+`PartResourceLinkRewriter_Rewrite_PageLinkPlainForm_PrefixesOneParent`,
+`PartResourceLinkRewriter_Rewrite_ExternalUrl_LeftUntouched`,
+`PartResourceLinkRewriter_Rewrite_AnchorLink_LeftUntouched`,
+`PartResourceLinkRewriter_Rewrite_AlreadyRelativeTarget_LeftUntouched`,
+`PartResourceLinkRewriter_Rewrite_NestedPart_PrefixesPerLevel`
+
+Proves part-file resource links are rewritten only for sink resource folders. This helper is linked to the
+ContentWriter link-rewrite requirement. The shared Open XML image path is verified by the unit documents for
+_EmbeddedImageWriter_, _ImageDimensions_, and _ImageLinkText_.

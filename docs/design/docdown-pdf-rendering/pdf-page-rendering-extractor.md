@@ -17,11 +17,12 @@ CanvasNet.Pdf is fully managed, so `ProbeAvailability()` is unconditional.
 ### Data Model
 
 `PdfPageRenderingExtractor` is a `public sealed class` implementing `IDocumentExtractor` and
-`ISelfValidating`. It holds no per-extraction state. Its only field is the rasterization function it
-drives, which defaults to `PageRenderer.Render`; an internal constructor accepts a substitute so a
-test can inject a faulting renderer and exercise the per-page note path. It also owns the private
-`DelegatedExtractionContext` it uses to run the managed backend against the same sink with a
-rendering-suppressed options clone.
+`ISelfValidating`. It holds no per-extraction state. Its fields are the rasterization function it
+drives, which defaults to `PageRenderer.Render`, and the page-count function, which defaults to
+`PageRenderer.GetPageCount`; internal constructors accept substitutes so a test can inject a faulting
+renderer or counter and exercise the per-page and count-fault note paths. It also uses the
+`DelegatedExtractionContext` (a separate `internal sealed` class in the same file) to run the managed
+backend against the same sink with a rendering-suppressed options clone.
 
 ### Key Methods
 
@@ -41,27 +42,34 @@ rendering-suppressed options clone.
   stable identity selection and reporting use when this backend participates in an extraction.
 - **`GetSelfTestCases()`** — contributes one case, `pdf-rendering.renderRoundTrip`, named distinctly
   from the managed backend's `pdf.parseRoundTrip` and `pdf.pageRendering` cases so existing
-  case-name assertions stay valid.
+  case-name assertions stay valid. The case rasterizes the embedded `Resources/probe.pdf` (loaded
+  through Core's `SelfTestProbe`), not a document it builds itself.
 
 ### Error Handling
 
 If the delegated managed extraction reports `Unreadable`, this unit returns `Unreadable` unchanged
-and does not attempt page rendering. When page rendering was requested but no page was selected to
+(passing the delegated outcome straight through) and does not attempt page rendering. If the pages
+cannot be counted (the injectable page-count function, `PageRenderer.GetPageCount` by default, throws),
+the managed content already written stands, no page is rendered, and this unit reports the single note
+"Pages could not be counted, so no page images were rendered." rather than turning an otherwise good
+extraction into an unreadable one; cancellation during the count still propagates. When page rendering
+was requested but no page was selected to
 render — an empty document, or a page range matching nothing — this unit reports that outcome
 itself, as the single note "Page rendering was requested and a renderer was available, but no pages
 were produced.", rather than relying on Core to infer it: Core cannot tell this unit's own
 explanation apart from an unrelated note the delegated managed backend may already have recorded
 during its earlier content phase, so this unit records the note from its own selected-page count
-instead. During rendering, cancellation propagates; every other per-page rasterization fault is
-caught in place, reported as `Page N could not be rasterized.`, and the run continues. No render
-fault reaches the caller as an exception.
+instead. During rendering, cancellation propagates; every other per-page rasterization fault
+(including an `OutOfMemoryException`, caught in its own clause) is caught in place, reported as
+`Page N could not be rasterized.`, and the run continues. No render fault reaches the caller as an
+exception.
 
 ### Dependencies
 
 - **DemaConsulting.DocDown.Core** — the extractor contract, the sink, the options, and the self-test types.
-- **DemaConsulting.DocDown.Pdf** — `PdfDocumentExtractor`, delegated to for the managed aspects; and PdfPig
-  (transitively) for counting pages to honor a page range.
-- **PageRenderer** — the rasterization seam. See *PageRenderer Design*.
+- **DemaConsulting.DocDown.Pdf** — `PdfDocumentExtractor`, delegated to for the managed aspects.
+- **PageRenderer** — the rasterization seam, which also counts pages (`GetPageCount`) to honor a page
+  range. See *PageRenderer Design*.
 
 ### Callers
 

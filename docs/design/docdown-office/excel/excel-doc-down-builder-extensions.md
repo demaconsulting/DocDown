@@ -6,7 +6,7 @@
 
 `ExcelDocDownBuilderExtensions` is the registration seam: the one explicit call that adds the Excel
 backend to a `DocDownBuilder`. Its single responsibility is to be the one visible edge from a host to
-this package.
+this subsystem.
 
 That edge matters more than its size suggests. DocDown registers backends explicitly rather than by
 reflection or assembly scanning, so a host's set of active backends is a property of its own code rather
@@ -16,7 +16,7 @@ or lost.
 ### Data Model
 
 `ExcelDocDownBuilderExtensions` is a `public static class` with no state. It carries no Open XML SDK type
-on its public surface — the `using DemaConsulting.DocDown.Excel.OpenXml;` directive references only this package's own
+on its public surface — the `using DemaConsulting.DocDown.Excel.OpenXml;` directive references only this subsystem's own
 extractor type — so a host can reference the surface it configures without the SDK's types entering its
 own compilation. Its member is thread-safe; the builder it mutates is not.
 
@@ -27,7 +27,7 @@ own compilation. Its member is thread-safe; the builder it mutates is not.
   `builder` non-null. Postcondition: exactly one further extractor is registered, and the builder
   returned is the one passed in.
 
-  There is deliberately no second registration method. The package ships one backend — the workbook
+  There is deliberately no second registration method. The subsystem ships one backend — the workbook
   intent offers no rendering, so there is no second, environment-dependent backend a variant call could
   select between.
 
@@ -50,4 +50,4 @@ constructs nothing.
 ### Callers
 
 A host application, once, when configuring an engine. `DemaConsulting.DocDown.Tool` calls `AddExcel` alongside its other
-extractor registrations. Nothing inside this package calls it.
+extractor registrations. Nothing inside this subsystem calls it.

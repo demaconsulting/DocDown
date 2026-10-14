@@ -331,6 +331,63 @@ public static class XlsxFixtures
     });
 
     /// <summary>
+    ///     Builds a workbook whose single worksheet's drawing relates to the supplied chart parts and
+    ///     anchors graphic frames that cite them in a chosen order.
+    /// </summary>
+    /// <param name="chartParts">
+    ///     The chart parts to relate, in relationship order: chart XML for a classic chart part, or
+    ///     <see langword="null"/> for an extended chart part with no content.
+    /// </param>
+    /// <param name="frames">
+    ///     The part index each graphic frame cites, in drawing order; <c>-1</c> cites a relationship
+    ///     id the package does not declare.
+    /// </param>
+    /// <returns>The workbook bytes.</returns>
+    /// <remarks>
+    ///     The chart XML is whatever the caller passes, so malformed content can be written into a
+    ///     genuine chart part; the part, the relationships, and the frames are built by the Open XML SDK.
+    /// </remarks>
+    public static byte[] ChartLayoutWorkbook(IReadOnlyList<string?> chartParts, IReadOnlyList<int> frames) =>
+        Build(workbookPart =>
+        {
+            var sheets = new S.Sheets();
+            var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+            var worksheet = new S.Worksheet();
+            worksheet.AppendChild(new S.SheetData());
+
+            var drawingsPart = worksheetPart.AddNewPart<DrawingsPart>();
+            var partIds = new List<string>();
+            foreach (var xml in chartParts)
+            {
+                if (xml is null)
+                {
+                    partIds.Add(drawingsPart.GetIdOfPart(drawingsPart.AddNewPart<ExtendedChartPart>()));
+                    continue;
+                }
+
+                var chartPart = drawingsPart.AddNewPart<ChartPart>();
+                using var stream = chartPart.GetStream(FileMode.Create, FileAccess.Write);
+                using var writer = new StreamWriter(stream);
+                writer.Write(xml);
+                writer.Flush();
+                partIds.Add(drawingsPart.GetIdOfPart(chartPart));
+            }
+
+            drawingsPart.WorksheetDrawing = BuildChartDrawing(
+                frames.Select(index => index < 0 ? "rIdUndeclared" : partIds[index]).ToList());
+            worksheet.AppendChild(new S.Drawing { Id = worksheetPart.GetIdOfPart(drawingsPart) });
+            worksheetPart.Worksheet = worksheet;
+
+            sheets.AppendChild(new S.Sheet
+            {
+                Id = workbookPart.GetIdOfPart(worksheetPart),
+                SheetId = 1U,
+                Name = "Charts"
+            });
+            workbookPart.Workbook!.AppendChild(sheets);
+        });
+
+    /// <summary>
     ///     The chart part XML of <see cref="ChartWorkbook"/>: an authored title, both axis titles, and
     ///     three cached points.
     /// </summary>
@@ -356,6 +413,333 @@ public static class XlsxFixtures
         + "</c:title></c:valAx></c:plotArea></c:chart></c:chartSpace>";
 
     /// <summary>
+    ///     Builds a workbook whose single worksheet's drawing carries text shapes: one with a line break
+    ///     inside a paragraph and a second paragraph, one with no text, and one nested in a group.
+    /// </summary>
+    /// <returns>The workbook bytes.</returns>
+    /// <remarks>Every string is invented; the shapes annotate a fictional bearing assembly.</remarks>
+    public static byte[] ShapeTextWorkbook() => Build(workbookPart =>
+    {
+        var sheets = new S.Sheets();
+
+        var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+        var sheetData = new S.SheetData();
+        var row = new S.Row();
+        row.AppendChild(InlineStringCell("A1", "Layout"));
+        sheetData.AppendChild(row);
+        var worksheet = new S.Worksheet();
+        worksheet.AppendChild(sheetData);
+
+        var drawingsPart = worksheetPart.AddNewPart<DrawingsPart>();
+        var drawing = new Xdr.WorksheetDrawing();
+        drawing.AppendChild(ShapeAnchor(
+            2U,
+            With(new D.Paragraph(), Run("Bearing"), new D.Break(), Run("retainer")),
+            With(new D.Paragraph(), Run("Part LX-4120"))));
+        drawing.AppendChild(ShapeAnchor(3U, With(new D.Paragraph(), new D.EndParagraphRunProperties())));
+
+        var group = new Xdr.GroupShape(
+            new Xdr.NonVisualGroupShapeProperties(
+                new Xdr.NonVisualDrawingProperties { Id = 4U, Name = "Group 4" },
+                new Xdr.NonVisualGroupShapeDrawingProperties()),
+            new Xdr.GroupShapeProperties(),
+            BuildShape(5U, With(new D.Paragraph(), Run("Grouped callout"))));
+        drawing.AppendChild(new Xdr.OneCellAnchor(
+            new Xdr.FromMarker(
+                new Xdr.ColumnId("3"), new Xdr.ColumnOffset("0"), new Xdr.RowId("3"), new Xdr.RowOffset("0")),
+            new Xdr.Extent { Cx = 100L, Cy = 100L },
+            group,
+            new Xdr.ClientData()));
+        drawingsPart.WorksheetDrawing = drawing;
+
+        worksheet.AppendChild(new S.Drawing { Id = worksheetPart.GetIdOfPart(drawingsPart) });
+        worksheetPart.Worksheet = worksheet;
+
+        sheets.AppendChild(new S.Sheet
+        {
+            Id = workbookPart.GetIdOfPart(worksheetPart),
+            SheetId = 1U,
+            Name = "Layout"
+        });
+
+        workbookPart.Workbook!.AppendChild(sheets);
+    });
+
+    /// <summary>
+    ///     Builds a workbook with two worksheets, each showing its own distinct embedded PNG picture.
+    /// </summary>
+    /// <returns>The workbook bytes.</returns>
+    public static byte[] TwoSheetImageWorkbook() => Build(workbookPart =>
+    {
+        var sheets = new S.Sheets();
+        for (var index = 1; index <= 2; index++)
+        {
+            var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+            var sheetData = new S.SheetData();
+            var row = new S.Row();
+            row.AppendChild(InlineStringCell("A1", "Sheet " + index.ToString(CultureInfo.InvariantCulture)));
+            sheetData.AppendChild(row);
+            var worksheet = new S.Worksheet();
+            worksheet.AppendChild(sheetData);
+
+            var drawingsPart = worksheetPart.AddNewPart<DrawingsPart>();
+            var imagePart = drawingsPart.AddImagePart(ImagePartType.Png);
+            using (var stream = imagePart.GetStream(FileMode.Create, FileAccess.Write))
+            {
+                stream.Write([(byte)index, 2, 3], 0, 3);
+            }
+
+            drawingsPart.WorksheetDrawing = BuildWorksheetDrawing(drawingsPart.GetIdOfPart(imagePart));
+            worksheet.AppendChild(new S.Drawing { Id = worksheetPart.GetIdOfPart(drawingsPart) });
+            worksheetPart.Worksheet = worksheet;
+
+            sheets.AppendChild(new S.Sheet
+            {
+                Id = workbookPart.GetIdOfPart(worksheetPart),
+                SheetId = (uint)index,
+                Name = "Pictures" + index.ToString(CultureInfo.InvariantCulture)
+            });
+        }
+
+        workbookPart.Workbook!.AppendChild(sheets);
+    });
+
+    /// <summary>
+    ///     Builds a workbook with two worksheets whose drawings both relate to one and the same image
+    ///     part, so a single picture file is shown on both sheets.
+    /// </summary>
+    /// <returns>The workbook bytes.</returns>
+    public static byte[] SharedImagePartWorkbook() => Build(workbookPart =>
+    {
+        var sheets = new S.Sheets();
+        ImagePart? sharedImage = null;
+        for (var index = 1; index <= 2; index++)
+        {
+            var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+            var sheetData = new S.SheetData();
+            var row = new S.Row();
+            row.AppendChild(InlineStringCell("A1", "Sheet " + index.ToString(CultureInfo.InvariantCulture)));
+            sheetData.AppendChild(row);
+            var worksheet = new S.Worksheet();
+            worksheet.AppendChild(sheetData);
+
+            var drawingsPart = worksheetPart.AddNewPart<DrawingsPart>();
+            if (sharedImage is null)
+            {
+                sharedImage = drawingsPart.AddImagePart(ImagePartType.Png);
+                using var stream = sharedImage.GetStream(FileMode.Create, FileAccess.Write);
+                stream.Write([9, 8, 7], 0, 3);
+            }
+            else
+            {
+                drawingsPart.AddPart(sharedImage);
+            }
+
+            drawingsPart.WorksheetDrawing = BuildWorksheetDrawing(drawingsPart.GetIdOfPart(sharedImage));
+            worksheet.AppendChild(new S.Drawing { Id = worksheetPart.GetIdOfPart(drawingsPart) });
+            worksheetPart.Worksheet = worksheet;
+
+            sheets.AppendChild(new S.Sheet
+            {
+                Id = workbookPart.GetIdOfPart(worksheetPart),
+                SheetId = (uint)index,
+                Name = "Shared" + index.ToString(CultureInfo.InvariantCulture)
+            });
+        }
+
+        workbookPart.Workbook!.AppendChild(sheets);
+    });
+
+    /// <summary>
+    ///     Builds a workbook whose single worksheet carries a shared-string cell, boolean cells, a
+    ///     decimal cell, and two merged ranges.
+    /// </summary>
+    /// <returns>The workbook bytes.</returns>
+    public static byte[] TypedAndMergedWorkbook() => Build(workbookPart =>
+    {
+        var sharedStrings = workbookPart.AddNewPart<SharedStringTablePart>();
+        sharedStrings.SharedStringTable = With(
+            new S.SharedStringTable(), With(new S.SharedStringItem(), new S.Text("Shared header")));
+        sharedStrings.SharedStringTable.Save();
+
+        var sheets = new S.Sheets();
+        var worksheetPart = AddSheet(workbookPart, sheets, "Typed", 1U,
+        [
+            TypedCell("A1", "0", S.CellValues.SharedString),
+            TypedCell("B1", "1", S.CellValues.Boolean),
+            TypedCell("C1", "0", S.CellValues.Boolean),
+            NumberCell("D1", "3.14159")
+        ]);
+        worksheetPart.Worksheet!.AppendChild(With(
+            new S.MergeCells(),
+            new S.MergeCell { Reference = "A3:B3" },
+            new S.MergeCell { Reference = "D4:E5" },
+            new S.MergeCell()));
+
+        workbookPart.Workbook!.AppendChild(sheets);
+    });
+
+    /// <summary>
+    ///     Builds a valid Open XML spreadsheet package that has no workbook part.
+    /// </summary>
+    /// <returns>The package bytes.</returns>
+    public static byte[] NoWorkbookPartBytes()
+    {
+        using var stream = new MemoryStream();
+        using (var document = SpreadsheetDocument.Create(stream, SpreadsheetDocumentType.Workbook))
+        {
+            document.PackageProperties.Title = "No workbook";
+        }
+
+        return stream.ToArray();
+    }
+
+    /// <summary>
+    ///     Builds a workbook whose single worksheet carries inline-string cells, one of them with
+    ///     rich-text runs.
+    /// </summary>
+    /// <returns>The workbook bytes.</returns>
+    public static byte[] InlineStringWorkbook() => Build(workbookPart =>
+    {
+        var sheets = new S.Sheets();
+        var richCell = new S.Cell { CellReference = "A2", DataType = S.CellValues.InlineString };
+        richCell.AppendChild(With(
+            new S.InlineString(),
+            With(new S.Run(), new S.Text("Rich ")),
+            With(new S.Run(), new S.Text("text"))));
+        AddSheet(workbookPart, sheets, "Inline", 1U, [InlineStringCell("A1", "Plain inline text"), richCell]);
+        workbookPart.Workbook!.AppendChild(sheets);
+    });
+
+    /// <summary>
+    ///     Builds a workbook whose single worksheet carries two error cells and a date-serial cell.
+    /// </summary>
+    /// <returns>The workbook bytes.</returns>
+    public static byte[] ErrorAndDateSerialWorkbook() => Build(workbookPart =>
+    {
+        var sheets = new S.Sheets();
+        AddSheet(workbookPart, sheets, "Values", 1U,
+        [
+            TypedCell("A1", "#DIV/0!", S.CellValues.Error),
+            TypedCell("B1", "45292.5", S.CellValues.Number),
+            TypedCell("C1", "#N/A", S.CellValues.Error)
+        ]);
+        workbookPart.Workbook!.AppendChild(sheets);
+    });
+
+    /// <summary>
+    ///     Builds a workbook whose legacy comment cites an author index the comments part does not
+    ///     list and whose threaded comment cites a person identifier the person part does not list.
+    /// </summary>
+    /// <returns>The workbook bytes.</returns>
+    public static byte[] UnresolvedAuthorWorkbook() => Build(workbookPart =>
+    {
+        var sheets = new S.Sheets();
+        var worksheetPart = AddSheet(workbookPart, sheets, "Sheet1", 1U,
+        [
+            InlineStringCell("B7", "40 psi"),
+            InlineStringCell("C3", "12 kg")
+        ]);
+
+        AddLegacyComments(worksheetPart, ["Dana Reyes"], [("B7", 5U, "Legacy remark with an unlisted author.")]);
+        AddPersons(workbookPart, [("{AAAA}", "Morgan Patel")]);
+        AddThreadedComments(worksheetPart, [("C3", "{ZZZZ}", "Threaded remark with an unlisted person.")]);
+
+        workbookPart.Workbook!.AppendChild(sheets);
+    });
+
+    /// <summary>
+    ///     Builds a workbook whose package declares core properties.
+    /// </summary>
+    /// <returns>The workbook bytes.</returns>
+    public static byte[] CorePropertiesWorkbook() => Build(workbookPart =>
+    {
+        var properties = workbookPart.OpenXmlPackage.PackageProperties;
+        properties.Creator = "Dana Reyes";
+        properties.Title = "Quarterly figures";
+        properties.Created = new DateTime(2024, 3, 5, 10, 30, 0, DateTimeKind.Utc);
+
+        var sheets = new S.Sheets();
+        AddSheet(workbookPart, sheets, "Sheet1", 1U, [InlineStringCell("A1", "Value")]);
+        workbookPart.Workbook!.AppendChild(sheets);
+    });
+
+    /// <summary>
+    ///     Appends children to an element and returns it, so fixtures can build small trees inline.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="parent">The element to fill.</param>
+    /// <param name="children">The children to append in order.</param>
+    /// <returns>The same element.</returns>
+    private static T With<T>(T parent, params OpenXmlElement[] children)
+        where T : OpenXmlElement
+    {
+        foreach (var child in children)
+        {
+            parent.AppendChild(child);
+        }
+
+        return parent;
+    }
+
+    /// <summary>
+    ///     Builds a drawing run holding the supplied text.
+    /// </summary>
+    /// <param name="text">The run text.</param>
+    /// <returns>The run.</returns>
+    private static D.Run Run(string text) => With(new D.Run(), new D.Text(text));
+
+    /// <summary>
+    ///     Builds a cell holding a stored value of the supplied data type.
+    /// </summary>
+    /// <param name="reference">The A1-style cell address.</param>
+    /// <param name="value">The stored value.</param>
+    /// <param name="type">The cell data type.</param>
+    /// <returns>The cell.</returns>
+    private static S.Cell TypedCell(string reference, string value, S.CellValues type) =>
+        With(new S.Cell { CellReference = reference, DataType = type }, new S.CellValue(value));
+
+    /// <summary>
+    ///     Builds an anchored shape carrying the supplied paragraphs.
+    /// </summary>
+    /// <param name="id">The shape identifier.</param>
+    /// <param name="paragraphs">The paragraphs of the shape's text body.</param>
+    /// <returns>The anchor holding the shape.</returns>
+    private static Xdr.OneCellAnchor ShapeAnchor(uint id, params D.Paragraph[] paragraphs) =>
+        new(
+            new Xdr.FromMarker(
+                new Xdr.ColumnId("1"), new Xdr.ColumnOffset("0"), new Xdr.RowId("1"), new Xdr.RowOffset("0")),
+            new Xdr.Extent { Cx = 100L, Cy = 100L },
+            BuildShape(id, paragraphs),
+            new Xdr.ClientData());
+
+    /// <summary>
+    ///     Builds a drawing shape carrying the supplied paragraphs.
+    /// </summary>
+    /// <param name="id">The shape identifier.</param>
+    /// <param name="paragraphs">The paragraphs of the shape's text body.</param>
+    /// <returns>The shape.</returns>
+    private static Xdr.Shape BuildShape(uint id, params D.Paragraph[] paragraphs)
+    {
+        var body = new Xdr.TextBody(new D.BodyProperties(), new D.ListStyle());
+        foreach (var paragraph in paragraphs)
+        {
+            body.AppendChild(paragraph);
+        }
+
+        return new Xdr.Shape(
+            new Xdr.NonVisualShapeProperties(
+                new Xdr.NonVisualDrawingProperties
+                {
+                    Id = id,
+                    Name = "Shape " + id.ToString(CultureInfo.InvariantCulture)
+                },
+                new Xdr.NonVisualShapeDrawingProperties()),
+            new Xdr.ShapeProperties(),
+            body);
+    }
+
+    /// <summary>
     ///     Builds a worksheet drawing anchoring one graphic frame that references the chart part.
     /// </summary>
     /// <param name="relationshipId">The relationship id of the chart part.</param>
@@ -364,31 +748,48 @@ public static class XlsxFixtures
     ///     The frame is written with the same graphic-data grammar a spreadsheet application emits, so
     ///     the reader's frame walk is exercised rather than only its relationship sweep.
     /// </remarks>
-    private static Xdr.WorksheetDrawing BuildChartDrawing(string relationshipId)
+    private static Xdr.WorksheetDrawing BuildChartDrawing(string relationshipId) =>
+        BuildChartDrawing([relationshipId]);
+
+    /// <summary>
+    ///     Builds a worksheet drawing anchoring one graphic frame per relationship id, in the order given.
+    /// </summary>
+    /// <param name="relationshipIds">The relationship id each frame cites, in drawing order.</param>
+    /// <returns>The worksheet drawing.</returns>
+    private static Xdr.WorksheetDrawing BuildChartDrawing(IReadOnlyList<string> relationshipIds)
     {
-        var chartReference = new DocumentFormat.OpenXml.Drawing.Charts.ChartReference { Id = relationshipId };
-        var graphicData = new D.GraphicData { Uri = "http://schemas.openxmlformats.org/drawingml/2006/chart" };
-        graphicData.AppendChild(chartReference);
-        var graphic = new D.Graphic();
-        graphic.AppendChild(graphicData);
-
-        var frame = new Xdr.GraphicFrame();
-        frame.AppendChild(new Xdr.NonVisualGraphicFrameProperties(
-            new Xdr.NonVisualDrawingProperties { Id = 2U, Name = "Chart 1" },
-            new Xdr.NonVisualGraphicFrameDrawingProperties()));
-        frame.AppendChild(new Xdr.Transform());
-        frame.AppendChild(graphic);
-
-        var anchor = new Xdr.OneCellAnchor(
-            new Xdr.FromMarker(
-                new Xdr.ColumnId("1"), new Xdr.ColumnOffset("0"),
-                new Xdr.RowId("1"), new Xdr.RowOffset("0")),
-            new Xdr.Extent { Cx = 100L, Cy = 100L },
-            frame,
-            new Xdr.ClientData());
-
         var worksheetDrawing = new Xdr.WorksheetDrawing();
-        worksheetDrawing.AppendChild(anchor);
+        for (var index = 0; index < relationshipIds.Count; index++)
+        {
+            var chartReference = new DocumentFormat.OpenXml.Drawing.Charts.ChartReference
+            {
+                Id = relationshipIds[index]
+            };
+            var graphicData = new D.GraphicData { Uri = "http://schemas.openxmlformats.org/drawingml/2006/chart" };
+            graphicData.AppendChild(chartReference);
+            var graphic = new D.Graphic();
+            graphic.AppendChild(graphicData);
+
+            var frame = new Xdr.GraphicFrame();
+            frame.AppendChild(new Xdr.NonVisualGraphicFrameProperties(
+                new Xdr.NonVisualDrawingProperties
+                {
+                    Id = (uint)(index + 2),
+                    Name = "Chart " + (index + 1).ToString(CultureInfo.InvariantCulture)
+                },
+                new Xdr.NonVisualGraphicFrameDrawingProperties()));
+            frame.AppendChild(new Xdr.Transform());
+            frame.AppendChild(graphic);
+
+            worksheetDrawing.AppendChild(new Xdr.OneCellAnchor(
+                new Xdr.FromMarker(
+                    new Xdr.ColumnId("1"), new Xdr.ColumnOffset("0"),
+                    new Xdr.RowId((index + 1).ToString(CultureInfo.InvariantCulture)), new Xdr.RowOffset("0")),
+                new Xdr.Extent { Cx = 100L, Cy = 100L },
+                frame,
+                new Xdr.ClientData()));
+        }
+
         return worksheetDrawing;
     }
 

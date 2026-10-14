@@ -26,6 +26,7 @@ sections:
                 tests:
                   - FormatSniffer_Detect_ExtensionContradictsContent_TrustsExtension
                   - FormatSniffer_Detect_VsdxExtensionWithoutSignature_IdentifiesVsdxByExtension
+                  - FormatSniffer_Detect_VsdmExtensionWithoutSignature_IdentifiesVsdmByExtension
                   - FormatSniffer_Detect_LegacyBinaryExtension_IdentifiesByExtension
                   - FormatSniffer_Detect_UpperCaseLogExtension_IdentifiesTextCaseInsensitively
 
@@ -60,6 +61,15 @@ sections:
                   fallback so callers, and later readers of manifest.json, can see the evidence.
                 tests:
                   - FormatSniffer_Detect_ExtensionMatch_ReportsExtensionBasis
+
+              - id: DocDownCore-Detection-FormatSniffer-RejectsInvalidStreams
+                title: FormatSniffer shall reject a null stream and a stream that cannot seek.
+                justification: |
+                  Restoring the stream position requires seeking, so a stream that cannot seek would
+                  be consumed by detection. Refusing it up front prevents silent data loss.
+                tests:
+                  - FormatSniffer_Detect_NullContent_ThrowsArgumentNullException
+                  - FormatSniffer_Detect_NonSeekableStream_ThrowsArgumentException
 
               - id: DocDownCore-Detection-FormatSniffer-StreamPositionRestored
                 title: FormatSniffer shall restore the source stream position after inspecting it.

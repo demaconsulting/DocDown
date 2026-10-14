@@ -103,3 +103,46 @@ count of comments in general. Nothing asserts any modern comment's text or autho
 reader deliberately reads neither. Evidence for
 `DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-CountsModernPersonaComments` and
 `DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ExcludesModernPersonaComments`.
+
+#### Table text is read as one line per row
+
+**Test**: `PowerPointOpenXmlReader_Read_DeckWithTable_ReadsRowsAsLines`
+
+Proves a table held in a graphic frame reaches the slide's text lines as one line per row, with the
+cells of a row joined by a pipe in reading order. Evidence for
+`DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsTableText`.
+
+#### Grouped shape text is read, including nested groups
+
+**Test**: `PowerPointOpenXmlReader_Read_DeckWithGroupedShapes_ReadsNestedGroupText`
+
+Proves text in a group shape and in a group nested inside it is read in shape-tree order. Evidence for
+`DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsGroupedShapeText`.
+
+#### SmartArt node text is read
+
+**Test**: `PowerPointOpenXmlReader_Read_DeckWithSmartArt_ReadsNodeText`
+
+Proves a SmartArt diagram's node text is resolved through its diagram data part and reaches the
+slide's text lines. Evidence for `DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsSmartArtText`.
+
+#### A line break reads as a space and field text is kept
+
+**Test**: `PowerPointOpenXmlReader_Read_DeckWithBreakAndField_KeepsBreakAndFieldText`
+
+Proves the words either side of a soft line break stay apart and a field's text appears in the line.
+Evidence for `DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-ReadsBreakAndFieldText`.
+
+#### A corrupt package is wrapped
+
+**Test**: `PowerPointOpenXmlReader_Read_CorruptPackage_ThrowsExtractionException`
+
+Proves bytes that are not an Open XML package raise `PowerPointExtractionException`. Evidence for
+`DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-WrapsUnreadablePackage`.
+
+#### A null stream is rejected
+
+**Test**: `PowerPointOpenXmlReader_Read_NullStream_Throws`
+
+Proves a null stream raises `ArgumentNullException`. Evidence for
+`DocDownPowerPoint-OpenXml-PowerPointOpenXmlReader-RejectsNullStream`.

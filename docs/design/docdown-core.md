@@ -37,9 +37,9 @@ explains why.
 
 ### Determinism is scoped to one environment
 
-Selection and serialization are deterministic inside one environment. When the caller supplies
-the extraction timestamp, two runs with the same inputs and the same available extractors
-produce byte-identical `summary.txt` and `manifest.json`. Core does not claim identical content
+Selection and serialization are deterministic inside one environment. Two runs with the same inputs and the same available
+extractors produce output that is identical apart from the extraction timestamp, which the engine
+takes from the current UTC time and which callers cannot supply. Core does not claim identical content
 across operating systems or across installations with different extractors available.
 
 ### A scratch-folder refusal is the one no-layout outcome
@@ -63,7 +63,7 @@ DemaConsulting.DocDown.Core exposes a managed .NET API only. Its principal publi
   construction.
 - **`DocDownEngine.ExtractAsync`** — runs one extraction and returns an `ExtractionResult`.
 - **`DocDownEngine.GetBackends`** — returns the registered candidates with their cached
-  availability.
+  availability; **`DocDownEngine.Extractors`** lists the registered descriptors without probing.
 - **`DocDownEngine.RefreshAvailability`** — clears cached availability so the next query re-probes.
 - **`DocDownEngine.GetSelfTestCases`** — exposes Core's built-in self-tests and backend-contributed
   cases.
@@ -111,11 +111,13 @@ A single extraction follows this fixed sequence:
    identifier.
 7. **Extract through the sink** — the selected backend writes content, images, pages, parts,
    metadata, content features, notes, and environment facts through `IExtractionSink`.
-8. **Add Core-derived notes** — the engine records notes for caller-disabled image extraction, for a
-   requested paginated render with no renderer, or for a renderer that produced no pages.
-9. **Write artifacts** — `ContentWriter` finalizes `content.md` and any `parts/`; `ManifestWriter`
-   writes `manifest.json`; `MetadataWriter` writes `metadata.json`; `SummaryWriter` writes
-   `summary.txt`.
+8. **Add Core-derived notes** — the engine records notes for caller-disabled image extraction and for a
+   requested paginated render with no renderer. A renderer that produced no pages explains that
+   itself; the engine does not infer it.
+9. **Write artifacts** — `ContentWriter` finalizes `content.md` and any `parts/`;
+   `ReviewCommentsWriter` writes `review-comments.md` when reviewer comments were reported;
+   `ManifestWriter` writes `manifest.json`; `MetadataWriter` writes `metadata.json`; `SummaryWriter`
+   writes `summary.txt`.
 10. **Return result** — `ExtractionResult` mirrors the paths, outcome, selected extractor, failure,
     environment, and notes returned to the caller.
 

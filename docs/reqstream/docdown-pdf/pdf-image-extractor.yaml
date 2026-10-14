@@ -112,6 +112,17 @@ sections:
             tests:
               - PdfImageExtractor_Extract_ImagesDisabled_AttemptsNothing
 
+          - id: DocDownPdf-PdfImageExtractor-DropsDeclinedImage
+            title: >-
+              PdfImageExtractor shall emit no link and count no written image for an image the sink
+              declines to store.
+            justification: |
+              The sink returns an empty path when it declines an image. Linking an empty path would put a
+              broken reference in the content, and counting the image as written would overstate what
+              the output holds, so the image is dropped from the written count and from the links.
+            tests:
+              - PdfImageExtractor_AddImage_SinkReturnsEmptyPath_DropsImageWithoutLink
+
           - id: DocDownPdf-PdfImageExtractor-HonorsSizeLimits
             title: >-
               PdfImageExtractor shall skip an image exceeding a requested size or dimension limit and
@@ -123,3 +134,11 @@ sections:
             tests:
               - PdfImageExtractor_Extract_ImageOverByteLimit_ReportsSizeNoteDistinctFromDecodeFailure
               - PdfImageExtractor_Extract_ImageOverDimensionLimit_ReportsCountedSizeNote
+
+          - id: DocDownPdf-PdfImageExtractor-RejectsNullSink
+            title: PdfImageExtractor shall reject a missing sink.
+            justification: |
+              Every image is delivered through the sink, so a missing sink is a programming error that is
+              refused at the boundary rather than surfacing as a fault part-way through the extraction.
+            tests:
+              - PdfImageExtractor_Extract_NullSink_ThrowsArgumentNullException

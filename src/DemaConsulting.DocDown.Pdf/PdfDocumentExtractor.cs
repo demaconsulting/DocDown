@@ -85,7 +85,7 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
         var cancellationToken = context.CancellationToken;
 
         // Record what parsed this document, and state plainly that page rendering is not on offer
-        // here, so the environment block explains the capability shortfall rather than omitting it
+        // here, so the environment block explains the absence rather than omitting it
         sink.ReportEnvironmentFact(new EnvironmentFact("DemaConsulting.DocDown.Pdf", "pdf.parser", "PdfPig (managed)", Available: true));
         sink.ReportEnvironmentFact(new EnvironmentFact(
             "DemaConsulting.DocDown.Pdf", "pdf.pageRendering", "not provided by this extractor", Available: false));
@@ -128,13 +128,13 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
     ///     it can parse the document embedded here as a probe, and that page rendering is genuinely
     ///     unavailable
     ///     rather than merely untested. The rendering case reports as skipped with a reason, because
-    ///     a capability this package does not claim must not be reported as a failure.
+    ///     a feature this package does not offer must not be reported as a failure.
     /// </remarks>
     public IEnumerable<SelfTestCase> GetSelfTestCases() =>
     [
         new SelfTestCase("pdf.parseRoundTrip", Id, RunParseRoundTrip),
         new SelfTestCase("pdf.pageRendering", Id, static _ => SelfTestResult.Skipped(
-            "This extractor does not provide the renderedPages capability; page rendering is not attempted."))
+            "This extractor does not render pages; page rendering needs the Pdf.Rendering package."))
     ];
 
     /// <summary>

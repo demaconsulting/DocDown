@@ -1,0 +1,25 @@
+---
+# Software Unit Requirements for ImageLinkText
+#
+# ImageLinkText produces the alt text of an inline markdown image link, so every Open XML backend
+# links images with the same honest placeholder and the same escaping.
+
+sections:
+  - title: DocDownCore Requirements
+    sections:
+      - title: Output Requirements
+        sections:
+          - title: ImageLinkText Requirements
+            requirements:
+              - id: DocDownCore-Output-ImageLinkText-SafeAltText
+                title: >-
+                  ImageLinkText shall produce single-line alt text with link-structural characters
+                  escaped and a neutral placeholder when no description exists.
+                justification: |
+                  Alt text originates in document content. Escaping and line folding keep it from
+                  breaking the Markdown image link that carries it.
+                tests:
+                  - Alt_NoDescription_UsesNeutralPlaceholder
+                  - Alt_PlainDescription_IsPreserved
+                  - Alt_LinkStructuralCharacters_AreEscaped
+                  - Alt_MultiLineDescription_StaysOnOneLine

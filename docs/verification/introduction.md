@@ -9,8 +9,8 @@ folder, in a predictable layout designed to be fed to multimodal AI agents.
 The purpose of this document is to serve as the verification design entry point and document how
 requirements will be tested across all software items in this repository, covering the
 DemaConsulting.DocDown.Core, DemaConsulting.DocDown.Pdf, DemaConsulting.DocDown.Pdf.Rendering,
-DemaConsulting.DocDown.Tool, DemaConsulting.DocDown.Word, DemaConsulting.DocDown.Excel,
-DemaConsulting.DocDown.PowerPoint, DemaConsulting.DocDown.Visio, and
+DemaConsulting.DocDown.Tool, DemaConsulting.DocDown.Office (with its Word, Excel, PowerPoint, and Visio
+format subsystems), DemaConsulting.DocDown.PowerPoint.Rendering, and
 DemaConsulting.DocDown.Visio.Rendering systems. This
 documentation enables formal review by mapping every requirement to named test scenarios, supports
 compliance auditing by providing clear traceability from requirements through verification design
@@ -50,14 +50,27 @@ constituent software items, specifically:
   - **SummaryWriter (Unit)** — Serializes the human-readable `summary.txt`
   - **ManifestWriter (Unit)** — Serializes `manifest.json` from the recorded output, inventory,
     and notes
-- **DemaConsulting.DocDown.Pdf (System)** — PDF text, embedded-image, and document-metadata extraction; flat, with
-  no subsystems
+  - **ReviewCommentsWriter (Unit)** — Serializes `review-comments.md`, written only when the
+    document carries reviewer comments
+  - **ImageTextSelector (Unit)** — Chooses the most direct of the texts a document offered for an
+    image
+  - **EmbeddedImageWriter (Unit)** — Writes the resolved embedded images of the Open XML backends once
+    each, within the caller's size limits
+  - **ImageDimensions (Unit)** — Reads raster pixel size from image headers without decoding
+  - **ImageLinkText (Unit)** — Produces the alt text of an inline image link
+  - Supporting helpers with no verification document of their own — `MetadataWriter` and
+    `PartResourceLinkRewriter` in Output, and `OpcMetadataMapper`, `SelfTestProbe`, and
+    `DocumentSource` in Extraction — are verified through their owning subsystem's scenarios;
+    all of them except `DocumentSource` also have their own test files
+- **DemaConsulting.DocDown.Pdf (System)** — PDF text, embedded-image, reviewer-annotation, and
+  document-metadata extraction; flat, with no subsystems
   - **PdfDocumentExtractor (Unit)** — The backend the engine selects: availability, metadata,
     delegation, the content inventory, and notes
   - **PdfTextExtractor (Unit)** — Renders a page's glyphs into markdown paragraphs in reading
     order, with image links and page markers
   - **PdfImageExtractor (Unit)** — Writes the embedded images, labeling how each was produced and
     accounting for every one it could not deliver
+  - **PdfAnnotationExtractor (Unit)** — Reads the reviewer commentary a PDF carries as annotations
   - **PdfDocDownBuilderExtensions (Unit)** — The reflection-free registration seam
 - **DemaConsulting.DocDown.Pdf.Rendering (System)** — Optional PDF page rendering (rasterization); flat, with no
   subsystems, and fully managed like the rest of DocDown
@@ -78,68 +91,84 @@ constituent software items, specifically:
       the backend self-test union, and TRX/JUnit output
     - **SelfTestAdapter (Unit)** — Maps Core's dependency-free self-test records into the TestResults
       model
-- **DemaConsulting.DocDown.Word (System)** — Word text, real tables, embedded-image, document-control, and
-  document-metadata extraction; two subsystems and one direct unit
-  - **WordDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
-    Word backend
-  - **Markdown (Subsystem)** — The reader-neutral document model and its projection onto markdown
-    - **WordMarkdownWriter (Unit)** — Renders the model to a markdown flow: headings, lists, inline
-      formatting, images, comments, footnotes, and the Document Control section
-    - **WordTableWriter (Unit)** — Renders a table model as a GFM table, counting every flattened cell
-    - **WordContentEmitter (Unit)** — The model-to-sink emission path
-  - **OpenXml (Subsystem)** — The managed backend that reads a `.docx` through the Open XML SDK
-    - **WordOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
-      including page-rendering absence
-    - **WordOpenXmlReader (Unit)** — Turns the Open XML DOM into the backend-neutral model
-    - **WordOpenXmlImageReader (Unit)** — Yields each embedded image's bytes with passthrough
-      provenance
-- **DemaConsulting.DocDown.Excel (System)** — Workbook worksheet, cell-value (verbatim), formula, chart, drawing
-  annotation, embedded-image, and document-metadata extraction; deliberately never renders; two
-  subsystems and one direct unit
-  - **ExcelDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
-    Excel backend
-  - **Markdown (Subsystem)** — The projection of the workbook model onto markdown
-    - **ExcelContentEmitter (Unit)** — The model-to-sink emission path: sheet and chart parts,
-      the verbatim listing, the additive grid table, inventory counts, and notes
-    - **ExcelChartWriter (Unit)** — Renders a chart's cached data series as a bounded table
-  - **OpenXml (Subsystem)** — The managed backend that reads an `.xlsx` through the Open XML SDK
-    - **ExcelOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
-      including page-rendering non-applicability
-    - **ExcelOpenXmlReader (Unit)** — Turns the spreadsheet package into the backend-neutral model
-    - **ExcelOpenXmlImageReader (Unit)** — Yields each embedded image's bytes and worksheet association
-    - **ExcelChartReader (Unit)** — Recovers each chart's cached data series
-    - **ExcelDrawingTextReader (Unit)** — Recovers the text of the drawing shapes over a worksheet
-- **DemaConsulting.DocDown.PowerPoint (System)** — Slide text, slide-title, speaker-notes, slide-order, embedded-image,
-  and document-metadata extraction; rendered slide images are a separate, opt-in concern delivered by
-  the `DemaConsulting.DocDown.PowerPoint.Rendering` system; two subsystems (Markdown, OpenXml) and one direct unit
-  - **PowerPointDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
-    PowerPoint backend
-  - **Markdown (Subsystem)** — The projection of the deck model onto markdown
-    - **PowerPointContentEmitter (Unit)** — The model-to-sink emission path: per-slide title,
-      text, speaker notes, inventory counts, and notes
-  - **OpenXml (Subsystem)** — The guaranteed managed backend that reads a `.pptx` through the Open XML SDK
-    - **PowerPointOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
-      including the not-provided rendering fact
-    - **PowerPointOpenXmlReader (Unit)** — Turns the presentation package into the backend-neutral model
-    - **PowerPointOpenXmlImageReader (Unit)** — Yields each embedded image's bytes and slide association
-- **DemaConsulting.DocDown.Visio (System)** — Page-name, shape-text, and directed-connector-topology extraction, plus
-  embedded-image and document-metadata extraction; rendered page images are a separate, opt-in
-  concern delivered by the `DemaConsulting.DocDown.Visio.Rendering` system; two subsystems (Markdown, OpenXml)
-  and one direct unit
-  - **VisioDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
-    Visio backend
-  - **Markdown (Subsystem)** — The projection of the drawing model onto markdown
-    - **VisioContentEmitter (Unit)** — The model-to-sink emission path: per-page name, shape
-      text, directed topology, inventory counts, and notes
-    - **VisioShapeLabeler (Unit)** — Decides how each topology endpoint is named from what the drawing
-      says about it
-  - **OpenXml (Subsystem)** — The guaranteed managed backend that reads a `.vsdx`/`.vsdm` through
-    `System.IO.Packaging`
-    - **VisioOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
-      including the not-provided rendering fact
-    - **VisioPackageReader (Unit)** — Turns the Visio package into the backend-neutral model, resolving
-      page names, shape text, and the directed topology
-    - **VisioImageReader (Unit)** — Yields each embedded image's bytes and page association
+- **DemaConsulting.DocDown.Office (System)** — Word, Excel, PowerPoint, and Visio extraction, registered together
+  by `AddOffice()` or one format at a time; four format subsystems
+  - **Word (Subsystem)** — Word text, real tables, embedded-image, reviewer-comment, document-control, and
+    document-metadata extraction; two child subsystems and one direct unit
+    - **WordDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
+      Word backend
+    - **Markdown (Subsystem)** — The reader-neutral document model and its projection onto markdown
+      - **WordMarkdownWriter (Unit)** — Renders the model to a markdown flow: headings, lists, inline
+        formatting, images, comments, footnotes, and the Document Control section
+      - **WordTableWriter (Unit)** — Renders a table model as a GFM table, counting every flattened
+        cell
+      - **WordContentEmitter (Unit)** — The model-to-sink emission path
+    - **OpenXml (Subsystem)** — The managed backend that reads a `.docx` through the Open XML SDK
+      - **WordOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
+        including page-rendering absence
+      - **WordOpenXmlReader (Unit)** — Turns the Open XML DOM into the backend-neutral model
+      - **WordOpenXmlImageReader (Unit)** — Yields each embedded image's bytes with passthrough
+        provenance
+  - **Excel (Subsystem)** — Workbook worksheet, cell-value (verbatim), formula, chart, drawing
+    annotation, embedded-image, and document-metadata extraction; deliberately never renders; two
+    child subsystems and one direct unit
+    - **ExcelDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
+      Excel backend
+    - **Markdown (Subsystem)** — The projection of the workbook model onto markdown
+      - **ExcelContentEmitter (Unit)** — The model-to-sink emission path: sheet and chart parts,
+        the verbatim listing, the additive grid table, inventory counts, and notes
+      - **ExcelChartWriter (Unit)** — Renders a chart's cached data series as a bounded table
+    - **OpenXml (Subsystem)** — The managed backend that reads an `.xlsx` through the Open XML SDK
+      - **ExcelOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
+        including page-rendering non-applicability
+      - **ExcelOpenXmlReader (Unit)** — Turns the spreadsheet package into the backend-neutral model
+      - **ExcelOpenXmlImageReader (Unit)** — Yields each embedded image's bytes and worksheet
+        association
+      - **ExcelChartReader (Unit)** — Recovers each chart's cached data series
+      - **ExcelDrawingTextReader (Unit)** — Recovers the text of the drawing shapes over a worksheet
+  - **PowerPoint (Subsystem)** — Slide text, slide-title, speaker-notes, slide-order, embedded-image,
+    and document-metadata extraction; rendered slide images are a separate, opt-in concern delivered by
+    the `DemaConsulting.DocDown.PowerPoint.Rendering` system; two child subsystems (Markdown, OpenXml)
+    and one direct unit
+    - **PowerPointDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for
+      the PowerPoint backend
+    - **Markdown (Subsystem)** — The projection of the deck model onto markdown
+      - **PowerPointContentEmitter (Unit)** — The model-to-sink emission path: per-slide title,
+        text, speaker notes, inventory counts, and notes
+    - **OpenXml (Subsystem)** — The guaranteed managed backend that reads a `.pptx` through the Open XML
+      SDK
+      - **PowerPointOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
+        including the not-provided rendering fact
+      - **PowerPointOpenXmlReader (Unit)** — Turns the presentation package into the backend-neutral
+        model
+      - **PowerPointOpenXmlImageReader (Unit)** — Yields each embedded image's bytes and slide
+        association
+  - **Visio (Subsystem)** — Page-name, shape-text, and directed-connector-topology extraction, plus
+    embedded-image and document-metadata extraction; rendered page images are a separate, opt-in
+    concern delivered by the `DemaConsulting.DocDown.Visio.Rendering` system; two child subsystems
+    (Markdown, OpenXml) and one direct unit
+    - **VisioDocDownBuilderExtensions (Unit, direct)** — The reflection-free registration seam for the
+      Visio backend
+    - **Markdown (Subsystem)** — The projection of the drawing model onto markdown
+      - **VisioContentEmitter (Unit)** — The model-to-sink emission path: per-page name, shape
+        text, directed topology, inventory counts, and notes
+      - **VisioShapeLabeler (Unit)** — Decides how each topology endpoint is named from what the
+        drawing says about it
+    - **OpenXml (Subsystem)** — The guaranteed managed backend that reads a `.vsdx`/`.vsdm` through
+      `System.IO.Packaging`
+      - **VisioOpenXmlExtractor (Unit)** — The managed backend the engine selects and invokes,
+        including the not-provided rendering fact
+      - **VisioPackageReader (Unit)** — Turns the Visio package into the backend-neutral model,
+        resolving page names, shape text, and the directed topology
+      - **VisioImageReader (Unit)** — Yields each embedded image's bytes and page association
+- **DemaConsulting.DocDown.PowerPoint.Rendering (System)** — Optional PowerPoint slide rendering
+  (rasterization); flat, with no subsystems, and fully managed
+  - **PowerPointPageRenderingExtractor (Unit)** — The slide-rendering backend selected when rendering is
+    requested: delegates the managed aspects, rasterizes slides, and records notes for slides it cannot
+    render
+  - **SlideRenderer (Unit)** — The single rasterization seam over CanvasNet.Pptx
+  - **PowerPointRenderingDocDownBuilderExtensions (Unit)** — The reflection-free registration seam, free
+    of any CanvasNet type
 - **DemaConsulting.DocDown.Visio.Rendering (System)** — Optional Visio page rendering (rasterization); flat, with no
   subsystems, and fully managed
   - **VisioPageRenderingExtractor (Unit)** — The page-rendering backend selected when rendering is requested
@@ -153,16 +182,23 @@ DocDown attempted but could not complete.
 
 The following OTS items are also covered:
 
+- **ApiMark** — build-time API reference generator, verified by its self-validation suite
 - **BuildMark** — build-notes documentation tool
 - **CanvasNet** — fully-managed canvas and codec library, verified by transitive evidence from the
-  DemaConsulting.DocDown.Pdf.Rendering render tests rather than from a pipeline stage
+  Pdf, PowerPoint, and Visio rendering test suites rather than from a pipeline stage
+- **CanvasNet.Charts** — fully-managed chart-rendering library used internally by CanvasNet.Pptx,
+  verified by transitive evidence from the DemaConsulting.DocDown.PowerPoint.Rendering render tests
+  rather than from a pipeline stage
 - **CanvasNet.Pdf** — fully-managed PDF rasterization API, verified by transitive evidence from the
   DemaConsulting.DocDown.Pdf.Rendering render tests rather than from a pipeline stage
+- **CanvasNet.Pptx** — fully-managed PowerPoint rasterization API, verified by transitive evidence from the
+  DemaConsulting.DocDown.PowerPoint.Rendering render tests rather than from a pipeline stage
 - **CanvasNet.Vsdx** — fully-managed Visio rasterization API, verified by transitive evidence from the
   DemaConsulting.DocDown.Visio.Rendering render tests rather than from a pipeline stage
 - **FileAssert** — document assertion tool
-- **Open XML SDK** — managed WordprocessingML reader/writer, verified by transitive evidence from the
-  DemaConsulting.DocDown.Word extraction tests rather than from a pipeline stage
+- **Open XML SDK** — managed Open XML reader/writer, verified by transitive evidence from the
+  DemaConsulting.DocDown.Office Word, Excel, and PowerPoint extraction tests rather than from a pipeline
+  stage
 - **Pandoc** — Markdown-to-HTML conversion tool
 - **PdfPig** — managed PDF parser, verified by transitive evidence from the DemaConsulting.DocDown.Pdf test suites
   rather than from a pipeline stage
@@ -171,8 +207,8 @@ The following OTS items are also covered:
 - **SarifMark** — SARIF report conversion tool
 - **SonarMark** — SonarCloud quality report tool
 - **SysML2Tools** — architecture model lint and diagram rendering tool
-- **System.IO.Packaging** — managed OPC container reader, verified by transitive evidence from the
-  DemaConsulting.DocDown.Word extraction tests
+- **System.IO.Packaging** — managed OPC container reader, verified by direct evidence from the
+  DemaConsulting.DocDown.Office Visio package-reader and Word extraction tests
 - **TestResults** — test-results serialization library, verified by transitive evidence from the
   DemaConsulting.DocDown.Tool `--validate` tests
 - **VersionMark** — tool-version documentation tool

@@ -23,6 +23,8 @@ Its key fields are:
 - **`_content`** — buffered single-flow markdown.
 - **`_notes`**, **`_environmentFacts`**, and **`_contentFeatures`** — reporting data recorded in
   emission order.
+- **`_reviewComments`** — review comments recorded verbatim in report order, exposed to
+  `ReviewCommentsWriter` and `SummaryWriter`.
 - **`_documentInfo`** and **`_documentMetadata`** — reported orientation metadata and the document's
   self-reported metadata.
 - **`_nextImageOrdinal`** and **`_nextPartOrdinal`** — dense Core-side allocators.
@@ -30,8 +32,11 @@ Its key fields are:
 #### Key Methods
 
 - **`AddImageAsync`** — buffers image bytes, deduplicates by content key, allocates a safe
-  ordinal-prefixed path, and writes the bytes through `ScratchFolder`. When images are disabled it
-  returns `string.Empty` and writes nothing.
+  ordinal-prefixed path, and writes the bytes to the validated absolute path from
+  `ScratchFolder.Combine` (the sink creates the subfolder and writes the file directly; only text
+  writes go through `ScratchFolder.WriteTextAsync`). When images are disabled it
+  returns `string.Empty` and writes nothing. A byte-identical repeat writes nothing and merges its page
+  associations into the surviving record.
 - **`AddPageAsync`** — writes `pages/pageNNNN.png`, where `NNNN` is the 1-based source page number.
 - **`WriteContentAsync`** — appends markdown to the buffered single-flow content.
 - **`AddContentPartAsync`** — allocates a dense ordinal-kind-slug path and buffers the part for
@@ -53,7 +58,7 @@ never be empty.
 
 #### Dependencies
 
-- **`ScratchFolder`** — containment, subfolder creation, and writes.
+- **`ScratchFolder`** — containment, path validation (`Combine`), and text writes.
 - **`ExtractionOptions`**, **`ImageHint`**, **`ContentPart`**, **`ContentFeature`**,
   **`DocumentInfo`**, **`DocumentMetadata`**, **`ExtractionNote`**, and **`EnvironmentFact`** —
   supporting types.
@@ -62,5 +67,5 @@ never be empty.
 #### Callers
 
 `DocDownEngine` constructs the sink and hands it to the selected backend through `IExtractionContext`.
-`ContentWriter`, `MetadataWriter`, `ManifestWriter`, and `SummaryWriter` later read the sink's
-recorded state.
+`ContentWriter`, `ReviewCommentsWriter`, `ManifestWriter`, `MetadataWriter`, and `SummaryWriter` later
+read the sink's recorded state.

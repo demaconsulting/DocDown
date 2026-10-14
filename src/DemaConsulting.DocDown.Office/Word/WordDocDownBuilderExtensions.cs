@@ -10,8 +10,8 @@ namespace DemaConsulting.DocDown.Word;
 ///     <para>
 ///         DocDown registers backends explicitly rather than by reflection or assembly scanning, so a
 ///         host's dependency graph is exactly what its code says it is. This class is that explicit
-///         seam for the Word package: <see cref="AddWord"/> registers the managed Open XML backend,
-///         which is the only Word backend this package ships.
+///         seam for the Word subsystem: <see cref="AddWord"/> registers the managed Open XML backend,
+///         which is the only Word backend this subsystem ships.
 ///     </para>
 ///     <para>
 ///         Deliberately free of any Open XML SDK type, so a host can reference the registration

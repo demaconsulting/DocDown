@@ -5,7 +5,7 @@ namespace DemaConsulting.DocDown.Core;
 /// <summary>
 ///     Writes a backend's resolved embedded images through the extraction sink, applying the
 ///     caller's size limits and content deduplication, and returns an honest accounting a backend
-///     turns into its own gaps and diagnostics.
+///     turns into its own extraction notes.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -18,16 +18,15 @@ namespace DemaConsulting.DocDown.Core;
 ///     </para>
 ///     <para>
 ///         What this unit deliberately does not do is decide how to report the result: the vector
-///         readability caveat and the size-skip gap carry
-///         backend-owned diagnostic codes and prose, so each backend inspects the returned accounting
-///         and reports its own. This keeps the honesty policy uniform while leaving each backend its
+///         readability caveat and the size-skip note carry backend-owned prose, so each backend
+///         inspects the returned accounting and reports its own. This keeps the honesty policy uniform while leaving each backend its
 ///         own voice. Callers invoke this only when embedded-image extraction is enabled; suppression
 ///         is recorded by the sink and the engine. Stateless and thread-safe.
 ///     </para>
 /// </remarks>
 public static class EmbeddedImageWriter
 {
-    /// <summary>The maximum number of size-skipped item references recorded, to bound gap text for a pathological document.</summary>
+    /// <summary>The maximum number of size-skipped item references recorded, to bound note text for a pathological document.</summary>
     private const int MaxAffectedItems = 20;
 
     /// <summary>
@@ -233,7 +232,7 @@ public static class EmbeddedImageWriter
     /// </summary>
     /// <param name="items">The list to append to.</param>
     /// <param name="reference">The reference to append.</param>
-    /// <remarks>Bounds gap text for a pathological document while the count stays exact. Side effect: mutates <paramref name="items"/>.</remarks>
+    /// <remarks>Bounds note text for a pathological document while the count stays exact. Side effect: mutates <paramref name="items"/>.</remarks>
     private static void Append(List<string> items, string reference)
     {
         if (items.Count < MaxAffectedItems)
@@ -248,8 +247,8 @@ public static class EmbeddedImageWriter
 ///     and written as a vector metafile.
 /// </summary>
 /// <remarks>
-///     A backend turns this into its own gaps and diagnostics: it reports the found count, and — when
-///     the corresponding count is non-zero — the vector readability caveat, the size-skip gap, and
+///     A backend turns this into its own extraction notes: it reports the found count and, when
+///     the corresponding count is non-zero, the vector readability caveat and the size-skip note.
 ///     Immutable once constructed and thread-safe.
 /// </remarks>
 public sealed class EmbeddedImageWriteResult

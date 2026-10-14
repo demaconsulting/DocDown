@@ -64,6 +64,32 @@ public static class VsdxFixtures
     ]);
 
     /// <summary>
+    ///     Builds a one-page drawing whose Wingdings arrow run names its font by face-name id, as a
+    ///     real drawing does, resolved through the document's face-name table.
+    /// </summary>
+    /// <param name="faceId">The numeric <c>Font</c> value the arrow run declares.</param>
+    /// <returns>The drawing bytes.</returns>
+    /// <remarks>
+    ///     The table declares id <c>1</c> as Wingdings and id <c>2</c> as Arial, so an id of <c>1</c>
+    ///     must recover the arrow while an id the table does not declare must leave the text alone.
+    /// </remarks>
+    public static byte[] SymbolFontArrowsByFaceId(string faceId = "1") => VisioPackageBuilder.Build(
+        [
+            new VisioBuildPage(
+                "Valves",
+                [
+                    new VisioBuildShape("1", null, null,
+                    [
+                        new VisioBuildTextRun("IN "),
+                        new VisioBuildTextRun("\u00e0", faceId),
+                        new VisioBuildTextRun(" OUT")
+                    ])
+                ],
+                [])
+        ],
+        faceNames: new Dictionary<string, string> { ["1"] = "Wingdings", ["2"] = "Arial" });
+
+    /// <summary>
     ///     Builds a two-page drawing, to prove page names are surfaced and pages are ordered.
     /// </summary>
     /// <returns>The drawing bytes.</returns>
@@ -157,6 +183,24 @@ public static class VsdxFixtures
             ],
             [("2", "3"), ("3", "1")])
     ]);
+
+    /// <summary>
+    ///     Builds a single page that declares shape id "1" twice with different text, so the first
+    ///     declaration must win and the second must be dropped.
+    /// </summary>
+    /// <returns>The drawing bytes.</returns>
+    public static byte[] DuplicateShapeId() => VisioPackageBuilder.Build(
+    [
+        new VisioBuildPage(
+            "Duplicates",
+            [
+                new VisioBuildShape("1", "First"),
+                new VisioBuildShape("2", "Other"),
+                new VisioBuildShape("1", "Second")
+            ],
+            [])
+    ]);
+
     /// <summary>
     ///     Builds a one-page drawing whose text-less shapes are instantiated from named masters,
     ///     reproducing the mix a real engineering schematic carries: a labeled shape, shapes named

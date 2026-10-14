@@ -66,7 +66,10 @@ supplies the third layer — the facts only a rasterizer knows.
 Rendering is always available, so this package never reports a selection-time unavailability. If
 rendering begins and a specific page cannot be rasterized, this package reports one short factual
 note — `Page N could not be rasterized.` — because it attempted that step and could not complete it.
-The note stays limited to that extraction fact itself.
+If the pages cannot be counted it instead reports `Pages could not be counted, so no page images were
+rendered.` and keeps the delegated content, and if no page is selected it reports `Page rendering was
+requested and a renderer was available, but no pages were produced.` itself. The notes stay limited to
+those extraction facts themselves.
 
 ## External Interfaces
 
@@ -100,13 +103,14 @@ machine-enforced by a reflection test over the package's exported types.
 - **DemaConsulting.DocDown.Pdf** — the managed text/embedded-image/metadata extractor this package delegates to.
   This is a project reference; it adds no native asset.
 - **CanvasNet.Pdf** (OTS) — the fully-managed PDF rasterization API: `PdfDocument.Open`,
-  `GetPageInfo`, and `Render` produce a `Surface`. Confined to `PageRenderer` and absent from the
+  `PageCount`, and `Render` produce a `Surface`. Confined to `PageRenderer` and absent from the
   public API. See *CanvasNet.Pdf* under the OTS integration design.
 - **CanvasNet** (OTS) — the fully-managed 2D canvas/codec library CanvasNet.Pdf builds on; this
   package references it directly for `PngCodec.Save`, which encodes the rendered `Surface` to PNG
   bytes. See *CanvasNet* under the OTS integration design.
 - **PdfPig** — reached only through the `DemaConsulting.DocDown.Pdf` project reference, for the delegated managed
-  extraction. No type in this package names it.
+  extraction. No type in this package names it, and page counting does not use it (it goes through
+  `PageRenderer.GetPageCount`).
 
 ## Risk Control Measures
 
@@ -142,13 +146,18 @@ machine-enforced by a reflection test over the package's exported types.
 2. `PdfPageRenderingExtractor` buffers the source once, then delegates to a `PdfDocumentExtractor`
    with a cloned options object whose `RenderPages` is off. The managed backend writes the content,
    images, metadata, inventory, and its own notes. If the delegated extractor reports
-   `Unreadable`, this backend returns `Unreadable` and does not attempt page rendering. Because
+   `Unreadable`, this backend returns `Unreadable` (the delegated outcome, passed straight through) and
+   does not attempt page rendering. Because
    rendering is suppressed on the delegate and selection already handled ordinary renderer
    unavailability, this backend adds no "renderer unavailable" note of its own.
 3. It records the authoritative `pages.renderer` environment fact.
-4. It selects the pages to render, honoring any requested range, and for each renders a PNG through
-   `PageRenderer` and writes it through the sink, named by its document page number. A per-page fault
-   becomes the note `Page N could not be rasterized.`; the run continues.
+4. It counts the pages through `PageRenderer.GetPageCount` and selects those to render, honoring any
+   requested range. A count fault becomes the note `Pages could not be counted, so no page images were
+   rendered.` and rendering stops with the delegated content intact; an empty selection becomes the note
+   `Page rendering was requested and a renderer was available, but no pages were produced.` Otherwise,
+   for each selected page it renders a PNG through `PageRenderer` and writes it through the sink, named
+   by its document page number. A per-page fault becomes the note `Page N could not be rasterized.`; the
+   run continues.
 5. It returns `Produced` after the attempted page loop completes.
 6. The engine finalizes the content and writes `summary.txt` and `manifest.json`.
 

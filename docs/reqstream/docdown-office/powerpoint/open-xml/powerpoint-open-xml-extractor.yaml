@@ -84,3 +84,37 @@ sections:
                   from being reported as a pass or a failure.
                 tests:
                   - PowerPointOpenXmlExtractor_SelfTestCases_RoundTripPassesAndRenderingSkipped
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-ExplainsRenderingSkip
+                title: >-
+                  PowerPointOpenXmlExtractor shall state in its skipped page-rendering self-test that
+                  slide rendering comes from the PowerPoint.Rendering package.
+                justification: |
+                  A skipped case is only useful if its reason tells the operator what to do next. The
+                  managed backend never renders, and slide rendering is delivered by the separate
+                  PowerPoint.Rendering package, so the skip reason names that package rather than a
+                  backend that does not exist.
+                tests:
+                  - PowerPointOpenXmlExtractor_SelfTestCases_RenderingSkipNamesRenderingPackage
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-PropagatesUnreadableDeck
+                title: >-
+                  PowerPointOpenXmlExtractor shall let the PowerPointExtractionException raised for a
+                  corrupt deck propagate to Core, writing no content.
+                justification: |
+                  The extractor does not translate adverse decks into results; Core converts a thrown
+                  fault into an unreadable result with the layout still written. The extractor must
+                  therefore neither swallow the fault nor report a produced outcome, and must leave the
+                  sink free of content from a deck it could not read.
+                tests:
+                  - PowerPointOpenXmlExtractor_ExtractAsync_CorruptDeck_ThrowsExtractionException
+
+              - id: DocDownPowerPoint-OpenXml-PowerPointOpenXmlExtractor-HonorsCancellation
+                title: >-
+                  PowerPointOpenXmlExtractor shall observe the caller's cancellation token and surface
+                  cancellation as an OperationCanceledException, writing no content.
+                justification: |
+                  A caller that cancels an extraction expects it to stop, and cancellation is neither a
+                  failure of the deck nor a produced result, so it must propagate as cancellation.
+                tests:
+                  - PowerPointOpenXmlExtractor_ExtractAsync_CancelledToken_Throws

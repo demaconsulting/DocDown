@@ -4,7 +4,8 @@ This document describes the system-level verification strategy for DemaConsultin
 
 ## Verification Approach
 
-DemaConsulting.DocDown.Core is verified through end-to-end tests in `DocDownCoreTests.cs`, driven through the public
+DemaConsulting.DocDown.Core is verified through end-to-end tests in `DocDownCoreTests.cs` (plus
+`ApiExampleCoverageTests.cs` for the API-example scenario), driven through the public
 `DocDownEngine` with stub extractors from `DemaConsulting.DocDown.TestSupport`. Core ships no real
 format-specific backend of its own, so the stubs are the correct system-level seam: the engine,
 selection logic, and output writers all run for real while the tests control exactly what the backend
@@ -38,7 +39,10 @@ Per IEC 62304 §5.7.2, a system test run passes when:
   the normal root artifacts;
 - the selected backend and runtime context appear in the output where specified;
 - package-hint and legacy-format failure prose remain honest and specific;
-- fixed-timestamp runs are byte-identical within one environment;
+- repeated runs are identical apart from the extraction timestamp within one environment;
+- hostile image names stay inside the scratch folder, and populated folders that DocDown does not own are
+  refused without deleting or overwriting the caller's files;
+- review-comment artifacts are written and claimed only when a backend reports comments;
 - the self-test seam exposes the current Core case names.
 
 ## Test Scenarios
@@ -91,12 +95,43 @@ document.
 Proves a backend exception is contained as an unreadable result and still leaves the normal summary and
 manifest record in place.
 
-### Fixed-timestamp runs are byte-identical
+### Repeated runs differ only in the extraction timestamp
 
 **Test**: `DocDownCore_Extract_RepeatedRun_IsByteIdentical`
 
-Proves `summary.txt` and `manifest.json` are byte-identical between two runs with the same
-extraction timestamp in one environment.
+Proves `summary.txt` and `manifest.json` from two runs into the same folder are identical once the
+extraction timestamp is normalized away. The system test does not inject a fixed timestamp; byte-identity for a
+fixed timestamp is proven at the Output level by `Output_Determinism_FixedTimestamp_ProducesByteIdenticalOutput`.
+
+### A hostile image name stays inside the scratch folder
+
+**Test**: `DocDownCore_Extract_HostileImageName_StaysInsideScratchFolder`
+
+Proves a backend that asks for an image named with traversal segments (`..\..\escape`) and for a reserved device
+name (`CON`) still produces output, with every written file under the scratch folder and nothing created beside it.
+
+### A populated folder DocDown does not own is refused
+
+**Test**: `DocDownCore_Extract_UnownedPopulatedScratchFolder_IsRefusedAndLeftUntouched`
+
+Proves extracting into a non-empty folder with no DocDown manifest returns `Unreadable` with a "was refused"
+summary, writes no artifacts, and leaves the caller's file unchanged.
+
+### A re-run is refused when a foreign file was added
+
+**Test**: `DocDownCore_Extract_RerunWithForeignFileAdded_IsRefusedWithoutDeletingIt`
+
+Proves a second run into a previous DocDown folder that gained an unaccounted file is refused, the foreign file is
+not deleted, and the earlier manifest remains.
+
+### Review-comment artifacts follow backend reports
+
+**Tests**: `DocDownEngine_ExtractAsync_BackendReportsReviewComments_WritesAndClaimsArtifact` and
+`DocDownEngine_ExtractAsync_NoReviewComments_WritesNoArtifactAndClaimsNone` (engine level, in
+`DocDownEngineTests.cs`)
+
+Proves `review-comments.md` is written and claimed in the summary when a backend reports comments, and is
+neither written nor claimed otherwise. Evidence for `DocDownCore-ReviewCommentsFile`.
 
 ### Option mutation after the call does not affect the completed run
 
@@ -130,8 +165,10 @@ through a template container rather than giving it a fabricated page. Evidence f
 
 **Test**: `DocDownCore_ApiExamples_ConsumerEntryPoints_CarryRunnableExamples`
 
-Proves the builder, the extraction entry point, and all six backend registration methods each carry
+Proves the builder, the extraction entry point, and all nine backend registration methods each carry
 an example with a C# code block that builds an engine, so the API reference generated into every
-package's `api/` folder ships a runnable sample offline. The registration set is asserted by name, so
+package's `api/` folder ships a runnable sample offline. The registration set (`AddWord`, `AddExcel`,
+`AddPowerPoint`, `AddVisio`, `AddOffice`, `AddPdf`, `AddPdfRendering`, `AddPowerPointRendering`, and
+`AddVisioRendering`) is asserted by name, so
 a newly added format package cannot pass the check by being absent. Evidence for the repository-level
 `Quality-ApiExampleCoverage` requirement.
