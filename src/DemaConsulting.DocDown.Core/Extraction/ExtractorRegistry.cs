@@ -35,11 +35,11 @@ public sealed class ExtractorRegistry
 
     /// <summary>The materialized extractor instances in registration order.</summary>
     /// <remarks>Created once in the constructor so lifetime and identity are fixed for the registry.</remarks>
-    private readonly IReadOnlyList<IDocumentExtractor> _extractors;
+    private readonly List<IDocumentExtractor> _extractors;
 
     /// <summary>The extractor descriptors in registration order, aligned with <see cref="_extractors"/>.</summary>
     /// <remarks>Snapshots identity and declared abilities so selection never invokes an extractor to read them.</remarks>
-    private readonly IReadOnlyList<ExtractorDescriptor> _descriptors;
+    private readonly List<ExtractorDescriptor> _descriptors;
 
     /// <summary>The cached candidates (descriptor plus probed availability), or <see langword="null"/> before the first probe.</summary>
     /// <remarks>Guarded by <see cref="_availabilityLock"/>; cleared by <see cref="RefreshAvailability"/>.</remarks>

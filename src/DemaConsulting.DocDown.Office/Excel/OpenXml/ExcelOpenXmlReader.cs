@@ -109,7 +109,7 @@ internal static class ExcelOpenXmlReader
     ///     the table up front lets every cell resolve its text without re-walking the part. Whole
     ///     inner text is taken so rich-text runs concatenate into the complete value.
     /// </remarks>
-    private static IReadOnlyList<string> LoadSharedStrings(WorkbookPart workbookPart)
+    private static List<string> LoadSharedStrings(WorkbookPart workbookPart)
     {
         var table = workbookPart.SharedStringTablePart?.SharedStringTable;
         if (table is null)
@@ -136,7 +136,7 @@ internal static class ExcelOpenXmlReader
     ///     A cell with neither a value nor a formula contributes nothing and is dropped, so a sparse
     ///     sheet yields only its real content. Read-only over the part.
     /// </remarks>
-    private static IReadOnlyList<ExcelCellModel> ReadCells(
+    private static List<ExcelCellModel> ReadCells(
         WorksheetPart worksheetPart, IReadOnlyList<string> sharedStrings)
     {
         var sheetData = worksheetPart.Worksheet?.GetFirstChild<S.SheetData>();
@@ -186,7 +186,7 @@ internal static class ExcelOpenXmlReader
     ///     beside a grid table, which a GFM table cannot visually span. A reference that is blank is
     ///     skipped rather than carried as an empty range. Read-only over the part.
     /// </remarks>
-    private static IReadOnlyList<string> ReadMergedRanges(WorksheetPart worksheetPart)
+    private static List<string> ReadMergedRanges(WorksheetPart worksheetPart)
     {
         var mergeCells = worksheetPart.Worksheet?.GetFirstChild<S.MergeCells>();
         if (mergeCells is null)
@@ -219,7 +219,7 @@ internal static class ExcelOpenXmlReader
     ///     without re-walking the package. A workbook with no person part yields an empty map and
     ///     every threaded comment is then reported unattributed rather than attributed to a guess.
     /// </remarks>
-    private static IReadOnlyDictionary<string, string> LoadPersonNames(WorkbookPart workbookPart)
+    private static Dictionary<string, string> LoadPersonNames(WorkbookPart workbookPart)
     {
         var names = new Dictionary<string, string>(StringComparer.Ordinal);
         var personLists = workbookPart.WorkbookPersonParts
@@ -273,7 +273,7 @@ internal static class ExcelOpenXmlReader
     ///         sheet. Read-only over the parts.
     ///     </para>
     /// </remarks>
-    private static IReadOnlyList<ExcelCommentModel> ReadComments(
+    private static List<ExcelCommentModel> ReadComments(
         WorksheetPart worksheetPart, IReadOnlyDictionary<string, string> personNames)
     {
         var threaded = ReadThreadedComments(worksheetPart, personNames);

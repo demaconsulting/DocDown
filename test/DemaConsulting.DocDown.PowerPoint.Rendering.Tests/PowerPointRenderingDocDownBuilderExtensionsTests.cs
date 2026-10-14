@@ -28,8 +28,8 @@ public class PowerPointRenderingDocDownBuilderExtensionsTests
         var engine = new DocDownBuilder().AddPowerPointRendering().Build();
 
         // Assert: exactly the rendering extractor is registered
-        Assert.Single(engine.Extractors);
-        Assert.Equal("powerpoint-rendering", engine.Extractors[0].Id);
+        var extractor = Assert.Single(engine.Extractors);
+        Assert.Equal("powerpoint-rendering", extractor.Id);
     }
 
     /// <summary>

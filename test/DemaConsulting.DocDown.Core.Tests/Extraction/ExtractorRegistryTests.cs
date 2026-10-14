@@ -333,7 +333,7 @@ public class ExtractorRegistryTests
     /// </summary>
     /// <param name="extractors">The extractor instances to wrap.</param>
     /// <returns>The registration-ordered factory list.</returns>
-    private static IReadOnlyList<Func<IDocumentExtractor>> Factories(params IDocumentExtractor[] extractors) =>
+    private static List<Func<IDocumentExtractor>> Factories(params IDocumentExtractor[] extractors) =>
         extractors.Select<IDocumentExtractor, Func<IDocumentExtractor>>(extractor => () => extractor).ToList();
 
     /// <summary>

@@ -27,8 +27,8 @@ public class VisioRenderingDocDownBuilderExtensionsTests
         var engine = new DocDownBuilder().AddVisioRendering().Build();
 
         // Assert: exactly the rendering extractor is registered
-        Assert.Single(engine.Extractors);
-        Assert.Equal("visio-rendering", engine.Extractors[0].Id);
+        var extractor = Assert.Single(engine.Extractors);
+        Assert.Equal("visio-rendering", extractor.Id);
     }
 
     /// <summary>

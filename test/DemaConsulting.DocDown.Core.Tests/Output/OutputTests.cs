@@ -387,13 +387,11 @@ public class OutputTests
             await sink.AddImageAsync(one, new ImageHint("photo", "image/jpeg"), CancellationToken.None);
         }
 
-        using (var two = new MemoryStream([11, 21, 31, 41], writable: false))
-        {
-            await sink.AddImageAsync(
-                two,
-                new ImageHint("chart", "image/png", Transform: ImageTransform.DecodedToPng),
-                CancellationToken.None);
-        }
+        using var two = new MemoryStream([11, 21, 31, 41], writable: false);
+        await sink.AddImageAsync(
+            two,
+            new ImageHint("chart", "image/png", Transform: ImageTransform.DecodedToPng),
+            CancellationToken.None);
     }
 
     /// <summary>
@@ -412,12 +410,10 @@ public class OutputTests
                 CancellationToken.None);
         }
 
-        using (var template = new MemoryStream([13, 23, 33, 43], writable: false))
-        {
-            await sink.AddImageAsync(
-                template,
-                new ImageHint("watermark", "image/png", ReferencedByTemplate: true),
-                CancellationToken.None);
-        }
+        using var template = new MemoryStream([13, 23, 33, 43], writable: false);
+        await sink.AddImageAsync(
+            template,
+            new ImageHint("watermark", "image/png", ReferencedByTemplate: true),
+            CancellationToken.None);
     }
 }

@@ -95,8 +95,8 @@ public class ExtractionSinkTests
 
         // Assert: the second write reuses the first file and increments the reference count
         Assert.Equal(firstPath, secondPath);
-        Assert.Single(sink.Images);
-        Assert.Equal(2, sink.Images[0].References);
+        var image = Assert.Single(sink.Images);
+        Assert.Equal(2, image.References);
         Assert.Single(Directory.GetFiles(Path.Combine(sink.Folder.AbsolutePath, "images")));
     }
 

@@ -242,7 +242,7 @@ public sealed class PowerPointPageRenderingExtractor : IDocumentExtractor, ISelf
     private async ValueTask RenderSlidesAsync(
         byte[] bytes, IExtractionSink sink, ExtractionOptions options, CancellationToken cancellationToken)
     {
-        IReadOnlyList<int> pageNumbers;
+        List<int> pageNumbers;
         try
         {
             pageNumbers = SelectPageNumbers(bytes, options.Pages);
@@ -329,7 +329,7 @@ public sealed class PowerPointPageRenderingExtractor : IDocumentExtractor, ISelf
     ///     Slides outside the document are silently absent from the selection rather than an error,
     ///     matching the managed backend's page-range behavior. Read-only over the buffered bytes.
     /// </remarks>
-    private IReadOnlyList<int> SelectPageNumbers(byte[] bytes, PageRange? range)
+    private List<int> SelectPageNumbers(byte[] bytes, PageRange? range)
     {
         var pageCount = _pageCount(bytes);
         var numbers = new List<int>(pageCount);

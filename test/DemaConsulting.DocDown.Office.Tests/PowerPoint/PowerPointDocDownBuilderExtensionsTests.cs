@@ -17,8 +17,8 @@ public class PowerPointDocDownBuilderExtensionsTests
     {
         var engine = new DocDownBuilder().AddPowerPoint().Build();
 
-        Assert.Single(engine.Extractors);
-        Assert.Equal("powerpoint-openxml", engine.Extractors.Single().Id);
+        var extractor = Assert.Single(engine.Extractors);
+        Assert.Equal("powerpoint-openxml", extractor.Id);
     }
 
     /// <summary>

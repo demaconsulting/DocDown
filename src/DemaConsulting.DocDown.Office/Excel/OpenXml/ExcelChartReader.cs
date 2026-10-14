@@ -153,7 +153,7 @@ internal static class ExcelChartReader
     ///     is flagged so the output can say the title was generated rather than authored. A deleted
     ///     title (<c>autoTitleDeleted</c>) yields no title at all. Pure.
     /// </remarks>
-    private static string? ResolveTitle(XElement? chart, IReadOnlyList<ExcelChartSeries> series, out bool isAutomatic)
+    private static string? ResolveTitle(XElement? chart, List<ExcelChartSeries> series, out bool isAutomatic)
     {
         isAutomatic = false;
         if (chart is null)
@@ -258,7 +258,7 @@ internal static class ExcelChartReader
     ///     its series rather than only the first plot's. A scatter or bubble series spells its values
     ///     <c>c:yVal</c> instead of <c>c:val</c>, so both are accepted. Pure.
     /// </remarks>
-    private static IReadOnlyList<ExcelChartSeries> ReadSeries(XElement? plotArea)
+    private static List<ExcelChartSeries> ReadSeries(XElement? plotArea)
     {
         if (plotArea is null)
         {

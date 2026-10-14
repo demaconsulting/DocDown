@@ -168,7 +168,7 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
     ///     because an over-wide range is a reasonable caller request that should yield the pages that
     ///     do exist. Pure apart from reading the document.
     /// </remarks>
-    private static IReadOnlyList<Page> SelectPages(PdfDocument document, PageRange? range)
+    private static List<Page> SelectPages(PdfDocument document, PageRange? range)
     {
         var pages = new List<Page>(document.NumberOfPages);
         for (var number = 1; number <= document.NumberOfPages; number++)
@@ -225,7 +225,7 @@ public sealed class PdfDocumentExtractor : IDocumentExtractor, ISelfValidating
     ///     falsely claiming the document had no images. Side effect: records on the sink.
     /// </remarks>
     private static void ReportContentFeatures(
-        IExtractionSink sink, ExtractionOptions options, IReadOnlyList<Page> pages,
+        IExtractionSink sink, ExtractionOptions options, List<Page> pages,
         PdfTextResult text, PdfImageResult images, IReadOnlyList<PdfReviewAnnotation> annotations)
     {
         sink.ReportContentFeature(new ContentFeature("pages", pages.Count, "page", LookedFor: true));

@@ -105,9 +105,8 @@ internal static class PdfAnnotationExtractor
     ///         is machinery rather than commentary.
     ///     </para>
     /// </remarks>
-    private static readonly IReadOnlySet<AnnotationType> CommentaryAnnotationTypes =
-        new HashSet<AnnotationType>
-        {
+    private static readonly HashSet<AnnotationType> CommentaryAnnotationTypes =
+        [
             // Purpose-built commentary
             AnnotationType.Text,
             AnnotationType.FreeText,
@@ -129,7 +128,7 @@ internal static class PdfAnnotationExtractor
             AnnotationType.Caret,
             AnnotationType.Ink,
             AnnotationType.FileAttachment
-        };
+        ];
 
     /// <summary>The maximum number of page numbers named in the unreadable-annotations note.</summary>
     /// <remarks>
@@ -304,7 +303,7 @@ internal static class PdfAnnotationExtractor
     ///     incomplete about it. Side effect: records a note on the sink.
     /// </remarks>
     private static void ReportUnreadableAnnotationsNote(
-        IExtractionSink sink, IReadOnlyList<int> unreadablePages, int selectedPages)
+        IExtractionSink sink, List<int> unreadablePages, int selectedPages)
     {
         if (unreadablePages.Count == 0)
         {

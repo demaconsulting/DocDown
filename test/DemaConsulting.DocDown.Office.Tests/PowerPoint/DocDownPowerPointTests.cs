@@ -48,8 +48,8 @@ public class DocDownPowerPointTests
 
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         var images = Directory.GetFiles(Path.Combine(scratch, "images"));
-        Assert.Single(images);
-        Assert.EndsWith(".png", images[0], StringComparison.Ordinal);
+        var image = Assert.Single(images);
+        Assert.EndsWith(".png", image, StringComparison.Ordinal);
         Assert.Empty(result.Notes);
         var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
         Assert.Contains("images/" + Path.GetFileName(images[0]), content, StringComparison.Ordinal);
@@ -69,8 +69,8 @@ public class DocDownPowerPointTests
 
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         var images = Directory.GetFiles(Path.Combine(scratch, "images"));
-        Assert.Single(images);
-        Assert.EndsWith(".emf", images[0], StringComparison.Ordinal);
+        var image = Assert.Single(images);
+        Assert.EndsWith(".emf", image, StringComparison.Ordinal);
         Assert.Empty(result.Notes);
         ContractAssert.LayoutPresent(scratch);
     }

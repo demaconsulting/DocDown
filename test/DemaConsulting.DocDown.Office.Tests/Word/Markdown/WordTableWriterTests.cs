@@ -145,6 +145,6 @@ public class WordTableWriterTests
     /// </summary>
     /// <param name="cells">The cell texts.</param>
     /// <returns>The row.</returns>
-    private static IReadOnlyList<WordTableCell> Row(params string[] cells) =>
+    private static List<WordTableCell> Row(params string[] cells) =>
         cells.Select(text => new WordTableCell([new WordInline(text)])).ToList();
 }

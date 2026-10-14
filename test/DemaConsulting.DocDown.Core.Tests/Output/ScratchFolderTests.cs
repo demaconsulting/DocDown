@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.TestSupport;
 
@@ -11,8 +12,19 @@ namespace DemaConsulting.DocDown.Core.Tests.Output;
 ///     These tests prove containment, reserved-name rejection, path-length refusal, manifest-bound
 ///     safe reuse, and the two surviving preparation modes.
 /// </remarks>
-public class ScratchFolderTests
+public partial class ScratchFolderTests
 {
+    /// <summary>The escape reasons a hostile path may legitimately be refused with.</summary>
+    private static readonly string[] EscapeReasons = ["pathEscapesScratchFolder", "invalidPathComponent"];
+
+    /// <summary>The single source page recorded for each fabricated manifest image.</summary>
+    private static readonly int[] SingleSourcePage = [1];
+
+    /// <summary>Matches the manifest's source object so it can be replaced by null.</summary>
+    /// <returns>The generated regular expression.</returns>
+    [GeneratedRegex("\"source\":\\{[^}]*\\}")]
+    private static partial Regex ManifestSourceObject();
+
     /// <summary>
     ///     Proves a traversal, absolute, UNC, or rooted allocation is refused as an escape.
     /// </summary>
@@ -36,7 +48,7 @@ public class ScratchFolderTests
 
         // Act / Assert: every escape attempt is refused with a structured path reason
         var exception = Assert.Throws<ScratchFolderException>(() => folder.Combine(hostilePath));
-        Assert.Contains(exception.Reason, new[] { "pathEscapesScratchFolder", "invalidPathComponent" });
+        Assert.Contains(exception.Reason, EscapeReasons);
     }
 
     /// <summary>
@@ -414,7 +426,7 @@ public class ScratchFolderTests
             "wrongToolName" => genuine.Replace("\"name\":\"DocDown\"", "\"name\":\"NotDocDown\""),
             "wrongPackagePrefix" => genuine.Replace(
                 "\"package\":\"DemaConsulting.DocDown.Core\"", "\"package\":\"Other.Package\""),
-            "nullSource" => System.Text.RegularExpressions.Regex.Replace(genuine, "\"source\":\\{[^}]*\\}", "\"source\":null"),
+            "nullSource" => ManifestSourceObject().Replace(genuine, "\"source\":null"),
             "corruptJson" => "{ this is not json",
             _ => genuine + new string(' ', (8 * 1024 * 1024) + 1)
         };
@@ -485,7 +497,7 @@ public class ScratchFolderTests
             environment = new { operatingSystem = "TestOS", processArchitecture = "X64", runtimeVersion = "test-runtime", runtimeIdentifier = "test-rid", facts = Array.Empty<object>() },
             document = new { title = "Doc", author = (string?)null, pageCount = 1, partCount = (int?)null },
             contentFeatures = Array.Empty<object>(),
-            images = (images ?? []).Select(path => new { path, mediaType = "image/png", widthPx = 1, heightPx = 1, sizeBytes = 1, sha256 = "11", sourcePage = 1, sourcePages = new[] { 1 }, referencedByTemplate = false, sourceRef = (string?)null, transform = "passthrough", references = 1, description = (string?)null, descriptionSource = (string?)null }).ToArray(),
+            images = (images ?? []).Select(path => new { path, mediaType = "image/png", widthPx = 1, heightPx = 1, sizeBytes = 1, sha256 = "11", sourcePage = 1, sourcePages = SingleSourcePage, referencedByTemplate = false, sourceRef = (string?)null, transform = "passthrough", references = 1, description = (string?)null, descriptionSource = (string?)null }).ToArray(),
             pages = (pages ?? []).Select(path => new { path, pageNumber = 1, sizeBytes = 1, sha256 = "22" }).ToArray(),
             parts = (parts ?? []).Select(path => new { path, kind = "section", ordinal = 1, title = "Part", characterCount = 1 }).ToArray(),
             reviewComments = Array.Empty<object>(),
@@ -519,7 +531,7 @@ public class ScratchFolderTests
     private sealed class MutatingFileStateReader : IFileStateReader
     {
         /// <summary>The production reader used for the actual file-state snapshots.</summary>
-        private readonly IFileStateReader _inner = FileSystemFileStateReader.Instance;
+        private readonly FileSystemFileStateReader _inner = FileSystemFileStateReader.Instance;
 
         /// <summary>The path to mutate on the second read.</summary>
         private readonly string _pathToMutate;

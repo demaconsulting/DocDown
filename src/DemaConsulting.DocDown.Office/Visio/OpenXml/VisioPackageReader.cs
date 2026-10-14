@@ -208,7 +208,7 @@ internal static class VisioPackageReader
     ///     master carries no localized name. A master with neither is skipped rather than mapped to
     ///     an empty string.
     /// </remarks>
-    private static IReadOnlyDictionary<string, string> ReadMasterNames(Package package)
+    private static Dictionary<string, string> ReadMasterNames(Package package)
     {
         var mastersPart = FindMastersPart(package);
         if (mastersPart is null)
@@ -241,7 +241,7 @@ internal static class VisioPackageReader
     ///     font be recognized. The part is optional: a missing or unreadable one yields an empty map
     ///     and the drawing is still read, merely without numeric font resolution.
     /// </remarks>
-    private static IReadOnlyDictionary<string, string> ReadFaceNames(Package package)
+    private static Dictionary<string, string> ReadFaceNames(Package package)
     {
         var names = new Dictionary<string, string>(StringComparer.Ordinal);
         var uri = new Uri(DocumentPartUri, UriKind.Relative);
@@ -342,7 +342,7 @@ internal static class VisioPackageReader
     ///     simply carries no master name rather than a guessed one. A repeated shape id keeps its first
     ///     declaration and the later ones are dropped, so no shape is counted twice.
     /// </remarks>
-    private static IReadOnlyList<VisioShapeModel> ReadShapes(
+    private static List<VisioShapeModel> ReadShapes(
         XDocument contentsXml, IReadOnlyDictionary<string, string> masterNames,
         IReadOnlyDictionary<string, string> faceNames)
     {
@@ -511,7 +511,7 @@ internal static class VisioPackageReader
     ///     edge. A connector missing either end, or naming a shape that is not on the page, is dropped
     ///     from the topology. Pure.
     /// </remarks>
-    private static IReadOnlyList<VisioConnectionModel> ResolveConnections(
+    private static List<VisioConnectionModel> ResolveConnections(
         XDocument contentsXml, IReadOnlyList<VisioShapeModel> shapes)
     {
         var shapeIds = new HashSet<string>(shapes.Select(shape => shape.Id), StringComparer.Ordinal);

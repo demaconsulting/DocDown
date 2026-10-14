@@ -161,10 +161,10 @@ public class ContentWriterTests
         var result = await ContentWriter.WriteAsync(sink, "Workbook", Ct);
 
         // Assert: a part file was written and its image link resolves on disk from its own directory
-        Assert.Single(result.PartPaths);
+        var partPath = Assert.Single(result.PartPaths);
         var resolved = MarkdownImageLinks.AssertAllImageLinksResolveOnDisk(sink.Folder.AbsolutePath);
         Assert.True(resolved >= 1);
-        Assert.Contains("![Chart](../images/", await ReadPartAsync(sink, result.PartPaths[0]), StringComparison.Ordinal);
+        Assert.Contains("![Chart](../images/", await ReadPartAsync(sink, partPath), StringComparison.Ordinal);
     }
 
     /// <summary>

@@ -31,8 +31,8 @@ public class DocDownExcelTests
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Empty(result.Notes);
         var images = Directory.GetFiles(Path.Combine(scratch, "images"));
-        Assert.Single(images);
-        Assert.EndsWith(".png", images[0], StringComparison.Ordinal);
+        var image = Assert.Single(images);
+        Assert.EndsWith(".png", image, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
 
@@ -50,8 +50,8 @@ public class DocDownExcelTests
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Empty(result.Notes);
         var images = Directory.GetFiles(Path.Combine(scratch, "images"));
-        Assert.Single(images);
-        Assert.EndsWith(".emf", images[0], StringComparison.Ordinal);
+        var image = Assert.Single(images);
+        Assert.EndsWith(".emf", image, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
 

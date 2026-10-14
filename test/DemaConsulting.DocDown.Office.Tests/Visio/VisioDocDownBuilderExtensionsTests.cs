@@ -17,8 +17,8 @@ public class VisioDocDownBuilderExtensionsTests
     {
         var engine = new DocDownBuilder().AddVisio().Build();
 
-        Assert.Single(engine.Extractors);
-        Assert.Equal("visio-openxml", engine.Extractors.Single().Id);
+        var extractor = Assert.Single(engine.Extractors);
+        Assert.Equal("visio-openxml", extractor.Id);
     }
 
     /// <summary>
