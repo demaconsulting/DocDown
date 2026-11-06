@@ -4,6 +4,12 @@ DocDown turns a document into a predictable scratch-folder layout that downstrea
 automation can consume. It reports extraction facts, counts, and plain-language notes about work it
 could not complete; it does not make acceptability judgments about the document itself.
 
+The figure below shows how the pieces fit together: the `docdown` tool, or your own application using the libraries,
+registers backends with Core, which selects one for the document and writes the same scratch-folder layout
+whatever the format.
+
+![DocDown architecture: your documents, the Core engine with format backends and optional page-rendering add-ons, and the scratch folder it writes](architecture.svg)
+
 ## Purpose
 
 This document explains how to install, use, and interpret DocDown's libraries and command-line

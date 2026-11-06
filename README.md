@@ -20,6 +20,8 @@ designed to be fed to multimodal AI agents. It reports what was read, what was c
 plain-language notes about steps that could not be completed; it does not judge whether document
 content is acceptable.
 
+![DocDown architecture: your documents, the Core engine with format backends and optional page-rendering add-ons, and the scratch folder it writes][architecture]
+
 ## Features
 
 - 📄 **Many Formats** - PDF, Word, Excel, PowerPoint, and Visio
@@ -168,3 +170,5 @@ DocDown is built with the following open-source projects:
 - [PdfPig](https://github.com/UglyToad/PdfPig) - Managed PDF parsing
 - [CanvasNet](https://github.com/demaconsulting/CanvasNet) - Managed page rendering
 - [DemaConsulting.TestResults](https://github.com/demaconsulting/TestResults) - TRX and JUnit XML test results library
+
+[architecture]: https://raw.githubusercontent.com/demaconsulting/DocDown/main/docs/images/architecture.png
