@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="620" viewBox="0 0 900 620" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <!-- Transparent canvas; a white rounded card keeps the diagram readable in light and dark themes -->
+  <rect x="14" y="16" width="875" height="591" rx="28" fill="#d5dce6"/>
+  <rect x="10" y="10" width="875" height="591" rx="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+
+  <g transform="translate(30,30)">
+    <!-- Callers -->
+    <rect x="150" y="0" width="220" height="70" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+    <text x="260" y="31" font-size="16" font-family="Consolas, monospace" font-weight="600" fill="#92400e" text-anchor="middle">docdown</text>
+    <text x="260" y="53" font-size="13" fill="#92400e" text-anchor="middle">command-line tool</text>
+    <rect x="390" y="0" width="220" height="70" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+    <text x="500" y="31" font-size="16" font-weight="600" fill="#92400e" text-anchor="middle">Your application</text>
+    <text x="500" y="53" font-size="13" fill="#92400e" text-anchor="middle">uses the libraries directly</text>
+    <line x1="260" y1="74" x2="260" y2="118" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+    <line x1="500" y1="74" x2="500" y2="118" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+    <text x="272" y="100" font-size="12" fill="#334155">register backends,</text>
+    <text x="512" y="100" font-size="12" fill="#334155">register backends,</text>
+    <text x="272" y="114" font-size="12" fill="#334155">extract</text>
+    <text x="512" y="114" font-size="12" fill="#334155">extract</text>
+    <!-- DocDown frame -->
+    <rect x="150" y="122" width="460" height="430" rx="14" fill="#f8fafc" stroke="#2563eb" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="166" y="148" font-size="14" font-weight="600" fill="#2563eb">DemaConsulting.DocDown</text>
+
+    <!-- Core -->
+    <rect x="170" y="164" width="420" height="150" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <text x="380" y="192" font-size="18" font-weight="600" fill="#166534" text-anchor="middle">Core</text>
+    <rect x="190" y="206" width="180" height="44" rx="6" fill="#ffffff" stroke="#16a34a"/>
+    <text x="280" y="233" font-size="15" font-family="Consolas, monospace" fill="#14532d" text-anchor="middle">DocDownEngine</text>
+    <rect x="390" y="206" width="180" height="44" rx="6" fill="#ffffff" stroke="#16a34a"/>
+    <text x="480" y="233" font-size="15" font-family="Consolas, monospace" fill="#14532d" text-anchor="middle">FormatSniffer</text>
+    <rect x="190" y="262" width="380" height="40" rx="6" fill="#ffffff" stroke="#16a34a"/>
+    <text x="380" y="287" font-size="13" fill="#166534" text-anchor="middle">Selects one backend, then writes the invariant output layout</text>
+
+    <!-- Backends -->
+    <text x="380" y="342" font-size="13" font-weight="600" fill="#1e40af" text-anchor="middle">Format backends, registered explicitly</text>
+    <rect x="170" y="354" width="200" height="64" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="270" y="381" font-size="15" font-family="Consolas, monospace" fill="#1e3a8a" text-anchor="middle">.Pdf</text>
+    <text x="270" y="402" font-size="12" fill="#1e40af" text-anchor="middle">text, images, metadata</text>
+    <rect x="390" y="354" width="200" height="64" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="490" y="381" font-size="15" font-family="Consolas, monospace" fill="#1e3a8a" text-anchor="middle">.Office</text>
+    <text x="490" y="402" font-size="12" fill="#1e40af" text-anchor="middle">Word, Excel, PowerPoint, Visio</text>
+
+    <text x="380" y="448" font-size="13" font-weight="600" fill="#334155" text-anchor="middle">Optional page-rendering add-ons</text>
+    <rect x="170" y="460" width="130" height="72" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+    <text x="235" y="484" font-size="14" font-family="Consolas, monospace" fill="#4c1d95" text-anchor="middle">.Pdf</text><text x="235" y="502" font-size="14" font-family="Consolas, monospace" fill="#4c1d95" text-anchor="middle">.Rendering</text>
+    <text x="235" y="520" font-size="12" fill="#5b21b6" text-anchor="middle">PDF pages</text>
+    <rect x="315" y="460" width="130" height="72" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+    <text x="380" y="484" font-size="14" font-family="Consolas, monospace" fill="#4c1d95" text-anchor="middle">.PowerPoint</text><text x="380" y="502" font-size="14" font-family="Consolas, monospace" fill="#4c1d95" text-anchor="middle">.Rendering</text>
+    <text x="380" y="520" font-size="12" fill="#5b21b6" text-anchor="middle">slides</text>
+    <rect x="460" y="460" width="130" height="72" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+    <text x="525" y="484" font-size="14" font-family="Consolas, monospace" fill="#4c1d95" text-anchor="middle">.Visio</text><text x="525" y="502" font-size="14" font-family="Consolas, monospace" fill="#4c1d95" text-anchor="middle">.Rendering</text>
+    <text x="525" y="520" font-size="12" fill="#5b21b6" text-anchor="middle">Visio pages</text>
+
+    <line x1="200" y1="318" x2="200" y2="350" stroke="#475569" stroke-width="2" marker-start="url(#a)" marker-end="url(#a)"/>
+    <line x1="560" y1="318" x2="560" y2="350" stroke="#475569" stroke-width="2" marker-start="url(#a)" marker-end="url(#a)"/>
+
+    <!-- Documents in -->
+    <rect x="0" y="180" width="120" height="66" rx="6" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+    <text x="60" y="207" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">PDF</text>
+    <text x="60" y="228" font-size="12" fill="#475569" text-anchor="middle">.pdf</text>
+    <rect x="0" y="262" width="120" height="66" rx="6" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+    <text x="60" y="289" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">Word, Excel</text>
+    <text x="60" y="310" font-size="12" fill="#475569" text-anchor="middle">.docx .xlsx</text>
+    <rect x="0" y="344" width="120" height="66" rx="6" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+    <text x="60" y="371" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">PowerPoint</text>
+    <text x="60" y="392" font-size="12" fill="#475569" text-anchor="middle">.pptx</text>
+    <rect x="0" y="426" width="120" height="66" rx="6" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+    <text x="60" y="453" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">Visio</text>
+    <text x="60" y="474" font-size="12" fill="#475569" text-anchor="middle">.vsdx .vsdm</text>
+    <text x="60" y="160" font-size="13" font-weight="600" fill="#475569" text-anchor="middle">Your documents</text>
+    <line x1="124" y1="213" x2="146" y2="213" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+    <line x1="124" y1="295" x2="146" y2="295" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+    <line x1="124" y1="377" x2="146" y2="377" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+    <line x1="124" y1="459" x2="146" y2="459" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+
+    <!-- Scratch folder out -->
+    <rect x="650" y="164" width="165" height="305" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <text x="732" y="192" font-size="16" font-weight="600" fill="#166534" text-anchor="middle">Scratch folder</text>
+    <g font-size="13" font-family="Consolas, monospace" fill="#14532d" text-anchor="middle">
+      <rect x="664" y="206" width="137" height="30" rx="5" fill="#ffffff" stroke="#16a34a"/>
+      <text x="732" y="226">summary.txt</text>
+      <rect x="664" y="244" width="137" height="30" rx="5" fill="#ffffff" stroke="#16a34a"/>
+      <text x="732" y="264">manifest.json</text>
+      <rect x="664" y="282" width="137" height="30" rx="5" fill="#ffffff" stroke="#16a34a"/>
+      <text x="732" y="302">metadata.json</text>
+      <rect x="664" y="320" width="137" height="30" rx="5" fill="#ffffff" stroke="#16a34a"/>
+      <text x="732" y="340">content.md</text>
+      <rect x="664" y="358" width="137" height="30" rx="5" fill="#ffffff" stroke="#16a34a"/>
+      <text x="732" y="378">images/</text>
+      <rect x="664" y="396" width="137" height="30" rx="5" fill="#ffffff" stroke="#16a34a"/>
+      <text x="732" y="416">pages/</text>
+    </g>
+    <text x="732" y="440" font-size="12" fill="#166534" text-anchor="middle">+ review-comments.md</text><text x="732" y="455" font-size="12" fill="#166534" text-anchor="middle">when comments exist</text>
+    <line x1="590" y1="239" x2="646" y2="239" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+    <text x="732" y="492" font-size="12" fill="#475569" text-anchor="middle">Same layout for every format,</text>
+    <text x="732" y="508" font-size="12" fill="#475569" text-anchor="middle">ready for an AI agent</text>
+  </g>
+</svg>
