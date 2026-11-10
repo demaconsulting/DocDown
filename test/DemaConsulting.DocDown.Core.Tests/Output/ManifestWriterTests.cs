@@ -19,18 +19,18 @@ public class ManifestWriterTests
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>
-    ///     Proves the manifest declares schema version 3.1.
+    ///     Proves the manifest declares schema version 3.2.
     /// </summary>
     [Fact]
-    public async Task ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionThreePointOne()
+    public async Task ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionThreePointTwo()
     {
         // Arrange / Act: a produced text run serialized to a manifest
         using var temp = new TempScratch();
         var folder = await RunProducedAsync(temp, WriteText);
         using var document = await ParseManifestAsync(folder);
 
-        // Assert: the reduced manifest shape pins the 3.1 schema
-        Assert.Equal("3.1", document.RootElement.GetProperty("schemaVersion").GetString());
+        // Assert: the reduced manifest shape pins the 3.2 schema
+        Assert.Equal("3.2", document.RootElement.GetProperty("schemaVersion").GetString());
     }
 
     /// <summary>
@@ -78,6 +78,35 @@ public class ManifestWriterTests
         Assert.Equal(JsonValueKind.Null, comments[1].GetProperty("author").ValueKind);
         Assert.Equal("Agreed.", comments[1].GetProperty("body").GetString());
         Assert.Equal("review-comments.md", root.GetProperty("reviewCommentsPath").GetString());
+    }
+
+    /// <summary>
+    ///     Proves a feature detail and the revision kind of a recorded tracked change are serialized, and
+    ///     that a comment keeps its <c>comment</c> kind.
+    /// </summary>
+    [Fact]
+    public async Task ManifestWriter_WriteAsync_FeatureDetailAndRevisionKind_AreSerialized()
+    {
+        using var temp = new TempScratch();
+        var folder = await RunProducedAsync(temp, async sink =>
+        {
+            await sink.WriteContentAsync("# Document\n\nWith tracked changes.\n", CancellationToken.None);
+            sink.ReportContentFeature(new ContentFeature(
+                "tracked changes", 2, "tracked change", LookedFor: true, Detail: "shown as markup; 1 distinct author"));
+            sink.ReportContentFeature(new ContentFeature("headings", 1));
+            sink.ReportReviewComment(new DocumentComment("Ada", "A comment.", "Page 1"));
+            sink.ReportReviewComment(new DocumentComment("Bob", "Inserted: text", "Body", IsRevision: true));
+        });
+
+        using var document = await ParseManifestAsync(folder);
+        var root = document.RootElement;
+        var features = root.GetProperty("contentFeatures").EnumerateArray().ToList();
+        var comments = root.GetProperty("reviewComments").EnumerateArray().ToList();
+
+        Assert.Equal("shown as markup; 1 distinct author", features[0].GetProperty("detail").GetString());
+        Assert.False(features[1].TryGetProperty("detail", out _));
+        Assert.Equal("comment", comments[0].GetProperty("kind").GetString());
+        Assert.Equal("revision", comments[1].GetProperty("kind").GetString());
     }
 
     /// <summary>

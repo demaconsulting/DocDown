@@ -17,7 +17,8 @@ exact schema it emits, so the real file is the verification target.
 
 #### Acceptance Criteria
 
-Per IEC 62304 §5.5.2, `ManifestWriter` passes when it declares schema version 3.1, records the tool,
+Per IEC 62304 §5.5.2, `ManifestWriter` passes when it declares schema version 3.2, serializes feature details and
+review-entry kinds, records the tool,
 selected backend, scratch path, and status, emits notes in order, serializes the recorded reviewer
 comments and claims the review-comments artifact only when one was written, records the reduced
 extractor shape, omits the removed top-level keys, the environment block, the requested-options echo,
@@ -26,9 +27,16 @@ manifest vocabulary, and records per-image referrers, template flags, and descri
 
 #### Test Scenarios
 
-##### The schema version is declared as 3.1
+##### The schema version is declared as 3.2
 
-**Test**: `ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionThreePointOne`
+**Test**: `ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionThreePointTwo`
+
+##### A feature detail and the kind of each review entry are serialized
+
+**Test**: `ManifestWriter_WriteAsync_FeatureDetailAndRevisionKind_AreSerialized`
+
+Proves a content feature's optional `detail` is written only when present, and that a reviewer
+comment is recorded with kind `comment` while a tracked change is recorded with kind `revision`.
 
 ##### Reviewer comments are serialized and the artifact path is claimed honestly
 

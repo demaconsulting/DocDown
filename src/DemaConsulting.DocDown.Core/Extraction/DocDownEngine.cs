@@ -771,7 +771,7 @@ public sealed class DocDownEngine
         using var document = JsonDocument.Parse(File.ReadAllText(result.ManifestPath));
         var root = document.RootElement;
 
-        if (!root.TryGetProperty("schemaVersion", out var schema) || schema.GetString() != "3.1")
+        if (!root.TryGetProperty("schemaVersion", out var schema) || schema.GetString() != "3.2")
         {
             return (false, "manifest schemaVersion is missing or unsupported");
         }

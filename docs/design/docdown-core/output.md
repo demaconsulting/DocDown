@@ -70,7 +70,7 @@ self-reported metadata, content features, notes, review comments, and environmen
 `ReviewCommentsWriter` writes `review-comments.md` only when the document carries reviewer comments,
 so the file's absence states that no review was found rather than an empty file asserting an empty
 review. `MetadataWriter` always writes `metadata.json`, omitting blank metadata fields while
-preserving authored values and their provenance. `ManifestWriter` emits schema version `3.1`, which
+preserving authored values and their provenance. `ManifestWriter` emits schema version `3.2`, which
 records the tool, scratch folder, source, selected extractor, document metadata,
 content features, image/page/part inventories, reviewer comments, notes, and any unreadable failure.
 `SummaryWriter` emits the fixed plain-text sections: title and gist, header, optional failure,

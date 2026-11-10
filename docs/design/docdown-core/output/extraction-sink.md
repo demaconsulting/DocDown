@@ -43,10 +43,13 @@ Its key fields are:
   `ContentWriter`.
 - **`ReportDocumentInfo`** and **`ReportDocumentMetadata`** — record document-level metadata.
 - **`ReportContentFeature`** — accumulates counted content features, keeping a zero only when the
-  backend marked the feature as `LookedFor`.
+  backend marked the feature as `LookedFor`. A feature may carry an optional `Detail` qualifier (for
+  example the authors and date range of tracked changes); when the same label is reported more than once the first
+  non-null detail wins.
 - **`ReportNote`** — records one `ExtractionNote` verbatim.
 - **`ReportReviewComment`** — records one `DocumentComment` verbatim, in report order, after
-  rejecting a comment with no body or no location.
+  rejecting a comment with no body or no location. A `DocumentComment` flagged `IsRevision` is a
+  tracked change and is recorded in the same list; `ReviewCommentsWriter` separates the two when it writes.
 - **`ReportEnvironmentFact`** — records one environment fact in emission order.
 
 #### Error Handling

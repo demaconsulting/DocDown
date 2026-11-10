@@ -92,7 +92,7 @@ public sealed class ScratchFolder
     ///     wrote it produced — so refusing one would strand a folder this library demonstrably
     ///     created.
     /// </remarks>
-    private static readonly string[] SupportedManifestSchemas = ["3.0", "3.1"];
+    private static readonly string[] SupportedManifestSchemas = ["3.0", "3.1", "3.2"];
 
     /// <summary>
     ///     The set of reserved device-name stems, compared case-insensitively.

@@ -388,6 +388,7 @@ DemaConsulting.DocDown.Office/
 │   ├── WordOpenXmlExtractor.cs          — Unit: the managed backend the engine selects and invokes
 │   ├── WordOpenXmlImageReader.cs        — Unit: yields embedded image bytes with passthrough provenance
 │   ├── WordOpenXmlReader.cs             — Unit: turns the Open XML DOM into the backend-neutral model
+│   ├── WordRevisionScanner.cs           — Unit: finds tracked changes with author, date, and location
 
 DemaConsulting.DocDown.Pdf/
 ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders

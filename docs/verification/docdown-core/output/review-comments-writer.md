@@ -40,6 +40,13 @@ is a failure.
 
 #### Test Scenarios
 
+##### Tracked changes are counted separately and the heading names both
+
+**Test**: `ReviewCommentsWriter_WriteAsync_TrackedChanges_AreCountedSeparatelyAndRenamedHeading`
+
+Proves a `DocumentComment` flagged `IsRevision` is written to the same artifact, is reported in
+`RevisionCount` rather than `Count`, and turns the heading into `# Review comments and tracked changes`.
+
 ##### No comments produce no file
 
 **Test**: `ReviewCommentsWriter_WriteAsync_NoComments_WritesNoFileAndReportsNone`

@@ -312,21 +312,174 @@ public class DocDownWordTests
     }
 
     /// <summary>
+    ///     Proves a redline document is extracted with markup in content.md, and that the summary and
+    ///     manifest state the tracked-change count, authors, and date range.
+    /// </summary>
+    [Fact]
+    public async Task DocDownWord_Extract_RedlineDocx_ShowsMarkupAndReportsTrackedChanges()
+    {
+        using var temp = new TempScratch();
+        var (scratch, _) = await ExtractAsync(temp, "redline.docx", DocxFixtures.DocumentWithRedline());
+
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        Assert.Contains("{++added words++}", content, StringComparison.Ordinal);
+        Assert.Contains("{--dropped words--}", content, StringComparison.Ordinal);
+
+        var summary = Flatten(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
+        Assert.Contains("3 tracked changes", summary, StringComparison.Ordinal);
+        Assert.Contains("shown as markup", summary, StringComparison.Ordinal);
+        Assert.Contains("2 distinct authors", summary, StringComparison.Ordinal);
+        Assert.Contains("2026-01-02 to 2026-01-05", summary, StringComparison.Ordinal);
+
+        var manifest = await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct);
+        Assert.Contains("\"label\": \"tracked changes\"", manifest, StringComparison.Ordinal);
+        Assert.Contains("\"detail\"", manifest, StringComparison.Ordinal);
+        Assert.Contains("\"kind\": \"revision\"", manifest, StringComparison.Ordinal);
+
+        var review = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        Assert.Contains("tracked changes", review, StringComparison.Ordinal);
+        Assert.Contains("Alice", review, StringComparison.Ordinal);
+        Assert.Contains("dropped words", review, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
+    ///     Proves the accept option renders the accepted view while still reporting the count.
+    /// </summary>
+    [Fact]
+    public async Task DocDownWord_Extract_RedlineDocxWithAcceptOption_ShowsAcceptedViewAndStillReportsCount()
+    {
+        using var temp = new TempScratch();
+        var options = new ExtractionOptions { AcceptTrackedChanges = true };
+        var (scratch, _) = await ExtractAsync(temp, "redline.docx", DocxFixtures.DocumentWithRedline(), options);
+
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        Assert.Contains("added words", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("dropped words", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("{++", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("<u>", content, StringComparison.Ordinal);
+
+        var summary = Flatten(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
+        Assert.Contains("3 tracked changes", summary, StringComparison.Ordinal);
+        Assert.Contains("shown accepted", summary, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves a document with no revisions states an explicit zero and keeps the content unmarked.
+    /// </summary>
+    [Fact]
+    public async Task DocDownWord_Extract_DocxWithoutRevisions_StatesZeroTrackedChanges()
+    {
+        using var temp = new TempScratch();
+        var (scratch, _) = await ExtractAsync(temp, "clean.docx", DocxFixtures.CleanDocument());
+
+        var summary = Flatten(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
+        Assert.Contains("0 tracked changes", summary, StringComparison.Ordinal);
+
+        var manifest = await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct);
+        Assert.Contains("\"label\": \"tracked changes\"", manifest, StringComparison.Ordinal);
+
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        Assert.DoesNotContain("{++", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("{--", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("<u>", content, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves the summary and manifest break the tracked-change count down by part and state that
+    ///     headers, footers, and footnotes are included, and that review-comments.md locates every
+    ///     entry by part, heading path, and position.
+    /// </summary>
+    [Fact]
+    public async Task DocDownWord_Extract_LocatedRevisions_ReportsPartBreakdownAndLocations()
+    {
+        using var temp = new TempScratch();
+        var (scratch, _) = await ExtractAsync(temp, "located.docx", DocxFixtures.DocumentWithLocatedRevisions());
+
+        var summary = Flatten(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
+        Assert.Contains("8 tracked changes", summary, StringComparison.Ordinal);
+        Assert.Contains("count includes headers, footers, and footnotes", summary, StringComparison.Ordinal);
+        Assert.Contains("body 6, headers and footers 1, footnotes 1", summary, StringComparison.Ordinal);
+
+        var manifest = await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct);
+        Assert.Contains("body 6, headers and footers 1, footnotes 1", manifest, StringComparison.Ordinal);
+
+        var review = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        Assert.Contains("Body: before the first heading, paragraph 1", review, StringComparison.Ordinal);
+        Assert.Contains("Body: Alpha > Beta, paragraph 1", review, StringComparison.Ordinal);
+        Assert.Contains("table 1, row 1, column 2", review, StringComparison.Ordinal);
+        Assert.Contains("Footer: paragraph 1", review, StringComparison.Ordinal);
+        Assert.DoesNotContain("footer1.xml", review, StringComparison.Ordinal);
+        Assert.Contains("Footnote \\[^1\\]", review, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves a table of contents is omitted from content.md, that its tracked changes are still
+    ///     counted and listed, and that summary and manifest say it was skipped.
+    /// </summary>
+    [Fact]
+    public async Task DocDownWord_Extract_TrackedTableOfContents_IsSkippedAndReported()
+    {
+        using var temp = new TempScratch();
+        var (scratch, _) = await ExtractAsync(temp, "toc.docx", DocxFixtures.DocumentWithTrackedTableOfContents());
+
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        Assert.DoesNotContain("Overview entry", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("Retired entry", content, StringComparison.Ordinal);
+        Assert.Contains("# Overview", content, StringComparison.Ordinal);
+
+        var summary = Flatten(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
+        Assert.Contains("3 tracked changes", summary, StringComparison.Ordinal);
+        Assert.Contains("1 table of contents skipped", summary, StringComparison.Ordinal);
+        Assert.Contains("4 entries not rendered in content.md; 2 tracked changes inside", summary, StringComparison.Ordinal);
+
+        var manifest = await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct);
+        Assert.Contains("\"label\": \"tables of contents skipped\"", manifest, StringComparison.Ordinal);
+
+        var review = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        Assert.Contains("table of contents (omitted from content.md), entry 3", review, StringComparison.Ordinal);
+        Assert.Contains("Overview entry", review, StringComparison.Ordinal);
+        Assert.Contains("Retired entry", review, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves a legacy <c>w:object</c> preview image reaches the images folder.
+    /// </summary>
+    [Fact]
+    public async Task DocDownWord_Extract_DocxWithEmbeddedObject_WritesPreviewImages()
+    {
+        using var temp = new TempScratch();
+        var (scratch, _) = await ExtractAsync(temp, "objects.docx", DocxFixtures.DocumentWithLegacyObjectImages());
+
+        var images = Directory.GetFiles(Path.Combine(scratch, "images"));
+        Assert.True(images.Length >= 3, $"expected at least three preview images, found {images.Length}");
+        Assert.Contains(images, path => path.EndsWith(".emf", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
     ///     Extracts a fixture through the full Word subsystem and returns the folder and result.
     /// </summary>
     /// <param name="temp">The owning temporary folder.</param>
     /// <param name="name">The fixture file name.</param>
     /// <param name="bytes">The fixture bytes.</param>
+    /// <param name="options">Optional extraction options; fixed test options when omitted.</param>
     /// <returns>The extraction folder and result.</returns>
     private static async Task<(string Folder, ExtractionResult Result)> ExtractAsync(
-        TempScratch temp, string name, byte[] bytes)
+        TempScratch temp, string name, byte[] bytes, ExtractionOptions? options = null)
     {
         var engine = new DocDownBuilder().AddWord().Build();
         var input = WriteFixture(temp, name, bytes);
         var scratch = Path.Combine(temp.Path, "out");
-        var result = await engine.ExtractAsync(DocumentSource.FromFile(input), scratch, FixedOptions(), Ct);
+        var result = await engine.ExtractAsync(DocumentSource.FromFile(input), scratch, options ?? FixedOptions(), Ct);
         return (scratch, result);
     }
+
+    /// <summary>
+    ///     Collapses every run of whitespace to one space so a wrapped summary line can be asserted on.
+    /// </summary>
+    /// <param name="text">The text to flatten.</param>
+    /// <returns>The flattened text.</returns>
+    private static string Flatten(string text) => System.Text.RegularExpressions.Regex.Replace(text, @"\s+", " ");
 
     /// <summary>
     ///     Creates default extraction options.

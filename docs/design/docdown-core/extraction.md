@@ -89,6 +89,7 @@ The subsystem defines the following supporting types inline rather than as separ
   | `MaxImageBytes` | `null` | Optional byte-size limit; larger images are skipped, not written. |
   | `PageRenderDpi` | `150` | Resolution used when pages are rendered. |
   | `ScratchFolder` | `CleanIfDocDownFolder` | The `ScratchFolderMode` for the output folder. |
+  | `AcceptTrackedChanges` | `false` | Word only: show the accepted view, not redline markup. |
 
   The numeric options are not validated. A non-positive size limit skips every image that reports a size,
   and a non-positive `PageRenderDpi` is passed to the renderer as given.

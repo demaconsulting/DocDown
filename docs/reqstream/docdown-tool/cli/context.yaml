@@ -55,6 +55,7 @@ sections:
                   extraction.
                 tests:
                   - Context_BuildExtractionOptions_SupportedFlags_MapOntoOptions
+                  - Context_BuildExtractionOptions_AcceptChangesFlag_MapsOntoOption
 
               - id: DocDownTool-Context-ScratchPolicy
                 title: >-

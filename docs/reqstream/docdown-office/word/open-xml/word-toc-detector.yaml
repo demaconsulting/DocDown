@@ -1,0 +1,26 @@
+---
+# Software Unit Requirements for WordTocDetector
+#
+# WordTocDetector finds table-of-contents paragraphs so the reader can omit them from content.md
+# and report the omission, while their tracked changes are still counted.
+
+sections:
+  - title: DocDownWord Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: WordTocDetector Requirements
+            requirements:
+              - id: DocDownWord-OpenXml-WordTocDetector-FindsTableOfContents
+                title: >-
+                  WordTocDetector shall identify the paragraphs of a table of contents, whether it is
+                  a content control, contents-styled paragraphs, or a TOC field, and shall identify
+                  none in a document without one.
+                justification: |
+                  Omitting generated contents from content.md is only honest if the omitted paragraphs
+                  are identified precisely and counted, so that nothing else is dropped and the
+                  omission can be reported.
+                tests:
+                  - WordOpenXmlReader_Read_TrackedTableOfContents_IsOmittedButItsRevisionsAreCounted
+                  - WordOpenXmlReader_Read_StyleOnlyTocAndContentControl_OmitsTocAndKeepsControlText
+                  - WordOpenXmlReader_Read_DocumentWithoutToc_ReportsNoneSkipped

@@ -43,8 +43,8 @@ blocks for an empty document rather than a separate note, writes a vector image 
 merged-cell document together with a table-flattening note, and exposes
 two honest self-test cases; when the reader maps styled paragraphs, lists, and tables into
 structured blocks, builds a Document Control section from header content, omits page-number-only
-footer content from that section, deduplicates identical headers, renders tracked changes in the
-accepted view, detects a password-protected container with `WordExtractionException`, collects
+footer content from that section, deduplicates identical headers, renders tracked changes as redline markup (or
+accepted on request), detects a password-protected container with `WordExtractionException`, collects
 comments, surfaces metadata and omits it where undeclared, reports the producer-stated page count, and chooses
 image naming text from authored sources; and when the image reader yields a PNG's bytes unchanged with a
 passthrough hint, reports an EMF part's media type truthfully, resolves header-scoped images, ignores invalid
@@ -68,7 +68,7 @@ the *WordOpenXmlExtractor Verification Design*. Evidence for `DocDownWord-OpenXm
 
 **Test**: `WordOpenXmlReader_Read_HeadingsListsAndTables_ProducesStructuredBlocks`
 
-Proves the mapping directly for structured blocks. The Document Control, tracked-changes,
+Proves the mapping directly for structured blocks. The Document Control, tracked-changes, revision-scanner,
 protected-container, comment, metadata, page-count, footnote, missing-main-part, null-argument, break,
 deduplication, and image-text scenarios are given in the *WordOpenXmlReader Verification Design*. Evidence
 for `DocDownWord-OpenXml-Reading`.

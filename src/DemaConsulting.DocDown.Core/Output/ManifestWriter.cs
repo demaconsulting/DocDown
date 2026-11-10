@@ -39,10 +39,13 @@ public static class ManifestWriter
     ///         Raised to <c>3.0</c> when the integrity digests, the environment block, and the
     ///         requested-options echo were removed. Raised to <c>3.1</c> when the
     ///         <c>reviewComments</c> array and the <c>reviewCommentsPath</c> member were added, which
-    ///         takes nothing away from a <c>3.0</c> consumer.
+    ///         takes nothing away from a <c>3.0</c> consumer. Raised to <c>3.2</c> when the optional
+    ///         <c>detail</c> member of a content feature and the <c>kind</c> member of a review
+    ///         comment entry (which now also records tracked changes) were added, which again takes
+    ///         nothing away from an earlier consumer.
     ///     </para>
     /// </remarks>
-    private const string SchemaVersion = "3.1";
+    private const string SchemaVersion = "3.2";
 
     /// <summary>The fixed relative name of the manifest file.</summary>
     /// <remarks>Part of the invariant output contract; never varies.</remarks>
@@ -170,7 +173,7 @@ public static class ManifestWriter
         var mapped = new List<ManifestContentFeature>(features.Count);
         foreach (var feature in features)
         {
-            mapped.Add(new ManifestContentFeature(feature.Label, feature.Count));
+            mapped.Add(new ManifestContentFeature(feature.Label, feature.Count, feature.Detail));
         }
 
         return mapped;
@@ -243,7 +246,8 @@ public static class ManifestWriter
         var list = new List<ManifestReviewComment>(comments.Count);
         foreach (var comment in comments)
         {
-            list.Add(new ManifestReviewComment(comment.Author, comment.Body, comment.Location));
+            list.Add(new ManifestReviewComment(
+                comment.Author, comment.Body, comment.Location, comment.IsRevision ? "revision" : "comment"));
         }
 
         return list;

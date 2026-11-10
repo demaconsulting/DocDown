@@ -13,12 +13,13 @@
 # manifest schema 2.0 no longer carries a completeness verdict.
 #
 # SCHEMA VERSION HISTORY: DocDownCore-Output-ManifestWriter-SchemaVersion is an active requirement
-# (not superseded) that tracks the declared schema version, currently 3.1. The declared value moved
+# (not superseded) that tracks the declared schema version, currently 3.2. The declared value moved
 # from 2.0 to 3.0 when the digests, environment block, and requested-options echo were removed,
 # because a consumer pinned to 2.0 would otherwise meet a manifest missing fields that schema
 # promised. It moved to 3.1 when the reviewComments array and reviewCommentsPath were added: a purely
 # additive change raises the minor version because a consumer pinned to 3.0 still finds everything
-# 3.0 promised.
+# 3.0 promised. It moved to 3.2 when the optional feature detail and the review-comment kind were
+# added, again purely additive.
 
 sections:
   - title: DocDownCore Requirements
@@ -28,14 +29,26 @@ sections:
           - title: ManifestWriter Requirements
             requirements:
               - id: DocDownCore-Output-ManifestWriter-SchemaVersion
-                title: ManifestWriter shall declare manifest schema version 3.1.
+                title: ManifestWriter shall declare manifest schema version 3.2.
                 justification: |
                   Machine consumers need an explicit schema version before they act on the file.
                   The minor version is raised for a purely additive change, so a consumer pinned to
                   3.0 still finds everything 3.0 promised; the major version is reserved for a
                   removal, which is the change that can actually break such a consumer.
                 tests:
-                  - ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionThreePointOne
+                  - ManifestWriter_WriteAsync_AnyRun_DeclaresSchemaVersionThreePointTwo
+
+              - id: DocDownCore-Output-ManifestWriter-FeatureDetailAndKindSerialized
+                title: >-
+                  ManifestWriter shall serialize the optional detail of a content feature and the kind
+                  of each review-comment entry, distinguishing a comment from a tracked change.
+                justification: |
+                  A machine consumer reading a document with tracked changes must see, without opening
+                  any other file, how many there are, who made them, and over what dates, and must be
+                  able to tell a tracked change from a reviewer comment. Both members are additive, so
+                  a consumer pinned to an earlier minor version is unaffected.
+                tests:
+                  - ManifestWriter_WriteAsync_FeatureDetailAndRevisionKind_AreSerialized
 
               - id: DocDownCore-Output-ManifestWriter-ReviewCommentsSerialized
                 title: >-

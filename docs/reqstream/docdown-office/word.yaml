@@ -18,6 +18,12 @@
 # behavior is the accepted view itself; the extra commentary was removed under the governing
 # principle.
 #
+# SUPERSEDED REQUIREMENT: DocDownWord-TrackedChangesAcceptedView
+# required tracked changes to be rendered only in the accepted view. It is superseded (not
+# satisfied) by DocDownWord-TrackedChangesRedline because tracked changes are now shown as markup
+# by default so that nothing is silently flattened; the accepted view remains available through an
+# explicit option and is covered by the same replacement.
+#
 # SUPERSEDED REQUIREMENT: DocDownWord-VectorImages
 # required EMF or WMF images to be written with a caveat. It is superseded (not satisfied) by
 # DocDownWord-VectorImagesWrittenAsIs because the subsystem now reports only what it extracted; a
@@ -162,18 +168,70 @@ sections:
         tests:
           - WordMarkdownWriter_Write_DocumentControl_PlacedAfterTitleHeading
 
-      - id: DocDownWord-TrackedChangesAcceptedView
+      - id: DocDownWord-TrackedChangesRedline
         title: >-
-          The subsystem shall render tracked changes in the accepted view.
+          The subsystem shall show tracked changes as markup when a document has any, and shall show
+          the accepted view instead when asked to.
         tags: [system]
         justification: |
-          A document under revision has more than one possible reading. Rendering the accepted view
-          keeps inserted text, drops deleted text, and yields one coherent content flow for a
-          downstream reader.
+          A document under revision has more than one possible reading, and flattening it to one
+          silently discards who changed what. Marking insertions and deletions keeps the redline
+          reviewable in plain text; the accepted view stays available as an explicit choice for a
+          reader who wants one coherent flow.
         children:
-          - DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedView
+          - DocDownWord-OpenXml-WordOpenXmlReader-RendersRedlineMarkup
+          - DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedViewOnRequest
+          - DocDownWord-OpenXml-WordOpenXmlReader-MarksStrikeAndUnderlineInRedline
         tests:
-          - WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewAndCountsChanges
+          - DocDownWord_Extract_RedlineDocx_ShowsMarkupAndReportsTrackedChanges
+          - DocDownWord_Extract_RedlineDocxWithAcceptOption_ShowsAcceptedViewAndStillReportsCount
+
+      - id: DocDownWord-TrackedChangesReported
+        title: >-
+          The subsystem shall report the number of tracked changes, their distinct authors, and
+          their date range for every Word document, stating zero when there are none.
+        tags: [system]
+        justification: |
+          A reader of the summary or manifest must be able to tell whether the document was under
+          revision and how that was treated, so tracked changes are never silently flattened. An
+          explicit zero distinguishes a clean document from one the extractor did not examine.
+        children:
+          - DocDownWord-OpenXml-WordRevisionScanner-ScansRevisions
+          - DocDownWord-OpenXml-WordOpenXmlReader-CountsFormattingOnlyChanges
+        tests:
+          - DocDownWord_Extract_RedlineDocx_ShowsMarkupAndReportsTrackedChanges
+          - DocDownWord_Extract_DocxWithoutRevisions_StatesZeroTrackedChanges
+
+      - id: DocDownWord-TrackedChangeDetail
+        title: >-
+          The subsystem shall state that the tracked-change count includes headers, footers, and
+          footnotes with a count per part, shall locate every change in review-comments.md by part,
+          heading path, and position, and shall report a skipped table of contents with the number
+          of tracked changes inside it.
+        tags: [system]
+        justification: |
+          The count, authors, and date range must be explainable, each change must be findable in
+          content.md, and a table of contents omitted from content.md must never be a silent loss.
+        children:
+          - DocDownWord-OpenXml-WordRevisionScanner-LocatesRevisions
+          - DocDownWord-OpenXml-WordTocDetector-FindsTableOfContents
+        tests:
+          - DocDownWord_Extract_LocatedRevisions_ReportsPartBreakdownAndLocations
+          - DocDownWord_Extract_TrackedTableOfContents_IsSkippedAndReported
+
+      - id: DocDownWord-EmbeddedObjectImages
+        title: >-
+          The subsystem shall extract the preview picture of an embedded object, a legacy picture,
+          or an alternate-content picture as an image.
+        tags: [system]
+        justification: |
+          Images stored as `w:object`, `w:pict`, or inside `mc:AlternateContent` are real pictures
+          in the document, and ignoring them silently drops content a reader can see. Only the
+          preview picture is extracted; the embedded payload is not.
+        children:
+          - DocDownWord-OpenXml-WordOpenXmlReader-ResolvesLegacyObjectImages
+        tests:
+          - DocDownWord_Extract_DocxWithEmbeddedObject_WritesPreviewImages
 
       - id: DocDownWord-ChartNotes
         title: >-

@@ -473,13 +473,35 @@ public static class SummaryWriter
         builder.Append("  content.md           ")
             .Append(content is { ContentPresent: true } ? "PRESENT" : "not present").Append('\n');
         var commentCount = reviewComments?.Count ?? 0;
+        var revisionCount = reviewComments?.RevisionCount ?? 0;
+        var commentNoun = commentCount == 1 ? "comment" : "comments";
         builder.Append("  review-comments.md   ")
 
-            // A count reads as prose, so the noun agrees with it: one comment, two comments
-            .Append(FolderCountPhrase(commentCount, commentCount == 1 ? "comment" : "comments")).Append('\n');
+            // A count reads as prose, so the noun agrees with it: one comment, two comments. Tracked
+            // changes share the file, so they are named only when the document carries some
+            .Append(revisionCount > 0
+                ? RevisionLayoutPhrase(commentCount, revisionCount)
+                : FolderCountPhrase(commentCount, commentNoun)).Append('\n');
         builder.Append("  images/              ").Append(FolderCountPhrase(sink.Images.Count, "extracted")).Append('\n');
         builder.Append("  pages/               ").Append(FolderCountPhrase(sink.Pages.Count, "rendered")).Append('\n');
         builder.Append('\n');
+    }
+
+    /// <summary>
+    ///     Produces the review-comments presence phrase for a document that carries tracked changes.
+    /// </summary>
+    /// <param name="comments">The number of reviewer comments written.</param>
+    /// <param name="revisions">The number of tracked-change entries written; always greater than zero.</param>
+    /// <returns>A presence phrase naming both counts, or only the revisions when there are no comments.</returns>
+    /// <remarks>Pure.</remarks>
+    private static string RevisionLayoutPhrase(int comments, int revisions)
+    {
+        var changeNoun = revisions == 1 ? "change" : "changes";
+        var commentNoun = comments == 1 ? "comment" : "comments";
+        var revisionText = $"{revisions.ToString(CultureInfo.InvariantCulture)} tracked {changeNoun}";
+        return comments > 0
+            ? $"PRESENT - {comments.ToString(CultureInfo.InvariantCulture)} {commentNoun} and {revisionText}"
+            : $"PRESENT - {revisionText}";
     }
 
     /// <summary>
@@ -639,7 +661,8 @@ public static class SummaryWriter
         }
 
         var phrases = features
-            .Select(feature => $"{feature.Count.ToString("N0", CultureInfo.InvariantCulture)} {feature.AgreeingLabel}")
+            .Select(feature => $"{feature.Count.ToString("N0", CultureInfo.InvariantCulture)} {feature.AgreeingLabel}"
+                + (string.IsNullOrWhiteSpace(feature.Detail) ? string.Empty : $" ({feature.Detail})"))
             .ToList();
         AppendWrapped(builder, "               ", "Contains " + JoinList(phrases) + ".");
     }

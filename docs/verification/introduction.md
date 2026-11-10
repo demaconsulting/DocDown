@@ -109,6 +109,8 @@ constituent software items, specifically:
       - **WordOpenXmlReader (Unit)** — Turns the Open XML DOM into the backend-neutral model
       - **WordOpenXmlImageReader (Unit)** — Yields each embedded image's bytes with passthrough
         provenance
+      - **WordRevisionScanner (Unit)** — Finds every tracked change with its author, date, and
+        location
   - **Excel (Subsystem)** — Workbook worksheet, cell-value (verbatim), formula, chart, drawing
     annotation, embedded-image, and document-metadata extraction; deliberately never renders; two
     child subsystems and one direct unit

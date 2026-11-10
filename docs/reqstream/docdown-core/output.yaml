@@ -73,8 +73,9 @@ sections:
               - DocDownCore-Output-ManifestWriter-MachineTwin
               - DocDownCore-Output-ManifestWriter-ReducedSchema
               - DocDownCore-Output-ManifestWriter-NotesSerialized
+              - DocDownCore-Output-ManifestWriter-FeatureDetailAndKindSerialized
             tests:
-              - Output_ManifestContent_Written_ParsesWithSchemaVersionThreePointOne
+              - Output_ManifestContent_Written_ParsesWithSchemaVersionThreePointTwo
 
           - id: DocDownCore-Output-ReviewComments
             title: >-
@@ -88,6 +89,7 @@ sections:
               read, and gives every other consumer an unambiguous signal that no review was found.
             children:
               - DocDownCore-Output-ReviewCommentsWriter-ConditionalArtifact
+              - DocDownCore-Output-ReviewCommentsWriter-TrackedChanges
               - DocDownCore-Output-ReviewCommentsWriter-EntryFormat
               - DocDownCore-Output-ReviewCommentsWriter-ReportOrder
               - DocDownCore-Output-ReviewCommentsWriter-EscapesMarkdown

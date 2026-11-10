@@ -89,13 +89,15 @@ sections:
               - id: DocDownCore-Output-SummaryWriter-GistAndInventory
                 title: >-
                   SummaryWriter shall open with a justified gist and outline counted content
-                  features, including looked-for zero counts.
+                  features, including looked-for zero counts and any detail a feature carries.
                 justification: |
                   Readers need a compact description of both what the document is and what kinds of
-                  content the extracted markdown contains.
+                  content the extracted markdown contains, including how a count such as tracked
+                  changes was treated and by whom, so nothing is silently flattened.
                 tests:
                   - SummaryWriter_WriteAsync_WithContentFeatures_OpensWithGistAndOutlinesContent
                   - SummaryWriter_WriteAsync_LookedForZeroFeature_OutlinesTheZero
+                  - SummaryWriter_WriteAsync_FeatureWithDetail_RendersDetailInParentheses
                   - SummaryWriter_WriteAsync_UnknownFormat_OmitsGistRatherThanGuessing
 
               - id: DocDownCore-Output-SummaryWriter-ImageSummary

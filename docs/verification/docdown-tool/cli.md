@@ -52,7 +52,9 @@ non-zero. Evidence for `DocDownTool-Cli-Output`.
 **Test**: `Context_BuildExtractionOptions_SupportedFlags_MapOntoOptions`
 
 Proves the supported extraction flags project onto the engine's options. Evidence for
-`DocDownTool-Cli-OptionMapping`.
+`DocDownTool-Cli-OptionMapping`. A second test,
+`Context_BuildExtractionOptions_AcceptChangesFlag_MapsOntoOption`, proves `--accept-changes` sets the
+accepted-view option and that it is off by default.
 
 #### Scratch-folder policy tokens are constrained
 

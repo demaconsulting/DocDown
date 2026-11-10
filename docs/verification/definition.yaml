@@ -50,6 +50,8 @@ input-files:
   - docs/verification/docdown-office/word/open-xml.md
   - docs/verification/docdown-office/word/open-xml/word-open-xml-extractor.md
   - docs/verification/docdown-office/word/open-xml/word-open-xml-reader.md
+  - docs/verification/docdown-office/word/open-xml/word-revision-scanner.md
+  - docs/verification/docdown-office/word/open-xml/word-toc-detector.md
   - docs/verification/docdown-office/word/open-xml/word-open-xml-image-reader.md
   - docs/verification/docdown-office/excel.md
   - docs/verification/docdown-office/excel/excel-doc-down-builder-extensions.md

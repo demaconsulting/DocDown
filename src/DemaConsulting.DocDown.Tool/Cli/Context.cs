@@ -76,6 +76,9 @@ internal sealed class Context : IDisposable
     /// <summary>Gets the requested scratch-folder policy, or <see langword="null"/> to use the engine default.</summary>
     public ScratchFolderMode? ScratchMode { get; private init; }
 
+    /// <summary>Gets a value indicating whether tracked changes should be shown accepted rather than as markup.</summary>
+    public bool AcceptTrackedChanges { get; private init; }
+
     /// <summary>Gets the proposed exit code for the application (0 for success, 1 for errors).</summary>
     public int ExitCode => _hasErrors ? 1 : 0;
 
@@ -117,7 +120,8 @@ internal sealed class Context : IDisposable
             Dpi = parser.Dpi,
             MaxImageDimensionPx = parser.MaxImageDimensionPx,
             MaxImageBytes = parser.MaxImageBytes,
-            ScratchMode = parser.ScratchMode
+            ScratchMode = parser.ScratchMode,
+            AcceptTrackedChanges = parser.AcceptTrackedChanges
         };
 
         // Open log file if specified
@@ -142,7 +146,8 @@ internal sealed class Context : IDisposable
         var options = new ExtractionOptions
         {
             RenderPages = RenderPages,
-            IncludeEmbeddedImages = IncludeEmbeddedImages
+            IncludeEmbeddedImages = IncludeEmbeddedImages,
+            AcceptTrackedChanges = AcceptTrackedChanges
         };
 
         if (Pages.HasValue)
@@ -295,6 +300,9 @@ internal sealed class Context : IDisposable
         /// <summary>Gets the requested scratch-folder policy.</summary>
         public ScratchFolderMode? ScratchMode { get; private set; }
 
+        /// <summary>Gets a value indicating whether tracked changes should be shown accepted.</summary>
+        public bool AcceptTrackedChanges { get; private set; }
+
         /// <summary>Parses every argument in order.</summary>
         /// <param name="args">Command-line arguments.</param>
         public void ParseArguments(string[] args)
@@ -390,6 +398,10 @@ internal sealed class Context : IDisposable
                 case "--max-image-bytes":
                     MaxImageBytes = GetRequiredLongArgument(arg, args, index, "a byte-count argument", 1, long.MaxValue);
                     return index + 1;
+
+                case "--accept-changes":
+                    AcceptTrackedChanges = true;
+                    return index;
 
                 case "--overwrite":
                     ScratchMode = ParseScratchMode(arg, GetRequiredStringArgument(arg, args, index, "a scratch policy argument (clean|overwrite)"));

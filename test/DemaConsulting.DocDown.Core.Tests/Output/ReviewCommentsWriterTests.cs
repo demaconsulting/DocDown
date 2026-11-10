@@ -65,6 +65,26 @@ public class ReviewCommentsWriterTests
     }
 
     /// <summary>
+    ///     Proves tracked changes share the artifact, change its heading, and are counted separately
+    ///     from reviewer comments.
+    /// </summary>
+    [Fact]
+    public async Task ReviewCommentsWriter_WriteAsync_TrackedChanges_AreCountedSeparatelyAndRenamedHeading()
+    {
+        using var temp = new TempScratch();
+        var sink = NewSink(temp);
+        sink.ReportReviewComment(new DocumentComment("Ada", "A comment.", "Body"));
+        sink.ReportReviewComment(new DocumentComment("Bob", "Inserted: new text", "Body", IsRevision: true));
+
+        var result = await ReviewCommentsWriter.WriteAsync(sink, Ct);
+        var document = await ReadReviewCommentsAsync(sink);
+
+        Assert.Equal(1, result.Count);
+        Assert.Equal(1, result.RevisionCount);
+        Assert.StartsWith("# Review comments and tracked changes\n\n", document, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves many reported comments are written in the order the extractor reported them.
     /// </summary>
     [Fact]

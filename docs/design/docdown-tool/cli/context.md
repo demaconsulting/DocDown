@@ -18,8 +18,9 @@ The parsed choices are exposed as `private init` properties:
 - The DEMA vocabulary — `Version`, `Help`, `Silent`, `Validate`, `ResultsFile`, and `HeadingDepth`
   (default 1) — plus `ListBackends` for the auxiliary command.
 - The extraction flags — `Input`, `Scratch`, `RenderPages`, `IncludeEmbeddedImages` (default true),
-  `Pages`, `Dpi`, `MaxImageDimensionPx`, `MaxImageBytes`, and
-  `ScratchMode`. The optional ones are nullable so an unset flag can be told apart from a flag set
+  `Pages`, `Dpi`, `MaxImageDimensionPx`, `MaxImageBytes`,
+  `AcceptTrackedChanges` (the `--accept-changes` flag, default false), and `ScratchMode`. The optional ones are
+  nullable so an unset flag can be told apart from a flag set
   to its default.
 - `ExitCode` returns 1 when any error has been reported, and 0 otherwise.
 

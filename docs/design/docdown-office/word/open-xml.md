@@ -12,8 +12,8 @@ managed, carries no native asset, and is deployable anywhere the .NET runtime is
 The subsystem exists because two responsibilities are cleanly separable: the extractor the engine
 selects and probes (`WordOpenXmlExtractor`), and the SDK-to-model translation whose surface is
 substantial and whose scope is bounded (`WordOpenXmlReader`, with `WordOpenXmlImageReader`
-factored out because image resolution is scoped to an `OpenXmlPartContainer` rather than to the
-document as a whole).
+and `WordRevisionScanner` factored out: image resolution is scoped to an `OpenXmlPartContainer` rather than to
+the document as a whole, and revision scanning is a separate read-only pass).
 
 ### Interfaces
 
@@ -48,7 +48,8 @@ because this subsystem does not attempt page rendering.
 **The reader.** `WordOpenXmlReader` opens the package read-only, walks the body once, and produces
 the model. It handles styled paragraphs (`Heading 1` through `Heading 9`, `Title`, and
 `w:outlineLvl`), ordered and bulleted lists from `numbering.xml`, genuine tables built from
-`w:tbl`, embedded images from `a:blip`, the accepted view of tracked changes, comment content
+`w:tbl`, embedded images from `a:blip` and from legacy objects (`w:object`, `w:pict`,
+`mc:AlternateContent`), tracked changes as redline markup (or the accepted view on request), comment content
 through the comments part, and footnotes as inline references with trailing bodies. It also reads
 metadata from the core and extended properties.
 
@@ -57,6 +58,19 @@ step. It collects header and footer parts from every `w:sectPr`, renders each th
 block walker as the body, strips page-numbering furniture by examining the field instruction's
 first token, and deduplicates identical rendered content across sections. Empty and furniture-only
 parts are omitted from the rendered section instead of being surfaced as content.
+
+**The revision scanner.** `WordRevisionScanner` makes a read-only pass over the body, headers,
+footers, and footnotes and returns every tracked change with its kind, author, date, location, and a
+short snippet. The reader uses the result to decide whether to render redline markup, and the
+emitter reports the count, distinct authors, and date range, with a count per part (body, headers and
+footers, footnotes) stating that the total includes headers, footers, and footnotes. Every change
+carries a location of part, heading path, and position.
+
+**The table-of-contents detector.** `WordTocDetector` identifies the paragraphs of a generated table
+of contents. The reader omits them from `content.md` (they only repeat headings already rendered, so
+emitting them would add noise), the scanner flags tracked changes inside them, and the emitter reports
+a "tables of contents skipped" content feature with the entry count and the tracked changes inside.
+Block content controls that are not a table of contents are now read through rather than dropped.
 
 **The image reader.** `WordOpenXmlImageReader` resolves a drawing's `r:embed` relationship within
 its containing part, returning a `WordImageRef` that carries the complete part bytes, content

@@ -27,8 +27,9 @@ namespace DemaConsulting.DocDown.Word.Markdown;
 ///     <see langword="null"/> when absent. Never computed or guessed — Open XML has no true page count.
 /// </param>
 /// <param name="TrackedChangeCount">
-///     The number of tracked-change revisions rendered in the accepted view, so tests and future
-///     reporting can observe that choice without a second pass over the document.
+///     The number of tracked-change revisions the document carries (the length of
+///     <paramref name="Revisions"/>), so tests and reporting can observe it without a second pass over
+///     the document. Counted once per revision element, never per walk of a paragraph.
 /// </param>
 /// <param name="HeaderFooterPartsFound">The total number of header and footer parts found across all sections.</param>
 /// <param name="HeaderFooterPartsEmpty">
@@ -61,6 +62,21 @@ namespace DemaConsulting.DocDown.Word.Markdown;
 ///     emitter states the shortfall as an extraction note rather than letting those remarks vanish
 ///     without trace; a wholly empty comment is not counted here, because nothing was lost.
 /// </param>
+/// <param name="Revisions">
+///     Every tracked change the document carries, in document order, with author, date, and a
+///     location hint; <see langword="null"/> or empty when the document has none. Reported to Core
+///     as review-comment entries marked as revisions.
+/// </param>
+/// <param name="RevisionsAccepted">
+///     <see langword="true"/> when the document has tracked changes but the caller asked for the
+///     accepted view, so <c>content.md</c> shows no markup; <see langword="false"/> when the
+///     revisions are shown as markup (or there are none).
+/// </param>
+/// <param name="TocRegionsSkipped">
+///     The number of tables of contents deliberately omitted from <c>content.md</c>; reported so the
+///     omission is stated rather than silent.
+/// </param>
+/// <param name="TocParagraphsSkipped">The number of contents paragraphs those tables of contents held.</param>
 /// <remarks>
 ///     The counts live on the model rather than being recomputed because only the reader, walking
 ///     the document once, can observe them; the emitter turns them into inventory counts and notes.
@@ -81,7 +97,107 @@ internal sealed record WordDocumentModel(
     int EmptyTablesSkipped,
     int ChartsFound = 0,
     DocumentMetadata? Metadata = null,
-    int CommentsWithUnreadableContent = 0);
+    int CommentsWithUnreadableContent = 0,
+    IReadOnlyList<WordRevision>? Revisions = null,
+    bool RevisionsAccepted = false,
+    int TocRegionsSkipped = 0,
+    int TocParagraphsSkipped = 0)
+{
+    /// <summary>Gets the tracked changes, never <see langword="null"/>.</summary>
+    /// <remarks>Pure.</remarks>
+    public IReadOnlyList<WordRevision> RevisionList => Revisions ?? [];
+}
+
+/// <summary>
+///     The kind of a tracked change recorded in <see cref="WordDocumentModel.Revisions"/>.
+/// </summary>
+/// <remarks>Distinguishes what review-comments entries and counts describe.</remarks>
+internal enum WordRevisionKind
+{
+    /// <summary>Inserted content.</summary>
+    Inserted,
+
+    /// <summary>Deleted content.</summary>
+    Deleted,
+
+    /// <summary>Content moved away from this position.</summary>
+    MovedFrom,
+
+    /// <summary>Content moved to this position.</summary>
+    MovedTo,
+
+    /// <summary>An inserted paragraph mark (a paragraph split).</summary>
+    ParagraphMarkInserted,
+
+    /// <summary>A deleted paragraph mark (a paragraph merge).</summary>
+    ParagraphMarkDeleted,
+
+    /// <summary>A formatting-only or structural property change, not marked inline.</summary>
+    FormattingChanged,
+
+    /// <summary>An inserted table row or cell.</summary>
+    TableInserted,
+
+    /// <summary>A deleted table row or cell.</summary>
+    TableDeleted
+}
+
+/// <summary>
+///     The revision state an inline run carries when tracked changes are shown as markup.
+/// </summary>
+/// <remarks>Moves are expressed as a deletion at the source and an insertion at the destination.</remarks>
+internal enum WordInlineRevision
+{
+    /// <summary>The run is not part of a tracked change.</summary>
+    None,
+
+    /// <summary>The run is inserted, rendered <c>{++…++}</c>.</summary>
+    Inserted,
+
+    /// <summary>The run is deleted, rendered <c>{--…--}</c>.</summary>
+    Deleted
+}
+
+/// <summary>
+///     One tracked change found in the document.
+/// </summary>
+/// <param name="Kind">What kind of change it is.</param>
+/// <param name="Author">The recorded author, or <see langword="null"/> when none.</param>
+/// <param name="Date">The recorded date and time as written (no time-zone conversion), or <see langword="null"/> when absent or unparsable.</param>
+/// <param name="Location">
+///     A human-readable location for markdown consumers, never a page number: the part label, the
+///     heading path as <c>content.md</c> shows it (<c>Heading &gt; Subheading</c>), the paragraph or
+///     table position within that heading, and a short snippet of the surrounding text.
+/// </param>
+/// <param name="Snippet">A bounded snippet of the changed text, or <see langword="null"/> when there is none.</param>
+/// <param name="Part">The part of the document the change sits in.</param>
+/// <param name="InToc">
+///     <see langword="true"/> when the change sits inside a table of contents, which is omitted from
+///     <c>content.md</c> and so is findable only through this entry.
+/// </param>
+/// <remarks>Immutable and thread-safe.</remarks>
+internal sealed record WordRevision(
+    WordRevisionKind Kind, string? Author, DateTime? Date, string Location, string? Snippet,
+    WordRevisionPart Part = WordRevisionPart.Body, bool InToc = false);
+
+/// <summary>
+///     The part of a Word document a tracked change sits in.
+/// </summary>
+/// <remarks>Lets reporting break the single tracked-change count down by where the changes are.</remarks>
+internal enum WordRevisionPart
+{
+    /// <summary>The main document body.</summary>
+    Body,
+
+    /// <summary>A header part.</summary>
+    Header,
+
+    /// <summary>A footer part.</summary>
+    Footer,
+
+    /// <summary>A footnote body.</summary>
+    Footnote
+}
 
 /// <summary>
 ///     One surviving header or footer, rendered as a labeled subsection of <c>## Document Control</c>.
@@ -226,13 +342,23 @@ internal enum WordBlockKind
 ///     When <see langword="true"/>, <paramref name="Text"/> is already markdown and is emitted
 ///     verbatim without escaping (used for footnote reference markers such as <c>[^1]</c>).
 /// </param>
+/// <param name="Revision">
+///     The tracked-change state of the run when revisions are shown as markup: an inserted run is
+///     rendered <c>{++…++}</c> and a deleted run <c>{--…--}</c>. <see cref="WordInlineRevision.None"/>
+///     for every run of a document without revisions, so its rendering is unchanged.
+/// </param>
+/// <param name="Strike">Whether the run is struck through (single), rendered <c>~~…~~</c>. Set only in redline mode.</param>
+/// <param name="DoubleStrike">Whether the run is double-struck, rendered <c>&lt;del&gt;…&lt;/del&gt;</c>. Set only in redline mode.</param>
+/// <param name="Underline">Whether the run is underlined, rendered <c>&lt;u&gt;…&lt;/u&gt;</c>. Set only in redline mode.</param>
 /// <remarks>
-///     Inline formatting is deliberately minimal — bold, italic, and hyperlinks only. A language
-///     model consumer gains nothing from colors, fonts, or strikethrough, which would add tokens
-///     without adding meaning. Instances are immutable and thread-safe.
+///     Inline formatting is deliberately minimal — bold, italic, and hyperlinks, plus revision
+///     markers. Strike and underline are carried only for a document with tracked changes (redline
+///     mode), where authors use them as manual markup; otherwise they add tokens without adding
+///     meaning. Instances are immutable and thread-safe.
 /// </remarks>
 internal sealed record WordInline(string Text, bool Bold = false, bool Italic = false,
-    string? Href = null, bool Raw = false);
+    string? Href = null, bool Raw = false, WordInlineRevision Revision = WordInlineRevision.None,
+    bool Strike = false, bool DoubleStrike = false, bool Underline = false);
 
 /// <summary>
 ///     The list membership of a <see cref="WordBlockKind.ListItem"/> block.

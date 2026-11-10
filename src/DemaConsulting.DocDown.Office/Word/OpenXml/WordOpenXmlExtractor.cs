@@ -91,7 +91,7 @@ public sealed class WordOpenXmlExtractor : IDocumentExtractor, ISelfValidating
         // Any fault from here — encrypted (raised as WordExtractionException), malformed, truncated —
         // propagates to Core, which converts it into a structured failure that still writes the layout
         using var stream = new MemoryStream(bytes, writable: false);
-        var model = new WordOpenXmlReader().Read(stream);
+        var model = new WordOpenXmlReader(context.Options.AcceptTrackedChanges).Read(stream);
 
         await WordContentEmitter.EmitAsync(sink, context.Options, model, cancellationToken)
             .ConfigureAwait(false);

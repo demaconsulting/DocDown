@@ -15,6 +15,15 @@ language: en
 # Project-specific technical terms and tool names
 words:
   - bitstream
+  - Hana
+  - TOCHEADING
+  - delText
+  - dstrike
+  - imagedata
+  - moveFrom
+  - moveTo
+  - redline
+  - redlines
   - buildmark
   - containerless
   - DEMA

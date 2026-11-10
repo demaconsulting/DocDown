@@ -396,6 +396,7 @@ public sealed class ExtractionSink : IExtractionSink
             {
                 Count = accumulated.Count + feature.Count,
                 LookedFor = accumulated.LookedFor || feature.LookedFor,
+                Detail = accumulated.Detail ?? feature.Detail,
             };
             return;
         }
@@ -622,6 +623,11 @@ public sealed class ExtractionSink : IExtractionSink
 ///     document, so a count of zero is itself a finding and must be reported; <see langword="false"/>
 ///     (the default) for a feature that may simply not apply, whose zero is dropped as noise.
 /// </param>
+/// <param name="Detail">
+///     An optional short qualifier rendered in parentheses after the count (for example the
+///     date range and authors of tracked changes), or <see langword="null"/> for none. When the
+///     same label is reported more than once, the first non-null detail wins.
+/// </param>
 /// <remarks>
 ///     <para>
 ///         The summary's bare character count tells a reader how <em>much</em> text
@@ -645,7 +651,7 @@ public sealed class ExtractionSink : IExtractionSink
 ///     </para>
 /// </remarks>
 public sealed record ContentFeature(
-    string Label, int Count, string? SingularLabel = null, bool LookedFor = false)
+    string Label, int Count, string? SingularLabel = null, bool LookedFor = false, string? Detail = null)
 {
     /// <summary>
     ///     Gets the label agreeing in number with <see cref="Count"/>.

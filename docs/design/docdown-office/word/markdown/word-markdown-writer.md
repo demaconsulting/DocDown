@@ -32,7 +32,11 @@ prose from being reinterpreted as headings, emphasis, links, list markers, or ta
   the body and the document-control subsections itself. Pure.
 - **`internal static string RenderInlines(IReadOnlyList<WordInline>?)`** — renders inline runs,
   escaping literal text and applying the minimal preserved formatting: bold as `**…**`, italic as
-  `*…*`, and hyperlinks as `[text](href)`. A `Raw` inline is emitted verbatim so footnote markers
+  `*…*`, and hyperlinks as `[text](href)`. Consecutive inlines of one revision are grouped into one
+  `{++…++}` (inserted) or `{--…--}` (deleted) pair, and an inline carrying the redline-mode run
+  formatting is wrapped in `~~…~~` (strike), `<del>…</del>` (double strike), or `<u>…</u>`
+  (underline). The nesting order, outermost last, is bold, italic, strike, double strike,
+  underline, link. A `Raw` inline is emitted verbatim so footnote markers
   and hard breaks survive escaping. Pure.
 - **`internal static string RenderPlainText(IReadOnlyList<WordInline>?)`** — concatenates the same
   inline runs into literal text, applying neither escaping nor formatting markers, and returns the

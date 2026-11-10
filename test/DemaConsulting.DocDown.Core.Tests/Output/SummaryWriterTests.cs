@@ -327,6 +327,31 @@ public class SummaryWriterTests
     }
 
     /// <summary>
+    ///     Proves a feature's detail is rendered in parentheses after its count and label.
+    /// </summary>
+    [Fact]
+    public async Task SummaryWriter_WriteAsync_FeatureWithDetail_RendersDetailInParentheses()
+    {
+        using var temp = new TempScratch();
+        var summary = await RenderSummaryAsync(
+            temp,
+            async sink =>
+            {
+                await sink.WriteContentAsync("# Doc\n\nBody.\n", CancellationToken.None);
+                sink.ReportContentFeature(new ContentFeature(
+                    "tracked changes", 3, "tracked change", LookedFor: true, Detail: "shown as markup; 2 distinct authors"));
+            },
+            ExtractionOutcome.Produced,
+            SuccessExtractor(),
+            null);
+
+        Assert.Contains(
+            "Contains 3 tracked changes (shown as markup; 2 distinct authors).",
+            summary,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves a looked-for zero feature is outlined while an undeclared zero stays absent.
     /// </summary>
     [Fact]

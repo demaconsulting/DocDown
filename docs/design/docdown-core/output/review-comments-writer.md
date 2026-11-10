@@ -20,7 +20,10 @@ to filter the other out.
 file is self-describing when read on its own; and `UnattributedAuthor` (`Unattributed`), the label
 used for a comment the document records no author for.
 
-`DocumentComment(string? Author, string Body, string Location)` is the record an extractor reports.
+`DocumentComment(string? Author, string Body, string Location, bool IsRevision = false)` is the record an extractor
+reports. `IsRevision` marks an entry that describes a tracked change rather than a reviewer comment; such entries
+share the artifact and its shape, and when any are present the heading becomes `# Review comments and tracked changes`
+(`HeadingWithRevisions`).
 `Location` is a single, precomputed, human-readable display string rather than a structured address:
 the in-scope formats locate a comment in genuinely different terms, so any shared structure would be
 mostly-null fields that each consumer would have to re-render anyway. The backend that knows the
@@ -34,8 +37,9 @@ conventions are:
 | PowerPoint | slide ordinal | `Slide 4` |
 | PDF | page ordinal | `Page 12` |
 
-`ReviewCommentsWriteResult(string? Path, int Count)` is returned to the engine. `Path` is `null` and
-`Count` is zero exactly when no file was written.
+`ReviewCommentsWriteResult(string? Path, int Count, int RevisionCount)` is returned to the engine. `Count` is the
+number of reviewer comments (revisions excluded) and `RevisionCount` the number of tracked changes. `Path` is `null`
+exactly when no file was written, that is, when both are zero.
 
 `Body` is the comment text *as the document records it*. Every backend reports it unaltered, and
 `manifest.json` carries exactly that, so the machine-readable record holds the reviewer's words and

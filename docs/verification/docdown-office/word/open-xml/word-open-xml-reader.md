@@ -5,8 +5,10 @@ turns an Open XML document into the backend-neutral model.
 
 ### Verification Approach
 
-`WordOpenXmlReader` is verified through unit tests in `OpenXml/WordOpenXmlReaderTests.cs` in
-`DemaConsulting.DocDown.Office.Tests`, with method names beginning with `WordOpenXmlReader_`.
+`WordOpenXmlReader` is verified through unit tests in `OpenXml/WordOpenXmlReaderTests.cs` and
+`OpenXml/WordTrackedChangesTests.cs` (redline, accepted view, and legacy object pictures) in
+`DemaConsulting.DocDown.Office.Tests`, with method names beginning with `WordOpenXmlReader_`, plus
+the `WordMarkdownWriter_` tests that prove the markers the reader's inline stamps render to.
 
 The unit is driven directly, outside the engine, by opening a fixture stream and calling `Read()`
 against a fresh reader instance. This is the level at which the reader's contract lives: the
@@ -34,7 +36,10 @@ spelling Word writes and is not recognized for a value outside the valid spellin
 revision and classification builds a
 Document Control section; when a footer carrying only page-number fields is omitted from that
 section and counted on the model; when an identical header shared across sections is emitted once;
-when tracked changes render in the accepted view; when a password-protected container raises
+when tracked changes render as redline markup by default and as the accepted view on request,
+with strike and underline carried only in redline mode; when a deleted paragraph mark merges the
+paragraphs; when a formatting-only change is counted without marking content; when the preview
+pictures of legacy objects are extracted; when a password-protected container raises
 `WordExtractionException`; when a comment's author and text are collected; when a comment's anchor
 resolves into a location hint naming its heading and quoting its text, degrading gracefully when
 the document anchors it partially or not at all; when title, author, and
@@ -86,16 +91,63 @@ count is zero. Evidence for
 Proves the Document Control collection carries one entry, and that the found-parts count is at
 least two. Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-DeduplicatesHeaders`.
 
-#### Tracked changes render as the accepted view
+#### Tracked changes render as redline markup
 
-**Test**:
+**Tests**: `WordOpenXmlReader_Read_Redline_RendersInsertionAndDeletionMarkup`,
+`WordOpenXmlReader_Read_Move_RendersDeletionThenInsertion`,
+`WordOpenXmlReader_Read_DeletedParagraphMark_MergesWithNextParagraph`,
+`WordOpenXmlReader_Read_RevisedTableRows_MarksRowsAndDropsDeletedOnAccept`,
+`WordOpenXmlReader_Read_FootnoteRevision_MarksFootnoteBody`,
+`WordOpenXmlReader_Read_DeletedField_RendersResultOnlyAsDeletion`,
+`WordMarkdownWriter_RenderInlines_ConsecutiveRevisionRuns_ShareOneMarkerPair`,
+`WordMarkdownWriter_RenderInlines_LiteralMarkerText_IsEscaped`
 
-`WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewAndCountsChanges`
+Prove inserted text renders inside `{++…++}` and deleted text inside `{--…--}`; a move is a deletion
+at the source followed by an insertion at the destination; a deleted paragraph mark merges a heading
+with the following paragraph in both modes without losing the unrelated paragraph after it; deleted
+and inserted table rows are marked and the deleted row is dropped in the accepted view; a revision
+inside a footnote body is marked; a deleted field shows its deleted result but never its instruction;
+consecutive runs of one revision share one marker pair; and document text that looks like a marker is
+escaped so it cannot forge one. Evidence for
+`DocDownWord-OpenXml-WordOpenXmlReader-RendersRedlineMarkup` and `DocDownWord-TrackedChangesRedline`.
 
-Proves the flattened body text contains `inserted-text` and does not contain `removed-text`, so
-the accepted view is what reached the model, and that both revisions are counted. Evidence for
-`DocDownWord-TrackedChangesAcceptedView` and
-`DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedView`.
+#### The accepted view is available on request and changes nothing for a clean document
+
+**Tests**: `WordOpenXmlReader_Read_TrackedChangesAcceptOption_RendersAcceptedViewAndCountsChanges`,
+`WordOpenXmlReader_Read_TrackedChangesWithAcceptOption_DropsDeletedTextAndCounts`,
+`WordOpenXmlReader_Read_RedlineWithAcceptOption_RendersAcceptedViewAndKeepsCount`,
+`WordOpenXmlReader_Read_CleanDocument_IsIdenticalWithOrWithoutAcceptOption`
+
+Prove that with the accept option the body text contains the inserted text, not the deleted text,
+carries no markup, and still counts every revision; and that a document without tracked changes
+renders identically with or without the option and with no markup, so its `content.md` is unchanged.
+Evidence for `DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedViewOnRequest`.
+
+#### Strike and underline are carried only in redline mode
+
+**Tests**: `WordOpenXmlReader_Read_Redline_RendersStrikeAndUnderlineConvention`,
+`WordMarkdownWriter_RenderInlines_StrikeAndUnderline_WrapText`
+
+Prove manual underline renders as `<u>`, strikethrough as `~~`, and double strike as `<del>`, that
+underline inside a tracked insertion is not additionally marked, and that the writer nests the
+wrappers as documented. Evidence for
+`DocDownWord-OpenXml-WordOpenXmlReader-MarksStrikeAndUnderlineInRedline`.
+
+#### A formatting-only change is counted but not marked
+
+**Test**: `WordOpenXmlReader_Read_FormattingChangeOnly_CountsButDoesNotMarkContent`
+
+Proves a property change is counted and leaves the content unmarked. Evidence for
+`DocDownWord-OpenXml-WordOpenXmlReader-CountsFormattingOnlyChanges`.
+
+#### Legacy object pictures are extracted
+
+**Test**: `WordOpenXmlReader_Read_LegacyObjects_CollectsEachPreviewImage`
+
+Proves a `w:object` EMF preview, a `w:pict` picture, and an `mc:AlternateContent` picture each yield
+one image, with the EMF media type preserved. Evidence for
+`DocDownWord-OpenXml-WordOpenXmlReader-ResolvesLegacyObjectImages` and
+`DocDownWord-EmbeddedObjectImages`.
 
 #### A password-protected document raises a Word extraction exception
 

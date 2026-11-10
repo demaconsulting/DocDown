@@ -54,6 +54,7 @@ internal static class WordContentEmitter
         // Reviewer remarks are not the document's content, so they leave content.md untouched and
         // travel to Core as review comments for the dedicated review-comments.md artifact
         ReportReviewComments(sink, model);
+        ReportRevisions(sink, model);
 
         sink.ReportDocumentInfo(new DocumentInfo(model.Title, model.Author, model.ProducerPageCount, partCount));
 
@@ -185,6 +186,116 @@ internal static class WordContentEmitter
 
         sink.ReportContentFeature(new ContentFeature(
             "footnotes", model.Footnotes.Count, "footnote", LookedFor: true));
+
+        // Always stated for a Word document, including a deliberate zero, so a tracked change is
+        // never silently flattened and a clean document is positively reported as having none
+        sink.ReportContentFeature(new ContentFeature(
+            "tracked changes", model.RevisionList.Count, "tracked change", LookedFor: true,
+            Detail: DescribeRevisions(model)));
+
+        // A table of contents is omitted from content.md on purpose; say so and say what it held,
+        // so neither the omission nor a tracked change inside it is silent
+        if (model.TocRegionsSkipped > 0)
+        {
+            var inToc = model.RevisionList.Count(revision => revision.InToc);
+            sink.ReportContentFeature(new ContentFeature(
+                "tables of contents skipped", model.TocRegionsSkipped, "table of contents skipped",
+                Detail: $"{model.TocParagraphsSkipped.ToString(CultureInfo.InvariantCulture)} entries not rendered in content.md; "
+                    + $"{inToc.ToString(CultureInfo.InvariantCulture)} tracked "
+                    + (inToc == 1 ? "change" : "changes")
+                    + " inside, listed in review-comments.md"));
+        }
+    }
+
+    /// <summary>
+    ///     Describes how tracked changes were rendered and who made them and when.
+    /// </summary>
+    /// <param name="model">The model whose revisions are described.</param>
+    /// <returns>The detail text, or <see langword="null"/> when the document has no tracked changes.</returns>
+    /// <remarks>
+    ///     States the rendering (markup or accepted), the number of distinct authors, and the date
+    ///     range, which together tell a consumer whether this is one person's edits or a review and
+    ///     over what period. Pure.
+    /// </remarks>
+    private static string? DescribeRevisions(WordDocumentModel model)
+    {
+        var revisions = model.RevisionList;
+        if (revisions.Count == 0)
+        {
+            return null;
+        }
+
+        var parts = new List<string> { model.RevisionsAccepted ? "shown accepted" : "shown as markup" };
+
+        var authors = revisions.Select(revision => revision.Author)
+            .Where(author => !string.IsNullOrWhiteSpace(author))
+            .Distinct(StringComparer.Ordinal)
+            .Count();
+        parts.Add(authors == 1
+            ? "1 distinct author"
+            : $"{authors.ToString(CultureInfo.InvariantCulture)} distinct authors");
+
+        var dates = revisions.Where(revision => revision.Date is not null).Select(revision => revision.Date!.Value).ToList();
+        if (dates.Count > 0)
+        {
+            var first = dates.Min().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var last = dates.Max().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            parts.Add(first == last ? $"dated {first}" : $"{first} to {last}");
+        }
+
+        // The count spans every part, so state the split: it explains an author or date that no
+        // body text accounts for (a header edit, a footnote edit, a change inside the contents)
+        var body = revisions.Count(revision => revision.Part == WordRevisionPart.Body);
+        var headerFooter = revisions.Count(revision => revision.Part is WordRevisionPart.Header or WordRevisionPart.Footer);
+        var footnotes = revisions.Count(revision => revision.Part == WordRevisionPart.Footnote);
+        parts.Add($"count includes headers, footers, and footnotes: body {body.ToString(CultureInfo.InvariantCulture)}, "
+            + $"headers and footers {headerFooter.ToString(CultureInfo.InvariantCulture)}, "
+            + $"footnotes {footnotes.ToString(CultureInfo.InvariantCulture)}");
+
+        var inToc = revisions.Count(revision => revision.InToc);
+        if (inToc > 0)
+        {
+            parts.Add($"{inToc.ToString(CultureInfo.InvariantCulture)} inside the table of contents omitted from content.md");
+        }
+
+        return string.Join("; ", parts);
+    }
+
+    /// <summary>
+    ///     Reports the document's tracked changes through the sink as review-comment entries.
+    /// </summary>
+    /// <param name="sink">The sink to report through.</param>
+    /// <param name="model">The document model whose revisions are reported.</param>
+    /// <remarks>
+    ///     Every revision is listed with its author, date, location, and a bounded snippet so the
+    ///     account is complete even for changes (such as formatting) that are not marked inline.
+    ///     Side effect: records review comments marked as revisions on the sink.
+    /// </remarks>
+    private static void ReportRevisions(IExtractionSink sink, WordDocumentModel model)
+    {
+        foreach (var revision in model.RevisionList)
+        {
+            var label = revision.Kind switch
+            {
+                WordRevisionKind.Inserted => "Inserted",
+                WordRevisionKind.Deleted => "Deleted",
+                WordRevisionKind.MovedFrom => "Moved from here",
+                WordRevisionKind.MovedTo => "Moved to here",
+                WordRevisionKind.ParagraphMarkInserted => "Paragraph mark inserted",
+                WordRevisionKind.ParagraphMarkDeleted => "Paragraph mark deleted",
+                WordRevisionKind.TableInserted => "Table row or cell inserted",
+                WordRevisionKind.TableDeleted => "Table row or cell deleted",
+                _ => "Formatting or structure changed"
+            };
+
+            var date = revision.Date is { } value
+                ? value.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
+                : "date unknown";
+            var body = revision.Snippet is { Length: > 0 } snippet
+                ? $"{label} ({date}): \"{snippet}\""
+                : $"{label} ({date})";
+            sink.ReportReviewComment(new DocumentComment(revision.Author, body, revision.Location, IsRevision: true));
+        }
     }
 
     /// <summary>
@@ -340,6 +451,15 @@ internal static class WordContentEmitter
 
         ReportFlattenedTableStructureNote(sink, model);
 
+        // Formatting-only changes are listed in review-comments.md but cannot be marked inline
+        var formattingOnly = model.RevisionList.Count(revision => revision.Kind == WordRevisionKind.FormattingChanged);
+        if (formattingOnly > 0)
+        {
+            var counted = formattingOnly.ToString(CultureInfo.InvariantCulture);
+            var noun = formattingOnly == 1 ? "formatting-only change is" : "formatting-only changes are";
+            sink.ReportNote(new ExtractionNote(
+                $"{counted} {noun} listed in review-comments.md but not marked in content.md."));
+        }
         // A comment whose only content is a picture or ink carried a remark this backend cannot
         // render; say so rather than letting the reviewer's words leave no trace
         if (model.CommentsWithUnreadableContent > 0)

@@ -19,7 +19,8 @@ namespace DemaConsulting.DocDown.Word.OpenXml;
 ///     <para>
 ///         This unit owns the mapping from Open XML structure to the model: headings from styles,
 ///         ordered and bulleted lists from the numbering definitions, genuine tables from
-///         <c>w:tbl</c>, images from blips, the accepted-revisions view of tracked changes, comments,
+///         <c>w:tbl</c>, images from blips and legacy object pictures, tracked changes (shown as
+///         markup by default, or as the accepted view on request), comments,
 ///         footnotes, and — the feature that most distinguishes Word from PDF — the document-control
 ///         section built from headers and footers once, with page-numbering furniture detected
 ///         structurally by field instruction rather than by pattern-matching rendered text.
@@ -51,8 +52,37 @@ internal sealed class WordOpenXmlReader
     /// <summary>The footnote definitions indexed by id.</summary>
     private Dictionary<int, W.Footnote> _footnotesById = [];
 
-    /// <summary>The number of tracked-change revisions seen in the accepted view.</summary>
-    private int _trackedChanges;
+    /// <summary>Whether the caller asked for the accepted view even when the document has tracked changes.</summary>
+    private readonly bool _acceptTrackedChanges;
+
+    /// <summary>Whether tracked changes are being rendered as markup in this read.</summary>
+    /// <remarks>
+    ///     True only when the document carries revisions and the accepted view was not requested.
+    ///     Strike and underline are carried only in this mode, so a document without revisions
+    ///     renders exactly as before.
+    /// </remarks>
+    private bool _markup;
+
+    /// <summary>The revision state of the run container the walk is currently inside.</summary>
+    private WordInlineRevision _revision = WordInlineRevision.None;
+
+    /// <summary>The inlines of paragraphs whose mark was deleted, waiting to merge into the next paragraph.</summary>
+    private readonly List<WordInline> _carryInlines = [];
+
+    /// <summary>The images of paragraphs whose mark was deleted, waiting for the next paragraph.</summary>
+    private readonly List<WordImageRef> _carryImages = [];
+
+    /// <summary>Whether a page break was seen in the carried paragraphs.</summary>
+    private bool _carryPageBreak;
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="WordOpenXmlReader"/> class.
+    /// </summary>
+    /// <param name="acceptTrackedChanges">
+    ///     <see langword="true"/> to render the accepted view of tracked changes instead of markup.
+    /// </param>
+    /// <remarks>The default (<see langword="false"/>) renders markup whenever revisions are present.</remarks>
+    public WordOpenXmlReader(bool acceptTrackedChanges = false) => _acceptTrackedChanges = acceptTrackedChanges;
 
     /// <summary>The number of empty tables skipped.</summary>
     private int _emptyTables;
@@ -97,6 +127,9 @@ internal sealed class WordOpenXmlReader
     /// </remarks>
     private readonly List<string> _openCommentRanges = [];
 
+    /// <summary>The table-of-contents paragraphs of the document being read, omitted from the body walk.</summary>
+    private WordTocInfo _toc = WordTocInfo.None;
+
     /// <summary>
     ///     Reads a document stream into the model.
     /// </summary>
@@ -117,7 +150,13 @@ internal sealed class WordOpenXmlReader
         _numbering = BuildNumbering(mainPart);
         _footnotesById = BuildFootnoteIndex(mainPart);
         _footnoteBodies.Clear();
-        _trackedChanges = 0;
+        _toc = WordTocDetector.Find(mainPart);
+        var revisions = WordRevisionScanner.Scan(mainPart, !_acceptTrackedChanges, _toc);
+        _markup = revisions.Count > 0 && !_acceptTrackedChanges;
+        _revision = WordInlineRevision.None;
+        _carryInlines.Clear();
+        _carryImages.Clear();
+        _carryPageBreak = false;
         _emptyTables = 0;
         _commentsWithUnreadableContent = 0;
         _currentHeading = null;
@@ -132,10 +171,19 @@ internal sealed class WordOpenXmlReader
             {
                 AppendBodyElement(blocks, mainPart, element);
             }
+
+            FlushCarry(blocks);
         }
 
-        var (control, found, emptyParts, furnitureParts) = BuildDocumentControl(mainPart, body);
+        var (control, found, emptyParts, furnitureParts, partLabels) = BuildDocumentControl(mainPart, body);
         var comments = BuildComments(mainPart);
+
+        // Re-scan so header and footer locations use the labels content.md shows for them; the
+        // first scan only decided the rendering mode, and the count is unchanged
+        if (revisions.Count > 0)
+        {
+            revisions = WordRevisionScanner.Scan(mainPart, !_acceptTrackedChanges, _toc, partLabels);
+        }
 
         return new WordDocumentModel(
             Body: blocks,
@@ -145,7 +193,7 @@ internal sealed class WordOpenXmlReader
             Title: NullIfBlank(document.PackageProperties.Title),
             Author: NullIfBlank(document.PackageProperties.Creator),
             ProducerPageCount: ReadProducerPageCount(document),
-            TrackedChangeCount: _trackedChanges,
+            TrackedChangeCount: revisions.Count,
             HeaderFooterPartsFound: found,
             HeaderFooterPartsEmpty: emptyParts,
             HeaderFooterPartsPageFurniture: furnitureParts,
@@ -167,7 +215,42 @@ internal sealed class WordOpenXmlReader
                 document.PackageProperties.Version,
                 document.PackageProperties.Language,
                 document.PackageProperties.Identifier)),
-            CommentsWithUnreadableContent: _commentsWithUnreadableContent);
+            CommentsWithUnreadableContent: _commentsWithUnreadableContent,
+            Revisions: revisions,
+            RevisionsAccepted: revisions.Count > 0 && _acceptTrackedChanges,
+            TocRegionsSkipped: _toc.Regions,
+            TocParagraphsSkipped: _toc.Paragraphs.Count);
+    }
+
+    /// <summary>
+    ///     Emits any paragraphs still waiting to merge into a following paragraph that never came.
+    /// </summary>
+    /// <param name="blocks">The block list to append to.</param>
+    /// <remarks>
+    ///     A deleted paragraph mark merges a paragraph into the next one. When a table or the end of
+    ///     the container intervenes there is no next paragraph, so the carried content stands alone
+    ///     rather than being lost. Side effect: appends to <paramref name="blocks"/> and clears the carry.
+    /// </remarks>
+    private void FlushCarry(List<WordBlock> blocks)
+    {
+        if (_carryInlines.Count > 0 && HasVisibleText(_carryInlines))
+        {
+            blocks.Add(new WordBlock(WordBlockKind.Paragraph, _carryInlines.ToList()));
+        }
+
+        foreach (var image in _carryImages)
+        {
+            blocks.Add(new WordBlock(WordBlockKind.Image, Image: image));
+        }
+
+        if (_carryPageBreak)
+        {
+            blocks.Add(new WordBlock(WordBlockKind.PageBreak));
+        }
+
+        _carryInlines.Clear();
+        _carryImages.Clear();
+        _carryPageBreak = false;
     }
 
     /// <summary>
@@ -198,16 +281,37 @@ internal sealed class WordOpenXmlReader
     /// <param name="blocks">The block list to append to.</param>
     /// <param name="mainPart">The main document part, for image resolution.</param>
     /// <param name="element">The body element (paragraph, table, or section properties).</param>
-    /// <remarks>Section properties are handled separately for document control. Side effect: appends.</remarks>
+    /// <remarks>
+    ///     Section properties are handled separately for document control. A table of contents is
+    ///     omitted on purpose (see <see cref="WordTocDetector"/>) and reported by the emitter; any
+    ///     other block content control is read through to its content, so a cover page or a
+    ///     controlled section is never lost. Side effect: appends.
+    /// </remarks>
     private void AppendBodyElement(List<WordBlock> blocks, MainDocumentPart mainPart, OpenXmlElement element)
     {
         switch (element)
         {
             case W.Paragraph paragraph:
-                AppendParagraph(blocks, mainPart, paragraph, stripFurniture: false);
+                if (!_toc.Paragraphs.Contains(paragraph))
+                {
+                    AppendParagraph(blocks, mainPart, paragraph, stripFurniture: false);
+                }
+
+                break;
+
+            case W.SdtBlock sdt:
+                if (!WordTocDetector.IsTocSdt(sdt) && sdt.SdtContentBlock is { } content)
+                {
+                    foreach (var child in content.ChildElements)
+                    {
+                        AppendBodyElement(blocks, mainPart, child);
+                    }
+                }
+
                 break;
 
             case W.Table table:
+                FlushCarry(blocks);
                 var model = BuildTable(mainPart, table);
                 if (model is null)
                 {
@@ -235,12 +339,25 @@ internal sealed class WordOpenXmlReader
     /// <remarks>Side effect: appends heading, list-item, paragraph, image, and page-break blocks in document order.</remarks>
     private void AppendParagraph(List<WordBlock> blocks, OpenXmlPartContainer part, W.Paragraph paragraph, bool stripFurniture)
     {
-        var inlines = new List<WordInline>();
-        var images = new List<WordImageRef>();
-        var pageBreak = false;
+        var inlines = new List<WordInline>(_carryInlines);
+        var images = new List<WordImageRef>(_carryImages);
+        var pageBreak = _carryPageBreak;
+        _carryInlines.Clear();
+        _carryImages.Clear();
+        _carryPageBreak = false;
         var hadFurnitureField = false;
         WalkContainer(paragraph, part, new Stack<FieldFrame>(), inlines, images, stripFurniture,
             ref pageBreak, ref hadFurnitureField);
+
+        // A deleted paragraph mark merges this paragraph into the next one, in both modes: the
+        // content waits and is emitted as part of the following paragraph, which decides the kind
+        if (HasDeletedParagraphMark(paragraph))
+        {
+            _carryInlines.AddRange(inlines);
+            _carryImages.AddRange(images);
+            _carryPageBreak = pageBreak;
+            return;
+        }
 
         var level = DetermineHeadingLevel(paragraph);
         if (HasVisibleText(inlines))
@@ -251,8 +368,10 @@ internal sealed class WordOpenXmlReader
 
                 // Remember this heading so a later drawing can offer it as a naming hint; the walk
                 // above already collected any image in this paragraph against the previous heading,
-                // which is the correct "nearest preceding" context
-                _currentHeading = string.Concat(inlines.Select(inline => inline.Text)).Trim();
+                // which is the correct "nearest preceding" context. Deleted text is not part of it
+                _currentHeading = string.Concat(inlines
+                    .Where(inline => inline.Revision != WordInlineRevision.Deleted)
+                    .Select(inline => inline.Text)).Trim();
             }
             else if (TryGetListInfo(paragraph, out var list))
             {
@@ -276,8 +395,23 @@ internal sealed class WordOpenXmlReader
     }
 
     /// <summary>
+    ///     Determines whether a paragraph's mark was deleted by a tracked change.
+    /// </summary>
+    /// <param name="paragraph">The paragraph.</param>
+    /// <returns><see langword="true"/> when the mark was deleted or moved away; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    ///     Accepting such a change merges the paragraph with the next one, so the reader carries its
+    ///     content forward. Pure.
+    /// </remarks>
+    private static bool HasDeletedParagraphMark(W.Paragraph paragraph)
+    {
+        var mark = paragraph.ParagraphProperties?.ParagraphMarkRunProperties;
+        return mark is not null && (mark.GetFirstChild<W.Deleted>() is not null || mark.GetFirstChild<W.MoveFrom>() is not null);
+    }
+
+    /// <summary>
     ///     Walks a run container, appending inline runs and collecting images, honoring the
-    ///     accepted-revisions view and field furniture stripping.
+    ///     tracked-change mode and field furniture stripping.
     /// </summary>
     /// <param name="container">The container to walk (a paragraph, hyperlink, inserted run, or field).</param>
     /// <param name="part">The part for image and hyperlink resolution.</param>
@@ -288,8 +422,11 @@ internal sealed class WordOpenXmlReader
     /// <param name="pageBreak">Set to <see langword="true"/> when a page break is seen.</param>
     /// <param name="hadFurnitureField">Set to <see langword="true"/> when a furniture field is seen.</param>
     /// <remarks>
-    ///     Inserted runs are included and deleted runs excluded so the output is the accepted view;
-    ///     each is counted as a tracked change. Side effect: appends to <paramref name="inlines"/> and
+    ///     In markup mode inserted runs are tagged inserted and deleted runs are kept and tagged
+    ///     deleted (a move is a deletion at its source and an insertion at its destination); in the
+    ///     accepted view inserted runs are included untagged and deleted runs dropped. Counting is
+    ///     done by <see cref="WordRevisionScanner"/>, not here, because this walk can visit a
+    ///     paragraph more than once. Side effect: appends to <paramref name="inlines"/> and
     ///     <paramref name="images"/>.
     /// </remarks>
     private void WalkContainer(
@@ -305,14 +442,19 @@ internal sealed class WordOpenXmlReader
                     ProcessRun(run, part, fields, inlines, images, stripFurniture, ref pageBreak, ref hadFurnitureField);
                     break;
 
-                case W.InsertedRun inserted:
-                    _trackedChanges++;
-                    WalkContainer(inserted, part, fields, inlines, images, stripFurniture, ref pageBreak, ref hadFurnitureField);
+                case W.InsertedRun or W.MoveToRun:
+                    WalkRevision(child, WordInlineRevision.Inserted, part, fields, inlines, images, stripFurniture,
+                        ref pageBreak, ref hadFurnitureField);
                     break;
 
-                case W.DeletedRun:
-                    // Accepted view: a deleted run contributes no text, but the revision is counted
-                    _trackedChanges++;
+                case W.DeletedRun or W.MoveFromRun:
+                    // Accepted view: a deleted run contributes nothing
+                    if (_markup)
+                    {
+                        WalkRevision(child, WordInlineRevision.Deleted, part, fields, inlines, images, stripFurniture,
+                            ref pageBreak, ref hadFurnitureField);
+                    }
+
                     break;
 
                 case W.Hyperlink hyperlink:
@@ -338,6 +480,39 @@ internal sealed class WordOpenXmlReader
     }
 
     /// <summary>
+    ///     Walks the content of a tracked insertion or deletion under its revision state.
+    /// </summary>
+    /// <param name="element">The revision element.</param>
+    /// <param name="revision">The state its runs carry in markup mode.</param>
+    /// <param name="part">The part for image and hyperlink resolution.</param>
+    /// <param name="fields">The active complex-field frames.</param>
+    /// <param name="inlines">The inline list to append to.</param>
+    /// <param name="images">The image list to append to.</param>
+    /// <param name="stripFurniture">Whether to strip page-numbering field results.</param>
+    /// <param name="pageBreak">Set to <see langword="true"/> when a page break is seen.</param>
+    /// <param name="hadFurnitureField">Set to <see langword="true"/> when a furniture field is seen.</param>
+    /// <remarks>
+    ///     In the accepted view an insertion is walked untagged. The previous state is restored
+    ///     afterwards so nesting is safe. Side effect: appends to <paramref name="inlines"/> and <paramref name="images"/>.
+    /// </remarks>
+    private void WalkRevision(
+        OpenXmlElement element, WordInlineRevision revision, OpenXmlPartContainer part, Stack<FieldFrame> fields,
+        List<WordInline> inlines, List<WordImageRef> images, bool stripFurniture,
+        ref bool pageBreak, ref bool hadFurnitureField)
+    {
+        var previous = _revision;
+        _revision = _markup ? revision : WordInlineRevision.None;
+        try
+        {
+            WalkContainer(element, part, fields, inlines, images, stripFurniture, ref pageBreak, ref hadFurnitureField);
+        }
+        finally
+        {
+            _revision = previous;
+        }
+    }
+
+    /// <summary>
     ///     Processes a single run, appending its text and collecting any images and footnote markers.
     /// </summary>
     /// <param name="run">The run to process.</param>
@@ -355,6 +530,19 @@ internal sealed class WordOpenXmlReader
     {
         var bold = IsOn(run.RunProperties?.Bold);
         var italic = IsOn(run.RunProperties?.Italic);
+
+        // Manual strike and underline are carried only in redline mode, and not inside a tracked
+        // insertion or deletion, where the revision markers already say what happened
+        var style = RunStyle.None;
+        if (_markup && _revision == WordInlineRevision.None && run.RunProperties is { } properties)
+        {
+            var underline = properties.Underline?.Val?.Value;
+            style = new RunStyle(
+                IsOn(properties.Strike),
+                IsOn(properties.DoubleStrike),
+                underline is not null && underline != W.UnderlineValues.None);
+        }
+
         var text = new StringBuilder();
 
         foreach (var child in run.ChildElements)
@@ -365,17 +553,17 @@ internal sealed class WordOpenXmlReader
                     UpdateFieldState(fields, fieldChar, ref hadFurnitureField);
                     break;
 
-                case W.FieldCode code:
-                    if (fields.Count > 0)
-                    {
-                        fields.Peek().Instruction.Append(code.Text);
-                    }
-
+                case W.FieldCode or W.DeletedFieldCode:
+                    AppendFieldInstruction(fields, child);
                     break;
 
                 case W.Text runText when !SkipText(fields, stripFurniture):
                     text.Append(runText.Text);
                     AppendAnchoredText(runText.Text);
+                    break;
+
+                case W.DeletedText deletedText when !SkipText(fields, stripFurniture):
+                    text.Append(deletedText.Text);
                     break;
 
                 case W.TabChar when !SkipText(fields, stripFurniture):
@@ -398,8 +586,20 @@ internal sealed class WordOpenXmlReader
                     CollectImage(drawing, part, images);
                     break;
 
+                case W.EmbeddedObject embeddedObject:
+                    CollectObjectImages(embeddedObject, part, images);
+                    break;
+
+                case W.Picture picture when part is MainDocumentPart:
+                    CollectObjectImages(picture, part, images);
+                    break;
+
+                case AlternateContent alternate:
+                    CollectAlternateContentImages(alternate, part, images);
+                    break;
+
                 case W.FootnoteReference footnoteReference:
-                    FlushText(text, bold, italic, inlines);
+                    FlushText(text, bold, italic, style, inlines);
                     AppendFootnote(footnoteReference, part, inlines);
                     break;
 
@@ -414,7 +614,83 @@ internal sealed class WordOpenXmlReader
             }
         }
 
-        FlushText(text, bold, italic, inlines);
+        FlushText(text, bold, italic, style, inlines);
+    }
+
+    /// <summary>
+    ///     Collects the pictures of a legacy embedded object or picture (<c>w:object</c>, <c>w:pict</c>).
+    /// </summary>
+    /// <param name="element">The <c>w:object</c> or <c>w:pict</c> element.</param>
+    /// <param name="part">The part the relationships are scoped to.</param>
+    /// <param name="images">The image list to append to.</param>
+    /// <remarks>
+    ///     The preview picture of such an object is a VML <c>v:imagedata</c> whose <c>r:id</c> names
+    ///     an image part (typically EMF or WMF). Only that preview is extracted; the embedded OLE
+    ///     payload itself is not. Side effect: appends to <paramref name="images"/>.
+    /// </remarks>
+    private void CollectObjectImages(OpenXmlElement element, OpenXmlPartContainer part, List<WordImageRef> images)
+    {
+        var candidates = new List<ImageTextCandidate> { new(_currentHeading, ImageTextSource.Heading) };
+        foreach (var imageData in element.Descendants<DocumentFormat.OpenXml.Vml.ImageData>())
+        {
+            var image = WordOpenXmlImageReader.Resolve(part, imageData.RelationshipId?.Value, candidates);
+            if (image is not null)
+            {
+                images.Add(image);
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Collects the images of an <c>mc:AlternateContent</c> run child, from the branch Word would render.
+    /// </summary>
+    /// <param name="alternate">The alternate-content element.</param>
+    /// <param name="part">The part the relationships are scoped to.</param>
+    /// <param name="images">The image list to append to.</param>
+    /// <remarks>
+    ///     The first choice is used; the fallback only when there is no choice, so an image offered
+    ///     in both branches is not collected twice. Side effect: appends to <paramref name="images"/>.
+    /// </remarks>
+    private void CollectAlternateContentImages(AlternateContent alternate, OpenXmlPartContainer part, List<WordImageRef> images)
+    {
+        OpenXmlElement? branch = alternate.Elements<AlternateContentChoice>().FirstOrDefault();
+        branch ??= alternate.Elements<AlternateContentFallback>().FirstOrDefault();
+        if (branch is null)
+        {
+            return;
+        }
+
+        // The content of a branch is not always materialized as typed elements by the SDK, so the
+        // branch is read as plain XML and the relationship attributes are resolved from it
+        const string relationships = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+        var root = System.Xml.Linq.XElement.Parse(branch.OuterXml);
+        foreach (var element in root.Descendants())
+        {
+            var attribute = element.Name.LocalName switch
+            {
+                "blip" => element.Attribute(System.Xml.Linq.XName.Get("embed", relationships)),
+                "imagedata" when part is MainDocumentPart => element.Attribute(System.Xml.Linq.XName.Get("id", relationships)),
+                _ => null
+            };
+            if (attribute is null)
+            {
+                continue;
+            }
+
+            var candidates = new List<ImageTextCandidate>();
+            var description = root.Descendants().FirstOrDefault(e => e.Name.LocalName == "docPr")?.Attribute("descr")?.Value;
+            if (!string.IsNullOrWhiteSpace(description))
+            {
+                candidates.Add(new ImageTextCandidate(description, ImageTextSource.Description));
+            }
+
+            candidates.Add(new ImageTextCandidate(_currentHeading, ImageTextSource.Heading));
+            var image = WordOpenXmlImageReader.Resolve(part, attribute.Value, candidates);
+            if (image is not null)
+            {
+                images.Add(image);
+            }
+        }
     }
 
     /// <summary>
@@ -423,17 +699,32 @@ internal sealed class WordOpenXmlReader
     /// <param name="text">The accumulated text, cleared by this call.</param>
     /// <param name="bold">Whether the run is bold.</param>
     /// <param name="italic">Whether the run is italic.</param>
+    /// <param name="style">The redline-mode strike and underline state of the run.</param>
     /// <param name="inlines">The inline list to append to.</param>
-    /// <remarks>Side effect: appends to <paramref name="inlines"/> and clears <paramref name="text"/>.</remarks>
-    private static void FlushText(StringBuilder text, bool bold, bool italic, List<WordInline> inlines)
+    /// <remarks>
+    ///     The inline carries the current revision state. Side effect: appends to
+    ///     <paramref name="inlines"/> and clears <paramref name="text"/>.
+    /// </remarks>
+    private void FlushText(StringBuilder text, bool bold, bool italic, RunStyle style, List<WordInline> inlines)
     {
         if (text.Length == 0)
         {
             return;
         }
 
-        inlines.Add(new WordInline(text.ToString(), bold, italic));
+        inlines.Add(new WordInline(text.ToString(), bold, italic, Revision: _revision,
+            Strike: style.Strike, DoubleStrike: style.DoubleStrike, Underline: style.Underline));
         text.Clear();
+    }
+
+    /// <summary>Redline-mode formatting carried by one run.</summary>
+    /// <param name="Strike">Whether the run is single-struck.</param>
+    /// <param name="DoubleStrike">Whether the run is double-struck.</param>
+    /// <param name="Underline">Whether the run is underlined.</param>
+    private readonly record struct RunStyle(bool Strike, bool DoubleStrike, bool Underline)
+    {
+        /// <summary>Gets the style of a run with no redline-mode formatting.</summary>
+        public static RunStyle None => default;
     }
 
     /// <summary>
@@ -447,7 +738,11 @@ internal sealed class WordOpenXmlReader
     /// <param name="stripFurniture">Whether to strip page-numbering field results.</param>
     /// <param name="pageBreak">Set to <see langword="true"/> when a page break is seen.</param>
     /// <param name="hadFurnitureField">Set to <see langword="true"/> when a furniture field is seen.</param>
-    /// <remarks>Side effect: appends to <paramref name="inlines"/>.</remarks>
+    /// <remarks>
+    ///     When the content carries any revision or redline formatting, each inner run keeps its own
+    ///     state and link; otherwise the text is flattened into one linked inline as before.
+    ///     Side effect: appends to <paramref name="inlines"/>.
+    /// </remarks>
     private void AppendHyperlink(
         W.Hyperlink hyperlink, OpenXmlPartContainer part, Stack<FieldFrame> fields, List<WordInline> inlines,
         List<WordImageRef> images, bool stripFurniture, ref bool pageBreak, ref bool hadFurnitureField)
@@ -455,13 +750,23 @@ internal sealed class WordOpenXmlReader
         var inner = new List<WordInline>();
         WalkContainer(hyperlink, part, fields, inner, images, stripFurniture, ref pageBreak, ref hadFurnitureField);
 
+        var href = ResolveHyperlink(hyperlink, part);
+        if (inner.Any(inline => inline.Revision != WordInlineRevision.None || inline.Strike || inline.DoubleStrike || inline.Underline))
+        {
+            foreach (var inline in inner)
+            {
+                inlines.Add(inline.Raw || inline.Text.Trim().Length == 0 ? inline : inline with { Href = href });
+            }
+
+            return;
+        }
+
         var text = string.Concat(inner.Select(inline => inline.Text)).Trim();
         if (text.Length == 0)
         {
             return;
         }
 
-        var href = ResolveHyperlink(hyperlink, part);
         inlines.Add(new WordInline(text, Href: href));
     }
 
@@ -501,7 +806,7 @@ internal sealed class WordOpenXmlReader
     /// <param name="fieldChar">The field character.</param>
     /// <param name="hadFurnitureField">Set to <see langword="true"/> when the field is furniture.</param>
     /// <remarks>Side effect: mutates <paramref name="fields"/>.</remarks>
-    private static void UpdateFieldState(Stack<FieldFrame> fields, W.FieldChar fieldChar, ref bool hadFurnitureField)
+    internal static void UpdateFieldState(Stack<FieldFrame> fields, W.FieldChar fieldChar, ref bool hadFurnitureField)
     {
         switch (fieldChar.FieldCharType?.Value)
         {
@@ -526,13 +831,27 @@ internal sealed class WordOpenXmlReader
     }
 
     /// <summary>
+    ///     Accumulates field-code text into the innermost open complex field.
+    /// </summary>
+    /// <param name="fields">The field frame stack.</param>
+    /// <param name="code">The field-code element.</param>
+    /// <remarks>Side effect: mutates the top frame of <paramref name="fields"/>. Shared with the revision scanner.</remarks>
+    internal static void AppendFieldInstruction(Stack<FieldFrame> fields, OpenXmlElement code)
+    {
+        if (fields.Count > 0)
+        {
+            fields.Peek().Instruction.Append(code.InnerText);
+        }
+    }
+
+    /// <summary>
     ///     Determines whether the current field text should be skipped.
     /// </summary>
     /// <param name="fields">The active field frames.</param>
     /// <param name="stripFurniture">Whether furniture fields are being stripped.</param>
     /// <returns><see langword="true"/> when the text is a field definition or stripped furniture; otherwise <see langword="false"/>.</returns>
     /// <remarks>Field-definition text (before the separator) is never content; furniture results are stripped on request. Pure.</remarks>
-    private static bool SkipText(Stack<FieldFrame> fields, bool stripFurniture)
+    internal static bool SkipText(Stack<FieldFrame> fields, bool stripFurniture)
     {
         if (fields.Count == 0)
         {
@@ -698,7 +1017,8 @@ internal sealed class WordOpenXmlReader
         var hadFurnitureField = false;
         WalkContainer(paragraph, part, new Stack<FieldFrame>(), inlines, discardedImages,
             stripFurniture: false, ref pageBreak, ref hadFurnitureField);
-        return string.Concat(inlines.Select(inline => inline.Text)).Trim();
+        return string.Concat(inlines.Where(inline => inline.Revision != WordInlineRevision.Deleted)
+            .Select(inline => inline.Text)).Trim();
     }
 
     /// <summary>
@@ -717,16 +1037,27 @@ internal sealed class WordOpenXmlReader
         }
 
         var ordinal = _footnoteBodies.Count + 1;
-        inlines.Add(new WordInline($"[^{ordinal.ToString(CultureInfo.InvariantCulture)}]", Raw: true));
+        inlines.Add(new WordInline($"[^{ordinal.ToString(CultureInfo.InvariantCulture)}]", Raw: true, Revision: _revision));
 
         var bodyInlines = new List<WordInline>();
         var images = new List<WordImageRef>();
         var pageBreak = false;
         var hadFurniture = false;
-        foreach (var paragraph in footnote.Elements<W.Paragraph>())
+
+        // The footnote body is its own context: the marker's revision state must not leak into it
+        var outerRevision = _revision;
+        _revision = WordInlineRevision.None;
+        try
         {
-            WalkContainer(paragraph, part, new Stack<FieldFrame>(), bodyInlines, images, stripFurniture: false,
-                ref pageBreak, ref hadFurniture);
+            foreach (var paragraph in footnote.Elements<W.Paragraph>())
+            {
+                WalkContainer(paragraph, part, new Stack<FieldFrame>(), bodyInlines, images, stripFurniture: false,
+                    ref pageBreak, ref hadFurniture);
+            }
+        }
+        finally
+        {
+            _revision = outerRevision;
         }
 
         _footnoteBodies.Add(bodyInlines);
@@ -754,7 +1085,17 @@ internal sealed class WordOpenXmlReader
         for (var rowIndex = 0; rowIndex < rowElements.Count; rowIndex++)
         {
             var rowElement = rowElements[rowIndex];
-            if (rowIndex == 0)
+
+            // A tracked row deletion is dropped from the accepted view; in markup mode the row stays
+            // and its text carries the deletion (or insertion) marker
+            var rowRevision = RevisionOf(rowElement.TableRowProperties?.GetFirstChild<W.Deleted>(),
+                rowElement.TableRowProperties?.GetFirstChild<W.Inserted>());
+            if (rowRevision == WordInlineRevision.Deleted && !_markup)
+            {
+                continue;
+            }
+
+            if (rows.Count == 0)
             {
                 firstRowIsHeader = IsHeaderRow(rowElement);
             }
@@ -762,8 +1103,23 @@ internal sealed class WordOpenXmlReader
             var cells = new List<WordTableCell>();
             foreach (var cellElement in rowElement.Elements<W.TableCell>())
             {
+                var cellRevision = RevisionOf(cellElement.TableCellProperties?.GetFirstChild<W.CellDeletion>(),
+                    cellElement.TableCellProperties?.GetFirstChild<W.CellInsertion>());
+                var effective = rowRevision != WordInlineRevision.None ? rowRevision : cellRevision;
                 var (content, nestedInCell) = BuildCellContent(part, cellElement);
                 nested += nestedInCell;
+                if (effective == WordInlineRevision.Deleted && !_markup)
+                {
+                    content = new WordTableCell([]);
+                }
+                else if (_markup && effective != WordInlineRevision.None)
+                {
+                    content = new WordTableCell(content.Content
+                        .Select(inline => inline.Raw || inline.Revision != WordInlineRevision.None
+                            ? inline
+                            : inline with { Revision = effective })
+                        .ToList());
+                }
 
                 if (IsVerticalMergeContinuation(cellElement))
                 {
@@ -805,6 +1161,7 @@ internal sealed class WordOpenXmlReader
     {
         var inlines = new List<WordInline>();
         var nested = 0;
+        var mergeNext = false;
 
         foreach (var element in cell.ChildElements)
         {
@@ -819,7 +1176,7 @@ internal sealed class WordOpenXmlReader
                         stripFurniture: false, ref pageBreak, ref hadFurniture);
                     if (paragraphInlines.Count > 0)
                     {
-                        if (inlines.Count > 0)
+                        if (inlines.Count > 0 && !mergeNext)
                         {
                             inlines.Add(new WordInline("\n", Raw: true));
                         }
@@ -827,6 +1184,8 @@ internal sealed class WordOpenXmlReader
                         inlines.AddRange(paragraphInlines);
                     }
 
+                    // A deleted paragraph mark merges this paragraph with the next, so no break joins them
+                    mergeNext = HasDeletedParagraphMark(paragraph);
                     break;
 
                 case W.Table innerTable:
@@ -899,14 +1258,16 @@ internal sealed class WordOpenXmlReader
     ///     furniture-only part are distinct expected cases, never described by one another's text.
     ///     Read-only.
     /// </remarks>
-    private (IReadOnlyList<WordDocumentControlSection> Sections, int Found, int EmptyParts, int FurnitureParts)
+    private (IReadOnlyList<WordDocumentControlSection> Sections, int Found, int EmptyParts, int FurnitureParts,
+        IReadOnlyDictionary<string, string> PartLabels)
         BuildDocumentControl(MainDocumentPart mainPart, W.Body? body)
     {
         var references = CollectHeaderFooterReferences(mainPart, body);
         var headerSurvivors = new List<IReadOnlyList<WordBlock>>();
         var footerSurvivors = new List<IReadOnlyList<WordBlock>>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var seen = new Dictionary<string, int>(StringComparer.Ordinal);
         var empty = new Dictionary<string, string>();
+        var partSurvivor = new Dictionary<string, (bool IsHeader, int Index)>(StringComparer.Ordinal);
 
         var found = 0;
         var emptyParts = 0;
@@ -933,19 +1294,32 @@ internal sealed class WordOpenXmlReader
             }
 
             var key = (isHeader ? "H|" : "F|") + WordMarkdownWriter.WriteBlocks(blocks, empty) + ImageFingerprint(blocks);
-            if (!seen.Add(key))
+            var survivors = isHeader ? headerSurvivors : footerSurvivors;
+            if (!seen.TryGetValue(key, out var survivorIndex))
             {
-                continue;
+                survivorIndex = survivors.Count;
+                seen[key] = survivorIndex;
+                survivors.Add(blocks);
             }
 
-            (isHeader ? headerSurvivors : footerSurvivors).Add(blocks);
+            partSurvivor[part.Uri.OriginalString] = (isHeader, survivorIndex);
         }
 
         var sections = new List<WordDocumentControlSection>();
         AddLabeledSections(sections, "Header", headerSurvivors);
         AddLabeledSections(sections, "Footer", footerSurvivors);
 
-        return (sections, found, emptyParts, furnitureParts);
+        // Map each surviving part to the label content.md gives its section, so a revision location
+        // can be searched for there
+        var partLabels = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (uri, (isHeader, index)) in partSurvivor)
+        {
+            var count = (isHeader ? headerSurvivors : footerSurvivors).Count;
+            var kind = isHeader ? "Header" : "Footer";
+            partLabels[uri] = count == 1 ? kind : $"{kind} ({(index + 1).ToString(CultureInfo.InvariantCulture)})";
+        }
+
+        return (sections, found, emptyParts, furnitureParts, partLabels);
     }
 
     /// <summary>
@@ -988,6 +1362,7 @@ internal sealed class WordOpenXmlReader
             return blocks;
         }
 
+        FlushCarry([]);
         foreach (var element in root.ChildElements)
         {
             switch (element)
@@ -997,6 +1372,7 @@ internal sealed class WordOpenXmlReader
                     break;
 
                 case W.Table table:
+                    FlushCarry(blocks);
                     var model = BuildTable(part, table);
                     if (model is not null)
                     {
@@ -1010,6 +1386,7 @@ internal sealed class WordOpenXmlReader
             }
         }
 
+        FlushCarry(blocks);
         return blocks;
     }
 
@@ -1023,12 +1400,24 @@ internal sealed class WordOpenXmlReader
     /// <remarks>Side effect: appends to <paramref name="blocks"/>.</remarks>
     private bool AppendParagraphTrackingFurniture(List<WordBlock> blocks, OpenXmlPartContainer part, W.Paragraph paragraph)
     {
-        var inlines = new List<WordInline>();
-        var images = new List<WordImageRef>();
-        var pageBreak = false;
+        // Same carry/flush merge as the body: a deleted paragraph mark joins this paragraph to the next
+        var inlines = new List<WordInline>(_carryInlines);
+        var images = new List<WordImageRef>(_carryImages);
+        var pageBreak = _carryPageBreak;
+        _carryInlines.Clear();
+        _carryImages.Clear();
+        _carryPageBreak = false;
         var hadFurnitureField = false;
         WalkContainer(paragraph, part, new Stack<FieldFrame>(), inlines, images, stripFurniture: true,
             ref pageBreak, ref hadFurnitureField);
+
+        if (HasDeletedParagraphMark(paragraph))
+        {
+            _carryInlines.AddRange(inlines);
+            _carryImages.AddRange(images);
+            _carryPageBreak = pageBreak;
+            return hadFurnitureField;
+        }
 
         if (HasVisibleText(inlines))
         {
@@ -1487,12 +1876,29 @@ internal sealed class WordOpenXmlReader
     }
 
     /// <summary>
+    ///     Maps a deletion and an insertion marker to a revision state.
+    /// </summary>
+    /// <param name="deletion">The deletion marker, or <see langword="null"/>.</param>
+    /// <param name="insertion">The insertion marker, or <see langword="null"/>.</param>
+    /// <returns>The state; a deletion wins over an insertion.</returns>
+    /// <remarks>Pure.</remarks>
+    private static WordInlineRevision RevisionOf(OpenXmlElement? deletion, OpenXmlElement? insertion)
+    {
+        if (deletion is not null)
+        {
+            return WordInlineRevision.Deleted;
+        }
+
+        return insertion is not null ? WordInlineRevision.Inserted : WordInlineRevision.None;
+    }
+
+    /// <summary>
     ///     Determines a paragraph's heading level from its style or outline level.
     /// </summary>
     /// <param name="paragraph">The paragraph.</param>
     /// <returns>The 1-based heading level, or zero when the paragraph is not a heading.</returns>
     /// <remarks>Style is authoritative; the outline level is the fallback. Pure.</remarks>
-    private static int DetermineHeadingLevel(W.Paragraph paragraph)
+    internal static int DetermineHeadingLevel(W.Paragraph paragraph)
     {
         var styleId = paragraph.ParagraphProperties?.ParagraphStyleId?.Val?.Value;
         if (styleId is not null)
@@ -1633,7 +2039,7 @@ internal sealed class WordOpenXmlReader
     ///     cross-reference such as <c>PAGEREF</c> is not misclassified and a revision string that
     ///     happens to contain digits is never mistaken for page numbering. Pure.
     /// </remarks>
-    private static bool IsFurnitureInstruction(string? instruction)
+    internal static bool IsFurnitureInstruction(string? instruction)
     {
         if (string.IsNullOrWhiteSpace(instruction))
         {
@@ -1685,7 +2091,7 @@ internal sealed class WordOpenXmlReader
     ///     One frame of the complex-field state stack.
     /// </summary>
     /// <remarks>Tracks a field's accumulated instruction and whether its result is being emitted.</remarks>
-    private sealed class FieldFrame
+    internal sealed class FieldFrame
     {
         /// <summary>Gets the accumulated field instruction text.</summary>
         public StringBuilder Instruction { get; } = new();

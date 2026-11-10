@@ -45,7 +45,14 @@ and each image through the sink, which owns the layout and allocates the image p
 - **`ReportContentFeatures()`** (private) — reports the content inventory from the model: text
   blocks, headings, tables, list items, inline images, comments, distinct comment authors, and
   footnotes. Text blocks, comments, distinct comment authors, and footnotes are marked looked-for
-  so zero remains explicit.
+  so zero remains explicit. It also always reports a looked-for `tracked changes` feature, so a
+  Word document with none states `0 tracked changes`. Its `Detail` reads
+  `shown as markup` or `shown accepted`, then the number of distinct authors and the date range
+  (for example `shown as markup; 2 distinct authors; 2026-01-02 to 2026-02-03`); it is absent when the count is zero.
+- **`ReportRevisions()`** (private) — reports each tracked change as a `DocumentComment` with
+  `IsRevision: true`, so it reaches `review-comments.md` and `manifest.json` (kind `revision`). The
+  body reads `Label (date): "snippet"`. Formatting-only changes, which are listed here but not
+  marked in `content.md`, are explained by a note.
 - **`ReportReviewComments()`** (private) — reports each of the model's comments to the sink as a
   `DocumentComment` carrying the comment's author, its body as **literal text** rendered through
   `WordMarkdownWriter.RenderPlainText`, and its
