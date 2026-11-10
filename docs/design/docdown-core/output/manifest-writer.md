@@ -17,7 +17,7 @@ serialized object uses only strings, numbers, booleans, nulls, and lists.
 
 #### On-disk format
 
-`manifest.json` is emitted with schema version `3.1`, `\n` line endings, and UTF-8 without a byte
+`manifest.json` is emitted with schema version `3.2`, `\n` line endings, and UTF-8 without a byte
 order mark. The top-level shape contains:
 
 - `schemaVersion`
@@ -37,7 +37,7 @@ order mark. The top-level shape contains:
 - `notes`
 - `failure`
 
-The file contains only the schema 3.1 top-level fields listed above. Schema 3.0 dropped the
+The file contains only the schema 3.2 top-level fields listed above. Schema 3.0 dropped the
 `environment` block, the `requestedOptions` echo, and every SHA-256 digest, because the manifest
 describes the document that was extracted rather than the machine that ran the extraction or the
 arguments the caller supplied; `summary.txt` keeps its Environment section. The selected extractor
@@ -46,7 +46,10 @@ plain strings in emission order. Schema 3.1 added `reviewComments` and `reviewCo
 minor version was raised rather than the major one because the change is purely additive, so a
 consumer pinned to 3.0 still finds everything 3.0 promised. The `reviewComments` array is always
 serialized, possibly empty, while `reviewCommentsPath` is null unless the conditional artifact was
-actually written.
+actually written. Schema 3.2 added the optional `detail` member of a content feature (omitted when absent, used for
+the authors and date range of tracked changes) and the `kind` member of a reviewer-comment entry (`comment` or
+`revision`, because tracked changes are recorded alongside comments); both are additive, so a consumer pinned to 3.1
+still finds everything 3.1 promised.
 
 #### Key Methods
 

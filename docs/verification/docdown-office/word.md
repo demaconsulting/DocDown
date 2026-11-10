@@ -86,8 +86,9 @@ Per IEC 62304 §5.7.2, a subsystem-level test run passes when:
   explanation and the expected output layout.
 - Five representative summaries match their committed goldens after normalization.
 - Merged or nested table structure, charts, and comments whose only content is a picture are each reported as a
-  short note; an empty document is reported as a zero-count text inventory entry; tracked changes render in the
-  accepted view; and a vector image is written unchanged.
+  short note; an empty document is reported as a zero-count text inventory entry; tracked changes render as redline
+  markup, are counted (with an explicit
+  zero), and can be shown accepted; embedded-object pictures are written; and a vector image is written unchanged.
 - The managed extractor reports itself available and states that rendered pages are not provided, and its
   self-test cases pass and skip as documented.
 - Headings render as markdown heading levels, with the markup-escaping, list, inline-formatting, and footnote
@@ -310,12 +311,35 @@ Proves a document with merged cells completes as `Produced` and records a short 
 structure was flattened.
 Evidence for `DocDownWord-TableStructureNotes`.
 
-### Tracked changes render in the accepted view
+### Tracked changes render as redline markup and are reported
 
-**Test**: `WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewAndCountsChanges`
+**Test**: `DocDownWord_Extract_RedlineDocx_ShowsMarkupAndReportsTrackedChanges`
 
-Proves inserted text is kept, deleted text is dropped, and the changes are counted. Evidence for
-`DocDownWord-TrackedChangesAcceptedView`.
+Proves a document with tracked changes is extracted with `{++…++}` and `{--…--}` markup, with strike
+and underline conventions carried, and that `summary.txt` and `manifest.json` state the count, the
+distinct authors, and the date range, with the revisions listed in `review-comments.md`. Evidence for
+`DocDownWord-TrackedChangesRedline` and `DocDownWord-TrackedChangesReported`.
+
+### The accepted view is available on request
+
+**Test**: `DocDownWord_Extract_RedlineDocxWithAcceptOption_ShowsAcceptedViewAndStillReportsCount`
+
+Proves that with the accept option inserted text is kept, deleted text is dropped, no markup appears,
+and the count is still reported as shown accepted. Evidence for `DocDownWord-TrackedChangesRedline`.
+
+### A document without tracked changes states zero
+
+**Test**: `DocDownWord_Extract_DocxWithoutRevisions_StatesZeroTrackedChanges`
+
+Proves a clean document reports `0 tracked changes` explicitly and carries no revision markup.
+Evidence for `DocDownWord-TrackedChangesReported`.
+
+### Embedded object pictures are written
+
+**Test**: `DocDownWord_Extract_DocxWithEmbeddedObject_WritesPreviewImages`
+
+Proves the preview pictures of embedded objects reach the output as images. Evidence for
+`DocDownWord-EmbeddedObjectImages`.
 
 ### A vector image is written as stored
 

@@ -396,6 +396,7 @@ public sealed class ExtractionSink : IExtractionSink
             {
                 Count = accumulated.Count + feature.Count,
                 LookedFor = accumulated.LookedFor || feature.LookedFor,
+                Detail = accumulated.Detail ?? feature.Detail,
             };
             return;
         }
@@ -647,6 +648,17 @@ public sealed class ExtractionSink : IExtractionSink
 public sealed record ContentFeature(
     string Label, int Count, string? SingularLabel = null, bool LookedFor = false)
 {
+    /// <summary>
+    ///     Gets an optional short qualifier rendered in parentheses after the count (for example the
+    ///     date range and authors of tracked changes), or <see langword="null"/> for none.
+    /// </summary>
+    /// <remarks>
+    ///     When the same label is reported more than once, the first non-null detail wins. Declared
+    ///     as an init-only property rather than a positional parameter so the original public
+    ///     constructor signature is preserved for binary compatibility.
+    /// </remarks>
+    public string? Detail { get; init; }
+
     /// <summary>
     ///     Gets the label agreeing in number with <see cref="Count"/>.
     /// </summary>

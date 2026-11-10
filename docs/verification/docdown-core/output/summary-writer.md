@@ -63,7 +63,9 @@ block whether `review-comments.md` was written and how many comments it records.
 ##### Content features drive the gist and inventory line
 
 **Tests**: `SummaryWriter_WriteAsync_WithContentFeatures_OpensWithGistAndOutlinesContent`,
-`SummaryWriter_WriteAsync_LookedForZeroFeature_OutlinesTheZero`
+`SummaryWriter_WriteAsync_LookedForZeroFeature_OutlinesTheZero`,
+`SummaryWriter_WriteAsync_FeatureWithDetail_RendersDetailInParentheses` (a feature's detail is
+rendered in parentheses after its count and label)
 
 ##### Unknown format omits the gist instead of guessing
 

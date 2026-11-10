@@ -69,9 +69,10 @@ public class WordOpenXmlReaderTests
     ///     Proves tracked changes are rendered in the accepted view and counted.
     /// </summary>
     [Fact]
-    public void WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewAndCountsChanges()
+    public void WordOpenXmlReader_Read_TrackedChangesAcceptOption_RendersAcceptedViewAndCountsChanges()
     {
-        var model = Read(DocxFixtures.DocumentWithTrackedChanges());
+        using var stream = new MemoryStream(DocxFixtures.DocumentWithTrackedChanges());
+        var model = new WordOpenXmlReader(true).Read(stream);
 
         var text = BlocksText(model.Body);
         Assert.Contains("inserted-text", text, StringComparison.Ordinal);

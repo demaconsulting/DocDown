@@ -1,0 +1,45 @@
+---
+# Software Unit Requirements for WordRevisionScanner
+#
+# WordRevisionScanner finds every tracked change (revision) in a Word document, across the body,
+# headers, footers, and footnotes, and records each one's kind, author, date, location, and a short
+# snippet. It is read-only; the reader decides how the changes are rendered.
+
+sections:
+  - title: DocDownWord Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: WordRevisionScanner Requirements
+            requirements:
+              - id: DocDownWord-OpenXml-WordRevisionScanner-ScansRevisions
+                title: >-
+                  WordRevisionScanner shall find every tracked change, in the body, headers, footers,
+                  and footnotes, with its kind, author, date, and location, and shall find none in a
+                  document without any.
+                justification: |
+                  The count, authors, and date range reported to the reader of the summary are only as
+                  honest as the scan behind them. A change in a header or footnote is still a change,
+                  and a clean document must scan to nothing so that the reported zero is true.
+                tests:
+                  - WordRevisionScanner_Scan_RedlineDocument_FindsRevisionsWithAuthorDateAndLocation
+                  - WordRevisionScanner_Scan_CleanDocument_FindsNothing
+                  - WordRevisionScanner_Scan_FormattingChange_IsCountedAsFormatting
+                  - WordRevisionScanner_Scan_MoveAndInsertedMark_CountsEachElement
+                  - WordRevisionScanner_Scan_HeaderAndFootnote_ReportsTheirLocations
+                  - WordRevisionScanner_Scan_TableRows_ReportsRowLocations
+
+              - id: DocDownWord-OpenXml-WordRevisionScanner-LocatesRevisions
+                title: >-
+                  WordRevisionScanner shall give every tracked change a location made of a part label,
+                  the heading path as rendered in content.md, and a paragraph, table, or entry position
+                  with a short context snippet, and shall flag a change inside a table of contents.
+                justification: |
+                  A reader of review-comments.md works in markdown, where there are no pages. The change
+                  must be findable in content.md by heading path and position, including before the
+                  first heading, in table cells, headers, footers, footnotes, deleted headings, and
+                  the omitted table of contents.
+                tests:
+                  - WordRevisionScanner_Scan_LocatedRevisions_DescribesPartHeadingPathAndPosition
+                  - WordRevisionScanner_Scan_DeletedHeading_FollowsTheRenderedMode
+                  - WordOpenXmlReader_Read_TrackedTableOfContents_IsOmittedButItsRevisionsAreCounted

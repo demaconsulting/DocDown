@@ -1,4 +1,5 @@
 // cspell:ignore rels
+#pragma warning disable S3220 // Open XML element constructors take child lists; params-style construction is intentional
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using A = DocumentFormat.OpenXml.Drawing;
@@ -26,7 +27,7 @@ namespace DemaConsulting.DocDown.Office.Tests.Word.TestData;
 ///         their allocations.
 ///     </para>
 /// </remarks>
-public static class DocxFixtures
+public static partial class DocxFixtures
 {
     /// <summary>An 8x8 PNG embedded verbatim as an image part.</summary>
     /// <remarks>Held as base64 so the repository stays text-only while the bytes remain exact.</remarks>
@@ -352,6 +353,422 @@ public static class DocxFixtures
         body.AppendChild(paragraph);
         SetBody(mainPart, body);
         SetProperties(document, "Tracked Changes Report", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a tracked-change run container of the requested type with author and date.
+    /// </summary>
+    /// <typeparam name="T">The run-level revision type (insertion, deletion, or move).</typeparam>
+    /// <param name="id">The revision id.</param>
+    /// <param name="author">The revision author.</param>
+    /// <param name="date">The revision date as an ISO 8601 UTC string.</param>
+    /// <param name="children">The runs inside the revision.</param>
+    /// <returns>The revision element.</returns>
+    /// <remarks>Pure apart from allocation.</remarks>
+    private static T Revision<T>(string id, string author, string date, params OpenXmlElement[] children)
+        where T : W.RunTrackChangeType, new()
+    {
+        var element = new T { Id = id, Author = author, Date = DateTime.Parse(date, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal) };
+        foreach (var child in children)
+        {
+            element.AppendChild(child);
+        }
+
+        return element;
+    }
+
+    /// <summary>
+    ///     Builds a run whose text is deleted (<c>w:delText</c>).
+    /// </summary>
+    /// <param name="text">The deleted text.</param>
+    /// <returns>The run element.</returns>
+    /// <remarks>Pure.</remarks>
+    private static W.Run DeletedTextRun(string text)
+    {
+        var run = new W.Run();
+        run.AppendChild(new W.DeletedText(text) { Space = SpaceProcessingModeValues.Preserve });
+        return run;
+    }
+
+    /// <summary>
+    ///     Builds a run with strike, double strike, or underline formatting.
+    /// </summary>
+    /// <param name="text">The run text.</param>
+    /// <param name="strike">Whether to strike the run through.</param>
+    /// <param name="doubleStrike">Whether to double-strike the run.</param>
+    /// <param name="underline">Whether to underline the run.</param>
+    /// <returns>The run element.</returns>
+    /// <remarks>Pure.</remarks>
+    private static W.Run FormattedRun(string text, bool strike = false, bool doubleStrike = false, bool underline = false)
+    {
+        var run = Run(text);
+        var properties = new W.RunProperties();
+        if (strike)
+        {
+            properties.AppendChild(new W.Strike());
+        }
+
+        if (doubleStrike)
+        {
+            properties.AppendChild(new W.DoubleStrike());
+        }
+
+        if (underline)
+        {
+            properties.AppendChild(new W.Underline { Val = W.UnderlineValues.Single });
+        }
+
+        run.PrependChild(properties);
+        return run;
+    }
+
+    /// <summary>
+    ///     Builds a paragraph whose paragraph mark carries a tracked insertion or deletion.
+    /// </summary>
+    /// <param name="deleted">Whether the mark is deleted (otherwise inserted).</param>
+    /// <param name="style">An optional paragraph style id.</param>
+    /// <param name="children">The paragraph content.</param>
+    /// <returns>The paragraph element.</returns>
+    /// <remarks>Pure apart from allocation.</remarks>
+    private static W.Paragraph ParagraphWithTrackedMark(bool deleted, string? style, params OpenXmlElement[] children)
+    {
+        var paragraph = new W.Paragraph();
+        var properties = new W.ParagraphProperties();
+        if (style is not null)
+        {
+            properties.AppendChild(new W.ParagraphStyleId { Val = style });
+        }
+
+        var markProperties = new W.ParagraphMarkRunProperties();
+        if (deleted)
+        {
+            markProperties.AppendChild(new W.Deleted { Id = "90", Author = "Bob", Date = DateTime.Parse("2026-01-05T10:30:00Z", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal) });
+        }
+        else
+        {
+            markProperties.AppendChild(new W.Inserted { Id = "91", Author = "Alice", Date = DateTime.Parse("2026-01-02T09:00:00Z", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal) });
+        }
+
+        properties.AppendChild(markProperties);
+        paragraph.AppendChild(properties);
+        foreach (var child in children)
+        {
+            paragraph.AppendChild(child);
+        }
+
+        return paragraph;
+    }
+
+    /// <summary>
+    ///     Builds a redline document: two authors, an insertion and a deletion, manual strike and
+    ///     underline formatting, and an underline inside a tracked insertion. All text is invented.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Used to prove markup rendering, the strike and underline convention, and the reporting.</remarks>
+    public static byte[] DocumentWithRedline() => BuildDocx((document, mainPart) =>
+    {
+        var body = new W.Body();
+        body.AppendChild(StyledParagraph("Scope", "Heading1"));
+
+        var first = new W.Paragraph();
+        first.AppendChild(Run("Keep "));
+        first.AppendChild(Revision<W.InsertedRun>("1", "Alice", "2026-01-02T09:00:00Z", Run("added words")));
+        first.AppendChild(Revision<W.DeletedRun>("2", "Bob", "2026-01-05T10:30:00Z", DeletedTextRun("dropped words")));
+        body.AppendChild(first);
+
+        var second = new W.Paragraph();
+        second.AppendChild(FormattedRun("underlined", underline: true));
+        second.AppendChild(Run(" "));
+        second.AppendChild(FormattedRun("struck", strike: true));
+        second.AppendChild(Run(" "));
+        second.AppendChild(FormattedRun("double", doubleStrike: true));
+        body.AppendChild(second);
+
+        var third = new W.Paragraph();
+        third.AppendChild(Revision<W.InsertedRun>("3", "Alice", "2026-01-02T09:05:00Z", FormattedRun("quiet", underline: true)));
+        body.AppendChild(third);
+
+        SetBody(mainPart, body);
+        SetProperties(document, "Redline Report", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document with a deleted paragraph mark on a heading-styled paragraph, followed by
+    ///     a body paragraph, so accepting the change merges the two.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>
+    ///     Regression fixture: the merged content must not become a heading that swallows the next
+    ///     paragraph, nor lose either half.
+    /// </remarks>
+    public static byte[] DocumentWithDeletedParagraphMark() => BuildDocx((document, mainPart) =>
+    {
+        var body = new W.Body();
+        body.AppendChild(ParagraphWithTrackedMark(true, "Heading1", Run("First half ")));
+        body.AppendChild(TextParagraph("second half"));
+        body.AppendChild(TextParagraph("Unrelated paragraph."));
+        SetBody(mainPart, body);
+        SetProperties(document, "Merged Report", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document with an inserted paragraph mark and a move (source and destination).
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Moves render as a deletion at the source and an insertion at the destination.</remarks>
+    public static byte[] DocumentWithMoveAndInsertedMark() => BuildDocx((document, mainPart) =>
+    {
+        var body = new W.Body();
+        var source = new W.Paragraph();
+        source.AppendChild(Revision<W.MoveFromRun>("10", "Alice", "2026-02-01T08:00:00Z", DeletedTextRun("relocated clause")));
+        body.AppendChild(source);
+        body.AppendChild(ParagraphWithTrackedMark(false, null, Run("Stable sentence.")));
+        var destination = new W.Paragraph();
+        destination.AppendChild(Revision<W.MoveToRun>("11", "Alice", "2026-02-01T08:00:00Z", Run("relocated clause")));
+        body.AppendChild(destination);
+        SetBody(mainPart, body);
+        SetProperties(document, "Moved Report", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document whose only tracked change is a run formatting change.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Formatting-only changes are counted and listed but cannot be marked inline.</remarks>
+    public static byte[] DocumentWithFormattingChangeOnly() => BuildDocx((document, mainPart) =>
+    {
+        var body = new W.Body();
+        var paragraph = new W.Paragraph();
+        var run = Run("Reformatted text");
+        var properties = new W.RunProperties(new W.Bold());
+        properties.AppendChild(new W.RunPropertiesChange(new W.PreviousRunProperties())
+        {
+            Id = "20",
+            Author = "Carol",
+            Date = DateTime.Parse("2026-03-03T12:00:00Z", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal)
+        });
+        run.PrependChild(properties);
+        paragraph.AppendChild(run);
+        body.AppendChild(paragraph);
+        SetBody(mainPart, body);
+        SetProperties(document, "Formatting Report", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document with a table whose second row is a tracked deletion and third row a tracked insertion.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Used to prove row-level revisions in markup and accepted modes.</remarks>
+    public static byte[] DocumentWithRevisedTableRows() => BuildDocx((document, mainPart) =>
+    {
+        W.TableRow Row(string a, string b, OpenXmlElement? tracked)
+        {
+            var row = new W.TableRow();
+            if (tracked is not null)
+            {
+                row.AppendChild(new W.TableRowProperties(tracked));
+            }
+
+            row.AppendChild(Cell(a));
+            row.AppendChild(Cell(b));
+            return row;
+        }
+
+        var table = new W.Table();
+        table.AppendChild(Row("Item", "Status", null));
+        table.AppendChild(Row("Gamma", "retired", new W.Deleted { Id = "30", Author = "Dana", Date = DateTime.Parse("2026-04-01T00:00:00Z", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal) }));
+        table.AppendChild(Row("Delta", "added", new W.Inserted { Id = "31", Author = "Dana", Date = DateTime.Parse("2026-04-02T00:00:00Z", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal) }));
+        var body = new W.Body();
+        body.AppendChild(table);
+        SetBody(mainPart, body);
+        SetProperties(document, "Table Redline", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document with a revision in a header and another inside a footnote body.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Used to prove the scan covers headers and footnotes.</remarks>
+    public static byte[] DocumentWithHeaderAndFootnoteRevisions() => BuildDocx((document, mainPart) =>
+    {
+        var footnotesPart = mainPart.AddNewPart<FootnotesPart>();
+        var footnotes = new W.Footnotes();
+        var footnote = new W.Footnote { Id = 1 };
+        var footnoteParagraph = new W.Paragraph();
+        footnoteParagraph.AppendChild(Revision<W.DeletedRun>("40", "Erin", "2026-05-01T00:00:00Z", DeletedTextRun("old note")));
+        footnote.AppendChild(footnoteParagraph);
+        footnotes.AppendChild(footnote);
+        footnotesPart.Footnotes = footnotes;
+
+        var headerParagraph = new W.Paragraph();
+        headerParagraph.AppendChild(Run("Header "));
+        headerParagraph.AppendChild(Revision<W.InsertedRun>("41", "Erin", "2026-05-02T00:00:00Z", Run("added")));
+        var headerId = AddHeader(mainPart, headerParagraph);
+
+        var paragraph = new W.Paragraph();
+        paragraph.AppendChild(Run("Claim"));
+        var referenceRun = new W.Run();
+        referenceRun.AppendChild(new W.FootnoteReference { Id = 1 });
+        paragraph.AppendChild(referenceRun);
+
+        var body = new W.Body();
+        body.AppendChild(paragraph);
+        body.AppendChild(SectionProperties(headerId, null));
+        SetBody(mainPart, body);
+        SetProperties(document, "Header Footnote Redline", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document with a deleted complex field whose cached result is deleted text.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Proves the deleted field instruction is never rendered as content.</remarks>
+    public static byte[] DocumentWithDeletedField() => BuildDocx((document, mainPart) =>
+    {
+        var begin = new W.Run(new W.FieldChar { FieldCharType = W.FieldCharValues.Begin });
+        var instruction = new W.Run(new W.DeletedFieldCode(" REF hidden-bookmark ") { Space = SpaceProcessingModeValues.Preserve });
+        var separate = new W.Run(new W.FieldChar { FieldCharType = W.FieldCharValues.Separate });
+        var result = DeletedTextRun("field result");
+        var end = new W.Run(new W.FieldChar { FieldCharType = W.FieldCharValues.End });
+
+        var paragraph = new W.Paragraph();
+        paragraph.AppendChild(Run("See "));
+        paragraph.AppendChild(Revision<W.DeletedRun>("50", "Frank", "2026-06-01T00:00:00Z", begin, instruction, separate, result, end));
+        var body = new W.Body();
+        body.AppendChild(paragraph);
+        SetBody(mainPart, body);
+        SetProperties(document, "Field Redline", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document with a <c>w:object</c> whose preview is a VML image part, plus a
+    ///     <c>w:pict</c> picture and an <c>mc:AlternateContent</c> drawing.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Used to prove legacy object previews are extracted rather than silently dropped.</remarks>
+    public static byte[] DocumentWithLegacyObjectImages() => BuildDocx((document, mainPart) =>
+    {
+        var objectRelId = AddImagePart(mainPart, EmfBytes(), ImagePartType.Emf);
+        var pictRelId = AddImagePart(mainPart, PngBytes(), ImagePartType.Png);
+        var alternateRelId = AddImagePart(mainPart, [0x01, 0x02, 0x03, 0x04, 0x05], ImagePartType.Jpeg);
+
+        var objectRun = new W.Run(new W.EmbeddedObject(
+            new DocumentFormat.OpenXml.Vml.Shape(new DocumentFormat.OpenXml.Vml.ImageData { RelationshipId = objectRelId })));
+        var pictRun = new W.Run(new W.Picture(
+            new DocumentFormat.OpenXml.Vml.Shape(new DocumentFormat.OpenXml.Vml.ImageData { RelationshipId = pictRelId })));
+        var alternate = new AlternateContent(
+            new AlternateContentChoice(BuildDrawingRun(alternateRelId, "chosen")) { Requires = "w" },
+            new AlternateContentFallback(new W.Run(new W.Picture(
+                new DocumentFormat.OpenXml.Vml.Shape(new DocumentFormat.OpenXml.Vml.ImageData { RelationshipId = pictRelId })))));
+        var alternateRun = new W.Run(alternate);
+
+        var body = new W.Body();
+        body.AppendChild(TextParagraph("Embedded things"));
+        body.AppendChild(new W.Paragraph(objectRun));
+        body.AppendChild(new W.Paragraph(pictRun));
+        body.AppendChild(new W.Paragraph(alternateRun));
+        SetBody(mainPart, body);
+        SetProperties(document, "Object Report", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document whose header and footer each carry a <c>w:pict</c> preview whose image
+    ///     relationship lives in that header or footer part, not in the main part.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Synthetic. Used to prove legacy pictures are resolved against their containing part.</remarks>
+    public static byte[] DocumentWithHeaderAndFooterPictPreviews() => BuildDocx((document, mainPart) =>
+    {
+        var headerPart = mainPart.AddNewPart<HeaderPart>();
+        var headerImage = headerPart.AddImagePart(ImagePartType.Png);
+        WritePart(headerImage, PngBytes());
+        var header = new W.Header();
+        header.AppendChild(new W.Paragraph(new W.Run(new W.Picture(
+            new DocumentFormat.OpenXml.Vml.Shape(new DocumentFormat.OpenXml.Vml.ImageData
+            {
+                RelationshipId = headerPart.GetIdOfPart(headerImage)
+            })))));
+        headerPart.Header = header;
+
+        var footerPart = mainPart.AddNewPart<FooterPart>();
+        var footerImage = footerPart.AddImagePart(ImagePartType.Emf);
+        WritePart(footerImage, EmfBytes());
+        var footer = new W.Footer();
+        footer.AppendChild(new W.Paragraph(new W.Run(new W.Picture(
+            new DocumentFormat.OpenXml.Vml.Shape(new DocumentFormat.OpenXml.Vml.ImageData
+            {
+                RelationshipId = footerPart.GetIdOfPart(footerImage)
+            })))));
+        footerPart.Footer = footer;
+
+        var body = new W.Body();
+        body.AppendChild(TextParagraph("Body text."));
+        body.AppendChild(SectionProperties(mainPart.GetIdOfPart(headerPart), mainPart.GetIdOfPart(footerPart)));
+        SetBody(mainPart, body);
+        SetProperties(document, "Pict Furniture", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document whose first footnote reference is tracked-deleted and whose second,
+    ///     surviving footnote carries a tracked insertion.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>
+    ///     Synthetic. Used to prove the accepted view numbers the surviving footnote <c>[^1]</c>
+    ///     while the markup view numbers it <c>[^2]</c>, in both the markdown and the locations.
+    /// </remarks>
+    public static byte[] DocumentWithDeletedFootnoteReferenceBeforeSurvivor() => BuildDocx((document, mainPart) =>
+    {
+        var footnotesPart = mainPart.AddNewPart<FootnotesPart>();
+        var footnotes = new W.Footnotes();
+        var removed = new W.Footnote { Id = 1 };
+        removed.AppendChild(TextParagraph("removed note"));
+        var kept = new W.Footnote { Id = 2 };
+        var keptParagraph = new W.Paragraph();
+        keptParagraph.AppendChild(Run("kept note "));
+        keptParagraph.AppendChild(Revision<W.InsertedRun>("60", "Gina", "2026-07-01T00:00:00Z", Run("addition")));
+        kept.AppendChild(keptParagraph);
+        footnotes.AppendChild(removed);
+        footnotes.AppendChild(kept);
+        footnotesPart.Footnotes = footnotes;
+
+        var paragraph = new W.Paragraph();
+        paragraph.AppendChild(Run("Claim"));
+        paragraph.AppendChild(Revision<W.DeletedRun>("61", "Gina", "2026-07-01T00:00:00Z",
+            new W.Run(new W.FootnoteReference { Id = 1 })));
+        paragraph.AppendChild(new W.Run(new W.FootnoteReference { Id = 2 }));
+
+        var body = new W.Body();
+        body.AppendChild(paragraph);
+        SetBody(mainPart, body);
+        SetProperties(document, "Deleted Footnote Reference", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document with a table whose second cell is a tracked cell deletion holding text.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Synthetic. Used to prove the accepted view does not quote a deleted cell's text.</remarks>
+    public static byte[] DocumentWithDeletedCell() => BuildDocx((document, mainPart) =>
+    {
+        var deletedCell = Cell("confidential-old-value");
+        deletedCell.InsertAt(new W.TableCellProperties(new W.CellDeletion
+        {
+            Id = "70",
+            Author = "Hal",
+            Date = DateTime.Parse("2026-08-01T00:00:00Z", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal)
+        }), 0);
+
+        var row = new W.TableRow();
+        row.AppendChild(Cell("Keep"));
+        row.AppendChild(deletedCell);
+        var table = new W.Table();
+        table.AppendChild(row);
+
+        var body = new W.Body();
+        body.AppendChild(table);
+        SetBody(mainPart, body);
+        SetProperties(document, "Deleted Cell", "DocDown Test Suite");
     });
 
     /// <summary>

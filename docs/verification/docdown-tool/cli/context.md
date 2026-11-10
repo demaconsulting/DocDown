@@ -60,6 +60,13 @@ with no error reports success. Evidence for `DocDownTool-Context-ErrorFlag`.
 Proves each supported extraction flag projects onto its `ExtractionOptions` member. Evidence for
 `DocDownTool-Context-OptionMapping`.
 
+#### The accept-changes flag is mapped
+
+**Test**: `Context_BuildExtractionOptions_AcceptChangesFlag_MapsOntoOption`
+
+Proves `--accept-changes` sets `ExtractionOptions.AcceptTrackedChanges` and that the option is off
+when the flag is absent. Evidence for `DocDownTool-Context-OptionMapping`.
+
 #### Scratch-folder policy tokens are constrained
 
 **Tests**: `Context_BuildExtractionOptions_SupportedScratchPolicyToken_MapsToMode`,

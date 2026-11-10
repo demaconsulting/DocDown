@@ -35,9 +35,9 @@ per image.
 
 **Test**: `Output_SummaryContent_Written_ContainsMandatorySections`
 
-#### The manifest parses as schema version 3.1
+#### The manifest parses as schema version 3.2
 
-**Test**: `Output_ManifestContent_Written_ParsesWithSchemaVersionThreePointOne`
+**Test**: `Output_ManifestContent_Written_ParsesWithSchemaVersionThreePointTwo`
 
 #### Written text produces content.md
 

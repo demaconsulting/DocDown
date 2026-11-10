@@ -105,6 +105,19 @@ public sealed class ExtractionOptions
     public ScratchFolderMode ScratchFolder { get; set; } = ScratchFolderMode.CleanIfDocDownFolder;
 
     /// <summary>
+    ///     Gets or sets a value indicating whether tracked changes (revisions) should be shown in
+    ///     their accepted form instead of as markup. Defaults to <see langword="false"/>, which means
+    ///     automatic: a document that carries tracked changes is rendered with deletions and
+    ///     insertions marked, and a document without them is rendered unchanged.
+    /// </summary>
+    /// <remarks>
+    ///     When <see langword="true"/>, a backend that understands tracked changes renders the
+    ///     accepted view (insertions kept, deletions dropped) while still reporting how many tracked
+    ///     changes the document carries. Ignored by backends whose format has no tracked changes.
+    /// </remarks>
+    public bool AcceptTrackedChanges { get; set; }
+
+    /// <summary>
     ///     Creates a shallow member-wise copy of these options.
     /// </summary>
     /// <returns>A new <see cref="ExtractionOptions"/> instance with the same values.</returns>
@@ -121,7 +134,8 @@ public sealed class ExtractionOptions
         MaxImageDimensionPx = MaxImageDimensionPx,
         MaxImageBytes = MaxImageBytes,
         PageRenderDpi = PageRenderDpi,
-        ScratchFolder = ScratchFolder
+        ScratchFolder = ScratchFolder,
+        AcceptTrackedChanges = AcceptTrackedChanges
     };
 }
 

@@ -164,6 +164,7 @@ internal static class Program
         context.WriteLine("  --no-images                Do not extract embedded images");
         context.WriteLine("  --max-image-dim <#>        Skip images exceeding this pixel dimension");
         context.WriteLine("  --max-image-bytes <#>      Skip images exceeding this byte size");
+        context.WriteLine("  --accept-changes           Show Word tracked changes accepted instead of as markup");
         context.WriteLine("  --overwrite <clean|overwrite>  Scratch folder policy (default: clean)");
     }
 

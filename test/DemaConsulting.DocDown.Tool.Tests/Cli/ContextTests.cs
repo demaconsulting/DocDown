@@ -144,6 +144,19 @@ public class ContextTests
     }
 
     /// <summary>
+    ///     Proves <c>--accept-changes</c> maps onto the accepted-view option and is off by default.
+    /// </summary>
+    [Fact]
+    public void Context_BuildExtractionOptions_AcceptChangesFlag_MapsOntoOption()
+    {
+        using var defaultContext = Context.Create(["--input", "doc.docx", "--scratch", "out"]);
+        using var acceptContext = Context.Create(["--input", "doc.docx", "--scratch", "out", "--accept-changes"]);
+
+        Assert.False(defaultContext.BuildExtractionOptions().AcceptTrackedChanges);
+        Assert.True(acceptContext.BuildExtractionOptions().AcceptTrackedChanges);
+    }
+
+    /// <summary>
     ///     Proves the supported extraction flags project onto <see cref="ExtractionOptions"/>.
     /// </summary>
     [Fact]

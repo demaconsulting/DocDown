@@ -6,8 +6,9 @@
 
 `WordOpenXmlReader` reads a Word Open XML document into the backend-neutral `WordDocumentModel`.
 Its single responsibility is the SDK-to-model translation: headings from styles and outline level,
-ordered and bulleted lists from `numbering.xml`, genuine tables from `w:tbl`, images from blips,
-the accepted view of tracked changes, comments and footnotes, and the `## Document Control`
+ordered and bulleted lists from `numbering.xml`, genuine tables from `w:tbl`, images from blips and
+from legacy objects, tracked changes as redline markup (or the accepted view on request), comments and footnotes, and
+the `## Document Control`
 section built once from headers and footers with page-numbering furniture detected structurally by
 field instruction rather than by pattern-matching rendered text.
 
@@ -20,8 +21,18 @@ used per document. The important state is:
   start of `Read()` from `numbering.xml`.
 - **`_footnotesById`** and **`_footnoteBodies`** — the indexed footnote definitions and the
   referenced-in-body-order accumulator used to build the rendered footnote section.
-- **`_trackedChanges`** — the count of inserted and deleted tracked-change elements the walk
-  consumed while producing the accepted view.
+- **`_acceptTrackedChanges`** — the constructor option (`WordOpenXmlReader(bool acceptTrackedChanges)`,
+  default false) that selects the accepted view.
+- **`_markup`** — true for the current read when `WordRevisionScanner` found at least one tracked
+  change and the accepted view was not requested. It is the only switch for redline mode: it gates
+  the `{++ ++}` and `{-- --}` marking and the strike and underline convention, so a document with no
+  tracked changes renders exactly as it did before redline support existed.
+- **`_revision`** — the revision context of the walk (`None`, `Inserted`, `Deleted`), set by
+  `WalkRevision()` while inside `w:ins`, `w:del`, `w:moveTo`, or `w:moveFrom`. Each inline records
+  it, and `WordMarkdownWriter` groups consecutive same-revision inlines into one marker pair.
+- **`_carryInlines`**, **`_carryImages`**, and **`_carryPageBreak`** — the content of a paragraph whose
+  paragraph mark was deleted, carried into the next paragraph so the two merge, as they would when
+  the change is accepted. This applies in both modes.
 - **`_emptyTables`** — the count of authored tables that produced no visible cell content.
 - **`_currentHeading`** — the nearest preceding heading text, used as a low-confidence image naming
   hint when the document offered no descriptive text, and as the section half of a comment's
@@ -45,14 +56,22 @@ used per document. The important state is:
   control and comments. Returns a model carrying the body, document-control content, comments with
   their resolved location hints,
   footnotes, title and author from `docProps/core.xml`, producer page count from `docProps/app.xml`,
-  metadata, and the counts observed during the walk.
+  metadata, the counts observed during the walk, and the revisions `WordRevisionScanner` found
+  (the model's `Revisions`, `TrackedChangeCount`, and `RevisionsAccepted`).
 - **`AppendBodyElement()`** (private) — dispatches on the body element. A paragraph becomes a
   heading, list item, paragraph, image, or page break through `AppendParagraph()`; a table
   becomes a `Table` block through `BuildTable()`, or increments `_emptyTables` when no visible
   content survived.
 - **`AppendParagraph()`** and **`WalkContainer()`** (private) — the recursive workhorses. They
   collect styled text, hyperlinks, tracked changes, footnote references, page breaks, field
-  results, and drawings while preserving the accepted view of tracked changes. They also track
+  results, and drawings. In redline mode inserted and deleted runs are stamped with their revision
+  (deleted text is read from `w:delText` and deleted field instructions from `w:delInstrText`, which
+  is never rendered); a move is stamped as a deletion at `w:moveFrom` and an insertion at
+  `w:moveTo`. In the accepted view deleted content is dropped. Table rows and cells marked inserted
+  or deleted are stamped in redline mode and, when deleted, dropped in the accepted view.
+  Strike (`w:strike`), double strike (`w:dstrike`), and underline (`w:u`) are captured on the inline
+  only in redline mode and only outside a tracked change, and are rendered as `~~`, `<del>`, and
+  `<u>`. They also track
   comment anchors: `w:commentRangeStart` and `w:commentRangeEnd` open and close a bracketed range
   by `w:id`, and a `w:commentReference` inside a run marks a point anchor for its id. While a range
   is open, run text is appended to that comment's anchor snippet.
@@ -79,6 +98,14 @@ used per document. The important state is:
   or ink is counted in `CommentsWithUnreadableContent` rather than passing silently, because the
   reviewer did leave a remark this backend cannot render; a wholly empty comment is not counted,
   because nothing was lost and a note would assert a shortfall that did not occur.
+- **`CollectObjectImages()`** and **`CollectAlternateContentImages()`** (private) — extract the
+  preview picture of a `w:object` or `w:pict` (the `r:id` of its VML `v:imagedata`) and of an
+  `mc:AlternateContent` run child, taking the first choice or else the fallback so one picture is not
+  extracted twice. The branch is read as plain XML because the SDK leaves those elements untyped.
+  Only the preview image is extracted, typically EMF or WMF; the embedded OLE payload is not.
+  Relationships resolve against the containing part, so previews in headers, footers, and
+  footnotes are extracted like those in the body. These elements were previously ignored, which silently
+  dropped the picture.
 - **`CollectImage()`**, **`GatherImageTextCandidates()`**, and **`FindAdjacentCaption()`**
   (private) — choose each image's naming and description text. They prefer authored descriptions
   and titles, then caption text, then object names, then the nearest heading, and they
@@ -116,11 +143,13 @@ never swallows adverse conditions and never rewrites the document's content to h
 - **Core image-text selection types** — the shared image-text policy the reader feeds through
   `WordOpenXmlImageReader`.
 - **`WordOpenXmlImageReader`** — blip resolution and image-text selection.
+- **`WordRevisionScanner`** — finds the tracked changes before the walk decides whether to render markup.
 - **`WordDocumentModel` and the Markdown subsystem record types** — the model this unit populates.
 - **`WordExtractionException`** — the exception type it raises for encrypted or main-part-less packages.
 
 ### Callers
 
-`WordOpenXmlExtractor.ExtractAsync()` uses this unit for every extraction, and the same class's
+`WordOpenXmlExtractor.ExtractAsync()` uses this unit for every extraction, passing
+`ExtractionOptions.AcceptTrackedChanges`, and the same class's
 parse round-trip self-test case uses it against the embedded probe document. Tests construct
 additional instances directly through `InternalsVisibleTo`.

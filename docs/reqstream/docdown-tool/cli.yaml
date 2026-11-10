@@ -42,6 +42,7 @@ sections:
               - DocDownTool-Context-ScratchPolicy
             tests:
               - Context_BuildExtractionOptions_SupportedFlags_MapOntoOptions
+              - Context_BuildExtractionOptions_AcceptChangesFlag_MapsOntoOption
               - Context_BuildExtractionOptions_SupportedScratchPolicyToken_MapsToMode
 
           - id: DocDownTool-Cli-ArgumentValidation

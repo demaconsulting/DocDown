@@ -162,7 +162,7 @@ plus a sixth that appears only when the document carries reviewer comments:
   extracted, and Could not read. When an unreadable result is written to the layout, `summary.txt`
   also includes a Failure section. The Could not read section contains the recorded notes or the
   sentence `Nothing was left incomplete.`
-- **`manifest.json`** — the machine-readable twin of `summary.txt`. Its schema version is `3.1`.
+- **`manifest.json`** — the machine-readable twin of `summary.txt`. Its schema version is `3.2`.
   It carries a `notes` string array, a `reviewComments` array, and preserves the content inventory,
   image provenance, and
   metadata-facing details. It describes the document that was extracted and nothing else: there is
@@ -564,7 +564,67 @@ The Word backend extracts:
   through unchanged.
 - **Document metadata** — the title and author the document declares, and the page count the
   producer recorded.
-- **Tracked changes** — rendered in the accepted-revisions view, with a note that a view was chosen.
+- **Embedded objects** — the preview picture of an embedded object (`w:object`, `w:pict`, or a
+  picture inside `mc:AlternateContent`, typically an EMF or WMF) is extracted like any other image.
+  The embedded payload itself (for example an OLE-embedded workbook) is not extracted.
+- **Tracked changes** — shown as redline markup by default and always counted; see
+  [Tracked changes](#tracked-changes-redline) below.
+
+### Tracked changes (redline)
+
+When a Word document contains tracked changes, the backend shows them as markup so that nothing is
+silently flattened. This mode is chosen automatically; nothing needs to be requested.
+
+| Markup | Meaning |
+| ------ | ------- |
+| `{++text++}` | Inserted text |
+| `{--text--}` | Deleted text |
+| `~~text~~` | Text with manual strikethrough formatting |
+| `<del>text</del>` | Text with manual double-strikethrough formatting |
+| `<u>text</u>` | Text with manual underline formatting |
+
+A tracked move appears as a deletion at the source and an insertion at the destination. A deleted
+paragraph mark merges the two paragraphs, as it would when the change is accepted. Text that is
+itself inside a tracked insertion or deletion is not additionally marked for strike or underline,
+because the revision markers already say what happened. Strike and underline markup is written only
+for documents that contain tracked changes; a document without them produces exactly the same
+`content.md` as before. A change that only alters formatting is counted and listed in
+`review-comments.md`, but is not marked in `content.md`.
+
+Every Word extraction reports the tracked-change count in `summary.txt` and `manifest.json`: the
+number of changes, whether they are shown as markup or accepted, the number of distinct authors, and
+the date range. A document with none reports `0 tracked changes`. Each change is also listed with its
+author, date, and location in `review-comments.md`, which is then titled
+`Review comments and tracked changes`; in `manifest.json` these entries carry `"kind": "revision"`.
+
+The count includes revisions in headers, footers, and footnotes, and the detail text breaks it down,
+for example `count includes headers, footers, and footnotes: body 6, headers and footers 1, footnotes 1`.
+Each entry in `review-comments.md` has a location of the form
+`Body: Alpha > Beta, paragraph 2 — "context"`: a part label (`Body`; the `Header` or `Footer` label that
+`content.md` shows for that section, such as `Header` or `Footer (2)`; or `Footnote [^1]`, matching the
+marker in `content.md`), the heading path as
+rendered in `content.md` (or `before the first heading`), and the paragraph, table row and column, or
+`(heading)` position with a short context snippet. Table row numbers match the table as rendered in
+`content.md`: deleted rows count in the default markup view and are omitted from the numbering with
+`--accept-changes`. No page numbers are used, because markdown has
+none. The location follows the rendered view: a fully deleted heading is `(heading)` in markup mode.
+
+Known limitations of locations: the paragraph number can be off by one for a paragraph merged into a
+following heading, and it ignores images; and a footnote reference repeated in the body maps to the
+marker of its first occurrence.
+
+A Word table of contents is **deliberately omitted** from `content.md`: it repeats headings already
+rendered, so emitting it would add noise. It is never silent. `summary.txt` and `manifest.json` report
+`Contains 1 table of contents skipped (N entries not rendered in content.md; M tracked changes inside,
+listed in review-comments.md)`, and tracked changes inside it are still counted and listed in
+`review-comments.md` with a location such as `table of contents (omitted from content.md), entry 3`.
+The manifest change is additive (the `detail` field of content features), so the schema stays 3.2.
+
+To get the accepted view instead (inserted text kept, deleted text dropped), pass
+`--accept-changes` on the command line or set `ExtractionOptions.AcceptTrackedChanges` to `true`.
+The changes are still counted and reported, and the summary says they are shown accepted.
+
+### What is not provided
 
 It does **not** render pages to images. If pages are requested for a Word document, extraction still
 produces the layout and records a note that page rendering was not completed.
@@ -942,6 +1002,7 @@ The tool provides the standard DEMA command-line vocabulary plus DocDown's extra
 | `--no-images` | Do not extract embedded images |
 | `--max-image-dim <#>` | Skip images exceeding this pixel dimension |
 | `--max-image-bytes <#>` | Skip images exceeding this byte size |
+| `--accept-changes` | Word only: show the accepted view, not redline markup |
 | `--overwrite <clean\|overwrite>` | Scratch folder policy (`clean` is the default) |
 | `--list-backends` | List registered backends with formats and availability |
 | `--validate` | Run self-validation |

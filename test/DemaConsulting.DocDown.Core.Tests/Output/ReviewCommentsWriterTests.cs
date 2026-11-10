@@ -65,6 +65,26 @@ public class ReviewCommentsWriterTests
     }
 
     /// <summary>
+    ///     Proves tracked changes share the artifact, change its heading, and are counted separately
+    ///     from reviewer comments.
+    /// </summary>
+    [Fact]
+    public async Task ReviewCommentsWriter_WriteAsync_TrackedChanges_AreCountedSeparatelyAndRenamedHeading()
+    {
+        using var temp = new TempScratch();
+        var sink = NewSink(temp);
+        sink.ReportReviewComment(new DocumentComment("Ada", "A comment.", "Body"));
+        sink.ReportReviewComment(new DocumentComment("Bob", "Inserted: new text", "Body") { IsRevision = true });
+
+        var result = await ReviewCommentsWriter.WriteAsync(sink, Ct);
+        var document = await ReadReviewCommentsAsync(sink);
+
+        Assert.Equal(1, result.Count);
+        Assert.Equal(1, result.RevisionCount);
+        Assert.StartsWith("# Review comments and tracked changes\n\n", document, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves many reported comments are written in the order the extractor reported them.
     /// </summary>
     [Fact]
@@ -257,6 +277,21 @@ public class ReviewCommentsWriterTests
         Assert.Contains(
             "- **Ada** (Sheet1!B7): Please clarify the scope.\n", document, StringComparison.Ordinal);
         Assert.DoesNotContain("\\", document, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves the public record constructors keep their original signatures, so consumers compiled
+    ///     against an earlier version do not fail with <see cref="MissingMethodException"/>.
+    /// </summary>
+    [Fact]
+    public void ReviewCommentsWriter_PublicRecords_KeepOriginalConstructorSignatures()
+    {
+        // Arrange / Act / Assert: each original constructor shape is still public
+        Assert.NotNull(typeof(DocumentComment).GetConstructor([typeof(string), typeof(string), typeof(string)]));
+        Assert.NotNull(typeof(ReviewCommentsWriteResult).GetConstructor([typeof(string), typeof(int)]));
+        Assert.NotNull(typeof(ManifestContentFeature).GetConstructor([typeof(string), typeof(int)]));
+        Assert.NotNull(typeof(ManifestReviewComment).GetConstructor([typeof(string), typeof(string), typeof(string)]));
+        Assert.NotNull(typeof(ContentFeature).GetConstructor([typeof(string), typeof(int), typeof(string), typeof(bool)]));
     }
 
     /// <summary>

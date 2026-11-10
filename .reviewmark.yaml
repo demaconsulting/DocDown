@@ -1166,6 +1166,37 @@ reviews:
       - "docs/verification/docdown-office/word/open-xml/word-open-xml-reader.md"   # unit verification
       - "src/DemaConsulting.DocDown.Office/Word/OpenXml/WordOpenXmlReader.cs"      # unit source
       - "test/DemaConsulting.DocDown.Office.Tests/Word/OpenXml/WordOpenXmlReaderTests.cs"  # unit tests
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/OpenXml/WordTrackedChangesTests.cs"  # redline unit tests
+
+  # DocDownWord-OpenXml-WordRevisionScanner Unit Review (unit under subsystem, four context entries)
+  - id: DocDownWord-OpenXml-WordRevisionScanner
+    title: Review that DemaConsulting.DocDown.Word OpenXml WordRevisionScanner Implementation is Correct
+    context:
+      - "docs/design/docdown-office/word.md"
+      - "docs/reqstream/docdown-office/word.yaml"
+      - "docs/design/docdown-office/word/open-xml.md"
+      - "docs/reqstream/docdown-office/word/open-xml.yaml"
+    paths:
+      - "docs/reqstream/docdown-office/word/open-xml/word-revision-scanner.yaml"  # unit requirements
+      - "docs/design/docdown-office/word/open-xml/word-revision-scanner.md"       # unit design
+      - "docs/verification/docdown-office/word/open-xml/word-revision-scanner.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/Word/OpenXml/WordRevisionScanner.cs"   # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/OpenXml/WordTrackedChangesTests.cs"  # unit tests
+
+  # DocDownWord-OpenXml-WordTocDetector Unit Review (unit under subsystem, four context entries)
+  - id: DocDownWord-OpenXml-WordTocDetector
+    title: Review that DemaConsulting.DocDown.Word OpenXml WordTocDetector Implementation is Correct
+    context:
+      - "docs/design/docdown-office/word.md"
+      - "docs/reqstream/docdown-office/word.yaml"
+      - "docs/design/docdown-office/word/open-xml.md"
+      - "docs/reqstream/docdown-office/word/open-xml.yaml"
+    paths:
+      - "docs/reqstream/docdown-office/word/open-xml/word-toc-detector.yaml"  # unit requirements
+      - "docs/design/docdown-office/word/open-xml/word-toc-detector.md"       # unit design
+      - "docs/verification/docdown-office/word/open-xml/word-toc-detector.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/Word/OpenXml/WordTocDetector.cs"   # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/OpenXml/WordTrackedChangesTests.cs"  # unit tests
 
   # DocDownWord-OpenXml-WordOpenXmlImageReader Unit Review (unit under subsystem, four context entries)
   - id: DocDownWord-OpenXml-WordOpenXmlImageReader

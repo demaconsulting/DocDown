@@ -68,7 +68,7 @@ during preparation are refused, and `Overwrite` clears contents unconditionally.
 
 **Test**: `ScratchFolder_Prepare_PriorRunWithReviewComments_IsRecognizedAndCleaned`
 
-Proves a folder whose manifest declares the additive `3.1` schema is accepted as proven DocDown
+Proves a folder whose manifest declares the additive `3.1` schema (or the later `3.2`) is accepted as proven DocDown
 output and that the conditional `review-comments.md` it accounts for is cleaned rather than treated
 as an unaccounted stray.
 

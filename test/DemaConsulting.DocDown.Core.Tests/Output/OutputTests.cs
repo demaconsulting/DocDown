@@ -63,7 +63,7 @@ public class OutputTests
     ///     Proves the manifest parses and declares the new schema version.
     /// </summary>
     [Fact]
-    public async Task Output_ManifestContent_Written_ParsesWithSchemaVersionThreePointOne()
+    public async Task Output_ManifestContent_Written_ParsesWithSchemaVersionThreePointTwo()
     {
         // Arrange: a scratch folder and a simple text write
         using var temp = new TempScratch();
@@ -75,7 +75,7 @@ public class OutputTests
         var root = document.RootElement;
 
         // Assert: the manifest uses the reduced schema and omits the removed artifacts block
-        Assert.Equal("3.1", root.GetProperty("schemaVersion").GetString());
+        Assert.Equal("3.2", root.GetProperty("schemaVersion").GetString());
         Assert.True(root.TryGetProperty("status", out _));
         Assert.True(root.TryGetProperty("notes", out _));
         Assert.False(root.TryGetProperty("artifacts", out _));

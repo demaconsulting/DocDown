@@ -20,6 +20,11 @@ namespace DemaConsulting.DocDown.Word.Markdown;
 ///         Inline formatting is intentionally minimal (bold, italic, hyperlinks) and every literal
 ///         markdown-significant character in text is escaped, because the consumer is a language
 ///         model that gains nothing from richer formatting and is harmed by unescaped structure.
+///         For a document with tracked changes, runs are additionally wrapped in CriticMarkup-style
+///         markers — <c>{++inserted++}</c> and <c>{--deleted--}</c> — and manual strike and underline
+///         are shown as <c>~~text~~</c> and <c>&lt;u&gt;text&lt;/u&gt;</c> (double strike as
+///         <c>&lt;del&gt;text&lt;/del&gt;</c>). The marker braces are emitted verbatim, and because
+///         <c>{</c>, <c>+</c>, and <c>-</c> in ordinary text are escaped, document text can never forge one.
 ///         Stateless and thread-safe; a <see cref="StringBuilder"/> lives for one call.
 ///     </para>
 /// </remarks>
@@ -110,36 +115,85 @@ internal static class WordMarkdownWriter
         }
 
         var builder = new StringBuilder();
-        foreach (var inline in inlines)
+        var index = 0;
+        while (index < inlines.Count)
         {
-            if (inline.Raw)
+            var revision = inlines[index].Revision;
+            if (revision == WordInlineRevision.None)
             {
-                // A raw run is already markdown (a footnote marker or a hard break); never escape it
-                builder.Append(inline.Text);
+                builder.Append(RenderInline(inlines[index]));
+                index++;
                 continue;
             }
 
-            // A line break inside a run is a hard break in markdown: two trailing spaces, not a soft wrap
-            var text = Escape(inline.Text).Replace("\n", "  \n", StringComparison.Ordinal);
-            if (inline.Italic)
+            // Consecutive runs of the same revision kind share one marker pair, so a tracked edit
+            // reads as one change rather than as a marker per run
+            var group = new StringBuilder();
+            while (index < inlines.Count && inlines[index].Revision == revision)
             {
-                text = "*" + text + "*";
+                group.Append(RenderInline(inlines[index]));
+                index++;
             }
 
-            if (inline.Bold)
-            {
-                text = "**" + text + "**";
-            }
-
-            if (inline.Href is { Length: > 0 } href)
-            {
-                text = "[" + text + "](" + EscapeHref(href) + ")";
-            }
-
-            builder.Append(text);
+            builder.Append(revision == WordInlineRevision.Inserted ? "{++" : "{--")
+                .Append(group)
+                .Append(revision == WordInlineRevision.Inserted ? "++}" : "--}");
         }
 
         return builder.ToString();
+    }
+
+    /// <summary>
+    ///     Renders a single inline run to markdown.
+    /// </summary>
+    /// <param name="inline">The run to render.</param>
+    /// <returns>The rendered run, without any revision marker.</returns>
+    /// <remarks>
+    ///     A raw run is emitted verbatim so a footnote marker or a hard break survives escaping.
+    ///     Strike, double strike, and underline appear only when the reader set them, which it does
+    ///     for documents with tracked changes. Pure.
+    /// </remarks>
+    private static string RenderInline(WordInline inline)
+    {
+        if (inline.Raw)
+        {
+            // A raw run is already markdown (a footnote marker or a hard break); never escape it
+            return inline.Text;
+        }
+
+        // A line break inside a run is a hard break in markdown: two trailing spaces, not a soft wrap
+        var text = Escape(inline.Text).Replace("\n", "  \n", StringComparison.Ordinal);
+        if (inline.Italic)
+        {
+            text = "*" + text + "*";
+        }
+
+        if (inline.Bold)
+        {
+            text = "**" + text + "**";
+        }
+
+        if (inline.Strike)
+        {
+            text = "~~" + text + "~~";
+        }
+
+        if (inline.DoubleStrike)
+        {
+            text = "<del>" + text + "</del>";
+        }
+
+        if (inline.Underline)
+        {
+            text = "<u>" + text + "</u>";
+        }
+
+        if (inline.Href is { Length: > 0 } href)
+        {
+            text = "[" + text + "](" + EscapeHref(href) + ")";
+        }
+
+        return text;
     }
 
     /// <summary>

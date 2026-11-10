@@ -27,6 +27,17 @@ sections:
                   - ReviewCommentsWriter_WriteAsync_NoComments_WritesNoFileAndReportsNone
                   - ReviewCommentsWriter_WriteAsync_SingleComment_WritesDocumentWithEntry
 
+              - id: DocDownCore-Output-ReviewCommentsWriter-TrackedChanges
+                title: >-
+                  ReviewCommentsWriter shall record tracked changes in review-comments.md, counted
+                  separately from reviewer comments, under a heading that names both.
+                justification: |
+                  A tracked change is review activity, so it belongs with the review record rather
+                  than being silently flattened into content.md. Counting it apart from comments
+                  keeps the comment count honest, and the heading tells a reader the file holds both.
+                tests:
+                  - ReviewCommentsWriter_WriteAsync_TrackedChanges_AreCountedSeparatelyAndRenamedHeading
+
               - id: DocDownCore-Output-ReviewCommentsWriter-EntryFormat
                 title: >-
                   ReviewCommentsWriter shall render each comment as a single Markdown entry

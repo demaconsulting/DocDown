@@ -29,6 +29,8 @@ content is acceptable.
   `images/`, and `pages/` for every document
 - 🖼️ **Page Images** - Optional fully managed rendering of PDF pages, slides, and Visio pages
 - 💬 **Review Comments** - `review-comments.md` written when the document carries reviewer comments
+- 📝 **Tracked Changes** - Word redlines kept as `{++inserted++}` / `{--deleted--}` markup, with a count in the
+  summary (`--accept-changes` shows the accepted view)
 - 📝 **Honest Reporting** - Anything that could not be extracted is reported with a reason, never
   silently omitted
 - 🧩 **Pluggable Backends** - Explicit, reflection-free registration; write your own backend on the

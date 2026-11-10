@@ -59,6 +59,8 @@ includes:
   - docs/reqstream/docdown-office/word/open-xml.yaml
   - docs/reqstream/docdown-office/word/open-xml/word-open-xml-extractor.yaml
   - docs/reqstream/docdown-office/word/open-xml/word-open-xml-reader.yaml
+  - docs/reqstream/docdown-office/word/open-xml/word-revision-scanner.yaml
+  - docs/reqstream/docdown-office/word/open-xml/word-toc-detector.yaml
   - docs/reqstream/docdown-office/word/open-xml/word-open-xml-image-reader.yaml
   - docs/reqstream/docdown-office/excel.yaml
   - docs/reqstream/docdown-office/excel/platform-requirements.yaml

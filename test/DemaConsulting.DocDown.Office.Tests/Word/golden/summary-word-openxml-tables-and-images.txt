@@ -43,7 +43,7 @@ What WAS extracted
 ------------------
   content.md   289 characters of text.
                Contains 7 text blocks, 2 headings, 1 table, 2 list items, 1 inline image, 0 comments, 0 distinct
-               comment authors, and 0 footnotes.
+               comment authors, 0 footnotes, and 0 tracked changes.
   images/      1 embedded image, 240 bytes total.
                It carries no page number: the backend could not attribute it to a page.
                See manifest.json for the per-image inventory.

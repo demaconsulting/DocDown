@@ -15,7 +15,8 @@ namespace DemaConsulting.DocDown.Core;
 ///     </para>
 ///     <para>
 ///         The file is written <strong>only</strong> when the document actually carries reviewer
-///         comments. An empty <c>review-comments.md</c> would assert that a review exists and was
+///         comments or tracked changes (<see cref="DocumentComment.IsRevision"/> entries share the
+///         same flat entry shape). An empty <c>review-comments.md</c> would assert that a review exists and was
 ///         empty, which is a different claim from "this document was never commented on", so the
 ///         absence of comments is reported as the absence of the file (and, in <c>summary.txt</c>,
 ///         as an explicit "not present" line) rather than as an empty document.
@@ -48,6 +49,9 @@ public static class ReviewCommentsWriter
     ///     matching how <see cref="ContentWriter"/>'s index layout opens with a heading.
     /// </remarks>
     private const string Heading = "# Review comments";
+
+    /// <summary>The heading used when the file also records tracked changes.</summary>
+    private const string HeadingWithRevisions = "# Review comments and tracked changes";
 
     /// <summary>The author label used when a comment carries no author.</summary>
     /// <remarks>
@@ -87,8 +91,9 @@ public static class ReviewCommentsWriter
             return new ReviewCommentsWriteResult(null, 0);
         }
 
+        var revisionCount = comments.Count(comment => comment.IsRevision);
         var builder = new StringBuilder();
-        builder.Append(Heading).Append('\n').Append('\n');
+        builder.Append(revisionCount > 0 ? HeadingWithRevisions : Heading).Append('\n').Append('\n');
         foreach (var comment in comments)
         {
             AppendEntry(builder, comment);
@@ -96,7 +101,10 @@ public static class ReviewCommentsWriter
 
         await sink.Folder.WriteTextAsync(ReviewCommentsFileName, builder.ToString(), cancellationToken)
             .ConfigureAwait(false);
-        return new ReviewCommentsWriteResult(ReviewCommentsFileName, comments.Count);
+        return new ReviewCommentsWriteResult(ReviewCommentsFileName, comments.Count - revisionCount)
+        {
+            RevisionCount = revisionCount,
+        };
     }
 
     /// <summary>
@@ -215,15 +223,25 @@ public static class ReviewCommentsWriter
 ///     written.
 /// </param>
 /// <param name="Count">
-///     The number of reviewer comments written, which is zero exactly when
-///     <paramref name="Path"/> is <see langword="null"/>.
+///     The number of reviewer comments written (revisions excluded).
 /// </param>
 /// <remarks>
 ///     Returned to the engine so it can populate the result, and to <see cref="ManifestWriter"/> and
 ///     <see cref="SummaryWriter"/> so the manifest's accounted paths and the summary's layout block
 ///     reflect exactly what <see cref="ReviewCommentsWriter"/> produced. Immutable and thread-safe.
 /// </remarks>
-public sealed record ReviewCommentsWriteResult(string? Path, int Count);
+public sealed record ReviewCommentsWriteResult(string? Path, int Count)
+{
+    /// <summary>
+    ///     Gets the number of tracked-change entries written. <see cref="Path"/> is
+    ///     <see langword="null"/> exactly when both counts are zero.
+    /// </summary>
+    /// <remarks>
+    ///     An init-only property rather than a positional parameter so the original public
+    ///     constructor signature is preserved for binary compatibility.
+    /// </remarks>
+    public int RevisionCount { get; init; }
+}
 
 /// <summary>
 ///     One reviewer comment or annotation a document carries, as an extractor reports it.
@@ -253,4 +271,16 @@ public sealed record ReviewCommentsWriteResult(string? Path, int Count);
 ///     </para>
 ///     <para>Instances are immutable and thread-safe.</para>
 /// </remarks>
-public sealed record DocumentComment(string? Author, string Body, string Location);
+public sealed record DocumentComment(string? Author, string Body, string Location)
+{
+    /// <summary>
+    ///     Gets a value indicating whether the entry describes a tracked change (a revision) rather
+    ///     than a reviewer comment. Revisions share the review-comments artifact and its entry
+    ///     shape, but are counted and labeled separately. Defaults to <see langword="false"/>.
+    /// </summary>
+    /// <remarks>
+    ///     An init-only property rather than a positional parameter so the original public
+    ///     constructor signature is preserved for binary compatibility.
+    /// </remarks>
+    public bool IsRevision { get; init; }
+}

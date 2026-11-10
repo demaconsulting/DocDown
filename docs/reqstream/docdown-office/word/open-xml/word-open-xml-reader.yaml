@@ -2,14 +2,20 @@
 # Software Unit Requirements for WordOpenXmlReader
 #
 # WordOpenXmlReader turns the Open XML document into the backend-neutral model: it maps headings,
-# lists, tables, fields, comments, footnotes, and Document Control, renders the accepted tracked-
-# change view, detects the protected container, and surfaces the document metadata.
+# lists, tables, fields, comments, footnotes, and Document Control, renders tracked changes as
+# markup (or the accepted view on request), resolves legacy object pictures, detects the protected
+# container, and surfaces the document metadata.
 #
 # SUPERSEDED REQUIREMENT: DocDownWord-OpenXml-WordOpenXmlReader-OmitsFurnitureAsDiagnostic
 # required page-number-only header or footer content to be surfaced through diagnostic machinery.
 # It is superseded (not satisfied) by
 # DocDownWord-OpenXml-WordOpenXmlReader-OmitsPageFurnitureFromDocumentControl because the retained
 # behavior is omission from the rendered Document Control section without extra reporting.
+#
+# SUPERSEDED REQUIREMENT: DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedView
+# required tracked changes to be rendered only in the accepted view. It is superseded (not
+# satisfied) by DocDownWord-OpenXml-WordOpenXmlReader-RendersRedlineMarkup and
+# DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedViewOnRequest.
 #
 # SUPERSEDED REQUIREMENT: DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedRevisions
 # required commentary that the accepted tracked-change view was chosen. It is superseded (not
@@ -66,14 +72,72 @@ sections:
                 tests:
                   - WordOpenXmlReader_Read_IdenticalHeaderAcrossSections_EmittedOnce
 
-              - id: DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedView
-                title: WordOpenXmlReader shall render tracked changes in the accepted view.
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-RendersRedlineMarkup
+                title: >-
+                  WordOpenXmlReader shall, when a document has tracked changes, mark inserted text as
+                  {++text++} and deleted text as {--text--}, treat a move as a deletion at the source
+                  and an insertion at the destination, and honor a deleted paragraph mark by merging
+                  the paragraphs.
                 justification: |
-                  A document under revision still needs one coherent extracted text flow. Keeping
-                  insertions and dropping deletions yields that accepted-view reading.
+                  Redline markup keeps who-changed-what visible in plain text. Moves and paragraph-mark
+                  deletions must read the same way they would once accepted, and document text that
+                  looks like a marker is escaped so it cannot forge a change.
                 tests:
-                  - WordOpenXmlReader_Read_TrackedChanges_RendersAcceptedViewAndCountsChanges
+                  - WordOpenXmlReader_Read_Redline_RendersInsertionAndDeletionMarkup
+                  - WordOpenXmlReader_Read_Move_RendersDeletionThenInsertion
+                  - WordOpenXmlReader_Read_DeletedParagraphMark_MergesWithNextParagraph
+                  - WordOpenXmlReader_Read_RevisedTableRows_MarksRowsAndDropsDeletedOnAccept
+                  - WordOpenXmlReader_Read_FootnoteRevision_MarksFootnoteBody
+                  - WordOpenXmlReader_Read_DeletedField_RendersResultOnlyAsDeletion
+                  - WordMarkdownWriter_RenderInlines_ConsecutiveRevisionRuns_ShareOneMarkerPair
+                  - WordMarkdownWriter_RenderInlines_LiteralMarkerText_IsEscaped
 
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-RendersAcceptedViewOnRequest
+                title: >-
+                  WordOpenXmlReader shall render the accepted view of tracked changes, with no markup
+                  but the same count, when asked to, and shall render a document without tracked
+                  changes identically either way.
+                justification: |
+                  A reader who wants one coherent flow can ask for it without losing the count, and a
+                  clean document must never change because of an option that has nothing to act on.
+                tests:
+                  - WordOpenXmlReader_Read_TrackedChangesAcceptOption_RendersAcceptedViewAndCountsChanges
+                  - WordOpenXmlReader_Read_RedlineWithAcceptOption_RendersAcceptedViewAndKeepsCount
+                  - WordOpenXmlReader_Read_CleanDocument_IsIdenticalWithOrWithoutAcceptOption
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-MarksStrikeAndUnderlineInRedline
+                title: >-
+                  WordOpenXmlReader shall, only in redline mode, render manual strikethrough as
+                  ~~text~~, double strikethrough as <del>text</del>, and underline as <u>text</u>,
+                  except inside a tracked insertion or deletion.
+                justification: |
+                  Manual strike and underline are how many authors mark a redline by hand, so they
+                  carry meaning there. Inside a tracked change the revision markers already say what
+                  happened, and documents without tracked changes must stay byte-identical.
+                tests:
+                  - WordOpenXmlReader_Read_Redline_RendersStrikeAndUnderlineConvention
+                  - WordMarkdownWriter_RenderInlines_StrikeAndUnderline_WrapText
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-CountsFormattingOnlyChanges
+                title: >-
+                  WordOpenXmlReader shall count a formatting-only tracked change without marking the
+                  content.
+                justification: |
+                  A property change alters no words, so there is nothing honest to mark in the text,
+                  but it is still a tracked change and must be counted and listed.
+                tests:
+                  - WordOpenXmlReader_Read_FormattingChangeOnly_CountsButDoesNotMarkContent
+
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-ResolvesLegacyObjectImages
+                title: >-
+                  WordOpenXmlReader shall extract the preview picture of a w:object, a w:pict, and an
+                  mc:AlternateContent picture, taking one branch of each alternate.
+                justification: |
+                  These pictures are visible in the document but are not DrawingML drawings, so
+                  without this they were silently dropped. Taking one branch keeps a picture offered
+                  in both branches from being extracted twice.
+                tests:
+                  - WordOpenXmlReader_Read_LegacyObjects_CollectsEachPreviewImage
               - id: DocDownWord-OpenXml-WordOpenXmlReader-DetectsPasswordProtected
                 title: >-
                   WordOpenXmlReader shall detect an encrypted document by its container signature and

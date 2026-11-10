@@ -16,7 +16,7 @@ convenience wrapper.
 - **`MaxComponentLength`** (`40`) — maximum length of one slugged component.
 - **`MaxTotalPathLength`** (`240`) — maximum length of any allocated absolute path.
 - **`ReservedNames`** — case-insensitive reserved device-name stems.
-- **`SupportedManifestSchemas`** (`["3.0", "3.1"]`) — manifest schema versions accepted by the reuse
+- **`SupportedManifestSchemas`** (`["3.0", "3.1", "3.2"]`) — manifest schema versions accepted by the reuse
   guard. The guard is itself a manifest consumer, and the schema policy raises the minor version only
   for additive changes, so every version this library has written stays recognizable; pinning to a
   single exact version would strand folders DocDown demonstrably produced.
