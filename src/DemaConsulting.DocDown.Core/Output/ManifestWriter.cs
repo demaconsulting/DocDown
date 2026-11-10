@@ -173,7 +173,7 @@ public static class ManifestWriter
         var mapped = new List<ManifestContentFeature>(features.Count);
         foreach (var feature in features)
         {
-            mapped.Add(new ManifestContentFeature(feature.Label, feature.Count, feature.Detail));
+            mapped.Add(new ManifestContentFeature(feature.Label, feature.Count) { Detail = feature.Detail });
         }
 
         return mapped;
@@ -246,8 +246,10 @@ public static class ManifestWriter
         var list = new List<ManifestReviewComment>(comments.Count);
         foreach (var comment in comments)
         {
-            list.Add(new ManifestReviewComment(
-                comment.Author, comment.Body, comment.Location, comment.IsRevision ? "revision" : "comment"));
+            list.Add(new ManifestReviewComment(comment.Author, comment.Body, comment.Location)
+            {
+                Kind = comment.IsRevision ? "revision" : "comment",
+            });
         }
 
         return list;

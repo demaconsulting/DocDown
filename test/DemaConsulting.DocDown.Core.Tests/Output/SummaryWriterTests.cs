@@ -339,7 +339,8 @@ public class SummaryWriterTests
             {
                 await sink.WriteContentAsync("# Doc\n\nBody.\n", CancellationToken.None);
                 sink.ReportContentFeature(new ContentFeature(
-                    "tracked changes", 3, "tracked change", LookedFor: true, Detail: "shown as markup; 2 distinct authors"));
+                    "tracked changes", 3, "tracked change", LookedFor: true)
+                { Detail = "shown as markup; 2 distinct authors" });
             },
             ExtractionOutcome.Produced,
             SuccessExtractor(),

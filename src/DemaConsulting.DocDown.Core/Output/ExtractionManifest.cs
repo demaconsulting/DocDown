@@ -138,18 +138,25 @@ public sealed record ManifestDocument(string? Title, string? Author, int? PageCo
 /// </summary>
 /// <param name="Label">The plural noun phrase naming the feature (for example <c>comments</c>).</param>
 /// <param name="Count">How many of them the extracted content carries; zero only for a feature the backend declared it looked for.</param>
-/// <param name="Detail">
-///     An optional short qualifier for the count (for example the authors and date range of tracked
-///     changes), omitted from the JSON when absent. Added in schema 3.2.
-/// </param>
 /// <remarks>
 ///     The machine-readable twin of one line of the summary's content outline, so a consumer that
 ///     reads only the manifest learns the same structure — including, for example, that a draft
 ///     carries dozens of author-attributed reviewer comments — without parsing the markdown.
 ///     Immutable and thread-safe.
 /// </remarks>
-public sealed record ManifestContentFeature(
-    string Label, int Count, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Detail = null);
+public sealed record ManifestContentFeature(string Label, int Count)
+{
+    /// <summary>
+    ///     Gets an optional short qualifier for the count (for example the authors and date range of
+    ///     tracked changes), omitted from the JSON when absent. Added in schema 3.2.
+    /// </summary>
+    /// <remarks>
+    ///     An init-only property rather than a positional parameter so the original public
+    ///     constructor signature is preserved for binary compatibility.
+    /// </remarks>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Detail { get; init; }
+}
 
 /// <summary>
 ///     An extracted image as recorded in a manifest.
@@ -249,16 +256,23 @@ public sealed record ManifestPart(string Path, string Kind, int Ordinal, string?
 ///     The human-readable display string naming where in the document the comment sits (for example
 ///     <c>Sheet1!B7</c> or <c>Page 3</c>), composed by the backend that knows the format.
 /// </param>
-/// <param name="Kind">
-///     <c>comment</c> for a reviewer comment or <c>revision</c> for a tracked change. Added in
-///     schema 3.2; a consumer pinned to 3.1 may ignore it.
-/// </param>
 /// <remarks>
 ///     The machine-readable twin of one entry of <c>review-comments.md</c>, so a consumer that reads
 ///     only the manifest learns the same review — who said what, and where — without parsing the
 ///     markdown. Immutable and thread-safe.
 /// </remarks>
-public sealed record ManifestReviewComment(string? Author, string Body, string Location, string Kind = "comment");
+public sealed record ManifestReviewComment(string? Author, string Body, string Location)
+{
+    /// <summary>
+    ///     Gets <c>comment</c> for a reviewer comment or <c>revision</c> for a tracked change. Added
+    ///     in schema 3.2; a consumer pinned to 3.1 may ignore it.
+    /// </summary>
+    /// <remarks>
+    ///     An init-only property rather than a positional parameter so the original public
+    ///     constructor signature is preserved for binary compatibility.
+    /// </remarks>
+    public string Kind { get; init; } = "comment";
+}
 
 /// <summary>
 ///     A plain-language failure as recorded in a manifest.

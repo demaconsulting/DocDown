@@ -92,10 +92,11 @@ public class ManifestWriterTests
         {
             await sink.WriteContentAsync("# Document\n\nWith tracked changes.\n", CancellationToken.None);
             sink.ReportContentFeature(new ContentFeature(
-                "tracked changes", 2, "tracked change", LookedFor: true, Detail: "shown as markup; 1 distinct author"));
+                "tracked changes", 2, "tracked change", LookedFor: true)
+            { Detail = "shown as markup; 1 distinct author" });
             sink.ReportContentFeature(new ContentFeature("headings", 1));
             sink.ReportReviewComment(new DocumentComment("Ada", "A comment.", "Page 1"));
-            sink.ReportReviewComment(new DocumentComment("Bob", "Inserted: text", "Body", IsRevision: true));
+            sink.ReportReviewComment(new DocumentComment("Bob", "Inserted: text", "Body") { IsRevision = true });
         });
 
         using var document = await ParseManifestAsync(folder);

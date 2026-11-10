@@ -623,11 +623,6 @@ public sealed class ExtractionSink : IExtractionSink
 ///     document, so a count of zero is itself a finding and must be reported; <see langword="false"/>
 ///     (the default) for a feature that may simply not apply, whose zero is dropped as noise.
 /// </param>
-/// <param name="Detail">
-///     An optional short qualifier rendered in parentheses after the count (for example the
-///     date range and authors of tracked changes), or <see langword="null"/> for none. When the
-///     same label is reported more than once, the first non-null detail wins.
-/// </param>
 /// <remarks>
 ///     <para>
 ///         The summary's bare character count tells a reader how <em>much</em> text
@@ -651,8 +646,19 @@ public sealed class ExtractionSink : IExtractionSink
 ///     </para>
 /// </remarks>
 public sealed record ContentFeature(
-    string Label, int Count, string? SingularLabel = null, bool LookedFor = false, string? Detail = null)
+    string Label, int Count, string? SingularLabel = null, bool LookedFor = false)
 {
+    /// <summary>
+    ///     Gets an optional short qualifier rendered in parentheses after the count (for example the
+    ///     date range and authors of tracked changes), or <see langword="null"/> for none.
+    /// </summary>
+    /// <remarks>
+    ///     When the same label is reported more than once, the first non-null detail wins. Declared
+    ///     as an init-only property rather than a positional parameter so the original public
+    ///     constructor signature is preserved for binary compatibility.
+    /// </remarks>
+    public string? Detail { get; init; }
+
     /// <summary>
     ///     Gets the label agreeing in number with <see cref="Count"/>.
     /// </summary>

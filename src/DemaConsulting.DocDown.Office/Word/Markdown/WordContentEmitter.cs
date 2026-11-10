@@ -190,8 +190,10 @@ internal static class WordContentEmitter
         // Always stated for a Word document, including a deliberate zero, so a tracked change is
         // never silently flattened and a clean document is positively reported as having none
         sink.ReportContentFeature(new ContentFeature(
-            "tracked changes", model.RevisionList.Count, "tracked change", LookedFor: true,
-            Detail: DescribeRevisions(model)));
+            "tracked changes", model.RevisionList.Count, "tracked change", LookedFor: true)
+        {
+            Detail = DescribeRevisions(model),
+        });
 
         // A table of contents is omitted from content.md on purpose; say so and say what it held,
         // so neither the omission nor a tracked change inside it is silent
@@ -199,11 +201,13 @@ internal static class WordContentEmitter
         {
             var inToc = model.RevisionList.Count(revision => revision.InToc);
             sink.ReportContentFeature(new ContentFeature(
-                "tables of contents skipped", model.TocRegionsSkipped, "table of contents skipped",
-                Detail: $"{model.TocParagraphsSkipped.ToString(CultureInfo.InvariantCulture)} entries not rendered in content.md; "
+                "tables of contents skipped", model.TocRegionsSkipped, "table of contents skipped")
+            {
+                Detail = $"{model.TocParagraphsSkipped.ToString(CultureInfo.InvariantCulture)} entries not rendered in content.md; "
                     + $"{inToc.ToString(CultureInfo.InvariantCulture)} tracked "
                     + (inToc == 1 ? "change" : "changes")
-                    + " inside, listed in review-comments.md"));
+                    + " inside, listed in review-comments.md",
+            });
         }
     }
 
@@ -294,7 +298,7 @@ internal static class WordContentEmitter
             var body = revision.Snippet is { Length: > 0 } snippet
                 ? $"{label} ({date}): \"{snippet}\""
                 : $"{label} ({date})";
-            sink.ReportReviewComment(new DocumentComment(revision.Author, body, revision.Location, IsRevision: true));
+            sink.ReportReviewComment(new DocumentComment(revision.Author, body, revision.Location) { IsRevision = true });
         }
     }
 

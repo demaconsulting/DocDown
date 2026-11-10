@@ -101,7 +101,10 @@ public static class ReviewCommentsWriter
 
         await sink.Folder.WriteTextAsync(ReviewCommentsFileName, builder.ToString(), cancellationToken)
             .ConfigureAwait(false);
-        return new ReviewCommentsWriteResult(ReviewCommentsFileName, comments.Count - revisionCount, revisionCount);
+        return new ReviewCommentsWriteResult(ReviewCommentsFileName, comments.Count - revisionCount)
+        {
+            RevisionCount = revisionCount,
+        };
     }
 
     /// <summary>
@@ -222,16 +225,23 @@ public static class ReviewCommentsWriter
 /// <param name="Count">
 ///     The number of reviewer comments written (revisions excluded).
 /// </param>
-/// <param name="RevisionCount">
-///     The number of tracked-change entries written. <paramref name="Path"/> is
-///     <see langword="null"/> exactly when both counts are zero.
-/// </param>
 /// <remarks>
 ///     Returned to the engine so it can populate the result, and to <see cref="ManifestWriter"/> and
 ///     <see cref="SummaryWriter"/> so the manifest's accounted paths and the summary's layout block
 ///     reflect exactly what <see cref="ReviewCommentsWriter"/> produced. Immutable and thread-safe.
 /// </remarks>
-public sealed record ReviewCommentsWriteResult(string? Path, int Count, int RevisionCount = 0);
+public sealed record ReviewCommentsWriteResult(string? Path, int Count)
+{
+    /// <summary>
+    ///     Gets the number of tracked-change entries written. <see cref="Path"/> is
+    ///     <see langword="null"/> exactly when both counts are zero.
+    /// </summary>
+    /// <remarks>
+    ///     An init-only property rather than a positional parameter so the original public
+    ///     constructor signature is preserved for binary compatibility.
+    /// </remarks>
+    public int RevisionCount { get; init; }
+}
 
 /// <summary>
 ///     One reviewer comment or annotation a document carries, as an extractor reports it.
@@ -244,11 +254,6 @@ public sealed record ReviewCommentsWriteResult(string? Path, int Count, int Revi
 /// <param name="Location">
 ///     A single, precomputed, human-readable display string naming where in the document the comment
 ///     sits. Must not be null or blank.
-/// </param>
-/// <param name="IsRevision">
-///     <see langword="true"/> when the entry describes a tracked change (a revision) rather than a
-///     reviewer comment. Revisions share the review-comments artifact and its entry shape, but are
-///     counted and labeled separately. Defaults to <see langword="false"/>.
 /// </param>
 /// <remarks>
 ///     <para>
@@ -266,4 +271,16 @@ public sealed record ReviewCommentsWriteResult(string? Path, int Count, int Revi
 ///     </para>
 ///     <para>Instances are immutable and thread-safe.</para>
 /// </remarks>
-public sealed record DocumentComment(string? Author, string Body, string Location, bool IsRevision = false);
+public sealed record DocumentComment(string? Author, string Body, string Location)
+{
+    /// <summary>
+    ///     Gets a value indicating whether the entry describes a tracked change (a revision) rather
+    ///     than a reviewer comment. Revisions share the review-comments artifact and its entry
+    ///     shape, but are counted and labeled separately. Defaults to <see langword="false"/>.
+    /// </summary>
+    /// <remarks>
+    ///     An init-only property rather than a positional parameter so the original public
+    ///     constructor signature is preserved for binary compatibility.
+    /// </remarks>
+    public bool IsRevision { get; init; }
+}
