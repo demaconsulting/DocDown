@@ -590,7 +590,7 @@ internal sealed class WordOpenXmlReader
                     CollectObjectImages(embeddedObject, part, images);
                     break;
 
-                case W.Picture picture when part is MainDocumentPart:
+                case W.Picture picture:
                     CollectObjectImages(picture, part, images);
                     break;
 
@@ -669,7 +669,7 @@ internal sealed class WordOpenXmlReader
             var attribute = element.Name.LocalName switch
             {
                 "blip" => element.Attribute(System.Xml.Linq.XName.Get("embed", relationships)),
-                "imagedata" when part is MainDocumentPart => element.Attribute(System.Xml.Linq.XName.Get("id", relationships)),
+                "imagedata" => element.Attribute(System.Xml.Linq.XName.Get("id", relationships)),
                 _ => null
             };
             if (attribute is null)
@@ -1044,6 +1044,9 @@ internal sealed class WordOpenXmlReader
         var pageBreak = false;
         var hadFurniture = false;
 
+        // Relationships inside a footnote body (for example a picture) belong to the footnotes part
+        var footnotePart = (part as MainDocumentPart)?.FootnotesPart ?? part;
+
         // The footnote body is its own context: the marker's revision state must not leak into it
         var outerRevision = _revision;
         _revision = WordInlineRevision.None;
@@ -1051,7 +1054,7 @@ internal sealed class WordOpenXmlReader
         {
             foreach (var paragraph in footnote.Elements<W.Paragraph>())
             {
-                WalkContainer(paragraph, part, new Stack<FieldFrame>(), bodyInlines, images, stripFurniture: false,
+                WalkContainer(paragraph, footnotePart, new Stack<FieldFrame>(), bodyInlines, images, stripFurniture: false,
                     ref pageBreak, ref hadFurniture);
             }
         }

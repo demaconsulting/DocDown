@@ -672,6 +672,106 @@ public static partial class DocxFixtures
     });
 
     /// <summary>
+    ///     Builds a document whose header and footer each carry a <c>w:pict</c> preview whose image
+    ///     relationship lives in that header or footer part, not in the main part.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Synthetic. Used to prove legacy pictures are resolved against their containing part.</remarks>
+    public static byte[] DocumentWithHeaderAndFooterPictPreviews() => BuildDocx((document, mainPart) =>
+    {
+        var headerPart = mainPart.AddNewPart<HeaderPart>();
+        var headerImage = headerPart.AddImagePart(ImagePartType.Png);
+        WritePart(headerImage, PngBytes());
+        var header = new W.Header();
+        header.AppendChild(new W.Paragraph(new W.Run(new W.Picture(
+            new DocumentFormat.OpenXml.Vml.Shape(new DocumentFormat.OpenXml.Vml.ImageData
+            {
+                RelationshipId = headerPart.GetIdOfPart(headerImage)
+            })))));
+        headerPart.Header = header;
+
+        var footerPart = mainPart.AddNewPart<FooterPart>();
+        var footerImage = footerPart.AddImagePart(ImagePartType.Emf);
+        WritePart(footerImage, EmfBytes());
+        var footer = new W.Footer();
+        footer.AppendChild(new W.Paragraph(new W.Run(new W.Picture(
+            new DocumentFormat.OpenXml.Vml.Shape(new DocumentFormat.OpenXml.Vml.ImageData
+            {
+                RelationshipId = footerPart.GetIdOfPart(footerImage)
+            })))));
+        footerPart.Footer = footer;
+
+        var body = new W.Body();
+        body.AppendChild(TextParagraph("Body text."));
+        body.AppendChild(SectionProperties(mainPart.GetIdOfPart(headerPart), mainPart.GetIdOfPart(footerPart)));
+        SetBody(mainPart, body);
+        SetProperties(document, "Pict Furniture", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document whose first footnote reference is tracked-deleted and whose second,
+    ///     surviving footnote carries a tracked insertion.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>
+    ///     Synthetic. Used to prove the accepted view numbers the surviving footnote <c>[^1]</c>
+    ///     while the markup view numbers it <c>[^2]</c>, in both the markdown and the locations.
+    /// </remarks>
+    public static byte[] DocumentWithDeletedFootnoteReferenceBeforeSurvivor() => BuildDocx((document, mainPart) =>
+    {
+        var footnotesPart = mainPart.AddNewPart<FootnotesPart>();
+        var footnotes = new W.Footnotes();
+        var removed = new W.Footnote { Id = 1 };
+        removed.AppendChild(TextParagraph("removed note"));
+        var kept = new W.Footnote { Id = 2 };
+        var keptParagraph = new W.Paragraph();
+        keptParagraph.AppendChild(Run("kept note "));
+        keptParagraph.AppendChild(Revision<W.InsertedRun>("60", "Gina", "2026-07-01T00:00:00Z", Run("addition")));
+        kept.AppendChild(keptParagraph);
+        footnotes.AppendChild(removed);
+        footnotes.AppendChild(kept);
+        footnotesPart.Footnotes = footnotes;
+
+        var paragraph = new W.Paragraph();
+        paragraph.AppendChild(Run("Claim"));
+        paragraph.AppendChild(Revision<W.DeletedRun>("61", "Gina", "2026-07-01T00:00:00Z",
+            new W.Run(new W.FootnoteReference { Id = 1 })));
+        paragraph.AppendChild(new W.Run(new W.FootnoteReference { Id = 2 }));
+
+        var body = new W.Body();
+        body.AppendChild(paragraph);
+        SetBody(mainPart, body);
+        SetProperties(document, "Deleted Footnote Reference", "DocDown Test Suite");
+    });
+
+    /// <summary>
+    ///     Builds a document with a table whose second cell is a tracked cell deletion holding text.
+    /// </summary>
+    /// <returns>The document bytes.</returns>
+    /// <remarks>Synthetic. Used to prove the accepted view does not quote a deleted cell's text.</remarks>
+    public static byte[] DocumentWithDeletedCell() => BuildDocx((document, mainPart) =>
+    {
+        var deletedCell = Cell("confidential-old-value");
+        deletedCell.InsertAt(new W.TableCellProperties(new W.CellDeletion
+        {
+            Id = "70",
+            Author = "Hal",
+            Date = DateTime.Parse("2026-08-01T00:00:00Z", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal)
+        }), 0);
+
+        var row = new W.TableRow();
+        row.AppendChild(Cell("Keep"));
+        row.AppendChild(deletedCell);
+        var table = new W.Table();
+        table.AppendChild(row);
+
+        var body = new W.Body();
+        body.AppendChild(table);
+        SetBody(mainPart, body);
+        SetProperties(document, "Deleted Cell", "DocDown Test Suite");
+    });
+
+    /// <summary>
     ///     Builds a document carrying a single author-attributed comment anchored, with real range
     ///     markers, over a specific run beneath a specific heading.
     /// </summary>

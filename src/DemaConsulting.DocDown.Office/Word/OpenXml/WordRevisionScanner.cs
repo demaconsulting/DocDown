@@ -73,7 +73,7 @@ internal static class WordRevisionScanner
     {
         ArgumentNullException.ThrowIfNull(mainPart);
         var tocInfo = toc ?? WordTocDetector.Find(mainPart);
-        var context = new ScanContext(markup, tocInfo, FootnoteOrdinals(mainPart, tocInfo));
+        var context = new ScanContext(markup, tocInfo, FootnoteOrdinals(mainPart, tocInfo, markup));
 
         if (mainPart.Document?.Body is { } body)
         {
@@ -150,9 +150,13 @@ internal static class WordRevisionScanner
     /// </summary>
     /// <param name="mainPart">The main document part.</param>
     /// <param name="toc">The table-of-contents paragraphs, whose references are not rendered.</param>
+    /// <param name="markup">
+    ///     Whether the markup view is scanned. In the accepted view the reader drops deleted and
+    ///     moved-from runs, so references inside them are not rendered and do not take a number.
+    /// </param>
     /// <returns>The map from footnote id to the number in its <c>[^n]</c> marker.</returns>
     /// <remarks>Pure over the package.</remarks>
-    private static Dictionary<long, int> FootnoteOrdinals(MainDocumentPart mainPart, WordTocInfo toc)
+    private static Dictionary<long, int> FootnoteOrdinals(MainDocumentPart mainPart, WordTocInfo toc, bool markup)
     {
         var ordinals = new Dictionary<long, int>();
         var known = mainPart.FootnotesPart?.Footnotes?.Elements<W.Footnote>()
@@ -169,6 +173,11 @@ internal static class WordRevisionScanner
         {
             var id = reference.Id?.Value;
             if (id is null || !known.Contains(id.Value) || reference.Ancestors<W.Paragraph>().Any(toc.Paragraphs.Contains))
+            {
+                continue;
+            }
+
+            if (!markup && reference.Ancestors().Any(ancestor => ancestor is W.DeletedRun or W.MoveFromRun))
             {
                 continue;
             }
@@ -377,7 +386,10 @@ internal static class WordRevisionScanner
                 {
                     var columnNumber = row.Elements<W.TableCell>().ToList().IndexOf(cell) + 1;
                     position += $", column {columnNumber.ToString(CultureInfo.InvariantCulture)}";
-                    quoted = TextOf(cell, context.Markup, IsFurnitureRoot(state));
+                    // In the accepted view a deleted cell renders empty, so its deleted text is not quoted
+                    quoted = !context.Markup && cell.TableCellProperties?.GetFirstChild<W.CellDeletion>() is not null
+                        ? null
+                        : TextOf(cell, context.Markup, IsFurnitureRoot(state));
                 }
 
                 location = Compose(state, position, quoted);

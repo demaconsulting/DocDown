@@ -505,6 +505,61 @@ public class WordTrackedChangesTests
     }
 
     /// <summary>
+    ///     Proves a <c>w:pict</c> preview in a header or footer is resolved against that part and kept.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_HeaderAndFooterPict_CollectsPreviewImages()
+    {
+        var model = Read(DocxFixtures.DocumentWithHeaderAndFooterPictPreviews());
+
+        var images = model.DocumentControl.SelectMany(section => section.Blocks)
+            .Where(block => block.Kind == WordBlockKind.Image).Select(block => block.Image!).ToList();
+        Assert.Equal(2, images.Count);
+        Assert.Contains(images, image => image.MediaType.Contains("emf", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    ///     Proves a deleted footnote reference takes no number in the accepted view, and the
+    ///     locations agree with the markers content.md uses in each view.
+    /// </summary>
+    [Fact]
+    public void WordRevisionScanner_Scan_DeletedFootnoteReference_NumbersFootnotesAsRendered()
+    {
+        var bytes = DocxFixtures.DocumentWithDeletedFootnoteReferenceBeforeSurvivor();
+
+        var accepted = Read(bytes, accept: true);
+        var acceptedMarkdown = WordMarkdownWriter.Write(accepted, new Dictionary<string, string>());
+        Assert.Contains("Claim[^1]", acceptedMarkdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("[^2]", acceptedMarkdown, StringComparison.Ordinal);
+        Assert.Contains(accepted.RevisionList, revision => revision.Location.StartsWith(
+            "Footnote [^1]:", StringComparison.Ordinal));
+
+        var markup = Read(bytes);
+        var markupMarkdown = WordMarkdownWriter.Write(markup, new Dictionary<string, string>());
+        Assert.Contains("[^2]", markupMarkdown, StringComparison.Ordinal);
+        Assert.Contains(markup.RevisionList, revision => revision.Location.StartsWith(
+            "Footnote [^2]:", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    ///     Proves the accepted view keeps a deleted cell's column position but does not quote its
+    ///     deleted text, while markup mode still quotes it.
+    /// </summary>
+    [Fact]
+    public void WordRevisionScanner_Scan_DeletedCell_AcceptedViewDoesNotQuoteDeletedText()
+    {
+        var bytes = DocxFixtures.DocumentWithDeletedCell();
+
+        var accepted = Read(bytes, accept: true).RevisionList;
+        var cellDeletion = Assert.Single(accepted);
+        Assert.Contains("column 2", cellDeletion.Location, StringComparison.Ordinal);
+        Assert.DoesNotContain("confidential-old-value", cellDeletion.Location, StringComparison.Ordinal);
+
+        var markup = Read(bytes).RevisionList;
+        Assert.Contains("confidential-old-value", Assert.Single(markup).Location, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves consecutive runs of one revision kind share one marker pair and that raw and plain
     ///     runs are rendered unchanged.
     /// </summary>

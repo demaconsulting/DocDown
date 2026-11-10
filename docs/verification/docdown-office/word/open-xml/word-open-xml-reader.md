@@ -149,6 +149,14 @@ one image, with the EMF media type preserved. Evidence for
 `DocDownWord-OpenXml-WordOpenXmlReader-ResolvesLegacyObjectImages` and
 `DocDownWord-EmbeddedObjectImages`.
 
+#### Header and footer legacy pictures are extracted
+
+**Test**: `WordOpenXmlReader_Read_HeaderAndFooterPict_CollectsPreviewImages`
+
+Proves a `w:pict` preview whose relationship lives in a header or footer part is resolved against
+that part and yields an image. Evidence for
+`DocDownWord-OpenXml-WordOpenXmlReader-ResolvesLegacyObjectImages`.
+
 #### A password-protected document raises a Word extraction exception
 
 **Test**: `WordOpenXmlReader_Read_PasswordProtected_ThrowsWordExtractionException`

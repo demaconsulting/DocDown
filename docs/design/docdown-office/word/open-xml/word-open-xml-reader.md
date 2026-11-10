@@ -102,8 +102,9 @@ used per document. The important state is:
   preview picture of a `w:object` or `w:pict` (the `r:id` of its VML `v:imagedata`) and of an
   `mc:AlternateContent` run child, taking the first choice or else the fallback so one picture is not
   extracted twice. The branch is read as plain XML because the SDK leaves those elements untyped.
-  Only the preview image is extracted, typically EMF or WMF; the embedded OLE payload is not, and
-  `w:pict` is read in the main part only. These elements were previously ignored, which silently
+  Only the preview image is extracted, typically EMF or WMF; the embedded OLE payload is not.
+  Relationships resolve against the containing part, so previews in headers, footers, and
+  footnotes are extracted like those in the body. These elements were previously ignored, which silently
   dropped the picture.
 - **`CollectImage()`**, **`GatherImageTextCandidates()`**, and **`FindAdjacentCaption()`**
   (private) — choose each image's naming and description text. They prefer authored descriptions
