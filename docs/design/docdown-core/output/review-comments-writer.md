@@ -21,7 +21,8 @@ file is self-describing when read on its own; and `UnattributedAuthor` (`Unattri
 used for a comment the document records no author for.
 
 `DocumentComment(string? Author, string Body, string Location)` is the record an extractor
-reports. Its init-only `IsRevision` property (default `false`) marks an entry that describes a tracked change rather than a reviewer comment; such entries
+reports. Its init-only `IsRevision` property (default `false`) marks an entry that describes a tracked change
+rather than a reviewer comment; such entries
 share the artifact and its shape, and when any are present the heading becomes `# Review comments and tracked changes`
 (`HeadingWithRevisions`).
 `Location` is a single, precomputed, human-readable display string rather than a structured address:
