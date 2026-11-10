@@ -1,0 +1,30 @@
+---
+# Software Unit Requirements for WordSymbolMap
+#
+# WordSymbolMap translates a Word symbol character (a font and a font code point) to visible
+# Unicode, and never guesses: anything it cannot confirm becomes a placeholder the reader counts.
+
+sections:
+  - title: DocDownWord Requirements
+    sections:
+      - title: OpenXml Requirements
+        sections:
+          - title: WordSymbolMap Requirements
+            requirements:
+              - id: DocDownWord-OpenXml-WordSymbolMap-MapsSymbolCharacters
+                title: >-
+                  WordSymbolMap shall map a symbol font and character code to its verified Unicode
+                  text, treating the Private Use Area and bare forms of a code alike and matching the
+                  font name without regard to case, and shall resolve every unrecognized font,
+                  malformed code, or unlisted code to the U+FFFD placeholder flagged as unmapped.
+                justification: |
+                  A symbol character names a glyph in a symbol-encoded font, not a Unicode code point,
+                  so emitting its code would produce garbage or nothing. Translating only confirmed
+                  entries keeps bullets and check marks legible, and an explicit placeholder keeps an
+                  unconfirmed symbol from being silently dropped or wrongly guessed.
+                tests:
+                  - WordSymbolMap_Resolve_SymbolBullet_MapsToBullet
+                  - WordSymbolMap_Resolve_WingdingsCodes_MapToUnicode
+                  - WordSymbolMap_Resolve_FontNameCaseAndWhitespace_Ignored
+                  - WordSymbolMap_Resolve_PrivateUseAndBareCodes_AreEquivalent
+                  - WordSymbolMap_Resolve_UnmappableInput_ReturnsPlaceholder

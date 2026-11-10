@@ -72,6 +72,11 @@ emitting them would add noise), the scanner flags tracked changes inside them, a
 a "tables of contents skipped" content feature with the entry count and the tracked changes inside.
 Block content controls that are not a table of contents are now read through rather than dropped.
 
+**The symbol map.** `WordSymbolMap` translates a `w:sym` (a symbol font and a font code point) into
+verified Unicode, so bullets, tick boxes, and similar glyphs stay visible in `content.md`. The reader
+and the revision scanner both use it, so snippets agree with the rendered text. Anything it cannot
+confirm becomes U+FFFD and is counted for an extraction note.
+
 **The image reader.** `WordOpenXmlImageReader` resolves a drawing's `r:embed` relationship within
 its containing part, returning a `WordImageRef` that carries the complete part bytes, content
 type, selected name or description text, and source URI. A relationship that does not resolve to an

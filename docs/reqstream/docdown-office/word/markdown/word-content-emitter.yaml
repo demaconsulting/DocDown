@@ -109,6 +109,19 @@ sections:
                   - WordContentEmitter_Emit_ChartsFound_ReportsChartNote
                   - DocDownWord_Extract_DocxWithChart_ReportsChartNote
 
+              - id: DocDownWord-Markdown-WordContentEmitter-ReportsUnmappedSymbolsNote
+                title: >-
+                  WordContentEmitter shall report the number of symbol characters that could not be
+                  mapped to Unicode as a short extraction note, and none when every symbol mapped.
+                justification: |
+                  An unmapped symbol appears as U+FFFD in content.md (or review-comments.md when it
+                  sits in a comment). Stating the count keeps the
+                  placeholder explained and the incomplete step visible in summary.txt and
+                  manifest.json.
+                tests:
+                  - WordContentEmitter_Emit_UnmappedSymbols_ReportsNoteOnlyWhenPresent
+                  - DocDownWord_Extract_DocxWithUnmappedSymbols_ReportsNoteInSummaryAndManifest
+
               - id: DocDownWord-Markdown-WordContentEmitter-ReportsFlattenedTableNote
                 title: >-
                   WordContentEmitter shall report merged or nested table structure flattened for

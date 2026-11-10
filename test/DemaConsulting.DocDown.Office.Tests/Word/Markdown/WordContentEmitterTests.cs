@@ -23,13 +23,15 @@ public class WordContentEmitterTests
     /// <param name="chartsFound">The number of embedded charts to declare.</param>
     /// <param name="metadata">The self-reported metadata, or <see langword="null"/> for none.</param>
     /// <param name="commentsWithUnreadableContent">The number of comments carrying only a picture or ink.</param>
+    /// <param name="unmappedSymbolCount">The number of symbol characters that could not be mapped.</param>
     /// <returns>The constructed model.</returns>
     private static WordDocumentModel Model(
         IReadOnlyList<WordBlock> body,
         IReadOnlyList<WordComment>? comments = null,
         int chartsFound = 0,
         DocumentMetadata? metadata = null,
-        int commentsWithUnreadableContent = 0) =>
+        int commentsWithUnreadableContent = 0,
+        int unmappedSymbolCount = 0) =>
         new(
             body,
             DocumentControl: [],
@@ -45,7 +47,8 @@ public class WordContentEmitterTests
             EmptyTablesSkipped: 0,
             ChartsFound: chartsFound,
             Metadata: metadata,
-            CommentsWithUnreadableContent: commentsWithUnreadableContent);
+            CommentsWithUnreadableContent: commentsWithUnreadableContent,
+            UnmappedSymbolCount: unmappedSymbolCount);
 
     /// <summary>
     ///     Proves a body carrying a heading and author-attributed comments writes content and reports
@@ -255,6 +258,28 @@ public class WordContentEmitterTests
         var note = Assert.Single(sink.Notes);
         Assert.Contains("2 charts", note.Message, StringComparison.Ordinal);
         Assert.Contains("does not read chart parts", note.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves unmapped symbols are reported as a note with the count, and none when there are none.
+    /// </summary>
+    [Fact]
+    public async Task WordContentEmitter_Emit_UnmappedSymbols_ReportsNoteOnlyWhenPresent()
+    {
+        var body = new[] { new WordBlock(WordBlockKind.Paragraph, [new WordInline("Body text.")]) };
+        var noneSink = new RecordingSink();
+        await WordContentEmitter.EmitAsync(noneSink, new ExtractionOptions(), Model(body), Ct);
+        Assert.Empty(noneSink.Notes);
+
+        var sink = new RecordingSink();
+        await WordContentEmitter.EmitAsync(sink, new ExtractionOptions(), Model(body, unmappedSymbolCount: 3), Ct);
+        var note = Assert.Single(sink.Notes);
+        Assert.Contains("3 symbol characters could not be mapped", note.Message, StringComparison.Ordinal);
+        Assert.Contains("U+FFFD", note.Message, StringComparison.Ordinal);
+
+        var single = new RecordingSink();
+        await WordContentEmitter.EmitAsync(single, new ExtractionOptions(), Model(body, unmappedSymbolCount: 1), Ct);
+        Assert.Contains("1 symbol character could not be mapped", Assert.Single(single.Notes).Message, StringComparison.Ordinal);
     }
 
     /// <summary>

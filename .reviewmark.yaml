@@ -1198,6 +1198,21 @@ reviews:
       - "src/DemaConsulting.DocDown.Office/Word/OpenXml/WordTocDetector.cs"   # unit source
       - "test/DemaConsulting.DocDown.Office.Tests/Word/OpenXml/WordTrackedChangesTests.cs"  # unit tests
 
+  # DocDownWord-OpenXml-WordSymbolMap Unit Review (unit under subsystem, four context entries)
+  - id: DocDownWord-OpenXml-WordSymbolMap
+    title: Review that DemaConsulting.DocDown.Word OpenXml WordSymbolMap Implementation is Correct
+    context:
+      - "docs/design/docdown-office/word.md"
+      - "docs/reqstream/docdown-office/word.yaml"
+      - "docs/design/docdown-office/word/open-xml.md"
+      - "docs/reqstream/docdown-office/word/open-xml.yaml"
+    paths:
+      - "docs/reqstream/docdown-office/word/open-xml/word-symbol-map.yaml"  # unit requirements
+      - "docs/design/docdown-office/word/open-xml/word-symbol-map.md"       # unit design
+      - "docs/verification/docdown-office/word/open-xml/word-symbol-map.md"  # unit verification
+      - "src/DemaConsulting.DocDown.Office/Word/OpenXml/WordSymbolMap.cs"   # unit source
+      - "test/DemaConsulting.DocDown.Office.Tests/Word/OpenXml/WordSymbolMapTests.cs"  # unit tests
+
   # DocDownWord-OpenXml-WordOpenXmlImageReader Unit Review (unit under subsystem, four context entries)
   - id: DocDownWord-OpenXml-WordOpenXmlImageReader
     title: Review that DemaConsulting.DocDown.Word OpenXml WordOpenXmlImageReader Implementation is Correct

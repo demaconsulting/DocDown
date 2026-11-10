@@ -248,6 +248,25 @@ sections:
           - DocDownWord_Extract_DocxWithChart_ReportsChartNote
           - DocDownWord_Extract_DocxWithTwoCharts_ReportsPluralChartNote
 
+      - id: DocDownWord-SymbolCharacters
+        title: >-
+          The subsystem shall render Word symbol characters as visible Unicode text, shall show an
+          unmappable symbol as U+FFFD, and shall report the number of unmappable symbols as a short
+          extraction note.
+        tags: [system]
+        justification: |
+          Bullets, check marks, and tick boxes are often stored as symbol characters naming a glyph in
+          a symbol font. Dropping them leaves table cells and list items looking empty, and guessing
+          at unverified glyphs would misstate the document, so only confirmed mappings are rendered
+          and the rest are marked and counted.
+        children:
+          - DocDownWord-OpenXml-WordSymbolMap-MapsSymbolCharacters
+          - DocDownWord-OpenXml-WordOpenXmlReader-RendersSymbolCharacters
+          - DocDownWord-Markdown-WordContentEmitter-ReportsUnmappedSymbolsNote
+        tests:
+          - DocDownWord_Extract_DocxWithMappedSymbols_ReportsNoSymbolNote
+          - DocDownWord_Extract_DocxWithUnmappedSymbols_ReportsNoteInSummaryAndManifest
+
       - id: DocDownWord-EmbeddedImages
         title: >-
           The subsystem shall write a document's embedded images into the images folder and link them

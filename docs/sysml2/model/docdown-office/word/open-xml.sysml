@@ -11,6 +11,7 @@ package DocDownOffice {
         part wordOpenXmlReader : WordOpenXmlReader;
         part wordRevisionScanner : WordRevisionScanner;
         part wordTocDetector : WordTocDetector;
+        part wordSymbolMap : WordSymbolMap;
         part wordOpenXmlImageReader : WordOpenXmlImageReader;
     }
 }

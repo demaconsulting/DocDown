@@ -77,6 +77,10 @@ namespace DemaConsulting.DocDown.Word.Markdown;
 ///     omission is stated rather than silent.
 /// </param>
 /// <param name="TocParagraphsSkipped">The number of contents paragraphs those tables of contents held.</param>
+/// <param name="UnmappedSymbolCount">
+///     The number of distinct symbol characters (<c>w:sym</c>) that could not be mapped to Unicode
+///     and appear as U+FFFD in <c>content.md</c>; reported as an extraction note when above zero.
+/// </param>
 /// <remarks>
 ///     The counts live on the model rather than being recomputed because only the reader, walking
 ///     the document once, can observe them; the emitter turns them into inventory counts and notes.
@@ -101,7 +105,8 @@ internal sealed record WordDocumentModel(
     IReadOnlyList<WordRevision>? Revisions = null,
     bool RevisionsAccepted = false,
     int TocRegionsSkipped = 0,
-    int TocParagraphsSkipped = 0)
+    int TocParagraphsSkipped = 0,
+    int UnmappedSymbolCount = 0)
 {
     /// <summary>Gets the tracked changes, never <see langword="null"/>.</summary>
     /// <remarks>Pure.</remarks>

@@ -601,6 +601,28 @@ public class WordTrackedChangesTests
     }
 
     /// <summary>
+    ///     Proves a symbol in a tracked insertion and deletion renders inside the redline markers, is
+    ///     kept or dropped by the accepted view, and reaches the revision snippets.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_SymbolInTrackedChanges_RendersMarkupAndSnippets()
+    {
+        var bytes = DocxFixtures.DocumentWithSymbolInTrackedChanges();
+
+        var markdown = Render(bytes);
+        Assert.Contains("{++\u2022++}", markdown, StringComparison.Ordinal);
+        Assert.Contains("{--\u2713--}", markdown, StringComparison.Ordinal);
+
+        var accepted = WordMarkdownWriter.Write(Read(bytes, accept: true), new Dictionary<string, string>());
+        Assert.Contains("Start \u2022 middle", accepted, StringComparison.Ordinal);
+        Assert.DoesNotContain("\u2713", accepted, StringComparison.Ordinal);
+
+        var revisions = Scan(bytes);
+        Assert.Contains(revisions, revision => revision.Kind == WordRevisionKind.Inserted && revision.Snippet == "\u2022");
+        Assert.Contains(revisions, revision => revision.Kind == WordRevisionKind.Deleted && revision.Snippet == "\u2713");
+    }
+
+    /// <summary>
     ///     Reads a document into a model.
     /// </summary>
     /// <param name="bytes">The document bytes.</param>

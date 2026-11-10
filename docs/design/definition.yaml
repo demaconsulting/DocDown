@@ -52,6 +52,7 @@ input-files:
   - docs/design/docdown-office/word/open-xml/word-open-xml-reader.md
   - docs/design/docdown-office/word/open-xml/word-revision-scanner.md
   - docs/design/docdown-office/word/open-xml/word-toc-detector.md
+  - docs/design/docdown-office/word/open-xml/word-symbol-map.md
   - docs/design/docdown-office/word/open-xml/word-open-xml-image-reader.md
   - docs/design/docdown-office/excel.md
   - docs/design/docdown-office/excel/excel-doc-down-builder-extensions.md

@@ -46,7 +46,9 @@ namespace used to read the author and date attributes.
   parent; inserted or deleted cells; and the property-change elements, which become formatting
   changes.
 - **`BuildSnippet()`** (private) — the affected text, whitespace-collapsed and bounded to
-  `SnippetMaxLength`.
+  `SnippetMaxLength`. Like the location context text, it renders a `w:sym` through `WordSymbolMap`
+  so snippets match `content.md`; in the accepted view a symbol inside a deleted run is omitted,
+  as deleted text is.
 - **`BuildLocation()`** (private) — superseded by `Compose()` above; the location is never a page number.
 - **Known limitations** — ordinals for a paragraph merged into a following heading, and for images
   (not counted), can be off by one; a repeated footnote reference maps to its first marker. Table
