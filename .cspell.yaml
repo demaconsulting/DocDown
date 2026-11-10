@@ -15,6 +15,8 @@ language: en
 # Project-specific technical terms and tool names
 words:
   - bitstream
+  - unmappable
+  - FFFD
   - Hana
   - TOCHEADING
   - delText

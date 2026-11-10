@@ -389,6 +389,7 @@ DemaConsulting.DocDown.Office/
 │   ├── WordOpenXmlImageReader.cs        — Unit: yields embedded image bytes with passthrough provenance
 │   ├── WordOpenXmlReader.cs             — Unit: turns the Open XML DOM into the backend-neutral model
 │   ├── WordRevisionScanner.cs           — Unit: finds tracked changes with author, date, and location
+│   ├── WordSymbolMap.cs                 — Unit: maps symbol-font characters (w:sym) to Unicode
 
 DemaConsulting.DocDown.Pdf/
 ├── NamespaceDoc.cs                  — Documentation: the namespace summary ApiMark renders

@@ -182,6 +182,26 @@ sections:
                 tests:
                   - WordOpenXmlReader_Read_ImageOnlyComment_IsDroppedAndCounted
 
+              - id: DocDownWord-OpenXml-WordOpenXmlReader-RendersSymbolCharacters
+                title: >-
+                  WordOpenXmlReader shall render a symbol character in any run it walks, including
+                  table cells, headers, tracked insertions and deletions, as the text
+                  WordSymbolMap resolves, shall skip it inside page-number field results, and shall
+                  count each unmappable symbol once.
+                justification: |
+                  A symbol-only table cell or list item would otherwise read as empty. Counting each
+                  source symbol once, even when a paragraph is walked more than once, keeps the
+                  reported shortfall honest, and leaving documents without symbols unchanged keeps
+                  existing output stable.
+                tests:
+                  - WordOpenXmlReader_Read_SymbolDotMatrix_RendersDotsInCells
+                  - WordOpenXmlReader_Read_SymbolOnlyTable_IsNotSkippedAsEmpty
+                  - WordOpenXmlReader_Read_WingdingsCheckbox_RendersUnicode
+                  - WordOpenXmlReader_Read_UnmappedSymbols_RenderPlaceholderAndCountOnce
+                  - WordOpenXmlReader_Read_SymbolInHeaderAndFooterField_HeaderRendersFieldSkipped
+                  - WordOpenXmlReader_Read_SymbolInTrackedChanges_RendersMarkupAndSnippets
+                  - WordOpenXmlReader_Read_DocumentWithoutSymbols_ReportsNoUnmappedSymbols
+
               - id: DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation
                 title: >-
                   WordOpenXmlReader shall resolve each comment's anchor into a location hint naming

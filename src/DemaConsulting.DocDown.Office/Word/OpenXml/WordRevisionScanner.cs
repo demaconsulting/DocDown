@@ -566,6 +566,9 @@ internal static class WordRevisionScanner
                 case W.DeletedText deleted when markup:
                     builder.Append(deleted.Text);
                     break;
+                case W.SymbolChar symbol when markup || !InDeletedRun(symbol):
+                    builder.Append(WordSymbolMap.Resolve(symbol.Font?.Value, symbol.Char?.Value).Text);
+                    break;
                 case W.TabChar or W.Break:
                     builder.Append(' ');
                     break;
@@ -576,6 +579,15 @@ internal static class WordRevisionScanner
 
         return builder.ToString();
     }
+
+    /// <summary>
+    ///     Determines whether a node sits inside a tracked deletion or move-from run.
+    /// </summary>
+    /// <param name="node">The node.</param>
+    /// <returns><see langword="true"/> when an ancestor is a deleted or moved-from run.</returns>
+    /// <remarks>Used so the accepted view omits deleted symbols exactly as it omits deleted text. Pure.</remarks>
+    private static bool InDeletedRun(OpenXmlElement node) =>
+        node.Ancestors().Any(ancestor => ancestor is W.DeletedRun or W.MoveFromRun);
 
     /// <summary>
     ///     Collapses whitespace runs to single spaces and trims.
@@ -691,6 +703,9 @@ internal static class WordRevisionScanner
                     break;
                 case W.DeletedText deleted:
                     builder.Append(deleted.Text);
+                    break;
+                case W.SymbolChar symbol:
+                    builder.Append(WordSymbolMap.Resolve(symbol.Font?.Value, symbol.Char?.Value).Text);
                     break;
                 default:
                     break;

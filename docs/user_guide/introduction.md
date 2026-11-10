@@ -192,6 +192,10 @@ plus a sixth that appears only when the document carries reviewer comments:
   note. And PowerPoint reads the classic comment grammar only: the newer persona-based "modern"
   comments are out of scope for now, and a deck carrying them says so in an extraction note naming
   how many there are, so you can tell such a deck from one nobody commented on.
+
+  Word symbol characters (such as bullet dots and Wingdings tick boxes) are written to
+  `content.md` as the matching Unicode character. A symbol DocDown cannot confidently map is
+  written as the replacement character (U+FFFD), and an extraction note states how many there are.
 - **`images/` and `pages/`** — extracted embedded images and optional rendered page images.
 
 `summary.txt` is intentionally compact because it is the artifact a user pastes into an LLM context

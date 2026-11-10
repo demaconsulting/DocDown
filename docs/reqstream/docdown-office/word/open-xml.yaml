@@ -54,6 +54,8 @@ sections:
               - DocDownWord-OpenXml-WordOpenXmlReader-CollectsComments
               - DocDownWord-OpenXml-WordOpenXmlReader-DropsTextlessComments
               - DocDownWord-OpenXml-WordOpenXmlReader-CountsUnreadableComments
+              - DocDownWord-OpenXml-WordOpenXmlReader-RendersSymbolCharacters
+              - DocDownWord-OpenXml-WordSymbolMap-MapsSymbolCharacters
               - DocDownWord-OpenXml-WordOpenXmlReader-ResolvesCommentLocation
               - DocDownWord-OpenXml-WordOpenXmlReader-BoundsCommentSnippet
               - DocDownWord-OpenXml-WordOpenXmlReader-DegradesCommentLocation

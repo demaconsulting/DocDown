@@ -111,6 +111,7 @@ constituent software items, specifically:
         provenance
       - **WordRevisionScanner (Unit)** — Finds every tracked change with its author, date, and
         location
+      - **WordSymbolMap (Unit)** — Maps a symbol-font character (`w:sym`) to verified Unicode
   - **Excel (Subsystem)** — Workbook worksheet, cell-value (verbatim), formula, chart, drawing
     annotation, embedded-image, and document-metadata extraction; deliberately never renders; two
     child subsystems and one direct unit

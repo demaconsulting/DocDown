@@ -414,6 +414,89 @@ public class WordOpenXmlReaderTests
     }
 
     /// <summary>
+    ///     Proves symbol-only table cells render the bullet dot and the table is not skipped as empty.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_SymbolDotMatrix_RendersDotsInCells()
+    {
+        var model = Read(DocxFixtures.DocumentWithSymbolDotMatrix());
+        var markdown = WordMarkdownWriter.Write(model, new Dictionary<string, string>());
+
+        Assert.Equal(0, model.EmptyTablesSkipped);
+        Assert.Equal(0, model.UnmappedSymbolCount);
+        Assert.Contains("| Widget | \u2022 | \u2022 |", markdown, StringComparison.Ordinal);
+        Assert.Contains("| Gadget | \u2022 | \u2022 Alpha |", markdown, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves a table made wholly of symbols is kept rather than skipped as empty.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_SymbolOnlyTable_IsNotSkippedAsEmpty()
+    {
+        var model = Read(DocxFixtures.DocumentWithSymbolOnlyTable());
+
+        Assert.Equal(0, model.EmptyTablesSkipped);
+        Assert.Single(model.Body, block => block.Kind == WordBlockKind.Table);
+        Assert.Contains("\u2022", WordMarkdownWriter.Write(model, new Dictionary<string, string>()), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves Wingdings checkbox and check-mark symbols (including a bare code) render as Unicode.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_WingdingsCheckbox_RendersUnicode()
+    {
+        var model = Read(DocxFixtures.DocumentWithWingdingsCheckbox());
+        var markdown = WordMarkdownWriter.Write(model, new Dictionary<string, string>());
+
+        Assert.Contains("Approved \U0001F5F9", markdown, StringComparison.Ordinal);
+        Assert.Contains("Verified \u2713", markdown, StringComparison.Ordinal);
+        Assert.Equal(0, model.UnmappedSymbolCount);
+    }
+
+    /// <summary>
+    ///     Proves unmappable symbols render as the placeholder and are counted once each, even though
+    ///     the table cell holding one is read more than once.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_UnmappedSymbols_RenderPlaceholderAndCountOnce()
+    {
+        var model = Read(DocxFixtures.DocumentWithUnmappedSymbols());
+        var markdown = WordMarkdownWriter.Write(model, new Dictionary<string, string>());
+
+        Assert.Equal(2, model.UnmappedSymbolCount);
+        Assert.Contains("Alpha \uFFFD Beta \u2022", markdown, StringComparison.Ordinal);
+        Assert.Contains("\uFFFD Gamma", markdown, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves a header symbol renders, and an unmappable symbol in a page-number field result is
+    ///     skipped and not counted.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_SymbolInHeaderAndFooterField_HeaderRendersFieldSkipped()
+    {
+        var model = Read(DocxFixtures.DocumentWithSymbolInHeaderAndFooterField());
+        var section = Assert.Single(model.DocumentControl, control => control.Label == "Header");
+
+        Assert.Contains("Header \u2022", BlocksText(section.Blocks), StringComparison.Ordinal);
+        Assert.Equal(0, model.UnmappedSymbolCount);
+    }
+
+    /// <summary>
+    ///     Proves a document without symbols reports none, leaving its output unchanged.
+    /// </summary>
+    [Fact]
+    public void WordOpenXmlReader_Read_DocumentWithoutSymbols_ReportsNoUnmappedSymbols()
+    {
+        var model = Read(DocxFixtures.CleanDocument());
+
+        Assert.Equal(0, model.UnmappedSymbolCount);
+        Assert.DoesNotContain("\uFFFD", WordMarkdownWriter.Write(model, new Dictionary<string, string>()), StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves an authored description becomes the image's naming hint, alt text, and manifest
     ///     description, with a <c>description</c> provenance.
     /// </summary>

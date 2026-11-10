@@ -95,6 +95,13 @@ internal sealed class WordOpenXmlReader
     /// </remarks>
     private int _commentsWithUnreadableContent;
 
+    /// <summary>The symbol characters that could not be mapped to Unicode, by element identity.</summary>
+    /// <remarks>
+    ///     A set rather than a counter because a paragraph can be walked more than once (see
+    ///     <see cref="WalkContainer"/>); identity keeps each source symbol counted exactly once.
+    /// </remarks>
+    private readonly HashSet<W.SymbolChar> _unmappedSymbols = new(ReferenceEqualityComparer.Instance);
+
     /// <summary>The text of the nearest preceding heading in the body walk, for image naming context.</summary>
     /// <remarks>
     ///     Threaded through the body walk so a drawing can offer its section heading as a low-confidence
@@ -159,6 +166,7 @@ internal sealed class WordOpenXmlReader
         _carryPageBreak = false;
         _emptyTables = 0;
         _commentsWithUnreadableContent = 0;
+        _unmappedSymbols.Clear();
         _currentHeading = null;
         _commentAnchors.Clear();
         _openCommentRanges.Clear();
@@ -219,7 +227,8 @@ internal sealed class WordOpenXmlReader
             Revisions: revisions,
             RevisionsAccepted: revisions.Count > 0 && _acceptTrackedChanges,
             TocRegionsSkipped: _toc.Regions,
-            TocParagraphsSkipped: _toc.Paragraphs.Count);
+            TocParagraphsSkipped: _toc.Paragraphs.Count,
+            UnmappedSymbolCount: _unmappedSymbols.Count);
     }
 
     /// <summary>
@@ -568,6 +577,17 @@ internal sealed class WordOpenXmlReader
 
                 case W.TabChar when !SkipText(fields, stripFurniture):
                     text.Append(' ');
+                    break;
+
+                case W.SymbolChar symbol when !SkipText(fields, stripFurniture):
+                    var resolved = WordSymbolMap.Resolve(symbol.Font?.Value, symbol.Char?.Value);
+                    text.Append(resolved.Text);
+                    AppendAnchoredText(resolved.Text);
+                    if (!resolved.Mapped)
+                    {
+                        _unmappedSymbols.Add(symbol);
+                    }
+
                     break;
 
                 case W.Break brk:

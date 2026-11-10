@@ -65,6 +65,7 @@ sections:
               - DocDownWord-Markdown-WordContentEmitter-ReportsReviewComments
               - DocDownWord-Markdown-WordContentEmitter-ReportsImageOnlyCommentsNote
               - DocDownWord-Markdown-WordContentEmitter-ReportsChartNote
+              - DocDownWord-Markdown-WordContentEmitter-ReportsUnmappedSymbolsNote
               - DocDownWord-Markdown-WordContentEmitter-ReportsFlattenedTableNote
             tests:
               - WordContentEmitter_Emit_BodyWithComments_ReportsOutlineAndSucceeds

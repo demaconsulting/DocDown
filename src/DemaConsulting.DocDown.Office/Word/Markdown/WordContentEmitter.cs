@@ -470,6 +470,29 @@ internal static class WordContentEmitter
         {
             ReportImageOnlyCommentsNote(sink, model.CommentsWithUnreadableContent);
         }
+
+        if (model.UnmappedSymbolCount > 0)
+        {
+            ReportUnmappedSymbolsNote(sink, model.UnmappedSymbolCount);
+        }
+    }
+
+    /// <summary>
+    ///     Reports that some symbol characters could not be mapped to Unicode.
+    /// </summary>
+    /// <param name="sink">The sink to report through.</param>
+    /// <param name="count">The number of such symbols; always greater than zero.</param>
+    /// <remarks>
+    ///     Each unmapped symbol appears as U+FFFD in content.md; the note says so rather than
+    ///     letting the placeholder pass unexplained. Side effect: records on the sink.
+    /// </remarks>
+    private static void ReportUnmappedSymbolsNote(IExtractionSink sink, int count)
+    {
+        var counted = count.ToString(CultureInfo.InvariantCulture);
+        var noun = count == 1 ? "symbol character" : "symbol characters";
+        var verb = count == 1 ? "appears" : "appear";
+        sink.ReportNote(new ExtractionNote(
+            $"{counted} {noun} could not be mapped to Unicode and {verb} as the replacement character (U+FFFD) in content.md."));
     }
 
     /// <summary>

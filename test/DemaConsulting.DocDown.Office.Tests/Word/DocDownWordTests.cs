@@ -205,6 +205,44 @@ public class DocDownWordTests
     }
 
     /// <summary>
+    ///     Proves a document with unmappable symbols reports the count in summary.txt, manifest.json,
+    ///     and the result notes, and renders the placeholder in content.md.
+    /// </summary>
+    [Fact]
+    public async Task DocDownWord_Extract_DocxWithUnmappedSymbols_ReportsNoteInSummaryAndManifest()
+    {
+        using var temp = new TempScratch();
+        var (scratch, result) = await ExtractAsync(temp, "symbols.docx", DocxFixtures.DocumentWithUnmappedSymbols());
+
+        Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
+        Assert.Contains(
+            result.Notes,
+            note => note.Message.Contains("2 symbol characters could not be mapped", StringComparison.Ordinal));
+        var summary = Flatten(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
+        Assert.Contains("2 symbol characters could not be mapped", summary, StringComparison.Ordinal);
+        var manifest = await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct);
+        Assert.Contains("2 symbol characters could not be mapped", manifest, StringComparison.Ordinal);
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        Assert.Contains("\uFFFD", content, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
+    ///     Proves a document whose symbols all map reports no note and renders the Unicode glyphs.
+    /// </summary>
+    [Fact]
+    public async Task DocDownWord_Extract_DocxWithMappedSymbols_ReportsNoSymbolNote()
+    {
+        using var temp = new TempScratch();
+        var (scratch, result) = await ExtractAsync(temp, "dots.docx", DocxFixtures.DocumentWithSymbolDotMatrix());
+
+        Assert.Empty(result.Notes);
+        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        Assert.Contains("| Widget | \u2022 | \u2022 |", content, StringComparison.Ordinal);
+        ContractAssert.LayoutPresent(scratch);
+    }
+
+    /// <summary>
     ///     Proves a password-protected document is reported as unreadable with an explanation naming the
     ///     protection, and the full output layout is still written.
     /// </summary>

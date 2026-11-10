@@ -69,7 +69,9 @@ and each image through the sink, which owns the layout and allocates the image p
   the document rather than part of it.
 - **`ReportExtractionNotes()`** (private) — emits only the incomplete-step notes the current design
   allows: charts whose chart parts were not read, merged or nested table structure flattened for
-  markdown, and comments whose only content was a picture or ink. The flattened total is summed
+  markdown, comments whose only content was a picture or ink, and symbol characters that could not
+  be mapped to Unicode (reported by `ReportUnmappedSymbolsNote()` from `UnmappedSymbolCount`, only
+  when it is above zero). The flattened total is summed
   from the model's `MergedCellCount` and `NestedTableCount` over every body and document-control
   table; it does not use the count `WordTableWriter.Write()` returns.
 - **`ReportImageOnlyCommentsNote()`** (private) — states, when `CommentsWithUnreadableContent` is

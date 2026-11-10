@@ -75,6 +75,14 @@ used per document. The important state is:
   comment anchors: `w:commentRangeStart` and `w:commentRangeEnd` open and close a bracketed range
   by `w:id`, and a `w:commentReference` inside a run marks a point anchor for its id. While a range
   is open, run text is appended to that comment's anchor snippet.
+- **`ProcessRun()`** symbol handling (private) — a `w:sym` run child is resolved through
+  `WordSymbolMap.Resolve()` and its text is appended to the run like ordinary text (and to open
+  comment anchors), so bullets and tick boxes survive in table cells, headers, footnotes, comments,
+  hyperlinks, and tracked insertions and deletions, all of which share this walk. It is skipped
+  wherever ordinary text is skipped, such as a page-number field result. A symbol that resolves to
+  the placeholder is added to `_unmappedSymbols`, a reference-identity set cleared in `Read()`,
+  because a paragraph can be walked more than once and each source symbol must be counted once; the
+  model carries its size as `UnmappedSymbolCount`.
 - **`OpenCommentRange()`**, **`CloseCommentRange()`**, **`NoteCommentAnchor()`**, and
   **`AppendAnchoredText()`** (private) — maintain the anchor table keyed by comment id. Each entry
   records the value of `_currentHeading` at the moment the anchor was first seen, so a later
