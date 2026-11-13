@@ -1,4 +1,6 @@
 package DocDownPowerPointRendering {
+    private import SoftwareItemMetadata::*;
+
     doc
     /*
      * DemaConsulting.DocDown.PowerPoint.Rendering is the optional .NET library that rasterizes PowerPoint slides
@@ -14,10 +16,12 @@ package DocDownPowerPointRendering {
     part def DocDownPowerPointRenderingSystem {
         doc /* The DemaConsulting.DocDown.PowerPoint.Rendering slide-rendering system as a whole. */
 
-        comment testRef /* Test: test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/DocDownPowerPointRenderingTests.cs */
-        comment designRef /* Design: docs/design/docdown-powerpoint-rendering.md */
-        comment verificationRef /* Verification: docs/verification/docdown-powerpoint-rendering.md */
-        comment reqRef /* Requirements: docs/reqstream/docdown-powerpoint-rendering.yaml */
+        metadata info : SoftwareInfo {
+            testFiles = ("test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/DocDownPowerPointRenderingTests.cs");
+            designFiles = ("docs/design/docdown-powerpoint-rendering.md");
+            verificationFiles = ("docs/verification/docdown-powerpoint-rendering.md");
+            requirementFiles = ("docs/reqstream/docdown-powerpoint-rendering.yaml");
+        }
 
         part powerPointPageRenderingExtractor : PowerPointPageRenderingExtractor;
         part slideRenderer : SlideRenderer;

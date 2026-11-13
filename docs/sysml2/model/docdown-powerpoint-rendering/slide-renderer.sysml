@@ -1,11 +1,15 @@
 package DocDownPowerPointRendering {
+    private import SoftwareItemMetadata::*;
+
     part def SlideRenderer {
         doc /* Rasterizes one slide to PNG through CanvasNet.Pptx, a fully-managed PowerPoint rasterizer; reports the slide count. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.PowerPoint.Rendering/SlideRenderer.cs */
-        comment testRef /* Test: test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/SlideRendererTests.cs */
-        comment designRef /* Design: docs/design/docdown-powerpoint-rendering/slide-renderer.md */
-        comment verificationRef /* Verification: docs/verification/docdown-powerpoint-rendering/slide-renderer.md */
-        comment reqRef /* Requirements: docs/reqstream/docdown-powerpoint-rendering/slide-renderer.yaml */
+        metadata info : SoftwareInfo {
+            sourceFiles = ("src/DemaConsulting.DocDown.PowerPoint.Rendering/SlideRenderer.cs");
+            testFiles = ("test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/SlideRendererTests.cs");
+            designFiles = ("docs/design/docdown-powerpoint-rendering/slide-renderer.md");
+            verificationFiles = ("docs/verification/docdown-powerpoint-rendering/slide-renderer.md");
+            requirementFiles = ("docs/reqstream/docdown-powerpoint-rendering/slide-renderer.yaml");
+        }
     }
 }

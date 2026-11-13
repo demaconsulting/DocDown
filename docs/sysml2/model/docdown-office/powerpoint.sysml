@@ -1,4 +1,6 @@
 package DocDownOffice {
+    private import SoftwareItemMetadata::*;
+
     doc
     /*
      * DemaConsulting.DocDown.PowerPoint is the PowerPoint extraction subsystem of DemaConsulting.DocDown.Office: a backend that
@@ -12,10 +14,12 @@ package DocDownOffice {
     part def PowerPoint {
         doc /* The DemaConsulting.DocDown.PowerPoint subsystem as a whole. */
 
-        comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/PowerPoint/DocDownPowerPointTests.cs */
-        comment designRef /* Design: docs/design/docdown-office/powerpoint.md */
-        comment verificationRef /* Verification: docs/verification/docdown-office/powerpoint.md */
-        comment reqRef /* Requirements: docs/reqstream/docdown-office/powerpoint.yaml */
+        metadata info : SoftwareInfo {
+            testFiles = ("test/DemaConsulting.DocDown.Office.Tests/PowerPoint/DocDownPowerPointTests.cs");
+            designFiles = ("docs/design/docdown-office/powerpoint.md");
+            verificationFiles = ("docs/verification/docdown-office/powerpoint.md");
+            requirementFiles = ("docs/reqstream/docdown-office/powerpoint.yaml");
+        }
 
         part powerPointDocDownBuilderExtensions : PowerPointDocDownBuilderExtensions;
         part markdown : PowerPointMarkdown;

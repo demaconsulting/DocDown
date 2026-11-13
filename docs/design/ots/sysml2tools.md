@@ -21,9 +21,10 @@ dotnet-tool restore and CI pipeline used by the other pipeline tools.
 SysML2Tools is invoked as a `dotnet tool` from two places: `lint.ps1` runs
 `dotnet sysml2tools lint 'docs/sysml2/**/*.sysml'` as an early-detection lint gate, and
 `.github/workflows/build.yaml` runs
-`dotnet sysml2tools render --output docs/design/generated --format svg 'docs/sysml2/model/**/*.sysml' 'docs/sysml2/views/design-views.sysml'`
+`dotnet sysml2tools render --output docs/design/generated --format svg 'docs/sysml2/common/**/*.sysml'
+'docs/sysml2/model/**/*.sysml' 'docs/sysml2/views/design-views.sysml'`
 immediately before Pandoc compiles the Design document. FileAssert then asserts that each declared
-view's rendered SVG file exists in `docs/design/generated/` and is well-formed XML, before Pandoc
+view's rendered SVG file exists in `docs/design/generated/`, is well-formed XML, and draws text, before Pandoc
 embeds it in the compiled document. It is a stateless CLI invocation — each run reads the SysML2
 source files and writes its output, and exits; there is no initialization, configuration object,
 or disposal step beyond the command-line arguments supplied on each invocation.

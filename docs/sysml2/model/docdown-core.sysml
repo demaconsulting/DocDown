@@ -1,4 +1,6 @@
 package DocDownCore {
+    private import SoftwareItemMetadata::*;
+
     doc
     /*
      * DemaConsulting.DocDown.Core is a .NET library providing the core functionality for the DocDown
@@ -8,10 +10,12 @@ package DocDownCore {
     part def DocDownCoreSystem {
         doc /* The DemaConsulting.DocDown.Core system as a whole. */
 
-        comment testRef /* Test: test/DemaConsulting.DocDown.Core.Tests/DocDownCoreTests.cs */
-        comment designRef /* Design: docs/design/docdown-core.md */
-        comment verificationRef /* Verification: docs/verification/docdown-core.md */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core.yaml */
+        metadata info : SoftwareInfo {
+            testFiles = ("test/DemaConsulting.DocDown.Core.Tests/DocDownCoreTests.cs");
+            designFiles = ("docs/design/docdown-core.md");
+            verificationFiles = ("docs/verification/docdown-core.md");
+            requirementFiles = ("docs/reqstream/docdown-core.yaml");
+        }
 
         part detection : Detection;
         part extraction : Extraction;

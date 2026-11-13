@@ -1,39 +1,49 @@
 package DocDownCore {
+    private import SoftwareItemMetadata::*;
+
     part def Detection {
         doc /* Identifies a document's format from its file name, falling back to leading content bytes, and reports how it reached its conclusion. */
 
-        comment testRef /* Test: test/DemaConsulting.DocDown.Core.Tests/Detection/DetectionTests.cs */
-        comment designRef /* Design: docs/design/docdown-core/detection.md */
-        comment verificationRef /* Verification: docs/verification/docdown-core/detection.md */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/detection.yaml */
+        metadata info : SoftwareInfo {
+            testFiles = ("test/DemaConsulting.DocDown.Core.Tests/Detection/DetectionTests.cs");
+            designFiles = ("docs/design/docdown-core/detection.md");
+            verificationFiles = ("docs/verification/docdown-core/detection.md");
+            requirementFiles = ("docs/reqstream/docdown-core/detection.yaml");
+        }
 
         part formatSniffer : FormatSniffer;
     }
 
     part def DocumentFormat {
-        doc /* Identifies a format by a short stable Id and its IANA media type. */
+        doc /* Identifies a format by a short stable Id and its IANA media type (documented as a supporting type). */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Detection/DocumentFormat.cs */
-        comment designRef /* Design: docs/design/docdown-core/detection.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/detection.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/detection.yaml (documented as a supporting type) */
+        metadata info : SoftwareInfo {
+            sourceFiles = ("src/DemaConsulting.DocDown.Core/Detection/DocumentFormat.cs");
+            designFiles = ("docs/design/docdown-core/detection.md");
+            verificationFiles = ("docs/verification/docdown-core/detection.md");
+            requirementFiles = ("docs/reqstream/docdown-core/detection.yaml");
+        }
     }
 
     part def DetectionBasis {
-        doc /* Enumerates the kind of evidence behind a detection so consumers can weigh its reliability. */
+        doc /* Enumerates the kind of evidence behind a detection so consumers can weigh its reliability (documented as a supporting type). */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Detection/FormatSniffer.cs */
-        comment designRef /* Design: docs/design/docdown-core/detection.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/detection.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/detection.yaml (documented as a supporting type) */
+        metadata info : SoftwareInfo {
+            sourceFiles = ("src/DemaConsulting.DocDown.Core/Detection/FormatSniffer.cs");
+            designFiles = ("docs/design/docdown-core/detection.md");
+            verificationFiles = ("docs/verification/docdown-core/detection.md");
+            requirementFiles = ("docs/reqstream/docdown-core/detection.yaml");
+        }
     }
 
     part def FormatDetection {
-        doc /* Pairs the identified format with the detection basis behind it. */
+        doc /* Pairs the identified format with the detection basis behind it (documented as a supporting type). */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Core/Detection/FormatSniffer.cs */
-        comment designRef /* Design: docs/design/docdown-core/detection.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-core/detection.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-core/detection.yaml (documented as a supporting type) */
+        metadata info : SoftwareInfo {
+            sourceFiles = ("src/DemaConsulting.DocDown.Core/Detection/FormatSniffer.cs");
+            designFiles = ("docs/design/docdown-core/detection.md");
+            verificationFiles = ("docs/verification/docdown-core/detection.md");
+            requirementFiles = ("docs/reqstream/docdown-core/detection.yaml");
+        }
     }
 }

@@ -1,11 +1,15 @@
 package DocDownPdfRendering {
+    private import SoftwareItemMetadata::*;
+
     part def PdfPageRenderingExtractor {
         doc /* The superset backend: delegates the managed aspects, rasterizes the pages, isolates page faults. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Pdf.Rendering/PdfPageRenderingExtractor.cs */
-        comment testRef /* Test: test/DemaConsulting.DocDown.Pdf.Rendering.Tests/PdfPageRenderingExtractorTests.cs */
-        comment designRef /* Design: docs/design/docdown-pdf-rendering/pdf-page-rendering-extractor.md */
-        comment verificationRef /* Verification: docs/verification/docdown-pdf-rendering/pdf-page-rendering-extractor.md */
-        comment reqRef /* Requirements: docs/reqstream/docdown-pdf-rendering/pdf-page-rendering-extractor.yaml */
+        metadata info : SoftwareInfo {
+            sourceFiles = ("src/DemaConsulting.DocDown.Pdf.Rendering/PdfPageRenderingExtractor.cs");
+            testFiles = ("test/DemaConsulting.DocDown.Pdf.Rendering.Tests/PdfPageRenderingExtractorTests.cs");
+            designFiles = ("docs/design/docdown-pdf-rendering/pdf-page-rendering-extractor.md");
+            verificationFiles = ("docs/verification/docdown-pdf-rendering/pdf-page-rendering-extractor.md");
+            requirementFiles = ("docs/reqstream/docdown-pdf-rendering/pdf-page-rendering-extractor.yaml");
+        }
     }
 }

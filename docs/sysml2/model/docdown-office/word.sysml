@@ -1,4 +1,6 @@
 package DocDownOffice {
+    private import SoftwareItemMetadata::*;
+
     doc
     /*
      * DemaConsulting.DocDown.Word is the Word extraction subsystem of DemaConsulting.DocDown.Office: a backend that reads a
@@ -10,10 +12,12 @@ package DocDownOffice {
     part def Word {
         doc /* The DemaConsulting.DocDown.Word subsystem as a whole. */
 
-        comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Word/DocDownWordTests.cs */
-        comment designRef /* Design: docs/design/docdown-office/word.md */
-        comment verificationRef /* Verification: docs/verification/docdown-office/word.md */
-        comment reqRef /* Requirements: docs/reqstream/docdown-office/word.yaml */
+        metadata info : SoftwareInfo {
+            testFiles = ("test/DemaConsulting.DocDown.Office.Tests/Word/DocDownWordTests.cs");
+            designFiles = ("docs/design/docdown-office/word.md");
+            verificationFiles = ("docs/verification/docdown-office/word.md");
+            requirementFiles = ("docs/reqstream/docdown-office/word.yaml");
+        }
 
         part wordDocDownBuilderExtensions : WordDocDownBuilderExtensions;
         part markdown : WordMarkdown;

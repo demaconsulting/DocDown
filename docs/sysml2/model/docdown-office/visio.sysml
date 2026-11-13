@@ -1,4 +1,6 @@
 package DocDownOffice {
+    private import SoftwareItemMetadata::*;
+
     doc
     /*
      * DemaConsulting.DocDown.Visio is the Visio extraction subsystem of DemaConsulting.DocDown.Office: a backend that reads a
@@ -14,10 +16,12 @@ package DocDownOffice {
     part def Visio {
         doc /* The DemaConsulting.DocDown.Visio subsystem as a whole. */
 
-        comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Visio/DocDownVisioTests.cs */
-        comment designRef /* Design: docs/design/docdown-office/visio.md */
-        comment verificationRef /* Verification: docs/verification/docdown-office/visio.md */
-        comment reqRef /* Requirements: docs/reqstream/docdown-office/visio.yaml */
+        metadata info : SoftwareInfo {
+            testFiles = ("test/DemaConsulting.DocDown.Office.Tests/Visio/DocDownVisioTests.cs");
+            designFiles = ("docs/design/docdown-office/visio.md");
+            verificationFiles = ("docs/verification/docdown-office/visio.md");
+            requirementFiles = ("docs/reqstream/docdown-office/visio.yaml");
+        }
 
         part visioDocDownBuilderExtensions : VisioDocDownBuilderExtensions;
         part markdown : VisioMarkdown;
