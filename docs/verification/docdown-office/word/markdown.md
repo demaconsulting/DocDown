@@ -19,7 +19,7 @@ through real extractions for end-to-end content and note behavior.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: hand-built `WordDocumentModel` instances for the writer units; generated `.docx`
   documents from `TestData/DocxFixtures.cs` for integration scenarios
 - **Filesystem**: none for the writer unit tests; the integration scenarios use per-test

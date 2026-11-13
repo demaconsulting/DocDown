@@ -30,7 +30,7 @@ submission, not during normal development.
 
 # Fix Guidance by Failure Type
 
-- **cspell spelling errors**: Add legitimate technical terms to `.cspell.yaml`
+- **TextLint spelling errors**: Add legitimate technical terms to `.textlint.yaml`
   under the `words` list. Correct genuine misspellings in the source text.
   Do not add misspelled words to the dictionary.
 
@@ -53,11 +53,13 @@ submission, not during normal development.
 - **reqstream / reviewmark / versionmark failures**: Fix the referenced
   requirements or review configuration per the standards in
   `.github/standards/reqstream-usage.md` and `.github/standards/reviewmark-usage.md`.
+  For an orphaned requirement, add the missing `children` link from the parent it
+  serves; if no parent clearly needs it, report it rather than inventing a link.
 
 # Rules
 
 - Fix **only** lint issues - do not refactor, restructure, or make functional changes
-- For spelling: prefer adding terms to `.cspell.yaml` over rewriting correct technical text
+- For spelling: prefer adding terms to `.textlint.yaml` over rewriting correct technical text
 - Never modify auto-generated files (check file headers for "auto-generated" or "do not edit")
 - Respect all protected configuration files listed in AGENTS.md
 - Report **all** files modified

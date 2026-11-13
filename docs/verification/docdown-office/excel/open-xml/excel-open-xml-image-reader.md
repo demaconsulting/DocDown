@@ -14,7 +14,7 @@ generated fixtures from `TestData/XlsxFixtures.cs` whose images are synthetic.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: generated workbooks that embed one or more images on named worksheets
 - **Filesystem**: none for the reader scenarios; a per-test `TempScratch` folder for the extraction-level
   scenario

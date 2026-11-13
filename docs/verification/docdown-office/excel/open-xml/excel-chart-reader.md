@@ -15,7 +15,7 @@ application saved. Every series name, category, and value in the fixtures is syn
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: hand-written chart XML strings for single-series, multi-series, scatter, automatic-title,
   deleted-title, sparse-index, literal-value, and cache-missing charts; generated workbooks for a worksheet
   with one chart, with none, and with several chart parts laid out under chosen graphic frames, including a

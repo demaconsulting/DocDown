@@ -17,7 +17,7 @@ split. Building the model by hand is what lets each mapping decision be proved i
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: hand-built `PowerPointDeckModel` instances with synthetic slides, titles, notes, and
   image references; on-disk link-resolution scenarios use a per-test `TempScratch` folder
 - **Mocking**: a recording sink captures the emitter's content, parts, images, notes, and features;

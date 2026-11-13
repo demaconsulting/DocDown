@@ -68,8 +68,8 @@ in the user guide.
 ### Test Environment
 
 The evidence is produced by the standard `DemaConsulting.DocDown.Tool` test run: xUnit v3 under the .NET SDK,
-targeting net10.0, across the CI operating-system matrix. `TestResults` enters the dependency graph
-only through the tool, which is packaged for that single framework, so net10.0 is the full extent of
+targeting net10.0 and net11.0, across the CI operating-system matrix. `TestResults` enters the
+dependency graph only through the tool, which is packaged for those two frameworks, so they are the full extent of
 this dependency's exercised surface rather than a narrowing of it. Every results file is
 written to a per-test temporary folder and re-parsed in the same test, so the evidence depends on no
 committed artifact and no network access.

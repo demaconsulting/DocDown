@@ -18,7 +18,7 @@ written vector image silent, and reports an image over the caller's size limit a
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: hand-built `ExcelWorkbookModel` instances
 - **Filesystem**: none; a recording sink captures the parts and reports
 - **Mocking**: a recording sink; no other substitute

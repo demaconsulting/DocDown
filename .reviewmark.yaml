@@ -726,7 +726,7 @@ reviews:
     paths:
       - "docs/reqstream/docdown-powerpoint-rendering/powerpoint-rendering-doc-down-builder-extensions.yaml"  # unit req
       - "docs/design/docdown-powerpoint-rendering/powerpoint-rendering-doc-down-builder-extensions.md"      # design
-      - "docs/verification/docdown-powerpoint-rendering/powerpoint-rendering-doc-down-builder-extensions.md"  # verif
+      - "docs/verification/docdown-powerpoint-rendering/powerpoint-rendering-doc-down-builder-extensions.md"  # verify
       - "src/DemaConsulting.DocDown.PowerPoint.Rendering/PowerPointRenderingDocDownBuilderExtensions.cs"     # source
       - "test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/PowerPointRenderingDocDownBuilderExtensionsTests.cs"
 
@@ -824,7 +824,7 @@ reviews:
     paths:
       - "docs/reqstream/docdown-visio-rendering/visio-rendering-doc-down-builder-extensions.yaml"  # unit req
       - "docs/design/docdown-visio-rendering/visio-rendering-doc-down-builder-extensions.md"      # design
-      - "docs/verification/docdown-visio-rendering/visio-rendering-doc-down-builder-extensions.md"  # verif
+      - "docs/verification/docdown-visio-rendering/visio-rendering-doc-down-builder-extensions.md"  # verify
       - "src/DemaConsulting.DocDown.Visio.Rendering/VisioRenderingDocDownBuilderExtensions.cs"     # source
       - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/VisioRenderingDocDownBuilderExtensionsTests.cs"
 

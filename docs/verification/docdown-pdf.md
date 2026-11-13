@@ -7,7 +7,7 @@ extraction package.
 
 `DemaConsulting.DocDown.Pdf` is verified through system-level integration tests in `DocDownPdfTests.cs` and unit
 tests per unit, all in `DemaConsulting.DocDown.Pdf.Tests`, running on xUnit v3 across net8.0,
-net9.0, and net10.0.
+net9.0, net10.0, and net11.0.
 
 ### Every extraction scenario checks the persisted contract artifacts
 
@@ -44,7 +44,7 @@ annotated PDF against committed files after normalizing machine-specific lines.
 
 ## Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Filesystem**: each system test owns a `TempScratch` folder for the generated input PDF and the
   extraction output
 - **Inputs**: PDFs generated at test time, plus committed golden summary files; no network access

@@ -323,7 +323,7 @@ public static class FormatSniffer
 ///     The basis is reported rather than scored. DocDown says what it found and how it knows —
 ///     a content signature or a file extension — and leaves the reader to weigh that. A numeric
 ///     confidence stood here once; nothing ever read it, and inventing a score is the kind of
-///     judgement about content this product does not make.
+///     judgment about content this product does not make.
 ///     Instances are immutable and therefore thread-safe.
 /// </remarks>
 public sealed record FormatDetection(DocumentFormat Format, DetectionBasis Basis)

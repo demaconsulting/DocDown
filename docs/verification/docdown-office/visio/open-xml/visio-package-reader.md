@@ -18,7 +18,7 @@ the developer report.)*
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: Visio Open Packaging drawings synthesized in memory by `VisioPackageBuilder` (test project) — master-typed
   schematics, parallel connectors, reversed connector records, reused shape ids, symbol-font runs, and
   drawings with or without a masters part

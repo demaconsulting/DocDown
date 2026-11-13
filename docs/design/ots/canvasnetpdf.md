@@ -4,9 +4,10 @@
 
 `DemaConsulting.CanvasNet.Pdf` is the managed PDF rasterization API `DemaConsulting.DocDown.Pdf.Rendering` is built
 on. It was chosen because it turns a PDF page into pixel data through a small managed API, is fully
-managed with no native asset, ships real `net8.0`, `net9.0`, and `net10.0` assets matching this
-repository's target frameworks exactly, and is MIT licensed, compatible with this repository's MIT
-license. Replacing the previously used PDFtoImage (PDFium/SkiaSharp) backend with `CanvasNet.Pdf`
+managed with no native asset, ships real `net8.0`, `net9.0`, and `net10.0` assets (`net11.0`
+consumers resolve the `net10.0` asset through normal framework compatibility), and is MIT licensed,
+compatible with this repository's MIT license. Replacing the previously used PDFtoImage
+(PDFium/SkiaSharp) backend with `CanvasNet.Pdf`
 removed every native asset, runtime-identifier concern, and native thread-safety constraint this
 package used to carry, without changing the page-rendering feature it provides.
 

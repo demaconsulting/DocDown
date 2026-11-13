@@ -7,7 +7,7 @@ extraction subsystem.
 
 `DemaConsulting.DocDown.Visio` is verified through subsystem-level integration tests in `DocDownVisioTests.cs` and
 unit tests per unit, all in `DemaConsulting.DocDown.Office.Tests`, running on xUnit v3 across
-net8.0, net9.0, and net10.0.
+net8.0, net9.0, net10.0, and net11.0.
 
 ### Every extraction test reconciles against the filesystem
 
@@ -56,7 +56,7 @@ name, shape name, master name, and image payload in the fixtures is synthetic.
 
 ## Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Filesystem**: a per-test `TempScratch` folder holds both the generated input drawing and the
   extraction output
 - **Inputs**: Visio Open Packaging drawings generated at test time by `VisioPackageBuilder` (test project), plus a

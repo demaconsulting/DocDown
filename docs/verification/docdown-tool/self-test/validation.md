@@ -13,7 +13,7 @@ real, so the self-test union the driver runs is exactly the one the shipped tool
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net10.0, the single framework the tool ships on
+- **Framework**: xUnit v3 under the .NET SDK, targeting net10.0 and net11.0, the frameworks the tool ships on
 - **Filesystem**: a per-test `TempScratch` folder holds the requested results file
 - **Engine**: these are unit tests of the `Validation` unit, so they supply their own engine —
   the managed PDF backends only (`AddPdf` and `AddPdfRendering`). Every property asserted here (the

@@ -18,7 +18,7 @@ image delegation, and text delegation are exercised against genuine parser behav
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: PDFs generated at test time by `PdfFixtures`; no committed binaries and no network
   access
 - **Filesystem**: none for extraction scenarios; the self-test scenario uses a per-test

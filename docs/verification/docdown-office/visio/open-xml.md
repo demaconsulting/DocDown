@@ -24,7 +24,7 @@ because the behavior is genuinely tested.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: Visio Open Packaging drawings synthesized in memory by `VisioPackageBuilder` (test project) —
   including master-typed schematics, parallel connectors, reused shape ids, symbol-font runs, and
   page/master/thumbnail image relationships — with no committed binary fixtures

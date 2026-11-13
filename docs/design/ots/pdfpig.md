@@ -54,10 +54,10 @@ minimum, because PdfPig is pre-1.0 and its own documentation states that the pub
 a minor version. A floating reference would let a restore silently substitute an incompatible API.
 
 **Framework resolution.** PdfPig publishes library assets for `net462`, `net471`, `net6.0`, `net8.0`,
-`net9.0`, `netstandard2.0`, and `netstandard2.1`. There is **no `net10.0` asset**: net10.0 consumers
-of `DemaConsulting.DocDown.Pdf` resolve PdfPig's `net9.0` asset through normal framework compatibility. This is
-recorded here and again in the `DemaConsulting.DocDown.Pdf` system design's Design Constraints, because it is a fact
-a reader of either document needs.
+`net9.0`, `netstandard2.0`, and `netstandard2.1`. There is **no `net10.0` or `net11.0` asset**: net10.0 and
+net11.0 consumers of `DemaConsulting.DocDown.Pdf` resolve PdfPig's `net9.0` asset through normal framework
+compatibility. This is recorded here and again in the `DemaConsulting.DocDown.Pdf` system design's Design
+Constraints, because it is a fact a reader of either document needs.
 
 **Containment as a risk control.** PdfPig types appear in exactly three source files —
 `PdfDocumentExtractor.cs`, `PdfTextExtractor.cs`, and `PdfImageExtractor.cs` — and in no public

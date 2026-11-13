@@ -16,7 +16,7 @@ CanvasNet is the managed canvas and codec library both `DemaConsulting.DocDown.P
 choice rather than an omission. Per the software-items standard, a dedicated OTS test project is
 required only *if no other verification evidence is available*. That is not the case here: CanvasNet
 is a runtime library on the critical path of every rendered page and every rendered slide, and the
-tests named below each drive its PNG encoding end to end, on three target frameworks, across the
+tests named below each drive its PNG encoding end to end, on four target frameworks, across the
 full CI operating-system matrix, since CanvasNet carries no runtime-identifier-specific asset to
 limit where it runs.
 
@@ -29,7 +29,7 @@ rendering suites already exercise against real documents.
 ### Test Environment
 
 The evidence is produced by the standard `DemaConsulting.DocDown.Pdf.Rendering` and `DemaConsulting.DocDown.PowerPoint.Rendering`
-test runs: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0, across the full CI
+test runs: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0, across the full CI
 operating-system matrix. Every PDF fixture is generated at test time; the PowerPoint fixture is the
 embedded `probe.pptx` resource. Neither depends on network access.
 

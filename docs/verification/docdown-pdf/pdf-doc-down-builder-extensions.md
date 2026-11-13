@@ -18,7 +18,7 @@ inspect the extension method signature itself and confirm it takes and returns o
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: none; no document is extracted and no file is read
 - **Filesystem**: none
 - **Mocking**: none; a real builder and real engines are used

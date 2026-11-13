@@ -12,7 +12,7 @@ skipped-region and skipped-paragraph counts the detector produced and the conten
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: WordprocessingML documents generated at test time
 - **Filesystem**: none; each fixture is read from a `MemoryStream`
 - **Mocking**: none

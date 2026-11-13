@@ -44,8 +44,10 @@ sections:
         title: The package shall support the .NET 8 runtime.
         tags: [system]
         justification: |
-          .NET 8 is an LTS release, and CanvasNet.Pdf ships a real net8.0 asset the package must
-          render on.
+          .NET 8 is a Long-Term Support (LTS) release that reached end of support in November 2026.
+          The package continues to support this runtime so that library consumers who have not yet
+          migrated to a newer release, such as enterprise environments with slow upgrade cycles, can
+          keep using it.
         tests:
           - "net8.0@DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages"
 
@@ -53,8 +55,9 @@ sections:
         title: The package shall support the .NET 9 runtime.
         tags: [system]
         justification: |
-          .NET 9 support enables users to leverage the latest .NET features, and CanvasNet.Pdf ships a
-          real net9.0 asset the package must render on.
+          .NET 9 is a Standard-Term Support (STS) release that has reached end of support. The
+          package continues to support this runtime so that library consumers who have not yet
+          migrated to a newer release can keep using it.
         tests:
           - "net9.0@DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages"
 
@@ -62,7 +65,18 @@ sections:
         title: The package shall support the .NET 10 runtime.
         tags: [system]
         justification: |
-          .NET 10 support keeps the package current, and CanvasNet.Pdf ships a real net10.0 asset the
-          package must render on — matching this repository's target frameworks exactly.
+          .NET 10 is the current Long-Term Support (LTS) release. Supporting this runtime provides a
+          stable, long-term supported target for library consumers who prefer LTS releases.
         tests:
           - "net10.0@DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages"
+
+      - id: DocDownPdfRendering-Platform-Net11
+        title: The package shall support the .NET 11 runtime.
+        tags: [system]
+        justification: |
+          .NET 11 is the latest release in the .NET platform roadmap. Supporting this runtime
+          ensures the package works for library consumers as they adopt the newest .NET version.
+          CanvasNet.Pdf ships no net11.0 asset; its net10.0 asset is resolved through normal
+          framework compatibility, and this test proves pages render there.
+        tests:
+          - "net11.0@DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages"

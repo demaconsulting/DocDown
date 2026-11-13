@@ -1,5 +1,5 @@
 ---
-# Spell-Checking
+# Spell-Checking with TextLint
 #
 # PURPOSE:
 # - Maintain professional documentation and code quality
@@ -11,6 +11,12 @@
 
 version: "0.2"
 language: en
+
+# The files to spell-check
+files:
+  - "**/*.{md,yaml,yml,json,cs,cpp,hpp,h,txt}"
+# Include hidden paths such as .github/ and .*.yaml
+enableGlobDot: true
 
 # Project-specific technical terms and tool names
 words:
@@ -188,11 +194,28 @@ words:
   # a misspelling.
   - Textless
 
+  # Tool, package, and configuration tokens that cspell's software dictionaries knew and TextLint's
+  # do not: the DEMA Consulting package prefix, the SonarScanner and ncipollo release-action names,
+  # the yamllint/markdownlint path and rule vocabulary, the PDF object keywords named in the
+  # ignore patterns below, and terms from the shared agent standards. All genuine technical
+  # names, not misspellings.
+  - demaconsulting
+  - sonarscanner
+  - ncipollo
+  - Setext
+  - venv
+  - thirdparty
+  - endobj
+  - startxref
+  - nestings
+  - shopt
+  - unidirectionality
+
 # Ignore the raster and PDF payloads the PDF test fixtures build documents from. These are
 # generated binary data expressed as text so the repository stays free of committed binaries:
-# base64 image bytes, and PDF object syntax appended after a '\n' escape (which the checker
-# reads as 'nendobj', 'nstartxref', and similar). They are data, not prose, so no spelling
-# judgement applies to them.
+# base64 image bytes, and PDF object syntax appended after a '\n' escape (which a spell checker
+# reads as the escape letter run together with the keyword). They are data, not prose, so no
+# spelling judgment applies to them.
 ignoreRegExpList:
   - "/[A-Za-z0-9+/]{40,}={0,2}/g"
   - "/\\\\n(endobj|endstream|startxref|trailer|xref|stream)/g"
@@ -209,7 +232,7 @@ ignorePaths:
   - "**/TestResults/**"
   # ApiMark generated API reference (src/<project>/api/). This is build output, regenerated
   # from the assembly and its XML doc comments and packed into the NuGet package; it is not
-  # authored prose, so no spelling judgement applies and no word list is being widened.
+  # authored prose, so no spelling judgment applies and no word list is being widened.
   - "**/api/**"
   - "**/AGENT_REPORT_*.md"
   - "**/.agent-logs/**"

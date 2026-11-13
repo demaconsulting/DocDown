@@ -22,7 +22,7 @@ real, decodable slide PNG, which the end-to-end rendering test below confirms. N
 ### Test Environment
 
 The evidence is produced by the standard `DemaConsulting.DocDown.PowerPoint.Rendering` test run: xUnit v3 under the
-.NET SDK, targeting net8.0, net9.0, and net10.0, across the full CI operating-system matrix.
+.NET SDK, targeting net8.0, net9.0, net10.0, and net11.0, across the full CI operating-system matrix.
 
 ### Test Scenarios
 

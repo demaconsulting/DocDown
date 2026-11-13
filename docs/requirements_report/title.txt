@@ -1,6 +1,6 @@
 ---
 title: DocDown Trace Matrix
-subtitle: Requirements Traceability Matrix for DocDown
+subtitle: Document extraction for LLM consumption
 author: DEMA Consulting
 description: Requirements Traceability Matrix for DocDown
 lang: en-US

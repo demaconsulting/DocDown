@@ -7,7 +7,7 @@ subsystem.
 
 `DemaConsulting.DocDown.Excel` is verified through subsystem-level integration tests in `DocDownExcelTests.cs` and unit
 tests per unit, all in `DemaConsulting.DocDown.Office.Tests`, running on xUnit v3 across net8.0,
-net9.0, and net10.0.
+net9.0, net10.0, and net11.0.
 
 ### Extraction tests reconcile against the filesystem
 
@@ -53,7 +53,7 @@ sheet name, chart series, and annotation in the fixtures is synthetic.
 
 ## Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Filesystem**: a per-test `TempScratch` folder holds both the generated input workbook and the
   extraction output
 - **Inputs**: SpreadsheetML workbooks generated at test time by the Open XML SDK writer, plus a short

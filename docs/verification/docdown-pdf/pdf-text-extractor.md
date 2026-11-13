@@ -19,7 +19,7 @@ markdown formatting.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: pages from PDFs generated at test time; no committed binaries and no network access
 - **Filesystem**: none; the unit performs no I/O
 - **Mocking**: none; the parser and layout-analysis pipeline are exercised as used in production

@@ -18,7 +18,7 @@ must open an OPC package without native binaries and expose those parts and rela
 transitive evidence from the Office suite.** Per the software-items standard, a dedicated OTS test
 project is required only *if no other verification evidence is available*. That is not the case:
 `VisioPackageReader` names the packaging API in its own source, so the Visio reader tests exercise
-`Package.Open`, `PackagePart` lookup, and relationship resolution directly, on three target
+`Package.Open`, `PackagePart` lookup, and relationship resolution directly, on four target
 frameworks, in every CI matrix combination. The Word path (part of the Office suite) reaches the same
 library transitively
 through the SDK.
@@ -34,7 +34,7 @@ suites answer the question directly, so no such project is created.
 ### Test Environment
 
 The evidence is produced by the standard `DemaConsulting.DocDown.Office` test run: xUnit v3 under the .NET SDK,
-targeting net8.0, net9.0, and net10.0, across the CI operating-system matrix. Every fixture is an
+targeting net8.0, net9.0, net10.0, and net11.0, across the CI operating-system matrix. Every fixture is an
 OPC package generated at test time, so the evidence depends on no network access.
 
 ### Test Scenarios

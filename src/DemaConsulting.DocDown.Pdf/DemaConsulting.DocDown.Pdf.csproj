@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0;net11.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -40,7 +40,7 @@
     <!-- ApiMark writes the gradual-disclosure Markdown API reference into the project's api/
          folder after every build, and ApiMarkPackDocs places that folder inside the produced
          NuGet package so consumers (and AI agents) get the API reference with the package. The
-         api/ folder is build output: it is git-ignored and excluded from markdownlint and cspell. -->
+         api/ folder is build output: it is git-ignored and excluded from markdownlint and TextLint. -->
     <ApiMarkPackDocs>true</ApiMarkPackDocs>
     <!-- ApiMarkOutputDir is left at ApiMark's default, $(MSBuildProjectDirectory)\api, unless a
          harness supplies ApiMarkOutputRoot. The packaging tests run 'dotnet pack' on this project

@@ -13,7 +13,7 @@ asserts the resolved image and its slide association — and through the emitter
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: PresentationML decks with a synthetic embedded image and an authored description; read from an
   in-memory stream
 - **Filesystem**: none for the reader scenarios; a per-test `TempScratch` folder where an emitter scenario

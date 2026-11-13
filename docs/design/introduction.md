@@ -232,6 +232,14 @@ diagram or the prose below.
 
 ![Software Structure](SoftwareStructureView.svg)
 
+The diagram below complements the structure view by showing DocDown in its run-time context: the
+`docdown` tool or your own application registers backends with Core, Core sniffs the document's
+format and selects one format backend (optionally with a page-rendering add-on), and the result is
+written to the same scratch-folder layout whatever the format.
+
+![DocDown architecture: your documents, the Core engine with format backends and optional
+page-rendering add-ons, and the scratch folder it writes](architecture.svg)
+
 DemaConsulting.DocDown.Core is organized into three subsystems that form a one-directional pipeline: **Detection**
 identifies a document's format, **Extraction** registers backends and selects the best available one
 deterministically, and **Output** is the sole write path that produces the invariant scratch-folder

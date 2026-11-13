@@ -11,7 +11,7 @@ identifier resolution, and probe containment directly observable without filesys
 #### Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK
-- **Targets**: net8.0, net9.0, and net10.0
+- **Targets**: net8.0, net9.0, net10.0, and net11.0
 - **Backends**: StubExtractor instances, including throwing and unavailable probes, plus a local test
   double whose probe returns null
 - **Filesystem**: N/A - registry tests are fully in memory

@@ -11,7 +11,7 @@ the filesystem, so no mocking is required.
 ### Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK
-- **Targets**: net8.0, net9.0, and net10.0
+- **Targets**: net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: in-memory `MemoryStream` instances only
 - **Isolation**: each test creates its own stream and file name
 

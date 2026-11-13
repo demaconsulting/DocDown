@@ -21,7 +21,7 @@ a build-time tool invoked once per pipeline whose correct operation must be infe
 pipeline completing. It is a runtime library on the critical path of every `DemaConsulting.DocDown.Pdf` extraction,
 and the extraction and unit tests named in the scenarios below — those in `PdfDocumentExtractorTests`,
 `PdfTextExtractorTests`, `PdfImageExtractorTests`, and the `DocDownPdf_Extract_*` tests in
-`DocDownPdfTests` — each parse a real PDF end to end, on three target frameworks, in every CI matrix
+`DocDownPdfTests` — each parse a real PDF end to end, on four target frameworks, in every CI matrix
 combination.
 
 Two families of tests in the same project are deliberately **not** claimed as evidence that PdfPig
@@ -49,7 +49,7 @@ in the requirement links themselves, so a reader can follow either direction.
 ### Test Environment
 
 The evidence is produced by the standard `DemaConsulting.DocDown.Pdf` test run: xUnit v3 under the .NET SDK,
-targeting net8.0, net9.0, and net10.0, across the CI operating-system matrix. Every fixture is a PDF
+targeting net8.0, net9.0, net10.0, and net11.0, across the CI operating-system matrix. Every fixture is a PDF
 generated at test time, so the evidence depends on no committed binary and no network access.
 
 ### Test Scenarios
@@ -101,7 +101,7 @@ The document-metadata capability this package declares is satisfied entirely fro
 reads out of the document, so a title, author, and page count that match what the fixture declared is
 direct evidence the parser exposed them. Evidence for `DocDown-OTS-PdfPig-DocumentMetadata`.
 
-#### Protected and invalid documents are signalled
+#### Protected and invalid documents are signaled
 
 **Tests**: `PdfDocumentExtractor_ExtractAsync_EncryptedDocument_PropagatesParserFaultForCore`,
 `PdfDocumentExtractor_ExtractAsync_MalformedDocument_PropagatesParserFaultForCore`

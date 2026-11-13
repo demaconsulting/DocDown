@@ -112,7 +112,7 @@ sections:
           high DPI — while the rest succeed. Recording only the factual note that the attempted slide
           could not be rasterized keeps the run alive and keeps the report aligned with DocDown's
           reduced output model: report what was attempted and what was produced, without adding an
-          acceptability judgement.
+          acceptability judgment.
         children:
           - DocDownPowerPointRendering-PowerPointPageRenderingExtractor-ReportsSlideFailuresAsNotes
         tests:

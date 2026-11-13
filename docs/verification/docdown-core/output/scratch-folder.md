@@ -11,7 +11,7 @@ deletes on disk.
 #### Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK
-- **Targets**: net8.0, net9.0, and net10.0
+- **Targets**: net8.0, net9.0, net10.0, and net11.0
 - **Filesystem**: real per-test `TempScratch` folders
 - **Inputs**: hostile path strings and hand-authored manifest fixtures
 

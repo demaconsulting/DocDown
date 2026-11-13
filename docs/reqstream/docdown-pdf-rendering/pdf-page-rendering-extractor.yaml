@@ -87,7 +87,7 @@ sections:
             justification: |
               One unrenderable page must not abort a whole extraction or reach the caller as an
               exception. Catching each page's fault, naming the page in a short factual note, and
-              continuing is what keeps the run honest and alive without adding any extra judgement.
+              continuing is what keeps the run honest and alive without adding any extra judgment.
             tests:
               - PdfPageRenderingExtractor_ExtractAsync_PageRenderFaults_ReportsNoteWithoutThrowing
 

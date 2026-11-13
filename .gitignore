@@ -94,7 +94,7 @@ __pycache__/
 # ApiMark generated API reference. ApiMark writes src/<project>/api/ after every build and
 # packs it into the NuGet package; it is build output regenerated from the assembly and its
 # XML doc comments, so it is never committed. Also excluded from markdownlint
-# (.markdownlint-cli2.yaml) and cspell (.cspell.yaml) for the same reason.
+# (.markdownlint-cli2.yaml) and TextLint (.textlint.yaml) for the same reason.
 src/*/api/
 
 # Test results

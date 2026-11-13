@@ -285,7 +285,7 @@ public class PowerPointContentEmitterTests
     /// <remarks>
     ///     The zero is what lets a reader tell "we read every notes slide and there are none" from
     ///     "notes are not something this backend counts"; the retired PPTX0002 diagnostic said the
-    ///     same thing as a judgement about the deck's content, which is not DocDown's role.
+    ///     same thing as a judgment about the deck's content, which is not DocDown's role.
     /// </remarks>
     [Fact]
     public async Task PowerPointContentEmitter_Emit_NoNotes_ReportsZeroNotesFeatureWithoutNote()

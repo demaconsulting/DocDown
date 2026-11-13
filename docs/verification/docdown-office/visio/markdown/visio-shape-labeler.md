@@ -16,7 +16,7 @@ additional honesty measure rather than because the intent called for it. *(See t
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: hand-built shape maps with authored text, master names, connective masters, and missing shapes
 - **Mocking**: none; the labeler is pure over the shape map
 - **Isolation**: each test builds its own shape map

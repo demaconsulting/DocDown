@@ -11,9 +11,8 @@
 #   windows@TestName  - proves the test passed on a Windows platform
 #   ubuntu@TestName   - proves the test passed on a Linux (Ubuntu) platform
 #   macos@TestName    - proves the test passed on a macOS platform
-#   net8.0@TestName   - proves the test passed under the .NET 8 runtime
-#   net9.0@TestName   - proves the test passed under the .NET 9 runtime
 #   net10.0@TestName  - proves the test passed under the .NET 10 runtime
+#   net11.0@TestName  - proves the test passed under the .NET 11 runtime
 
 sections:
   - title: DocDownTool Requirements
@@ -46,14 +45,21 @@ sections:
         title: The tool shall support the .NET 10 runtime.
         tags: [system]
         justification: |
-          .NET 10 is the runtime the tool is packaged for, and the only one it claims. A .NET tool is
-          executed rather than referenced, so it needs exactly one framework; multi-targeting it
-          duplicated the PDF rasterizer's native binaries once per framework and made the download
-          many times larger than the code it delivered. The .NET 8 and .NET 9 requirements that stood
-          here were removed with that change rather than left as claims no evidence could support:
-          the tool's test project targets net10.0 alone, so no net8.0- or net9.0-filtered result can
-          exist. The libraries continue to require and prove all three runtimes - see the
+          .NET 10 is the current Long-Term Support (LTS) release and the oldest runtime the tool is
+          packaged for. A .NET tool is executed rather than referenced, so it targets only supported
+          runtimes; the end-of-support .NET 8 and .NET 9 runtimes are not claimed, and the tool's
+          test project targets net10.0 and net11.0 alone, so no net8.0- or net9.0-filtered result
+          can exist. The libraries continue to require and prove .NET 8 through .NET 11 - see the
           DocDownCore platform requirements - so a library consumer is unaffected by the tool's
           choice.
         tests:
           - "net10.0@DocDownTool_Extract_GeneratedPdf_PrintsAbsoluteSummaryPathAndExitsZero"
+
+      - id: DocDownTool-Platform-Net11
+        title: The tool shall support the .NET 11 runtime.
+        tags: [system]
+        justification: |
+          .NET 11 is the latest release in the .NET platform roadmap. The tool is packaged with a
+          net11.0 build so it runs natively for users who have adopted the newest .NET version.
+        tests:
+          - "net11.0@DocDownTool_Extract_GeneratedPdf_PrintsAbsoluteSummaryPathAndExitsZero"

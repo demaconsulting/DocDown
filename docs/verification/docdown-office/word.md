@@ -7,7 +7,7 @@ extraction subsystem.
 
 `DemaConsulting.DocDown.Word` is verified through subsystem-level integration tests in `DocDownWordTests.cs` and
 `WordGoldenTests.cs`, and through subsystem and unit tests in `DemaConsulting.DocDown.Office.Tests`,
-running on xUnit v3 across net8.0, net9.0, and net10.0.
+running on xUnit v3 across net8.0, net9.0, net10.0, and net11.0.
 
 ### Extraction scenarios prove the expected layout is written
 
@@ -55,7 +55,7 @@ regeneration is refused in CI.
 
 ## Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Filesystem**: a per-test `TempScratch` folder holds both the generated input document and the
   extraction output
 - **Inputs**: WordprocessingML documents generated at test time by the Open XML SDK writer, plus a

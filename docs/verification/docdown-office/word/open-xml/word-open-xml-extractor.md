@@ -16,7 +16,7 @@ genuine `.docx` files rather than against a simulation of one.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: WordprocessingML documents generated at test time by `TestData/DocxFixtures.cs`
 - **Filesystem**: a per-test `TempScratch` folder holds the fixture file and output folder
 - **Mocking**: none; the SDK is exercised against real documents and the sink is Core's real writer

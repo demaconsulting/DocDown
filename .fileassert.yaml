@@ -362,10 +362,14 @@ tests:
             - pattern: "tools/net10.0/any/DemaConsulting.DocDown.Tool.dll"
               min: 1
               max: 1
-            # The tool is packaged for one framework: a tool is executed, not referenced.
-            - pattern: "tools/*/any/DemaConsulting.DocDown.Tool.dll"
+            - pattern: "tools/net11.0/any/DemaConsulting.DocDown.Tool.dll"
               min: 1
               max: 1
+            # The tool is packaged for .NET 10 and .NET 11 only: a tool is executed, not
+            # referenced, so it carries no end-of-support framework folders.
+            - pattern: "tools/*/any/DemaConsulting.DocDown.Tool.dll"
+              min: 2
+              max: 2
             - pattern: "tools/**/DotnetToolSettings.xml"
               min: 1
               text:

@@ -14,7 +14,7 @@ unit's value is the accounting and the calls it makes to the sink.
 
 #### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Sink**: `RecordingSink`, an in-memory `IExtractionSink`
 - **Filesystem**: N/A - the tests are fully in memory
 - **Isolation**: each test builds its own sink and image list

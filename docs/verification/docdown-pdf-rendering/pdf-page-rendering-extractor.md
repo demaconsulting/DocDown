@@ -18,7 +18,7 @@ depending on a genuine rasterization fault.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Rasterizer**: CanvasNet.Pdf is fully managed, so the delegation and self-test scenarios rasterize
   for real on every host; the fault scenarios substitute a throwing renderer
 - **Filesystem**: a per-test `TempScratch` folder holds input and output
