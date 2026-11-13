@@ -50,7 +50,7 @@ whose code calls an API declares that API rather than inheriting it by accident.
 **Version resolution — different per target framework.** Because the package is part of the .NET
 runtime component family, the version referenced depends on the target framework: the Office project
 declares one exact-version reference for `net10.0` and a different exact-version reference for the
-other target frameworks (`net8.0` and `net9.0`), each selected by a target-framework condition on the
+other target frameworks (`net8.0`, `net9.0`, and `net11.0`), each selected by a target-framework condition on the
 `PackageReference`. See `src/DemaConsulting.DocDown.Office/DemaConsulting.DocDown.Office.csproj` for
 the current versions.
 

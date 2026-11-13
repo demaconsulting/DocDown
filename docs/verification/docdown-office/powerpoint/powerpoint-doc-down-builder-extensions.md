@@ -13,7 +13,7 @@ call site.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: a real `DocDownBuilder`; no filesystem and no network access
 - **Mocking**: none; the real builder and real extractor descriptors are exercised
 - **Isolation**: each test constructs its own builder

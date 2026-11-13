@@ -12,7 +12,7 @@ the subsystem's value is what it actually writes to disk.
 ### Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK
-- **Targets**: net8.0, net9.0, and net10.0
+- **Targets**: net8.0, net9.0, net10.0, and net11.0
 - **Filesystem**: a per-test `TempScratch` folder receives the real output
 - **Inputs**: the test itself acts as the backend by writing through `IExtractionSink`
 

@@ -23,7 +23,7 @@ literal and a hexadecimal string is only meaningfully proved against tokens the 
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: pages from PDFs generated at test time by `PdfFixtures`, including a two-page
   annotated document and a document whose annotation reference is damaged
 - **Filesystem**: none; the fixtures are assembled in memory and the sink records in memory

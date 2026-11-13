@@ -1,6 +1,6 @@
 ---
 title: DocDown Code Quality Report
-subtitle: Code Quality Analysis Report
+subtitle: Document extraction for LLM consumption
 author: DEMA Consulting
 description: Code Quality Analysis Report for DocDown
 lang: en-US

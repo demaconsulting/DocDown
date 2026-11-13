@@ -12,7 +12,7 @@ failure containment, and result assembly.
 #### Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK
-- **Targets**: net8.0, net9.0, and net10.0
+- **Targets**: net8.0, net9.0, net10.0, and net11.0
 - **Backends**: `StubExtractor` instances scripted per scenario
 - **Filesystem**: a per-test `TempScratch` folder receives any real output
 

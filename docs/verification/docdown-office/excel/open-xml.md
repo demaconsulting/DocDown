@@ -23,7 +23,7 @@ round-trip case passes and the page-rendering case skips.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: SpreadsheetML workbooks generated at test time by `TestData/XlsxFixtures.cs`; every
   value, sheet name, chart series, and image in them is synthetic
 - **Filesystem**: a per-test `TempScratch` folder for the subsystem-level scenarios; none for the reader

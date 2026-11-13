@@ -12,7 +12,7 @@ count) is verified in the `WordOpenXmlReader` and tracked-change tests.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: font names and hexadecimal codes supplied inline
 - **Filesystem**: none
 - **Mocking**: none

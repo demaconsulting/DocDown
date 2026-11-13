@@ -1,4 +1,6 @@
 package DocDownOffice {
+    private import SoftwareItemMetadata::*;
+
     doc
     /*
      * DemaConsulting.DocDown.Office is the Microsoft Office extraction package: a separately distributed backend that
@@ -13,10 +15,12 @@ package DocDownOffice {
     part def DocDownOfficeSystem {
         doc /* The DemaConsulting.DocDown.Office system as a whole. */
 
-        comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/OfficeDocDownBuilderExtensionsTests.cs */
-        comment designRef /* Design: docs/design/docdown-office.md */
-        comment verificationRef /* Verification: docs/verification/docdown-office.md */
-        comment reqRef /* Requirements: docs/reqstream/docdown-office.yaml */
+        metadata info : SoftwareInfo {
+            testFiles = ("test/DemaConsulting.DocDown.Office.Tests/OfficeDocDownBuilderExtensionsTests.cs");
+            designFiles = ("docs/design/docdown-office.md");
+            verificationFiles = ("docs/verification/docdown-office.md");
+            requirementFiles = ("docs/reqstream/docdown-office.yaml");
+        }
 
         part officeDocDownBuilderExtensions : OfficeDocDownBuilderExtensions;
         part word : Word;
@@ -28,10 +32,12 @@ package DocDownOffice {
     part def OfficeDocDownBuilderExtensions {
         doc /* The reflection-free registration seam that adds every Office backend in one call. */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Office/OfficeDocDownBuilderExtensions.cs */
-        comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/OfficeDocDownBuilderExtensionsTests.cs */
-        comment designRef /* Design: docs/design/docdown-office.md */
-        comment verificationRef /* Verification: docs/verification/docdown-office.md */
-        comment reqRef /* Requirements: docs/reqstream/docdown-office.yaml */
+        metadata info : SoftwareInfo {
+            sourceFiles = ("src/DemaConsulting.DocDown.Office/OfficeDocDownBuilderExtensions.cs");
+            testFiles = ("test/DemaConsulting.DocDown.Office.Tests/OfficeDocDownBuilderExtensionsTests.cs");
+            designFiles = ("docs/design/docdown-office.md");
+            verificationFiles = ("docs/verification/docdown-office.md");
+            requirementFiles = ("docs/reqstream/docdown-office.yaml");
+        }
     }
 }

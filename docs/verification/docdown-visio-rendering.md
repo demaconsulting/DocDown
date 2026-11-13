@@ -7,8 +7,8 @@ the optional Visio page-rendering package.
 
 `DemaConsulting.DocDown.Visio.Rendering` is verified through system-level integration tests in
 `DocDownVisioRenderingTests.cs` and focused unit tests per unit, all in
-`DemaConsulting.DocDown.Visio.Rendering.Tests`, running on xUnit v3 across net8.0, net9.0, and
-net10.0.
+`DemaConsulting.DocDown.Visio.Rendering.Tests`, running on xUnit v3 across net8.0, net9.0, net10.0, and
+net11.0.
 
 ### The central scenario produces a real rendered page
 
@@ -54,7 +54,7 @@ project.
 
 ## Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Rasterizer**: CanvasNet.Vsdx and CanvasNet are fully managed and carry no
   runtime-identifier-specific asset, so the render scenarios exercise the real rasterizer on every
   operating system and framework in the CI matrix with no conditional skip path

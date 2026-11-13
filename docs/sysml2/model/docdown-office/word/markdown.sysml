@@ -1,11 +1,15 @@
 package DocDownOffice {
+    private import SoftwareItemMetadata::*;
+
     part def WordMarkdown {
         doc /* The Markdown subsystem: the backend-neutral document model and its projection onto markdown — the model renderer, the GFM table writer, and the shared content emitter that produces every output the model implies. */
 
-        comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Word/Markdown/WordMarkdownWriterTests.cs */
-        comment designRef /* Design: docs/design/docdown-office/word/markdown.md */
-        comment verificationRef /* Verification: docs/verification/docdown-office/word/markdown.md */
-        comment reqRef /* Requirements: docs/reqstream/docdown-office/word/markdown.yaml */
+        metadata info : SoftwareInfo {
+            testFiles = ("test/DemaConsulting.DocDown.Office.Tests/Word/Markdown/WordMarkdownWriterTests.cs");
+            designFiles = ("docs/design/docdown-office/word/markdown.md");
+            verificationFiles = ("docs/verification/docdown-office/word/markdown.md");
+            requirementFiles = ("docs/reqstream/docdown-office/word/markdown.yaml");
+        }
 
         part wordMarkdownWriter : WordMarkdownWriter;
         part wordTableWriter : WordTableWriter;
@@ -13,11 +17,13 @@ package DocDownOffice {
     }
 
     part def WordDocumentModel {
-        doc /* The reader-neutral model of a Word document: its blocks, inlines, lists, and tables. */
+        doc /* The reader-neutral model of a Word document: its blocks, inlines, lists, and tables (documented as a supporting type). */
 
-        comment sourceRef /* Source: src/DemaConsulting.DocDown.Office/Word/Markdown/WordDocumentModel.cs */
-        comment designRef /* Design: docs/design/docdown-office/word/markdown.md (documented as a supporting type) */
-        comment verificationRef /* Verification: docs/verification/docdown-office/word/markdown.md (documented as a supporting type) */
-        comment reqRef /* Requirements: docs/reqstream/docdown-office/word/markdown.yaml (documented as a supporting type) */
+        metadata info : SoftwareInfo {
+            sourceFiles = ("src/DemaConsulting.DocDown.Office/Word/Markdown/WordDocumentModel.cs");
+            designFiles = ("docs/design/docdown-office/word/markdown.md");
+            verificationFiles = ("docs/verification/docdown-office/word/markdown.md");
+            requirementFiles = ("docs/reqstream/docdown-office/word/markdown.yaml");
+        }
     }
 }

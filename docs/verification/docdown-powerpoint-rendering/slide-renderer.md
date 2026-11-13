@@ -16,7 +16,7 @@ opens its own document with no shared mutable state in this unit.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Rasterizer**: CanvasNet.Pptx, CanvasNet.Charts, and CanvasNet are fully managed and carry no
   runtime-identifier-specific asset, so the render scenarios exercise the real rasterizer on every
   host

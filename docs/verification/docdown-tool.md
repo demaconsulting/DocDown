@@ -6,8 +6,8 @@ command-line tool.
 ## Verification Approach
 
 `DemaConsulting.DocDown.Tool` is verified through system-level integration tests in `DocDownToolTests.cs` and unit
-tests per unit, all in `DemaConsulting.DocDown.Tool.Tests`, running on xUnit v3 against net10.0. The
-tool is packaged for that single framework, so the test project targets it alone; the
+tests per unit, all in `DemaConsulting.DocDown.Tool.Tests`, running on xUnit v3 against net10.0 and
+net11.0. The tool is packaged for those two frameworks only, so the test project targets them alone; the
 multi-framework matrix continues to apply to every library, where it carries meaning for consumers.
 
 ### The tool is driven in-process against a captured log
@@ -32,7 +32,7 @@ not-executed, and surface the rendering backend's own self-test without reportin
 
 ## Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net10.0, the single framework the tool ships on
+- **Framework**: xUnit v3 under the .NET SDK, targeting net10.0 and net11.0, the frameworks the tool ships on
 - **Filesystem**: a per-test `TempScratch` folder holds the generated input document and the
   extraction output
 - **Inputs**: a PDF generated at test time; no committed binary fixtures and no network access
@@ -160,8 +160,8 @@ trace. Evidence for `DocDownTool-ExpectedErrors`.
 
 Inspects the `.nupkg` the build just produced, rather than the project's source metadata. Proves the
 package is **runtime-identifier-agnostic**: the tool's assets sit under the literal `any` platform
-folder (`tools/net10.0/any/…`, exactly one framework folder), and a `DotnetToolSettings.xml` declares
-`Command Name="docdown"`. Evidence for `DocDownTool-Packaging`.
+folder (`tools/net10.0/any/…` and `tools/net11.0/any/…`, exactly two framework folders), and a
+`DotnetToolSettings.xml` declares `Command Name="docdown"`. Evidence for `DocDownTool-Packaging`.
 
 ### The produced package carries no native assets
 

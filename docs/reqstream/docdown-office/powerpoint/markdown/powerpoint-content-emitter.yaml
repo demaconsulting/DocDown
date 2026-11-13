@@ -8,7 +8,7 @@
 # SUPERSEDED REQUIREMENT: DocDownPowerPoint-Markdown-PowerPointContentEmitter-ReportsSpeakerNotesAbsenceGap
 # required the whole-deck absence of speaker notes to be reported as a counted gap with a reason. It
 # was authored as a statement of intent before the repository owner established the governing
-# principle that DocDown reports what was extracted and where and makes no acceptability judgement
+# principle that DocDown reports what was extracted and where and makes no acceptability judgment
 # about the content — a shortfall report must describe what DocDown could not do, never what the
 # document does not contain. A notes-less deck cost the extraction nothing, so the requirement is
 # superseded (not satisfied) by

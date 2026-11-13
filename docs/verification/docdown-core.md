@@ -25,7 +25,7 @@ The system-level suite is organized around the current reporting model:
 ## Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK
-- **Targets**: net8.0, net9.0, and net10.0
+- **Targets**: net8.0, net9.0, net10.0, and net11.0
 - **Backends**: `StubExtractor` instances scripted per scenario
 - **Filesystem**: a per-test `TempScratch` folder receives the real output artifacts
 - **Dependencies**: no external services or network access

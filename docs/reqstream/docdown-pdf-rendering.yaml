@@ -146,7 +146,7 @@ sections:
           while the rest succeed. Recording only the factual note that the attempted page could not be
           rasterized keeps the run alive and keeps the report aligned with DocDown's reduced output
           model: report what was attempted and what was produced, without adding an acceptability
-          judgement.
+          judgment.
         children:
           - DocDownPdfRendering-PdfPageRenderingExtractor-ReportsPageFailuresAsNotes
         tests:

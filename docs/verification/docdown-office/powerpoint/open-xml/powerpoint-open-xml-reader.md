@@ -13,7 +13,7 @@ deck, and the embedded image with its slide association.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: PresentationML decks generated at test time; every title, body line, speaker note, and
   image name is synthetic
 - **Filesystem**: none; each deck is read from an in-memory stream

@@ -1,4 +1,6 @@
 package DocDownOffice {
+    private import SoftwareItemMetadata::*;
+
     doc
     /*
      * DemaConsulting.DocDown.Excel is the Excel extraction subsystem of DemaConsulting.DocDown.Office: a backend that reads a
@@ -12,10 +14,12 @@ package DocDownOffice {
     part def Excel {
         doc /* The DemaConsulting.DocDown.Excel subsystem as a whole. */
 
-        comment testRef /* Test: test/DemaConsulting.DocDown.Office.Tests/Excel/DocDownExcelTests.cs */
-        comment designRef /* Design: docs/design/docdown-office/excel.md */
-        comment verificationRef /* Verification: docs/verification/docdown-office/excel.md */
-        comment reqRef /* Requirements: docs/reqstream/docdown-office/excel.yaml */
+        metadata info : SoftwareInfo {
+            testFiles = ("test/DemaConsulting.DocDown.Office.Tests/Excel/DocDownExcelTests.cs");
+            designFiles = ("docs/design/docdown-office/excel.md");
+            verificationFiles = ("docs/verification/docdown-office/excel.md");
+            requirementFiles = ("docs/reqstream/docdown-office/excel.yaml");
+        }
 
         part excelDocDownBuilderExtensions : ExcelDocDownBuilderExtensions;
         part markdown : ExcelMarkdown;

@@ -25,7 +25,7 @@ ranked with alt text gated. The passthrough and vector scenarios supply no text 
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: WordprocessingML documents generated at test time, one carrying a PNG part and one
   carrying an EMF part, both from `TestData/DocxFixtures.cs`
 - **Filesystem**: none; each fixture is opened from a `MemoryStream`

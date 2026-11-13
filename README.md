@@ -35,7 +35,7 @@ content is acceptable.
   silently omitted
 - 🧩 **Pluggable Backends** - Explicit, reflection-free registration; write your own backend on the
   Core abstractions
-- 🌐 **Cross-Platform** - Fully managed libraries for .NET 8, 9, and 10; the tool runs on .NET 10
+- 🌐 **Cross-Platform** - Fully managed libraries for .NET 8, 9, 10, and 11; the tool runs on .NET 10 and 11
 - ✅ **Self-Validation** - Built-in qualification tests for regulated environments
 
 ## Installation
@@ -54,7 +54,7 @@ Page images come from optional add-on packages: `DemaConsulting.DocDown.Pdf.Rend
 
 ### Command-Line Tool
 
-Requires the [.NET 10 SDK or runtime](https://dotnet.microsoft.com/download).
+Requires the [.NET 10 or .NET 11 SDK or runtime](https://dotnet.microsoft.com/download).
 
 ```bash
 dotnet tool install --global DemaConsulting.DocDown.Tool
@@ -152,7 +152,7 @@ This project is licensed under the MIT License — see the
 
 ## Project Practices
 
-- 🔍 **Linting Enforcement** - markdownlint, cspell, and yamllint enforced on every CI run
+- 🔍 **Linting Enforcement** - markdownlint, TextLint, and yamllint enforced on every CI run
 - 📋 **Continuous Compliance** - Compliance evidence generated automatically on every CI run,
   following the [Continuous Compliance](https://github.com/demaconsulting/ContinuousCompliance) methodology
 - ☁️ **SonarCloud Integration** - Quality gate and security analysis on every build
@@ -163,7 +163,7 @@ This project is licensed under the MIT License — see the
 For security concerns and vulnerability reporting, please see our
 [Security Policy](https://github.com/demaconsulting/DocDown/blob/main/SECURITY.md).
 
-## Acknowledgements
+## Acknowledgments
 
 DocDown is built with the following open-source projects:
 

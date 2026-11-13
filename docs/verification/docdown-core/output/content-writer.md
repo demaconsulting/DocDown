@@ -18,7 +18,7 @@ buffered into the final on-disk layout; a mock sink would not evidence that the 
 
 #### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Filesystem**: a per-test `TempScratch` folder backs the real `ScratchFolder` and `ExtractionSink`
 - **Mocking**: none; the real sink supplies buffered content and parts
 - **Isolation**: each test owns its scratch folder; no shared state

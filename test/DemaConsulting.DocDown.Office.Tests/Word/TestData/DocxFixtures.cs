@@ -1,4 +1,3 @@
-// cspell:ignore rels
 #pragma warning disable S3220 // Open XML element constructors take child lists; params-style construction is intentional
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;

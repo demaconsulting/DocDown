@@ -22,10 +22,10 @@ tool, and the tool's private closure (Mono.Cecil, ANTLR runtime, and
 `Microsoft.Extensions.FileSystemGlobbing`), none of which enters this repository's dependency
 graph.
 
-### Prerelease Version — a Recorded Judgement Call
+### Prerelease Version — a Recorded Judgment Call
 
 **The pinned version is a prerelease.** An older, stable ApiMark release line exists, so pinning
-a newer prerelease in a repository with this compliance posture is a deliberate judgement rather
+a newer prerelease in a repository with this compliance posture is a deliberate judgment rather
 than the absence of an alternative. It is recorded here so that it is a decision on the record
 rather than an unnoticed default.
 
@@ -111,13 +111,13 @@ one reason — it is build output, not a relaxation of any authored-content rule
 - `.gitignore` (`src/*/api/`) so it cannot be committed;
 - `.markdownlint-cli2.yaml` `ignores` (`**/api/**`), because generated signature lines and member
   tables are not authored documentation and are not subject to the prose formatting rules;
-- `.cspell.yaml` `ignorePaths` (`**/api/**`), because generated type and member identifiers are
-  not prose and no spelling judgement applies to them.
+- `.textlint.yaml` `ignorePaths` (`**/api/**`), because generated type and member identifiers are
+  not prose and no spelling judgment applies to them.
 
 Omitting any one of the three produces a lint gate whose result depends on whether a build has
 recently run — the precise failure mode this repository has already hit twice with `TestResults/`.
 
-**Multi-targeting.** Each library targets `net8.0;net9.0;net10.0`. ApiMark's target runs for the
+**Multi-targeting.** Each library targets `net8.0;net9.0;net10.0;net11.0`. ApiMark's target runs for the
 first framework in `TargetFrameworks` only (`net8.0`), and the pack hook contributes the same
 single `api/` folder regardless of framework, so a multi-targeted package carries exactly one
 copy of the reference rather than one per framework.

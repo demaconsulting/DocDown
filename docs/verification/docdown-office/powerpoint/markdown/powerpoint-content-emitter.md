@@ -14,7 +14,7 @@ inventory; and the single content flow with links resolving on disk.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: hand-built `PowerPointDeckModel` instances with synthetic slides, titles, notes, and
   image references
 - **Filesystem**: a per-test `TempScratch` folder for the scenarios that resolve links on disk; none

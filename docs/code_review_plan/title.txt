@@ -1,6 +1,6 @@
 ---
-title: DocDown Review Plan
-subtitle: File Review Plan for DocDown
+title: DocDown Code Review Plan
+subtitle: Document extraction for LLM consumption
 author: DEMA Consulting
 description: File Review Plan for DocDown
 lang: en-US

@@ -2,15 +2,14 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!-- The tool targets a single framework, unlike the libraries, which multi-target so consumers
-         can reference them from any supported runtime. A PackAsTool package is executed, never
-         referenced, so a second and third framework adds no reachable surface: 'dotnet tool install'
-         picks one framework folder and RollForward=Major below carries the build onto later hosts.
-
-         net10.0 is chosen deliberately over the lowest supported framework: installing the tool
-         therefore requires a .NET 10 runtime. The libraries remain net8.0/net9.0/net10.0 so library
-         consumers are unaffected by this choice; it constrains only the command-line tool. -->
-    <TargetFramework>net10.0</TargetFramework>
+    <!-- The tool targets .NET 10 and .NET 11 only, unlike the libraries, which also target the
+         end-of-support .NET 8 and .NET 9 runtimes so existing library consumers can reference them.
+         A PackAsTool package is executed, never referenced: 'dotnet tool install' picks the best
+         framework folder for the host and RollForward=LatestMajor below carries the build onto
+         later hosts. Installing the tool therefore requires a .NET 10 or later runtime; the
+         libraries remain net8.0/net9.0/net10.0/net11.0 so library consumers are unaffected by this
+         choice. -->
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -38,7 +37,7 @@
          published with a runtime identifier and the single-file publish switches. Explicit
          registration keeps assembly trimming and single-file packaging viable because no extractor
          is discovered by reflection or assembly scanning. -->
-    <RollForward>Major</RollForward>
+    <RollForward>LatestMajor</RollForward>
 
     <!-- API Documentation Configuration -->
     <!-- ApiMark is disabled for the tool. Every type in this project is internal, so ApiMark's

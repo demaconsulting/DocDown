@@ -5,7 +5,8 @@
 `DemaConsulting.CanvasNet.Pptx` is the managed PowerPoint rasterization API
 `DemaConsulting.DocDown.PowerPoint.Rendering` is built on. It was chosen because it turns a PPTX slide into pixel
 data through a small managed API, is fully managed with no native asset, ships real `net8.0`,
-`net9.0`, and `net10.0` assets matching this repository's target frameworks exactly, and is MIT
+`net9.0`, and `net10.0` assets (`net11.0` consumers resolve the `net10.0` asset through normal
+framework compatibility), and is MIT
 licensed, compatible with this repository's MIT license. Adopting it lets this package add slide
 rendering without introducing a native, runtime-identifier-specific dependency of its own.
 

@@ -7,7 +7,7 @@ Office extraction package.
 
 `DemaConsulting.DocDown.Office` is verified through the per-format system tests described in the Word, Excel,
 PowerPoint, and Visio subsystem verification documents, plus the system-level tests in
-`DemaConsulting.DocDown.Office.Tests`, running on xUnit v3 across net8.0, net9.0, and net10.0.
+`DemaConsulting.DocDown.Office.Tests`, running on xUnit v3 across net8.0, net9.0, net10.0, and net11.0.
 
 Two properties belong to the system rather than to any one format, and are verified here.
 
@@ -36,7 +36,7 @@ inside it. What is inside it is answered by the self-tests that extract it.
 
 ## Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: the probe documents embedded in the package, authored in Microsoft Word, Excel,
   PowerPoint, and Visio and scrubbed of author metadata
 - **Mocking**: none at this level; the registration tests build the real engine

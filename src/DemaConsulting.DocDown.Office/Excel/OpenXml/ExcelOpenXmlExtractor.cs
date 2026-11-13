@@ -35,7 +35,7 @@ namespace DemaConsulting.DocDown.Excel.OpenXml;
 public sealed class ExcelOpenXmlExtractor : IDocumentExtractor, ISelfValidating
 {
     /// <summary>The embedded document the parse round-trip self-test reads.</summary>
-    /// <remarks>A real file authored in Microsoft Excel, carrying a named sheet of labelled cells and numbers.</remarks>
+    /// <remarks>A real file authored in Microsoft Excel, carrying a named sheet of labeled cells and numbers.</remarks>
     private const string ProbeResourceName = "DemaConsulting.DocDown.Office.Resources.probe.xlsx";
 
     /// <summary>

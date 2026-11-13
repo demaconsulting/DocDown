@@ -11,7 +11,7 @@ function of detected format, effective options, and candidate list.
 #### Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK
-- **Targets**: net8.0, net9.0, and net10.0
+- **Targets**: net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: hand-built `FormatDetection`, `ExtractionOptions`, and `ExtractorCandidate` values
 - **Filesystem**: N/A - selector tests are fully in memory
 

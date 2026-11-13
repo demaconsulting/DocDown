@@ -15,7 +15,7 @@ rejected at the point of the call.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: a `DocDownBuilder` constructed in the test
 - **Filesystem**: none
 - **Mocking**: none; the real builder is used

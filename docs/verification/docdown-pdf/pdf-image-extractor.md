@@ -18,7 +18,7 @@ payloads, so the tests exercise the actual parser output the production code con
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: pages from PDFs generated at test time, including fixtures carrying JPEG 2000 and
   JBIG2 images
 - **Filesystem**: none; all writes go to the recording sink

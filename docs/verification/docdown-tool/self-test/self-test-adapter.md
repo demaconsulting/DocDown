@@ -13,7 +13,7 @@ itself.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net10.0, the single framework the tool ships on
+- **Framework**: xUnit v3 under the .NET SDK, targeting net10.0 and net11.0, the frameworks the tool ships on
 - **Inputs**: constructed `SelfTestCase` and `SelfTestResult` values
 - **Isolation**: each test constructs its own inputs
 

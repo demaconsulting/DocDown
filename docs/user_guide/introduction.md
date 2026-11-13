@@ -274,7 +274,7 @@ ensures compliance evidence is generated automatically on every CI run.
 
 - **Requirements Traceability**: Every requirement is linked to passing tests, and a trace matrix is
   generated on each release.
-- **Linting Enforcement**: markdownlint, cspell, and yamllint are enforced before any build
+- **Linting Enforcement**: markdownlint, TextLint, and yamllint are enforced before any build
   proceeds.
 - **Automated Audit Documentation**: Each release ships with generated requirements,
   justifications, trace matrices, and quality reports.
@@ -369,11 +369,12 @@ dotnet tool install -g DemaConsulting.DocDown.Tool          # global
 dotnet tool install --local DemaConsulting.DocDown.Tool     # local tool manifest
 ```
 
-The tool requires a **.NET 10 runtime**. It is packaged for a single framework because a tool is
-executed rather than referenced, so a second and third framework would add no reachable surface.
+The tool requires a **.NET 10 or .NET 11 runtime**. It is packaged for these two supported runtimes
+only because a tool is executed rather than referenced, so end-of-support frameworks would add no
+reachable surface.
 Every backend it carries, including PDF page rendering and PowerPoint slide rendering, is fully
 managed and runtime-identifier agnostic, so one package installs and runs on every platform with a
-.NET 10 runtime. The libraries are unaffected — they target .NET 8, 9, and 10 and are
+.NET 10 or later runtime. The libraries are unaffected — they target .NET 8, 9, 10, and 11 and are
 platform-neutral, including the optional PDF and PowerPoint page renderers, so referencing them
 never constrains your project to the tool's runtime.
 

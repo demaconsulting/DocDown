@@ -14,7 +14,7 @@ and produces the contract layout.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: the constructed extractor for the descriptor and probe; a generated deck from
   `TestData/PptxFixtures.cs` for the orchestration scenario
 - **Filesystem**: a per-test `TempScratch` folder for the orchestration scenario; none for the

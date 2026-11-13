@@ -15,7 +15,7 @@ expected since each call opens its own document with no shared mutable state in 
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Rasterizer**: CanvasNet.Pdf and CanvasNet are fully managed and carry no runtime-identifier-
   specific asset, so the render scenarios exercise the real rasterizer on every host
 - **Filesystem**: none; documents are generated in memory and rendered to in-memory PNG bytes

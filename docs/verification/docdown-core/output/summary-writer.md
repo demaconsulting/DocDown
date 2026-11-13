@@ -11,7 +11,7 @@ golden tests in `SummaryWriterGoldenTests.cs`. The tests drive the real writer o
 #### Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK
-- **Targets**: net8.0, net9.0, and net10.0
+- **Targets**: net8.0, net9.0, net10.0, and net11.0
 - **Filesystem**: a real per-test `TempScratch` folder
 - **Inputs**: real report, sink, and content values assembled per scenario
 

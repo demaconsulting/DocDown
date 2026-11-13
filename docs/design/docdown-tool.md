@@ -88,9 +88,10 @@ metadata.
 
 ### Packaged footprint
 
-- **One target framework.** A tool is executed, never referenced, so the package is built for
-  `net10.0` alone. Installing the tool therefore requires a .NET 10 runtime. The libraries keep
-  their `net8.0;net9.0;net10.0` matrix, so this constrains only the command line.
+- **Supported .NET runtimes only.** A tool is executed, never referenced, so the package is built for
+  `net10.0` and `net11.0` only, with `RollForward=LatestMajor` carrying it onto later hosts.
+  Installing the tool therefore requires a .NET 10 or later runtime. The libraries keep their
+  `net8.0;net9.0;net10.0;net11.0` matrix, so this constrains only the command line.
 - **No native assets.** Every dependency in the tool's graph, including the PDF page-rendering
   backend's `DemaConsulting.CanvasNet.Pdf`/`DemaConsulting.CanvasNet` packages, is fully managed, so
   there is nothing under `runtimes/` to trim or allow-list. This is enforced against the produced

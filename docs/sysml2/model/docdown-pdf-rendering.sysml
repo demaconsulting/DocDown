@@ -1,4 +1,6 @@
 package DocDownPdfRendering {
+    private import SoftwareItemMetadata::*;
+
     doc
     /*
      * DemaConsulting.DocDown.Pdf.Rendering is the optional .NET library that rasterizes PDF pages to PNG
@@ -13,10 +15,12 @@ package DocDownPdfRendering {
     part def DocDownPdfRenderingSystem {
         doc /* The DemaConsulting.DocDown.Pdf.Rendering page-rendering system as a whole. */
 
-        comment testRef /* Test: test/DemaConsulting.DocDown.Pdf.Rendering.Tests/DocDownPdfRenderingTests.cs */
-        comment designRef /* Design: docs/design/docdown-pdf-rendering.md */
-        comment verificationRef /* Verification: docs/verification/docdown-pdf-rendering.md */
-        comment reqRef /* Requirements: docs/reqstream/docdown-pdf-rendering.yaml */
+        metadata info : SoftwareInfo {
+            testFiles = ("test/DemaConsulting.DocDown.Pdf.Rendering.Tests/DocDownPdfRenderingTests.cs");
+            designFiles = ("docs/design/docdown-pdf-rendering.md");
+            verificationFiles = ("docs/verification/docdown-pdf-rendering.md");
+            requirementFiles = ("docs/reqstream/docdown-pdf-rendering.yaml");
+        }
 
         part pdfPageRenderingExtractor : PdfPageRenderingExtractor;
         part pageRenderer : PageRenderer;

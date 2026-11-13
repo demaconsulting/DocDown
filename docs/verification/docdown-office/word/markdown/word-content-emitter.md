@@ -20,7 +20,7 @@ path.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: hand-built `WordDocumentModel` instances through a `RecordingSink` for the unit
   tests; generated `.docx` fixtures from `TestData/DocxFixtures.cs` for the integration tests
 - **Filesystem**: the unit tests touch no filesystem; per-test `TempScratch` folders receive one

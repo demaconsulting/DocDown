@@ -1,6 +1,6 @@
 ---
-title: DocDown Requirements
-subtitle: Requirements Specification for DocDown
+title: DocDown Requirements Document
+subtitle: Document extraction for LLM consumption
 author: DEMA Consulting
 description: Requirements Specification for DocDown
 lang: en-US

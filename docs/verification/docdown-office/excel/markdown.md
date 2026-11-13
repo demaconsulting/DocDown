@@ -22,7 +22,7 @@ vector image records no vector-only note.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: hand-built `ExcelWorkbookModel` and `ExcelChartModel` instances; every value, sheet name,
   and series in them is synthetic
 - **Filesystem**: none — the emitter is driven through a recording sink and the chart writer is pure

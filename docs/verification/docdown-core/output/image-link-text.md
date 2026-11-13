@@ -12,7 +12,7 @@ Nothing is mocked because the unit is a pure function.
 
 #### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: description strings supplied by the test
 - **Filesystem**: N/A
 - **Isolation**: each test is independent with no shared state

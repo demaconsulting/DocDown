@@ -23,7 +23,7 @@ stray file on disk would be exactly the dishonesty the conditional artifact exis
 
 #### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Filesystem**: a per-test `TempScratch` folder backs the real `ScratchFolder` and `ExtractionSink`
 - **Mocking**: none; the real sink supplies the recorded comments
 - **Isolation**: each test owns its scratch folder; no shared state
@@ -33,7 +33,7 @@ stray file on disk would be exactly the dishonesty the conditional artifact exis
 Per IEC 62304 §5.5.2, a `ReviewCommentsWriter` unit test run passes when a document with no reviewer
 comments produces no file and a result claiming none; when a document with comments produces a file
 carrying every comment's author, location, and body; when entries appear in the order the extractor
-reported them; when a comment the document leaves unattributed is labelled as unattributed; and when
+reported them; when a comment the document leaves unattributed is labeled as unattributed; and when
 a multi-line body stays within its single entry. A written-but-empty file, a claimed path with no
 file behind it, a re-sorted or dropped comment, an invented author, or a body that escapes its entry
 is a failure.
@@ -78,7 +78,7 @@ Evidence for `DocDownCore-Output-ReviewCommentsWriter-ReportOrder`.
 
 **Test**: `ReviewCommentsWriter_WriteAsync_CommentWithoutAuthor_ReportsUnattributed`
 
-Proves a comment the document records no author for is labelled `Unattributed` rather than being
+Proves a comment the document records no author for is labeled `Unattributed` rather than being
 dropped or attributed to a guessed name. Evidence for
 `DocDownCore-Output-ReviewCommentsWriter-UnattributedReported`.
 

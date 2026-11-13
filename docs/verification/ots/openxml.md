@@ -20,7 +20,7 @@ verification evidence is available*. That is not the case here: the SDK is a run
 the critical path of every Word extraction, not a build-time tool whose correct operation
 must be inferred from a pipeline completing. The extraction and unit tests named in the scenarios
 below — those in `DocDownWordTests`, `WordOpenXmlExtractorTests`, `WordOpenXmlReaderTests`, and
-`WordOpenXmlImageReaderTests` — each open a real generated document end to end, on three target
+`WordOpenXmlImageReaderTests` — each open a real generated document end to end, on four target
 frameworks, in every CI matrix combination.
 
 The evidence is limited to the tests named below. The claim is transitive, not comprehensive:
@@ -40,7 +40,7 @@ such project is created.
 ### Test Environment
 
 The evidence is produced by the standard `DemaConsulting.DocDown.Office.Tests` run: xUnit v3 under the .NET SDK,
-targeting net8.0, net9.0, and net10.0, across the CI operating-system matrix. Every fixture is a
+targeting net8.0, net9.0, net10.0, and net11.0, across the CI operating-system matrix. Every fixture is a
 WordprocessingML document generated at test time by the SDK's own writer, so the evidence depends
 on no committed binary and no network access.
 

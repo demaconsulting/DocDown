@@ -26,7 +26,7 @@ simulation of one.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: WordprocessingML documents generated at test time by the Open XML SDK writer; no
   committed binaries and no network access
 - **Filesystem**: per-test `TempScratch` folders receive the extractor's output; the reader and

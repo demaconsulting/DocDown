@@ -16,7 +16,7 @@ is stated explicitly because it is a deliberate choice rather than an omission. 
 software-items standard, a dedicated OTS test project is required only *if no other verification
 evidence is available*. That is not the case here: unlike the repository's build-time tools,
 CanvasNet.Pdf is a runtime library on the critical path of every rendered page, and the tests named
-below each drive its managed rasterization API end to end, on three target frameworks, across the
+below each drive its managed rasterization API end to end, on four target frameworks, across the
 full CI operating-system matrix, since it carries no runtime-identifier-specific asset to limit where
 it runs.
 
@@ -29,7 +29,7 @@ same library path the rendering suite already exercises against real documents.
 ### Test Environment
 
 The evidence is produced by the standard `DemaConsulting.DocDown.Pdf.Rendering` test run: xUnit v3 under the .NET
-SDK, targeting net8.0, net9.0, and net10.0, across the full CI operating-system matrix, since
+SDK, targeting net8.0, net9.0, net10.0, and net11.0, across the full CI operating-system matrix, since
 CanvasNet.Pdf is fully managed and runs identically on every platform in the matrix.
 
 ### Test Scenarios

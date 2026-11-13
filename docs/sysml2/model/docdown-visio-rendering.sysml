@@ -1,4 +1,6 @@
 package DocDownVisioRendering {
+    private import SoftwareItemMetadata::*;
+
     doc
     /*
      * DemaConsulting.DocDown.Visio.Rendering is the optional .NET library that rasterizes Visio pages
@@ -14,10 +16,12 @@ package DocDownVisioRendering {
     part def DocDownVisioRenderingSystem {
         doc /* The DemaConsulting.DocDown.Visio.Rendering page-rendering system as a whole. */
 
-        comment testRef /* Test: test/DemaConsulting.DocDown.Visio.Rendering.Tests/DocDownVisioRenderingTests.cs */
-        comment designRef /* Design: docs/design/docdown-visio-rendering.md */
-        comment verificationRef /* Verification: docs/verification/docdown-visio-rendering.md */
-        comment reqRef /* Requirements: docs/reqstream/docdown-visio-rendering.yaml */
+        metadata info : SoftwareInfo {
+            testFiles = ("test/DemaConsulting.DocDown.Visio.Rendering.Tests/DocDownVisioRenderingTests.cs");
+            designFiles = ("docs/design/docdown-visio-rendering.md");
+            verificationFiles = ("docs/verification/docdown-visio-rendering.md");
+            requirementFiles = ("docs/reqstream/docdown-visio-rendering.yaml");
+        }
 
         part visioPageRenderingExtractor : VisioPageRenderingExtractor;
         part pageRenderer : PageRenderer;

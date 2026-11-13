@@ -16,7 +16,7 @@ inside its item, and the labeling convention in content.
 
 ### Test Environment
 
-- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, and net10.0
+- **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
 - **Inputs**: hand-built `VisioDocumentModel` instances and synthetic image byte sequences; a
   recording sink captures content, parts, images, notes, and content features
 - **Mocking**: none beyond the recording sink; the emitter is pure over the model
