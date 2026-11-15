@@ -76,7 +76,6 @@ sections:
         justification: |
           .NET 11 is the latest release in the .NET platform roadmap. Supporting this runtime
           ensures the package works for library consumers as they adopt the newest .NET version.
-          CanvasNet.Pdf ships no net11.0 asset; its net10.0 asset is resolved through normal
-          framework compatibility, and this test proves pages render there.
+          CanvasNet.Pdf ships a net11.0 asset, and this test proves pages render there.
         tests:
           - "net11.0@DocDownPdfRendering_Render_GeneratedPdf_ProducesValidPngPages"

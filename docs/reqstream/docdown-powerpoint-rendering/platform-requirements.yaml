@@ -76,7 +76,6 @@ sections:
         justification: |
           .NET 11 is the latest release in the .NET platform roadmap. Supporting this runtime
           ensures the package works for library consumers as they adopt the newest .NET version.
-          CanvasNet.Pptx ships no net11.0 asset; its net10.0 asset is resolved through normal
-          framework compatibility, and this test proves slides render there.
+          CanvasNet.Pptx ships a net11.0 asset, and this test proves slides render there.
         tests:
           - "net11.0@DocDownPowerPointRendering_Render_ProbePresentation_ProducesValidPngPages"
