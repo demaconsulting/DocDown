@@ -511,9 +511,6 @@ jobs:
         with:
           dotnet-version: 10.x
 
-      - name: Install npm dependencies
-        run: npm install
-
       - name: Restore Tools
         run: dotnet tool restore
 
@@ -599,7 +596,6 @@ jobs:
         run: >
           dotnet pandoc
           --defaults docs/build_notes/definition.yaml
-          --filter node_modules/.bin/mermaid-filter.cmd
           --metadata version="${{ inputs.version }}"
           --metadata date="$(date +'%Y-%m-%d')"
           --output docs/build_notes/generated/build_notes.html
@@ -682,7 +678,6 @@ jobs:
         run: >
           dotnet pandoc
           --defaults docs/code_quality/definition.yaml
-          --filter node_modules/.bin/mermaid-filter.cmd
           --metadata version="${{ inputs.version }}"
           --metadata date="$(date +'%Y-%m-%d')"
           --output docs/code_quality/generated/quality.html
@@ -744,7 +739,6 @@ jobs:
         run: >
           dotnet pandoc
           --defaults docs/code_review_plan/definition.yaml
-          --filter node_modules/.bin/mermaid-filter.cmd
           --metadata version="${{ inputs.version }}"
           --metadata date="$(date +'%Y-%m-%d')"
           --output docs/code_review_plan/generated/plan.html
@@ -761,7 +755,6 @@ jobs:
         run: >
           dotnet pandoc
           --defaults docs/code_review_report/definition.yaml
-          --filter node_modules/.bin/mermaid-filter.cmd
           --metadata version="${{ inputs.version }}"
           --metadata date="$(date +'%Y-%m-%d')"
           --output docs/code_review_report/generated/report.html
@@ -808,7 +801,6 @@ jobs:
         run: >
           dotnet pandoc
           --defaults docs/design/definition.yaml
-          --filter node_modules/.bin/mermaid-filter.cmd
           --metadata version="${{ inputs.version }}"
           --metadata date="$(date +'%Y-%m-%d')"
           --output docs/design/generated/design.html
@@ -840,7 +832,6 @@ jobs:
         run: >
           dotnet pandoc
           --defaults docs/verification/definition.yaml
-          --filter node_modules/.bin/mermaid-filter.cmd
           --metadata version="${{ inputs.version }}"
           --metadata date="$(date +'%Y-%m-%d')"
           --output docs/verification/generated/verification.html
@@ -872,7 +863,6 @@ jobs:
         run: >
           dotnet pandoc
           --defaults docs/user_guide/definition.yaml
-          --filter node_modules/.bin/mermaid-filter.cmd
           --metadata version="${{ inputs.version }}"
           --metadata date="$(date +'%Y-%m-%d')"
           --output docs/user_guide/generated/user_guide.html
@@ -937,7 +927,6 @@ jobs:
         run: >
           dotnet pandoc
           --defaults docs/requirements_doc/definition.yaml
-          --filter node_modules/.bin/mermaid-filter.cmd
           --metadata version="${{ inputs.version }}"
           --metadata date="$(date +'%Y-%m-%d')"
           --output docs/requirements_doc/generated/requirements.html
@@ -954,7 +943,6 @@ jobs:
         run: >
           dotnet pandoc
           --defaults docs/requirements_report/definition.yaml
-          --filter node_modules/.bin/mermaid-filter.cmd
           --metadata version="${{ inputs.version }}"
           --metadata date="$(date +'%Y-%m-%d')"
           --output docs/requirements_report/generated/trace_matrix.html
