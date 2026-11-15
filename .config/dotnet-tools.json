@@ -72,7 +72,7 @@
       "rollForward": false
     },
     "demaconsulting.textlint.tool": {
-      "version": "0.1.0-beta.2",
+      "version": "0.1.0-beta.4",
       "commands": [
         "textlint"
       ],
@@ -86,7 +86,7 @@
       "rollForward": false
     },
     "demaconsulting.canvasnet.tool": {
-      "version": "0.2.0-beta.9",
+      "version": "0.2.0-beta.10",
       "commands": [
         "canvasnet"
       ],

@@ -93,7 +93,6 @@ if (-not $skipDotnetTools) {
 # Installs npm dependencies and runs markdownlint-cli2.
 Write-Host "Linting: markdown..."
 $skipNpm = $false
-$env:PUPPETEER_SKIP_DOWNLOAD = "true"
 npm install --silent
 if ($LASTEXITCODE -ne 0) { $lintError = $true; $skipNpm = $true }
 
