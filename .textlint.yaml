@@ -267,4 +267,3 @@ ignorePaths:
   - "**/.agent-logs/**"
   - "**/bin/**"
   - "**/obj/**"
-  - package-lock.json
