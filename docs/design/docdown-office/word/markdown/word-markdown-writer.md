@@ -16,7 +16,7 @@ from a hand-built model with no document behind it.
 
 `WordMarkdownWriter` is an `internal static class` with no state; a `StringBuilder` lives for one
 call. The private `EscapedCharacters` set names the full markdown-structural set:
-`` \ ` * _ { } [ ] ( ) # + - . ! | ``. Escaping the whole set keeps stray occurrences in document
+``\ ` * _ { } [ ] ( ) # + - . ! |``. Escaping the whole set keeps stray occurrences in document
 prose from being reinterpreted as headings, emphasis, links, list markers, or table separators.
 
 ### Key Methods

@@ -13,7 +13,7 @@ subsystem reads the package directly with `System.IO.Packaging` and ships no nat
 ### Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | `IDocumentExtractor` | Inbound, from engine | .NET interface | `Available()` without I/O |
 | `ISelfValidating` | Inbound, from the engine | .NET interface | Enumeration is cheap |
 | `IExtractionSink` | Outbound, to Core | .NET interface | The only output channel |

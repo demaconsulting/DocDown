@@ -28,10 +28,10 @@ rendering suites already exercise against real documents.
 
 ### Test Environment
 
-The evidence is produced by the standard `DemaConsulting.DocDown.Pdf.Rendering` and `DemaConsulting.DocDown.PowerPoint.Rendering`
-test runs: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0, across the full CI
-operating-system matrix. Every PDF fixture is generated at test time; the PowerPoint fixture is the
-embedded `probe.pptx` resource. Neither depends on network access.
+The evidence is produced by the standard `DemaConsulting.DocDown.Pdf.Rendering` and
+`DemaConsulting.DocDown.PowerPoint.Rendering` test runs: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0,
+and net11.0, across the full CI operating-system matrix. Every PDF fixture is generated at test time; the PowerPoint
+fixture is the embedded `probe.pptx` resource. Neither depends on network access.
 
 ### Test Scenarios
 

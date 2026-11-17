@@ -49,7 +49,7 @@ here, on the tool side of the boundary. Neither Core nor the extraction backends
 ## External Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | Command line | Inbound, from a user or pipeline | Arguments | DEMA vocabulary plus DocDown extraction flags |
 | Standard output / error | Outbound | Text | Suppressed by `--silent`; an error still sets the exit code |
 | `--log` file | Outbound | Text | Opened with immediate flushing |

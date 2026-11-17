@@ -84,10 +84,10 @@ and each image through the sink, which owns the layout and allocates the image p
 
 ### Error Handling
 
-Every null argument to `EmitAsync()` is rejected with `ArgumentNullException`. Cancellation is
-observed before each image is added and before the content is written. No condition of the model raises an exception here:
-every incomplete step that must be surfaced becomes a note, and every empty-but-looked-for category
-becomes a zero-count inventory entry. The unit performs no filesystem I/O of its own.
+Every null argument to `EmitAsync()` is rejected with `ArgumentNullException`. Cancellation is observed before each
+image is added and before the content is written. No condition of the model raises an exception here: every incomplete
+step that must be surfaced becomes a note, and every empty-but-looked-for category becomes a zero-count inventory entry.
+The unit performs no filesystem I/O of its own.
 
 ### Dependencies
 

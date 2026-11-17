@@ -20,7 +20,7 @@ flushing.
 ## External Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | Argument vector | Inbound, from the process | `string[]` | Parsed at `Create`; a bad argument is an argument fault |
 | Standard output / error | Outbound | Text | Console suppressed under `--silent`; the log is not |
 | `--log` file | Outbound | Text | Opened with immediate flushing; an open failure is an operation fault |

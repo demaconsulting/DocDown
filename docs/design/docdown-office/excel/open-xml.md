@@ -18,7 +18,7 @@ of a worksheet's drawing layer — the image reader (`ExcelOpenXmlImageReader`),
 ### Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | `IDocumentExtractor` | Inbound, from the engine | .NET interface | Cheap probe; no I/O |
 | `ISelfValidating` | Inbound, from the engine | .NET interface | Cheap enumeration; work runs in the case delegate |
 | `DocumentSource` | Inbound, from Core | .NET record | Buffered before opening because a stream may not seek |

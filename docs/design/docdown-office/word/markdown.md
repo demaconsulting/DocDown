@@ -21,7 +21,7 @@ that could drift from the first.
 ### Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | `WordDocumentModel` | Inbound, from the reader | .NET record | The pivot between reading and rendering |
 | `IExtractionSink` | Outbound, from the emitter to Core | .NET interface | The only output channel |
 | `ExtractionOptions` | Inbound | .NET | Image suppression and size limits |

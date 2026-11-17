@@ -31,4 +31,4 @@ No input throws. A null or blank description selects the placeholder.
 #### Callers
 
 The PowerPoint, Excel, and Visio content emitters call `Alt` with the alt text of an `EmbeddedImage`, which is
-set only for a `Descriptive` selection. See _EmbeddedImageWriter Design_.
+set only for a `Descriptive` selection. See *EmbeddedImageWriter Design*.

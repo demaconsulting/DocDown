@@ -22,7 +22,7 @@ drift from the first.
 ### Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | `ExcelWorkbookModel` | Inbound, from the reader | .NET record | The pivot between reading and emission |
 | `IExtractionSink` | Outbound, from the emitter to Core | .NET interface | The only output channel |
 | `ExtractionOptions` | Inbound, from `IExtractionContext` | .NET record | Page request and image size limits |

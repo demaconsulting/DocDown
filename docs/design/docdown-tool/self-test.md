@@ -27,7 +27,7 @@ knowing anything about the results model.
 ## External Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | `DocDownEngine.GetSelfTestCases` | Inbound, from Core | .NET API | The union of Core and registered-backend cases |
 | `Program.Run` | Inbound, in-process | .NET API | Driven with `--silent --log` to capture the tool's own output |
 | `--results` file | Outbound | TRX or JUnit XML | Extension selects the serializer; any other extension is an error |

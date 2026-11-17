@@ -37,7 +37,7 @@ namespace used to read the author and date attributes.
 - **`Compose()`** (private) — builds the location `Label: path, position — "context"`, where the label
   is `Body`, the header or footer label `content.md` shows (`Header`, `Footer (2)`), or `Footnote [^n]`
   (the marker number in
-  `content.md`), the path is the heading path joined by ` > ` or `before the first heading`, and the
+  `content.md`), the path is the heading path joined by `>` or `before the first heading`, and the
   position is `paragraph N`, `table T, row R, column C`, `(heading)` for a heading, `after paragraph N`
   for an empty paragraph, or `table of contents (omitted from content.md), entry N`. Each revision
   also carries its `Part` and an `InToc` flag.

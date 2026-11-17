@@ -19,7 +19,7 @@ responsibility (`PowerPointOpenXmlImageReader`).
 ### Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | `IDocumentExtractor` | Inbound, from the engine | .NET interface | `ProbeAvailability()` returns `Available()` |
 | `ISelfValidating` | Inbound, from the engine | .NET interface | Enumeration is cheap; work runs only in a delegate |
 | `DocumentSource` | Inbound, from Core | .NET record | Buffered before opening because a stream may not seek |

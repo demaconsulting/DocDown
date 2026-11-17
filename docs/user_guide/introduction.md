@@ -581,7 +581,7 @@ When a Word document contains tracked changes, the backend shows them as markup 
 silently flattened. This mode is chosen automatically; nothing needs to be requested.
 
 | Markup | Meaning |
-| ------ | ------- |
+| --- | --- |
 | `{++text++}` | Inserted text |
 | `{--text--}` | Deleted text |
 | `~~text~~` | Text with manual strikethrough formatting |
@@ -916,7 +916,7 @@ extracts the text, and `summary.txt` records that pages were not rendered.
 Across all the format packages, `docdown --list-backends` reports eight registered backends:
 
 | Backend id | Formats | Role |
-| ---------- | ------- | ---- |
+| --- | --- | --- |
 | `pdf` | `pdf` | Managed PDF backend |
 | `pdf-rendering` | `pdf` | PDF backend with page rendering |
 | `word-openxml` | `docx` | Managed Word backend |
@@ -998,7 +998,7 @@ The tool provides the standard DEMA command-line vocabulary plus DocDown's extra
 `docdown --help` for the authoritative list.
 
 | Option | Meaning |
-| ------ | ------- |
+| --- | --- |
 | `--input <file>` | Document to extract (required for extraction) |
 | `--scratch <dir>` | Scratch folder to write the extraction into (required) |
 | `--pages` / `--no-pages` | Request or disable rendered page images |
