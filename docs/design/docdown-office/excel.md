@@ -48,7 +48,7 @@ a caller requests rendered pages.
 ## External Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | `IDocumentExtractor` | Inbound, from the engine | .NET interface | Cheap probe; does not open the workbook |
 | `ISelfValidating` | Inbound, from the engine | .NET interface | Cheap enumeration; work runs in the case delegate |
 | `IExtractionSink` | Outbound, to Core | .NET interface | The only output channel |

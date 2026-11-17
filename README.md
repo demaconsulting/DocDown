@@ -152,7 +152,7 @@ This project is licensed under the MIT License — see the
 
 ## Project Practices
 
-- 🔍 **Linting Enforcement** - markdownlint, TextLint, and yamllint enforced on every CI run
+- 🔍 **Linting Enforcement** - LintMark, TextLint, and yamllint enforced on every CI run
 - 📋 **Continuous Compliance** - Compliance evidence generated automatically on every CI run,
   following the [Continuous Compliance](https://github.com/demaconsulting/ContinuousCompliance) methodology
 - ☁️ **SonarCloud Integration** - Quality gate and security analysis on every build

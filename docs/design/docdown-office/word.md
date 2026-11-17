@@ -33,7 +33,7 @@ instead of splitting it across environment-specific implementations.
 ## External Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | `IDocumentExtractor` | Inbound | .NET | Probe returns `Available()` |
 | `ISelfValidating` | Inbound, from the engine | .NET interface | Enumeration is cheap; delegates perform the work |
 | `IExtractionSink` | Outbound, to Core | .NET interface | The only output channel |

@@ -29,7 +29,7 @@ This subsystem has two child subsystems and one direct unit:
 ## External Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | `IDocumentExtractor` | Inbound, from the engine | .NET interface | Cheap probe; no throw; no side effects |
 | `ISelfValidating` | Inbound, from the engine | .NET interface | Cheap enumeration; work runs in delegates |
 | `IExtractionSink` | Outbound, to Core | .NET interface | Only output channel for content, pages, facts, notes |

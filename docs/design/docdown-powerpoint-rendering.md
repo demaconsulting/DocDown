@@ -77,7 +77,7 @@ The notes stay limited to those extraction facts themselves.
 ## External Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | `IDocumentExtractor` | Inbound, from the engine | .NET interface | See the probe obligations below |
 | `ISelfValidating` | Inbound, from the engine | .NET interface | Enumeration must be cheap |
 | `IExtractionSink` | Outbound, to Core | .NET interface | The only output channel |

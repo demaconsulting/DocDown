@@ -103,4 +103,4 @@ the rendered shape (value-and-source objects, the absent array, and the explanat
 
 Proves part-file resource links are rewritten only for sink resource folders. This helper is linked to the
 ContentWriter link-rewrite requirement. The shared Open XML image path is verified by the unit documents for
-_EmbeddedImageWriter_, _ImageDimensions_, and _ImageLinkText_.
+*EmbeddedImageWriter*, *ImageDimensions*, and *ImageLinkText*.

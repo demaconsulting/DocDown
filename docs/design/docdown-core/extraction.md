@@ -12,13 +12,13 @@ Extraction turns a detected format and a set of registered backends into a compl
 is built around four software units:
 
 - **DocDownBuilder** — collects extractor registrations and default options, then builds an engine.
-  See _DocDownBuilder Design_.
+  See *DocDownBuilder Design*.
 - **ExtractorRegistry** — materializes the registered extractors, exposes descriptors, and caches
-  availability. See _ExtractorRegistry Design_.
+  availability. See *ExtractorRegistry Design*.
 - **ExtractorSelector** — a pure static function that chooses one extractor or returns prose
-  explaining why none can be chosen. See _ExtractorSelector Design_.
+  explaining why none can be chosen. See *ExtractorSelector Design*.
 - **DocDownEngine** — orchestrates the whole pipeline and returns `ExtractionResult` instead of
-  throwing. See _DocDownEngine Design_.
+  throwing. See *DocDownEngine Design*.
 
 The subsystem deliberately keeps the selection model small. After Detection names a format,
 selection reasons only about four things: supported formats, current availability, whether page

@@ -38,7 +38,7 @@ dependency explicitly.
 ## External Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | `IDocumentExtractor` | Inbound, from the engine | .NET interface | Cheap, side-effect-free probe |
 | `ISelfValidating` | Inbound, from the engine | .NET interface | Enumeration must be cheap |
 | `IExtractionSink` | Outbound, to Core | .NET interface | The only output channel |

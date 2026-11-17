@@ -19,7 +19,7 @@ delegation, so a deck's content reads identically whether or not it was rendered
 ### Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | `PowerPointDeckModel` | Inbound, from the reader | .NET record | The pivot between reading and reporting |
 | `IExtractionSink` | Outbound, from the emitter to Core | .NET interface | The only output channel |
 | `ExtractionOptions` | Inbound, from `IExtractionContext` | .NET record | Image suppression, image size limits, DPI |

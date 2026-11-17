@@ -58,7 +58,7 @@ lives for the duration of one call.
 ### Filter handling
 
 | PDF filter | Raw stored bytes | Handling |
-| ---------- | ---------------- | -------- |
+| --- | --- | --- |
 | `DCTDecode` | complete JPEG file | write unchanged as `.jpg`; report `image/jpeg`, `Passthrough` |
 | `JPXDecode` | complete JPEG 2000 codestream | write unchanged as `.jp2`; report `image/jp2`, `Passthrough` |
 | `FlateDecode`, `LZWDecode`, `RunLengthDecode` | compressed pixel samples | decode and re-encode as PNG |

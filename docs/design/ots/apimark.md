@@ -109,7 +109,7 @@ XML doc comments on every build and is never committed. It is excluded in three 
 one reason — it is build output, not a relaxation of any authored-content rule:
 
 - `.gitignore` (`src/*/api/`) so it cannot be committed;
-- `.markdownlint-cli2.yaml` `ignores` (`**/api/**`), because generated signature lines and member
+- `.lintmark.yaml` `ignore` (`**/api/**`), because generated signature lines and member
   tables are not authored documentation and are not subject to the prose formatting rules;
 - `.textlint.yaml` `ignorePaths` (`**/api/**`), because generated type and member identifiers are
   not prose and no spelling judgment applies to them.

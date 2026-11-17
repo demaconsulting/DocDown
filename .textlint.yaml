@@ -65,6 +65,7 @@ words:
   - ellipsizing
   - FileAssert
   - fileassert
+  - lintmark
   - multimodal
   - NFKD
   - presentationml
@@ -267,4 +268,3 @@ ignorePaths:
   - "**/.agent-logs/**"
   - "**/bin/**"
   - "**/obj/**"
-  - package-lock.json

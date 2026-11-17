@@ -74,7 +74,7 @@ those extraction facts themselves.
 ## External Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | `IDocumentExtractor` | Inbound, from the engine | .NET interface | See the probe obligations below |
 | `ISelfValidating` | Inbound, from the engine | .NET interface | Enumeration must be cheap |
 | `IExtractionSink` | Outbound, to Core | .NET interface | The only output channel |
@@ -117,10 +117,10 @@ machine-enforced by a reflection test over the package's exported types.
 - **Rasterizer containment.** CanvasNet.Pdf and CanvasNet types appear in exactly one file
   (`PageRenderer.cs`) and in no public signature. A reflection test fails the build if either
   reaches the exported surface, so the rasterizer stays confined and replaceable.
-- **Portability of the whole package graph.** `DemaConsulting.DocDown.Core`, `DemaConsulting.DocDown.Pdf`, `DemaConsulting.DocDown.Pdf.Rendering`,
-  and `DemaConsulting.DocDown.Tool` are all fully managed and free of runtime-identifier-specific dependencies. That
-  the PDF packages ship no native asset is asserted against their produced `.nupkg` files, not merely
-  their build output.
+- **Portability of the whole package graph.** `DemaConsulting.DocDown.Core`, `DemaConsulting.DocDown.Pdf`,
+  `DemaConsulting.DocDown.Pdf.Rendering`, and `DemaConsulting.DocDown.Tool` are all fully managed and free of
+  runtime-identifier-specific dependencies. That the PDF packages ship no native asset is asserted against their
+  produced `.nupkg` files, not merely their build output.
 - **Per-page fault isolation.** Each page is rasterized independently. An unsupported page or an
   out-of-memory at a high DPI is caught per page, recorded as the plain note
   `Page N could not be rasterized.`, and the run continues with the remaining pages. No render

@@ -31,26 +31,26 @@ detailed approach and named test scenarios.
 
 ## OTS Items
 
-| OTS Item            | Verification Approach                                                                   |
-| :------------------ | :-------------------------------------------------------------------------------------- |
-| ApiMark             | Self-validation CLI suite: the named ApiMark_DotNetGeneration test                      |
-| BuildMark           | Self-validation CLI suite plus pipeline evidence via build-notes document               |
-| CanvasNet           | Transitive evidence from the Pdf, PowerPoint, and Visio rendering test suites           |
-| CanvasNet.Charts    | Transitive evidence from the DemaConsulting.DocDown.PowerPoint.Rendering render tests   |
-| CanvasNet.Pdf       | Transitive evidence from the DemaConsulting.DocDown.Pdf.Rendering render tests          |
-| CanvasNet.Pptx      | Transitive evidence from the DemaConsulting.DocDown.PowerPoint.Rendering render tests   |
-| CanvasNet.Vsdx      | Transitive evidence from the DemaConsulting.DocDown.Visio.Rendering render tests        |
-| FileAssert          | Self-validation CLI suite plus transitive evidence from document assertions             |
-| Open XML SDK        | Transitive evidence from the Word, Excel and PowerPoint test suites                     |
-| Pandoc              | Pipeline evidence: FileAssert assertions on each generated HTML document                |
-| PdfPig              | Transitive evidence from the DemaConsulting.DocDown.Pdf extraction and unit test suites |
-| ReqStream           | Self-validation CLI suite plus pipeline evidence via --enforce traceability             |
-| ReviewMark          | Self-validation CLI suite plus pipeline evidence via review plan/report                 |
-| SarifMark           | Self-validation CLI suite plus pipeline evidence via SARIF markdown report              |
-| SonarMark           | Self-validation CLI suite plus pipeline evidence via SonarCloud report                  |
-| SysML2Tools         | Self-validation CLI suite plus pipeline evidence via lint and rendered SVGs             |
-| System.IO.Packaging | Direct evidence from the Visio package-reader and Word extraction tests                 |
-| TestResults         | Transitive evidence from the DemaConsulting.DocDown.Tool --validate tests               |
-| VersionMark         | Self-validation CLI suite plus pipeline evidence via version data                       |
-| WeasyPrint          | Pipeline evidence: FileAssert assertions on each generated PDF document                 |
-| xUnit               | Self-validation via discovery, execution, and TRX reporting of tests                    |
+| OTS Item | Verification Approach |
+| :--- | :--- |
+| ApiMark | Self-validation CLI suite: the named ApiMark_DotNetGeneration test |
+| BuildMark | Self-validation CLI suite plus pipeline evidence via build-notes document |
+| CanvasNet | Transitive evidence from the Pdf, PowerPoint, and Visio rendering test suites |
+| CanvasNet.Charts | Transitive evidence from the DemaConsulting.DocDown.PowerPoint.Rendering render tests |
+| CanvasNet.Pdf | Transitive evidence from the DemaConsulting.DocDown.Pdf.Rendering render tests |
+| CanvasNet.Pptx | Transitive evidence from the DemaConsulting.DocDown.PowerPoint.Rendering render tests |
+| CanvasNet.Vsdx | Transitive evidence from the DemaConsulting.DocDown.Visio.Rendering render tests |
+| FileAssert | Self-validation CLI suite plus transitive evidence from document assertions |
+| Open XML SDK | Transitive evidence from the Word, Excel and PowerPoint test suites |
+| Pandoc | Pipeline evidence: FileAssert assertions on each generated HTML document |
+| PdfPig | Transitive evidence from the DemaConsulting.DocDown.Pdf extraction and unit test suites |
+| ReqStream | Self-validation CLI suite plus pipeline evidence via --enforce traceability |
+| ReviewMark | Self-validation CLI suite plus pipeline evidence via review plan/report |
+| SarifMark | Self-validation CLI suite plus pipeline evidence via SARIF markdown report |
+| SonarMark | Self-validation CLI suite plus pipeline evidence via SonarCloud report |
+| SysML2Tools | Self-validation CLI suite plus pipeline evidence via lint and rendered SVGs |
+| System.IO.Packaging | Direct evidence from the Visio package-reader and Word extraction tests |
+| TestResults | Transitive evidence from the DemaConsulting.DocDown.Tool --validate tests |
+| VersionMark | Self-validation CLI suite plus pipeline evidence via version data |
+| WeasyPrint | Pipeline evidence: FileAssert assertions on each generated PDF document |
+| xUnit | Self-validation via discovery, execution, and TRX reporting of tests |

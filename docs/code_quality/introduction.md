@@ -21,8 +21,8 @@ This code quality report covers:
 
 ## Analysis Source
 
-This report contains quality analysis results captured at the time this version of DemaConsulting.DocDown.Core was built.
-It serves as evidence that the code maintains good quality standards and provides transparency about the
+This report contains quality analysis results captured at the time this version of DemaConsulting.DocDown.Core was
+built. It serves as evidence that the code maintains good quality standards and provides transparency about the
 project's code health. The analysis includes results from various quality tools run during the build process.
 
 ## Audience

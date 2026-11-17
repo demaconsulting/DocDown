@@ -49,7 +49,7 @@
     <!-- ApiMark writes the gradual-disclosure Markdown API reference into the project's api/
          folder after every build, and ApiMarkPackDocs places that folder inside the produced
          NuGet package so consumers (and AI agents) get the API reference with the package. The
-         api/ folder is build output: it is git-ignored and excluded from markdownlint and TextLint. -->
+         api/ folder is build output: it is git-ignored and excluded from LintMark and TextLint. -->
     <ApiMarkPackDocs>true</ApiMarkPackDocs>
     <!-- ApiMarkOutputDir is left at ApiMark's default, $(MSBuildProjectDirectory)\api, unless a
          harness supplies ApiMarkOutputRoot. The packaging tests run 'dotnet pack' on this project

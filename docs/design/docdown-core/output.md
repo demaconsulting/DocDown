@@ -20,21 +20,21 @@ properties:
 
 The subsystem contains ten documented units:
 
-- **ScratchFolder** — owns the output directory and enforces path safety. See _ScratchFolder Design_.
+- **ScratchFolder** — owns the output directory and enforces path safety. See *ScratchFolder Design*.
 - **ExtractionSink** — concrete `IExtractionSink`; allocates paths, writes images and pages, buffers
-  content and parts, and records notes and content features. See _ExtractionSink Design_.
-- **ContentWriter** — finalizes `content.md` and any `parts/` files. See _ContentWriter Design_.
+  content and parts, and records notes and content features. See *ExtractionSink Design*.
+- **ContentWriter** — finalizes `content.md` and any `parts/` files. See *ContentWriter Design*.
 - **ReviewCommentsWriter** — finalizes `review-comments.md`, and only when the document carries
-  reviewer comments. See _ReviewCommentsWriter Design_.
-- **SummaryWriter** — serializes the human-readable `summary.txt`. See _SummaryWriter Design_.
-- **ManifestWriter** — serializes `manifest.json`. See _ManifestWriter Design_.
+  reviewer comments. See *ReviewCommentsWriter Design*.
+- **SummaryWriter** — serializes the human-readable `summary.txt`. See *SummaryWriter Design*.
+- **ManifestWriter** — serializes `manifest.json`. See *ManifestWriter Design*.
 - **ImageTextSelector** — shared image-text ranking policy used by backends when they derive image
-  labels. See _ImageTextSelector Design_.
+  labels. See *ImageTextSelector Design*.
 - **EmbeddedImageWriter** — shared sink-write pipeline of the Open XML backends: content deduplication, size
-  limits, merged referrers, and the accounting each backend turns into notes. See _EmbeddedImageWriter Design_.
+  limits, merged referrers, and the accounting each backend turns into notes. See *EmbeddedImageWriter Design*.
 - **ImageDimensions** — reads raster pixel size from PNG, JPEG, GIF, and BMP headers without decoding. See
-  _ImageDimensions Design_.
-- **ImageLinkText** — produces the honest, link-safe alt text of an inline image link. See _ImageLinkText Design_.
+  *ImageDimensions Design*.
+- **ImageLinkText** — produces the honest, link-safe alt text of an inline image link. See *ImageLinkText Design*.
 
 `MetadataWriter`, `ArtifactInventory`, and `PartResourceLinkRewriter` are helper types documented inline
 here. `MetadataWriter` always writes `metadata.json`; `ArtifactInventory` defines which files a prior
@@ -94,11 +94,11 @@ chapters:
 - **`ArtifactInventory`** — internal static helper used by `ScratchFolder` to decide which prior files
   may be deleted safely.
 - **`EmbeddedImage`** and **`EmbeddedImageWriteResult`** — the image reference and accounting types of
-  `EmbeddedImageWriter`, documented in _EmbeddedImageWriter Design_. `ImageHint` is declared in the same
+  `EmbeddedImageWriter`, documented in *EmbeddedImageWriter Design*. `ImageHint` is declared in the same
   source file.
 - **`PartResourceLinkRewriter`** — internal pure helper used by `ContentWriter` to rewrite
   root-relative `images/` and `pages/` link targets so they resolve from a part file under `parts/`.
-  See _ContentWriter Design_.
+  See *ContentWriter Design*.
 - **`ExtractionManifest`** and **`DocDownJsonContext`** — the manifest DTO graph and source-generated
   JSON context.
 - **`ScratchFolderException`** — typed refusal returned when a folder or path is unsafe.

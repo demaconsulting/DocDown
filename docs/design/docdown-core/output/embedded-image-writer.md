@@ -60,4 +60,4 @@ unwritten.
 #### Callers
 
 The PowerPoint, Excel, and Visio content emitters pass the images of their document model to `WriteAsync`,
-then turn the returned accounting into their own notes. See _ImageTextSelector Design_ for the naming policy.
+then turn the returned accounting into their own notes. See *ImageTextSelector Design* for the naming policy.

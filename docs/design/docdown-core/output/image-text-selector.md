@@ -72,5 +72,5 @@ and turns the result into an image reference's naming hint, alt text, and manife
 PowerPoint, Excel, and Visio image readers reach the same policy through `EmbeddedImage.Create`, which
 appends the media-name fallback, calls `Select`, and applies the same naming, alt-text, and description
 rules. The confidence tier is what makes the markdown writers assert alt text only for a `Descriptive`
-selection while still allowing a `Contextual` heading to seed the file name. See _WordOpenXmlReader
-Design_ and _WordMarkdownWriter Design_.
+selection while still allowing a `Contextual` heading to seed the file name. See *WordOpenXmlReader
+Design* and *WordMarkdownWriter Design*.

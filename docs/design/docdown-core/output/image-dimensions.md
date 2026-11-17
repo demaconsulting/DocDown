@@ -36,4 +36,4 @@ None beyond the base class library.
 #### Callers
 
 `EmbeddedImageWriter.WriteAsync` is the only production caller. It uses `TryRead` for the dimension limit and
-the recorded pixel size. See _EmbeddedImageWriter Design_.
+the recorded pixel size. See *EmbeddedImageWriter Design*.

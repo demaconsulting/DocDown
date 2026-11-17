@@ -45,29 +45,29 @@ runtime-identifier agnostic.
 
 ## OTS Items
 
-| OTS Item            | Purpose                                                                                      |
-| :------------------ | :------------------------------------------------------------------------------------------- |
-| ApiMark             | Generates the packaged gradual-disclosure Markdown API reference                             |
-| BuildMark           | Generates build-notes documentation from GitHub Actions metadata                             |
-| CanvasNet           | Fully-managed 2D canvas/codec library used for PNG encoding                                  |
-| CanvasNet.Charts    | Chart-rendering library CanvasNet.Pptx uses internally; resolved, never called               |
-| CanvasNet.Pdf       | Fully-managed PDF rasterization API for the DemaConsulting.DocDown.Pdf.Rendering package     |
-| CanvasNet.Pptx      | Fully-managed PowerPoint rasterization API for DemaConsulting.DocDown.PowerPoint.Rendering   |
-| CanvasNet.Vsdx      | Fully-managed Visio rasterization API for the DemaConsulting.DocDown.Visio.Rendering package |
-| FileAssert          | Validates generated documents (HTML/PDF) against acceptance criteria                         |
-| Open XML SDK        | Reads Office documents for the DemaConsulting.DocDown.Office extraction package              |
-| Pandoc              | Converts Markdown documentation to HTML                                                      |
-| PdfPig              | Parses PDF documents for the DemaConsulting.DocDown.Pdf extraction package                   |
-| ReqStream           | Enforces requirements-to-test traceability                                                   |
-| ReviewMark          | Enforces file review coverage and currency                                                   |
-| SarifMark           | Converts CodeQL SARIF results into a markdown report                                         |
-| SonarMark           | Generates a SonarCloud quality report                                                        |
-| SysML2Tools         | Validates the SysML2 architecture model and renders its views to SVG                         |
-| System.IO.Packaging | Opens an Office document's OPC container for DemaConsulting.DocDown.Office                   |
-| TestResults         | Serializes docdown self-validation results to TRX and JUnit                                  |
-| VersionMark         | Captures and publishes tool-version information                                              |
-| WeasyPrint          | Converts HTML documentation to PDF                                                           |
-| xUnit               | Discovers and executes unit and integration tests                                            |
+| OTS Item | Purpose |
+| :--- | :--- |
+| ApiMark | Generates the packaged gradual-disclosure Markdown API reference |
+| BuildMark | Generates build-notes documentation from GitHub Actions metadata |
+| CanvasNet | Fully-managed 2D canvas/codec library used for PNG encoding |
+| CanvasNet.Charts | Chart-rendering library CanvasNet.Pptx uses internally; resolved, never called |
+| CanvasNet.Pdf | Fully-managed PDF rasterization API for the DemaConsulting.DocDown.Pdf.Rendering package |
+| CanvasNet.Pptx | Fully-managed PowerPoint rasterization API for DemaConsulting.DocDown.PowerPoint.Rendering |
+| CanvasNet.Vsdx | Fully-managed Visio rasterization API for the DemaConsulting.DocDown.Visio.Rendering package |
+| FileAssert | Validates generated documents (HTML/PDF) against acceptance criteria |
+| Open XML SDK | Reads Office documents for the DemaConsulting.DocDown.Office extraction package |
+| Pandoc | Converts Markdown documentation to HTML |
+| PdfPig | Parses PDF documents for the DemaConsulting.DocDown.Pdf extraction package |
+| ReqStream | Enforces requirements-to-test traceability |
+| ReviewMark | Enforces file review coverage and currency |
+| SarifMark | Converts CodeQL SARIF results into a markdown report |
+| SonarMark | Generates a SonarCloud quality report |
+| SysML2Tools | Validates the SysML2 architecture model and renders its views to SVG |
+| System.IO.Packaging | Opens an Office document's OPC container for DemaConsulting.DocDown.Office |
+| TestResults | Serializes docdown self-validation results to TRX and JUnit |
+| VersionMark | Captures and publishes tool-version information |
+| WeasyPrint | Converts HTML documentation to PDF |
+| xUnit | Discovers and executes unit and integration tests |
 
 Each item's individual design document (`docs/design/ots/{ots-name}.md`) records its Purpose,
 Features Used, and Integration Pattern. Each item's requirements and verification evidence are

@@ -14,11 +14,11 @@ The system makes no acceptability judgment about document content.
 The system is organized into three subsystems:
 
 - **Detection** — names a document format from its file extension, falling back to a bounded
-  leading-byte signature check. See _Detection Subsystem Design_.
+  leading-byte signature check. See *Detection Subsystem Design*.
 - **Extraction** — holds the registered extractors, probes their availability, chooses one
-  deterministically, and orchestrates one run end to end. See _Extraction Subsystem Design_.
+  deterministically, and orchestrates one run end to end. See *Extraction Subsystem Design*.
 - **Output** — prepares the scratch folder, allocates every output path, writes every artifact,
-  and serializes the human- and machine-readable reports. See _Output Subsystem Design_.
+  and serializes the human- and machine-readable reports. See *Output Subsystem Design*.
 
 Two rules govern every interaction among these subsystems:
 
@@ -37,10 +37,10 @@ explains why.
 
 ### Determinism is scoped to one environment
 
-Selection and serialization are deterministic inside one environment. Two runs with the same inputs and the same available
-extractors produce output that is identical apart from the extraction timestamp, which the engine
-takes from the current UTC time and which callers cannot supply. Core does not claim identical content
-across operating systems or across installations with different extractors available.
+Selection and serialization are deterministic inside one environment. Two runs with the same inputs and the same
+available extractors produce output that is identical apart from the extraction timestamp, which the engine takes from
+the current UTC time and which callers cannot supply. Core does not claim identical content across operating systems or
+across installations with different extractors available.
 
 ### A scratch-folder refusal is the one no-layout outcome
 

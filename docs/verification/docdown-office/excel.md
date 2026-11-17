@@ -1,7 +1,7 @@
 # DemaConsulting.DocDown.Excel Verification Design
 
-This document describes the subsystem-level verification strategy for `DemaConsulting.DocDown.Excel`, the Excel extraction
-subsystem.
+This document describes the subsystem-level verification strategy for `DemaConsulting.DocDown.Excel`, the Excel
+extraction subsystem.
 
 ## Verification Approach
 

@@ -77,11 +77,6 @@ project.fragment.lock.json
 artifacts/
 packages/
 
-# Node.js
-node_modules/
-package-lock.json
-npm-debug.log
-
 # Python
 __pycache__/
 *.py[cod]
@@ -93,8 +88,8 @@ __pycache__/
 
 # ApiMark generated API reference. ApiMark writes src/<project>/api/ after every build and
 # packs it into the NuGet package; it is build output regenerated from the assembly and its
-# XML doc comments, so it is never committed. Also excluded from markdownlint
-# (.markdownlint-cli2.yaml) and TextLint (.textlint.yaml) for the same reason.
+# XML doc comments, so it is never committed. Also excluded from LintMark
+# (.lintmark.yaml) and TextLint (.textlint.yaml) for the same reason.
 src/*/api/
 
 # Test results

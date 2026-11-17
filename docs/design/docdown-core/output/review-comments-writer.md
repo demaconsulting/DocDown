@@ -58,7 +58,7 @@ differ in a stated way.
   emphasized so a reader can follow one reviewer's thread, and the location precedes the body so the
   entry reads as a statement about a place in the document. Every field passes through
   `EscapeInline` on the way in, because this is where markdown is written.
-- **`EscapeInline`** — backslash-escapes the inline-structural set `` \ ` * _ [ ] < & ~ `` in the
+- **`EscapeInline`** — backslash-escapes the inline-structural set ``\ ` * _ [ ] < & ~`` in the
   author, the location, and the flattened body. Escaping lives here, once, rather than in each
   backend: that
   keeps every extractor reporting the comment text *as the document records it*, which is what

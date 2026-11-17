@@ -18,7 +18,7 @@ the document as a whole, and revision scanning is a separate read-only pass).
 ### Interfaces
 
 | Interface | Direction | Format | Constraints |
-| --------- | --------- | ------ | ----------- |
+| --- | --- | --- | --- |
 | `IDocumentExtractor` | Inbound, from the engine | .NET interface | Cheap no-I/O availability probe |
 | `ISelfValidating` | Inbound, from the engine | .NET interface | Enumeration is cheap; case bodies do the work |
 | `DocumentSource` | Inbound, from Core | .NET record | Buffered before opening because a stream source may not seek |
