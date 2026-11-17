@@ -65,6 +65,7 @@ words:
   - ellipsizing
   - FileAssert
   - fileassert
+  - lintmark
   - multimodal
   - NFKD
   - presentationml
