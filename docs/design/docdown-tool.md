@@ -41,8 +41,8 @@ exactly what the tool actually runs.
 
 `DemaConsulting.TestResults` enters the dependency graph only in this tool, in the `SelfTestAdapter`
 unit. Core defines its self-test contract (`ISelfValidating`, `SelfTestCase`, `SelfTestResult`,
-`SelfTestStatus`) as plain records with no NuGet dependency, so it keeps its zero-runtime-
-dependency posture; the adapter that turns those records into a serializable results model lives
+`SelfTestStatus`) as plain records with no NuGet dependency, so it keeps its zero-runtime-dependency
+posture; the adapter that turns those records into a serializable results model lives
 here, on the tool side of the boundary. Neither Core nor the extraction backends references
 `DemaConsulting.TestResults`.
 
