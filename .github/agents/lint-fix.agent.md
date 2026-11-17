@@ -13,7 +13,7 @@ submission, not during normal development.
 # Workflow (MANDATORY)
 
 1. **Auto-fix pass**: Run `pwsh ./fix.ps1` to silently apply all
-   automatic fixes (dotnet format, markdownlint, yamlfix).
+   automatic fixes (dotnet format, lintmark, yamlfix).
 
 2. **Fix loop** (maximum 5 iterations):
 
@@ -41,7 +41,7 @@ submission, not during normal development.
   3. **Fixture or test data** (deliberate misspellings, encoded data): Add a
      scoped `overrides` entry with `filename` globs and `words`, `ignoreWords`,
      or `ignoreRegExpList`, plus a comment explaining why. Do not use global
-     `words` or scattered inline `cspell:` directives for these.
+     `words` or scattered inline `textlint:` comment directives for these.
   4. **Never ours** (vendored, generated, or build-output files): Use
      `ignorePaths`, and only for these.
   5. **Ours, but deliberately not checked**: Add an `overrides` entry with
@@ -49,17 +49,18 @@ submission, not during normal development.
   6. `.textlint.yaml` is a protected configuration file. Explain every change to
      it in the report.
 
-- **markdownlint MD013 (line length)**: Wrap long lines at natural break points,
-  after commas, before conjunctions, or at sentence boundaries. Do not break
-  in the middle of a code span or URL. **Pipe-tables that cannot be wrapped
-  without breaking structure** are a special case - convert them to a bullet
-  list if the data reads naturally that way, or rewrite as a
-  [grid table](https://pandoc.org/MANUAL.html#tables) if a tabular layout is
-  essential. Do not get stuck trying to squeeze a wide pipe-table into 120
-  characters.
+- **LintMark line length (`line-length`, `MD013`)**: Run `pwsh ./fix.ps1` (or `dotnet lintmark --fix`), which
+  re-wraps over-length paragraphs automatically. Only lines LintMark cannot break remain: a single long URL, link, or
+  code span, a heading, or a table row. Fix these by shortening the content, using reference-style links, or
+  restructuring the table. **Pipe-tables that cannot be wrapped without breaking structure** are a special case -
+  convert them to a bullet list if the data reads naturally that way, or rewrite as a
+  [grid table](https://pandoc.org/MANUAL.html#tables) if a tabular layout is essential. Do not get stuck trying to
+  squeeze a wide pipe-table into 120 characters.
 
-- **markdownlint other rules**: Apply the specific fix indicated in the output
-  (e.g., missing blank lines, heading levels, code fence languages).
+- **LintMark other rules** (`dotnet lintmark`): Formatting rules are fixed by `pwsh ./fix.ps1`. The lint-only rules
+  (heading increment, duplicate headings, missing alt text, broken link fragments, undefined or unused link
+  references, emphasis or link spacing, table too wide) need a manual fix: apply the specific fix indicated in the
+  output (`file:line:col: rule-id message`).
 
 - **yamllint errors**: Fix indentation, trailing spaces, or missing document
   markers as indicated. Run `pwsh ./fix.ps1` again if structural YAML
