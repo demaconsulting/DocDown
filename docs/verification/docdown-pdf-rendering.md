@@ -53,8 +53,8 @@ project.
 ## Test Environment
 
 - **Framework**: xUnit v3 under the .NET SDK, targeting net8.0, net9.0, net10.0, and net11.0
-- **Rasterizer**: CanvasNet.Pdf and CanvasNet are fully managed and carry no runtime-identifier-
-  specific asset, so the render scenarios exercise the real rasterizer on every operating system and
+- **Rasterizer**: CanvasNet.Pdf and CanvasNet are fully managed and carry no runtime-identifier-specific
+  asset, so the render scenarios exercise the real rasterizer on every operating system and
   framework in the CI matrix with no conditional skip path
 - **Filesystem**: a per-test `TempScratch` folder holds both the generated input and the output
 - **Inputs**: PDFs generated at test time, plus the embedded `Resources/probe.pdf` the self-test
