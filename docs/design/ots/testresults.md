@@ -10,7 +10,7 @@ dependencies, so it adds nothing to the tool's dependency graph beyond itself.
 
 It is the one runtime OTS dependency of `DemaConsulting.DocDown.Tool`, and it is referenced by no other package:
 `DemaConsulting.DocDown.Core` and `DemaConsulting.DocDown.Pdf` are free of it, which is what preserves Core's
-zero-runtime-NuGet -dependency posture. MIT is compatible with this repository's MIT license.
+zero-runtime-NuGet-dependency posture. MIT is compatible with this repository's MIT license.
 
 ### Features Used
 
