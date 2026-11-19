@@ -12,6 +12,8 @@
 [![Security](https://sonarcloud.io/api/project_badges/measure?project=demaconsulting_DocDown&metric=security_rating)](https://sonarcloud.io/dashboard?id=demaconsulting_DocDown)
 [![NuGet](https://img.shields.io/nuget/v/DemaConsulting.DocDown.Core?style=plastic)](https://www.nuget.org/packages/DemaConsulting.DocDown.Core)
 
+![DocDown banner: the DocDown name with the tagline 'Office and PDF in. Agent-ready out.' and the command 'docdown --input report.pdf --scratch ./out'. PDF, Word, Excel, PowerPoint, and Visio documents flow on curved arrows into the docdown .NET tool, and arrows lead out to the scratch folder it writes: content.md Markdown with a heading, a table, and a list, extracted images and rendered pages in images/ and pages/, an agent-readable summary.txt, and the manifest.json and metadata.json files. A footnote notes that DocDown also ships as .NET libraries][hero]
+
 ## Overview
 
 DocDown is a family of .NET libraries and a command-line tool that extract useful information from
@@ -173,4 +175,5 @@ DocDown is built with the following open-source projects:
 - [CanvasNet](https://github.com/demaconsulting/CanvasNet) - Managed page rendering
 - [DemaConsulting.TestResults](https://github.com/demaconsulting/TestResults) - TRX and JUnit XML test results library
 
+[hero]: https://raw.githubusercontent.com/demaconsulting/DocDown/main/docs/images/hero.png
 [architecture]: https://raw.githubusercontent.com/demaconsulting/DocDown/main/docs/images/architecture.png
