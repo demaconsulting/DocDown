@@ -58,7 +58,7 @@ function Normalize-YamlLineEndings {
     $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
     Get-ChildItem -Recurse -Include "*.yaml", "*.yml" |
-        Where-Object { $_.FullName -notmatch '[/\\](\.git|node_modules|\.venv|thirdparty|third-party|3rd-party|\.agent-logs)[/\\]' } |
+        Where-Object { $_.FullName -notmatch '[/\\](\.git|node_modules|\.venv|thirdparty|third-party|3rd-party|\.agent-logs|generated)[/\\]' } |
         ForEach-Object {
             $raw = [System.IO.File]::ReadAllText($_.FullName)
             $fixed = $raw.Replace("`r`n", "`n")

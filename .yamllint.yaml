@@ -29,10 +29,8 @@ rules:
   truthy:
     allowed-values: ['true', 'false', 'on', 'off']
 
-  # Allow longer lines for URLs and complex expressions
-  line-length:
-    max: 120
-    level: error
+  # No YAML line-length limit in DEMA repositories (yamlfix uses line_length = 10000 for the same reason)
+  line-length: disable
 
   # Ensure proper indentation
   indentation:
