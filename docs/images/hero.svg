@@ -1,0 +1,348 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="640" viewBox="0 0 1600 640">
+  <!-- The README hero banner. PDF, Word, Excel, PowerPoint, and Visio documents flow into the docdown tool and
+       come out as a scratch folder: content.md Markdown, extracted images and rendered pages, an agent-readable
+       summary.txt, and the manifest.json and metadata.json twins.
+       The definitions and the left panel follow the shared DEMA Consulting hero (CanvasNet and BuildMark).
+       This file is docs/images/hero.svg, beside its rendered docs/images/hero.png (matching base names, per the
+       diagram documentation standard); the files it embeds are in docs/images/hero/. -->
+  <defs>
+    <style>
+      .word { font: bold 92px sans-serif; fill: #ffffff; }
+      .eyebrow { font: bold 25px sans-serif; fill: #a5b4fc; }
+      .tag { font: bold 40px sans-serif; fill: #f8fafc; }
+      .body { font: 25px sans-serif; fill: #cbd5e1; }
+      .cmd { font: 25px monospace; fill: #e2e8f0; }
+      .prompt { fill: #5eead4; }
+      .file { fill: #f9a8d4; }
+      .brandText { fill: url(#brand); }
+      .note { font: italic 25px sans-serif; fill: #94a3b8; }
+      .label { font: bold 25px sans-serif; fill: #f1f5f9; text-anchor: middle; }
+      .engine { font: bold 32px monospace; fill: #ffffff; }
+      .api { font: bold 25px sans-serif; fill: #c4b5fd; }
+      .card { fill: url(#glass); stroke: url(#rim); stroke-width: 1.5; filter: url(#shadow); }
+      .panel { fill: #0a1022; stroke: #ffffff; stroke-opacity: 0.06; }
+      .flow { fill: none; stroke-width: 3; stroke-linecap: round; }
+      .page { fill: #ffffff; filter: url(#paper); }
+    </style>
+
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#070b1f"/>
+      <stop offset="0.55" stop-color="#130f3b"/>
+      <stop offset="1" stop-color="#071a2e"/>
+    </linearGradient>
+    <radialGradient id="glowViolet" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7c3aed" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#7c3aed" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowCyan" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#06b6d4" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#06b6d4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowPink" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#db2777" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#db2777" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="1.2" fill="#a5b4fc" fill-opacity="0.16"/>
+    </pattern>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="0.5" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#f472b6"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.04"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.08"/>
+    </linearGradient>
+    <linearGradient id="engineFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1e1b4b"/>
+      <stop offset="1" stop-color="#0b1022"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+    <filter id="paper" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <filter id="blur" x="-30%" y="-150%" width="160%" height="400%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="heat" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+
+    <marker id="headPink" viewBox="0 0 10 10" refX="2.5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 L2.5,5 z" fill="#f472b6"/>
+    </marker>
+    <marker id="headAmber" viewBox="0 0 10 10" refX="2.5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 L2.5,5 z" fill="#fbbf24"/>
+    </marker>
+    <marker id="headCyan" viewBox="0 0 10 10" refX="2.5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 L2.5,5 z" fill="#22d3ee"/>
+    </marker>
+    <marker id="headViolet" viewBox="0 0 10 10" refX="2.5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 L2.5,5 z" fill="#a78bfa"/>
+    </marker>
+    <marker id="headBlue" viewBox="0 0 10 10" refX="2.5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 L2.5,5 z" fill="#60a5fa"/>
+    </marker>
+    <marker id="headMint" viewBox="0 0 10 10" refX="2.5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 L2.5,5 z" fill="#5eead4"/>
+    </marker>
+
+    <!-- The text and shapes inside the mini illustrations -->
+    <style>
+      .mini { font: bold 22px sans-serif; }
+      .miniMono { font: bold 22px monospace; }
+      .bar { fill: #cbd5e1; }
+      .ink { fill: #1e293b; }
+    </style>
+  </defs>
+
+  <!-- Background: deep gradient, soft glows, and a dot grid -->
+  <rect width="1600" height="640" fill="url(#bg)"/>
+  <ellipse cx="250" cy="170" rx="420" ry="300" fill="url(#glowViolet)"/>
+  <ellipse cx="1070" cy="294" rx="420" ry="220" fill="url(#glowCyan)"/>
+  <ellipse cx="1480" cy="620" rx="380" ry="260" fill="url(#glowPink)"/>
+  <rect width="1600" height="640" fill="url(#dots)"/>
+
+  <!-- Wordmark and tagline -->
+  <image href="hero/dc-logo-dark.svg" x="46" y="54" width="50" height="50"/>
+  <text class="eyebrow" x="100" y="90">DEMA Consulting</text>
+  <text class="word" x="52" y="176">Doc</text>
+  <text class="word brandText" x="225.8" y="176">Down</text>
+  <rect x="58" y="200" width="132" height="6" rx="3" fill="url(#brand)"/>
+  <text class="tag" x="56" y="266">Office and PDF in.</text>
+  <text class="tag brandText" x="56" y="316">Agent-ready out.</text>
+  <text class="body" x="58" y="368">Extracts text, tables, and images</text>
+  <text class="body" x="58" y="402">into one predictable scratch folder</text>
+  <text class="body" x="58" y="436">for people and multimodal AI agents.</text>
+  <rect x="56" y="468" width="480" height="90" rx="12" fill="#0a1022" fill-opacity="0.8" stroke="#a78bfa" stroke-opacity="0.45" stroke-width="1.5"/>
+  <text class="cmd prompt" x="78" y="503">$</text>
+  <text class="cmd" x="108" y="503">docdown --input</text>
+  <text class="cmd file" x="348" y="503">report.pdf</text>
+  <text class="cmd" x="138" y="539">--scratch</text>
+  <text class="cmd file" x="288" y="539">./out</text>
+  <text class="note" x="58" y="604">Also ships as .NET libraries.</text>
+
+  <!-- Input cards: the document formats DocDown reads -->
+  <g>
+    <!-- PDF: a text page -->
+    <rect class="card" x="580" y="40" width="186" height="160" rx="16"/>
+    <rect x="617" y="40" width="112" height="3" rx="1.5" fill="#fbbf24"/>
+    <rect class="panel" x="588" y="48" width="170" height="112" rx="10"/>
+    <g transform="translate(588 48)">
+      <path class="page" d="M14 10 L56 10 L72 26 L72 102 L14 102 Z"/>
+      <path d="M56 10 L56 26 L72 26 Z" fill="#cbd5e1"/>
+      <rect x="22" y="34" width="34" height="5" rx="2.5" fill="#fbbf24"/>
+      <rect class="bar" x="22" y="46" width="42" height="5" rx="2.5"/>
+      <rect class="bar" x="22" y="58" width="36" height="5" rx="2.5"/>
+      <rect class="bar" x="22" y="70" width="42" height="5" rx="2.5"/>
+      <rect class="bar" x="22" y="82" width="28" height="5" rx="2.5"/>
+      <rect x="84" y="18" width="74" height="32" rx="7" fill="#fbbf24" fill-opacity="0.16" stroke="#fbbf24" stroke-width="1.5"/>
+      <text class="mini" x="121" y="42" fill="#fde68a" text-anchor="middle">.pdf</text>
+      <rect class="bar" x="84" y="66" width="74" height="8" rx="4" fill-opacity="0.75"/>
+      <rect class="bar" x="84" y="84" width="50" height="8" rx="4" fill-opacity="0.75"/>
+    </g>
+    <text class="label" x="673" y="190">PDF</text>
+
+    <!-- Word: a page with a heading and paragraphs -->
+    <rect class="card" x="778" y="40" width="186" height="160" rx="16"/>
+    <rect x="815" y="40" width="112" height="3" rx="1.5" fill="#22d3ee"/>
+    <rect class="panel" x="786" y="48" width="170" height="112" rx="10"/>
+    <g transform="translate(786 48)">
+      <path class="page" d="M14 10 L56 10 L72 26 L72 102 L14 102 Z"/>
+      <path d="M56 10 L56 26 L72 26 Z" fill="#cbd5e1"/>
+      <rect x="22" y="32" width="30" height="8" rx="4" fill="#22d3ee"/>
+      <rect class="bar" x="22" y="48" width="42" height="4" rx="2"/>
+      <rect class="bar" x="22" y="56" width="38" height="4" rx="2"/>
+      <rect class="bar" x="22" y="64" width="30" height="4" rx="2"/>
+      <rect class="bar" x="22" y="78" width="42" height="4" rx="2"/>
+      <rect class="bar" x="22" y="86" width="34" height="4" rx="2"/>
+      <rect x="84" y="18" width="74" height="32" rx="7" fill="#22d3ee" fill-opacity="0.16" stroke="#22d3ee" stroke-width="1.5"/>
+      <text class="mini" x="121" y="42" fill="#a5f3fc" text-anchor="middle">.docx</text>
+      <rect class="bar" x="84" y="66" width="74" height="8" rx="4" fill-opacity="0.75"/>
+      <rect class="bar" x="84" y="84" width="50" height="8" rx="4" fill-opacity="0.75"/>
+    </g>
+    <text class="label" x="871" y="190">Word</text>
+
+    <!-- Excel: a worksheet grid -->
+    <rect class="card" x="976" y="40" width="186" height="160" rx="16"/>
+    <rect x="1013" y="40" width="112" height="3" rx="1.5" fill="#f472b6"/>
+    <rect class="panel" x="984" y="48" width="170" height="112" rx="10"/>
+    <g transform="translate(984 48)">
+      <rect class="page" x="10" y="18" width="66" height="76" rx="3"/>
+      <rect x="10" y="18" width="66" height="15" rx="3" fill="#f472b6" fill-opacity="0.75"/>
+      <g stroke="#94a3b8" stroke-width="1.2">
+        <line x1="32" y1="18" x2="32" y2="94"/>
+        <line x1="54" y1="18" x2="54" y2="94"/>
+        <line x1="10" y1="48" x2="76" y2="48"/>
+        <line x1="10" y1="63" x2="76" y2="63"/>
+        <line x1="10" y1="78" x2="76" y2="78"/>
+      </g>
+      <rect x="84" y="18" width="74" height="32" rx="7" fill="#f472b6" fill-opacity="0.16" stroke="#f472b6" stroke-width="1.5"/>
+      <text class="mini" x="121" y="42" fill="#fbcfe8" text-anchor="middle">.xlsx</text>
+      <rect class="bar" x="84" y="66" width="74" height="8" rx="4" fill-opacity="0.75"/>
+      <rect class="bar" x="84" y="84" width="50" height="8" rx="4" fill-opacity="0.75"/>
+    </g>
+    <text class="label" x="1069" y="190">Excel</text>
+
+    <!-- PowerPoint: a slide with a title and a chart -->
+    <rect class="card" x="1174" y="40" width="186" height="160" rx="16"/>
+    <rect x="1211" y="40" width="112" height="3" rx="1.5" fill="#60a5fa"/>
+    <rect class="panel" x="1182" y="48" width="170" height="112" rx="10"/>
+    <g transform="translate(1182 48)">
+      <rect class="page" x="8" y="28" width="72" height="54" rx="3"/>
+      <rect x="16" y="35" width="38" height="6" rx="3" fill="#60a5fa"/>
+      <rect x="18" y="62" width="9" height="14" fill="#60a5fa"/>
+      <rect x="31" y="54" width="9" height="22" fill="#93c5fd"/>
+      <rect x="44" y="48" width="9" height="28" fill="#60a5fa"/>
+      <rect class="bar" x="58" y="50" width="16" height="4" rx="2"/>
+      <rect class="bar" x="58" y="58" width="12" height="4" rx="2"/>
+      <rect x="84" y="18" width="74" height="32" rx="7" fill="#60a5fa" fill-opacity="0.16" stroke="#60a5fa" stroke-width="1.5"/>
+      <text class="mini" x="121" y="42" fill="#bfdbfe" text-anchor="middle">.pptx</text>
+      <rect class="bar" x="84" y="66" width="74" height="8" rx="4" fill-opacity="0.75"/>
+      <rect class="bar" x="84" y="84" width="50" height="8" rx="4" fill-opacity="0.75"/>
+    </g>
+    <text class="label" x="1267" y="190">PowerPoint</text>
+
+    <!-- Visio: a page with connected shapes -->
+    <rect class="card" x="1372" y="40" width="188" height="160" rx="16"/>
+    <rect x="1410" y="40" width="112" height="3" rx="1.5" fill="#a78bfa"/>
+    <rect class="panel" x="1380" y="48" width="172" height="112" rx="10"/>
+    <g transform="translate(1380 48)">
+      <rect class="page" x="10" y="16" width="66" height="80" rx="3"/>
+      <g stroke="#7c3aed" stroke-width="2" fill="none">
+        <line x1="43" y1="38" x2="43" y2="52"/>
+        <path d="M43 52 L26 52 L26 64"/>
+        <path d="M43 52 L60 52 L60 64"/>
+      </g>
+      <rect x="30" y="24" width="26" height="14" rx="3" fill="#a78bfa"/>
+      <rect x="16" y="64" width="20" height="14" rx="3" fill="#c4b5fd"/>
+      <rect x="50" y="64" width="20" height="14" rx="7" fill="#c4b5fd"/>
+      <rect x="86" y="18" width="74" height="32" rx="7" fill="#a78bfa" fill-opacity="0.16" stroke="#a78bfa" stroke-width="1.5"/>
+      <text class="mini" x="123" y="42" fill="#ddd6fe" text-anchor="middle">.vsdx</text>
+      <rect class="bar" x="86" y="66" width="74" height="8" rx="4" fill-opacity="0.75"/>
+      <rect class="bar" x="86" y="84" width="50" height="8" rx="4" fill-opacity="0.75"/>
+    </g>
+    <text class="label" x="1466" y="190">Visio</text>
+  </g>
+
+  <!-- Flows into the engine -->
+  <g class="flow">
+    <path d="M673,206 C673,236 930,226 930,253" stroke="#fbbf24" marker-end="url(#headAmber)"/>
+    <path d="M871,206 C871,236 1000,226 1000,253" stroke="#22d3ee" marker-end="url(#headCyan)"/>
+    <path d="M1069,206 C1069,236 1070,226 1070,253" stroke="#f472b6" marker-end="url(#headPink)"/>
+    <path d="M1267,206 C1267,236 1140,226 1140,253" stroke="#60a5fa" marker-end="url(#headBlue)"/>
+    <path d="M1466,206 C1466,236 1210,226 1210,253" stroke="#a78bfa" marker-end="url(#headViolet)"/>
+  </g>
+  <g stroke="#0a1022" stroke-width="2">
+    <circle cx="673" cy="206" r="5" fill="#fbbf24"/>
+    <circle cx="871" cy="206" r="5" fill="#22d3ee"/>
+    <circle cx="1069" cy="206" r="5" fill="#f472b6"/>
+    <circle cx="1267" cy="206" r="5" fill="#60a5fa"/>
+    <circle cx="1466" cy="206" r="5" fill="#a78bfa"/>
+  </g>
+  <!-- The engine: the docdown tool -->
+  <rect x="860" y="262" width="420" height="64" rx="32" fill="url(#brand)" opacity="0.55" filter="url(#blur)"/>
+  <rect x="860" y="262" width="420" height="64" rx="32" fill="url(#engineFill)" stroke="url(#brand)" stroke-width="2.5"/>
+  <rect x="884" y="276" width="36" height="36" rx="9" fill="url(#brand)"/>
+  <path d="M893 282 L906 282 L912 288 L912 306 L893 306 Z" fill="#ffffff"/>
+  <g fill="#7c3aed">
+    <rect x="897" y="290" width="11" height="2.5" rx="1.2"/>
+    <rect x="897" y="295" width="11" height="2.5" rx="1.2"/>
+    <rect x="897" y="300" width="7" height="2.5" rx="1.2"/>
+  </g>
+  <text class="engine" x="936" y="305">docdown</text>
+  <line x1="1120" y1="278" x2="1120" y2="310" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.5"/>
+  <text class="api" x="1140" y="303">.NET tool</text>
+
+  <!-- Flows out of the engine -->
+  <g class="flow" stroke="#5eead4">
+    <path d="M980,330 C980,356 728,356 728,381" marker-end="url(#headMint)"/>
+    <path d="M1040,330 C1040,356 999,356 999,381" marker-end="url(#headMint)"/>
+    <path d="M1100,330 C1100,356 1232,356 1232,381" marker-end="url(#headMint)"/>
+    <path d="M1160,330 C1160,356 1457,356 1457,381" marker-end="url(#headMint)"/>
+  </g>
+  <g fill="#5eead4" stroke="#0a1022" stroke-width="2">
+    <circle cx="980" cy="330" r="5"/>
+    <circle cx="1040" cy="330" r="5"/>
+    <circle cx="1100" cy="330" r="5"/>
+    <circle cx="1160" cy="330" r="5"/>
+  </g>
+
+  <!-- Output tiles: what DocDown writes into the scratch folder -->
+  <g>
+    <!-- content.md: Markdown with a heading, a table, and a list -->
+    <rect class="card" x="580" y="390" width="296" height="210" rx="16"/>
+    <rect class="panel" x="588" y="398" width="280" height="152" rx="10"/>
+    <path class="page" d="M604 406 L834 406 L852 424 L852 542 L604 542 Z"/>
+    <path d="M834 406 L834 424 L852 424 Z" fill="#cbd5e1"/>
+    <text class="mini" x="618" y="433" fill="#7c3aed">#</text>
+    <text class="mini ink" x="640" y="433">Report</text>
+    <rect class="bar" x="730" y="424" width="80" height="6" rx="3"/>
+    <rect x="618" y="446" width="216" height="44" rx="3" fill="#ffffff" stroke="#94a3b8" stroke-width="1.2"/>
+    <rect x="618" y="446" width="216" height="22" rx="3" fill="#ede9fe" stroke="#94a3b8" stroke-width="1.2"/>
+    <g stroke="#94a3b8" stroke-width="1.2">
+      <line x1="690" y1="446" x2="690" y2="490"/>
+      <line x1="762" y1="446" x2="762" y2="490"/>
+    </g>
+    <g fill="#7c3aed">
+      <rect x="628" y="454" width="44" height="6" rx="3"/>
+      <rect x="700" y="454" width="44" height="6" rx="3"/>
+      <rect x="772" y="454" width="44" height="6" rx="3"/>
+    </g>
+    <rect class="bar" x="628" y="476" width="40" height="6" rx="3"/>
+    <rect class="bar" x="700" y="476" width="50" height="6" rx="3"/>
+    <rect class="bar" x="772" y="476" width="34" height="6" rx="3"/>
+    <circle cx="624" cy="510" r="4" fill="#7c3aed"/>
+    <rect class="bar" x="636" y="507" width="150" height="6" rx="3"/>
+    <circle cx="624" cy="528" r="4" fill="#7c3aed"/>
+    <rect class="bar" x="636" y="525" width="110" height="6" rx="3"/>
+    <text class="label" x="728" y="585">content.md</text>
+
+    <!-- images/ and pages/: extracted images and rendered pages -->
+    <rect class="card" x="889" y="390" width="220" height="210" rx="16"/>
+    <rect class="panel" x="897" y="398" width="204" height="152" rx="10"/>
+    <rect x="907" y="410" width="88" height="78" rx="6" fill="#1e293b" stroke="#5eead4" stroke-opacity="0.6" stroke-width="1.5"/>
+    <circle cx="975" cy="430" r="9" fill="#fbbf24"/>
+    <path d="M913 482 L940 446 L958 468 L970 456 L989 482 Z" fill="#22d3ee"/>
+    <path class="page" d="M1012 410 L1076 410 L1090 424 L1090 488 L1012 488 Z"/>
+    <path d="M1076 410 L1076 424 L1090 424 Z" fill="#cbd5e1"/>
+    <rect x="1020" y="420" width="40" height="6" rx="3" fill="#4f46e5"/>
+    <rect class="bar" x="1020" y="434" width="60" height="4" rx="2"/>
+    <rect class="bar" x="1020" y="442" width="52" height="4" rx="2"/>
+    <rect x="1020" y="452" width="60" height="22" rx="2" fill="#c4b5fd"/>
+    <rect class="bar" x="1020" y="478" width="44" height="4" rx="2"/>
+    <text class="miniMono" x="951" y="524" fill="#e2e8f0" text-anchor="middle">images/</text>
+    <text class="miniMono" x="1051" y="524" fill="#e2e8f0" text-anchor="middle">pages/</text>
+    <text class="label" x="999" y="585">Images, pages</text>
+
+    <!-- summary.txt: the write-up an agent reads first -->
+    <rect class="card" x="1122" y="390" width="220" height="210" rx="16"/>
+    <rect class="panel" x="1130" y="398" width="204" height="152" rx="10"/>
+    <text class="miniMono" x="1146" y="436" fill="#f8fafc">summary.txt</text>
+    <line x1="1146" y1="456" x2="1318" y2="456" stroke="#ffffff" stroke-opacity="0.15"/>
+    <circle cx="1152" cy="478" r="5" fill="#60a5fa"/>
+    <rect class="bar" x="1166" y="474" width="130" height="8" rx="4" fill-opacity="0.75"/>
+    <circle cx="1152" cy="504" r="5" fill="#f472b6"/>
+    <rect class="bar" x="1166" y="500" width="104" height="8" rx="4" fill-opacity="0.75"/>
+    <circle cx="1152" cy="530" r="5" fill="#fbbf24"/>
+    <rect class="bar" x="1166" y="526" width="118" height="8" rx="4" fill-opacity="0.75"/>
+    <text class="label" x="1232" y="585">Agent summary</text>
+
+    <!-- manifest.json and metadata.json: the machine-readable twins -->
+    <rect class="card" x="1355" y="390" width="205" height="210" rx="16"/>
+    <rect class="panel" x="1363" y="398" width="189" height="152" rx="10"/>
+    <circle cx="1457" cy="434" r="22" fill="url(#brand)"/>
+    <text class="miniMono" x="1457" y="442" fill="#ffffff" text-anchor="middle">{}</text>
+    <text class="miniMono" x="1457" y="488" fill="#e2e8f0" text-anchor="middle">manifest.json</text>
+    <line x1="1379" y1="503" x2="1536" y2="503" stroke="#ffffff" stroke-opacity="0.15"/>
+    <text class="miniMono" x="1457" y="532" fill="#e2e8f0" text-anchor="middle">metadata.json</text>
+    <text class="label" x="1457" y="585">JSON metadata</text>
+  </g>
+</svg>
