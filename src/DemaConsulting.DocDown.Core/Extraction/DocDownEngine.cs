@@ -625,7 +625,7 @@ public sealed class DocDownEngine
     ///     Enumerating a backend's cases is defended against a throwing implementation so one
     ///     misbehaving backend cannot break the whole suite, yet the fault is never silent: it is
     ///     reported as a single failing case so validation cannot pass a backend whose own checks
-    ///     never ran. An unavailable backend's cases are wrapped
+    ///     never ran, even when the backend is unavailable. An unavailable backend's cases are wrapped
     ///     to return <see cref="SelfTestResult.Skipped(string)"/> without running. Side effect: appends
     ///     to <paramref name="cases"/>.
     /// </remarks>
@@ -641,11 +641,11 @@ public sealed class DocDownEngine
         catch (Exception exception)
 #pragma warning restore CA1031
         {
+            // Added unwrapped so the fault fails validation even when the backend is unavailable
             var message = $"The backend's self-test cases could not be enumerated: {exception.GetType().Name}: {exception.Message}";
-            contributed =
-            [
-                new SelfTestCase($"{backendId}.selfTestCases", backendId, _ => SelfTestResult.Failed(message, TimeSpan.Zero))
-            ];
+            cases.Add(new SelfTestCase(
+                $"{backendId}.selfTestCases", backendId, _ => SelfTestResult.Failed(message, TimeSpan.Zero)));
+            return;
         }
 
         foreach (var testCase in contributed)

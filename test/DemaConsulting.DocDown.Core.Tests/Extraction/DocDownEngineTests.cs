@@ -425,6 +425,32 @@ public class DocDownEngineTests
     }
 
     /// <summary>
+    ///     Proves an unavailable backend whose case enumeration throws still reports a failing case
+    ///     rather than having the fault wrapped as skipped.
+    /// </summary>
+    [Fact]
+    public void DocDownEngine_GetSelfTestCases_UnavailableBackendEnumerationFault_ReportsFailingCase()
+    {
+        // Arrange: an unavailable self-validating backend whose case enumeration throws
+        using var temp = new TempScratch();
+        var backend = new StubExtractor
+        {
+            Id = "broken",
+            AvailabilityMode = StubAvailabilityMode.Unavailable,
+            UnavailableReason = "the backend is offline here",
+            SelfTestCasesFault = new InvalidOperationException("cases unavailable")
+        };
+        var engine = new DocDownBuilder().AddExtractor(backend).Build();
+
+        // Act: run the case standing in for the backend's own cases
+        var backendCase = engine.GetSelfTestCases().Single(testCase => testCase.Category == "broken");
+        var outcome = backendCase.Run(new SelfTestContext(temp.Path, Ct));
+
+        // Assert: the enumeration fault still fails validation
+        Assert.Equal(SelfTestStatus.Failed, outcome.Status);
+        Assert.Contains("cases unavailable", outcome.Message, StringComparison.Ordinal);
+    }
+    /// <summary>
     ///     Proves cancellation propagates rather than being recorded as a structured failure.
     /// </summary>
     [Fact]
