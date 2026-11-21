@@ -11,6 +11,8 @@ data, rather than requiring reviewers to open the SARIF file separately.
 
 - SARIF-file reading of CodeQL code-scanning output
 - Markdown report generation summarizing SARIF findings
+- Location-based exclusion (`--exclude "**/obj/**" --exclude "**/bin/**"`), which keeps
+  compiler- and source-generator output out of the report so it covers only hand-written code
 - Enforcement mode, which returns a non-zero exit code when the SARIF input contains reported
   issues
 
