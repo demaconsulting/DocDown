@@ -17,11 +17,17 @@ CanvasNet.Pdf is fully managed, so `ProbeAvailability()` is unconditional.
 ### Data Model
 
 `PdfPageRenderingExtractor` is a `public sealed class` implementing `IDocumentExtractor` and
-`ISelfValidating`. It holds no per-extraction state. Its fields are the rasterization function it
-drives, which defaults to `PageRenderer.Render`, and the page-count function, which defaults to
-`PageRenderer.GetPageCount`; internal constructors accept substitutes so a test can inject a faulting
-renderer or counter and exercise the per-page and count-fault note paths. It also uses the
-`DelegatedExtractionContext` (a separate `internal sealed` class in the same file) to run the managed
+`ISelfValidating`. It holds no per-extraction state. Its single field is a `PageRenderingPipeline`
+configured with the rasterization function it drives, which defaults to `PageRenderer.Render`, and
+the page-count function, which defaults to `PageRenderer.GetPageCount`; internal constructors accept
+substitutes so a test can inject a faulting renderer or counter and exercise the per-page and
+count-fault note paths.
+
+`PageRenderingPipeline` and `DelegatedExtractionContext` live in
+`src/Shared/PageRendering/PageRenderingPipeline.cs`, a source file linked into each of the three
+page-rendering assemblies (PDF, PowerPoint, and Visio) and compiled as `internal` types in each. It
+holds the delegate-then-rasterize steps described below once, so the three backends cannot drift
+apart, without Core publishing it as public API. `DelegatedExtractionContext` runs the managed
 backend against the same sink with a rendering-suppressed options clone.
 
 ### Key Methods

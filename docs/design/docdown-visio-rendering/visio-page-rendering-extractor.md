@@ -18,11 +18,14 @@ CanvasNet.Vsdx is fully managed, so `ProbeAvailability()` is unconditional.
 ### Data Model
 
 `VisioPageRenderingExtractor` is a `public sealed class` implementing `IDocumentExtractor` and
-`ISelfValidating`. It holds no per-extraction state. Its fields are the rasterization function it
-drives (default `PageRenderer.Render`) and the page-count function it drives (default
-`PageRenderer.GetPageCount`); internal constructors accept substitutes so a test can inject a
-faulting renderer or counter and exercise the per-page note path and the count-failure path without
-depending on CanvasNet.Vsdx actually failing.
+`ISelfValidating`. It holds no per-extraction state. Its single field is a `PageRenderingPipeline`
+configured with the rasterization function it drives (default `PageRenderer.Render`) and the
+page-count function it drives (default `PageRenderer.GetPageCount`); internal constructors accept
+substitutes so a test can inject a faulting renderer or counter and exercise the per-page note path
+and the count-failure path without depending on CanvasNet.Vsdx actually failing.
+`PageRenderingPipeline` and `DelegatedExtractionContext` come from
+`src/Shared/PageRendering/PageRenderingPipeline.cs`, the source file linked into all three
+page-rendering assemblies as `internal` types; see *PdfPageRenderingExtractor Design*.
 
 ### Key Methods
 

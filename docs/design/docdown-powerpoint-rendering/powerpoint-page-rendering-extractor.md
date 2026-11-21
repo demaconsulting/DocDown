@@ -17,11 +17,14 @@ CanvasNet.Pptx is fully managed, so `ProbeAvailability()` is unconditional.
 ### Data Model
 
 `PowerPointPageRenderingExtractor` is a `public sealed class` implementing `IDocumentExtractor` and
-`ISelfValidating`. It holds no per-extraction state. Its fields are the rasterization function it
-drives (default `SlideRenderer.Render`) and the slide-count function it drives (default
-`SlideRenderer.GetSlideCount`); internal constructors accept substitutes so a test can inject a
-faulting renderer or counter and exercise the per-slide note path and the count-failure path without
-depending on CanvasNet.Pptx actually failing.
+`ISelfValidating`. It holds no per-extraction state. Its single field is a `PageRenderingPipeline`
+configured with the rasterization function it drives (default `SlideRenderer.Render`), the
+slide-count function it drives (default `SlideRenderer.GetSlideCount`), and the unit name `slide`
+used in its notes; internal constructors accept substitutes so a test can inject a faulting renderer
+or counter and exercise the per-slide note path and the count-failure path without depending on
+CanvasNet.Pptx actually failing. `PageRenderingPipeline` and `DelegatedExtractionContext` come from
+`src/Shared/PageRendering/PageRenderingPipeline.cs`, the source file linked into all three
+page-rendering assemblies as `internal` types; see *PdfPageRenderingExtractor Design*.
 
 ### Key Methods
 
