@@ -40,7 +40,7 @@ public class DocDownEngineTests
         // Act: run against a non-paginated format
         var result = await engine.ExtractAsync(
             temp.CreateFile("document.txt", "hello world"),
-            Path.Combine(temp.Path, "out"),
+            Path.Join(temp.Path, "out"),
             options,
             Ct);
 
@@ -57,7 +57,7 @@ public class DocDownEngineTests
     {
         // Arrange: a backend that reports two reviewer comments alongside the document content
         using var temp = new TempScratch();
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var commenting = new StubExtractor
         {
             Id = "text",
@@ -75,12 +75,12 @@ public class DocDownEngineTests
         // Act: run the engine over the commented document
         var result = await engine.ExtractAsync(
             temp.CreateFile("document.txt", "hello world"), scratch, FixedOptions(), Ct);
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct);
 
         // Assert: the artifact is claimed, present on disk, and announced in the summary layout
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Equal("review-comments.md", result.ReviewCommentsPath);
-        Assert.True(File.Exists(Path.Combine(scratch, "review-comments.md")));
+        Assert.True(File.Exists(Path.Join(scratch, "review-comments.md")));
         Assert.Contains("review-comments.md", summary, StringComparison.Ordinal);
         Assert.Contains("2 comments", summary, StringComparison.Ordinal);
     }
@@ -93,7 +93,7 @@ public class DocDownEngineTests
     {
         // Arrange: an ordinary backend that reports no reviewer comments
         using var temp = new TempScratch();
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var plain = new StubExtractor
         {
             Id = "text",
@@ -109,11 +109,11 @@ public class DocDownEngineTests
         // Act: run the engine over the uncommented document
         var result = await engine.ExtractAsync(
             temp.CreateFile("document.txt", "hello world"), scratch, FixedOptions(), Ct);
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct);
 
         // Assert: absence is reported as absence rather than as an empty artifact
         Assert.Null(result.ReviewCommentsPath);
-        Assert.False(File.Exists(Path.Combine(scratch, "review-comments.md")));
+        Assert.False(File.Exists(Path.Join(scratch, "review-comments.md")));
         Assert.Contains("review-comments.md", summary, StringComparison.Ordinal);
         Assert.Contains("not present", summary, StringComparison.Ordinal);
     }
@@ -144,7 +144,7 @@ public class DocDownEngineTests
         // Act: run with rendering requested
         var result = await engine.ExtractAsync(
             temp.CreateFile("document.txt", "hello world"),
-            Path.Combine(temp.Path, "out"),
+            Path.Join(temp.Path, "out"),
             options,
             Ct);
 
@@ -163,9 +163,9 @@ public class DocDownEngineTests
     {
         // Arrange: a non-empty target folder that the default safe mode must refuse
         using var temp = new TempScratch();
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         Directory.CreateDirectory(scratch);
-        var userData = Path.Combine(scratch, "user-data.txt");
+        var userData = Path.Join(scratch, "user-data.txt");
         await File.WriteAllTextAsync(userData, "precious", Ct);
         var engine = BuildEngine(StubExtractor.Available("text", [DocumentFormat.Text]));
 
@@ -180,8 +180,8 @@ public class DocDownEngineTests
         Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
         Assert.Equal(Path.GetFullPath(scratch), result.ScratchFolder);
         Assert.Contains("was refused", result.Failure?.Summary, StringComparison.Ordinal);
-        Assert.False(File.Exists(Path.Combine(scratch, "summary.txt")));
-        Assert.False(File.Exists(Path.Combine(scratch, "manifest.json")));
+        Assert.False(File.Exists(Path.Join(scratch, "summary.txt")));
+        Assert.False(File.Exists(Path.Join(scratch, "manifest.json")));
         Assert.Equal([userData], Directory.GetFileSystemEntries(scratch));
     }
 
@@ -209,7 +209,7 @@ public class DocDownEngineTests
         // Act: run against an unrecognized file type
         var result = await engine.ExtractAsync(
             temp.CreateFile("mystery.dat", "\u0000\u0001\u0002 not a known format"),
-            Path.Combine(temp.Path, "out"),
+            Path.Join(temp.Path, "out"),
             FixedOptions(),
             Ct);
 
@@ -245,7 +245,7 @@ public class DocDownEngineTests
         // Act: run with the caller-owned options object
         await engine.ExtractAsync(
             temp.CreateFile("document.txt", "hello world"),
-            Path.Combine(temp.Path, "out"),
+            Path.Join(temp.Path, "out"),
             options,
             Ct);
 
@@ -275,7 +275,7 @@ public class DocDownEngineTests
             }
         };
         var engine = BuildEngine(extractor);
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the extraction
         var result = await engine.ExtractAsync(
@@ -312,7 +312,7 @@ public class DocDownEngineTests
         // Arrange: a backend that throws during extraction
         using var temp = new TempScratch();
         var engine = BuildEngine(StubExtractor.Failing("text", [DocumentFormat.Text]));
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run so the backend faults
         var result = await engine.ExtractAsync(
@@ -323,7 +323,7 @@ public class DocDownEngineTests
 
         // Assert: the exception was contained and the summary and manifest were still written
         Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
-        Assert.False(File.Exists(Path.Combine(scratch, "content.md")));
+        Assert.False(File.Exists(Path.Join(scratch, "content.md")));
         Assert.Contains("failed while extracting", result.Failure?.Explanation, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
@@ -399,6 +399,32 @@ public class DocDownEngineTests
     }
 
     /// <summary>
+    ///     Proves a backend whose case enumeration throws is reported as a failing case rather than
+    ///     silently contributing nothing.
+    /// </summary>
+    [Fact]
+    public void DocDownEngine_GetSelfTestCases_EnumerationFault_ReportsFailingCase()
+    {
+        // Arrange: an available self-validating backend whose case enumeration throws
+        using var temp = new TempScratch();
+        var backend = new StubExtractor
+        {
+            Id = "broken",
+            SelfTestCasesFault = new InvalidOperationException("cases unavailable")
+        };
+        var engine = new DocDownBuilder().AddExtractor(backend).Build();
+
+        // Act: enumerate the suite and run the case standing in for the backend's own cases
+        var backendCase = engine.GetSelfTestCases().Single(testCase => testCase.Category == "broken");
+        var outcome = backendCase.Run(new SelfTestContext(temp.Path, Ct));
+
+        // Assert: the fault surfaces as a named failing case carrying the exception message
+        Assert.Equal("broken.selfTestCases", backendCase.Name);
+        Assert.Equal(SelfTestStatus.Failed, outcome.Status);
+        Assert.Contains("cases unavailable", outcome.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves cancellation propagates rather than being recorded as a structured failure.
     /// </summary>
     [Fact]
@@ -414,7 +440,7 @@ public class DocDownEngineTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             async () => await engine.ExtractAsync(
                 temp.CreateFile("document.txt", "hello world"),
-                Path.Combine(temp.Path, "out"),
+                Path.Join(temp.Path, "out"),
                 FixedOptions(),
                 cts.Token));
     }
@@ -431,7 +457,7 @@ public class DocDownEngineTests
 
         // Act / Assert: a null source is a programming error
         await Assert.ThrowsAsync<ArgumentNullException>(
-            async () => await engine.ExtractAsync((DocumentSource)null!, Path.Combine(temp.Path, "out"), FixedOptions(), Ct));
+            async () => await engine.ExtractAsync((DocumentSource)null!, Path.Join(temp.Path, "out"), FixedOptions(), Ct));
     }
 
     /// <summary>
@@ -462,7 +488,7 @@ public class DocDownEngineTests
 
         // Act / Assert: an empty document path is a programming error
         await Assert.ThrowsAsync<ArgumentException>(
-            async () => await engine.ExtractAsync(string.Empty, Path.Combine(temp.Path, "out"), FixedOptions(), Ct));
+            async () => await engine.ExtractAsync(string.Empty, Path.Join(temp.Path, "out"), FixedOptions(), Ct));
     }
 
     /// <summary>
@@ -499,7 +525,7 @@ public class DocDownEngineTests
         var engine = BuildEngine(extractor);
         var options = FixedOptions();
         options.RenderPages = true;
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the extraction end to end
         var result = await engine.ExtractAsync(
@@ -510,8 +536,8 @@ public class DocDownEngineTests
 
         // Assert: both folders are populated together and the run succeeds
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
-        Assert.NotEmpty(Directory.GetFiles(Path.Combine(scratch, "images")));
-        Assert.NotEmpty(Directory.GetFiles(Path.Combine(scratch, "pages")));
+        Assert.NotEmpty(Directory.GetFiles(Path.Join(scratch, "images")));
+        Assert.NotEmpty(Directory.GetFiles(Path.Join(scratch, "pages")));
     }
 
     /// <summary>
@@ -549,7 +575,7 @@ public class DocDownEngineTests
         // Act
         var result = await engine.ExtractAsync(
             temp.CreateFile("document.txt", "hello world"),
-            Path.Combine(temp.Path, "out"),
+            Path.Join(temp.Path, "out"),
             options,
             Ct);
 

@@ -57,8 +57,9 @@ concurrent extractions targeting different scratch folders.
   runs a trivial extraction through the real pipeline with an in-process stub extractor in a unique
   case folder, applies its assertion, and always removes the folder afterwards. A backend whose cached
   probe reports it unavailable has its cases wrapped so they return `Skipped` with a reason naming the
-  backend rather than running, and a backend that throws while enumerating its cases contributes none,
-  so one misbehaving backend cannot break the suite.
+  backend rather than running. A backend that throws while enumerating its cases contributes a single
+  failing case named `{backendId}.selfTestCases` carrying the exception message, so one misbehaving
+  backend cannot break the suite yet cannot pass validation with its own checks silently missing.
 
 #### Page rendering is a request, not a guarantee
 

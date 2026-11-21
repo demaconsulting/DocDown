@@ -133,7 +133,7 @@ internal static class Validation
         try
         {
             using var work = new TemporaryDirectory();
-            var logFile = Path.Combine(work.DirectoryPath, "cli-test.log");
+            var logFile = Path.Join(work.DirectoryPath, "cli-test.log");
 
             var args = new List<string> { "--silent", "--log", logFile };
             args.AddRange(commandArgs);
@@ -213,7 +213,7 @@ internal static class Validation
     /// <returns>The case's result, or a failure describing an exception it raised.</returns>
     private static SelfTestResult RunSelfTestCase(SelfTestCase testCase, string workRoot)
     {
-        var workFolder = Path.Combine(workRoot, Guid.NewGuid().ToString("N"));
+        var workFolder = Path.Join(workRoot, Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(workFolder);
 
         try
@@ -290,7 +290,7 @@ internal static class Validation
         /// <exception cref="InvalidOperationException">Thrown when the directory cannot be created.</exception>
         public TemporaryDirectory()
         {
-            DirectoryPath = Path.Combine(Path.GetTempPath(), $"docdown-validate-{Guid.NewGuid():N}");
+            DirectoryPath = Path.Join(Path.GetTempPath(), $"docdown-validate-{Guid.NewGuid():N}");
 
             try
             {
