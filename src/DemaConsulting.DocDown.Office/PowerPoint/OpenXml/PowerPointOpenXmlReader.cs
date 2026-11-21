@@ -365,50 +365,63 @@ internal static class PowerPointOpenXmlReader
     private static List<string> ReadGraphicFrameText(P.GraphicFrame frame, SlidePart slidePart)
     {
         var result = new List<string>();
-
-        foreach (var table in frame.Descendants<D.Table>())
-        {
-            foreach (var row in table.Elements<D.TableRow>())
-            {
-                var cells = new List<string>();
-                foreach (var cell in row.Elements<D.TableCell>())
-                {
-                    var cellText = string.Join(' ', cell.TextBody?.Elements<D.Paragraph>()
-                        .Select(ReadParagraph)
-                        .Where(text => text.Length > 0) ?? []);
-                    if (cellText.Length > 0)
-                    {
-                        cells.Add(cellText);
-                    }
-                }
-
-                if (cells.Count > 0)
-                {
-                    result.Add(string.Join(" | ", cells));
-                }
-            }
-        }
-
-        foreach (var ids in frame.Descendants<Dgm.RelationshipIds>())
-        {
-            if (ids.DataPart?.Value is { } relationshipId
-                && slidePart.TryGetPartById(relationshipId, out var part)
-                && part is DiagramDataPart dataPart
-                && dataPart.DataModelRoot is { } root)
-            {
-                foreach (var paragraph in root.Descendants<D.Paragraph>())
-                {
-                    var text = ReadParagraph(paragraph);
-                    if (text.Length > 0)
-                    {
-                        result.Add(text);
-                    }
-                }
-            }
-        }
-
+        result.AddRange(ReadTableRowLines(frame));
+        result.AddRange(ReadSmartArtLines(frame, slidePart));
         return result;
     }
+
+    /// <summary>
+    ///     Reads every table row in a graphic frame as one line.
+    /// </summary>
+    /// <param name="frame">The graphic frame.</param>
+    /// <returns>One line per row that has any cell text, joining the non-empty cells with a pipe separator.</returns>
+    /// <remarks>Pure.</remarks>
+    private static IEnumerable<string> ReadTableRowLines(P.GraphicFrame frame) =>
+        frame.Descendants<D.Table>()
+            .SelectMany(table => table.Elements<D.TableRow>())
+            .Select(row => row.Elements<D.TableCell>().Select(ReadCellText).Where(text => text.Length > 0).ToList())
+            .Where(cells => cells.Count > 0)
+            .Select(cells => string.Join(" | ", cells));
+
+    /// <summary>
+    ///     Reads a table cell's non-blank paragraphs joined by spaces.
+    /// </summary>
+    /// <param name="cell">The table cell.</param>
+    /// <returns>The cell text, empty when the cell has none.</returns>
+    /// <remarks>Pure.</remarks>
+    private static string ReadCellText(D.TableCell cell) =>
+        string.Join(' ', cell.TextBody?.Elements<D.Paragraph>()
+            .Select(ReadParagraph)
+            .Where(text => text.Length > 0) ?? []);
+
+    /// <summary>
+    ///     Reads the node paragraphs of every SmartArt diagram a graphic frame references.
+    /// </summary>
+    /// <param name="frame">The graphic frame.</param>
+    /// <param name="slidePart">The slide part, used to resolve the SmartArt data part.</param>
+    /// <returns>The diagrams' non-blank paragraph texts in document order.</returns>
+    /// <remarks>A reference whose data part cannot be resolved contributes nothing. Read-only over the part.</remarks>
+    private static IEnumerable<string> ReadSmartArtLines(P.GraphicFrame frame, SlidePart slidePart) =>
+        frame.Descendants<Dgm.RelationshipIds>()
+            .Select(ids => ResolveDiagramData(ids, slidePart))
+            .OfType<Dgm.DataModelRoot>()
+            .SelectMany(root => root.Descendants<D.Paragraph>())
+            .Select(ReadParagraph)
+            .Where(text => text.Length > 0);
+
+    /// <summary>
+    ///     Resolves the data model of the SmartArt diagram a relationship-id set points to.
+    /// </summary>
+    /// <param name="ids">The diagram's relationship ids.</param>
+    /// <param name="slidePart">The slide part the relationships belong to.</param>
+    /// <returns>The diagram data model root, or <see langword="null"/> when it cannot be resolved.</returns>
+    /// <remarks>Read-only over the part.</remarks>
+    private static Dgm.DataModelRoot? ResolveDiagramData(Dgm.RelationshipIds ids, SlidePart slidePart) =>
+        ids.DataPart?.Value is { } relationshipId
+        && slidePart.TryGetPartById(relationshipId, out var part)
+        && part is DiagramDataPart dataPart
+            ? dataPart.DataModelRoot
+            : null;
 
     /// <summary>
     ///     Reads a shape's paragraphs, one string per paragraph, dropping blank paragraphs.
@@ -416,26 +429,11 @@ internal static class PowerPointOpenXmlReader
     /// <param name="shape">The shape to read.</param>
     /// <returns>The shape's non-blank paragraph texts in reading order.</returns>
     /// <remarks>Concatenates the text runs of each paragraph so a run-split line reads as one line. Pure.</remarks>
-    private static List<string> ReadShapeParagraphs(P.Shape shape)
-    {
-        var paragraphs = new List<string>();
-        var textBody = shape.TextBody;
-        if (textBody is null)
-        {
-            return paragraphs;
-        }
-
-        foreach (var paragraph in textBody.Elements<D.Paragraph>())
-        {
-            var line = ReadParagraph(paragraph);
-            if (line.Length > 0)
-            {
-                paragraphs.Add(line);
-            }
-        }
-
-        return paragraphs;
-    }
+    private static List<string> ReadShapeParagraphs(P.Shape shape) =>
+        shape.TextBody?.Elements<D.Paragraph>()
+            .Select(ReadParagraph)
+            .Where(line => line.Length > 0)
+            .ToList() ?? [];
 
     /// <summary>
     ///     Reads one paragraph's text, including field text, with a line break read as a space.

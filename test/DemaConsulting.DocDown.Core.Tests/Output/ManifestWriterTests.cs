@@ -119,7 +119,7 @@ public class ManifestWriterTests
         // Arrange / Act: a clean text run serialized and round-tripped
         using var temp = new TempScratch();
         var folder = await RunProducedAsync(temp, WriteText);
-        var json = await File.ReadAllTextAsync(Path.Combine(folder.AbsolutePath, "manifest.json"), Ct);
+        var json = await File.ReadAllTextAsync(Path.Join(folder.AbsolutePath, "manifest.json"), Ct);
         var manifest = JsonSerializer.Deserialize(json, DocDownJsonContext.Default.ExtractionManifest);
 
         // Assert: the manifest records the tool, selected backend, scratch folder, and produced status
@@ -138,7 +138,7 @@ public class ManifestWriterTests
     {
         // Arrange: an unreadable report with no selected extractor
         using var temp = new TempScratch();
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, Options());
         var failure = new ExtractionFailure(
             "No available extractor can process the detected format in this environment.",
@@ -300,7 +300,7 @@ public class ManifestWriterTests
         // Arrange: a prepared folder, sink, and fixed report
         using var temp = new TempScratch();
         var options = Options();
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, options);
         await WriteText(sink);
         var report = BuildReport(temp, options, ExtractionOutcome.Produced, SuccessExtractor(), null);
@@ -309,13 +309,13 @@ public class ManifestWriterTests
 
         // Act: serialize twice into the same folder, snapshotting the first output
         await ManifestWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
-        var firstSnapshot = Path.Combine(temp.Path, "first-manifest.json");
-        File.Copy(Path.Combine(folder.AbsolutePath, "manifest.json"), firstSnapshot);
+        var firstSnapshot = Path.Join(temp.Path, "first-manifest.json");
+        File.Copy(Path.Join(folder.AbsolutePath, "manifest.json"), firstSnapshot);
         await ManifestWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
-        var manifestBytes = await File.ReadAllBytesAsync(Path.Combine(folder.AbsolutePath, "manifest.json"), Ct);
+        var manifestBytes = await File.ReadAllBytesAsync(Path.Join(folder.AbsolutePath, "manifest.json"), Ct);
 
         // Assert: the bytes are stable, BOM-free, and use Unix line endings only
-        ContractAssert.FileEquals(firstSnapshot, Path.Combine(folder.AbsolutePath, "manifest.json"));
+        ContractAssert.FileEquals(firstSnapshot, Path.Join(folder.AbsolutePath, "manifest.json"));
         Assert.False(manifestBytes.Length >= 3 && manifestBytes[0] == 0xEF && manifestBytes[1] == 0xBB && manifestBytes[2] == 0xBF);
         Assert.DoesNotContain("\r", Encoding.UTF8.GetString(manifestBytes), StringComparison.Ordinal);
     }
@@ -383,7 +383,7 @@ public class ManifestWriterTests
         ExtractionOptions? options = null)
     {
         var effective = options ?? Options();
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), effective.ScratchFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), effective.ScratchFolder);
         var sink = new ExtractionSink(folder, effective);
         await write(sink);
         var content = await ContentWriter.WriteAsync(sink, "Document", Ct);
@@ -399,7 +399,7 @@ public class ManifestWriterTests
     /// <param name="folder">The scratch folder whose manifest is read.</param>
     /// <returns>The parsed JSON document.</returns>
     private static async Task<JsonDocument> ParseManifestAsync(ScratchFolder folder) =>
-        JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(folder.AbsolutePath, "manifest.json"), Ct));
+        JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(folder.AbsolutePath, "manifest.json"), Ct));
 
     /// <summary>
     ///     Builds a consistent extraction report for the manifest writer.

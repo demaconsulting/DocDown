@@ -23,7 +23,7 @@ public sealed class TempScratch : IDisposable
     /// </remarks>
     public TempScratch()
     {
-        Path = System.IO.Path.Combine(
+        Path = System.IO.Path.Join(
             System.IO.Path.GetTempPath(),
             "docdown-test-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path);
@@ -53,7 +53,7 @@ public sealed class TempScratch : IDisposable
         ArgumentException.ThrowIfNullOrEmpty(relativeName);
         ArgumentNullException.ThrowIfNull(content);
 
-        var fullPath = System.IO.Path.Combine(Path, relativeName);
+        var fullPath = System.IO.Path.Join(Path, relativeName);
         var directory = System.IO.Path.GetDirectoryName(fullPath);
         if (!string.IsNullOrEmpty(directory))
         {

@@ -41,7 +41,7 @@ public class DocDownPdfRenderingTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var options = RenderingOptions();
 
         // Act: extract with page rendering requested at the default 150 DPI
@@ -53,7 +53,7 @@ public class DocDownPdfRenderingTests
         Assert.Empty(result.Notes);
 
         // Assert: a page image exists on disk and the contract layout is present
-        var pagePath = Path.Combine(scratch, "pages", "page0001.png");
+        var pagePath = Path.Join(scratch, "pages", "page0001.png");
         Assert.True(File.Exists(pagePath), $"expected a rendered page at '{pagePath}'");
         ContractAssert.LayoutPresent(scratch);
 
@@ -78,8 +78,8 @@ public class DocDownPdfRenderingTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
-        var first = Path.Combine(temp.Path, "first");
-        var second = Path.Combine(temp.Path, "second");
+        var first = Path.Join(temp.Path, "first");
+        var second = Path.Join(temp.Path, "second");
 
         // Act: render the same input twice
         var firstResult = await engine.ExtractAsync(input, first, RenderingOptions(), Ct);
@@ -92,7 +92,7 @@ public class DocDownPdfRenderingTests
         ContractAssert.LayoutPresent(second);
 
         // Assert: the rendered page bytes are identical across the two runs
-        ContractAssert.FileEquals(Path.Combine(first, "pages", "page0001.png"), Path.Combine(second, "pages", "page0001.png"));
+        ContractAssert.FileEquals(Path.Join(first, "pages", "page0001.png"), Path.Join(second, "pages", "page0001.png"));
     }
 
     /// <summary>
@@ -105,7 +105,7 @@ public class DocDownPdfRenderingTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: request rendered pages
         var result = await engine.ExtractAsync(input, scratch, RenderingOptions(), Ct);
@@ -128,7 +128,7 @@ public class DocDownPdfRenderingTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: extract without requesting rendered pages
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
@@ -151,7 +151,7 @@ public class DocDownPdfRenderingTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "multi.pdf", RenderingFixtures.MultiPage(5));
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var options = RenderingOptions();
         options.Pages = new PageRange(2, 3);
 
@@ -161,7 +161,7 @@ public class DocDownPdfRenderingTests
         // Assert: exactly the two pages in range were rendered, named by their document page number
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Equal("pdf-rendering", result.SelectedExtractor?.Id);
-        var pageFiles = Directory.GetFiles(Path.Combine(scratch, "pages"), "*.png")
+        var pageFiles = Directory.GetFiles(Path.Join(scratch, "pages"), "*.png")
             .Select(Path.GetFileName).OrderBy(name => name, StringComparer.Ordinal).ToList();
         Assert.Equal(["page0002.png", "page0003.png"], pageFiles);
         ContractAssert.LayoutPresent(scratch);
@@ -177,8 +177,8 @@ public class DocDownPdfRenderingTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", RenderingFixtures.SimpleText());
-        var lowScratch = Path.Combine(temp.Path, "low");
-        var highScratch = Path.Combine(temp.Path, "high");
+        var lowScratch = Path.Join(temp.Path, "low");
+        var highScratch = Path.Join(temp.Path, "high");
 
         var lowOptions = RenderingOptions();
         lowOptions.PageRenderDpi = 72;
@@ -197,9 +197,9 @@ public class DocDownPdfRenderingTests
 
         // Assert: the higher-DPI render is strictly larger in both dimensions
         var (lowWidth, lowHeight) = Png.ReadDimensions(
-            await File.ReadAllBytesAsync(Path.Combine(lowScratch, "pages", "page0001.png"), Ct));
+            await File.ReadAllBytesAsync(Path.Join(lowScratch, "pages", "page0001.png"), Ct));
         var (highWidth, highHeight) = Png.ReadDimensions(
-            await File.ReadAllBytesAsync(Path.Combine(highScratch, "pages", "page0001.png"), Ct));
+            await File.ReadAllBytesAsync(Path.Join(highScratch, "pages", "page0001.png"), Ct));
         Assert.True(highWidth > lowWidth, "a higher DPI should widen the raster");
         Assert.True(highHeight > lowHeight, "a higher DPI should heighten the raster");
     }
@@ -235,7 +235,7 @@ public class DocDownPdfRenderingTests
     /// <remarks>The name ends in <c>.pdf</c> because detection trusts the file extension.</remarks>
     private static string WriteFixture(TempScratch temp, string name, byte[] bytes)
     {
-        var path = Path.Combine(temp.Path, name);
+        var path = Path.Join(temp.Path, name);
         File.WriteAllBytes(path, bytes);
         return path;
     }

@@ -94,14 +94,14 @@ public class WordGoldenTests
     {
         using var temp = new TempScratch();
         var engine = new DocDownBuilder().AddWord().Build();
-        var input = Path.Combine(temp.Path, fixtureName);
+        var input = Path.Join(temp.Path, fixtureName);
         await File.WriteAllBytesAsync(input, bytes, Ct);
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var options = new ExtractionOptions();
 
         await engine.ExtractAsync(DocumentSource.FromFile(input), scratch, options, Ct);
 
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct);
         await AssertMatchesGoldenAsync(goldenName, Normalize(summary));
     }
 
@@ -131,7 +131,7 @@ public class WordGoldenTests
     /// <returns>A task that completes when the comparison is done.</returns>
     private static async Task AssertMatchesGoldenAsync(string goldenName, string normalized)
     {
-        var goldenPath = Path.Combine(GoldenFolder(), goldenName);
+        var goldenPath = Path.Join(GoldenFolder(), goldenName);
 
         if (Environment.GetEnvironmentVariable("DOCDOWN_UPDATE_GOLDEN") == "1")
         {
@@ -155,13 +155,13 @@ public class WordGoldenTests
     private static string GoldenFolder()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "DocDown.slnx")))
+        while (directory is not null && !File.Exists(Path.Join(directory.FullName, "DocDown.slnx")))
         {
             directory = directory.Parent;
         }
 
         var root = directory?.FullName
             ?? throw new InvalidOperationException("Could not locate the repository root from the test output folder.");
-        return Path.Combine(root, "test", "DemaConsulting.DocDown.Office.Tests", "Word", "golden");
+        return Path.Join(root, "test", "DemaConsulting.DocDown.Office.Tests", "Word", "golden");
     }
 }

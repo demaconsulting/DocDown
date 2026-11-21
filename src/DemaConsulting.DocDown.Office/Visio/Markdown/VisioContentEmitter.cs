@@ -165,7 +165,20 @@ internal static class VisioContentEmitter
     {
         var builder = new StringBuilder();
         builder.Append("# ").Append(page.Name).Append('\n').Append('\n');
+        AppendShapes(builder, page);
+        AppendConnections(builder, page);
+        AppendImages(builder, page, imagePaths);
+        return builder.ToString();
+    }
 
+    /// <summary>
+    ///     Appends the page's informative shape text as a list, and a count of the bare callouts omitted.
+    /// </summary>
+    /// <param name="builder">The page markdown being built.</param>
+    /// <param name="page">The page being rendered.</param>
+    /// <remarks>Side effect: appends to <paramref name="builder"/>.</remarks>
+    private static void AppendShapes(StringBuilder builder, VisioPageModel page)
+    {
         var labeled = page.Shapes.Where(shape => Informative(shape.Text)).ToList();
         var suppressedShapes = page.Shapes.Count(shape => shape.Text is not null) - labeled.Count;
         if (labeled.Count > 0)
@@ -188,54 +201,81 @@ internal static class VisioContentEmitter
                     : " shapes whose text is a bare callout number were omitted.")
                 .Append('\n').Append('\n');
         }
+    }
 
-        if (page.Connections.Count > 0)
+    /// <summary>
+    ///     Appends the page's directed topology as a readable edge list, and a count of the edges omitted.
+    /// </summary>
+    /// <param name="builder">The page markdown being built.</param>
+    /// <param name="page">The page being rendered.</param>
+    /// <remarks>
+    ///     Each edge is kept on one list line: multi-line endpoint labels are collapsed to single
+    ///     spaces. Side effect: appends to <paramref name="builder"/>.
+    /// </remarks>
+    private static void AppendConnections(StringBuilder builder, VisioPageModel page)
+    {
+        if (page.Connections.Count == 0)
         {
-            var shapes = IndexShapes(page);
-            var labels = page.Connections
-                .Select(connection => (
-                    From: VisioShapeLabeler.Label(connection.FromId, shapes),
-                    To: VisioShapeLabeler.Label(connection.ToId, shapes)))
-                .ToList();
-
-            // An edge whose endpoints are both unidentified names nothing a reader can use; keep
-            // every edge with at least one meaningful endpoint and count the rest
-            var meaningful = labels
-                .Where(pair => pair.From.Source != VisioLabelSource.Unresolved
-                    || pair.To.Source != VisioLabelSource.Unresolved)
-                .ToList();
-            var suppressedEdges = labels.Count - meaningful.Count;
-
-            if (meaningful.Count > 0)
-            {
-                builder.Append("## Connections").Append('\n').Append('\n');
-
-                // State the convention in the content itself whenever a label is not the shape's own
-                // text, so a human reading content.md alone cannot mistake a type for a name
-                if (meaningful.Any(pair => pair.From.Source != VisioLabelSource.Text || pair.To.Source != VisioLabelSource.Text))
-                {
-                    builder.Append("> ").Append(VisioShapeLabeler.Convention).Append('\n').Append('\n');
-                }
-
-                foreach (var (from, to) in meaningful)
-                {
-                    builder.Append("- ").Append(AsSingleLine(from.Display)).Append(Arrow)
-                        .Append(AsSingleLine(to.Display)).Append('\n');
-                }
-
-                builder.Append('\n');
-            }
-
-            if (suppressedEdges > 0)
-            {
-                builder.Append("> ").Append(suppressedEdges.ToString(CultureInfo.InvariantCulture))
-                    .Append(suppressedEdges == 1
-                        ? " connection between unnamed shapes was omitted."
-                        : " connections between unnamed shapes were omitted.")
-                    .Append('\n').Append('\n');
-            }
+            return;
         }
 
+        var shapes = IndexShapes(page);
+        var labels = page.Connections
+            .Select(connection => (
+                From: VisioShapeLabeler.Label(connection.FromId, shapes),
+                To: VisioShapeLabeler.Label(connection.ToId, shapes)))
+            .ToList();
+
+        // An edge whose endpoints are both unidentified names nothing a reader can use; keep
+        // every edge with at least one meaningful endpoint and count the rest
+        var meaningful = labels
+            .Where(pair => pair.From.Source != VisioLabelSource.Unresolved
+                || pair.To.Source != VisioLabelSource.Unresolved)
+            .ToList();
+        var suppressedEdges = labels.Count - meaningful.Count;
+
+        if (meaningful.Count > 0)
+        {
+            builder.Append("## Connections").Append('\n').Append('\n');
+
+            // State the convention in the content itself whenever a label is not the shape's own
+            // text, so a human reading content.md alone cannot mistake a type for a name
+            if (meaningful.Any(pair => pair.From.Source != VisioLabelSource.Text || pair.To.Source != VisioLabelSource.Text))
+            {
+                builder.Append("> ").Append(VisioShapeLabeler.Convention).Append('\n').Append('\n');
+            }
+
+            foreach (var (from, to) in meaningful)
+            {
+                builder.Append("- ").Append(AsSingleLine(from.Display)).Append(Arrow)
+                    .Append(AsSingleLine(to.Display)).Append('\n');
+            }
+
+            builder.Append('\n');
+        }
+
+        if (suppressedEdges > 0)
+        {
+            builder.Append("> ").Append(suppressedEdges.ToString(CultureInfo.InvariantCulture))
+                .Append(suppressedEdges == 1
+                    ? " connection between unnamed shapes was omitted."
+                    : " connections between unnamed shapes were omitted.")
+                .Append('\n').Append('\n');
+        }
+    }
+
+    /// <summary>
+    ///     Links each image the page shows that the sink actually wrote.
+    /// </summary>
+    /// <param name="builder">The page markdown being built.</param>
+    /// <param name="page">The page being rendered.</param>
+    /// <param name="imagePaths">The map from an image part reference to its written relative path.</param>
+    /// <remarks>
+    ///     A suppressed, size-skipped, or deduplicated-away image has no path, so it never leaves a
+    ///     link pointing at nothing. Side effect: appends to <paramref name="builder"/>.
+    /// </remarks>
+    private static void AppendImages(StringBuilder builder, VisioPageModel page, IReadOnlyDictionary<string, string> imagePaths)
+    {
         foreach (var image in page.Images)
         {
             if (imagePaths.TryGetValue(image.SourceRef, out var path))
@@ -244,8 +284,6 @@ internal static class VisioContentEmitter
                     .Append('\n').Append('\n');
             }
         }
-
-        return builder.ToString();
     }
 
     /// <summary>

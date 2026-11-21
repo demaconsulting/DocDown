@@ -184,7 +184,7 @@ public class SummaryWriterGoldenTests
         Func<ExtractionSink, ValueTask> write,
         string sourceFileName = "source.pdf")
     {
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, options);
         await write(sink);
 
@@ -205,7 +205,7 @@ public class SummaryWriterGoldenTests
             : await ContentWriter.WriteAsync(sink, "Document", Ct);
         var reviewComments = await ReviewCommentsWriter.WriteAsync(sink, Ct);
         await SummaryWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
-        return await File.ReadAllTextAsync(Path.Combine(folder.AbsolutePath, "summary.txt"), Ct);
+        return await File.ReadAllTextAsync(Path.Join(folder.AbsolutePath, "summary.txt"), Ct);
     }
 
     /// <summary>
@@ -277,7 +277,7 @@ public class SummaryWriterGoldenTests
     private static async Task AssertMatchesGoldenAsync(string goldenName, string summary)
     {
         var normalized = Normalize(summary);
-        var goldenPath = Path.Combine(GoldenFolder(), goldenName);
+        var goldenPath = Path.Join(GoldenFolder(), goldenName);
 
         if (Environment.GetEnvironmentVariable("DOCDOWN_UPDATE_GOLDEN") == "1")
         {
@@ -300,13 +300,13 @@ public class SummaryWriterGoldenTests
     private static string GoldenFolder()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "DocDown.slnx")))
+        while (directory is not null && !File.Exists(Path.Join(directory.FullName, "DocDown.slnx")))
         {
             directory = directory.Parent;
         }
 
         var root = directory?.FullName
             ?? throw new InvalidOperationException("Could not locate the repository root from the test output folder.");
-        return Path.Combine(root, "test", "DemaConsulting.DocDown.Core.Tests", "golden");
+        return Path.Join(root, "test", "DemaConsulting.DocDown.Core.Tests", "golden");
     }
 }

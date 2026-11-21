@@ -48,14 +48,14 @@ public class PdfRenderingGoldenTests
         // Arrange: a generated one-page PDF rendered through the real backend
         using var temp = new TempScratch();
         var engine = new DocDownBuilder().AddPdf().AddPdfRendering().Build();
-        var input = Path.Combine(temp.Path, "simple.pdf");
+        var input = Path.Join(temp.Path, "simple.pdf");
         await File.WriteAllBytesAsync(input, RenderingFixtures.SimpleText(), Ct);
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var options = new ExtractionOptions { RenderPages = true };
 
         // Act: extract and capture the rendered summary
         var result = await engine.ExtractAsync(input, scratch, options, Ct);
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct);
 
         // Assert: the run produced the invariant layout and the normalized summary matches its golden
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
@@ -89,7 +89,7 @@ public class PdfRenderingGoldenTests
     /// <returns>A task that completes when the comparison is done.</returns>
     private static async Task AssertMatchesGoldenAsync(string goldenName, string normalized)
     {
-        var goldenPath = Path.Combine(GoldenFolder(), goldenName);
+        var goldenPath = Path.Join(GoldenFolder(), goldenName);
 
         if (Environment.GetEnvironmentVariable("DOCDOWN_UPDATE_GOLDEN") == "1")
         {
@@ -114,13 +114,13 @@ public class PdfRenderingGoldenTests
     private static string GoldenFolder()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "DocDown.slnx")))
+        while (directory is not null && !File.Exists(Path.Join(directory.FullName, "DocDown.slnx")))
         {
             directory = directory.Parent;
         }
 
         var root = directory?.FullName
             ?? throw new InvalidOperationException("Could not locate the repository root from the test output folder.");
-        return Path.Combine(root, "test", "DemaConsulting.DocDown.Pdf.Rendering.Tests", "golden");
+        return Path.Join(root, "test", "DemaConsulting.DocDown.Pdf.Rendering.Tests", "golden");
     }
 }

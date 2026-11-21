@@ -20,7 +20,7 @@ public class ContextTests
     [Fact]
     public void Context_Create_LogFile_WritesLinesWithAutoFlush()
     {
-        var logFile = Path.Combine(Path.GetTempPath(), $"docdown-ctx-{Guid.NewGuid():N}.log");
+        var logFile = Path.Join(Path.GetTempPath(), $"docdown-ctx-{Guid.NewGuid():N}.log");
         try
         {
             using var context = Context.Create(["--log", logFile]);
@@ -119,7 +119,7 @@ public class ContextTests
     [Fact]
     public void Context_WriteLine_SilentMode_SuppressesConsoleButWritesLog()
     {
-        var logFile = Path.Combine(Path.GetTempPath(), $"docdown-ctx-{Guid.NewGuid():N}.log");
+        var logFile = Path.Join(Path.GetTempPath(), $"docdown-ctx-{Guid.NewGuid():N}.log");
         var originalOut = Console.Out;
         using var capturedOut = new StringWriter();
         Console.SetOut(capturedOut);

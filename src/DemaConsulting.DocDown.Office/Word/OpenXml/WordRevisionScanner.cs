@@ -100,23 +100,37 @@ internal static class WordRevisionScanner
 
         if (mainPart.FootnotesPart?.Footnotes is { } footnotes)
         {
-            foreach (var footnote in footnotes.Elements<W.Footnote>())
-            {
-                var type = footnote.Type?.Value;
-                if (type is not null && type != W.FootnoteEndnoteValues.Normal)
-                {
-                    continue;
-                }
-
-                var id = footnote.Id?.Value ?? 0;
-                var label = context.FootnoteNumbers.TryGetValue(id, out var ordinal)
-                    ? $"Footnote [^{ordinal.ToString(CultureInfo.InvariantCulture)}]"
-                    : $"Footnote (id {id.ToString(CultureInfo.InvariantCulture)}, not referenced in the body)";
-                ScanContainer(footnote.ChildElements, new RootState(WordRevisionPart.Footnote, label, isBody: false), context);
-            }
+            ScanFootnotes(footnotes, context);
         }
 
         return context.Revisions;
+    }
+
+    /// <summary>
+    ///     Scans every normal footnote, labeling each by the marker number <c>content.md</c> gives it.
+    /// </summary>
+    /// <param name="footnotes">The footnotes part root.</param>
+    /// <param name="context">The shared scan context, carrying the footnote numbering.</param>
+    /// <remarks>
+    ///     Separator and continuation footnotes are layout furniture, not content, so they are skipped.
+    ///     A footnote the body never references keeps its id in the label. Side effect: appends revisions.
+    /// </remarks>
+    private static void ScanFootnotes(W.Footnotes footnotes, ScanContext context)
+    {
+        foreach (var footnote in footnotes.Elements<W.Footnote>())
+        {
+            var type = footnote.Type?.Value;
+            if (type is not null && type != W.FootnoteEndnoteValues.Normal)
+            {
+                continue;
+            }
+
+            var id = footnote.Id?.Value ?? 0;
+            var label = context.FootnoteNumbers.TryGetValue(id, out var ordinal)
+                ? $"Footnote [^{ordinal.ToString(CultureInfo.InvariantCulture)}]"
+                : $"Footnote (id {id.ToString(CultureInfo.InvariantCulture)}, not referenced in the body)";
+            ScanContainer(footnote.ChildElements, new RootState(WordRevisionPart.Footnote, label, isBody: false), context);
+        }
     }
 
     /// <summary>
@@ -211,16 +225,7 @@ internal static class WordRevisionScanner
                     break;
 
                 case W.SdtBlock sdt:
-                    foreach (var element in sdt.SdtProperties?.Descendants() ?? [])
-                    {
-                        AddIfRevision(element, Compose(state, null, null), state, context, inToc: false);
-                    }
-
-                    if (sdt.SdtContentBlock is { } content)
-                    {
-                        ScanContainer(content.ChildElements, state, context);
-                    }
-
+                    ScanSdtBlock(sdt, state, context);
                     break;
 
                 case W.CustomXmlBlock custom:
@@ -239,6 +244,29 @@ internal static class WordRevisionScanner
 
                     break;
             }
+        }
+    }
+
+    /// <summary>
+    ///     Scans a block content control: revisions to its properties, then its content as ordinary blocks.
+    /// </summary>
+    /// <param name="sdt">The block content control.</param>
+    /// <param name="state">The position state of the root.</param>
+    /// <param name="context">The shared scan context.</param>
+    /// <remarks>
+    ///     The reader reads through a content control to its content, so the content is numbered as
+    ///     if it were inline in the container. Side effect: appends revisions and updates <paramref name="state"/>.
+    /// </remarks>
+    private static void ScanSdtBlock(W.SdtBlock sdt, RootState state, ScanContext context)
+    {
+        foreach (var element in sdt.SdtProperties?.Descendants() ?? [])
+        {
+            AddIfRevision(element, Compose(state, null, null), state, context, inToc: false);
+        }
+
+        if (sdt.SdtContentBlock is { } content)
+        {
+            ScanContainer(content.ChildElements, state, context);
         }
     }
 
@@ -267,39 +295,54 @@ internal static class WordRevisionScanner
         }
         else
         {
-            var combined = state.CarryText + text;
-            var hasText = !string.IsNullOrWhiteSpace(combined);
-            if (HasDeletedMark(paragraph))
-            {
-                state.CarryText = combined;
-                var merged = $"paragraph {(state.ParagraphCount + 1).ToString(CultureInfo.InvariantCulture)}";
-                location = Compose(state, hasText ? merged : AfterParagraph(state), text);
-            }
-            else
-            {
-                state.CarryText = string.Empty;
-                var level = state.IsBody && hasText ? WordOpenXmlReader.DetermineHeadingLevel(paragraph) : 0;
-                if (level > 0)
-                {
-                    PushHeading(state, level, Collapse(combined));
-                    location = Compose(state, null, null) + " (heading)";
-                }
-                else if (hasText)
-                {
-                    state.ParagraphCount++;
-                    location = Compose(state, $"paragraph {state.ParagraphCount.ToString(CultureInfo.InvariantCulture)}", text);
-                }
-                else
-                {
-                    location = Compose(state, AfterParagraph(state), null);
-                }
-            }
+            location = LocateContentParagraph(paragraph, text, state);
         }
 
         foreach (var element in paragraph.Descendants())
         {
             AddIfRevision(element, location, state, context, inToc);
         }
+    }
+
+    /// <summary>
+    ///     Locates a non-table-of-contents paragraph and advances the position state past it.
+    /// </summary>
+    /// <param name="paragraph">The paragraph.</param>
+    /// <param name="text">The paragraph's text as <c>content.md</c> shows it.</param>
+    /// <param name="state">The position state of the root.</param>
+    /// <returns>The location text for revisions inside the paragraph.</returns>
+    /// <remarks>
+    ///     A deleted paragraph mark carries the text into the next paragraph and takes its ordinal; a
+    ///     heading extends the heading path; a paragraph with text takes the next ordinal; an empty
+    ///     paragraph produces no block, so it is placed after the previous one. Side effect: updates
+    ///     <paramref name="state"/>.
+    /// </remarks>
+    private static string LocateContentParagraph(W.Paragraph paragraph, string text, RootState state)
+    {
+        var combined = state.CarryText + text;
+        var hasText = !string.IsNullOrWhiteSpace(combined);
+        if (HasDeletedMark(paragraph))
+        {
+            state.CarryText = combined;
+            var merged = $"paragraph {(state.ParagraphCount + 1).ToString(CultureInfo.InvariantCulture)}";
+            return Compose(state, hasText ? merged : AfterParagraph(state), text);
+        }
+
+        state.CarryText = string.Empty;
+        var level = state.IsBody && hasText ? WordOpenXmlReader.DetermineHeadingLevel(paragraph) : 0;
+        if (level > 0)
+        {
+            PushHeading(state, level, Collapse(combined));
+            return Compose(state, null, null) + " (heading)";
+        }
+
+        if (hasText)
+        {
+            state.ParagraphCount++;
+            return Compose(state, $"paragraph {state.ParagraphCount.ToString(CultureInfo.InvariantCulture)}", text);
+        }
+
+        return Compose(state, AfterParagraph(state), null);
     }
 
     /// <summary>
@@ -354,49 +397,62 @@ internal static class WordRevisionScanner
             }
 
             var row = element.Ancestors<W.TableRow>().FirstOrDefault(candidate => ReferenceEquals(candidate.Parent, table));
-            var location = Compose(state, tableNumber, null);
-            if (row is not null)
-            {
-                // Number rows as content.md renders them: every row in markup mode, but without
-                // tracked-deleted rows in the accepted view
-                var renderedRows = table.Elements<W.TableRow>()
-                    .Where(candidate => context.Markup || !IsDeletedRow(candidate))
-                    .ToList();
-                var rowIndex = renderedRows.IndexOf(row);
-                var cell = element.Ancestors<W.TableCell>().FirstOrDefault(candidate => ReferenceEquals(candidate.Parent, row));
-                string position;
-                string? quoted = TextOf(row, context.Markup, IsFurnitureRoot(state));
-                if (rowIndex < 0)
-                {
-                    // A deleted row has no rendered number in the accepted view: place it by the
-                    // rendered rows that precede it
-                    var preceding = table.Elements<W.TableRow>()
-                        .TakeWhile(candidate => !ReferenceEquals(candidate, row))
-                        .Count(candidate => !IsDeletedRow(candidate));
-                    position = $"{tableNumber}, deleted row (omitted from the accepted view), after row "
-                        + preceding.ToString(CultureInfo.InvariantCulture);
-                    quoted = null;
-                }
-                else
-                {
-                    position = $"{tableNumber}, row {(rowIndex + 1).ToString(CultureInfo.InvariantCulture)}";
-                }
-
-                if (cell is not null && rowIndex >= 0)
-                {
-                    var columnNumber = row.Elements<W.TableCell>().ToList().IndexOf(cell) + 1;
-                    position += $", column {columnNumber.ToString(CultureInfo.InvariantCulture)}";
-                    // In the accepted view a deleted cell renders empty, so its deleted text is not quoted
-                    quoted = !context.Markup && cell.TableCellProperties?.GetFirstChild<W.CellDeletion>() is not null
-                        ? null
-                        : TextOf(cell, context.Markup, IsFurnitureRoot(state));
-                }
-
-                location = Compose(state, position, quoted);
-            }
-
+            var location = row is null
+                ? Compose(state, tableNumber, null)
+                : LocateInTableRow(element, table, row, tableNumber, state, context);
             AddIfRevision(element, location, state, context, inToc: false);
         }
+    }
+
+    /// <summary>
+    ///     Locates a revision inside a top-level table row by rendered row number and Word column.
+    /// </summary>
+    /// <param name="element">The revision element.</param>
+    /// <param name="table">The top-level table.</param>
+    /// <param name="row">The top-level row containing the element.</param>
+    /// <param name="tableNumber">The table's label, such as <c>table 2</c>.</param>
+    /// <param name="state">The position state of the root.</param>
+    /// <param name="context">The shared scan context.</param>
+    /// <returns>The location text for the revision.</returns>
+    /// <remarks>
+    ///     Rows are numbered as <c>content.md</c> renders them: every row in markup mode, but without
+    ///     tracked-deleted rows in the accepted view, where a deleted row is placed by the rendered
+    ///     rows before it and is not quoted. Pure.
+    /// </remarks>
+    private static string LocateInTableRow(
+        OpenXmlElement element, W.Table table, W.TableRow row, string tableNumber, RootState state, ScanContext context)
+    {
+        var renderedRows = table.Elements<W.TableRow>()
+            .Where(candidate => context.Markup || !IsDeletedRow(candidate))
+            .ToList();
+        var rowIndex = renderedRows.IndexOf(row);
+        if (rowIndex < 0)
+        {
+            // A deleted row has no rendered number in the accepted view: place it by the
+            // rendered rows that precede it
+            var preceding = table.Elements<W.TableRow>()
+                .TakeWhile(candidate => !ReferenceEquals(candidate, row))
+                .Count(candidate => !IsDeletedRow(candidate));
+            var deletedPosition = $"{tableNumber}, deleted row (omitted from the accepted view), after row "
+                + preceding.ToString(CultureInfo.InvariantCulture);
+            return Compose(state, deletedPosition, null);
+        }
+
+        var position = $"{tableNumber}, row {(rowIndex + 1).ToString(CultureInfo.InvariantCulture)}";
+        string? quoted = TextOf(row, context.Markup, IsFurnitureRoot(state));
+        var cell = element.Ancestors<W.TableCell>().FirstOrDefault(candidate => ReferenceEquals(candidate.Parent, row));
+        if (cell is not null)
+        {
+            var columnNumber = row.Elements<W.TableCell>().ToList().IndexOf(cell) + 1;
+            position += $", column {columnNumber.ToString(CultureInfo.InvariantCulture)}";
+
+            // In the accepted view a deleted cell renders empty, so its deleted text is not quoted
+            quoted = !context.Markup && cell.TableCellProperties?.GetFirstChild<W.CellDeletion>() is not null
+                ? null
+                : TextOf(cell, context.Markup, IsFurnitureRoot(state));
+        }
+
+        return Compose(state, position, quoted);
     }
 
     /// <summary>
@@ -533,29 +589,12 @@ internal static class WordRevisionScanner
     {
         var builder = new StringBuilder();
         var fields = new Stack<WordOpenXmlReader.FieldFrame>();
-        var unusedFurnitureFlag = false;
         foreach (var node in element.Descendants())
         {
-            if (stripFurniture)
+            // Apply the reader's own field rules so header and footer text matches what it renders
+            if (stripFurniture && IsHiddenFieldNode(node, fields))
             {
-                // Apply the reader's own field rules so header and footer text matches what it renders
-                if (node is W.FieldChar fieldChar)
-                {
-                    WordOpenXmlReader.UpdateFieldState(fields, fieldChar, ref unusedFurnitureFlag);
-                    continue;
-                }
-
-                if (node is W.FieldCode or W.DeletedFieldCode)
-                {
-                    WordOpenXmlReader.AppendFieldInstruction(fields, node);
-                    continue;
-                }
-
-                if (WordOpenXmlReader.SkipText(fields, stripFurniture: true)
-                    || node.Ancestors<W.SimpleField>().Any(field => WordOpenXmlReader.IsFurnitureInstruction(field.Instruction?.Value)))
-                {
-                    continue;
-                }
+                continue;
             }
 
             switch (node)
@@ -578,6 +617,37 @@ internal static class WordRevisionScanner
         }
 
         return builder.ToString();
+    }
+
+    /// <summary>
+    ///     Tracks complex-field state for one node and reports whether the reader would hide it.
+    /// </summary>
+    /// <param name="node">The node being read.</param>
+    /// <param name="fields">The active complex-field frames, updated by field characters and codes.</param>
+    /// <returns>
+    ///     <see langword="true"/> for field machinery (characters and codes), field-definition text,
+    ///     and page-numbering furniture results; otherwise <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    ///     Mirrors the reader's furniture stripping for headers and footers so a revision location
+    ///     quotes the same text <c>content.md</c> shows. Side effect: mutates <paramref name="fields"/>.
+    /// </remarks>
+    private static bool IsHiddenFieldNode(OpenXmlElement node, Stack<WordOpenXmlReader.FieldFrame> fields)
+    {
+        if (node is W.FieldChar fieldChar)
+        {
+            _ = WordOpenXmlReader.UpdateFieldState(fields, fieldChar);
+            return true;
+        }
+
+        if (node is W.FieldCode or W.DeletedFieldCode)
+        {
+            WordOpenXmlReader.AppendFieldInstruction(fields, node);
+            return true;
+        }
+
+        return WordOpenXmlReader.SkipText(fields, stripFurniture: true)
+            || node.Ancestors<W.SimpleField>().Any(field => WordOpenXmlReader.IsFurnitureInstruction(field.Instruction?.Value));
     }
 
     /// <summary>

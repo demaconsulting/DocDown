@@ -54,7 +54,7 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         // Arrange: a generated single-page text PDF and a fresh scratch folder
         using var temp = new TempScratch();
         var input = WriteFixture(temp, "input.pdf", ToolPdfFixtures.SimpleText());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the tool
         var (exit, log) = CliHarness.Run("--input", input, "--scratch", scratch);
@@ -78,8 +78,8 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
     {
         // Arrange: a path that does not exist
         using var temp = new TempScratch();
-        var input = Path.Combine(temp.Path, "missing.pdf");
-        var scratch = Path.Combine(temp.Path, "out");
+        var input = Path.Join(temp.Path, "missing.pdf");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act
         var (exit, log) = CliHarness.Run("--input", input, "--scratch", scratch);
@@ -125,7 +125,7 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         // Arrange
         using var temp = new TempScratch();
         var input = WriteFixture(temp, "input.pdf", ToolPdfFixtures.SimpleText());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: suppress embedded images
         var (exit, log) = CliHarness.Run("--input", input, "--scratch", scratch, "--no-images");
@@ -147,7 +147,7 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
             summary,
             StringComparison.Ordinal);
 
-        var manifestPath = Path.Combine(Path.GetDirectoryName(summaryPath)!, "manifest.json");
+        var manifestPath = Path.Join(Path.GetDirectoryName(summaryPath)!, "manifest.json");
         Assert.True(File.Exists(manifestPath));
         using var manifest = JsonDocument.Parse(File.ReadAllText(manifestPath));
         var root = manifest.RootElement;
@@ -315,7 +315,7 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
     /// <summary>Writes fixture bytes to a file under the temporary folder and returns its path.</summary>
     private static string WriteFixture(TempScratch temp, string name, byte[] bytes)
     {
-        var path = Path.Combine(temp.Path, name);
+        var path = Path.Join(temp.Path, name);
         File.WriteAllBytes(path, bytes);
         return path;
     }

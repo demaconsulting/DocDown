@@ -425,6 +425,9 @@ DemaConsulting.DocDown.Visio.Rendering/
 ├── VisioPageRenderingExtractor.cs   — Unit: page-rendering backend; delegates, rasterizes, and records notes
 ├── VisioRenderingDocDownBuilderExtensions.cs — Unit: the reflection-free AddVisioRendering registration seam
 
+Shared/PageRendering/
+├── PageRenderingPipeline.cs         — Linked source: the internal delegate-then-rasterize pipeline compiled into each rendering backend
+
 DemaConsulting.DocDown.Tool/
 ├── Program.cs                       — Unit: entry point, priority dispatch, banner/help, extraction and reporting
 ├── Cli/

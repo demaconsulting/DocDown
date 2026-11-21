@@ -64,7 +64,7 @@ public class ContentWriterTests
         Assert.Contains("2 parts", index, StringComparison.Ordinal);
         Assert.Contains("](parts/0001-sheet-budget.md)", index, StringComparison.Ordinal);
         Assert.All(result.PartPaths, part =>
-            Assert.True(File.Exists(Path.Combine(sink.Folder.AbsolutePath, part.Replace('/', Path.DirectorySeparatorChar)))));
+            Assert.True(File.Exists(Path.Join(sink.Folder.AbsolutePath, part.Replace('/', Path.DirectorySeparatorChar)))));
     }
 
     /// <summary>
@@ -83,7 +83,7 @@ public class ContentWriterTests
 
         // Assert: a part file was written under parts/ and linked from the index
         Assert.Single(result.PartPaths);
-        Assert.True(Directory.Exists(Path.Combine(sink.Folder.AbsolutePath, "parts")));
+        Assert.True(Directory.Exists(Path.Join(sink.Folder.AbsolutePath, "parts")));
     }
 
     /// <summary>
@@ -121,7 +121,7 @@ public class ContentWriterTests
         var result = await ContentWriter.WriteAsync(sink, null, Ct);
 
         // Assert: content.md exists but is honestly reported absent so an explaining gap is forced
-        Assert.True(File.Exists(Path.Combine(sink.Folder.AbsolutePath, "content.md")));
+        Assert.True(File.Exists(Path.Join(sink.Folder.AbsolutePath, "content.md")));
         Assert.False(result.ContentPresent);
     }
 
@@ -203,7 +203,7 @@ public class ContentWriterTests
     /// <remarks>Prepares the scratch folder through the safety gate the content writer writes behind.</remarks>
     private static ExtractionSink NewSink(TempScratch temp)
     {
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         return new ExtractionSink(folder, new ExtractionOptions());
     }
 
@@ -232,7 +232,7 @@ public class ContentWriterTests
     /// <remarks>Reads the exact bytes the writer produced so assertions see the rewritten link form.</remarks>
     private static async Task<string> ReadPartAsync(ExtractionSink sink, string partRelativePath) =>
         await File.ReadAllTextAsync(
-            Path.Combine(sink.Folder.AbsolutePath, partRelativePath.Replace('/', Path.DirectorySeparatorChar)), Ct);
+            Path.Join(sink.Folder.AbsolutePath, partRelativePath.Replace('/', Path.DirectorySeparatorChar)), Ct);
 
     /// <summary>
     ///     Reads the finalized content document from the sink's scratch folder.
@@ -241,5 +241,5 @@ public class ContentWriterTests
     /// <returns>The text of <c>content.md</c>.</returns>
     /// <remarks>Reads the exact bytes the writer produced so assertions see the on-disk form.</remarks>
     private static async Task<string> ReadContentAsync(ExtractionSink sink) =>
-        await File.ReadAllTextAsync(Path.Combine(sink.Folder.AbsolutePath, "content.md"), Ct);
+        await File.ReadAllTextAsync(Path.Join(sink.Folder.AbsolutePath, "content.md"), Ct);
 }

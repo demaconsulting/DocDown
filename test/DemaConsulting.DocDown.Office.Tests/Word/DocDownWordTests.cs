@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.Office.Tests.Word.TestData;
 using DemaConsulting.DocDown.TestSupport;
@@ -14,7 +15,7 @@ namespace DemaConsulting.DocDown.Office.Tests.Word;
 ///     Every scenario runs the real engine over a real document and confirms the invariant layout is
 ///     written, so reported notes and inventory match what is on disk.
 /// </remarks>
-public class DocDownWordTests
+public partial class DocDownWordTests
 {
     /// <summary>Gets the ambient test cancellation token.</summary>
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -33,7 +34,7 @@ public class DocDownWordTests
         Assert.Empty(result.Notes);
         Assert.Equal("word-openxml", result.SelectedExtractor?.Id);
 
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("| --- | --- |", content, StringComparison.Ordinal);
         Assert.Contains("## Document Control", content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
@@ -58,11 +59,11 @@ public class DocDownWordTests
 
         // Assert: the summary's content outline names the comment and its comment author, and the
         // manifest carries the same counts for a machine reader
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct);
         Assert.Contains("1 comment", summary, StringComparison.Ordinal);
         Assert.Contains("1 distinct comment author", summary, StringComparison.Ordinal);
 
-        var manifest = await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct);
+        var manifest = await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct);
         Assert.Contains("\"contentFeatures\"", manifest, StringComparison.Ordinal);
         Assert.Contains("\"label\": \"comments\"", manifest, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
@@ -85,13 +86,13 @@ public class DocDownWordTests
         var (scratch, _) = await ExtractAsync(temp, "commented.docx", DocxFixtures.DocumentWithComment());
 
         // Assert: the comment is in review-comments.md with its author and location hint
-        var reviewComments = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        var reviewComments = await File.ReadAllTextAsync(Path.Join(scratch, "review-comments.md"), Ct);
         Assert.Contains("**Reviewer**", reviewComments, StringComparison.Ordinal);
         Assert.Contains("§Overview", reviewComments, StringComparison.Ordinal);
         Assert.Contains("clarify", reviewComments, StringComparison.Ordinal);
 
         // Assert: and nowhere in the extracted content
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.DoesNotContain("## Comments", content, StringComparison.Ordinal);
         Assert.DoesNotContain("clarify", content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
@@ -120,12 +121,12 @@ public class DocDownWordTests
 
         // Assert: the extraction produced output rather than failing on the empty comment
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
-        Assert.True(File.Exists(Path.Combine(scratch, "content.md")));
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        Assert.True(File.Exists(Path.Join(scratch, "content.md")));
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("Body text that must survive extraction", content, StringComparison.Ordinal);
 
         // Assert: the real comment still reached the artifact, and the empty one left no entry
-        var reviewComments = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        var reviewComments = await File.ReadAllTextAsync(Path.Join(scratch, "review-comments.md"), Ct);
         Assert.Contains("**Reviewer**", reviewComments, StringComparison.Ordinal);
         Assert.Contains("clarify", reviewComments, StringComparison.Ordinal);
         Assert.DoesNotContain("Silent Reviewer", reviewComments, StringComparison.Ordinal);
@@ -141,12 +142,12 @@ public class DocDownWordTests
         using var temp = new TempScratch();
         var (scratch, _) = await ExtractAsync(temp, "images.docx", DocxFixtures.DocumentWithImage());
 
-        var images = Directory.GetFiles(Path.Combine(scratch, "images"));
+        var images = Directory.GetFiles(Path.Join(scratch, "images"));
         var written = Assert.Single(images);
         Assert.EndsWith(".png", written, StringComparison.Ordinal);
         Assert.Equal(DocxFixtures.PngBytes(), await File.ReadAllBytesAsync(written, Ct));
 
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("](images/", content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
@@ -160,7 +161,7 @@ public class DocDownWordTests
         using var temp = new TempScratch();
         var (scratch, result) = await ExtractAsync(temp, "engineering.docx", DocxFixtures.EngineeringStyleDocument());
 
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("## Document Control", content, StringComparison.Ordinal);
         Assert.Contains("Revision", content, StringComparison.Ordinal);
         Assert.Contains("CONFIDENTIAL", content, StringComparison.Ordinal);
@@ -218,11 +219,11 @@ public class DocDownWordTests
         Assert.Contains(
             result.Notes,
             note => note.Message.Contains("2 symbol characters could not be mapped", StringComparison.Ordinal));
-        var summary = Flatten(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
+        var summary = Flatten(await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct));
         Assert.Contains("2 symbol characters could not be mapped", summary, StringComparison.Ordinal);
-        var manifest = await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct);
+        var manifest = await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct);
         Assert.Contains("2 symbol characters could not be mapped", manifest, StringComparison.Ordinal);
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("\uFFFD", content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
@@ -237,7 +238,7 @@ public class DocDownWordTests
         var (scratch, result) = await ExtractAsync(temp, "dots.docx", DocxFixtures.DocumentWithSymbolDotMatrix());
 
         Assert.Empty(result.Notes);
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("| Widget | \u2022 | \u2022 |", content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
@@ -267,7 +268,7 @@ public class DocDownWordTests
         using var temp = new TempScratch();
         var (scratch, _) = await ExtractAsync(temp, "props.docx", DocxFixtures.DocumentWithCoreProperties());
 
-        var metadata = await File.ReadAllTextAsync(Path.Combine(scratch, "metadata.json"), Ct);
+        var metadata = await File.ReadAllTextAsync(Path.Join(scratch, "metadata.json"), Ct);
         Assert.Contains("Interface control", metadata, StringComparison.Ordinal);
         Assert.Contains("Editor Person", metadata, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
@@ -290,12 +291,12 @@ public class DocDownWordTests
         foreach (var name in new[] { "content.md", "metadata.json" })
         {
             Assert.Equal(
-                await File.ReadAllBytesAsync(Path.Combine(firstFolder, name), Ct),
-                await File.ReadAllBytesAsync(Path.Combine(secondFolder, name), Ct));
+                await File.ReadAllBytesAsync(Path.Join(firstFolder, name), Ct),
+                await File.ReadAllBytesAsync(Path.Join(secondFolder, name), Ct));
         }
 
-        var firstImages = Directory.GetFiles(Path.Combine(firstFolder, "images")).Select(Path.GetFileName).Order().ToList();
-        var secondImages = Directory.GetFiles(Path.Combine(secondFolder, "images")).Select(Path.GetFileName).Order().ToList();
+        var firstImages = Directory.GetFiles(Path.Join(firstFolder, "images")).Select(Path.GetFileName).Order().ToList();
+        var secondImages = Directory.GetFiles(Path.Join(secondFolder, "images")).Select(Path.GetFileName).Order().ToList();
         Assert.Equal(firstImages, secondImages);
     }
 
@@ -308,7 +309,7 @@ public class DocDownWordTests
         using var temp = new TempScratch();
         var engine = new DocDownBuilder().AddWord().Build();
         var input = WriteFixture(temp, "clean.docx", DocxFixtures.CleanDocument());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         var result = await engine.ExtractAsync(DocumentSource.FromFile(input), scratch, FixedOptions(), Ct);
 
@@ -331,7 +332,7 @@ public class DocDownWordTests
         using var temp = new TempScratch();
         var engine = new DocDownBuilder().AddWord().Build();
         var input = WriteFixture(temp, "report.doc", DocxFixtures.LegacyDocBytes());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         var result = await engine.ExtractAsync(DocumentSource.FromFile(input), scratch, FixedOptions(), Ct);
 
@@ -359,22 +360,22 @@ public class DocDownWordTests
         using var temp = new TempScratch();
         var (scratch, _) = await ExtractAsync(temp, "redline.docx", DocxFixtures.DocumentWithRedline());
 
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("{++added words++}", content, StringComparison.Ordinal);
         Assert.Contains("{--dropped words--}", content, StringComparison.Ordinal);
 
-        var summary = Flatten(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
+        var summary = Flatten(await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct));
         Assert.Contains("3 tracked changes", summary, StringComparison.Ordinal);
         Assert.Contains("shown as markup", summary, StringComparison.Ordinal);
         Assert.Contains("2 distinct authors", summary, StringComparison.Ordinal);
         Assert.Contains("2026-01-02 to 2026-01-05", summary, StringComparison.Ordinal);
 
-        var manifest = await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct);
+        var manifest = await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct);
         Assert.Contains("\"label\": \"tracked changes\"", manifest, StringComparison.Ordinal);
         Assert.Contains("\"detail\"", manifest, StringComparison.Ordinal);
         Assert.Contains("\"kind\": \"revision\"", manifest, StringComparison.Ordinal);
 
-        var review = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        var review = await File.ReadAllTextAsync(Path.Join(scratch, "review-comments.md"), Ct);
         Assert.Contains("tracked changes", review, StringComparison.Ordinal);
         Assert.Contains("Alice", review, StringComparison.Ordinal);
         Assert.Contains("dropped words", review, StringComparison.Ordinal);
@@ -391,13 +392,13 @@ public class DocDownWordTests
         var options = new ExtractionOptions { AcceptTrackedChanges = true };
         var (scratch, _) = await ExtractAsync(temp, "redline.docx", DocxFixtures.DocumentWithRedline(), options);
 
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("added words", content, StringComparison.Ordinal);
         Assert.DoesNotContain("dropped words", content, StringComparison.Ordinal);
         Assert.DoesNotContain("{++", content, StringComparison.Ordinal);
         Assert.DoesNotContain("<u>", content, StringComparison.Ordinal);
 
-        var summary = Flatten(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
+        var summary = Flatten(await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct));
         Assert.Contains("3 tracked changes", summary, StringComparison.Ordinal);
         Assert.Contains("shown accepted", summary, StringComparison.Ordinal);
     }
@@ -411,13 +412,13 @@ public class DocDownWordTests
         using var temp = new TempScratch();
         var (scratch, _) = await ExtractAsync(temp, "clean.docx", DocxFixtures.CleanDocument());
 
-        var summary = Flatten(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
+        var summary = Flatten(await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct));
         Assert.Contains("0 tracked changes", summary, StringComparison.Ordinal);
 
-        var manifest = await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct);
+        var manifest = await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct);
         Assert.Contains("\"label\": \"tracked changes\"", manifest, StringComparison.Ordinal);
 
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.DoesNotContain("{++", content, StringComparison.Ordinal);
         Assert.DoesNotContain("{--", content, StringComparison.Ordinal);
         Assert.DoesNotContain("<u>", content, StringComparison.Ordinal);
@@ -434,15 +435,15 @@ public class DocDownWordTests
         using var temp = new TempScratch();
         var (scratch, _) = await ExtractAsync(temp, "located.docx", DocxFixtures.DocumentWithLocatedRevisions());
 
-        var summary = Flatten(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
+        var summary = Flatten(await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct));
         Assert.Contains("8 tracked changes", summary, StringComparison.Ordinal);
         Assert.Contains("count includes headers, footers, and footnotes", summary, StringComparison.Ordinal);
         Assert.Contains("body 6, headers and footers 1, footnotes 1", summary, StringComparison.Ordinal);
 
-        var manifest = await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct);
+        var manifest = await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct);
         Assert.Contains("body 6, headers and footers 1, footnotes 1", manifest, StringComparison.Ordinal);
 
-        var review = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        var review = await File.ReadAllTextAsync(Path.Join(scratch, "review-comments.md"), Ct);
         Assert.Contains("Body: before the first heading, paragraph 1", review, StringComparison.Ordinal);
         Assert.Contains("Body: Alpha > Beta, paragraph 1", review, StringComparison.Ordinal);
         Assert.Contains("table 1, row 1, column 2", review, StringComparison.Ordinal);
@@ -461,20 +462,20 @@ public class DocDownWordTests
         using var temp = new TempScratch();
         var (scratch, _) = await ExtractAsync(temp, "toc.docx", DocxFixtures.DocumentWithTrackedTableOfContents());
 
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.DoesNotContain("Overview entry", content, StringComparison.Ordinal);
         Assert.DoesNotContain("Retired entry", content, StringComparison.Ordinal);
         Assert.Contains("# Overview", content, StringComparison.Ordinal);
 
-        var summary = Flatten(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
+        var summary = Flatten(await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct));
         Assert.Contains("3 tracked changes", summary, StringComparison.Ordinal);
         Assert.Contains("1 table of contents skipped", summary, StringComparison.Ordinal);
         Assert.Contains("4 entries not rendered in content.md; 2 tracked changes inside", summary, StringComparison.Ordinal);
 
-        var manifest = await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct);
+        var manifest = await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct);
         Assert.Contains("\"label\": \"tables of contents skipped\"", manifest, StringComparison.Ordinal);
 
-        var review = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        var review = await File.ReadAllTextAsync(Path.Join(scratch, "review-comments.md"), Ct);
         Assert.Contains("table of contents (omitted from content.md), entry 3", review, StringComparison.Ordinal);
         Assert.Contains("Overview entry", review, StringComparison.Ordinal);
         Assert.Contains("Retired entry", review, StringComparison.Ordinal);
@@ -489,7 +490,7 @@ public class DocDownWordTests
         using var temp = new TempScratch();
         var (scratch, _) = await ExtractAsync(temp, "objects.docx", DocxFixtures.DocumentWithLegacyObjectImages());
 
-        var images = Directory.GetFiles(Path.Combine(scratch, "images"));
+        var images = Directory.GetFiles(Path.Join(scratch, "images"));
         Assert.True(images.Length >= 3, $"expected at least three preview images, found {images.Length}");
         Assert.Contains(images, path => path.EndsWith(".emf", StringComparison.OrdinalIgnoreCase));
     }
@@ -507,7 +508,7 @@ public class DocDownWordTests
     {
         var engine = new DocDownBuilder().AddWord().Build();
         var input = WriteFixture(temp, name, bytes);
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var result = await engine.ExtractAsync(DocumentSource.FromFile(input), scratch, options ?? FixedOptions(), Ct);
         return (scratch, result);
     }
@@ -517,7 +518,14 @@ public class DocDownWordTests
     /// </summary>
     /// <param name="text">The text to flatten.</param>
     /// <returns>The flattened text.</returns>
-    private static string Flatten(string text) => System.Text.RegularExpressions.Regex.Replace(text, @"\s+", " ");
+    private static string Flatten(string text) => WhitespaceRun().Replace(text, " ");
+
+    /// <summary>
+    ///     Matches a run of one or more whitespace characters.
+    /// </summary>
+    /// <returns>The compile-time generated whitespace-run expression.</returns>
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex WhitespaceRun();
 
     /// <summary>
     ///     Creates default extraction options.
@@ -534,7 +542,7 @@ public class DocDownWordTests
     /// <returns>The written path.</returns>
     private static string WriteFixture(TempScratch temp, string name, byte[] bytes)
     {
-        var path = Path.Combine(temp.Path, name);
+        var path = Path.Join(temp.Path, name);
         File.WriteAllBytes(path, bytes);
         return path;
     }

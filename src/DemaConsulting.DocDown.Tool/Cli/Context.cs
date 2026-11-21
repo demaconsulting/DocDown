@@ -188,8 +188,9 @@ internal sealed class Context : IDisposable
             // AutoFlush so log entries reach disk even if the process terminates before Dispose
             _logWriter = new StreamWriter(logFile, append: false) { AutoFlush = true };
         }
-        // Generic catch is justified: any file-system exception is wrapped with context here.
-        catch (Exception ex)
+        // Every way opening the file can fail is wrapped with the path for context
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException
+            or NotSupportedException or System.Security.SecurityException)
         {
             throw new InvalidOperationException($"Failed to open log file '{logFile}': {ex.Message}", ex);
         }

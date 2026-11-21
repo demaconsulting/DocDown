@@ -33,8 +33,8 @@ public static class ContractAssert
     {
         ArgumentException.ThrowIfNullOrEmpty(scratchFolder);
 
-        var summaryPath = Path.Combine(scratchFolder, "summary.txt");
-        var manifestPath = Path.Combine(scratchFolder, "manifest.json");
+        var summaryPath = Path.Join(scratchFolder, "summary.txt");
+        var manifestPath = Path.Join(scratchFolder, "manifest.json");
 
         if (!File.Exists(summaryPath))
         {

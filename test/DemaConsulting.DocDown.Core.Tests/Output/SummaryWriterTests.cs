@@ -51,7 +51,7 @@ public class SummaryWriterTests
     {
         // Arrange: a prepared scratch folder rendered into a summary
         using var temp = new TempScratch();
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, Options());
         await WriteText(sink);
 
@@ -231,7 +231,7 @@ public class SummaryWriterTests
     {
         // Arrange: a prepared folder, sink, and fixed report rendered once, then snapshotted
         using var temp = new TempScratch();
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, Options());
         await WriteText(sink);
         var report = BuildReport(temp, Options(), ExtractionOutcome.Produced, SuccessExtractor(), null, DefaultEnvironment());
@@ -240,12 +240,12 @@ public class SummaryWriterTests
 
         // Act: render twice into the same folder, snapshotting the first render
         await SummaryWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
-        var firstSnapshot = Path.Combine(temp.Path, "first-summary.txt");
-        File.Copy(Path.Combine(folder.AbsolutePath, "summary.txt"), firstSnapshot);
+        var firstSnapshot = Path.Join(temp.Path, "first-summary.txt");
+        File.Copy(Path.Join(folder.AbsolutePath, "summary.txt"), firstSnapshot);
         await SummaryWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
 
         // Assert: the deterministic output is byte-identical
-        ContractAssert.FileEquals(firstSnapshot, Path.Combine(folder.AbsolutePath, "summary.txt"));
+        ContractAssert.FileEquals(firstSnapshot, Path.Join(folder.AbsolutePath, "summary.txt"));
     }
 
     /// <summary>
@@ -383,7 +383,7 @@ public class SummaryWriterTests
     {
         // Arrange: a run whose detected format is unknown
         using var temp = new TempScratch();
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, Options());
         await WriteText(sink);
         var report = new ExtractionReport(
@@ -401,7 +401,7 @@ public class SummaryWriterTests
 
         // Act: render the summary
         await SummaryWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
-        var summary = await File.ReadAllTextAsync(Path.Combine(folder.AbsolutePath, "summary.txt"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(folder.AbsolutePath, "summary.txt"), Ct);
 
         // Assert: the banner is followed directly by the header block
         Assert.Contains("==========================\n\nScratch folder  : ", summary, StringComparison.Ordinal);
@@ -484,7 +484,7 @@ public class SummaryWriterTests
         ExtractionFailure? failure,
         ExtractionEnvironment? environment = null)
     {
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, Options());
         await write(sink);
         return await FinalizeSummaryAsync(temp, folder, sink, outcome, selected, failure, environment);
@@ -516,7 +516,7 @@ public class SummaryWriterTests
             : await ContentWriter.WriteAsync(sink, "Document", Ct);
         var reviewComments = await ReviewCommentsWriter.WriteAsync(sink, Ct);
         await SummaryWriter.WriteAsync(folder, sink, report, content, reviewComments, Ct);
-        return await File.ReadAllTextAsync(Path.Combine(folder.AbsolutePath, "summary.txt"), Ct);
+        return await File.ReadAllTextAsync(Path.Join(folder.AbsolutePath, "summary.txt"), Ct);
     }
 
     /// <summary>

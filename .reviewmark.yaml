@@ -603,6 +603,7 @@ reviews:
       - "docs/design/docdown-pdf-rendering/pdf-page-rendering-extractor.md"        # unit design
       - "docs/verification/docdown-pdf-rendering/pdf-page-rendering-extractor.md"  # unit verification
       - "src/DemaConsulting.DocDown.Pdf.Rendering/PdfPageRenderingExtractor.cs"    # unit source
+      - "src/Shared/PageRendering/PageRenderingPipeline.cs"    # shared pipeline linked into this unit
       - "test/DemaConsulting.DocDown.Pdf.Rendering.Tests/PdfPageRenderingExtractorTests.cs"  # unit tests
 
   # DocDownPdfRendering-PageRenderer Unit Review (one per unit)
@@ -702,6 +703,7 @@ reviews:
       - "docs/design/docdown-powerpoint-rendering/powerpoint-page-rendering-extractor.md"        # unit design
       - "docs/verification/docdown-powerpoint-rendering/powerpoint-page-rendering-extractor.md"  # unit verification
       - "src/DemaConsulting.DocDown.PowerPoint.Rendering/PowerPointPageRenderingExtractor.cs"    # unit source
+      - "src/Shared/PageRendering/PageRenderingPipeline.cs"    # shared pipeline linked into this unit
       - "test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/PowerPointPageRenderingExtractorTests.cs"  # unit tests
 
   # DocDownPowerPointRendering-SlideRenderer Unit Review (one per unit)
@@ -800,6 +802,7 @@ reviews:
       - "docs/design/docdown-visio-rendering/visio-page-rendering-extractor.md"        # unit design
       - "docs/verification/docdown-visio-rendering/visio-page-rendering-extractor.md"  # unit verification
       - "src/DemaConsulting.DocDown.Visio.Rendering/VisioPageRenderingExtractor.cs"    # unit source
+      - "src/Shared/PageRendering/PageRenderingPipeline.cs"    # shared pipeline linked into this unit
       - "test/DemaConsulting.DocDown.Visio.Rendering.Tests/VisioPageRenderingExtractorTests.cs"  # unit tests
 
   # DocDownVisioRendering-PageRenderer Unit Review (one per unit)

@@ -63,7 +63,7 @@ public static class ExtractorSelector
     ///     these formats and only these. This never alters which extractor is chosen.
     /// </remarks>
     private static readonly HashSet<string> LegacyBinaryFormatIds =
-        new(StringComparer.Ordinal) { "doc", "xls", "ppt", "vsd" };
+        [with(StringComparer.Ordinal), "doc", "xls", "ppt", "vsd"];
 
     /// <summary>
     ///     Selects the extractor to run for a detected format, or reports in prose why none can be chosen.

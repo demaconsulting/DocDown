@@ -112,6 +112,13 @@
     </PackageReference>
   </ItemGroup>
 
+  <!-- The delegate-then-rasterize pipeline shared by the three page-rendering backends. It is
+       compiled into each rendering assembly as an internal type (a linked source file) so the
+       backends share one implementation without Core publishing it as public API. -->
+  <ItemGroup>
+    <Compile Include="..\Shared\PageRendering\PageRenderingPipeline.cs" Link="Shared\PageRenderingPipeline.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="DemaConsulting.DocDown.Pdf.Rendering.Tests" />
   </ItemGroup>

@@ -5,7 +5,7 @@ package DocDownVisioRendering {
         doc /* The superset backend: delegates the managed aspects, rasterizes the pages, isolates per-page faults. */
 
         metadata info : SoftwareInfo {
-            sourceFiles = ("src/DemaConsulting.DocDown.Visio.Rendering/VisioPageRenderingExtractor.cs");
+            sourceFiles = ("src/DemaConsulting.DocDown.Visio.Rendering/VisioPageRenderingExtractor.cs", "src/Shared/PageRendering/PageRenderingPipeline.cs");
             testFiles = ("test/DemaConsulting.DocDown.Visio.Rendering.Tests/VisioPageRenderingExtractorTests.cs");
             designFiles = ("docs/design/docdown-visio-rendering/visio-page-rendering-extractor.md");
             verificationFiles = ("docs/verification/docdown-visio-rendering/visio-page-rendering-extractor.md");

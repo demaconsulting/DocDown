@@ -129,7 +129,15 @@ public sealed class StubExtractor : IDocumentExtractor, ISelfValidating
     }
 
     /// <inheritdoc/>
-    public IEnumerable<SelfTestCase> GetSelfTestCases() => SelfTestCases;
+    public IEnumerable<SelfTestCase> GetSelfTestCases() =>
+        SelfTestCasesFault is { } fault ? throw fault : SelfTestCases;
+
+    /// <summary>
+    ///     Gets the exception <see cref="GetSelfTestCases"/> throws instead of returning the cases, or
+    ///     <see langword="null"/> to return <see cref="SelfTestCases"/> normally.
+    /// </summary>
+    /// <remarks>Lets a test prove the engine reports a backend whose case enumeration faults.</remarks>
+    public Exception? SelfTestCasesFault { get; init; }
 
     /// <summary>
     ///     Creates an available stub for the given formats that writes default text.

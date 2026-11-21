@@ -81,24 +81,9 @@ internal static class VisioImageReader
             var pageIndex = pageIndexByContentsUri.TryGetValue(hostUri, out var index) ? index : (int?)null;
             var isMaster = hostUri.Contains(MastersPathMarker, StringComparison.OrdinalIgnoreCase);
 
-            foreach (var relationship in part.GetRelationshipsByType(ImageRelationshipType))
+            foreach (var targetUri in EmbeddedImageTargets(package, part))
             {
-                // An external image is a link, not embedded content, so only internal targets are followed
-                if (relationship.TargetMode != TargetMode.Internal)
-                {
-                    continue;
-                }
-
-                var targetUri = PackUriHelper.ResolvePartUri(part.Uri, relationship.TargetUri);
                 var uri = targetUri.ToString();
-
-                // Exclude package furniture (the thumbnail) and missing targets
-                if (uri.StartsWith(DocumentPropertiesPrefix, StringComparison.OrdinalIgnoreCase)
-                    || !package.PartExists(targetUri))
-                {
-                    continue;
-                }
-
                 if (!accumulators.TryGetValue(uri, out var accumulator))
                 {
                     accumulator = new PartAccumulator(package.GetPart(targetUri));
@@ -129,21 +114,41 @@ internal static class VisioImageReader
             altByUri[uri] = image.AltText;
         }
 
-        // Resolve each page's ordered image occurrences into inline references carrying alt text
-        var pageImageRefs = new Dictionary<int, IReadOnlyList<VisioPageImageRef>>();
-        foreach (var (page, uris) in pageRefUris)
-        {
-            var refs = new List<VisioPageImageRef>(uris.Count);
-            foreach (var uri in uris)
-            {
-                refs.Add(new VisioPageImageRef(uri, altByUri.TryGetValue(uri, out var alt) ? alt : null));
-            }
-
-            pageImageRefs[page] = refs;
-        }
-
-        return new VisioImageCollection(images, pageImageRefs);
+        return new VisioImageCollection(images, BuildPageImageRefs(pageRefUris, altByUri));
     }
+
+    /// <summary>
+    ///     Resolves the embedded image parts a package part references.
+    /// </summary>
+    /// <param name="package">The opened Visio package.</param>
+    /// <param name="part">The referring part (a page, master, or other content part).</param>
+    /// <returns>The resolved target URIs of the part's image relationships, in relationship order.</returns>
+    /// <remarks>
+    ///     An external image is a link, not embedded content, so only internal targets are followed;
+    ///     package furniture (the thumbnail under <c>docProps</c>) and missing targets are excluded.
+    ///     Read-only.
+    /// </remarks>
+    private static IEnumerable<Uri> EmbeddedImageTargets(Package package, PackagePart part) =>
+        part.GetRelationshipsByType(ImageRelationshipType)
+            .Where(relationship => relationship.TargetMode == TargetMode.Internal)
+            .Select(relationship => PackUriHelper.ResolvePartUri(part.Uri, relationship.TargetUri))
+            .Where(target => !target.ToString().StartsWith(DocumentPropertiesPrefix, StringComparison.OrdinalIgnoreCase)
+                && package.PartExists(target));
+
+    /// <summary>
+    ///     Resolves each page's ordered image occurrences into inline references carrying alt text.
+    /// </summary>
+    /// <param name="pageRefUris">The per-page ordered image-part URIs.</param>
+    /// <param name="altByUri">The alt text chosen for each media part URI.</param>
+    /// <returns>The map from a 1-based page index to that page's inline image references.</returns>
+    /// <remarks>Pure.</remarks>
+    private static Dictionary<int, IReadOnlyList<VisioPageImageRef>> BuildPageImageRefs(
+        Dictionary<int, List<string>> pageRefUris, Dictionary<string, string?> altByUri) =>
+        pageRefUris.ToDictionary(
+            entry => entry.Key,
+            IReadOnlyList<VisioPageImageRef> (entry) => entry.Value
+                .Select(uri => new VisioPageImageRef(uri, altByUri.GetValueOrDefault(uri)))
+                .ToList());
 
     /// <summary>
     ///     Adds a media part URI to a page's ordered image references, keeping it distinct.

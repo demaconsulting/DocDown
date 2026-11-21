@@ -73,7 +73,7 @@ public class DocDownBuilderTests
         var input = temp.CreateFile("document.txt", "hello world");
 
         // Act: run with no per-call options so the configured defaults apply
-        var result = await engine.ExtractAsync(input, Path.Combine(temp.Path, "out"), null, Ct);
+        var result = await engine.ExtractAsync(input, Path.Join(temp.Path, "out"), null, Ct);
 
         // Assert: the render request and image suppression defaults reached the run
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
@@ -147,7 +147,7 @@ public class DocDownBuilderTests
 
         // Act: reconfigure the builder defaults after the snapshot, then run the earlier engine
         builder.ConfigureDefaults(options => options.RenderPages = false);
-        var result = await engine.ExtractAsync(input, Path.Combine(temp.Path, "out"), null, Ct);
+        var result = await engine.ExtractAsync(input, Path.Join(temp.Path, "out"), null, Ct);
 
         // Assert: the engine still uses the defaults captured at Build time
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);

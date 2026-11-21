@@ -241,7 +241,7 @@ public sealed class DocDownEngine
 
             var isAvailable = availabilityById.TryGetValue(extractor.Id, out var candidate) && candidate.Availability.IsAvailable;
             var skipReason = BuildSkipReason(extractor.Id, candidate);
-            AppendBackendCases(cases, validating, isAvailable, skipReason);
+            AppendBackendCases(cases, extractor.Id, validating, isAvailable, skipReason);
         }
 
         return cases;
@@ -452,8 +452,8 @@ public sealed class DocDownEngine
         return new ExtractionResult(
             report.Outcome,
             absolute,
-            Path.Combine(absolute, "summary.txt"),
-            Path.Combine(absolute, "manifest.json"),
+            Path.Join(absolute, "summary.txt"),
+            Path.Join(absolute, "manifest.json"),
             content?.ContentPath,
             reviewComments?.Path,
             sink.Images.Select(image => image.Path).ToList(),
@@ -487,8 +487,8 @@ public sealed class DocDownEngine
         return new ExtractionResult(
             ExtractionOutcome.Unreadable,
             requested,
-            Path.Combine(requested, "summary.txt"),
-            Path.Combine(requested, "manifest.json"),
+            Path.Join(requested, "summary.txt"),
+            Path.Join(requested, "manifest.json"),
             null,
             null,
             [],
@@ -617,17 +617,20 @@ public sealed class DocDownEngine
     ///     Appends a self-validating backend's cases, wrapping them to skip when the backend is unavailable.
     /// </summary>
     /// <param name="cases">The case list to append to.</param>
+    /// <param name="backendId">The backend's identifier, naming the case that reports an enumeration fault.</param>
     /// <param name="validating">The self-validating backend contributing cases.</param>
     /// <param name="isAvailable">Whether the backend's cached probe reports it available.</param>
     /// <param name="skipReason">The reason to report when a case is skipped.</param>
     /// <remarks>
     ///     Enumerating a backend's cases is defended against a throwing implementation so one
-    ///     misbehaving backend cannot break the whole suite; an unavailable backend's cases are wrapped
+    ///     misbehaving backend cannot break the whole suite, yet the fault is never silent: it is
+    ///     reported as a single failing case so validation cannot pass a backend whose own checks
+    ///     never ran, even when the backend is unavailable. An unavailable backend's cases are wrapped
     ///     to return <see cref="SelfTestResult.Skipped(string)"/> without running. Side effect: appends
     ///     to <paramref name="cases"/>.
     /// </remarks>
     private static void AppendBackendCases(
-        List<SelfTestCase> cases, ISelfValidating validating, bool isAvailable, string skipReason)
+        List<SelfTestCase> cases, string backendId, ISelfValidating validating, bool isAvailable, string skipReason)
     {
         List<SelfTestCase> contributed;
         try
@@ -635,10 +638,14 @@ public sealed class DocDownEngine
             contributed = validating.GetSelfTestCases()?.ToList() ?? [];
         }
 #pragma warning disable CA1031 // A backend enumerating its cases is untrusted; a fault must not break the suite
-        catch (Exception)
+        catch (Exception exception)
 #pragma warning restore CA1031
         {
-            contributed = [];
+            // Added unwrapped so the fault fails validation even when the backend is unavailable
+            var message = $"The backend's self-test cases could not be enumerated: {exception.GetType().Name}: {exception.Message}";
+            cases.Add(new SelfTestCase(
+                $"{backendId}.selfTestCases", backendId, _ => SelfTestResult.Failed(message, TimeSpan.Zero)));
+            return;
         }
 
         foreach (var testCase in contributed)
@@ -681,7 +688,7 @@ public sealed class DocDownEngine
     private static SelfTestResult ExecuteCoreCase(SelfTestContext context, Func<ExtractionResult, (bool Ok, string? Message)> assert)
     {
         var stopwatch = Stopwatch.StartNew();
-        var caseFolder = Path.Combine(context.WorkFolder, "core-selftest-" + Guid.NewGuid().ToString("N"));
+        var caseFolder = Path.Join(context.WorkFolder, "core-selftest-" + Guid.NewGuid().ToString("N"));
         try
         {
             Directory.CreateDirectory(caseFolder);
@@ -718,10 +725,10 @@ public sealed class DocDownEngine
     private static ExtractionResult RunSelfExtraction(string caseFolder, CancellationToken cancellationToken)
     {
         // Write a trivial text source the stub extractor can process
-        var sourcePath = Path.Combine(caseFolder, "source.txt");
+        var sourcePath = Path.Join(caseFolder, "source.txt");
         File.WriteAllText(sourcePath, "DocDown core self-test source content.");
 
-        var scratch = Path.Combine(caseFolder, "scratch");
+        var scratch = Path.Join(caseFolder, "scratch");
         var registry = new ExtractorRegistry(new Func<IDocumentExtractor>[] { static () => new InProcessSelfTestExtractor() });
         var engine = new DocDownEngine(registry, new ExtractionOptions());
 
@@ -754,7 +761,7 @@ public sealed class DocDownEngine
             return (false, "manifest.json was not written");
         }
 
-        return File.Exists(Path.Combine(result.ScratchFolder, "content.md"))
+        return File.Exists(Path.Join(result.ScratchFolder, "content.md"))
             ? (true, null)
             : (false, "content.md was not written");
     }
@@ -788,12 +795,13 @@ public sealed class DocDownEngine
     }
 
     /// <summary>
-    ///     Deletes a folder and its contents, ignoring any error.
+    ///     Deletes a folder and its contents, ignoring a file-system failure.
     /// </summary>
     /// <param name="folder">The folder to delete.</param>
     /// <remarks>
     ///     A self-test must clean up after itself, but a cleanup failure must never turn a passing test
-    ///     into a failing one, so all errors are swallowed. Performs filesystem I/O.
+    ///     into a failing one, so I/O and access errors (a locked or read-only leftover) are ignored;
+    ///     any other exception indicates a defect and propagates. Performs filesystem I/O.
     /// </remarks>
     private static void TryDeleteFolder(string folder)
     {
@@ -804,9 +812,7 @@ public sealed class DocDownEngine
                 Directory.Delete(folder, recursive: true);
             }
         }
-#pragma warning disable CA1031 // Cleanup is best-effort; a failure must not affect the test outcome
-        catch (Exception)
-#pragma warning restore CA1031
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             // Intentionally ignored: leftover temporary files are harmless and must not fail the test
         }

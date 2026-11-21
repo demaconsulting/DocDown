@@ -58,6 +58,17 @@ internal static class ExcelContentEmitter
     /// </remarks>
     private const int MaxTableCellLength = 80;
 
+    /// <summary>The largest 1-based row number an Excel worksheet can hold.</summary>
+    /// <remarks>
+    ///     Excel's documented sheet limit (1,048,576 rows). A cell reference beyond it cannot come
+    ///     from a genuine workbook, so it is treated as malformed rather than gridded.
+    /// </remarks>
+    private const int MaxWorksheetRow = 1_048_576;
+
+    /// <summary>The largest 1-based column number an Excel worksheet can hold.</summary>
+    /// <remarks>Excel's documented sheet limit (16,384 columns, <c>XFD</c>).</remarks>
+    private const int MaxWorksheetColumn = 16_384;
+
     /// <summary>
     ///     Emits a workbook model through the sink.
     /// </summary>
@@ -199,8 +210,10 @@ internal static class ExcelContentEmitter
             LookedFor: true));
         sink.ReportContentFeature(new ContentFeature(
             "cached chart data points",
-            model.Sheets.Sum((ExcelSheetModel sheet) => sheet.Charts.Sum((ExcelChartModel chart) =>
-                chart.Data?.Series.Sum((ExcelChartSeries series) => series.Points.Count) ?? 0)),
+            model.Sheets
+                .SelectMany(sheet => sheet.Charts)
+                .SelectMany(chart => chart.Data?.Series ?? Enumerable.Empty<ExcelChartSeries>())
+                .Sum(series => series.Points.Count),
             "cached chart data point",
             LookedFor: true));
 
@@ -534,7 +547,7 @@ internal static class ExcelContentEmitter
 
         var rowSpan = maxRow - minRow + 1;
         var columnSpan = maxColumn - minColumn + 1;
-        var density = (double)byPosition.Count / (rowSpan * columnSpan);
+        var density = byPosition.Count / ((double)rowSpan * columnSpan);
 
         // Apply the qualification heuristic; a region that is not table-shaped keeps the listing alone
         if (rowSpan < MinTableRowSpan || columnSpan < MinTableColumnSpan
@@ -623,7 +636,9 @@ internal static class ExcelContentEmitter
     /// <remarks>
     ///     A reference is a run of column letters followed by a run of row digits; anything else (an
     ///     absolute <c>$</c> marker, a range, or a malformed value) fails the parse and is left out of
-    ///     the grid rather than guessed. Pure.
+    ///     the grid rather than guessed. A reference beyond the worksheet limits Excel itself enforces
+    ///     (<see cref="MaxWorksheetRow"/> rows, <see cref="MaxWorksheetColumn"/> columns) is malformed
+    ///     too, and rejecting it as soon as it is exceeded keeps the parse from overflowing. Pure.
     /// </remarks>
     private static bool TryParseReference(string reference, out int row, out int column)
     {
@@ -634,6 +649,11 @@ internal static class ExcelContentEmitter
         while (index < reference.Length && reference[index] is >= 'A' and <= 'Z')
         {
             column = (column * 26) + (reference[index] - 'A' + 1);
+            if (column > MaxWorksheetColumn)
+            {
+                return false;
+            }
+
             index++;
         }
 
@@ -651,6 +671,10 @@ internal static class ExcelContentEmitter
             }
 
             row = (row * 10) + (reference[digit] - '0');
+            if (row > MaxWorksheetRow)
+            {
+                return false;
+            }
         }
 
         return true;

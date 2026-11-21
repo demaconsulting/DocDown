@@ -5,7 +5,7 @@ package DocDownPdfRendering {
         doc /* The superset backend: delegates the managed aspects, rasterizes the pages, isolates page faults. */
 
         metadata info : SoftwareInfo {
-            sourceFiles = ("src/DemaConsulting.DocDown.Pdf.Rendering/PdfPageRenderingExtractor.cs");
+            sourceFiles = ("src/DemaConsulting.DocDown.Pdf.Rendering/PdfPageRenderingExtractor.cs", "src/Shared/PageRendering/PageRenderingPipeline.cs");
             testFiles = ("test/DemaConsulting.DocDown.Pdf.Rendering.Tests/PdfPageRenderingExtractorTests.cs");
             designFiles = ("docs/design/docdown-pdf-rendering/pdf-page-rendering-extractor.md");
             verificationFiles = ("docs/verification/docdown-pdf-rendering/pdf-page-rendering-extractor.md");

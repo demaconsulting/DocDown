@@ -46,7 +46,7 @@ internal static class WordTestHarness
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>The content markdown.</returns>
     public static Task<string> ReadContentAsync(string folder, CancellationToken cancellationToken) =>
-        File.ReadAllTextAsync(Path.Combine(folder, "content.md"), cancellationToken);
+        File.ReadAllTextAsync(Path.Join(folder, "content.md"), cancellationToken);
 
     /// <summary>
     ///     A minimal read-only extraction context backed by a real sink.

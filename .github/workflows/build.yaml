@@ -634,6 +634,8 @@ jobs:
         run: >
           dotnet sarifmark
           --sarif artifacts/csharp.sarif
+          --exclude "**/obj/**"
+          --exclude "**/bin/**"
           --report docs/code_quality/generated/codeql-quality.md
           --heading "DemaConsulting.DocDown.Core CodeQL Analysis"
           --report-depth 1

@@ -85,26 +85,8 @@ public static class EmbeddedImageWriter
             found++;
             var reference = image.SourceRef ?? $"image {found.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
 
-            // A raster image whose header can be read carries a real pixel size; a vector metafile has
-            // none, so its dimensions stay unknown and the dimension limit cannot apply to it
-            int? width = null;
-            int? height = null;
-            if (ImageDimensions.TryRead(image.Bytes, out var readWidth, out var readHeight))
-            {
-                width = readWidth;
-                height = readHeight;
-                if (options.MaxImageDimensionPx is { } maxDimension
-                    && (readWidth > maxDimension || readHeight > maxDimension))
-                {
-                    sizeSkipped++;
-                    Append(sizeSkippedItems, reference);
-                    decisionByContent[digest] = null;
-                    continue;
-                }
-            }
-
-            // A payload beyond the caller's byte budget is a deliberate skip, not a loss
-            if (options.MaxImageBytes is { } maxBytes && image.Bytes.LongLength > maxBytes)
+            // Apply the caller's dimension and byte limits; an oversized image is a deliberate skip, not a loss
+            if (!IsWithinSizeLimits(image.Bytes, options, out var width, out var height))
             {
                 sizeSkipped++;
                 Append(sizeSkippedItems, reference);
@@ -112,22 +94,8 @@ public static class EmbeddedImageWriter
                 continue;
             }
 
-            var merged = referrersByContent.TryGetValue(digest, out var found2) ? found2 : null;
-            var sourcePages = merged is { Pages.Count: > 0 } ? merged.Pages.ToArray() : null;
-            var referencedByTemplate = merged?.Template ?? image.ReferencedByTemplate;
-
-            var hint = new ImageHint(
-                PreferredName: image.PreferredName,
-                MediaType: image.MediaType,
-                WidthPx: width,
-                HeightPx: height,
-                SourcePage: sourcePages is { Length: > 0 } ? sourcePages[0] : image.SourcePage,
-                SourceRef: image.SourceRef,
-                Transform: ImageTransform.Passthrough,
-                Description: image.Description,
-                DescriptionSource: image.DescriptionSource,
-                SourcePages: sourcePages,
-                ReferencedByTemplate: referencedByTemplate);
+            referrersByContent.TryGetValue(digest, out var merged);
+            var hint = BuildHint(image, width, height, merged);
             using var stream = new MemoryStream(image.Bytes, writable: false);
             var path = await sink.AddImageAsync(stream, hint, cancellationToken).ConfigureAwait(false);
             decisionByContent[digest] = string.IsNullOrEmpty(path) ? null : path;
@@ -157,6 +125,66 @@ public static class EmbeddedImageWriter
             SizeSkippedItems = sizeSkippedItems,
             VectorWrittenCount = vectorWritten
         };
+    }
+
+    /// <summary>
+    ///     Reads an image's pixel dimensions and decides whether it fits the caller's size limits.
+    /// </summary>
+    /// <param name="bytes">The complete image file bytes.</param>
+    /// <param name="options">The effective options carrying the optional dimension and byte limits.</param>
+    /// <param name="width">The pixel width when the header could be read; otherwise <see langword="null"/>.</param>
+    /// <param name="height">The pixel height when the header could be read; otherwise <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when the image is within every configured limit; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    ///     A raster image whose header can be read carries a real pixel size; a vector metafile has
+    ///     none, so its dimensions stay unknown and the dimension limit cannot apply to it. The byte
+    ///     limit applies to every image. Pure.
+    /// </remarks>
+    private static bool IsWithinSizeLimits(byte[] bytes, ExtractionOptions options, out int? width, out int? height)
+    {
+        width = null;
+        height = null;
+        if (ImageDimensions.TryRead(bytes, out var readWidth, out var readHeight))
+        {
+            width = readWidth;
+            height = readHeight;
+            if (options.MaxImageDimensionPx is { } maxDimension
+                && (readWidth > maxDimension || readHeight > maxDimension))
+            {
+                return false;
+            }
+        }
+
+        return options.MaxImageBytes is not { } maxBytes || bytes.LongLength <= maxBytes;
+    }
+
+    /// <summary>
+    ///     Builds the sink hint for one kept image, carrying its merged page associations.
+    /// </summary>
+    /// <param name="image">The image being written.</param>
+    /// <param name="width">The pixel width, or <see langword="null"/> when unknown.</param>
+    /// <param name="height">The pixel height, or <see langword="null"/> when unknown.</param>
+    /// <param name="merged">The merged referrers of every byte-identical image, or <see langword="null"/> when none were recorded.</param>
+    /// <returns>The passthrough hint the sink names and records the image from.</returns>
+    /// <remarks>
+    ///     The merged referrer set wins over the image's own scalar page so a file shared by several
+    ///     parts lists every referrer; the scalar source page is its first entry. Pure.
+    /// </remarks>
+    private static ImageHint BuildHint(EmbeddedImage image, int? width, int? height, MergedReferrers? merged)
+    {
+        var sourcePages = merged is { Pages.Count: > 0 } ? merged.Pages.ToArray() : null;
+        return new ImageHint(
+            PreferredName: image.PreferredName,
+            MediaType: image.MediaType,
+            WidthPx: width,
+            HeightPx: height,
+            SourcePage: sourcePages is { Length: > 0 } ? sourcePages[0] : image.SourcePage,
+            SourceRef: image.SourceRef,
+            Transform: ImageTransform.Passthrough,
+            Description: image.Description,
+            DescriptionSource: image.DescriptionSource,
+            SourcePages: sourcePages,
+            ReferencedByTemplate: merged?.Template ?? image.ReferencedByTemplate);
     }
 
     /// <summary>

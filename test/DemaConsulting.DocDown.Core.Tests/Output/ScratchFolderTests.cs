@@ -44,7 +44,7 @@ public partial class ScratchFolderTests
     {
         // Arrange: a prepared scratch folder
         using var temp = new TempScratch();
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
 
         // Act / Assert: every escape attempt is refused with a structured path reason
         var exception = Assert.Throws<ScratchFolderException>(() => folder.Combine(hostilePath));
@@ -59,7 +59,7 @@ public partial class ScratchFolderTests
     {
         // Arrange: a prepared scratch folder
         using var temp = new TempScratch();
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
 
         // Act: combine a safe relative resource path
         var absolute = folder.Combine("images/0001-logo.png");
@@ -79,7 +79,7 @@ public partial class ScratchFolderTests
     {
         // Arrange: a prepared scratch folder
         using var temp = new TempScratch();
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
 
         // Act / Assert: injection characters are refused with a structured reason
         var exception = Assert.Throws<ScratchFolderException>(() => folder.Combine(hostileComponent));
@@ -134,7 +134,7 @@ public partial class ScratchFolderTests
     {
         // Arrange: a prepared scratch folder
         using var temp = new TempScratch();
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
 
         // Act / Assert: an allocation naming a device is refused with a structured reason
         var exception = Assert.Throws<ScratchFolderException>(() => folder.Combine("images/CON.png"));
@@ -185,7 +185,7 @@ public partial class ScratchFolderTests
     {
         // Arrange: a prepared scratch folder and a component that pushes the total path over the limit
         using var temp = new TempScratch();
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var longComponent = "images/" + new string('a', ScratchFolder.MaxTotalPathLength + 20) + ".png";
 
         // Act / Assert: the resulting path is refused as over-length
@@ -221,9 +221,9 @@ public partial class ScratchFolderTests
     {
         // Arrange: a non-empty folder that is not recognizable DocDown output
         using var temp = new TempScratch();
-        var target = Path.Combine(temp.Path, "documents");
+        var target = Path.Join(temp.Path, "documents");
         Directory.CreateDirectory(target);
-        var userFile = Path.Combine(target, "thesis.md");
+        var userFile = Path.Join(target, "thesis.md");
         File.WriteAllText(userFile, "irreplaceable work");
 
         // Act / Assert: the safe default refuses to clean it
@@ -241,23 +241,23 @@ public partial class ScratchFolderTests
     {
         // Arrange: a folder whose manifest proves it is prior DocDown output for this very folder
         using var temp = new TempScratch();
-        var target = Path.Combine(temp.Path, "prior-run");
+        var target = Path.Join(temp.Path, "prior-run");
         Directory.CreateDirectory(target);
-        Directory.CreateDirectory(Path.Combine(target, "images"));
-        File.WriteAllText(Path.Combine(target, "summary.txt"), "summary");
-        File.WriteAllText(Path.Combine(target, "metadata.json"), "{}\n");
-        File.WriteAllText(Path.Combine(target, "content.md"), "stale output");
-        File.WriteAllText(Path.Combine(target, "manifest.json"), DocDownManifest(target));
+        Directory.CreateDirectory(Path.Join(target, "images"));
+        File.WriteAllText(Path.Join(target, "summary.txt"), "summary");
+        File.WriteAllText(Path.Join(target, "metadata.json"), "{}\n");
+        File.WriteAllText(Path.Join(target, "content.md"), "stale output");
+        File.WriteAllText(Path.Join(target, "manifest.json"), DocDownManifest(target));
 
         // Act: prepare over the proven DocDown folder
         var folder = ScratchFolder.Prepare(target, ScratchFolderMode.CleanIfDocDownFolder);
 
         // Assert: the inventoried files were deleted while the empty directory remains
-        Assert.False(File.Exists(Path.Combine(folder.AbsolutePath, "summary.txt")));
-        Assert.False(File.Exists(Path.Combine(folder.AbsolutePath, "manifest.json")));
-        Assert.False(File.Exists(Path.Combine(folder.AbsolutePath, "metadata.json")));
-        Assert.False(File.Exists(Path.Combine(folder.AbsolutePath, "content.md")));
-        Assert.True(Directory.Exists(Path.Combine(folder.AbsolutePath, "images")));
+        Assert.False(File.Exists(Path.Join(folder.AbsolutePath, "summary.txt")));
+        Assert.False(File.Exists(Path.Join(folder.AbsolutePath, "manifest.json")));
+        Assert.False(File.Exists(Path.Join(folder.AbsolutePath, "metadata.json")));
+        Assert.False(File.Exists(Path.Join(folder.AbsolutePath, "content.md")));
+        Assert.True(Directory.Exists(Path.Join(folder.AbsolutePath, "images")));
     }
 
     /// <summary>
@@ -269,20 +269,20 @@ public partial class ScratchFolderTests
     {
         // Arrange: a prior run that declared the 3.1 schema and wrote the conditional artifact
         using var temp = new TempScratch();
-        var target = Path.Combine(temp.Path, "prior-3-1-run");
+        var target = Path.Join(temp.Path, "prior-3-1-run");
         Directory.CreateDirectory(target);
-        File.WriteAllText(Path.Combine(target, "summary.txt"), "summary");
-        File.WriteAllText(Path.Combine(target, "review-comments.md"), "# Review comments\n\n- **Ada** (Page 1): A remark.\n");
+        File.WriteAllText(Path.Join(target, "summary.txt"), "summary");
+        File.WriteAllText(Path.Join(target, "review-comments.md"), "# Review comments\n\n- **Ada** (Page 1): A remark.\n");
         File.WriteAllText(
-            Path.Combine(target, "manifest.json"),
+            Path.Join(target, "manifest.json"),
             DocDownManifest(target, schemaVersion: "3.1", reviewCommentsPath: "review-comments.md"));
 
         // Act: prepare over the proven DocDown folder
         var folder = ScratchFolder.Prepare(target, ScratchFolderMode.CleanIfDocDownFolder);
 
         // Assert: the newer schema was accepted and the accounted artifact was cleaned, not left as a stray
-        Assert.False(File.Exists(Path.Combine(folder.AbsolutePath, "review-comments.md")));
-        Assert.False(File.Exists(Path.Combine(folder.AbsolutePath, "summary.txt")));
+        Assert.False(File.Exists(Path.Join(folder.AbsolutePath, "review-comments.md")));
+        Assert.False(File.Exists(Path.Join(folder.AbsolutePath, "summary.txt")));
     }
 
     /// <summary>
@@ -293,11 +293,11 @@ public partial class ScratchFolderTests
     {
         // Arrange: a documents folder containing a real manifest from some other run
         using var temp = new TempScratch();
-        var otherRun = Path.Combine(temp.Path, "some-other-run");
-        var target = Path.Combine(temp.Path, "documents");
+        var otherRun = Path.Join(temp.Path, "some-other-run");
+        var target = Path.Join(temp.Path, "documents");
         Directory.CreateDirectory(target);
-        var manifestPath = Path.Combine(target, "manifest.json");
-        var userFile = Path.Combine(target, "thesis.md");
+        var manifestPath = Path.Join(target, "manifest.json");
+        var userFile = Path.Join(target, "thesis.md");
         File.WriteAllText(manifestPath, DocDownManifest(otherRun));
         File.WriteAllText(userFile, "irreplaceable work");
 
@@ -317,13 +317,13 @@ public partial class ScratchFolderTests
     {
         // Arrange: a genuine DocDown folder plus one extra file not listed by the manifest
         using var temp = new TempScratch();
-        var target = Path.Combine(temp.Path, "prior-run");
+        var target = Path.Join(temp.Path, "prior-run");
         Directory.CreateDirectory(target);
-        File.WriteAllText(Path.Combine(target, "summary.txt"), "summary");
-        File.WriteAllText(Path.Combine(target, "metadata.json"), "{}\n");
-        File.WriteAllText(Path.Combine(target, "content.md"), "stale output");
-        File.WriteAllText(Path.Combine(target, "manifest.json"), DocDownManifest(target));
-        var rogue = Path.Combine(target, "rogue.txt");
+        File.WriteAllText(Path.Join(target, "summary.txt"), "summary");
+        File.WriteAllText(Path.Join(target, "metadata.json"), "{}\n");
+        File.WriteAllText(Path.Join(target, "content.md"), "stale output");
+        File.WriteAllText(Path.Join(target, "manifest.json"), DocDownManifest(target));
+        var rogue = Path.Join(target, "rogue.txt");
         File.WriteAllText(rogue, "keep me");
 
         // Act / Assert: the unaccounted file prevents safe deletion
@@ -341,13 +341,13 @@ public partial class ScratchFolderTests
     {
         // Arrange: a manifest whose images list contains an escaping relative path
         using var temp = new TempScratch();
-        var target = Path.Combine(temp.Path, "prior-run");
+        var target = Path.Join(temp.Path, "prior-run");
         Directory.CreateDirectory(target);
-        File.WriteAllText(Path.Combine(target, "summary.txt"), "summary");
-        File.WriteAllText(Path.Combine(target, "metadata.json"), "{}\n");
-        File.WriteAllText(Path.Combine(target, "content.md"), "stale output");
+        File.WriteAllText(Path.Join(target, "summary.txt"), "summary");
+        File.WriteAllText(Path.Join(target, "metadata.json"), "{}\n");
+        File.WriteAllText(Path.Join(target, "content.md"), "stale output");
         File.WriteAllText(
-            Path.Combine(target, "manifest.json"),
+            Path.Join(target, "manifest.json"),
             DocDownManifest(target, images: ["../escape.txt"]));
 
         // Act / Assert: the escaping manifest path is refused before any deletion occurs
@@ -364,13 +364,13 @@ public partial class ScratchFolderTests
     {
         // Arrange: a genuine DocDown folder and a reader that mutates summary.txt on its second read
         using var temp = new TempScratch();
-        var target = Path.Combine(temp.Path, "prior-run");
+        var target = Path.Join(temp.Path, "prior-run");
         Directory.CreateDirectory(target);
-        var summaryPath = Path.Combine(target, "summary.txt");
+        var summaryPath = Path.Join(target, "summary.txt");
         File.WriteAllText(summaryPath, "summary");
-        File.WriteAllText(Path.Combine(target, "metadata.json"), "{}\n");
-        File.WriteAllText(Path.Combine(target, "content.md"), "stale output");
-        File.WriteAllText(Path.Combine(target, "manifest.json"), DocDownManifest(target));
+        File.WriteAllText(Path.Join(target, "metadata.json"), "{}\n");
+        File.WriteAllText(Path.Join(target, "content.md"), "stale output");
+        File.WriteAllText(Path.Join(target, "manifest.json"), DocDownManifest(target));
         var reader = new MutatingFileStateReader(summaryPath);
 
         // Act / Assert: the changed file is detected and preparation refuses
@@ -387,11 +387,11 @@ public partial class ScratchFolderTests
     {
         // Arrange: a populated target folder
         using var temp = new TempScratch();
-        var target = Path.Combine(temp.Path, "replace-me");
+        var target = Path.Join(temp.Path, "replace-me");
         Directory.CreateDirectory(target);
-        File.WriteAllText(Path.Combine(target, "user.txt"), "replace me");
-        Directory.CreateDirectory(Path.Combine(target, "nested"));
-        File.WriteAllText(Path.Combine(target, "nested", "deep.txt"), "replace me too");
+        File.WriteAllText(Path.Join(target, "user.txt"), "replace me");
+        Directory.CreateDirectory(Path.Join(target, "nested"));
+        File.WriteAllText(Path.Join(target, "nested", "deep.txt"), "replace me too");
 
         // Act: prepare under overwrite mode
         var folder = ScratchFolder.Prepare(target, ScratchFolderMode.Overwrite);
@@ -415,9 +415,9 @@ public partial class ScratchFolderTests
     {
         // Arrange: a folder with one inventoried-looking file and a manifest that breaks one identity condition
         using var temp = new TempScratch();
-        var target = Path.Combine(temp.Path, "suspect");
+        var target = Path.Join(temp.Path, "suspect");
         Directory.CreateDirectory(target);
-        var userFile = Path.Combine(target, "summary.txt");
+        var userFile = Path.Join(target, "summary.txt");
         File.WriteAllText(userFile, "keep me");
         var genuine = DocDownManifest(target);
         var manifest = kind switch
@@ -431,7 +431,7 @@ public partial class ScratchFolderTests
             _ => genuine + new string(' ', (8 * 1024 * 1024) + 1)
         };
         Assert.NotEqual(genuine, manifest);
-        File.WriteAllText(Path.Combine(target, "manifest.json"), manifest);
+        File.WriteAllText(Path.Join(target, "manifest.json"), manifest);
 
         // Act / Assert: the folder is not provably DocDown output, so it is refused and left intact
         var exception = Assert.Throws<ScratchFolderException>(
@@ -448,9 +448,9 @@ public partial class ScratchFolderTests
     {
         // Arrange: a populated folder so the mode is actually consulted
         using var temp = new TempScratch();
-        var target = Path.Combine(temp.Path, "populated");
+        var target = Path.Join(temp.Path, "populated");
         Directory.CreateDirectory(target);
-        var userFile = Path.Combine(target, "user.txt");
+        var userFile = Path.Join(target, "user.txt");
         File.WriteAllText(userFile, "keep me");
 
         // Act / Assert: the unknown mode is refused and the contents are untouched

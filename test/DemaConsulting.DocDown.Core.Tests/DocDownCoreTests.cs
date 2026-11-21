@@ -22,7 +22,7 @@ public class DocDownCoreTests
         // Arrange: a plain-text input document and an available text backend
         using var temp = new TempScratch();
         var engine = BuildEngine(StubExtractor.Available("text", [DocumentFormat.Text]));
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the extraction into a fresh scratch folder
         var result = await engine.ExtractAsync(temp.CreateFile("document.txt", "hello world"), scratch, FixedOptions(), Ct);
@@ -30,7 +30,7 @@ public class DocDownCoreTests
         // Assert: the layout is produced with no failure and the root artifacts exist
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Null(result.Failure);
-        Assert.True(File.Exists(Path.Combine(scratch, "content.md")));
+        Assert.True(File.Exists(Path.Join(scratch, "content.md")));
         ContractAssert.LayoutPresent(scratch);
     }
 
@@ -43,7 +43,7 @@ public class DocDownCoreTests
         // Arrange: only a text backend is registered, and the input is named as a Word document
         using var temp = new TempScratch();
         var engine = BuildEngine(StubExtractor.Available("text", [DocumentFormat.Text]));
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the extraction against the detected docx format
         var result = await engine.ExtractAsync(
@@ -59,7 +59,7 @@ public class DocDownCoreTests
         Assert.Contains("DemaConsulting.DocDown.Word", result.Failure.Explanation, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
 
-        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct));
         var source = manifest.RootElement.GetProperty("source");
         Assert.Equal("docx", source.GetProperty("format").GetString());
         Assert.Equal("extension", source.GetProperty("detectionBasis").GetString());
@@ -74,7 +74,7 @@ public class DocDownCoreTests
         // Arrange: only a text backend is registered, and the input is named as a legacy Word document
         using var temp = new TempScratch();
         var engine = BuildEngine(StubExtractor.Available("text", [DocumentFormat.Text]));
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the extraction against the detected legacy format
         var result = await engine.ExtractAsync(
@@ -104,7 +104,7 @@ public class DocDownCoreTests
         using var temp = new TempScratch();
         const string reason = "the native text renderer 'libtxt 4.2' is not installed on this host";
         var engine = BuildEngine(StubExtractor.Unavailable("text", [DocumentFormat.Text], reason));
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the extraction with no available backend
         var result = await engine.ExtractAsync(
@@ -114,7 +114,7 @@ public class DocDownCoreTests
             Ct);
 
         // Assert: the summary carries the unavailability reason verbatim
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct);
         Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
         Assert.Contains(reason, summary, StringComparison.Ordinal);
     }
@@ -130,7 +130,7 @@ public class DocDownCoreTests
         var engine = BuildEngine(StubExtractor.Available("text", [DocumentFormat.Text]));
         var options = FixedOptions();
         options.RenderPages = true;
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the extraction with an unsatisfied render request
         var result = await engine.ExtractAsync(
@@ -144,7 +144,7 @@ public class DocDownCoreTests
         Assert.Contains(
             result.Notes,
             note => note.Message.Contains("Page rendering was requested", StringComparison.Ordinal));
-        Assert.False(Directory.Exists(Path.Combine(scratch, "pages")));
+        Assert.False(Directory.Exists(Path.Join(scratch, "pages")));
         ContractAssert.LayoutPresent(scratch);
     }
 
@@ -157,7 +157,7 @@ public class DocDownCoreTests
         // Arrange: an input whose extension and content match no known format
         using var temp = new TempScratch();
         var engine = BuildEngine(StubExtractor.Available("text", [DocumentFormat.Text]));
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the extraction against the unknown document
         var result = await engine.ExtractAsync(
@@ -182,7 +182,7 @@ public class DocDownCoreTests
         // Arrange: a backend that throws partway through extraction
         using var temp = new TempScratch();
         var engine = BuildEngine(StubExtractor.Failing("failing", [DocumentFormat.Text]));
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the extraction so the backend faults
         var result = await engine.ExtractAsync(
@@ -194,7 +194,7 @@ public class DocDownCoreTests
         // Assert: the run is unreadable but still writes the full layout
         Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
         Assert.False(string.IsNullOrWhiteSpace(result.Failure?.Explanation));
-        Assert.False(File.Exists(Path.Combine(scratch, "content.md")));
+        Assert.False(File.Exists(Path.Join(scratch, "content.md")));
         ContractAssert.LayoutPresent(scratch);
     }
 
@@ -209,19 +209,19 @@ public class DocDownCoreTests
         using var temp = new TempScratch();
         var engine = BuildEngine(StubExtractor.Available("text", [DocumentFormat.Text]));
         var input = temp.CreateFile("document.txt", "hello world");
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run twice into the same scratch folder, snapshotting the first run's files
         await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
-        var firstSummary = Path.Combine(temp.Path, "first-summary.txt");
-        var firstManifest = Path.Combine(temp.Path, "first-manifest.json");
-        File.Copy(Path.Combine(scratch, "summary.txt"), firstSummary);
-        File.Copy(Path.Combine(scratch, "manifest.json"), firstManifest);
+        var firstSummary = Path.Join(temp.Path, "first-summary.txt");
+        var firstManifest = Path.Join(temp.Path, "first-manifest.json");
+        File.Copy(Path.Join(scratch, "summary.txt"), firstSummary);
+        File.Copy(Path.Join(scratch, "manifest.json"), firstManifest);
         await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
         // Assert: both outputs are identical between runs apart from the wall-clock stamp
-        ContractAssert.FileEqualsIgnoringTimestamp(firstSummary, Path.Combine(scratch, "summary.txt"));
-        ContractAssert.FileEqualsIgnoringTimestamp(firstManifest, Path.Combine(scratch, "manifest.json"));
+        ContractAssert.FileEqualsIgnoringTimestamp(firstSummary, Path.Join(scratch, "summary.txt"));
+        ContractAssert.FileEqualsIgnoringTimestamp(firstManifest, Path.Join(scratch, "manifest.json"));
     }
 
     /// <summary>
@@ -238,8 +238,8 @@ public class DocDownCoreTests
             SupportedFormats = [DocumentFormat.Text],
             ExtractBehavior = WriteHostileNamedImagesAsync
         });
-        var workRoot = Path.Combine(temp.Path, "work");
-        var scratch = Path.Combine(workRoot, "out");
+        var workRoot = Path.Join(temp.Path, "work");
+        var scratch = Path.Join(workRoot, "out");
         Directory.CreateDirectory(workRoot);
         var input = temp.CreateFile("document.txt", "hello world");
 
@@ -256,7 +256,7 @@ public class DocDownCoreTests
             Assert.StartsWith(scratchPrefix, Path.GetFullPath(file), StringComparison.OrdinalIgnoreCase);
         }
 
-        Assert.False(File.Exists(Path.Combine(temp.Path, "escape.png")));
+        Assert.False(File.Exists(Path.Join(temp.Path, "escape.png")));
         ContractAssert.LayoutPresent(scratch);
     }
 
@@ -270,9 +270,9 @@ public class DocDownCoreTests
         // Arrange: a scratch folder holding a caller file and no DocDown manifest
         using var temp = new TempScratch();
         var engine = BuildEngine(StubExtractor.Available("text", [DocumentFormat.Text]));
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         Directory.CreateDirectory(scratch);
-        var userFile = Path.Combine(scratch, "precious.txt");
+        var userFile = Path.Join(scratch, "precious.txt");
         await File.WriteAllTextAsync(userFile, "keep me", Ct);
 
         // Act: extract into that folder in the default safe mode
@@ -296,9 +296,9 @@ public class DocDownCoreTests
         using var temp = new TempScratch();
         var engine = BuildEngine(StubExtractor.Available("text", [DocumentFormat.Text]));
         var input = temp.CreateFile("document.txt", "hello world");
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var first = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
-        var foreign = Path.Combine(scratch, "notes.txt");
+        var foreign = Path.Join(scratch, "notes.txt");
         await File.WriteAllTextAsync(foreign, "mine", Ct);
 
         // Act: run again into the same folder
@@ -308,7 +308,7 @@ public class DocDownCoreTests
         Assert.Equal(ExtractionOutcome.Produced, first.Outcome);
         Assert.Equal(ExtractionOutcome.Unreadable, second.Outcome);
         Assert.Equal("mine", await File.ReadAllTextAsync(foreign, Ct));
-        Assert.True(File.Exists(Path.Combine(scratch, "manifest.json")));
+        Assert.True(File.Exists(Path.Join(scratch, "manifest.json")));
     }
 
     /// <summary>
@@ -326,8 +326,8 @@ public class DocDownCoreTests
             ExtractBehavior = WriteImageAsync
         });
         var input = temp.CreateFile("document.txt", "hello world");
-        var firstScratch = Path.Combine(temp.Path, "out1");
-        var secondScratch = Path.Combine(temp.Path, "out2");
+        var firstScratch = Path.Join(temp.Path, "out1");
+        var secondScratch = Path.Join(temp.Path, "out2");
         var options = FixedOptions();
         options.IncludeEmbeddedImages = true;
 
@@ -375,7 +375,7 @@ public class DocDownCoreTests
             SupportedFormats = [DocumentFormat.Text],
             ExtractBehavior = WriteImagesOfDifferingProvenanceAsync
         });
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the extraction end to end through the engine
         var result = await engine.ExtractAsync(
@@ -386,7 +386,7 @@ public class DocDownCoreTests
 
         // Assert: the manifest records distinct per-image provenance
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
-        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct));
         var images = manifest.RootElement.GetProperty("images");
         Assert.Equal(2, images.GetArrayLength());
         Assert.Equal("passthrough", images[0].GetProperty("transform").GetString());
@@ -411,7 +411,7 @@ public class DocDownCoreTests
             SupportedFormats = [DocumentFormat.Text],
             ExtractBehavior = WriteImagesOfDifferingReferrersAsync
         });
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the extraction end to end through the engine
         var result = await engine.ExtractAsync(
@@ -422,7 +422,7 @@ public class DocDownCoreTests
 
         // Assert: the manifest records the referrer set, the scalar alias, and the template flag
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
-        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct));
         var images = manifest.RootElement.GetProperty("images");
         Assert.Equal(2, images.GetArrayLength());
 
@@ -482,7 +482,7 @@ public class DocDownCoreTests
     /// <returns>The number of image entries recorded in the manifest.</returns>
     private static int ReadImageCount(string scratchFolder)
     {
-        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(scratchFolder, "manifest.json")));
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Join(scratchFolder, "manifest.json")));
         return manifest.RootElement.GetProperty("images").GetArrayLength();
     }
 

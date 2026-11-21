@@ -32,7 +32,7 @@ public class ExtractionSinkTests
         Assert.Equal("images/0001-image.png", first);
         Assert.Equal("images/0002-image.png", second);
         Assert.Equal("images/0003-image.png", third);
-        Assert.Equal(3, Directory.GetFiles(Path.Combine(sink.Folder.AbsolutePath, "images")).Length);
+        Assert.Equal(3, Directory.GetFiles(Path.Join(sink.Folder.AbsolutePath, "images")).Length);
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ public class ExtractionSinkTests
         Assert.Equal(firstPath, secondPath);
         var image = Assert.Single(sink.Images);
         Assert.Equal(2, image.References);
-        Assert.Single(Directory.GetFiles(Path.Combine(sink.Folder.AbsolutePath, "images")));
+        Assert.Single(Directory.GetFiles(Path.Join(sink.Folder.AbsolutePath, "images")));
     }
 
     /// <summary>
@@ -141,7 +141,7 @@ public class ExtractionSinkTests
 
         // Assert: the page file is named by the source page number
         Assert.Equal("pages/page0007.png", path);
-        Assert.True(File.Exists(Path.Combine(sink.Folder.AbsolutePath, "pages", "page0007.png")));
+        Assert.True(File.Exists(Path.Join(sink.Folder.AbsolutePath, "pages", "page0007.png")));
     }
 
     /// <summary>
@@ -197,7 +197,7 @@ public class ExtractionSinkTests
         Assert.Equal(string.Empty, firstPath);
         Assert.Equal(string.Empty, secondPath);
         Assert.Empty(sink.Images);
-        Assert.False(Directory.Exists(Path.Combine(sink.Folder.AbsolutePath, "images")));
+        Assert.False(Directory.Exists(Path.Join(sink.Folder.AbsolutePath, "images")));
     }
 
     /// <summary>
@@ -402,7 +402,7 @@ public class ExtractionSinkTests
         // Assert: the sink allocates a contained relative path and writes inside the scratch folder
         Assert.StartsWith("images/", path, StringComparison.Ordinal);
         Assert.DoesNotContain("..", path, StringComparison.Ordinal);
-        Assert.True(File.Exists(Path.Combine(sink.Folder.AbsolutePath, path.Replace('/', Path.DirectorySeparatorChar))));
+        Assert.True(File.Exists(Path.Join(sink.Folder.AbsolutePath, path.Replace('/', Path.DirectorySeparatorChar))));
     }
 
     /// <summary>
@@ -479,7 +479,7 @@ public class ExtractionSinkTests
     /// <returns>The configured sink.</returns>
     private static ExtractionSink NewSink(TempScratch temp, ExtractionOptions options)
     {
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         return new ExtractionSink(folder, options);
     }
 

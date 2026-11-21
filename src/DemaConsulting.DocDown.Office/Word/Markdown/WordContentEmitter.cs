@@ -413,30 +413,20 @@ internal static class WordContentEmitter
     /// <param name="model">The model to walk.</param>
     /// <returns>The image references, deduplication left to the sink.</returns>
     /// <remarks>Pure.</remarks>
-    private static List<WordImageRef> CollectImages(WordDocumentModel model)
-    {
-        var images = new List<WordImageRef>();
-        foreach (var block in model.Body)
-        {
-            if (block is { Kind: WordBlockKind.Image, Image: { } image })
-            {
-                images.Add(image);
-            }
-        }
+    private static List<WordImageRef> CollectImages(WordDocumentModel model) =>
+        [.. AllBlocks(model)
+            .Where(block => block.Kind == WordBlockKind.Image)
+            .Select(block => block.Image)
+            .OfType<WordImageRef>()];
 
-        foreach (var section in model.DocumentControl)
-        {
-            foreach (var block in section.Blocks)
-            {
-                if (block is { Kind: WordBlockKind.Image, Image: { } image })
-                {
-                    images.Add(image);
-                }
-            }
-        }
-
-        return images;
-    }
+    /// <summary>
+    ///     Enumerates every block in document order: the body, then each document-control subsection.
+    /// </summary>
+    /// <param name="model">The model to walk.</param>
+    /// <returns>The blocks in document order.</returns>
+    /// <remarks>Pure.</remarks>
+    private static IEnumerable<WordBlock> AllBlocks(WordDocumentModel model) =>
+        model.Body.Concat(model.DocumentControl.SelectMany(section => section.Blocks));
 
     /// <summary>
     ///     Reports the extraction notes the model implies beyond the images written earlier.
@@ -585,26 +575,10 @@ internal static class WordContentEmitter
     /// <param name="model">The model to walk.</param>
     /// <returns>The table models in document order.</returns>
     /// <remarks>Pure.</remarks>
-    private static IEnumerable<WordTableModel> EnumerateTables(WordDocumentModel model)
-    {
-        foreach (var block in model.Body)
-        {
-            if (block is { Kind: WordBlockKind.Table, Table: { } table })
-            {
-                yield return table;
-            }
-        }
-
-        foreach (var section in model.DocumentControl)
-        {
-            foreach (var block in section.Blocks)
-            {
-                if (block is { Kind: WordBlockKind.Table, Table: { } table })
-                {
-                    yield return table;
-                }
-            }
-        }
-    }
+    private static IEnumerable<WordTableModel> EnumerateTables(WordDocumentModel model) =>
+        AllBlocks(model)
+            .Where(block => block.Kind == WordBlockKind.Table)
+            .Select(block => block.Table)
+            .OfType<WordTableModel>();
 }
 

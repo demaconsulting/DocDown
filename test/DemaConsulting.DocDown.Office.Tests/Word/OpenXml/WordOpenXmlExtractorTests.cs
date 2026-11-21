@@ -47,7 +47,7 @@ public class WordOpenXmlExtractorTests
         var scratch = await ExtractAsync(temp, "vector.docx", DocxFixtures.DocumentWithVectorImage());
 
         Assert.Equal(ExtractionOutcome.Produced, scratch.Result.Outcome);
-        Assert.Single(Directory.GetFiles(Path.Combine(scratch.Folder, "images")));
+        Assert.Single(Directory.GetFiles(Path.Join(scratch.Folder, "images")));
         Assert.Empty(scratch.Result.Notes);
         ContractAssert.LayoutPresent(scratch.Folder);
     }
@@ -80,7 +80,7 @@ public class WordOpenXmlExtractorTests
         Assert.Equal(ExtractionOutcome.Produced, scratch.Result.Outcome);
         Assert.Empty(scratch.Result.Notes);
 
-        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch.Folder, "manifest.json"), Ct));
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(scratch.Folder, "manifest.json"), Ct));
         var textBlocks = manifest.RootElement
             .GetProperty("contentFeatures")
             .EnumerateArray()
@@ -103,7 +103,7 @@ public class WordOpenXmlExtractorTests
         Assert.Equal(ExtractionOutcome.Produced, scratch.Result.Outcome);
         Assert.Contains(scratch.Result.Notes, note => note.Message.Contains("Page rendering was requested", StringComparison.Ordinal));
         Assert.Contains(scratch.Result.Notes, note => note.Message.Contains("pages were not rendered", StringComparison.Ordinal));
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch.Folder, "summary.txt"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch.Folder, "summary.txt"), Ct);
         Assert.DoesNotContain("install", summary, StringComparison.OrdinalIgnoreCase);
         ContractAssert.LayoutPresent(scratch.Folder);
     }
@@ -117,7 +117,7 @@ public class WordOpenXmlExtractorTests
         using var temp = new TempScratch();
         var scratch = await ExtractAsync(temp, "logo.docx", DocxFixtures.DocumentWithHeaderLogo());
 
-        Assert.Single(Directory.GetFiles(Path.Combine(scratch.Folder, "images")));
+        Assert.Single(Directory.GetFiles(Path.Join(scratch.Folder, "images")));
         ContractAssert.LayoutPresent(scratch.Folder);
     }
 
@@ -186,7 +186,7 @@ public class WordOpenXmlExtractorTests
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
             await WordTestHarness.ExtractAsync(
-                new WordOpenXmlExtractor(), source, Path.Combine(temp.Path, "out"), new ExtractionOptions(),
+                new WordOpenXmlExtractor(), source, Path.Join(temp.Path, "out"), new ExtractionOptions(),
                 CoreFormat.Docx, cancelled.Token));
     }
 
@@ -199,7 +199,7 @@ public class WordOpenXmlExtractorTests
         using var temp = new TempScratch();
         var scratch = await ExtractAsync(temp, "breaks.docx", DocxFixtures.DocumentWithLineAndPageBreaks());
 
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch.Folder, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch.Folder, "content.md"), Ct);
         Assert.Contains("first line  \nsecond line", content, StringComparison.Ordinal);
         Assert.Contains("\n---\n", content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch.Folder);
@@ -214,7 +214,7 @@ public class WordOpenXmlExtractorTests
         using var temp = new TempScratch();
         var scratch = await ExtractAsync(temp, "footnoted.docx", DocxFixtures.DocumentWithFootnote());
 
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch.Folder, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch.Folder, "content.md"), Ct);
         Assert.Contains("[^1]", content, StringComparison.Ordinal);
         Assert.Contains("## Footnotes", content, StringComparison.Ordinal);
         Assert.Contains("[^1]: The footnote body", content, StringComparison.Ordinal);
@@ -247,9 +247,9 @@ public class WordOpenXmlExtractorTests
         TempScratch temp, string name, byte[] bytes, Action<ExtractionOptions>? configure = null)
     {
         var engine = new DocDownBuilder().AddWord().Build();
-        var input = Path.Combine(temp.Path, name);
+        var input = Path.Join(temp.Path, name);
         await File.WriteAllBytesAsync(input, bytes, Ct);
-        var scratch = Path.Combine(temp.Path, "out-" + Path.GetFileNameWithoutExtension(name));
+        var scratch = Path.Join(temp.Path, "out-" + Path.GetFileNameWithoutExtension(name));
         var options = new ExtractionOptions();
         configure?.Invoke(options);
         var result = await engine.ExtractAsync(DocumentSource.FromFile(input), scratch, options, Ct);

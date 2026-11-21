@@ -5,7 +5,7 @@ package DocDownPowerPointRendering {
         doc /* The superset backend: delegates the managed aspects, rasterizes the slides, isolates per-slide faults. */
 
         metadata info : SoftwareInfo {
-            sourceFiles = ("src/DemaConsulting.DocDown.PowerPoint.Rendering/PowerPointPageRenderingExtractor.cs");
+            sourceFiles = ("src/DemaConsulting.DocDown.PowerPoint.Rendering/PowerPointPageRenderingExtractor.cs", "src/Shared/PageRendering/PageRenderingPipeline.cs");
             testFiles = ("test/DemaConsulting.DocDown.PowerPoint.Rendering.Tests/PowerPointPageRenderingExtractorTests.cs");
             designFiles = ("docs/design/docdown-powerpoint-rendering/powerpoint-page-rendering-extractor.md");
             verificationFiles = ("docs/verification/docdown-powerpoint-rendering/powerpoint-page-rendering-extractor.md");

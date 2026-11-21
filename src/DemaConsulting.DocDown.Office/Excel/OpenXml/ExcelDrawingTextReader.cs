@@ -42,17 +42,9 @@ internal static class ExcelDrawingTextReader
             return [];
         }
 
-        var texts = new List<string>();
-        foreach (var shape in drawing.Descendants<Xdr.Shape>())
-        {
-            var text = TextOf(shape);
-            if (text.Length > 0)
-            {
-                texts.Add(text);
-            }
-        }
-
-        return texts;
+        return [.. drawing.Descendants<Xdr.Shape>()
+            .Select(TextOf)
+            .Where(text => text.Length > 0)];
     }
 
     /// <summary>

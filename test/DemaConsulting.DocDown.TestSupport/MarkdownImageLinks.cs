@@ -62,13 +62,13 @@ public static class MarkdownImageLinks
 
         // Gather the content entry point and every split part file; either may carry resource links
         var documents = new List<string>();
-        var contentPath = Path.Combine(scratchRoot, "content.md");
+        var contentPath = Path.Join(scratchRoot, "content.md");
         if (File.Exists(contentPath))
         {
             documents.Add(contentPath);
         }
 
-        var partsFolder = Path.Combine(scratchRoot, "parts");
+        var partsFolder = Path.Join(scratchRoot, "parts");
         if (Directory.Exists(partsFolder))
         {
             documents.AddRange(Directory.GetFiles(partsFolder, "*.md", SearchOption.AllDirectories));
@@ -122,7 +122,7 @@ public static class MarkdownImageLinks
             }
 
             // Resolve the target relative to the containing document, exactly as a renderer would
-            var candidate = Path.GetFullPath(Path.Combine(directory, target.Replace('/', Path.DirectorySeparatorChar)));
+            var candidate = Path.GetFullPath(Path.Join(directory, target.Replace('/', Path.DirectorySeparatorChar)));
             if (File.Exists(candidate))
             {
                 resolved++;

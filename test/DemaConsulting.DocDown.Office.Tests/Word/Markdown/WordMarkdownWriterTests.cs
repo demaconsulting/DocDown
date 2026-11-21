@@ -9,7 +9,7 @@ namespace DemaConsulting.DocDown.Office.Tests.Word.Markdown;
 public class WordMarkdownWriterTests
 {
     /// <summary>An empty image path map for text-only models.</summary>
-    private static readonly Dictionary<string, string> NoImages = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, string> NoImages = [with(StringComparer.Ordinal)];
 
     /// <summary>
     ///     Proves headings render as the matching number of hash marks.

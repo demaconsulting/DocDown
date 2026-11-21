@@ -70,12 +70,13 @@ internal static class VisioShapeLabeler
     ///     stencil variants (<c>Dynamic connector</c>, <c>Line-curve connector</c>) without
     ///     enumerating them.
     /// </remarks>
-    private static readonly HashSet<string> LineMasters = new(StringComparer.OrdinalIgnoreCase)
-    {
+    private static readonly HashSet<string> LineMasters =
+    [
+        with(StringComparer.OrdinalIgnoreCase),
         "Straight Line",
         "Curved Line",
         "Freeform Line"
-    };
+    ];
 
     /// <summary>
     ///     The word that marks a master as describing the connector itself.
