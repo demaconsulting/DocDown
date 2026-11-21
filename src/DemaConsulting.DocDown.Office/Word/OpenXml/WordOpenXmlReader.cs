@@ -41,7 +41,7 @@ internal sealed class WordOpenXmlReader
 
     /// <summary>The field instructions whose result is page-numbering furniture.</summary>
     private static readonly HashSet<string> FurnitureFieldInstructions =
-        new(StringComparer.OrdinalIgnoreCase) { "PAGE", "NUMPAGES", "SECTIONPAGES", "SECTIONPAGESNUM" };
+        [with(StringComparer.OrdinalIgnoreCase), "PAGE", "NUMPAGES", "SECTIONPAGES", "SECTIONPAGESNUM"];
 
     /// <summary>The numbering map from a numbering id and level to whether the list is ordered.</summary>
     private Dictionary<int, Dictionary<int, bool>> _numbering = [];
@@ -100,7 +100,7 @@ internal sealed class WordOpenXmlReader
     ///     A set rather than a counter because a paragraph can be walked more than once (see
     ///     <see cref="WalkContainer"/>); identity keeps each source symbol counted exactly once.
     /// </remarks>
-    private readonly HashSet<W.SymbolChar> _unmappedSymbols = new(ReferenceEqualityComparer.Instance);
+    private readonly HashSet<W.SymbolChar> _unmappedSymbols = [with(ReferenceEqualityComparer.Instance)];
 
     /// <summary>The text of the nearest preceding heading in the body walk, for image naming context.</summary>
     /// <remarks>
@@ -125,7 +125,7 @@ internal sealed class WordOpenXmlReader
     ///     walk because only the walk knows which heading preceded the anchor and which text it
     ///     bracketed; <see cref="BuildComments"/> reads it afterwards.
     /// </remarks>
-    private readonly Dictionary<string, CommentAnchor> _commentAnchors = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, CommentAnchor> _commentAnchors = [with(StringComparer.Ordinal)];
 
     /// <summary>The comment ids whose anchored range is currently open in the walk.</summary>
     /// <remarks>
@@ -350,13 +350,12 @@ internal sealed class WordOpenXmlReader
     {
         var inlines = new List<WordInline>(_carryInlines);
         var images = new List<WordImageRef>(_carryImages);
-        var pageBreak = _carryPageBreak;
+        var walk = new RunWalk(part, images, stripFurniture) { PageBreak = _carryPageBreak };
         _carryInlines.Clear();
         _carryImages.Clear();
         _carryPageBreak = false;
-        var hadFurnitureField = false;
-        WalkContainer(paragraph, part, new Stack<FieldFrame>(), inlines, images, stripFurniture,
-            ref pageBreak, ref hadFurnitureField);
+        WalkContainer(paragraph, inlines, walk);
+        var pageBreak = walk.PageBreak;
 
         // A deleted paragraph mark merges this paragraph into the next one, in both modes: the
         // content waits and is emitted as part of the following paragraph, which decides the kind
@@ -423,55 +422,45 @@ internal sealed class WordOpenXmlReader
     ///     tracked-change mode and field furniture stripping.
     /// </summary>
     /// <param name="container">The container to walk (a paragraph, hyperlink, inserted run, or field).</param>
-    /// <param name="part">The part for image and hyperlink resolution.</param>
-    /// <param name="fields">The active complex-field frames.</param>
     /// <param name="inlines">The inline list to append to.</param>
-    /// <param name="images">The image list to append to.</param>
-    /// <param name="stripFurniture">Whether to strip page-numbering field results.</param>
-    /// <param name="pageBreak">Set to <see langword="true"/> when a page break is seen.</param>
-    /// <param name="hadFurnitureField">Set to <see langword="true"/> when a furniture field is seen.</param>
+    /// <param name="walk">The walk state; its <see cref="RunWalk.PageBreak"/> and <see cref="RunWalk.HadFurnitureField"/> flags are set as they are seen.</param>
     /// <remarks>
     ///     In markup mode inserted runs are tagged inserted and deleted runs are kept and tagged
     ///     deleted (a move is a deletion at its source and an insertion at its destination); in the
     ///     accepted view inserted runs are included untagged and deleted runs dropped. Counting is
     ///     done by <see cref="WordRevisionScanner"/>, not here, because this walk can visit a
-    ///     paragraph more than once. Side effect: appends to <paramref name="inlines"/> and
-    ///     <paramref name="images"/>.
+    ///     paragraph more than once. Side effect: appends to <paramref name="inlines"/> and the
+    ///     walk's image list.
     /// </remarks>
-    private void WalkContainer(
-        OpenXmlElement container, OpenXmlPartContainer part, Stack<FieldFrame> fields,
-        List<WordInline> inlines, List<WordImageRef> images, bool stripFurniture,
-        ref bool pageBreak, ref bool hadFurnitureField)
+    private void WalkContainer(OpenXmlElement container, List<WordInline> inlines, RunWalk walk)
     {
         foreach (var child in container.ChildElements)
         {
             switch (child)
             {
                 case W.Run run:
-                    ProcessRun(run, part, fields, inlines, images, stripFurniture, ref pageBreak, ref hadFurnitureField);
+                    ProcessRun(run, inlines, walk);
                     break;
 
                 case W.InsertedRun or W.MoveToRun:
-                    WalkRevision(child, WordInlineRevision.Inserted, part, fields, inlines, images, stripFurniture,
-                        ref pageBreak, ref hadFurnitureField);
+                    WalkRevision(child, WordInlineRevision.Inserted, inlines, walk);
                     break;
 
                 case W.DeletedRun or W.MoveFromRun:
                     // Accepted view: a deleted run contributes nothing
                     if (_markup)
                     {
-                        WalkRevision(child, WordInlineRevision.Deleted, part, fields, inlines, images, stripFurniture,
-                            ref pageBreak, ref hadFurnitureField);
+                        WalkRevision(child, WordInlineRevision.Deleted, inlines, walk);
                     }
 
                     break;
 
                 case W.Hyperlink hyperlink:
-                    AppendHyperlink(hyperlink, part, fields, inlines, images, stripFurniture, ref pageBreak, ref hadFurnitureField);
+                    AppendHyperlink(hyperlink, inlines, walk);
                     break;
 
                 case W.SimpleField simpleField:
-                    AppendSimpleField(simpleField, part, fields, inlines, images, stripFurniture, ref pageBreak, ref hadFurnitureField);
+                    AppendSimpleField(simpleField, inlines, walk);
                     break;
 
                 case W.CommentRangeStart rangeStart:
@@ -493,27 +482,19 @@ internal sealed class WordOpenXmlReader
     /// </summary>
     /// <param name="element">The revision element.</param>
     /// <param name="revision">The state its runs carry in markup mode.</param>
-    /// <param name="part">The part for image and hyperlink resolution.</param>
-    /// <param name="fields">The active complex-field frames.</param>
     /// <param name="inlines">The inline list to append to.</param>
-    /// <param name="images">The image list to append to.</param>
-    /// <param name="stripFurniture">Whether to strip page-numbering field results.</param>
-    /// <param name="pageBreak">Set to <see langword="true"/> when a page break is seen.</param>
-    /// <param name="hadFurnitureField">Set to <see langword="true"/> when a furniture field is seen.</param>
+    /// <param name="walk">The walk state; its <see cref="RunWalk.PageBreak"/> and <see cref="RunWalk.HadFurnitureField"/> flags are set as they are seen.</param>
     /// <remarks>
     ///     In the accepted view an insertion is walked untagged. The previous state is restored
-    ///     afterwards so nesting is safe. Side effect: appends to <paramref name="inlines"/> and <paramref name="images"/>.
+    ///     afterwards so nesting is safe. Side effect: appends to <paramref name="inlines"/> and the walk's image list.
     /// </remarks>
-    private void WalkRevision(
-        OpenXmlElement element, WordInlineRevision revision, OpenXmlPartContainer part, Stack<FieldFrame> fields,
-        List<WordInline> inlines, List<WordImageRef> images, bool stripFurniture,
-        ref bool pageBreak, ref bool hadFurnitureField)
+    private void WalkRevision(OpenXmlElement element, WordInlineRevision revision, List<WordInline> inlines, RunWalk walk)
     {
         var previous = _revision;
         _revision = _markup ? revision : WordInlineRevision.None;
         try
         {
-            WalkContainer(element, part, fields, inlines, images, stripFurniture, ref pageBreak, ref hadFurnitureField);
+            WalkContainer(element, inlines, walk);
         }
         finally
         {
@@ -525,18 +506,15 @@ internal sealed class WordOpenXmlReader
     ///     Processes a single run, appending its text and collecting any images and footnote markers.
     /// </summary>
     /// <param name="run">The run to process.</param>
-    /// <param name="part">The part for image resolution.</param>
-    /// <param name="fields">The active complex-field frames.</param>
     /// <param name="inlines">The inline list to append to.</param>
-    /// <param name="images">The image list to append to.</param>
-    /// <param name="stripFurniture">Whether to strip page-numbering field results.</param>
-    /// <param name="pageBreak">Set to <see langword="true"/> when a page break is seen.</param>
-    /// <param name="hadFurnitureField">Set to <see langword="true"/> when a furniture field is seen.</param>
-    /// <remarks>Side effect: appends to <paramref name="inlines"/> and <paramref name="images"/>.</remarks>
-    private void ProcessRun(
-        W.Run run, OpenXmlPartContainer part, Stack<FieldFrame> fields, List<WordInline> inlines,
-        List<WordImageRef> images, bool stripFurniture, ref bool pageBreak, ref bool hadFurnitureField)
+    /// <param name="walk">The walk state; its <see cref="RunWalk.PageBreak"/> and <see cref="RunWalk.HadFurnitureField"/> flags are set as they are seen.</param>
+    /// <remarks>Side effect: appends to <paramref name="inlines"/> and the walk's image list.</remarks>
+    private void ProcessRun(W.Run run, List<WordInline> inlines, RunWalk walk)
     {
+        var part = walk.Part;
+        var fields = walk.Fields;
+        var images = walk.Images;
+        var stripFurniture = walk.StripFurniture;
         var bold = IsOn(run.RunProperties?.Bold);
         var italic = IsOn(run.RunProperties?.Italic);
 
@@ -559,7 +537,7 @@ internal sealed class WordOpenXmlReader
             switch (child)
             {
                 case W.FieldChar fieldChar:
-                    UpdateFieldState(fields, fieldChar, ref hadFurnitureField);
+                    walk.HadFurnitureField |= UpdateFieldState(fields, fieldChar);
                     break;
 
                 case W.FieldCode or W.DeletedFieldCode:
@@ -593,7 +571,7 @@ internal sealed class WordOpenXmlReader
                 case W.Break brk:
                     if (brk.Type?.Value == W.BreakValues.Page)
                     {
-                        pageBreak = true;
+                        walk.PageBreak = true;
                     }
                     else if (!SkipText(fields, stripFurniture))
                     {
@@ -737,6 +715,39 @@ internal sealed class WordOpenXmlReader
         text.Clear();
     }
 
+    /// <summary>
+    ///     The state threaded through one inline walk of a paragraph and its nested run containers.
+    /// </summary>
+    /// <remarks>
+    ///     The run, hyperlink, field, and revision handlers all need the same part, complex-field
+    ///     stack, image list, and furniture policy, and all report the same two flags back. Grouping
+    ///     them keeps those handlers' signatures to what actually varies per call (the element and
+    ///     the inline list it appends to). A fresh instance is used per walked paragraph.
+    /// </remarks>
+    /// <param name="part">The part the walked content belongs to, for image and hyperlink resolution.</param>
+    /// <param name="images">The image list the walk appends to.</param>
+    /// <param name="stripFurniture">Whether page-numbering field results are stripped (headers and footers).</param>
+    private sealed class RunWalk(OpenXmlPartContainer part, List<WordImageRef> images, bool stripFurniture)
+    {
+        /// <summary>Gets the part the walked content belongs to.</summary>
+        public OpenXmlPartContainer Part { get; } = part;
+
+        /// <summary>Gets the active complex-field frames.</summary>
+        public Stack<FieldFrame> Fields { get; } = new();
+
+        /// <summary>Gets the image list the walk appends to.</summary>
+        public List<WordImageRef> Images { get; } = images;
+
+        /// <summary>Gets a value indicating whether page-numbering field results are stripped.</summary>
+        public bool StripFurniture { get; } = stripFurniture;
+
+        /// <summary>Gets or sets a value indicating whether a page break was seen.</summary>
+        public bool PageBreak { get; set; }
+
+        /// <summary>Gets or sets a value indicating whether a page-numbering furniture field was seen.</summary>
+        public bool HadFurnitureField { get; set; }
+    }
+
     /// <summary>Redline-mode formatting carried by one run.</summary>
     /// <param name="Strike">Whether the run is single-struck.</param>
     /// <param name="DoubleStrike">Whether the run is double-struck.</param>
@@ -751,26 +762,19 @@ internal sealed class WordOpenXmlReader
     ///     Appends a hyperlink's text as a single linked inline.
     /// </summary>
     /// <param name="hyperlink">The hyperlink element.</param>
-    /// <param name="part">The part for relationship resolution.</param>
-    /// <param name="fields">The active complex-field frames.</param>
     /// <param name="inlines">The inline list to append to.</param>
-    /// <param name="images">The image list to append to.</param>
-    /// <param name="stripFurniture">Whether to strip page-numbering field results.</param>
-    /// <param name="pageBreak">Set to <see langword="true"/> when a page break is seen.</param>
-    /// <param name="hadFurnitureField">Set to <see langword="true"/> when a furniture field is seen.</param>
+    /// <param name="walk">The walk state; its <see cref="RunWalk.PageBreak"/> and <see cref="RunWalk.HadFurnitureField"/> flags are set as they are seen.</param>
     /// <remarks>
     ///     When the content carries any revision or redline formatting, each inner run keeps its own
     ///     state and link; otherwise the text is flattened into one linked inline as before.
     ///     Side effect: appends to <paramref name="inlines"/>.
     /// </remarks>
-    private void AppendHyperlink(
-        W.Hyperlink hyperlink, OpenXmlPartContainer part, Stack<FieldFrame> fields, List<WordInline> inlines,
-        List<WordImageRef> images, bool stripFurniture, ref bool pageBreak, ref bool hadFurnitureField)
+    private void AppendHyperlink(W.Hyperlink hyperlink, List<WordInline> inlines, RunWalk walk)
     {
         var inner = new List<WordInline>();
-        WalkContainer(hyperlink, part, fields, inner, images, stripFurniture, ref pageBreak, ref hadFurnitureField);
+        WalkContainer(hyperlink, inner, walk);
 
-        var href = ResolveHyperlink(hyperlink, part);
+        var href = ResolveHyperlink(hyperlink, walk.Part);
         if (inner.Any(inline => inline.Revision != WordInlineRevision.None || inline.Strike || inline.DoubleStrike || inline.Underline))
         {
             foreach (var inline in inner)
@@ -794,29 +798,22 @@ internal sealed class WordOpenXmlReader
     ///     Appends the cached result of a simple field, honoring furniture stripping.
     /// </summary>
     /// <param name="field">The simple field element.</param>
-    /// <param name="part">The part for image resolution.</param>
-    /// <param name="fields">The active complex-field frames.</param>
     /// <param name="inlines">The inline list to append to.</param>
-    /// <param name="images">The image list to append to.</param>
-    /// <param name="stripFurniture">Whether to strip page-numbering field results.</param>
-    /// <param name="pageBreak">Set to <see langword="true"/> when a page break is seen.</param>
-    /// <param name="hadFurnitureField">Set to <see langword="true"/> when a furniture field is seen.</param>
+    /// <param name="walk">The walk state; its <see cref="RunWalk.PageBreak"/> and <see cref="RunWalk.HadFurnitureField"/> flags are set as they are seen.</param>
     /// <remarks>Side effect: appends to <paramref name="inlines"/>.</remarks>
-    private void AppendSimpleField(
-        W.SimpleField field, OpenXmlPartContainer part, Stack<FieldFrame> fields, List<WordInline> inlines,
-        List<WordImageRef> images, bool stripFurniture, ref bool pageBreak, ref bool hadFurnitureField)
+    private void AppendSimpleField(W.SimpleField field, List<WordInline> inlines, RunWalk walk)
     {
         var furniture = IsFurnitureInstruction(field.Instruction?.Value);
         if (furniture)
         {
-            hadFurnitureField = true;
-            if (stripFurniture)
+            walk.HadFurnitureField = true;
+            if (walk.StripFurniture)
             {
                 return;
             }
         }
 
-        WalkContainer(field, part, fields, inlines, images, stripFurniture, ref pageBreak, ref hadFurnitureField);
+        WalkContainer(field, inlines, walk);
     }
 
     /// <summary>
@@ -824,9 +821,9 @@ internal sealed class WordOpenXmlReader
     /// </summary>
     /// <param name="fields">The field frame stack.</param>
     /// <param name="fieldChar">The field character.</param>
-    /// <param name="hadFurnitureField">Set to <see langword="true"/> when the field is furniture.</param>
+    /// <returns><see langword="true"/> when this character opens the result of a furniture field; otherwise <see langword="false"/>.</returns>
     /// <remarks>Side effect: mutates <paramref name="fields"/>.</remarks>
-    internal static void UpdateFieldState(Stack<FieldFrame> fields, W.FieldChar fieldChar, ref bool hadFurnitureField)
+    internal static bool UpdateFieldState(Stack<FieldFrame> fields, W.FieldChar fieldChar)
     {
         switch (fieldChar.FieldCharType?.Value)
         {
@@ -838,8 +835,7 @@ internal sealed class WordOpenXmlReader
                 var frame = fields.Peek();
                 frame.InResult = true;
                 frame.Furniture = IsFurnitureInstruction(frame.Instruction.ToString());
-                hadFurnitureField |= frame.Furniture;
-                break;
+                return frame.Furniture;
 
             case W.FieldCharValues f when f == W.FieldCharValues.End && fields.Count > 0:
                 fields.Pop();
@@ -848,6 +844,8 @@ internal sealed class WordOpenXmlReader
             default:
                 break;
         }
+
+        return false;
     }
 
     /// <summary>
@@ -1031,12 +1029,7 @@ internal sealed class WordOpenXmlReader
     /// </remarks>
     private string ReadParagraphText(OpenXmlPartContainer part, W.Paragraph paragraph)
     {
-        var inlines = new List<WordInline>();
-        var discardedImages = new List<WordImageRef>();
-        var pageBreak = false;
-        var hadFurnitureField = false;
-        WalkContainer(paragraph, part, new Stack<FieldFrame>(), inlines, discardedImages,
-            stripFurniture: false, ref pageBreak, ref hadFurnitureField);
+        var inlines = WalkParagraphInlines(part, paragraph, discardedImages: []);
         return string.Concat(inlines.Where(inline => inline.Revision != WordInlineRevision.Deleted)
             .Select(inline => inline.Text)).Trim();
     }
@@ -1061,8 +1054,6 @@ internal sealed class WordOpenXmlReader
 
         var bodyInlines = new List<WordInline>();
         var images = new List<WordImageRef>();
-        var pageBreak = false;
-        var hadFurniture = false;
 
         // Relationships inside a footnote body (for example a picture) belong to the footnotes part
         var footnotePart = (part as MainDocumentPart)?.FootnotesPart ?? part;
@@ -1074,8 +1065,7 @@ internal sealed class WordOpenXmlReader
         {
             foreach (var paragraph in footnote.Elements<W.Paragraph>())
             {
-                WalkContainer(paragraph, footnotePart, new Stack<FieldFrame>(), bodyInlines, images, stripFurniture: false,
-                    ref pageBreak, ref hadFurniture);
+                WalkContainer(paragraph, bodyInlines, new RunWalk(footnotePart, images, stripFurniture: false));
             }
         }
         finally
@@ -1123,51 +1113,133 @@ internal sealed class WordOpenXmlReader
                 firstRowIsHeader = IsHeaderRow(rowElement);
             }
 
-            var cells = new List<WordTableCell>();
-            foreach (var cellElement in rowElement.Elements<W.TableCell>())
-            {
-                var cellRevision = RevisionOf(cellElement.TableCellProperties?.GetFirstChild<W.CellDeletion>(),
-                    cellElement.TableCellProperties?.GetFirstChild<W.CellInsertion>());
-                var effective = rowRevision != WordInlineRevision.None ? rowRevision : cellRevision;
-                var (content, nestedInCell) = BuildCellContent(part, cellElement);
-                nested += nestedInCell;
-                if (effective == WordInlineRevision.Deleted && !_markup)
-                {
-                    content = new WordTableCell([]);
-                }
-                else if (_markup && effective != WordInlineRevision.None)
-                {
-                    content = new WordTableCell(content.Content
-                        .Select(inline => inline.Raw || inline.Revision != WordInlineRevision.None
-                            ? inline
-                            : inline with { Revision = effective })
-                        .ToList());
-                }
-
-                if (IsVerticalMergeContinuation(cellElement))
-                {
-                    cells.Add(new WordTableCell([]));
-                    merged++;
-                }
-                else
-                {
-                    cells.Add(content);
-                }
-
-                var span = GridSpanOf(cellElement);
-                for (var extra = 1; extra < span; extra++)
-                {
-                    cells.Add(new WordTableCell([]));
-                    merged++;
-                }
-            }
-
+            var (cells, mergedInRow, nestedInRow) = BuildRowCells(part, rowElement, rowRevision);
+            merged += mergedInRow;
+            nested += nestedInRow;
             rows.Add(cells);
         }
 
         var hasContent = rows.Any(row => row.Any(cell =>
             cell.Content.Any(inline => !string.IsNullOrWhiteSpace(inline.Text))));
         return hasContent ? new WordTableModel(rows, firstRowIsHeader, merged, nested) : null;
+    }
+
+    /// <summary>
+    ///     Builds the grid cells of one table row, padding merges and applying tracked-change state.
+    /// </summary>
+    /// <param name="part">The part for image resolution.</param>
+    /// <param name="rowElement">The row element.</param>
+    /// <param name="rowRevision">The row's own tracked-change state, which overrides any cell state.</param>
+    /// <returns>The row's cells and the number of merged and nested-table cells it contributed.</returns>
+    /// <remarks>
+    ///     A horizontal merge pads the grid with empty cells and a vertical-merge continuation is
+    ///     emptied, so the row keeps the table's column count. Read-only.
+    /// </remarks>
+    private (List<WordTableCell> Cells, int Merged, int Nested) BuildRowCells(
+        OpenXmlPartContainer part, W.TableRow rowElement, WordInlineRevision rowRevision)
+    {
+        var cells = new List<WordTableCell>();
+        var merged = 0;
+        var nested = 0;
+        foreach (var cellElement in rowElement.Elements<W.TableCell>())
+        {
+            var cellRevision = RevisionOf(cellElement.TableCellProperties?.GetFirstChild<W.CellDeletion>(),
+                cellElement.TableCellProperties?.GetFirstChild<W.CellInsertion>());
+            var effective = rowRevision != WordInlineRevision.None ? rowRevision : cellRevision;
+            var (content, nestedInCell) = BuildCellContent(part, cellElement);
+            nested += nestedInCell;
+            content = ApplyCellRevision(content, effective);
+
+            if (IsVerticalMergeContinuation(cellElement))
+            {
+                cells.Add(new WordTableCell([]));
+                merged++;
+            }
+            else
+            {
+                cells.Add(content);
+            }
+
+            var span = GridSpanOf(cellElement);
+            for (var extra = 1; extra < span; extra++)
+            {
+                cells.Add(new WordTableCell([]));
+                merged++;
+            }
+        }
+
+        return (cells, merged, nested);
+    }
+
+    /// <summary>
+    ///     Applies a cell's effective tracked-change state to its content.
+    /// </summary>
+    /// <param name="content">The cell content as walked.</param>
+    /// <param name="effective">The effective revision of the cell (the row's, else the cell's own).</param>
+    /// <returns>The content to show for the cell in the current rendering mode.</returns>
+    /// <remarks>
+    ///     A deleted cell is emptied in the accepted view; in markup mode an inserted or deleted cell
+    ///     tags every untagged inline with its state so the change stays visible. Pure.
+    /// </remarks>
+    private WordTableCell ApplyCellRevision(WordTableCell content, WordInlineRevision effective)
+    {
+        if (effective == WordInlineRevision.Deleted && !_markup)
+        {
+            return new WordTableCell([]);
+        }
+
+        if (_markup && effective != WordInlineRevision.None)
+        {
+            return new WordTableCell(content.Content
+                .Select(inline => inline.Raw || inline.Revision != WordInlineRevision.None
+                    ? inline
+                    : inline with { Revision = effective })
+                .ToList());
+        }
+
+        return content;
+    }
+
+    /// <summary>
+    ///     Walks one paragraph with a fresh field context and returns its inlines.
+    /// </summary>
+    /// <param name="part">The part the paragraph belongs to, for image and hyperlink resolution.</param>
+    /// <param name="paragraph">The paragraph to walk.</param>
+    /// <param name="discardedImages">The list that receives any images found, which the caller does not surface.</param>
+    /// <returns>The paragraph's inlines, which may be empty.</returns>
+    /// <remarks>
+    ///     Used where only a paragraph's text matters (captions, table cells): page breaks and
+    ///     furniture fields are irrelevant there, so the walk's flags are ignored. Side effect: appends
+    ///     to <paramref name="discardedImages"/>.
+    /// </remarks>
+    private List<WordInline> WalkParagraphInlines(
+        OpenXmlPartContainer part, W.Paragraph paragraph, List<WordImageRef> discardedImages)
+    {
+        var inlines = new List<WordInline>();
+        WalkContainer(paragraph, inlines, new RunWalk(part, discardedImages, stripFurniture: false));
+        return inlines;
+    }
+
+    /// <summary>
+    ///     Appends one line of cell content, separated from earlier content by a hard break.
+    /// </summary>
+    /// <param name="cellInlines">The cell's accumulated inlines.</param>
+    /// <param name="line">The inlines of the line to append; nothing is appended when empty.</param>
+    /// <param name="joinWithBreak">Whether a hard break separates the line from earlier content.</param>
+    /// <remarks>Side effect: appends to <paramref name="cellInlines"/>.</remarks>
+    private static void AppendCellLine(List<WordInline> cellInlines, List<WordInline> line, bool joinWithBreak)
+    {
+        if (line.Count == 0)
+        {
+            return;
+        }
+
+        if (cellInlines.Count > 0 && joinWithBreak)
+        {
+            cellInlines.Add(new WordInline("\n", Raw: true));
+        }
+
+        cellInlines.AddRange(line);
     }
 
     /// <summary>
@@ -1191,21 +1263,9 @@ internal sealed class WordOpenXmlReader
             switch (element)
             {
                 case W.Paragraph paragraph:
-                    var paragraphInlines = new List<WordInline>();
-                    var images = new List<WordImageRef>();
-                    var pageBreak = false;
-                    var hadFurniture = false;
-                    WalkContainer(paragraph, part, new Stack<FieldFrame>(), paragraphInlines, images,
-                        stripFurniture: false, ref pageBreak, ref hadFurniture);
-                    if (paragraphInlines.Count > 0)
-                    {
-                        if (inlines.Count > 0 && !mergeNext)
-                        {
-                            inlines.Add(new WordInline("\n", Raw: true));
-                        }
-
-                        inlines.AddRange(paragraphInlines);
-                    }
+                    // Images inside a cell are not surfaced in the table; only its text is
+                    var paragraphInlines = WalkParagraphInlines(part, paragraph, discardedImages: []);
+                    AppendCellLine(inlines, paragraphInlines, joinWithBreak: !mergeNext);
 
                     // A deleted paragraph mark merges this paragraph with the next, so no break joins them
                     mergeNext = HasDeletedParagraphMark(paragraph);
@@ -1216,12 +1276,7 @@ internal sealed class WordOpenXmlReader
                     var flattened = FlattenNestedTable(part, innerTable);
                     if (flattened.Length > 0)
                     {
-                        if (inlines.Count > 0)
-                        {
-                            inlines.Add(new WordInline("\n", Raw: true));
-                        }
-
-                        inlines.Add(new WordInline(flattened, Raw: true));
+                        AppendCellLine(inlines, [new WordInline(flattened, Raw: true)], joinWithBreak: true);
                     }
 
                     break;
@@ -1426,13 +1481,13 @@ internal sealed class WordOpenXmlReader
         // Same carry/flush merge as the body: a deleted paragraph mark joins this paragraph to the next
         var inlines = new List<WordInline>(_carryInlines);
         var images = new List<WordImageRef>(_carryImages);
-        var pageBreak = _carryPageBreak;
+        var walk = new RunWalk(part, images, stripFurniture: true) { PageBreak = _carryPageBreak };
         _carryInlines.Clear();
         _carryImages.Clear();
         _carryPageBreak = false;
-        var hadFurnitureField = false;
-        WalkContainer(paragraph, part, new Stack<FieldFrame>(), inlines, images, stripFurniture: true,
-            ref pageBreak, ref hadFurnitureField);
+        WalkContainer(paragraph, inlines, walk);
+        var pageBreak = walk.PageBreak;
+        var hadFurnitureField = walk.HadFurnitureField;
 
         if (HasDeletedParagraphMark(paragraph))
         {
@@ -1577,12 +1632,9 @@ internal sealed class WordOpenXmlReader
         {
             var inlines = new List<WordInline>();
             var images = new List<WordImageRef>();
-            var pageBreak = false;
-            var hadFurniture = false;
             foreach (var paragraph in comment.Elements<W.Paragraph>())
             {
-                WalkContainer(paragraph, mainPart, new Stack<FieldFrame>(), inlines, images,
-                    stripFurniture: false, ref pageBreak, ref hadFurniture);
+                WalkContainer(paragraph, inlines, new RunWalk(mainPart, images, stripFurniture: false));
             }
 
             var location = comment.Id?.Value is { } commentId && locations.TryGetValue(commentId, out var hint)

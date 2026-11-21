@@ -15,7 +15,7 @@ namespace DemaConsulting.DocDown.Word.OpenXml;
 internal sealed record WordTocInfo(HashSet<OpenXmlElement> Paragraphs, int Regions)
 {
     /// <summary>Gets an empty result for a document with no table of contents.</summary>
-    public static WordTocInfo None => new(new HashSet<OpenXmlElement>(ReferenceEqualityComparer.Instance), 0);
+    public static WordTocInfo None => new([with(ReferenceEqualityComparer.Instance)], 0);
 }
 
 /// <summary>
