@@ -1,3 +1,4 @@
+using System.Text;
 using DemaConsulting.DocDown.Core;
 using DemaConsulting.DocDown.Excel.Markdown;
 using DemaConsulting.DocDown.Excel.OpenXml;
@@ -361,6 +362,33 @@ public class ExcelContentEmitterTests
     }
 
     /// <summary>
+    ///     Proves a region whose bounding rectangle is too large to count in 32 bits is not mistaken
+    ///     for a dense table, so the emitter keeps the listing rather than rendering a vast grid.
+    /// </summary>
+    /// <remarks>
+    ///     A 1,431,655,766-row by 3-column rectangle holds 4,294,967,298 cells, which wraps to 2 in
+    ///     32-bit arithmetic and would read as fully dense. Such a row is also beyond Excel's own
+    ///     1,048,576-row limit, so the reference is malformed and left out of the grid.
+    /// </remarks>
+    [Fact]
+    public async Task ExcelContentEmitter_Emit_RowBeyondWorksheetLimit_KeepsListingOnly()
+    {
+        // Arrange: two cells whose bounding rectangle's area overflows a 32-bit integer
+        var cells = new List<ExcelCellModel>
+        {
+            new("A1", "a", null), new("C1431655766", "b", null)
+        };
+
+        // Act: render the sheet
+        var markdown = await RenderSingleSheetAsync(new ExcelSheetModel("Huge", cells, []));
+
+        // Assert: no grid table, and both cells still listed by address
+        Assert.DoesNotContain("| --- |", markdown, StringComparison.Ordinal);
+        Assert.Contains("- `A1`:", markdown, StringComparison.Ordinal);
+        Assert.Contains("- `C1431655766`:", markdown, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Proves a long cell is elided in the table only, with its full verbatim value preserved at
     ///     full length in the address listing below — the verbatim-full-length guarantee is not
     ///     weakened by the table.
@@ -679,7 +707,7 @@ public class ExcelContentEmitterTests
     {
         using var temp = new TempScratch();
         var options = new ExtractionOptions { IncludeEmbeddedImages = true };
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, options);
         var image = new EmbeddedImage([1, 2, 3, 4], "image/png",
             SourceRef: "/xl/media/image1.png", AltText: "Sales chart", SourcePages: [1]);
@@ -733,16 +761,16 @@ public class ExcelContentEmitterTests
     /// <returns>The column's letters.</returns>
     private static string ColumnLetters(int column)
     {
-        var letters = string.Empty;
+        var letters = new StringBuilder();
         var remaining = column;
         while (remaining > 0)
         {
             var zeroBased = (remaining - 1) % 26;
-            letters = (char)('A' + zeroBased) + letters;
+            letters.Insert(0, (char)('A' + zeroBased));
             remaining = (remaining - 1) / 26;
         }
 
-        return letters;
+        return letters.ToString();
     }
 
     /// <summary>

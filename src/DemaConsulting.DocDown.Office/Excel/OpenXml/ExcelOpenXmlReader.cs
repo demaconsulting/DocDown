@@ -194,17 +194,10 @@ internal static class ExcelOpenXmlReader
             return [];
         }
 
-        var ranges = new List<string>();
-        foreach (var merge in mergeCells.Elements<S.MergeCell>())
-        {
-            var reference = merge.Reference?.Value;
-            if (!string.IsNullOrWhiteSpace(reference))
-            {
-                ranges.Add(reference);
-            }
-        }
-
-        return ranges;
+        return [.. mergeCells.Elements<S.MergeCell>()
+            .Select(merge => merge.Reference?.Value)
+            .OfType<string>()
+            .Where(reference => !string.IsNullOrWhiteSpace(reference))];
     }
 
     /// <summary>
