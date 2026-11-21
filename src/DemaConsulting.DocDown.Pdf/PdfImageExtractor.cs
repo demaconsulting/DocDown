@@ -456,7 +456,7 @@ internal static class PdfImageExtractor
     private sealed class ImageAccounting
     {
         /// <summary>Counts of undecodable images by PDF filter name, sorted for deterministic text.</summary>
-        private readonly SortedDictionary<string, int> _undecodableByEncoding = new(StringComparer.Ordinal);
+        private readonly SortedDictionary<string, int> _undecodableByEncoding = [with(StringComparer.Ordinal)];
 
         /// <summary>The references of undecodable images, in document order and bounded in length.</summary>
         private readonly List<string> _undecodableItems = [];

@@ -117,17 +117,9 @@ internal static class ArtifactInventory
         ArgumentNullException.ThrowIfNull(accounted);
         ArgumentNullException.ThrowIfNull(files);
 
-        var unaccounted = new List<string>();
-        foreach (var file in files)
-        {
-            var relative = ToRelativePath(root, file);
-            if (!accounted.Contains(relative))
-            {
-                unaccounted.Add(relative);
-            }
-        }
-
-        return unaccounted;
+        return [.. files
+            .Select(file => ToRelativePath(root, file))
+            .Where(relative => !accounted.Contains(relative))];
     }
 
     /// <summary>

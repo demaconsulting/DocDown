@@ -51,7 +51,7 @@ public sealed class ExtractionSink : IExtractionSink
 
     /// <summary>Maps an image content key to its recorded entry for content deduplication.</summary>
     /// <remarks>Lets a repeated image resolve to the existing path in one lookup without a rescan.</remarks>
-    private readonly Dictionary<string, RecordedImage> _imageByDigest = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, RecordedImage> _imageByDigest = [with(StringComparer.Ordinal)];
 
     /// <summary>The recorded rendered pages, indexed by page number to prevent duplicates.</summary>
     /// <remarks>Kept in insertion order; the companion index deduplicates a re-rendered page.</remarks>
@@ -67,7 +67,7 @@ public sealed class ExtractionSink : IExtractionSink
 
     /// <summary>The relative paths already allocated, used to detect and resolve collisions.</summary>
     /// <remarks>The ordinal prefix makes collisions impossible today; this guards a future change.</remarks>
-    private readonly HashSet<string> _allocatedPaths = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _allocatedPaths = [with(StringComparer.Ordinal)];
 
     /// <summary>The buffered single-flow markdown content.</summary>
     /// <remarks>Accumulated across calls so no content is silently dropped if written in pieces.</remarks>

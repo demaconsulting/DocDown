@@ -411,12 +411,9 @@ public sealed class ScratchFolder
         // Fold accents to base letters by decomposing and dropping the combining marks
         var decomposed = value.Normalize(NormalizationForm.FormKD);
         var stripped = new StringBuilder(decomposed.Length);
-        foreach (var ch in decomposed)
+        foreach (var ch in decomposed.Where(ch => CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark))
         {
-            if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
-            {
-                stripped.Append(ch);
-            }
+            stripped.Append(ch);
         }
 
         // Lowercase invariantly, then map to the [a-z0-9-] alphabet collapsing hyphen runs as we go
@@ -837,7 +834,7 @@ public sealed class ScratchFolder
     private static ExtractionManifest? LoadDocDownManifest(string absolute)
     {
         // Only a structurally valid DocDown manifest can start the reuse guard; it proves the file, not the folder
-        var manifestPath = Path.Combine(absolute, "manifest.json");
+        var manifestPath = Path.Join(absolute, "manifest.json");
         if (!File.Exists(manifestPath))
         {
             return null;

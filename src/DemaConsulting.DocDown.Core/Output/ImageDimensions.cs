@@ -112,7 +112,7 @@ public static class ImageDimensions
             var marker = bytes[pos + 1];
 
             // Standalone markers (SOI, EOI, RSTn, TEM) carry no length payload
-            if (marker is 0xD8 or 0xD9 or 0x01 || marker is >= 0xD0 and <= 0xD7)
+            if (IsStandaloneJpegMarker(marker))
             {
                 pos += 2;
                 continue;
@@ -121,7 +121,7 @@ public static class ImageDimensions
             var segmentLength = (bytes[pos + 2] << 8) | bytes[pos + 3];
 
             // A start-of-frame marker names the frame dimensions; exclude DHT (C4), JPG (C8), and DAC (CC)
-            if (marker is >= 0xC0 and <= 0xCF && marker is not (0xC4 or 0xC8 or 0xCC))
+            if (IsJpegStartOfFrameMarker(marker))
             {
                 height = (bytes[pos + 5] << 8) | bytes[pos + 6];
                 width = (bytes[pos + 7] << 8) | bytes[pos + 8];
@@ -138,6 +138,24 @@ public static class ImageDimensions
 
         return false;
     }
+
+    /// <summary>
+    ///     Reports whether a JPEG marker is a standalone marker that carries no length payload.
+    /// </summary>
+    /// <param name="marker">The marker byte following the <c>0xFF</c> prefix.</param>
+    /// <returns><see langword="true"/> for <c>SOI</c>, <c>EOI</c>, <c>TEM</c>, and <c>RST0</c>..<c>RST7</c>; otherwise <see langword="false"/>.</returns>
+    /// <remarks>Pure.</remarks>
+    private static bool IsStandaloneJpegMarker(byte marker) =>
+        marker is 0xD8 or 0xD9 or 0x01 || marker is >= 0xD0 and <= 0xD7;
+
+    /// <summary>
+    ///     Reports whether a JPEG marker is a start-of-frame marker naming the frame dimensions.
+    /// </summary>
+    /// <param name="marker">The marker byte following the <c>0xFF</c> prefix.</param>
+    /// <returns><see langword="true"/> for <c>SOF0</c>..<c>SOF15</c>; otherwise <see langword="false"/>.</returns>
+    /// <remarks>Excludes <c>DHT</c> (<c>C4</c>), <c>JPG</c> (<c>C8</c>), and <c>DAC</c> (<c>CC</c>), which share the range. Pure.</remarks>
+    private static bool IsJpegStartOfFrameMarker(byte marker) =>
+        marker is >= 0xC0 and <= 0xCF && marker is not (0xC4 or 0xC8 or 0xCC);
 
     /// <summary>
     ///     Reads a GIF's dimensions from its logical screen descriptor.
