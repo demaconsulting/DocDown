@@ -9,7 +9,7 @@
     <style>
       .word { font: bold 92px sans-serif; fill: #ffffff; }
       .eyebrow { font: bold 25px sans-serif; fill: #a5b4fc; }
-      .tag { font: bold 40px sans-serif; fill: #f8fafc; }
+      .tag { font: bold 36px sans-serif; fill: #f8fafc; }
       .body { font: 25px sans-serif; fill: #cbd5e1; }
       .cmd { font: 25px monospace; fill: #e2e8f0; }
       .prompt { fill: #5eead4; }
@@ -116,18 +116,18 @@
   <text class="word" x="52" y="176">Doc</text>
   <text class="word brandText" x="225.8" y="176">Down</text>
   <rect x="58" y="200" width="132" height="6" rx="3" fill="url(#brand)"/>
-  <text class="tag" x="56" y="266">Office and PDF in.</text>
-  <text class="tag brandText" x="56" y="316">Agent-ready out.</text>
-  <text class="body" x="58" y="368">Extracts text, tables, and images</text>
-  <text class="body" x="58" y="402">into one predictable scratch folder</text>
-  <text class="body" x="58" y="436">for people and multimodal AI agents.</text>
+  <text class="tag" x="56" y="266">PDF and Office documents</text>
+  <text class="tag" x="56" y="314" style="fill: #a5b4fc">as Markdown.</text>
+  <text class="body" x="58" y="368">Reads PDF, Word, Excel, PowerPoint,</text>
+  <text class="body" x="58" y="402">and Visio; writes text, tables, and</text>
+  <text class="body" x="58" y="436">images to a scratch folder for agents.</text>
   <rect x="56" y="468" width="480" height="90" rx="12" fill="#0a1022" fill-opacity="0.8" stroke="#a78bfa" stroke-opacity="0.45" stroke-width="1.5"/>
   <text class="cmd prompt" x="78" y="503">$</text>
   <text class="cmd" x="108" y="503">docdown --input</text>
   <text class="cmd file" x="348" y="503">report.pdf</text>
   <text class="cmd" x="138" y="539">--scratch</text>
   <text class="cmd file" x="288" y="539">./out</text>
-  <text class="note" x="58" y="604">Also ships as .NET libraries.</text>
+  <text class="note" x="58" y="604">.NET 8 to 11 libraries &#183; .NET 10 and 11 tool</text>
 
   <!-- Input cards: the document formats DocDown reads -->
   <g>
