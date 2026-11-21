@@ -1,7 +1,4 @@
-# DocDown
-
-<!-- IMPORTANT: All links in this file must be absolute URLs.
-     This file is distributed in packages and relative links will not resolve. -->
+# ![DocDown: PDF and Office documents as Markdown][hero]
 
 [![GitHub forks](https://img.shields.io/github/forks/demaconsulting/DocDown?style=plastic)](https://github.com/demaconsulting/DocDown/network/members)
 [![GitHub stars](https://img.shields.io/github/stars/demaconsulting/DocDown?style=plastic)](https://github.com/demaconsulting/DocDown/stargazers)
@@ -11,8 +8,6 @@
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=demaconsulting_DocDown&metric=alert_status)](https://sonarcloud.io/dashboard?id=demaconsulting_DocDown)
 [![Security](https://sonarcloud.io/api/project_badges/measure?project=demaconsulting_DocDown&metric=security_rating)](https://sonarcloud.io/dashboard?id=demaconsulting_DocDown)
 [![NuGet](https://img.shields.io/nuget/v/DemaConsulting.DocDown.Core?style=plastic)](https://www.nuget.org/packages/DemaConsulting.DocDown.Core)
-
-![DocDown banner: the DocDown name with the tagline 'Office and PDF in. Agent-ready out.' and the command 'docdown --input report.pdf --scratch ./out'. PDF, Word, Excel, PowerPoint, and Visio documents flow on curved arrows into the docdown .NET tool, and arrows lead out to the scratch folder it writes: content.md Markdown with a heading, a table, and a list, extracted images and rendered pages in images/ and pages/, an agent-readable summary.txt, and the manifest.json and metadata.json files. A footnote notes that DocDown also ships as .NET libraries][hero]
 
 ## Overview
 
