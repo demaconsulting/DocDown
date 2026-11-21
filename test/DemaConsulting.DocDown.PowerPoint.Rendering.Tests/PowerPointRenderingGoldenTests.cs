@@ -47,14 +47,14 @@ public class PowerPointRenderingGoldenTests
         // Arrange: the embedded two-slide probe presentation rendered through the real backend
         using var temp = new TempScratch();
         var engine = new DocDownBuilder().AddPowerPointRendering().Build();
-        var input = Path.Combine(temp.Path, "probe.pptx");
+        var input = Path.Join(temp.Path, "probe.pptx");
         await File.WriteAllBytesAsync(input, PptxRenderingFixtures.Probe(), Ct);
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var options = new ExtractionOptions { RenderPages = true };
 
         // Act: extract and capture the rendered summary
         var result = await engine.ExtractAsync(input, scratch, options, Ct);
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct);
 
         // Assert: the run produced the invariant layout and the normalized summary matches its golden
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
@@ -88,7 +88,7 @@ public class PowerPointRenderingGoldenTests
     /// <returns>A task that completes when the comparison is done.</returns>
     private static async Task AssertMatchesGoldenAsync(string goldenName, string normalized)
     {
-        var goldenPath = Path.Combine(GoldenFolder(), goldenName);
+        var goldenPath = Path.Join(GoldenFolder(), goldenName);
 
         if (Environment.GetEnvironmentVariable("DOCDOWN_UPDATE_GOLDEN") == "1")
         {
@@ -113,13 +113,13 @@ public class PowerPointRenderingGoldenTests
     private static string GoldenFolder()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "DocDown.slnx")))
+        while (directory is not null && !File.Exists(Path.Join(directory.FullName, "DocDown.slnx")))
         {
             directory = directory.Parent;
         }
 
         var root = directory?.FullName
             ?? throw new InvalidOperationException("Could not locate the repository root from the test output folder.");
-        return Path.Combine(root, "test", "DemaConsulting.DocDown.PowerPoint.Rendering.Tests", "golden");
+        return Path.Join(root, "test", "DemaConsulting.DocDown.PowerPoint.Rendering.Tests", "golden");
     }
 }

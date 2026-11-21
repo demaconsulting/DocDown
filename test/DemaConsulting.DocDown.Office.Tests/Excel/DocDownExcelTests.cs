@@ -30,7 +30,7 @@ public class DocDownExcelTests
 
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Empty(result.Notes);
-        var images = Directory.GetFiles(Path.Combine(scratch, "images"));
+        var images = Directory.GetFiles(Path.Join(scratch, "images"));
         var image = Assert.Single(images);
         Assert.EndsWith(".png", image, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
@@ -49,7 +49,7 @@ public class DocDownExcelTests
 
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Empty(result.Notes);
-        var images = Directory.GetFiles(Path.Combine(scratch, "images"));
+        var images = Directory.GetFiles(Path.Join(scratch, "images"));
         var image = Assert.Single(images);
         Assert.EndsWith(".emf", image, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
@@ -82,7 +82,7 @@ public class DocDownExcelTests
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Empty(result.Notes);
 
-        var parts = Directory.GetFiles(Path.Combine(scratch, "parts"), "*.md");
+        var parts = Directory.GetFiles(Path.Join(scratch, "parts"), "*.md");
         Assert.Equal(2, parts.Length);
         ContractAssert.LayoutPresent(scratch);
     }
@@ -98,7 +98,7 @@ public class DocDownExcelTests
         var (scratch, _) = await ExtractAsync(temp, "book.xlsx", XlsxFixtures.TwoSheetWorkbook(), FixedOptions());
 
         var allText = string.Concat(
-            Directory.GetFiles(Path.Combine(scratch, "parts"), "*.md").Select(File.ReadAllText));
+            Directory.GetFiles(Path.Join(scratch, "parts"), "*.md").Select(File.ReadAllText));
         Assert.Contains(XlsxFixtures.LongProse, allText, StringComparison.Ordinal);
         Assert.Contains("=A1+A2", allText, StringComparison.Ordinal);
     }
@@ -158,7 +158,7 @@ public class DocDownExcelTests
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Empty(result.Notes);
         var chartPart = Assert.Single(
-            Directory.GetFiles(Path.Combine(scratch, "parts"), "*chart*.md"));
+            Directory.GetFiles(Path.Join(scratch, "parts"), "*chart*.md"));
         var markdown = await File.ReadAllTextAsync(chartPart, Ct);
         Assert.Contains("# Tank Pressure Trend", markdown, StringComparison.Ordinal);
         Assert.Contains("- Category axis: Elapsed time (min)", markdown, StringComparison.Ordinal);
@@ -175,7 +175,7 @@ public class DocDownExcelTests
     {
         var engine = new DocDownBuilder().AddExcel().Build();
         var input = WriteFixture(temp, name, bytes);
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var result = await engine.ExtractAsync(DocumentSource.FromFile(input), scratch, options, Ct);
         return (scratch, result);
     }
@@ -186,7 +186,7 @@ public class DocDownExcelTests
     /// <summary>Writes a fixture to disk.</summary>
     private static string WriteFixture(TempScratch temp, string name, byte[] bytes)
     {
-        var path = Path.Combine(temp.Path, name);
+        var path = Path.Join(temp.Path, name);
         File.WriteAllBytes(path, bytes);
         return path;
     }

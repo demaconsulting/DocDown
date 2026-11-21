@@ -47,7 +47,7 @@ public class DocDownVisioTests
         var (scratch, result) = await ExtractAsync(temp, "schematic.vsdx", VsdxFixtures.PageWithVectorImage(), FixedOptions());
 
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
-        var images = Directory.GetFiles(Path.Combine(scratch, "images"));
+        var images = Directory.GetFiles(Path.Join(scratch, "images"));
         var image = Assert.Single(images);
         Assert.EndsWith(".emf", image, StringComparison.Ordinal);
         Assert.Empty(result.Notes);
@@ -64,7 +64,7 @@ public class DocDownVisioTests
         using var temp = new TempScratch();
         var (scratch, _) = await ExtractAsync(temp, "wash.vsdx", VsdxFixtures.WashSystem(), FixedOptions());
 
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("Wash System", content, StringComparison.Ordinal);
         Assert.Contains("Inlet Tank \u2192 Transfer Pump", content, StringComparison.Ordinal);
         Assert.Contains("Transfer Pump \u2192 Outlet Valve", content, StringComparison.Ordinal);
@@ -82,7 +82,7 @@ public class DocDownVisioTests
         var (scratch, result) = await ExtractAsync(temp, "wash.vsdm", VsdxFixtures.WashSystem(), FixedOptions());
 
         Assert.Equal("visio-openxml", result.SelectedExtractor?.Id);
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("Inlet Tank \u2192 Transfer Pump", content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
@@ -96,7 +96,7 @@ public class DocDownVisioTests
         using var temp = new TempScratch();
         var (scratch, _) = await ExtractAsync(temp, "two.vsdx", VsdxFixtures.TwoPages(), FixedOptions());
 
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("Schematic", content, StringComparison.Ordinal);
         Assert.Contains("Legend", content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
@@ -120,7 +120,7 @@ public class DocDownVisioTests
         Assert.Contains(
             result.Notes,
             note => note.Message.Contains("Page rendering was requested", StringComparison.Ordinal));
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("Inlet Tank \u2192 Transfer Pump", content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
@@ -186,7 +186,7 @@ public class DocDownVisioTests
 
         // Act & Assert: the caller sees the cancellation, not a failure result
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await engine.ExtractAsync(
-            DocumentSource.FromFile(input), Path.Combine(temp.Path, "out"), FixedOptions(), cancellation.Token));
+            DocumentSource.FromFile(input), Path.Join(temp.Path, "out"), FixedOptions(), cancellation.Token));
     }
 
     /// <summary>
@@ -197,7 +197,7 @@ public class DocDownVisioTests
     {
         var engine = new DocDownBuilder().AddVisio().Build();
         var input = WriteFixture(temp, name, bytes);
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var result = await engine.ExtractAsync(DocumentSource.FromFile(input), scratch, options, Ct);
         return (scratch, result);
     }
@@ -208,7 +208,7 @@ public class DocDownVisioTests
     /// <summary>Writes a fixture to disk.</summary>
     private static string WriteFixture(TempScratch temp, string name, byte[] bytes)
     {
-        var path = Path.Combine(temp.Path, name);
+        var path = Path.Join(temp.Path, name);
         File.WriteAllBytes(path, bytes);
         return path;
     }

@@ -102,7 +102,7 @@ public class PdfRenderingDocDownBuilderExtensionsTests
     /// <param name="member">The member to inspect.</param>
     /// <returns>The parameter, return, property, and field types involved.</returns>
     /// <remarks>Mirrors the managed PDF package's public-API leak test so both packages hold one standard. Pure.</remarks>
-    private static IEnumerable<Type> SignatureTypes(MemberInfo member)
+    private static List<Type> SignatureTypes(MemberInfo member)
     {
         var types = new List<Type>();
         switch (member)

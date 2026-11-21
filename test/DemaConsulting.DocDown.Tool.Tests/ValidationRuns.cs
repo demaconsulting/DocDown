@@ -84,7 +84,7 @@ public sealed class ValidationRuns : IDisposable
     /// </remarks>
     private ValidationRun Invoke(string resultsFileName)
     {
-        var resultsPath = Path.Combine(_work.Path, resultsFileName);
+        var resultsPath = Path.Join(_work.Path, resultsFileName);
         var (exit, log) = CliHarness.RunValidation("--validate", "--results", resultsPath);
         return new ValidationRun(exit, log, resultsPath);
     }

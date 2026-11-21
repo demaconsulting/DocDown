@@ -24,7 +24,7 @@ internal static class CliHarness
     /// <returns>The proposed exit code and the captured log content.</returns>
     public static (int ExitCode, string Log) Run(params string[] args)
     {
-        var logFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"docdown-test-{Guid.NewGuid():N}.log");
+        var logFile = System.IO.Path.Join(System.IO.Path.GetTempPath(), $"docdown-test-{Guid.NewGuid():N}.log");
         try
         {
             var full = new List<string> { "--silent", "--log", logFile };
@@ -73,7 +73,7 @@ internal static class CliHarness
     /// </remarks>
     public static (int ExitCode, string Log) RunSelfValidation(DocDownEngine engine, params string[] args)
     {
-        var logFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"docdown-test-{Guid.NewGuid():N}.log");
+        var logFile = System.IO.Path.Join(System.IO.Path.GetTempPath(), $"docdown-test-{Guid.NewGuid():N}.log");
         try
         {
             var full = new List<string> { "--silent", "--log", logFile, "--validate" };
@@ -119,7 +119,7 @@ internal static class CliHarness
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir != null)
         {
-            if (File.Exists(System.IO.Path.Combine(dir.FullName, "DocDown.slnx")))
+            if (File.Exists(System.IO.Path.Join(dir.FullName, "DocDown.slnx")))
             {
                 return dir.FullName;
             }

@@ -73,11 +73,11 @@ public class ApiExampleCoverageTests
 
         // Assert: the two Core entry points a consumer starts from carry examples too
         AssertMemberCarriesExample(
-            Path.Combine("DemaConsulting.DocDown.Core", "Extraction", "DocDownBuilder.cs"),
+            Path.Join("DemaConsulting.DocDown.Core", "Extraction", "DocDownBuilder.cs"),
             BuilderType,
             "DocDownBuilder");
         AssertMemberCarriesExample(
-            Path.Combine("DemaConsulting.DocDown.Core", "Extraction", "DocDownEngine.cs"),
+            Path.Join("DemaConsulting.DocDown.Core", "Extraction", "DocDownEngine.cs"),
             ExtractAsyncMethod,
             "DocDownEngine.ExtractAsync");
     }
@@ -90,7 +90,7 @@ public class ApiExampleCoverageTests
     /// <param name="member">The member name used in the failure message.</param>
     private static void AssertMemberCarriesExample(string relativePath, Regex declaration, string member)
     {
-        var path = Path.Combine(RepositoryRoot(), "src", relativePath);
+        var path = Path.Join(RepositoryRoot(), "src", relativePath);
         Assert.True(File.Exists(path), $"'{relativePath}' was not found beneath src.");
 
         var lines = File.ReadAllLines(path);
@@ -155,7 +155,7 @@ public class ApiExampleCoverageTests
     /// </summary>
     /// <returns>The absolute paths of the library sources, excluding build output.</returns>
     private static List<string> ProductionSources() =>
-        [.. Directory.EnumerateFiles(Path.Combine(RepositoryRoot(), "src"), "*.cs", SearchOption.AllDirectories)
+        [.. Directory.EnumerateFiles(Path.Join(RepositoryRoot(), "src"), "*.cs", SearchOption.AllDirectories)
             .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))];
 
@@ -168,7 +168,7 @@ public class ApiExampleCoverageTests
     private static string RepositoryRoot()
     {
         var directory = new DirectoryInfo(Path.GetDirectoryName(typeof(ApiExampleCoverageTests).Assembly.Location)!);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "DocDown.slnx")))
+        while (directory is not null && !File.Exists(Path.Join(directory.FullName, "DocDown.slnx")))
         {
             directory = directory.Parent;
         }

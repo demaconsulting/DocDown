@@ -442,7 +442,7 @@ public class PowerPointContentEmitterTests
     {
         using var temp = new TempScratch();
         var options = new ExtractionOptions { IncludeEmbeddedImages = true };
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, options);
         var image = new EmbeddedImage([1, 2, 3, 4], "image/png",
             SourceRef: "/ppt/media/image1.png", AltText: "Company logo", SourcePages: [1]);

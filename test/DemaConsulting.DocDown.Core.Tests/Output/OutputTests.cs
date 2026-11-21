@@ -26,15 +26,15 @@ public class OutputTests
     {
         // Arrange: a scratch folder and a simple text write
         using var temp = new TempScratch();
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the output pipeline writing only text
         await RunPipelineAsync(temp, scratch, WriteText);
 
         // Assert: the root artifacts exist and the layout contract holds
-        Assert.True(File.Exists(Path.Combine(scratch, "summary.txt")));
-        Assert.True(File.Exists(Path.Combine(scratch, "manifest.json")));
-        Assert.True(File.Exists(Path.Combine(scratch, "metadata.json")));
+        Assert.True(File.Exists(Path.Join(scratch, "summary.txt")));
+        Assert.True(File.Exists(Path.Join(scratch, "manifest.json")));
+        Assert.True(File.Exists(Path.Join(scratch, "metadata.json")));
         ContractAssert.LayoutPresent(scratch);
     }
 
@@ -46,11 +46,11 @@ public class OutputTests
     {
         // Arrange: a scratch folder and a simple text write
         using var temp = new TempScratch();
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the output pipeline and read the summary
         await RunPipelineAsync(temp, scratch, WriteText);
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct);
 
         // Assert: the fixed sections of the reduced summary are present
         Assert.Contains("DocDown Extraction Summary", summary, StringComparison.Ordinal);
@@ -67,11 +67,11 @@ public class OutputTests
     {
         // Arrange: a scratch folder and a simple text write
         using var temp = new TempScratch();
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the output pipeline and parse the manifest
         await RunPipelineAsync(temp, scratch, WriteText);
-        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct));
         var root = document.RootElement;
 
         // Assert: the manifest uses the reduced schema and omits the removed artifacts block
@@ -89,13 +89,13 @@ public class OutputTests
     {
         // Arrange: a scratch folder and a text write with distinctive content
         using var temp = new TempScratch();
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the output pipeline writing text
         await RunPipelineAsync(temp, scratch, WriteText);
 
         // Assert: content.md exists and carries the written text
-        var contentPath = Path.Combine(scratch, "content.md");
+        var contentPath = Path.Join(scratch, "content.md");
         Assert.True(File.Exists(contentPath));
         Assert.Contains("Hello from the output subsystem", await File.ReadAllTextAsync(contentPath, Ct), StringComparison.Ordinal);
     }
@@ -108,14 +108,14 @@ public class OutputTests
     {
         // Arrange: a scratch folder and a write that adds the same image bytes twice
         using var temp = new TempScratch();
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the output pipeline writing duplicate images
         await RunPipelineAsync(temp, scratch, WriteDuplicateImages);
 
         // Assert: only one file exists and the manifest records two references
-        Assert.Single(Directory.GetFiles(Path.Combine(scratch, "images")));
-        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        Assert.Single(Directory.GetFiles(Path.Join(scratch, "images")));
+        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct));
         var images = document.RootElement.GetProperty("images");
         Assert.Equal(1, images.GetArrayLength());
         Assert.Equal(2, images[0].GetProperty("references").GetInt32());
@@ -129,14 +129,14 @@ public class OutputTests
     {
         // Arrange: a scratch folder and a write that renders page three
         using var temp = new TempScratch();
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the output pipeline rendering a page
         await RunPipelineAsync(temp, scratch, WritePage);
 
         // Assert: the page file is named by its 1-based page number and recorded in the manifest
-        Assert.True(File.Exists(Path.Combine(scratch, "pages", "page0003.png")));
-        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        Assert.True(File.Exists(Path.Join(scratch, "pages", "page0003.png")));
+        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct));
         Assert.Equal(3, document.RootElement.GetProperty("pages")[0].GetProperty("pageNumber").GetInt32());
     }
 
@@ -148,7 +148,7 @@ public class OutputTests
     {
         // Arrange: a scratch folder and a write that reports one note
         using var temp = new TempScratch();
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the output pipeline
         await RunPipelineAsync(temp, scratch, async sink =>
@@ -158,8 +158,8 @@ public class OutputTests
         });
 
         // Assert: both human- and machine-readable outputs carry the note
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
-        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct);
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct));
         Assert.Contains("One embedded image could not be decoded and was skipped.", summary, StringComparison.Ordinal);
         Assert.Equal(
             "One embedded image could not be decoded and was skipped.",
@@ -174,7 +174,7 @@ public class OutputTests
     {
         // Arrange: a scratch folder and a write that reports one reviewer comment
         using var temp = new TempScratch();
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the output pipeline
         await RunPipelineAsync(temp, scratch, async sink =>
@@ -184,9 +184,9 @@ public class OutputTests
         });
 
         // Assert: the artifact exists and both human- and machine-readable outputs account for it
-        var reviewComments = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
-        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        var reviewComments = await File.ReadAllTextAsync(Path.Join(scratch, "review-comments.md"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct);
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct));
         Assert.Contains("- **Ada** (Page 1): Clarify this paragraph.", reviewComments, StringComparison.Ordinal);
         Assert.Contains("review-comments.md   PRESENT - 1 comment\n", summary, StringComparison.Ordinal);
         Assert.Equal(
@@ -204,7 +204,7 @@ public class OutputTests
     {
         // Arrange: a prepared scratch folder and sink, plus a hostile preferred image name
         using var temp = new TempScratch();
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, new ExtractionOptions());
         using var bytes = new MemoryStream([1, 2, 3, 4], writable: false);
 
@@ -214,7 +214,7 @@ public class OutputTests
         // Assert: the allocated path stays under images/ and lands inside the scratch folder
         Assert.StartsWith("images/", relativePath, StringComparison.Ordinal);
         Assert.DoesNotContain("..", relativePath, StringComparison.Ordinal);
-        Assert.True(File.Exists(Path.Combine(folder.AbsolutePath, relativePath.Replace('/', Path.DirectorySeparatorChar))));
+        Assert.True(File.Exists(Path.Join(folder.AbsolutePath, relativePath.Replace('/', Path.DirectorySeparatorChar))));
     }
 
     /// <summary>
@@ -225,19 +225,19 @@ public class OutputTests
     {
         // Arrange: a stable scratch folder written twice with the same fixed timestamp
         using var temp = new TempScratch();
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the pipeline twice, snapshotting the first run's files
         await RunPipelineAsync(temp, scratch, WriteText);
-        var firstSummary = Path.Combine(temp.Path, "first-summary.txt");
-        var firstManifest = Path.Combine(temp.Path, "first-manifest.json");
-        File.Copy(Path.Combine(scratch, "summary.txt"), firstSummary);
-        File.Copy(Path.Combine(scratch, "manifest.json"), firstManifest);
+        var firstSummary = Path.Join(temp.Path, "first-summary.txt");
+        var firstManifest = Path.Join(temp.Path, "first-manifest.json");
+        File.Copy(Path.Join(scratch, "summary.txt"), firstSummary);
+        File.Copy(Path.Join(scratch, "manifest.json"), firstManifest);
         await RunPipelineAsync(temp, scratch, WriteText);
 
         // Assert: both outputs are byte-identical between runs
-        ContractAssert.FileEquals(firstSummary, Path.Combine(scratch, "summary.txt"));
-        ContractAssert.FileEquals(firstManifest, Path.Combine(scratch, "manifest.json"));
+        ContractAssert.FileEquals(firstSummary, Path.Join(scratch, "summary.txt"));
+        ContractAssert.FileEquals(firstManifest, Path.Join(scratch, "manifest.json"));
     }
 
     /// <summary>
@@ -248,13 +248,13 @@ public class OutputTests
     {
         // Arrange: a scratch folder and a write that adds one passthrough and one re-encoded image
         using var temp = new TempScratch();
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the output pipeline
         await RunPipelineAsync(temp, scratch, WriteMixedTransformImages);
 
         // Assert: the two images are labeled distinctly in allocation order
-        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct));
         var images = document.RootElement.GetProperty("images");
         Assert.Equal(2, images.GetArrayLength());
         Assert.Equal("passthrough", images[0].GetProperty("transform").GetString());
@@ -270,13 +270,13 @@ public class OutputTests
     {
         // Arrange: a scratch folder and a write that adds a page-referenced and a template-only image
         using var temp = new TempScratch();
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the output pipeline
         await RunPipelineAsync(temp, scratch, WriteImagesWithReferrers);
 
         // Assert: the referrer set reaches the manifest and the scalar alias is its first entry
-        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct));
         var images = document.RootElement.GetProperty("images");
         Assert.Equal(2, images.GetArrayLength());
         Assert.Equal(

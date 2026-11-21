@@ -51,9 +51,9 @@ public class ProgramTests
     {
         // Arrange: a generated PDF and a fresh scratch folder unique to this run
         using var temp = new TempScratch();
-        var input = Path.Combine(temp.Path, "input.pdf");
+        var input = Path.Join(temp.Path, "input.pdf");
         File.WriteAllBytes(input, ToolPdfFixtures.SimpleText());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the extraction
         var (exit, log) = CliHarness.Run("--input", input, "--scratch", scratch);
@@ -75,8 +75,8 @@ public class ProgramTests
     public void Program_Run_UnreadableInput_RendersStructuredFailure()
     {
         using var temp = new TempScratch();
-        var input = Path.Combine(temp.Path, "missing.pdf");
-        var scratch = Path.Combine(temp.Path, "out");
+        var input = Path.Join(temp.Path, "missing.pdf");
+        var scratch = Path.Join(temp.Path, "out");
 
         var (exit, log) = CliHarness.Run("--input", input, "--scratch", scratch);
 
@@ -91,7 +91,7 @@ public class ProgramTests
     public void Program_Run_MissingInput_ThrowsArgumentException()
     {
         using var temp = new TempScratch();
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         Assert.Throws<ArgumentException>(() => CliHarness.Run("--scratch", scratch));
     }
@@ -101,7 +101,7 @@ public class ProgramTests
     public void Program_Run_MissingScratch_ThrowsArgumentException()
     {
         using var temp = new TempScratch();
-        var input = Path.Combine(temp.Path, "input.pdf");
+        var input = Path.Join(temp.Path, "input.pdf");
 
         Assert.Throws<ArgumentException>(() => CliHarness.Run("--input", input));
     }
@@ -120,8 +120,8 @@ public class ProgramTests
     [Fact]
     public void Program_Main_LogOpenFailure_ReturnsOneWithoutStackTrace()
     {
-        var missingDir = Path.Combine(Path.GetTempPath(), $"docdown-missing-{Guid.NewGuid():N}");
-        var logPath = Path.Combine(missingDir, "out.log");
+        var missingDir = Path.Join(Path.GetTempPath(), $"docdown-missing-{Guid.NewGuid():N}");
+        var logPath = Path.Join(missingDir, "out.log");
 
         var (exit, error) = RunMainCapturingError("--log", logPath, "--version");
 

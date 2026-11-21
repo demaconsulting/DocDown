@@ -67,7 +67,7 @@ public class VisioPageRenderingExtractorTests
         using var temp = new TempScratch();
         var engine = new DocDownBuilder().AddVisioRendering().Build();
         var input = WriteFixture(temp, "probe.vsdx", VsdxRenderingFixtures.Probe());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: request rendered pages
         var result = await engine.ExtractAsync(input, scratch, RenderOptions(), Ct);
@@ -76,8 +76,8 @@ public class VisioPageRenderingExtractorTests
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Equal("visio-rendering", result.SelectedExtractor?.Id);
         Assert.Empty(result.Notes);
-        Assert.True(File.Exists(Path.Combine(scratch, "content.md")));
-        var page1 = Path.Combine(scratch, "pages", "page0001.png");
+        Assert.True(File.Exists(Path.Join(scratch, "content.md")));
+        var page1 = Path.Join(scratch, "pages", "page0001.png");
         Assert.True(File.Exists(page1));
         Assert.True(Png.HasSignature(await File.ReadAllBytesAsync(page1, Ct)));
         ContractAssert.LayoutPresent(scratch);
@@ -99,7 +99,7 @@ public class VisioPageRenderingExtractorTests
         using var temp = new TempScratch();
         var engine = new DocDownBuilder().AddVisioRendering().Build();
         var input = WriteFixture(temp, "probe.vsdx", VsdxRenderingFixtures.Probe());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act
         var result = await engine.ExtractAsync(input, scratch, new ExtractionOptions { RenderPages = false }, Ct);
@@ -109,7 +109,7 @@ public class VisioPageRenderingExtractorTests
         Assert.Equal("visio-rendering", result.SelectedExtractor?.Id);
         Assert.Empty(result.Notes);
         Assert.Empty(result.PagePaths);
-        Assert.True(File.Exists(Path.Combine(scratch, "content.md")));
+        Assert.True(File.Exists(Path.Join(scratch, "content.md")));
         ContractAssert.LayoutPresent(scratch);
     }
 
@@ -126,7 +126,7 @@ public class VisioPageRenderingExtractorTests
                 (_, _, _) => throw new InvalidOperationException("simulated render fault")))
             .Build();
         var input = WriteFixture(temp, "probe.vsdx", VsdxRenderingFixtures.Probe());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: the fault must be isolated to the page, not propagated to the caller
         var result = await engine.ExtractAsync(input, scratch, RenderOptions(), Ct);
@@ -157,7 +157,7 @@ public class VisioPageRenderingExtractorTests
         using var temp = new TempScratch();
         var engine = new DocDownBuilder().AddVisioRendering().Build();
         var input = WriteFixture(temp, "probe.vsdx", VsdxRenderingFixtures.Probe());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var options = RenderOptions();
         options.Pages = new PageRange(5, 6);
 
@@ -188,7 +188,7 @@ public class VisioPageRenderingExtractorTests
                 _ => throw new InvalidOperationException("simulated count fault")))
             .Build();
         var input = WriteFixture(temp, "probe.vsdx", VsdxRenderingFixtures.Probe());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: the count runs before the per-page loop, so its fault must still be isolated
         var result = await engine.ExtractAsync(input, scratch, RenderOptions(), Ct);
@@ -226,7 +226,7 @@ public class VisioPageRenderingExtractorTests
             }))
             .Build();
         var input = WriteFixture(temp, "corrupt.vsdx", "this is not a zip package"u8.ToArray());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act
         var result = await engine.ExtractAsync(input, scratch, RenderOptions(), Ct);
@@ -316,7 +316,7 @@ public class VisioPageRenderingExtractorTests
     /// <remarks>The name ends in <c>.vsdx</c> because detection trusts the file extension.</remarks>
     private static string WriteFixture(TempScratch temp, string name, byte[] bytes)
     {
-        var path = Path.Combine(temp.Path, name);
+        var path = Path.Join(temp.Path, name);
         File.WriteAllBytes(path, bytes);
         return path;
     }

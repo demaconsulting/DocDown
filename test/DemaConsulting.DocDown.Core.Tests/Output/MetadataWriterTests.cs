@@ -115,14 +115,14 @@ public class MetadataWriterTests
     public async Task MetadataWriter_WriteAsync_ReportedMetadata_WritesFile()
     {
         using var temp = new TempScratch();
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, new ExtractionOptions());
         sink.ReportDocumentMetadata(new DocumentMetadata(
             [new DocumentMetadataField("creator", "Author", MetadataProvenance.OpcCoreProperties)], []));
 
         await MetadataWriter.WriteAsync(folder, sink, Ct);
 
-        var path = Path.Combine(folder.AbsolutePath, "metadata.json");
+        var path = Path.Join(folder.AbsolutePath, "metadata.json");
         Assert.True(File.Exists(path));
         using var document = JsonDocument.Parse(await File.ReadAllTextAsync(path, Ct));
         Assert.Equal("Author", document.RootElement.GetProperty("document").GetProperty("creator").GetProperty("value").GetString());
@@ -136,12 +136,12 @@ public class MetadataWriterTests
     public async Task MetadataWriter_WriteAsync_NoReportedMetadata_WritesSparseFile()
     {
         using var temp = new TempScratch();
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, new ExtractionOptions());
 
         await MetadataWriter.WriteAsync(folder, sink, Ct);
 
-        var path = Path.Combine(folder.AbsolutePath, "metadata.json");
+        var path = Path.Join(folder.AbsolutePath, "metadata.json");
         using var document = JsonDocument.Parse(await File.ReadAllTextAsync(path, Ct));
         Assert.Empty(document.RootElement.GetProperty("document").EnumerateObject());
         Assert.Single(document.RootElement.GetProperty("notes").EnumerateArray());

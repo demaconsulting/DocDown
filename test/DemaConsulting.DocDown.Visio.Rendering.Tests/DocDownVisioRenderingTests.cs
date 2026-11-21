@@ -41,7 +41,7 @@ public class DocDownVisioRenderingTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "probe.vsdx", VsdxRenderingFixtures.Probe());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var options = RenderingOptions();
 
         // Act: extract with page rendering requested at the default DPI
@@ -53,7 +53,7 @@ public class DocDownVisioRenderingTests
         Assert.Empty(result.Notes);
 
         // Assert: the page image exists on disk and the contract layout is present
-        var page1 = Path.Combine(scratch, "pages", "page0001.png");
+        var page1 = Path.Join(scratch, "pages", "page0001.png");
         Assert.True(File.Exists(page1), $"expected a rendered page at '{page1}'");
         ContractAssert.LayoutPresent(scratch);
 
@@ -74,8 +74,8 @@ public class DocDownVisioRenderingTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "probe.vsdx", VsdxRenderingFixtures.Probe());
-        var first = Path.Combine(temp.Path, "first");
-        var second = Path.Combine(temp.Path, "second");
+        var first = Path.Join(temp.Path, "first");
+        var second = Path.Join(temp.Path, "second");
 
         // Act: render the same input twice
         var firstResult = await engine.ExtractAsync(input, first, RenderingOptions(), Ct);
@@ -88,15 +88,15 @@ public class DocDownVisioRenderingTests
         ContractAssert.LayoutPresent(second);
 
         // Assert: every rendered page's bytes are identical across the two runs, not just the first
-        var firstPages = Directory.GetFiles(Path.Combine(first, "pages"), "*.png")
+        var firstPages = Directory.GetFiles(Path.Join(first, "pages"), "*.png")
             .Select(Path.GetFileName).OrderBy(name => name, StringComparer.Ordinal).ToList();
-        var secondPages = Directory.GetFiles(Path.Combine(second, "pages"), "*.png")
+        var secondPages = Directory.GetFiles(Path.Join(second, "pages"), "*.png")
             .Select(Path.GetFileName).OrderBy(name => name, StringComparer.Ordinal).ToList();
         Assert.Equal(firstPages, secondPages);
         Assert.NotEmpty(firstPages);
         foreach (var page in firstPages)
         {
-            ContractAssert.FileEquals(Path.Combine(first, "pages", page!), Path.Combine(second, "pages", page!));
+            ContractAssert.FileEquals(Path.Join(first, "pages", page!), Path.Join(second, "pages", page!));
         }
     }
 
@@ -111,7 +111,7 @@ public class DocDownVisioRenderingTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "probe.vsdx", VsdxRenderingFixtures.Probe());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: request rendered pages
         var result = await engine.ExtractAsync(input, scratch, RenderingOptions(), Ct);
@@ -135,7 +135,7 @@ public class DocDownVisioRenderingTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "probe.vsdx", VsdxRenderingFixtures.Probe());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: extract without requesting rendered pages
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
@@ -159,7 +159,7 @@ public class DocDownVisioRenderingTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "probe.vsdx", VsdxRenderingFixtures.Probe());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var options = RenderingOptions();
         options.Pages = new PageRange(1, 1);
 
@@ -169,7 +169,7 @@ public class DocDownVisioRenderingTests
         // Assert: exactly the one page in range was rendered, named by its document page number
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Equal("visio-rendering", result.SelectedExtractor?.Id);
-        var pageFiles = Directory.GetFiles(Path.Combine(scratch, "pages"), "*.png")
+        var pageFiles = Directory.GetFiles(Path.Join(scratch, "pages"), "*.png")
             .Select(Path.GetFileName).OrderBy(name => name, StringComparer.Ordinal).ToList();
         Assert.Equal(["page0001.png"], pageFiles);
         ContractAssert.LayoutPresent(scratch);
@@ -185,8 +185,8 @@ public class DocDownVisioRenderingTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "probe.vsdx", VsdxRenderingFixtures.Probe());
-        var lowScratch = Path.Combine(temp.Path, "low");
-        var highScratch = Path.Combine(temp.Path, "high");
+        var lowScratch = Path.Join(temp.Path, "low");
+        var highScratch = Path.Join(temp.Path, "high");
 
         var lowOptions = RenderingOptions();
         lowOptions.PageRenderDpi = 72;
@@ -205,9 +205,9 @@ public class DocDownVisioRenderingTests
 
         // Assert: the higher-DPI render is strictly larger in both dimensions
         var (lowWidth, lowHeight) = Png.ReadDimensions(
-            await File.ReadAllBytesAsync(Path.Combine(lowScratch, "pages", "page0001.png"), Ct));
+            await File.ReadAllBytesAsync(Path.Join(lowScratch, "pages", "page0001.png"), Ct));
         var (highWidth, highHeight) = Png.ReadDimensions(
-            await File.ReadAllBytesAsync(Path.Combine(highScratch, "pages", "page0001.png"), Ct));
+            await File.ReadAllBytesAsync(Path.Join(highScratch, "pages", "page0001.png"), Ct));
         Assert.True(highWidth > lowWidth, "a higher DPI should widen the raster");
         Assert.True(highHeight > lowHeight, "a higher DPI should heighten the raster");
     }
@@ -242,7 +242,7 @@ public class DocDownVisioRenderingTests
     /// <remarks>The name ends in <c>.vsdx</c> because detection trusts the file extension.</remarks>
     private static string WriteFixture(TempScratch temp, string name, byte[] bytes)
     {
-        var path = Path.Combine(temp.Path, name);
+        var path = Path.Join(temp.Path, name);
         File.WriteAllBytes(path, bytes);
         return path;
     }

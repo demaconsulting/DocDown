@@ -313,7 +313,7 @@ public class ReviewCommentsWriterTests
     /// <remarks>Uses a real folder because the writer's contract includes what lands on disk.</remarks>
     private static ExtractionSink NewSink(TempScratch temp)
     {
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         return new ExtractionSink(folder, new ExtractionOptions());
     }
 
@@ -324,7 +324,7 @@ public class ReviewCommentsWriterTests
     /// <returns>The absolute path of <c>review-comments.md</c>, whether or not it exists.</returns>
     /// <remarks>Used to prove the file's absence as well as its presence.</remarks>
     private static string ReviewCommentsFile(ExtractionSink sink) =>
-        Path.Combine(sink.Folder.AbsolutePath, "review-comments.md");
+        Path.Join(sink.Folder.AbsolutePath, "review-comments.md");
 
     /// <summary>
     ///     Reads the finalized review-comments document from the sink's scratch folder.

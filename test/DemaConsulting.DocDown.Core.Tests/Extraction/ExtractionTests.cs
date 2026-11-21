@@ -112,7 +112,7 @@ public class ExtractionTests
             .AddExtractor(StubExtractor.Available("text", [DocumentFormat.Text]))
             .Build();
         var input = temp.CreateFile("document.txt", "hello world");
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run the full pipeline
         var result = await engine.ExtractAsync(input, scratch, new ExtractionOptions(), Ct);
@@ -120,7 +120,7 @@ public class ExtractionTests
         // Assert: the layout was produced, the backend was selected, and content was written
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Equal("text", result.SelectedExtractor?.Id);
-        Assert.True(File.Exists(Path.Combine(scratch, "content.md")));
+        Assert.True(File.Exists(Path.Join(scratch, "content.md")));
         ContractAssert.LayoutPresent(scratch);
     }
 
@@ -138,7 +138,7 @@ public class ExtractionTests
         var input = temp.CreateFile("document.txt", "hello world");
 
         // Act: run the extraction with no available backend
-        var result = await engine.ExtractAsync(input, Path.Combine(temp.Path, "out"), new ExtractionOptions(), Ct);
+        var result = await engine.ExtractAsync(input, Path.Join(temp.Path, "out"), new ExtractionOptions(), Ct);
 
         // Assert: the failure is unreadable and carries prose
         Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
@@ -162,7 +162,7 @@ public class ExtractionTests
         var input = temp.CreateFile("document.txt", "hello world");
 
         // Act: run the engine using its own captured defaults
-        var result = await engine.ExtractAsync(input, Path.Combine(temp.Path, "out"), null, Ct);
+        var result = await engine.ExtractAsync(input, Path.Join(temp.Path, "out"), null, Ct);
 
         // Assert: the later builder mutation did not leak into the already-built engine
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
@@ -184,7 +184,7 @@ public class ExtractionTests
         var input = temp.CreateFile("document.txt", "hello world");
 
         // Act: run the extraction so the backend faults
-        var result = await engine.ExtractAsync(input, Path.Combine(temp.Path, "out"), new ExtractionOptions(), Ct);
+        var result = await engine.ExtractAsync(input, Path.Join(temp.Path, "out"), new ExtractionOptions(), Ct);
 
         // Assert: the exception was contained and converted into an unreadable failure
         Assert.Equal(ExtractionOutcome.Unreadable, result.Outcome);
@@ -228,14 +228,16 @@ public class ExtractionTests
         var source = DocumentSource.FromFile(path);
         using var first = source.OpenRead();
         using var second = source.OpenRead();
+        using var firstReader = new StreamReader(first);
+        using var secondReader = new StreamReader(second);
 
         // Assert: identity is recorded and the two streams are independent and fully readable
         Assert.Equal("note.txt", source.FileName);
         Assert.Equal(path, source.Path);
         Assert.Equal(5, source.SizeBytes);
         Assert.NotSame(first, second);
-        Assert.Equal("hello", new StreamReader(first).ReadToEnd());
-        Assert.Equal("hello", new StreamReader(second).ReadToEnd());
+        Assert.Equal("hello", firstReader.ReadToEnd());
+        Assert.Equal("hello", secondReader.ReadToEnd());
     }
 
     /// <summary>
@@ -246,7 +248,7 @@ public class ExtractionTests
     {
         // Arrange / Act: a source for a file that does not exist
         using var temp = new TempScratch();
-        var source = DocumentSource.FromFile(Path.Combine(temp.Path, "absent.txt"));
+        var source = DocumentSource.FromFile(Path.Join(temp.Path, "absent.txt"));
 
         // Assert: size is unknown and the read error is deferred to OpenRead
         Assert.Null(source.SizeBytes);
@@ -267,8 +269,9 @@ public class ExtractionTests
         // Act: open, read, and dispose the returned stream
         string text;
         using (var opened = source.OpenRead())
+        using (var reader = new StreamReader(opened))
         {
-            text = new StreamReader(opened).ReadToEnd();
+            text = reader.ReadToEnd();
         }
 
         // Assert: reading began at the start, size and name were recorded, and the stream stays usable

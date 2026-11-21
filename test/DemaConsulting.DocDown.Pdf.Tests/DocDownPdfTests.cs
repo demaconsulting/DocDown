@@ -47,7 +47,7 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", PdfFixtures.SimpleText());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: extract into a fresh scratch folder
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
@@ -57,10 +57,10 @@ public class DocDownPdfTests
         Assert.Null(result.Failure);
         Assert.Empty(result.Notes);
         Assert.Equal("pdf", result.SelectedExtractor?.Id);
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("quick brown fox", content, StringComparison.Ordinal);
-        Assert.True(File.Exists(Path.Combine(scratch, "summary.txt")));
-        Assert.True(File.Exists(Path.Combine(scratch, "manifest.json")));
+        Assert.True(File.Exists(Path.Join(scratch, "summary.txt")));
+        Assert.True(File.Exists(Path.Join(scratch, "manifest.json")));
         ContractAssert.LayoutPresent(scratch);
     }
 
@@ -74,7 +74,7 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "multi.pdf", PdfFixtures.MultiPage(3));
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: extract the whole document
         await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
@@ -82,7 +82,7 @@ public class DocDownPdfTests
         // Assert: the manifest reports three pages and the content carries all three in reading order
         using var manifest = await ReadManifestAsync(scratch);
         Assert.Equal(3, manifest.RootElement.GetProperty("document").GetProperty("pageCount").GetInt32());
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         var first = content.IndexOf("Page 1 marker", StringComparison.Ordinal);
         var second = content.IndexOf("Page 2 marker", StringComparison.Ordinal);
         var third = content.IndexOf("Page 3 marker", StringComparison.Ordinal);
@@ -107,13 +107,13 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "jpeg.pdf", PdfFixtures.WithEmbeddedJpeg());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: extract with the default preserve-encoding image policy
         await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
         // Assert: exactly one image was written, as .jpg, and its bytes are the embedded source bytes
-        var images = Directory.GetFiles(Path.Combine(scratch, "images"));
+        var images = Directory.GetFiles(Path.Join(scratch, "images"));
         var written = Assert.Single(images);
         Assert.EndsWith(".jpg", written, StringComparison.Ordinal);
         Assert.Equal(PdfFixtures.SourceJpegBytes(), await File.ReadAllBytesAsync(written, Ct));
@@ -125,7 +125,7 @@ public class DocDownPdfTests
         Assert.Equal("passthrough", entry.GetProperty("transform").GetString());
 
         // Assert: the content document links the image by the path the sink allocated
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains(entry.GetProperty("path").GetString()!, content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
@@ -140,13 +140,13 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "png.pdf", PdfFixtures.WithEmbeddedPng());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: extract with the default preserve-encoding image policy
         await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
         // Assert: the image is written as PNG and labeled as the re-encoding it genuinely is
-        var written = Assert.Single(Directory.GetFiles(Path.Combine(scratch, "images")));
+        var written = Assert.Single(Directory.GetFiles(Path.Join(scratch, "images")));
         Assert.EndsWith(".png", written, StringComparison.Ordinal);
         using var manifest = await ReadManifestAsync(scratch);
         var entry = Assert.Single(manifest.RootElement.GetProperty("images").EnumerateArray().ToList());
@@ -166,14 +166,14 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "mixed.pdf", PdfFixtures.WithUndecodableImage());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: extract the document
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
         // Assert: the decodable image was written and the undecodable one was counted, not dropped
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
-        Assert.Single(Directory.GetFiles(Path.Combine(scratch, "images")));
+        Assert.Single(Directory.GetFiles(Path.Join(scratch, "images")));
         var note = Assert.Single(result.Notes).Message;
         Assert.Contains("JBIG2Decode: 1", note, StringComparison.Ordinal);
         Assert.Contains("1 of 2", note, StringComparison.Ordinal);
@@ -182,7 +182,7 @@ public class DocDownPdfTests
         using var manifest = await ReadManifestAsync(scratch);
         Assert.Single(manifest.RootElement.GetProperty("images").EnumerateArray());
         Assert.Equal(note, Assert.Single(manifest.RootElement.GetProperty("notes").EnumerateArray()).GetString());
-        var summary = Normalize(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
+        var summary = Normalize(await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct));
         Assert.Contains("1 of 2", summary, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
@@ -205,13 +205,13 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "jpx.pdf", PdfFixtures.WithJpeg2000Image());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: extract the document
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
         // Assert: both images are on disk, the JPEG 2000 one under an extension describing its bytes
-        var images = Directory.GetFiles(Path.Combine(scratch, "images")).Order(StringComparer.Ordinal).ToList();
+        var images = Directory.GetFiles(Path.Join(scratch, "images")).Order(StringComparer.Ordinal).ToList();
         Assert.Equal(2, images.Count);
         var jp2 = Assert.Single(images, path => path.EndsWith(".jp2", StringComparison.Ordinal));
         Assert.Equal(PdfFixtures.SourceJpeg2000Bytes(), await File.ReadAllBytesAsync(jp2, Ct));
@@ -244,14 +244,14 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "jpeg.pdf", PdfFixtures.WithEmbeddedJpeg());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var options = FixedOptions();
 
         // Act: extract with the default image policy
         var result = await engine.ExtractAsync(input, scratch, options, Ct);
 
         // Assert: the file on disk describes its own bytes truthfully
-        var written = Assert.Single(Directory.GetFiles(Path.Combine(scratch, "images")));
+        var written = Assert.Single(Directory.GetFiles(Path.Join(scratch, "images")));
         Assert.EndsWith(".jpg", written, StringComparison.Ordinal);
         using var manifest = await ReadManifestAsync(scratch);
         var entry = Assert.Single(manifest.RootElement.GetProperty("images").EnumerateArray().ToList());
@@ -273,7 +273,7 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "jpeg.pdf", PdfFixtures.WithEmbeddedJpeg());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var options = FixedOptions();
         options.MaxImageBytes = 8;
 
@@ -281,8 +281,8 @@ public class DocDownPdfTests
         var result = await engine.ExtractAsync(input, scratch, options, Ct);
 
         // Assert: nothing was written, and the note names a size limit rather than a decode failure
-        Assert.False(Directory.Exists(Path.Combine(scratch, "images"))
-            && Directory.GetFiles(Path.Combine(scratch, "images")).Length > 0);
+        Assert.False(Directory.Exists(Path.Join(scratch, "images"))
+            && Directory.GetFiles(Path.Join(scratch, "images")).Length > 0);
         var note = Assert.Single(result.Notes).Message;
         Assert.Contains("size or dimension limit", note, StringComparison.Ordinal);
         Assert.DoesNotContain("cannot decode", note, StringComparison.Ordinal);
@@ -299,7 +299,7 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "jpeg.pdf", PdfFixtures.WithEmbeddedJpeg());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var options = FixedOptions();
         options.IncludeEmbeddedImages = false;
 
@@ -307,12 +307,12 @@ public class DocDownPdfTests
         var result = await engine.ExtractAsync(input, scratch, options, Ct);
 
         // Assert: nothing was written, the suppression is recorded, and no link points at nothing
-        Assert.False(Directory.Exists(Path.Combine(scratch, "images"))
-            && Directory.GetFiles(Path.Combine(scratch, "images")).Length > 0);
+        Assert.False(Directory.Exists(Path.Join(scratch, "images"))
+            && Directory.GetFiles(Path.Join(scratch, "images")).Length > 0);
         Assert.Equal(
             "Embedded image extraction was disabled by the caller; no images were written.",
             Assert.Single(result.Notes).Message);
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.DoesNotContain("](images/", content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
@@ -327,21 +327,21 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "scanned.pdf", PdfFixtures.NoTextLayer());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: extract the scanned document
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
         // Assert: the run still produces output, and the page contributes an image link but no body text
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("<!-- docdown:page 1 -->", content, StringComparison.Ordinal);
         Assert.Contains("](images/", content, StringComparison.Ordinal);
         Assert.DoesNotContain("quick brown fox", content, StringComparison.Ordinal);
         Assert.Empty(result.Notes);
 
         // Assert: the page's embedded image is still extracted, so the run remains useful
-        Assert.Single(Directory.GetFiles(Path.Combine(scratch, "images")));
+        Assert.Single(Directory.GetFiles(Path.Join(scratch, "images")));
         ContractAssert.LayoutPresent(scratch);
     }
 
@@ -355,7 +355,7 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", PdfFixtures.SimpleText());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var options = FixedOptions();
         options.RenderPages = true;
 
@@ -372,7 +372,7 @@ public class DocDownPdfTests
         // Assert: the summary states where the capability lives, declaratively. The summary wraps
         // its prose across lines, so the text is compared with whitespace normalized — a
         // line-oriented match would pass or fail on where the wrap happened to fall.
-        var summary = Normalize(await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct));
+        var summary = Normalize(await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct));
         Assert.Contains("no page renderer is available", summary, StringComparison.Ordinal);
         Assert.Contains("pages were not rendered", summary, StringComparison.Ordinal);
 
@@ -393,7 +393,7 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "protected.pdf", PdfFixtures.Encrypted());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: extract the protected document
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
@@ -416,7 +416,7 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "broken.pdf", PdfFixtures.Malformed());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: extract the malformed document
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
@@ -439,7 +439,7 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "empty.pdf", PdfFixtures.ZeroPage());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: extract the empty document
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
@@ -448,7 +448,7 @@ public class DocDownPdfTests
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Null(result.Failure);
         Assert.Empty(result.Notes);
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.StartsWith("# DocDown Empty", content, StringComparison.Ordinal);
         Assert.DoesNotContain("<!-- docdown:page", content, StringComparison.Ordinal);
 
@@ -475,7 +475,7 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "multi.pdf", PdfFixtures.MultiPage(3));
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var options = FixedOptions();
         options.Pages = new PageRange(2, 2);
 
@@ -483,7 +483,7 @@ public class DocDownPdfTests
         await engine.ExtractAsync(input, scratch, options, Ct);
 
         // Assert: only the requested page's text is present, and the others are absent
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("Page 2 marker", content, StringComparison.Ordinal);
         Assert.DoesNotContain("Page 1 marker", content, StringComparison.Ordinal);
         Assert.DoesNotContain("Page 3 marker", content, StringComparison.Ordinal);
@@ -501,11 +501,11 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "mixed.pdf", PdfFixtures.WithJpeg2000Image());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: run twice, snapshotting the first run's artifacts
         await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
-        var snapshot = Path.Combine(temp.Path, "snapshot");
+        var snapshot = Path.Join(temp.Path, "snapshot");
         CopyTree(scratch, snapshot);
         await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
@@ -515,7 +515,7 @@ public class DocDownPdfTests
         Assert.NotEmpty(expected);
         foreach (var file in expected)
         {
-            var actual = Path.Combine(scratch, Path.GetRelativePath(snapshot, file));
+            var actual = Path.Join(scratch, Path.GetRelativePath(snapshot, file));
             if (Path.GetExtension(file) is ".txt" or ".json" or ".md")
             {
                 ContractAssert.FileEqualsIgnoringTimestamp(file, actual);
@@ -542,7 +542,7 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "annotated.pdf", PdfFixtures.WithAnnotations());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: extract the whole document
         var result = await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
@@ -550,7 +550,7 @@ public class DocDownPdfTests
         // Assert: the run was clean and the review artifact carries each remark with author and page
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Empty(result.Notes);
-        var comments = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        var comments = await File.ReadAllTextAsync(Path.Join(scratch, "review-comments.md"), Ct);
         Assert.Contains("- **Alice Reviewer** (Page 1): Section 2 needs a citation.", comments, StringComparison.Ordinal);
         Assert.Contains("- **Carol Editor** (Page 1): This claim needs evidence.", comments, StringComparison.Ordinal);
         Assert.Contains("- **Dave Approver** (Page 2): Rewrite this conclusion.", comments, StringComparison.Ordinal);
@@ -563,7 +563,7 @@ public class DocDownPdfTests
         using var manifest = await ReadManifestAsync(scratch);
         Assert.Equal(5, manifest.RootElement.GetProperty("reviewComments").GetArrayLength());
         Assert.Equal("review-comments.md", manifest.RootElement.GetProperty("reviewCommentsPath").GetString());
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.DoesNotContain("Section 2 needs a citation.", content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
@@ -582,13 +582,13 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, "simple.pdf", PdfFixtures.SimpleText());
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: extract it
         await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
 
         // Assert: no artifact, and nothing in the manifest claiming otherwise
-        Assert.False(File.Exists(Path.Combine(scratch, "review-comments.md")));
+        Assert.False(File.Exists(Path.Join(scratch, "review-comments.md")));
         using var manifest = await ReadManifestAsync(scratch);
         Assert.Equal(JsonValueKind.Null, manifest.RootElement.GetProperty("reviewCommentsPath").ValueKind);
         Assert.Equal(0, manifest.RootElement.GetProperty("reviewComments").GetArrayLength());
@@ -617,7 +617,7 @@ public class DocDownPdfTests
         using var temp = new TempScratch();
         var engine = BuildEngine();
         var input = WriteFixture(temp, scenario + ".pdf", FixtureFor(scenario));
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
 
         // Act: extract whatever this scenario produces, clean or noted or failed
         await engine.ExtractAsync(input, scratch, FixedOptions(), Ct);
@@ -646,12 +646,9 @@ public class DocDownPdfTests
         {
             foreach (var member in type.GetMembers())
             {
-                foreach (var referenced in SignatureTypes(member))
+                foreach (var referenced in SignatureTypes(member).Where(IsPdfPigType))
                 {
-                    if (IsPdfPigType(referenced))
-                    {
-                        leaks.Add($"{type.FullName}.{member.Name} -> {referenced.FullName}");
-                    }
+                    leaks.Add($"{type.FullName}.{member.Name} -> {referenced.FullName}");
                 }
             }
         }
@@ -675,7 +672,7 @@ public class DocDownPdfTests
         var output = PackageOutputFolder();
 
         // Assert: no runtime-identifier folder exists, which is what makes the package RID-agnostic
-        Assert.False(Directory.Exists(Path.Combine(output, "runtimes")), $"a runtimes/ folder was produced in '{output}'");
+        Assert.False(Directory.Exists(Path.Join(output, "runtimes")), $"a runtimes/ folder was produced in '{output}'");
 
         // Assert: no unmanaged binaries of any platform are present
         foreach (var extension in new[] { "*.so", "*.dylib" })
@@ -690,7 +687,7 @@ public class DocDownPdfTests
         }
 
         // Assert: the project declares no runtime identifier, so no RID-specific asset can appear later
-        var project = File.ReadAllText(Path.Combine(RepositoryRoot(), "src",
+        var project = File.ReadAllText(Path.Join(RepositoryRoot(), "src",
             "DemaConsulting.DocDown.Pdf", "DemaConsulting.DocDown.Pdf.csproj"));
         Assert.DoesNotContain("<RuntimeIdentifier", project, StringComparison.OrdinalIgnoreCase);
     }
@@ -708,7 +705,7 @@ public class DocDownPdfTests
     {
         var testOutput = Path.GetDirectoryName(typeof(DocDownPdfTests).Assembly.Location)!;
         var framework = new DirectoryInfo(testOutput).Name;
-        return Path.Combine(RepositoryRoot(), "src", "DemaConsulting.DocDown.Pdf", "bin", "Release", framework);
+        return Path.Join(RepositoryRoot(), "src", "DemaConsulting.DocDown.Pdf", "bin", "Release", framework);
     }
 
     /// <summary>
@@ -720,7 +717,7 @@ public class DocDownPdfTests
     private static string RepositoryRoot()
     {
         var directory = new DirectoryInfo(Path.GetDirectoryName(typeof(DocDownPdfTests).Assembly.Location)!);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "DocDown.slnx")))
+        while (directory is not null && !File.Exists(Path.Join(directory.FullName, "DocDown.slnx")))
         {
             directory = directory.Parent;
         }
@@ -793,7 +790,7 @@ public class DocDownPdfTests
     /// </remarks>
     private static string WriteFixture(TempScratch temp, string name, byte[] bytes)
     {
-        var path = Path.Combine(temp.Path, name);
+        var path = Path.Join(temp.Path, name);
         File.WriteAllBytes(path, bytes);
         return path;
     }
@@ -828,7 +825,7 @@ public class DocDownPdfTests
     /// <returns>The parsed manifest; the caller disposes it.</returns>
     /// <remarks>Parsed as a document rather than deserialized so tests can assert on raw field spellings.</remarks>
     private static async Task<JsonDocument> ReadManifestAsync(string scratch) =>
-        JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct));
 
     /// <summary>
     ///     Copies a directory tree so a later run can be compared against it.
@@ -840,7 +837,7 @@ public class DocDownPdfTests
     {
         foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
         {
-            var target = Path.Combine(destination, Path.GetRelativePath(source, file));
+            var target = Path.Join(destination, Path.GetRelativePath(source, file));
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             File.Copy(file, target);
         }

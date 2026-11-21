@@ -47,7 +47,7 @@ public class ValidationTests
     {
         // Arrange: a per-test scratch folder holding the requested TRX file
         using var temp = new TempScratch();
-        var trx = Path.Combine(temp.Path, "results.trx");
+        var trx = Path.Join(temp.Path, "results.trx");
 
         // Act: run a self-validation over the managed engine that writes the TRX results file
         var (exit, log) = CliHarness.RunSelfValidation(CliHarness.BuildManagedEngine(), "--results", trx);
@@ -93,7 +93,7 @@ public class ValidationTests
     {
         // Arrange: a per-test scratch folder holding the requested JUnit file
         using var temp = new TempScratch();
-        var xml = Path.Combine(temp.Path, "results.xml");
+        var xml = Path.Join(temp.Path, "results.xml");
 
         // Act: run a self-validation over the managed engine that writes the JUnit results file
         var (exit, log) = CliHarness.RunSelfValidation(CliHarness.BuildManagedEngine(), "--results", xml);
@@ -134,7 +134,7 @@ public class ValidationTests
     public void Validation_Run_UnsupportedResultsExtension_WritesError()
     {
         using var temp = new TempScratch();
-        var json = Path.Combine(temp.Path, "results.json");
+        var json = Path.Join(temp.Path, "results.json");
 
         var (exit, log) = CliHarness.RunSelfValidation(CliHarness.BuildManagedEngine(), "--results", json);
 

@@ -260,7 +260,7 @@ public class VisioContentEmitterTests
     {
         using var temp = new TempScratch();
         var options = new ExtractionOptions { IncludeEmbeddedImages = true };
-        var folder = ScratchFolder.Prepare(Path.Combine(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
+        var folder = ScratchFolder.Prepare(Path.Join(temp.Path, "out"), ScratchFolderMode.CleanIfDocDownFolder);
         var sink = new ExtractionSink(folder, options);
         var image = new EmbeddedImage([1, 2, 3, 4], "image/png",
             SourceRef: "/visio/media/image1.png", AltText: "Diagram", SourcePages: [1]);

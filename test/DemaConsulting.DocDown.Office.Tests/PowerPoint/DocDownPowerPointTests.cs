@@ -47,11 +47,11 @@ public class DocDownPowerPointTests
         var (scratch, result) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithImage(), FixedOptions());
 
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
-        var images = Directory.GetFiles(Path.Combine(scratch, "images"));
+        var images = Directory.GetFiles(Path.Join(scratch, "images"));
         var image = Assert.Single(images);
         Assert.EndsWith(".png", image, StringComparison.Ordinal);
         Assert.Empty(result.Notes);
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("images/" + Path.GetFileName(images[0]), content, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
@@ -68,7 +68,7 @@ public class DocDownPowerPointTests
         var (scratch, result) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithVectorImage(), FixedOptions());
 
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
-        var images = Directory.GetFiles(Path.Combine(scratch, "images"));
+        var images = Directory.GetFiles(Path.Join(scratch, "images"));
         var image = Assert.Single(images);
         Assert.EndsWith(".emf", image, StringComparison.Ordinal);
         Assert.Empty(result.Notes);
@@ -85,7 +85,7 @@ public class DocDownPowerPointTests
         using var temp = new TempScratch();
         var (scratch, _) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithNotes(), FixedOptions());
 
-        var content = await File.ReadAllTextAsync(Path.Combine(scratch, "content.md"), Ct);
+        var content = await File.ReadAllTextAsync(Path.Join(scratch, "content.md"), Ct);
         Assert.Contains("Say this out loud on slide one.", content, StringComparison.Ordinal);
         Assert.Contains("Remember the caveat on slide two.", content, StringComparison.Ordinal);
         Assert.Contains("Overview", content, StringComparison.Ordinal);
@@ -105,10 +105,10 @@ public class DocDownPowerPointTests
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Empty(result.Notes);
 
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct);
         Assert.Contains("2 sets of speaker notes", summary, StringComparison.Ordinal);
 
-        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct));
         var feature = manifest.RootElement
             .GetProperty("contentFeatures")
             .EnumerateArray()
@@ -135,11 +135,11 @@ public class DocDownPowerPointTests
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
         Assert.Empty(result.Notes);
 
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct);
         Assert.Contains("0 sets of speaker notes", summary, StringComparison.Ordinal);
         Assert.Contains("Nothing was left incomplete.", summary, StringComparison.Ordinal);
 
-        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct));
         Assert.Equal("3.2", manifest.RootElement.GetProperty("schemaVersion").GetString());
         Assert.Equal("produced", manifest.RootElement.GetProperty("status").GetString());
         Assert.Equal(0, manifest.RootElement.GetProperty("notes").GetArrayLength());
@@ -162,12 +162,12 @@ public class DocDownPowerPointTests
         var (scratch, result) = await ExtractAsync(temp, "deck.pptx", PptxFixtures.DeckWithComment(), FixedOptions());
 
         Assert.Equal(ExtractionOutcome.Produced, result.Outcome);
-        var reviewComments = await File.ReadAllTextAsync(Path.Combine(scratch, "review-comments.md"), Ct);
+        var reviewComments = await File.ReadAllTextAsync(Path.Join(scratch, "review-comments.md"), Ct);
         Assert.Contains("Dana Reyes", reviewComments, StringComparison.Ordinal);
         Assert.Contains("Slide 1", reviewComments, StringComparison.Ordinal);
         Assert.Contains("Tighten this claim", reviewComments, StringComparison.Ordinal);
 
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct);
         Assert.Contains("1 comment", summary, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
@@ -188,7 +188,7 @@ public class DocDownPowerPointTests
         Assert.Contains("1 modern", note.Message, StringComparison.Ordinal);
         Assert.Contains("does not read", note.Message, StringComparison.Ordinal);
 
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct);
         Assert.Contains("modern (persona-based, cloud-synced) comment", summary, StringComparison.Ordinal);
         ContractAssert.LayoutPresent(scratch);
     }
@@ -212,11 +212,11 @@ public class DocDownPowerPointTests
             StringComparison.Ordinal);
         Assert.DoesNotContain("install", failure.Explanation, StringComparison.OrdinalIgnoreCase);
 
-        var summary = await File.ReadAllTextAsync(Path.Combine(scratch, "summary.txt"), Ct);
+        var summary = await File.ReadAllTextAsync(Path.Join(scratch, "summary.txt"), Ct);
         Assert.Contains("UNREADABLE  - no output could be produced; see \"Failure\"", summary, StringComparison.Ordinal);
         Assert.Contains("No backend was selected. See \"Failure\" for the reason.", summary, StringComparison.Ordinal);
 
-        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(scratch, "manifest.json"), Ct));
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Join(scratch, "manifest.json"), Ct));
         Assert.Equal("unreadable", manifest.RootElement.GetProperty("status").GetString());
         Assert.True(manifest.RootElement.TryGetProperty("failure", out _));
 
@@ -231,7 +231,7 @@ public class DocDownPowerPointTests
     {
         var engine = new DocDownBuilder().AddPowerPoint().Build();
         var input = WriteFixture(temp, name, bytes);
-        var scratch = Path.Combine(temp.Path, "out");
+        var scratch = Path.Join(temp.Path, "out");
         var result = await engine.ExtractAsync(DocumentSource.FromFile(input), scratch, options, Ct);
         return (scratch, result);
     }
@@ -242,7 +242,7 @@ public class DocDownPowerPointTests
     /// <summary>Writes a fixture to disk.</summary>
     private static string WriteFixture(TempScratch temp, string name, byte[] bytes)
     {
-        var path = Path.Combine(temp.Path, name);
+        var path = Path.Join(temp.Path, name);
         File.WriteAllBytes(path, bytes);
         return path;
     }

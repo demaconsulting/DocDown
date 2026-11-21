@@ -23,7 +23,7 @@ internal static class ToolPdfFixtures
     /// <returns>The bytes of the built document.</returns>
     public static byte[] SimpleText()
     {
-        var builder = new PdfDocumentBuilder { IncludeDocumentInformation = true };
+        using var builder = new PdfDocumentBuilder { IncludeDocumentInformation = true };
         builder.DocumentInformation.Title = "DocDown Tool Fixture";
         builder.DocumentInformation.Author = "DocDown Test Suite";
         var font = builder.AddStandard14Font(Standard14Font.Helvetica);
