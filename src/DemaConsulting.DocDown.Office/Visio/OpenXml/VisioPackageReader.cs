@@ -213,7 +213,7 @@ internal static class VisioPackageReader
         var mastersPart = FindMastersPart(package);
         if (mastersPart is null)
         {
-            return new Dictionary<string, string>(StringComparer.Ordinal);
+            return [with(StringComparer.Ordinal)];
         }
 
         var names = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -557,19 +557,11 @@ internal static class VisioPackageReader
             }
         }
 
-        var connections = new List<VisioConnectionModel>();
-        foreach (var connectorId in connectors)
-        {
-            if (begins.TryGetValue(connectorId, out var from)
-                && ends.TryGetValue(connectorId, out var to)
-                && shapeIds.Contains(from)
-                && shapeIds.Contains(to))
-            {
-                connections.Add(new VisioConnectionModel(from, to));
-            }
-        }
-
-        return connections;
+        // Pair each connector's two ends into a directed edge, keeping only edges between real shapes
+        return [.. connectors
+            .Where(connectorId => begins.TryGetValue(connectorId, out var from) && shapeIds.Contains(from)
+                && ends.TryGetValue(connectorId, out var to) && shapeIds.Contains(to))
+            .Select(connectorId => new VisioConnectionModel(begins[connectorId], ends[connectorId]))];
     }
 
     /// <summary>
