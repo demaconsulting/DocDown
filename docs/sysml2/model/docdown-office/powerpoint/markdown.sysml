@@ -1,4 +1,5 @@
-package DocDownOffice {
+package DocDownOffice_PowerPointMarkdownSubsystem {
+    public import DocDownOffice_PowerPointContentEmitter::*;
     private import SoftwareItemMetadata::*;
 
     part def PowerPointMarkdown {

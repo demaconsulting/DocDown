@@ -1,4 +1,7 @@
-package DocDownOffice {
+package DocDownOffice_PowerPointSubsystem {
+    public import DocDownOffice_PowerPointMarkdownSubsystem::*;
+    public import DocDownOffice_PowerPointOpenXmlSubsystem::*;
+    public import DocDownOffice_PowerPointDocDownBuilderExtensions::*;
     private import SoftwareItemMetadata::*;
 
     doc

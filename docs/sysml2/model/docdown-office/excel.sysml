@@ -1,4 +1,7 @@
-package DocDownOffice {
+package DocDownOffice_ExcelSubsystem {
+    public import DocDownOffice_ExcelDocDownBuilderExtensions::*;
+    public import DocDownOffice_ExcelMarkdownSubsystem::*;
+    public import DocDownOffice_ExcelOpenXmlSubsystem::*;
     private import SoftwareItemMetadata::*;
 
     doc

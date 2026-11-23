@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_VisioShapeLabeler {
     private import SoftwareItemMetadata::*;
 
     part def VisioShapeLabeler {

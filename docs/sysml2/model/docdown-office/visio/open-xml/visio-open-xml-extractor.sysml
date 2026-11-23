@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_VisioOpenXmlExtractor {
     private import SoftwareItemMetadata::*;
 
     part def VisioOpenXmlExtractor {

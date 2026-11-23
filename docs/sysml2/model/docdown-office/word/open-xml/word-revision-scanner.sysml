@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_WordRevisionScanner {
     private import SoftwareItemMetadata::*;
 
     part def WordRevisionScanner {

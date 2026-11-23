@@ -1,4 +1,6 @@
-package DocDownOffice {
+package DocDownOffice_VisioMarkdownSubsystem {
+    public import DocDownOffice_VisioContentEmitter::*;
+    public import DocDownOffice_VisioShapeLabeler::*;
     private import SoftwareItemMetadata::*;
 
     part def VisioMarkdown {

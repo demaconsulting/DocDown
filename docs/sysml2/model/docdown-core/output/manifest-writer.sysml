@@ -1,4 +1,4 @@
-package DocDownCore {
+package DocDownCore_ManifestWriter {
     private import SoftwareItemMetadata::*;
 
     part def ManifestWriter {

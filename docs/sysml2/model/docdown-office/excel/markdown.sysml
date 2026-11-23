@@ -1,4 +1,6 @@
-package DocDownOffice {
+package DocDownOffice_ExcelMarkdownSubsystem {
+    public import DocDownOffice_ExcelChartWriter::*;
+    public import DocDownOffice_ExcelContentEmitter::*;
     private import SoftwareItemMetadata::*;
 
     part def ExcelMarkdown {

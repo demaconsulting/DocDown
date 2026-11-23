@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_WordOpenXmlImageReader {
     private import SoftwareItemMetadata::*;
 
     part def WordOpenXmlImageReader {

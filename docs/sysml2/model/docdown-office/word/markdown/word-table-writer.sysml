@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_WordTableWriter {
     private import SoftwareItemMetadata::*;
 
     part def WordTableWriter {

@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_WordContentEmitter {
     private import SoftwareItemMetadata::*;
 
     part def WordContentEmitter {

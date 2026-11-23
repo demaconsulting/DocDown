@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_WordSymbolMap {
     private import SoftwareItemMetadata::*;
 
     part def WordSymbolMap {

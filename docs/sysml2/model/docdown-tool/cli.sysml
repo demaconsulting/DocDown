@@ -1,4 +1,5 @@
-package DocDownTool {
+package DocDownTool_CliSubsystem {
+    public import DocDownTool_Context::*;
     private import SoftwareItemMetadata::*;
 
     part def Cli {

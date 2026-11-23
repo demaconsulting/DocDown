@@ -1,4 +1,7 @@
-package DocDownOffice {
+package DocDownOffice_PowerPointOpenXmlSubsystem {
+    public import DocDownOffice_PowerPointOpenXmlExtractor::*;
+    public import DocDownOffice_PowerPointOpenXmlImageReader::*;
+    public import DocDownOffice_PowerPointOpenXmlReader::*;
     private import SoftwareItemMetadata::*;
 
     part def PowerPointOpenXml {

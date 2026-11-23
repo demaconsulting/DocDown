@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_ExcelDocDownBuilderExtensions {
     private import SoftwareItemMetadata::*;
 
     part def ExcelDocDownBuilderExtensions {

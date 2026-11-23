@@ -1,4 +1,4 @@
-package DocDownPdf {
+package DocDownPdf_PdfDocDownBuilderExtensions {
     private import SoftwareItemMetadata::*;
 
     part def PdfDocDownBuilderExtensions {

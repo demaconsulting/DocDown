@@ -1,4 +1,7 @@
-package DocDownOffice {
+package DocDownOffice_VisioSubsystem {
+    public import DocDownOffice_VisioMarkdownSubsystem::*;
+    public import DocDownOffice_VisioOpenXmlSubsystem::*;
+    public import DocDownOffice_VisioDocDownBuilderExtensions::*;
     private import SoftwareItemMetadata::*;
 
     doc

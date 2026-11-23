@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_WordTocDetector {
     private import SoftwareItemMetadata::*;
 
     part def WordTocDetector {

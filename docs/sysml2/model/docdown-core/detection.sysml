@@ -1,4 +1,5 @@
-package DocDownCore {
+package DocDownCore_DetectionSubsystem {
+    public import DocDownCore_FormatSniffer::*;
     private import SoftwareItemMetadata::*;
 
     part def Detection {

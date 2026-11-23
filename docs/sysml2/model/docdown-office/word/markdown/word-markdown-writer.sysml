@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_WordMarkdownWriter {
     private import SoftwareItemMetadata::*;
 
     part def WordMarkdownWriter {

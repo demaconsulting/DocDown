@@ -1,4 +1,9 @@
-package DocDownOffice {
+package DocDownOffice_ExcelOpenXmlSubsystem {
+    public import DocDownOffice_ExcelChartReader::*;
+    public import DocDownOffice_ExcelDrawingTextReader::*;
+    public import DocDownOffice_ExcelOpenXmlExtractor::*;
+    public import DocDownOffice_ExcelOpenXmlImageReader::*;
+    public import DocDownOffice_ExcelOpenXmlReader::*;
     private import SoftwareItemMetadata::*;
 
     part def ExcelOpenXml {

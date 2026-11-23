@@ -1,4 +1,7 @@
-package DocDownOffice {
+package DocDownOffice_WordSubsystem {
+    public import DocDownOffice_WordMarkdownSubsystem::*;
+    public import DocDownOffice_WordOpenXmlSubsystem::*;
+    public import DocDownOffice_WordDocDownBuilderExtensions::*;
     private import SoftwareItemMetadata::*;
 
     doc

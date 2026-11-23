@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_PowerPointContentEmitter {
     private import SoftwareItemMetadata::*;
 
     part def PowerPointContentEmitter {

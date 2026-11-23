@@ -1,4 +1,4 @@
-package DocDownCore {
+package DocDownCore_ContentWriter {
     private import SoftwareItemMetadata::*;
 
     part def ContentWriter {

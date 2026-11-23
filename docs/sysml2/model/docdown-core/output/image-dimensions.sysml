@@ -1,4 +1,4 @@
-package DocDownCore {
+package DocDownCore_ImageDimensions {
     private import SoftwareItemMetadata::*;
 
     part def ImageDimensions {

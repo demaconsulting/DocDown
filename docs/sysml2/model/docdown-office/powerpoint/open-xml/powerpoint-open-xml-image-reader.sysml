@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_PowerPointOpenXmlImageReader {
     private import SoftwareItemMetadata::*;
 
     part def PowerPointOpenXmlImageReader {

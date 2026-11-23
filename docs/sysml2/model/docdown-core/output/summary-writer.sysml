@@ -1,4 +1,4 @@
-package DocDownCore {
+package DocDownCore_SummaryWriter {
     private import SoftwareItemMetadata::*;
 
     part def SummaryWriter {

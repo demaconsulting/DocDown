@@ -1,4 +1,4 @@
-package DocDownCore {
+package DocDownCore_ImageTextSelector {
     private import SoftwareItemMetadata::*;
 
     part def ImageTextSelector {

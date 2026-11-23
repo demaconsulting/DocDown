@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_WordOpenXmlExtractor {
     private import SoftwareItemMetadata::*;
 
     part def WordOpenXmlExtractor {

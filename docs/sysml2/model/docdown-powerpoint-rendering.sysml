@@ -1,4 +1,7 @@
 package DocDownPowerPointRendering {
+    public import DocDownPowerPointRendering_PowerPointPageRenderingExtractor::*;
+    public import DocDownPowerPointRendering_PowerPointRenderingDocDownBuilderExtensions::*;
+    public import DocDownPowerPointRendering_SlideRenderer::*;
     private import SoftwareItemMetadata::*;
 
     doc

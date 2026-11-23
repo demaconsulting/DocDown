@@ -1,4 +1,4 @@
-package DocDownPowerPointRendering {
+package DocDownPowerPointRendering_PowerPointRenderingDocDownBuilderExtensions {
     private import SoftwareItemMetadata::*;
 
     part def PowerPointRenderingDocDownBuilderExtensions {

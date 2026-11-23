@@ -1,4 +1,4 @@
-package DocDownCore {
+package DocDownCore_DocDownBuilder {
     private import SoftwareItemMetadata::*;
 
     part def DocDownBuilder {
