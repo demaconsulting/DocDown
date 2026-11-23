@@ -1,4 +1,4 @@
-package DocDownPowerPointRendering {
+package DocDownPowerPointRendering_PowerPointPageRenderingExtractor {
     private import SoftwareItemMetadata::*;
 
     part def PowerPointPageRenderingExtractor {

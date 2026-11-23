@@ -1,4 +1,4 @@
-package DocDownTool {
+package DocDownTool_Validation {
     private import SoftwareItemMetadata::*;
 
     part def Validation {

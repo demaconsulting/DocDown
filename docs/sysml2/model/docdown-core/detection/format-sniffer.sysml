@@ -1,4 +1,4 @@
-package DocDownCore {
+package DocDownCore_FormatSniffer {
     private import SoftwareItemMetadata::*;
 
     part def FormatSniffer {

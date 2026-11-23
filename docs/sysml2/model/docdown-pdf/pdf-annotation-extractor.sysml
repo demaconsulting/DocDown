@@ -1,4 +1,4 @@
-package DocDownPdf {
+package DocDownPdf_PdfAnnotationExtractor {
     private import SoftwareItemMetadata::*;
 
     part def PdfAnnotationExtractor {

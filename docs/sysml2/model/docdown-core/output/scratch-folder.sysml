@@ -1,4 +1,4 @@
-package DocDownCore {
+package DocDownCore_ScratchFolder {
     private import SoftwareItemMetadata::*;
 
     part def ScratchFolder {

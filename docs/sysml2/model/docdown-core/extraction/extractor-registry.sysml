@@ -1,4 +1,4 @@
-package DocDownCore {
+package DocDownCore_ExtractorRegistry {
     private import SoftwareItemMetadata::*;
 
     part def ExtractorRegistry {

@@ -1,4 +1,4 @@
-package DocDownVisioRendering {
+package DocDownVisioRendering_VisioRenderingDocDownBuilderExtensions {
     private import SoftwareItemMetadata::*;
 
     part def VisioRenderingDocDownBuilderExtensions {

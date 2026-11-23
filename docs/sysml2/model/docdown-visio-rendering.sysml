@@ -1,4 +1,7 @@
 package DocDownVisioRendering {
+    public import DocDownVisioRendering_PageRenderer::*;
+    public import DocDownVisioRendering_VisioPageRenderingExtractor::*;
+    public import DocDownVisioRendering_VisioRenderingDocDownBuilderExtensions::*;
     private import SoftwareItemMetadata::*;
 
     doc

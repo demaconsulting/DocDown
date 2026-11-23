@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_ExcelOpenXmlReader {
     private import SoftwareItemMetadata::*;
 
     part def ExcelOpenXmlReader {

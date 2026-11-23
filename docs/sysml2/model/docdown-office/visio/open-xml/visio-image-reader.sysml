@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_VisioImageReader {
     private import SoftwareItemMetadata::*;
 
     part def VisioImageReader {

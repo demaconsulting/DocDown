@@ -1,4 +1,7 @@
 package DocDownTool {
+    public import DocDownTool_CliSubsystem::*;
+    public import DocDownTool_Program::*;
+    public import DocDownTool_SelfTestSubsystem::*;
     private import SoftwareItemMetadata::*;
 
     doc

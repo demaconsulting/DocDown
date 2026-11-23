@@ -1,4 +1,4 @@
-package DocDownVisioRendering {
+package DocDownVisioRendering_VisioPageRenderingExtractor {
     private import SoftwareItemMetadata::*;
 
     part def VisioPageRenderingExtractor {

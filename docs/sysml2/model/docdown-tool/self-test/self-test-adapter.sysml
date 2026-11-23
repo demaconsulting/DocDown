@@ -1,4 +1,4 @@
-package DocDownTool {
+package DocDownTool_SelfTestAdapter {
     private import SoftwareItemMetadata::*;
 
     part def SelfTestAdapter {

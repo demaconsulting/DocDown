@@ -1,4 +1,7 @@
 package DocDownCore {
+    public import DocDownCore_DetectionSubsystem::*;
+    public import DocDownCore_ExtractionSubsystem::*;
+    public import DocDownCore_OutputSubsystem::*;
     private import SoftwareItemMetadata::*;
 
     doc

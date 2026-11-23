@@ -1,4 +1,8 @@
 package DocDownOffice {
+    public import DocDownOffice_ExcelSubsystem::*;
+    public import DocDownOffice_PowerPointSubsystem::*;
+    public import DocDownOffice_VisioSubsystem::*;
+    public import DocDownOffice_WordSubsystem::*;
     private import SoftwareItemMetadata::*;
 
     doc

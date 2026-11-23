@@ -1,4 +1,8 @@
-package DocDownCore {
+package DocDownCore_ExtractionSubsystem {
+    public import DocDownCore_DocDownBuilder::*;
+    public import DocDownCore_DocDownEngine::*;
+    public import DocDownCore_ExtractorRegistry::*;
+    public import DocDownCore_ExtractorSelector::*;
     private import SoftwareItemMetadata::*;
 
     part def Extraction {

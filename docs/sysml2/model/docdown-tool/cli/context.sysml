@@ -1,4 +1,4 @@
-package DocDownTool {
+package DocDownTool_Context {
     private import SoftwareItemMetadata::*;
 
     part def Context {

@@ -1,4 +1,4 @@
-package DocDownPdf {
+package DocDownPdf_PdfImageExtractor {
     private import SoftwareItemMetadata::*;
 
     part def PdfImageExtractor {

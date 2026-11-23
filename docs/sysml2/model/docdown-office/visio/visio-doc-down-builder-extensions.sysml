@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_VisioDocDownBuilderExtensions {
     private import SoftwareItemMetadata::*;
 
     part def VisioDocDownBuilderExtensions {

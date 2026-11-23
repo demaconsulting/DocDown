@@ -1,4 +1,10 @@
-package DocDownOffice {
+package DocDownOffice_WordOpenXmlSubsystem {
+    public import DocDownOffice_WordOpenXmlExtractor::*;
+    public import DocDownOffice_WordOpenXmlImageReader::*;
+    public import DocDownOffice_WordOpenXmlReader::*;
+    public import DocDownOffice_WordRevisionScanner::*;
+    public import DocDownOffice_WordSymbolMap::*;
+    public import DocDownOffice_WordTocDetector::*;
     private import SoftwareItemMetadata::*;
 
     part def WordOpenXml {

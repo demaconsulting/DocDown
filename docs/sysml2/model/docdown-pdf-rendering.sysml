@@ -1,4 +1,7 @@
 package DocDownPdfRendering {
+    public import DocDownPdfRendering_PageRenderer::*;
+    public import DocDownPdfRendering_PdfPageRenderingExtractor::*;
+    public import DocDownPdfRendering_PdfRenderingDocDownBuilderExtensions::*;
     private import SoftwareItemMetadata::*;
 
     doc

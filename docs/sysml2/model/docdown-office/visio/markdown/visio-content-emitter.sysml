@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_VisioContentEmitter {
     private import SoftwareItemMetadata::*;
 
     part def VisioContentEmitter {

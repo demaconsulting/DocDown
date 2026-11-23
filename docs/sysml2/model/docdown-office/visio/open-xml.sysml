@@ -1,4 +1,7 @@
-package DocDownOffice {
+package DocDownOffice_VisioOpenXmlSubsystem {
+    public import DocDownOffice_VisioImageReader::*;
+    public import DocDownOffice_VisioOpenXmlExtractor::*;
+    public import DocDownOffice_VisioPackageReader::*;
     private import SoftwareItemMetadata::*;
 
     part def VisioOpenXml {

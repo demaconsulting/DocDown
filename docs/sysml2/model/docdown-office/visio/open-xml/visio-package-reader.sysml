@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_VisioPackageReader {
     private import SoftwareItemMetadata::*;
 
     part def VisioPackageReader {

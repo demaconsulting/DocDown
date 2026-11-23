@@ -1,4 +1,7 @@
-package DocDownOffice {
+package DocDownOffice_WordMarkdownSubsystem {
+    public import DocDownOffice_WordContentEmitter::*;
+    public import DocDownOffice_WordMarkdownWriter::*;
+    public import DocDownOffice_WordTableWriter::*;
     private import SoftwareItemMetadata::*;
 
     part def WordMarkdown {

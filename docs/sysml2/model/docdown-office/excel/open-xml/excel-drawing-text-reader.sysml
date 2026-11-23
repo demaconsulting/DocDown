@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_ExcelDrawingTextReader {
     private import SoftwareItemMetadata::*;
 
     part def ExcelDrawingTextReader {

@@ -1,4 +1,4 @@
-package DocDownCore {
+package DocDownCore_DocDownEngine {
     private import SoftwareItemMetadata::*;
 
     part def DocDownEngine {

@@ -1,4 +1,4 @@
-package DocDownPdfRendering {
+package DocDownPdfRendering_PageRenderer {
     private import SoftwareItemMetadata::*;
 
     part def PageRenderer {

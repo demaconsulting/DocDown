@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_PowerPointOpenXmlExtractor {
     private import SoftwareItemMetadata::*;
 
     part def PowerPointOpenXmlExtractor {

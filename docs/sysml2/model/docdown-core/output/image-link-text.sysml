@@ -1,4 +1,4 @@
-package DocDownCore {
+package DocDownCore_ImageLinkText {
     private import SoftwareItemMetadata::*;
 
     part def ImageLinkText {

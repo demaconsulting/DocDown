@@ -1,4 +1,4 @@
-package DocDownCore {
+package DocDownCore_ExtractorSelector {
     private import SoftwareItemMetadata::*;
 
     part def ExtractorSelector {

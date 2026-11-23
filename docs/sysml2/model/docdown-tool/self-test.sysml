@@ -1,4 +1,6 @@
-package DocDownTool {
+package DocDownTool_SelfTestSubsystem {
+    public import DocDownTool_SelfTestAdapter::*;
+    public import DocDownTool_Validation::*;
     private import SoftwareItemMetadata::*;
 
     part def SelfTest {

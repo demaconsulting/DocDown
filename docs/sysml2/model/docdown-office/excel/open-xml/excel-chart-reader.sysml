@@ -1,4 +1,4 @@
-package DocDownOffice {
+package DocDownOffice_ExcelChartReader {
     private import SoftwareItemMetadata::*;
 
     part def ExcelChartReader {

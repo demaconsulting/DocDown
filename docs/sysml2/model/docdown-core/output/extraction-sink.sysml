@@ -1,4 +1,4 @@
-package DocDownCore {
+package DocDownCore_ExtractionSink {
     private import SoftwareItemMetadata::*;
 
     part def ExtractionSink {

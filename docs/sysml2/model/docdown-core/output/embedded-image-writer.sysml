@@ -1,4 +1,4 @@
-package DocDownCore {
+package DocDownCore_EmbeddedImageWriter {
     private import SoftwareItemMetadata::*;
 
     part def EmbeddedImageWriter {

@@ -1,4 +1,14 @@
-package DocDownCore {
+package DocDownCore_OutputSubsystem {
+    public import DocDownCore_ContentWriter::*;
+    public import DocDownCore_EmbeddedImageWriter::*;
+    public import DocDownCore_ExtractionSink::*;
+    public import DocDownCore_ImageDimensions::*;
+    public import DocDownCore_ImageLinkText::*;
+    public import DocDownCore_ImageTextSelector::*;
+    public import DocDownCore_ManifestWriter::*;
+    public import DocDownCore_ReviewCommentsWriter::*;
+    public import DocDownCore_ScratchFolder::*;
+    public import DocDownCore_SummaryWriter::*;
     private import SoftwareItemMetadata::*;
 
     part def Output {

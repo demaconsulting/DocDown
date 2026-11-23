@@ -1,4 +1,9 @@
 package DocDownPdf {
+    public import DocDownPdf_PdfAnnotationExtractor::*;
+    public import DocDownPdf_PdfDocDownBuilderExtensions::*;
+    public import DocDownPdf_PdfDocumentExtractor::*;
+    public import DocDownPdf_PdfImageExtractor::*;
+    public import DocDownPdf_PdfTextExtractor::*;
     private import SoftwareItemMetadata::*;
 
     doc

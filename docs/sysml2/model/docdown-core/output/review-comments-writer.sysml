@@ -1,4 +1,4 @@
-package DocDownCore {
+package DocDownCore_ReviewCommentsWriter {
     private import SoftwareItemMetadata::*;
 
     part def ReviewCommentsWriter {
