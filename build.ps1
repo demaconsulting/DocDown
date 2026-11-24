@@ -133,6 +133,10 @@ if (-not $All) {
     $fullReason = $null
 
     foreach ($single in @($Project | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })) {
+        # [PROJECT-SPECIFIC] Every DocDown project is named DemaConsulting.DocDown.<name>, so map short names
+        # (Core, Pdf, Pdf.Rendering, Tool.Tests, ...) to that form before the shared resolver runs; the
+        # shared resolver would otherwise treat the shortest project name as the prefix for short names.
+        if ($graph.Contains("DemaConsulting.DocDown.$single")) { $single = "DemaConsulting.DocDown.$single" }
         $resolved = Resolve-ProjectName $graph $single
         if (-not $resolved) {
             Write-Host "Unknown project '$single'. Known projects: $($graph.Keys -join ', ')"
