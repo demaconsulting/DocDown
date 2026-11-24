@@ -11,17 +11,23 @@
 #   pwsh ./build.ps1 -All                      Full local build and all tests
 #   pwsh ./build.ps1 -Changed [-Base <ref>]    Only the test projects affected by the changes since <ref>
 #                                              (default origin/main, else main) plus uncommitted changes
-#   pwsh ./build.ps1 -Project Core,Pdf         Only the test projects affected by the named projects
+#   pwsh ./build.ps1 -Project Core,Pdf         Only the test projects affected by the named projects (full or short
+#                                              names: Pdf finds X.Y.Pdf, Core is the core library, aliases from
+#                                              $ProjectAliases also work; -Help lists this repository's names)
 #   Add -DryRun to any scope to print the selection without building anything.
 #   With no arguments the usage text is printed and the script exits 1 (a scope must be chosen).
 #
 #   A changed project selects every project that references it, directly or transitively, from the
-#   ProjectReference graph, and files linked into another project (Compile/None/EmbeddedResource items
-#   that point outside the project folder) select that project too. Changes that affect the whole
+#   ProjectReference graph, and files linked into another project (any item or file property that
+#   points outside the project folder) select that project too. Changes that affect the whole
 #   build (solution, project, props/targets, global.json, .editorconfig, nuget.config, tool manifest,
 #   this script, scripts/ProjectScripts.psm1) fall back to the full build; repository files tests read
 #   at run time select their test projects through $RuntimeReads; other changes the build does not
-#   read select nothing.
+#   read select nothing. This works unchanged for a solution with one project pair or many.
+#
+#   The test platform is detected from global.json: "test": { "runner": "Microsoft.Testing.Platform" } runs
+#   'dotnet test --project <path> --report-trx', anything else runs VSTest 'dotnet test <path> --logger trx';
+#   results go to artifacts/tests either way. Do not customize the arguments per repository.
 #
 # EXTENSION POINTS:
 #   Search for "[PROJECT-SPECIFIC]" comments to find the designated locations
@@ -57,7 +63,6 @@ param(
     [switch]$Help
 )
 
-$ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'scripts/ProjectScripts.psm1') -Force
 
 # [PROJECT-SPECIFIC] Repository files that tests read at run time (through the repository root, not through a
@@ -70,6 +75,37 @@ $RuntimeReads = [ordered]@{
 # [PROJECT-SPECIFIC] Projects under test/ that hold shared test code but no tests (IsTestProject is false): they are
 # built, never passed to 'dotnet test'.
 $SupportProjects = @('DemaConsulting.DocDown.TestSupport')
+
+# [PROJECT-SPECIFIC] Short -Project names that no resolution rule can derive (exact name, unique dot-segment suffix,
+# Core), as data: alias = project name. Empty by default. Example:
+#   $ProjectAliases = @{ Ots = 'OtsSoftwareTests'; App = 'DemaConsulting.Foo' }
+$ProjectAliases = @{}
+
+# [PROJECT-SPECIFIC] Folders scanned for projects. List every root once here when projects live outside src/, test/,
+# and tools/ (for example demo, samples, benchmarks); leave out folders of fixture projects that are test inputs.
+$ProjectRoots = @('src', 'test', 'tools')
+
+# Test platform: global.json selects Microsoft.Testing.Platform with "test": { "runner": "Microsoft.Testing.Platform" };
+# otherwise VSTest is used. The platform decides the 'dotnet test' arguments (see Invoke-DotnetTest).
+$UseTestingPlatform = $false
+if (Test-Path global.json) {
+    try { $UseTestingPlatform = (Get-Content -Raw global.json | ConvertFrom-Json).test.runner -eq 'Microsoft.Testing.Platform' }
+    catch { Write-Host "Warning: global.json could not be read; assuming VSTest." }
+}
+
+function Invoke-DotnetTest {
+    # Runs the tests of one project, or of the whole solution when no path is given, against the existing build
+    param([string]$Path)
+
+    # @(...) keeps a one-element list an array, so the splat passes the path whole and not character by character
+    if ($UseTestingPlatform) {
+        $target = @(if ($Path) { '--project'; $Path })
+        dotnet test @target --no-build --configuration Release --report-trx --results-directory artifacts/tests
+    } else {
+        $target = @(if ($Path) { $Path })
+        dotnet test @target --no-build --configuration Release --logger trx --results-directory artifacts/tests
+    }
+}
 
 # ==============================================================================
 # USAGE AND SCOPE VALIDATION
@@ -86,6 +122,8 @@ function Show-Usage {
             '-DryRun'          = 'Print what would be built, tested, and skipped, then exit 0 without running anything.'
             '-Help'            = 'Print this text and exit 0.'
         }) `
+        -ChecksLabel 'Projects and aliases (-Project names; short names such as Core or Pdf also work)' `
+        -Checks @(try { Get-ProjectNameList (Get-ProjectGraph -Root $ProjectRoots) $ProjectAliases } catch { }) `
         -Examples @('-Changed', '-Project Core,Pdf', '-Changed -DryRun', '-All')
 }
 
@@ -103,17 +141,19 @@ if ($scopeProblems.Count -gt 0) {
     exit 1
 }
 
+$buildError = $false
+
 # ==============================================================================
 # FAILING-RUN EVIDENCE
 # ==============================================================================
 
 # [PROJECT-SPECIFIC] Preserve a failing run's TRX for diagnosis before exiting. The test TRX are
-# written under TestResults/ and are overwritten by the next run; on failure, copy them into a
-# timestamped archive OUTSIDE TestResults/** so the evidence survives. The archive location is
-# deliberately not matched by the ReqStream gate glob (--tests "TestResults/**/*.trx"), so retained
+# written under artifacts/tests and are overwritten by the next run; on failure, copy them into a
+# timestamped archive OUTSIDE artifacts/** so the evidence survives. The archive location is
+# deliberately not matched by the ReqStream gate glob (--tests "artifacts/**/*.trx"), so retained
 # failing copies never inflate the compliance case counts.
 function Save-FailingTestResults {
-    $failingTrx = Get-ChildItem -Path "TestResults" -Filter "*.trx" -Recurse -ErrorAction SilentlyContinue
+    $failingTrx = Get-ChildItem -Path "artifacts/tests" -Filter "*.trx" -Recurse -ErrorAction SilentlyContinue
     if ($failingTrx) {
         $archive = Join-Path "test-history" (Get-Date -Format "yyyyMMdd-HHmmss")
         New-Item -ItemType Directory -Force -Path $archive | Out-Null
@@ -127,19 +167,24 @@ function Save-FailingTestResults {
 # Selects the affected test projects; falls back to the full build when needed.
 # ==============================================================================
 
+$scoped = $false
+$testsFailed = $false
 if (-not $All) {
-    $graph = Get-ProjectGraph
+    $graph = Get-ProjectGraph -Root $ProjectRoots
     $selected = [System.Collections.Generic.HashSet[string]]::new()
     $fullReason = $null
 
-    foreach ($single in @($Project | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })) {
-        # [PROJECT-SPECIFIC] Every DocDown project is named DemaConsulting.DocDown.<name>, so map short names
-        # (Core, Pdf, Pdf.Rendering, Tool.Tests, ...) to that form before the shared resolver runs; the
-        # shared resolver would otherwise treat the shortest project name as the prefix for short names.
-        if ($graph.Contains("DemaConsulting.DocDown.$single")) { $single = "DemaConsulting.DocDown.$single" }
-        $resolved = Resolve-ProjectName $graph $single
+    $names = @($Project | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    $known = (Get-ProjectNameList $graph $ProjectAliases) -join ', '
+    if ($Project -and $names.Count -eq 0) {
+        Write-Host "Error: no project named in '$($Project -join ' ')'. Known projects: $known"
+        exit 1
+    }
+    foreach ($single in $names) {
+        try { $resolved = Resolve-ProjectName $graph $single $ProjectAliases }
+        catch { Write-Host "Error: $($_.Exception.Message)"; exit 1 }
         if (-not $resolved) {
-            Write-Host "Unknown project '$single'. Known projects: $($graph.Keys -join ', ')"
+            Write-Host "Unknown project '$single'. Known projects: $known"
             exit 1
         }
         [void]$selected.Add($resolved)
@@ -157,7 +202,6 @@ if (-not $All) {
 
     if ($fullReason) {
         Write-Host "Full build required: $fullReason."
-        if ($DryRun) { Write-Host "Dry run: would run the full build and all tests."; exit 0 }
     } else {
         Expand-ReferencingProjects -Graph $graph -Selected $selected
 
@@ -182,48 +226,64 @@ if (-not $All) {
             exit 0
         }
 
-        # Each step runs only if the steps before it succeeded
+        $scoped = $true
         foreach ($entry in $tests + $tools) {
             Write-Host "Building $($entry.Name)..."
             dotnet build $entry.Path --configuration Release
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            if ($LASTEXITCODE -ne 0) { $buildError = $true }
         }
 
-        foreach ($entry in $tests) {
-            Write-Host "Running unit tests: $($entry.Name)..."
-            dotnet test --project $entry.Path --configuration Release --report-trx
-            if ($LASTEXITCODE -ne 0) {
-                $testExitCode = $LASTEXITCODE
-                Save-FailingTestResults
-                exit $testExitCode
+        if (-not $buildError) {
+            foreach ($entry in $tests) {
+                Write-Host "Running tests: $($entry.Name)..."
+                Invoke-DotnetTest $entry.Path
+                if ($LASTEXITCODE -ne 0) { $buildError = $true; $testsFailed = $true }
             }
+        } else {
+            Write-Host "Skipping tests: the build failed."
         }
-
-        Write-Host "Scoped build and tests completed successfully!"
-        exit 0
     }
 }
 
-if ($DryRun) { Write-Host "Dry run: would run the full build and all tests."; exit 0 }
+if ($DryRun -and -not $scoped) { Write-Host "Dry run: would run the full build and all tests."; exit 0 }
 
 # ==============================================================================
 # FULL BUILD (-All, or a scoped run that needs everything)
 # ==============================================================================
 
-Write-Host "Building project..."
-dotnet build --configuration Release
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+if (-not $scoped) {
+    # Each step runs only if the steps before it succeeded, so tests never run against stale binaries
+    $failedStep = $null   # the step that failed first, so the skip message names the real cause
+    Write-Host "Restoring dependencies..."
+    dotnet restore
+    if ($LASTEXITCODE -ne 0) { $buildError = $true; $failedStep = 'restore' }
 
-# [PROJECT-SPECIFIC] Add additional build steps here.
+    if (-not $buildError) {
+        Write-Host "Building..."
+        dotnet build --no-restore --configuration Release
+        if ($LASTEXITCODE -ne 0) { $buildError = $true; $failedStep = 'build' }
+    }
 
-Write-Host "Running unit tests..."
-dotnet test --configuration Release --report-trx
-$testExitCode = $LASTEXITCODE
-if ($testExitCode -ne 0) {
-    Save-FailingTestResults
-    exit $testExitCode
+    # [PROJECT-SPECIFIC] Add additional build steps here.
+
+    if (-not $buildError) {
+        Write-Host "Running tests..."
+        Invoke-DotnetTest
+        if ($LASTEXITCODE -ne 0) { $buildError = $true; $testsFailed = $true }
+    } elseif ($failedStep -eq 'restore') {
+        Write-Host "Skipping build and tests: restore failed."
+    } else {
+        Write-Host "Skipping tests: the build failed."
+    }
+
+    # [PROJECT-SPECIFIC] Add additional test or post-build steps here.
+    # Guard steps that depend on the build with: if (-not $buildError) { ... }
 }
 
-# [PROJECT-SPECIFIC] Add additional test or post-build steps here.
+if ($testsFailed) { Save-FailingTestResults }
 
-Write-Host "Build and tests completed successfully!"
+if (-not $buildError) {
+    Write-Host "Build and tests completed successfully!"
+}
+
+exit ($buildError ? 1 : 0)
