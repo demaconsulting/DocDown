@@ -52,12 +52,26 @@ internal static class Program
     ///     Main entry point for the tool.
     /// </summary>
     /// <param name="args">Command-line arguments.</param>
-    /// <returns>0 when the output layout was produced, 1 when the document could not be read or an argument was bad.</returns>
+    /// <returns>
+    ///     0 when the output layout was produced, 1 when the document could not be read or an argument was bad;
+    ///     for the <c>help</c> command, the exit code of <see cref="HelpCommand"/> (2 for a wrong help argument).
+    /// </returns>
     /// <exception cref="Exception">Re-thrown after writing to standard error for any unexpected error.</exception>
+    /// <remarks>
+    ///     The <c>help</c> command is answered first, by <see cref="HelpCommand"/>, before the command-line
+    ///     options are parsed: <c>help</c> is a command and not an option, so <see cref="Context.Create"/>
+    ///     would reject it. Its exit code is returned as is.
+    /// </remarks>
     public static int Main(string[] args)
     {
         try
         {
+            // Answer the help command before the options are parsed
+            if (HelpCommand.Default.TryRun(args, out var helpExitCode))
+            {
+                return helpExitCode;
+            }
+
             using var context = Context.Create(args);
             Run(context);
             return context.ExitCode;
@@ -138,11 +152,12 @@ internal static class Program
         context.WriteLine("");
     }
 
-    /// <summary>Prints the usage and option list.</summary>
+    /// <summary>Prints the usage and option list, ending with a pointer to the built-in help topics.</summary>
     /// <param name="context">The context for output.</param>
     private static void PrintHelp(Context context)
     {
-        context.WriteLine("Usage: docdown [options]");
+        context.WriteLine($"Usage: {HelpCommand.ToolName} [options]");
+        context.WriteLine($"       {HelpCommand.ToolName} help [topic]");
         context.WriteLine("");
         context.WriteLine("Options:");
         context.WriteLine("  -v, --version              Display version information");
@@ -166,6 +181,8 @@ internal static class Program
         context.WriteLine("  --max-image-bytes <#>      Skip images exceeding this byte size");
         context.WriteLine("  --accept-changes           Show Word tracked changes accepted instead of as markup");
         context.WriteLine("  --overwrite <clean|overwrite>  Scratch folder policy (default: clean)");
+        context.WriteLine("");
+        context.WriteLine(HelpCommand.Default.Footer);
     }
 
     /// <summary>Lists the registered backends with their formats and availability.</summary>

@@ -1,4 +1,5 @@
 using DemaConsulting.DocDown.TestSupport;
+using DemaConsulting.DocDown.Tool.Cli;
 using DemaConsulting.DocDown.Tool.Tests.TestData;
 using ToolProgram = DemaConsulting.DocDown.Tool.Program;
 
@@ -8,6 +9,7 @@ namespace DemaConsulting.DocDown.Tool.Tests;
 ///     Unit tests for the <c>Program</c> unit: priority-ordered dispatch, the version and help
 ///     output, the extraction path, and the expected-error handling in <c>Main</c>.
 /// </summary>
+[Collection("Console")]
 public class ProgramTests
 {
     /// <summary>Proves the version flag writes an informational version string.</summary>
@@ -20,7 +22,7 @@ public class ProgramTests
         Assert.Matches(@"\d+\.\d+\.\d+", log);
     }
 
-    /// <summary>Proves the help flag writes the usage and option list.</summary>
+    /// <summary>Proves the help flag writes the usage and option list, ending with the pointer to the help command.</summary>
     [Fact]
     public void Program_Run_HelpFlag_WritesUsageAndOptions()
     {
@@ -30,6 +32,34 @@ public class ProgramTests
         Assert.Contains("Usage: docdown", log, StringComparison.Ordinal);
         Assert.Contains("Options:", log, StringComparison.Ordinal);
         Assert.Contains("--input", log, StringComparison.Ordinal);
+        Assert.Contains($"{HelpCommand.ToolName} help [topic]", log, StringComparison.Ordinal);
+        Assert.EndsWith(HelpCommand.Default.Footer, log.TrimEnd(), StringComparison.Ordinal);
+    }
+
+    /// <summary>Proves Main answers the help verb from the help cards before the options are parsed.</summary>
+    [Fact]
+    public void Program_Main_HelpVerb_PrintsHelpIndex()
+    {
+        // Arrange: capture console output
+        var originalOut = Console.Out;
+        try
+        {
+            using var outWriter = new StringWriter();
+            Console.SetOut(outWriter);
+
+            // Act: invoke Main with the help verb, which is not an option
+            var result = ToolProgram.Main(["help"]);
+
+            // Assert: the topic index is printed without the banner, and the exit code is success
+            var output = outWriter.ToString();
+            Assert.Equal(0, result);
+            Assert.Contains($"{HelpCommand.ToolName} help {HelpCommand.RootCardIds[0]}", output, StringComparison.Ordinal);
+            Assert.DoesNotContain("Copyright", output, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+        }
     }
 
     /// <summary>Proves dispatch is priority-ordered: version beats help and validate.</summary>

@@ -74,6 +74,11 @@
 
   <!-- Runtime Dependencies -->
   <ItemGroup>
+    <!-- DemaConsulting.HelpCards serves 'docdown help' from the Markdown cards in Help/, which its
+         build targets embed in this assembly; Cli/HelpCommand.cs is the only code that uses it. The
+         package is managed and has no dependencies of its own. It is a pre-release, so the exact
+         version is pinned. -->
+    <PackageReference Include="DemaConsulting.HelpCards" Version="0.1.0-beta.3" />
     <!-- DemaConsulting.TestResults enters the dependency graph only here, in the tool: the SelfTest
          subsystem adapts Core's dependency-free self-test records into this package's TestResults
          object model and serializes them to TRX or JUnit. DemaConsulting.DocDown.Core and DemaConsulting.DocDown.Pdf remain free

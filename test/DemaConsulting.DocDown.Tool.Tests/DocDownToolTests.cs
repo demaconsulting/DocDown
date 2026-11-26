@@ -7,10 +7,13 @@ using DemaConsulting.DocDown.Pdf.Rendering;
 using DemaConsulting.DocDown.PowerPoint;
 using DemaConsulting.DocDown.PowerPoint.Rendering;
 using DemaConsulting.DocDown.TestSupport;
+using DemaConsulting.DocDown.Tool.Cli;
 using DemaConsulting.DocDown.Tool.Tests.TestData;
 using DemaConsulting.DocDown.Visio;
 using DemaConsulting.DocDown.Visio.Rendering;
 using DemaConsulting.DocDown.Word;
+using DemaConsulting.HelpCards.Catalog;
+using DemaConsulting.HelpCards.Testing;
 using DemaConsulting.TestResults;
 using DemaConsulting.TestResults.IO;
 
@@ -310,6 +313,87 @@ public class DocDownToolTests : IClassFixture<ValidationRuns>
         Assert.Equal(1, exit);
         Assert.Contains("Error:", captured.ToString(), StringComparison.Ordinal);
         Assert.DoesNotContain("   at ", captured.ToString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves the <c>help</c> command lists the help topics of the built tool.
+    /// </summary>
+    [Fact]
+    public void DocDownTool_HelpTopics_HelpVerb_ListsTopics()
+    {
+        // Arrange: the built tool beside the test assembly
+        var dllPath = ToolDllPath();
+
+        // Act: run the tool with the help verb
+        var exitCode = Runner.Run(out var output, "dotnet", dllPath, "help");
+
+        // Assert: every topic is listed with its command, without the banner
+        Assert.Equal(0, exitCode);
+        foreach (var topic in HelpCommand.RootCardIds)
+        {
+            Assert.Contains($"{HelpCommand.ToolName} help {topic}", output, StringComparison.Ordinal);
+        }
+
+        Assert.DoesNotContain("Copyright", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves an unknown help topic returns the usage-error exit code.
+    /// </summary>
+    [Fact]
+    public void DocDownTool_HelpTopics_UnknownTopic_ReturnsUsageError()
+    {
+        // Arrange: the built tool beside the test assembly
+        var dllPath = ToolDllPath();
+
+        // Act: ask for a topic that does not exist
+        var exitCode = Runner.Run(out var output, "dotnet", dllPath, "help", "no-such-topic");
+
+        // Assert: exit code 2 and a message that names the topic
+        Assert.Equal(2, exitCode);
+        Assert.Contains("no-such-topic", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Proves every command example in the help cards gives the result that its card states.
+    /// </summary>
+    [Fact]
+    public void DocDownTool_HelpExamples_AllCommandExamples_GiveStatedResults()
+    {
+        // Arrange: the catalog the tool ships, and the documents that the examples read
+        var dllPath = ToolDllPath();
+        var catalog = HelpCatalog.Create(HelpCommand.CreateOptions().GetCatalogConfiguration());
+        var exampleFiles = Directory.GetFiles(Path.Join(AppContext.BaseDirectory, "TestData", "HelpExamples"));
+
+        // Act: run every command example against the built tool in the runner's scratch folder; the runner
+        // compares the exit codes and the 'expect' fragments. The input documents are copied in before every
+        // command, so that a command that writes a file cannot affect the next one.
+        var report = HelpExampleRunner.Run(catalog, invocation =>
+        {
+            foreach (var file in exampleFiles)
+            {
+                File.Copy(file, Path.Join(invocation.WorkingDirectory, Path.GetFileName(file)), true);
+            }
+
+            var exitCode = Runner.RunInDirectory(
+                out var output,
+                invocation.WorkingDirectory,
+                "dotnet",
+                [dllPath, .. invocation.Arguments]);
+            return new HelpExampleOutcome(exitCode, output);
+        });
+
+        // Assert: the cards hold command examples, and every one gave the result its card states
+        Assert.True(report.CommandsRun > 0, "The help cards contain no command examples.");
+        report.AssertSucceeded();
+    }
+
+    /// <summary>Gets the path of the built tool assembly, which the test project copies beside its own.</summary>
+    private static string ToolDllPath()
+    {
+        var dllPath = Path.Join(AppContext.BaseDirectory, "DemaConsulting.DocDown.Tool.dll");
+        Assert.True(File.Exists(dllPath), $"Could not find the DocDown Tool DLL at {dllPath}");
+        return dllPath;
     }
 
     /// <summary>Writes fixture bytes to a file under the temporary folder and returns its path.</summary>

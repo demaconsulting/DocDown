@@ -14,6 +14,7 @@ needs-review:
   - "docs/verification/**/*.md"  # Verification documentation files
   - "docs/user_guide/**/*.md"    # User guide documentation
   - "docs/sysml2/**/*.sysml"     # SysML2 architecture model
+  - "src/**/Help/**"              # Built-in help cards of the tool
   - "test/DemaConsulting.DocDown.Core.Tests/golden/**/*.txt"  # Golden summary.txt outputs (reviewed artifact)
   - "test/DemaConsulting.DocDown.Office.Tests/Word/golden/**/*.txt"  # Golden summary.txt outputs (reviewed artifact)
   - "!**/obj/**"                  # Exclude build output
@@ -853,6 +854,8 @@ reviews:
       - "test/DemaConsulting.DocDown.Tool.Tests/DocDownToolTests.cs"        # integration tests
       - "test/DemaConsulting.DocDown.Tool.Tests/CliHarness.cs"              # shared test harness
       - "test/DemaConsulting.DocDown.Tool.Tests/ValidationRuns.cs"           # shared validation-run fixture
+      - "test/DemaConsulting.DocDown.Tool.Tests/Runner.cs"                  # out-of-process tool runner
+      - "test/DemaConsulting.DocDown.Tool.Tests/ConsoleCollection.cs"       # serializes console-capturing classes
       - "test/DemaConsulting.DocDown.Tool.Tests/TestData/ToolPdfFixtures.cs"  # generated test fixtures
 
   # DocDownTool-Design Review (one per system)
@@ -936,6 +939,22 @@ reviews:
       - "docs/verification/docdown-tool/cli/context.md"                     # unit verification
       - "src/DemaConsulting.DocDown.Tool/Cli/Context.cs"                    # unit source
       - "test/DemaConsulting.DocDown.Tool.Tests/Cli/ContextTests.cs"        # unit tests
+
+  # DocDownTool-Cli-HelpCommand Unit Review (unit under subsystem, four context entries)
+  - id: DocDownTool-Cli-HelpCommand
+    title: Review that DemaConsulting.DocDown.Tool Cli HelpCommand Implementation is Correct
+    context:
+      - "docs/design/docdown-tool.md"
+      - "docs/reqstream/docdown-tool.yaml"
+      - "docs/design/docdown-tool/cli.md"
+      - "docs/reqstream/docdown-tool/cli.yaml"
+    paths:
+      - "docs/reqstream/docdown-tool/cli/help-command.yaml"                 # unit requirements
+      - "docs/design/docdown-tool/cli/help-command.md"                      # unit design
+      - "docs/verification/docdown-tool/cli/help-command.md"                # unit verification
+      - "src/DemaConsulting.DocDown.Tool/Cli/HelpCommand.cs"                # unit source
+      - "src/DemaConsulting.DocDown.Tool/Help/**"                           # built-in help cards
+      - "test/DemaConsulting.DocDown.Tool.Tests/Cli/HelpCommandTests.cs"    # unit tests
 
   # DocDownTool-SelfTest-Validation Unit Review (unit under subsystem, four context entries)
   - id: DocDownTool-SelfTest-Validation
@@ -1810,6 +1829,14 @@ reviews:
       - "docs/reqstream/ots/fileassert.yaml"                               # OTS requirements
       - "docs/design/ots/fileassert.md"                                    # OTS integration design
       - "docs/verification/ots/fileassert.md"                              # OTS verification
+
+  # OTS-HelpCards Review (one per OTS item)
+  - id: OTS-HelpCards
+    title: Review that HelpCards Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/help-cards.yaml"                               # OTS requirements
+      - "docs/design/ots/help-cards.md"                                    # OTS integration design
+      - "docs/verification/ots/help-cards.md"                              # OTS verification
 
   # OTS-Pandoc Review (one per OTS item)
   - id: OTS-Pandoc

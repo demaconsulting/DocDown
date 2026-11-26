@@ -86,4 +86,19 @@
     <ProjectReference Include="..\DemaConsulting.DocDown.TestSupport\DemaConsulting.DocDown.TestSupport.csproj" />
   </ItemGroup>
 
+  <!-- Test Data -->
+  <ItemGroup>
+    <!-- The input documents of the help card examples, copied to TestData/HelpExamples in the test
+         output; the example-runner test stages them into the scratch folder of each card. The two
+         text inputs are committed here. The five Office and PDF documents are the self-validation
+         probes of the backends, authored in the real applications, linked under the names the cards
+         use so that no binary document is committed to test/. -->
+    <None Update="TestData\HelpExamples\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\DemaConsulting.DocDown.Pdf\Resources\probe.pdf" Link="TestData\HelpExamples\report.pdf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\DemaConsulting.DocDown.Office\Resources\probe.docx" Link="TestData\HelpExamples\memo.docx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\DemaConsulting.DocDown.Office\Resources\probe.xlsx" Link="TestData\HelpExamples\budget.xlsx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\DemaConsulting.DocDown.Office\Resources\probe.pptx" Link="TestData\HelpExamples\deck.pptx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\DemaConsulting.DocDown.Office\Resources\probe.vsdx" Link="TestData\HelpExamples\drawing.vsdx" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
