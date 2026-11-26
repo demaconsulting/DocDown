@@ -1,0 +1,1 @@
+Meeting notes kept as plain text. A help example uses this file to show that plain text needs no extraction.

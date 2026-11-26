@@ -5,10 +5,11 @@
 ### Purpose
 
 `Program` is the tool's entry point and the direct unit of the `DemaConsulting.DocDown.Tool` system. Its
-responsibility is orchestration: read the parsed context, dispatch in a fixed priority order, print
-the banner and help, build the engine through the explicit registration seam, run an extraction and
-report its outcome, expose the `--list-backends` auxiliary command, and translate expected argument
-and operation faults into a clean, message-only, non-zero exit.
+responsibility is orchestration: hand the `help` command to `HelpCommand`, read the parsed context,
+dispatch in a fixed priority order, print the banner and help, build the engine through the explicit
+registration seam, run an extraction and report its outcome, expose the `--list-backends` auxiliary
+command, and translate expected argument and operation faults into a clean, message-only, non-zero
+exit.
 
 ### Data Model
 
@@ -17,13 +18,20 @@ which reads the assembly's `AssemblyInformationalVersionAttribute` on each acces
 
 ### Key Methods
 
-- **`int Main(string[] args)`** — builds a `Context`, runs the logic, and returns the context's exit
-  code. It catches `ArgumentException` and `InvalidOperationException` as expected errors — writing
-  only the message to standard error and returning 1 with no stack trace — and re-throws any other
-  exception after writing it to standard error, so a genuine defect is still recorded by the runtime.
+- **`int Main(string[] args)`** — first calls `HelpCommand.Default.TryRun(args, out exitCode)`. The
+  `help` command is not an option, so `Context.Create` would reject it; when the help command
+  answers, `Main` returns its exit code (0, 2 for a wrong help argument or an unknown topic, or 70
+  for a defective card catalog) without creating a `Context`. Otherwise it builds a `Context`, runs
+  the logic, and returns the context's exit code. It catches `ArgumentException` and
+  `InvalidOperationException` as expected errors — writing only the message to standard error and
+  returning 1 with no stack trace — and re-throws any other exception after writing it to standard
+  error, so a genuine defect is still recorded by the runtime.
 - **`void Run(Context context)`** — the priority-ordered dispatch. It executes only the
   highest-priority match: version, then the banner and help, then `--list-backends`, then
   `--validate`, then extraction. This makes the outcome of any flag combination deterministic.
+- **`PrintHelp`** (private) — writes the usage synopsis, `docdown [options]` and
+  `docdown help [topic]`, and the option list, and ends with `HelpCommand.Default.Footer`, the
+  pointer to the help command.
 - **`RunExtraction`** (private) — requires `--input` and `--scratch`, rejecting a missing one with an
   argument fault; builds the engine through the explicit registration chain; asks the context for the
   mapped options; runs `ExtractAsync`; and reports. On `ExtractionOutcome.Unreadable` it writes the
@@ -54,6 +62,8 @@ defect is surfaced rather than swallowed.
 ### Dependencies
 
 - **Context** — the parsed arguments and the output routing. See *Context Design*.
+- **HelpCommand** — `Main` offers the arguments to `HelpCommand.Default.TryRun` before the options
+  are parsed, and `PrintHelp` writes `HelpCommand.Default.Footer`. See *HelpCommand*.
 - **Validation** — the `--validate` driver. See *Validation Design*.
 - **DemaConsulting.DocDown.Core** — `DocDownBuilder`, `DocDownEngine`, `ExtractionOptions`, `ExtractionResult`,
   `ExtractionOutcome`, and `ExtractorCandidate`.

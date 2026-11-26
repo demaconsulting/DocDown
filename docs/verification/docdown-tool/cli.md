@@ -1,17 +1,18 @@
 ## Cli Subsystem Verification Design
 
 This document describes the verification strategy for the Cli subsystem, which parses and validates
-command-line arguments, projects the extraction flags onto the engine's options, and routes output to
-the console and an optional log.
+command-line arguments, projects the extraction flags onto the engine's options, routes output to
+the console and an optional log, and answers the built-in `help` command.
 
 ### Verification Approach
 
-The Cli subsystem is one unit, `Context`, verified through unit tests in `Cli/ContextTests.cs` in
+The Cli subsystem has two units. `Context` is verified through unit tests in `Cli/ContextTests.cs` in
 `DemaConsulting.DocDown.Tool.Tests`, with method names beginning with `Context_`. The tests construct
 a `Context` directly from an argument array and assert on the parsed choices, the projected options,
 the output routing, and the argument faults raised for malformed input. No engine is involved: the
 subsystem performs no extraction, so its verification is entirely about parsing, validation, mapping,
-and output.
+and output. `HelpCommand` is verified through unit tests in `Cli/HelpCommandTests.cs`, which create a
+help command with `HelpCommand.Create` so that it writes to in-memory writers instead of the console.
 
 ### Test Environment
 
@@ -27,11 +28,12 @@ silence but still written to the log; when an error sets the exit code even unde
 with no error reports success; when the supported extraction flags project onto the engine's options;
 when `--overwrite` accepts only `clean` and `overwrite`; and when an unrecognized argument, a
 removed scratch-policy token, a malformed option value, and an out-of-range heading depth are each
-rejected with an argument fault.
+rejected with an argument fault; and when the `help` command prints a requested topic from the
+built-in help cards.
 
 ### Test Scenarios
 
-The subsystem's behavior is verified by the `Context` unit scenarios below.
+The subsystem's behavior is verified by the `Context` and `HelpCommand` unit scenarios below.
 
 #### Output routing under silence
 
@@ -71,4 +73,12 @@ rejects the removed tokens. Evidence for `DocDownTool-Cli-OptionMapping`.
 Proves an unrecognized argument is rejected with an argument fault. Evidence for
 `DocDownTool-Cli-ArgumentValidation`.
 
-The full per-scenario detail for each of these is given in the *Context Verification Design*.
+#### The help command prints a requested topic
+
+**Test**: `HelpCommand_TryRun_TopicRequested_PrintsTopic`
+
+Proves the arguments `help command-line`, offered to `HelpCommand.TryRun`, are answered with the
+command-line topic and exit code 0. Evidence for `DocDownTool-Cli-HelpTopics`.
+
+The full per-scenario detail for each of these is given in the *Context Verification Design* and the
+*HelpCommand Verification Design*.

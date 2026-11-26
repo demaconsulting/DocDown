@@ -18,7 +18,7 @@ but unlike the others its *output* ships: the Markdown API reference it generate
 the `api/` folder of each library's NuGet package. It is the tool that is absent from the shipped
 artifact, not its product.
 
-**PdfPig, the CanvasNet family, the Open XML SDK, and TestResults are the exceptions, and
+**PdfPig, the CanvasNet family, the Open XML SDK, TestResults, and HelpCards are the exceptions, and
 deliberately so.**
 PdfPig is a runtime library that `DemaConsulting.DocDown.Pdf` depends on and that therefore flows to consumers of
 that package; CanvasNet.Pdf, CanvasNet.Pptx, CanvasNet.Vsdx, and CanvasNet (with CanvasNet.Charts, resolved
@@ -41,7 +41,9 @@ a pipeline stage completing, but from the tests that exercise them on every run.
 only by the one package that needs it, so `DemaConsulting.DocDown.Core` keeps its zero-runtime-NuGet-dependency
 posture, and `DemaConsulting.DocDown.Pdf`, `DemaConsulting.DocDown.Pdf.Rendering`, and
 `DemaConsulting.DocDown.Office` all stay fully managed and
-runtime-identifier agnostic.
+runtime-identifier agnostic. HelpCards is, like TestResults, a fully managed runtime library of
+`DemaConsulting.DocDown.Tool` only: it serves the built-in `help` command from the help cards embedded in
+the tool assembly, and the tool's help tests verify it on every run.
 
 ## OTS Items
 
@@ -55,6 +57,7 @@ runtime-identifier agnostic.
 | CanvasNet.Pptx | Fully-managed PowerPoint rasterization API for DemaConsulting.DocDown.PowerPoint.Rendering |
 | CanvasNet.Vsdx | Fully-managed Visio rasterization API for the DemaConsulting.DocDown.Visio.Rendering package |
 | FileAssert | Validates generated documents (HTML/PDF) against acceptance criteria |
+| HelpCards | Built-in help library: serves `docdown help` from embedded cards (runtime, tool only) |
 | Open XML SDK | Reads Office documents for the DemaConsulting.DocDown.Office extraction package |
 | Pandoc | Converts Markdown documentation to HTML |
 | PdfPig | Parses PDF documents for the DemaConsulting.DocDown.Pdf extraction package |

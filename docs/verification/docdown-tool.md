@@ -19,6 +19,16 @@ tool exactly as a scripted caller would rather than through a test-only seam. Th
 extraction consumes is a PDF generated at test time by PdfPig's document writer, so no binary fixture
 is committed.
 
+### The built-in help is run as a real process
+
+The help scenarios run the built tool as a separate process, `dotnet DemaConsulting.DocDown.Tool.dll`
+beside the test assembly, through the `Runner` helper, which merges standard output and standard
+error into one combined output. The help examples are verified with the example runner of HelpCards.
+It saves the source examples of each help card to a fresh scratch folder and calls a delegate for
+each command example; the delegate copies the example input documents into that folder and runs the
+built tool there with `Runner.RunInDirectory`, and the runner compares the exit code and the output
+with the `exit` and `expect` values of the example.
+
 ### Extraction, backend inventory, and self-validation are all exercised end to end
 
 The clean extraction scenario asserts the tool prints `Extraction produced the output layout.`, then
@@ -35,7 +45,10 @@ not-executed, and surface the rendering backend's own self-test without reportin
 - **Framework**: xUnit v3 under the .NET SDK, targeting net10.0 and net11.0, the frameworks the tool ships on
 - **Filesystem**: a per-test `TempScratch` folder holds the generated input document and the
   extraction output
-- **Inputs**: a PDF generated at test time; no committed binary fixtures and no network access
+- **Inputs**: a PDF generated at test time; no committed binary fixtures and no network access. The
+  help examples read the backends' self-validation probe documents, linked into
+  `TestData/HelpExamples/` of the test output as `report.pdf`, `memo.docx`, `budget.xlsx`,
+  `deck.pptx`, and `drawing.vsdx`, and two committed text files, `notes.txt` and `legacy.doc`
 - **Mocking**: none; the tests drive the real tool, the real engine, and the real PDF backend
 - **Isolation**: each test owns its temporary folder and its captured log, and cleans them on
   dispose. The scenarios that assert on `--validate` output are the exception: they read one of two
@@ -70,6 +83,8 @@ Per IEC 62304 §5.7.2, a system-level test run passes when:
   and a `status:` line, with no capabilities line.
 - The standard version and help commands print their expected output, and an unrecognized argument
   exits non-zero with a message and no stack trace.
+- The `help` command lists the topics with exit code 0, and exits with code 2 for an unknown topic.
+- Every command example in the help cards gives the exit code and output that its card states.
 - The tool project is configured to pack as a .NET tool with the command name `docdown`.
 - Each of the four platform requirements is satisfied by a source-filtered result from the matching
   operating system or runtime.
@@ -153,6 +168,29 @@ Prove the standard DEMA version and help output. Evidence for `DocDownTool-Stand
 
 Proves an unrecognized argument makes `Program.Main` return 1 with an error message and no stack
 trace. Evidence for `DocDownTool-ExpectedErrors`.
+
+### The help command lists the help topics
+
+**Test**: `DocDownTool_HelpTopics_HelpVerb_ListsTopics`
+
+Proves the `help` command, passed as the sole argument to the built tool, lists every root topic with
+its command, prints no banner, and exits with code 0. Evidence for `DocDownTool-HelpTopics` and the
+HelpCards OTS item.
+
+### An unknown help topic is a usage error
+
+**Test**: `DocDownTool_HelpTopics_UnknownTopic_ReturnsUsageError`
+
+Proves the arguments `help no-such-topic` make the built tool exit with code 2 and name the topic in
+its output. Evidence for `DocDownTool-HelpUnknownTopic`.
+
+### Every help example gives the result its card states
+
+**Test**: `DocDownTool_HelpExamples_AllCommandExamples_GiveStatedResults`
+
+Builds the catalog that the tool ships and runs every command example of every card against the built
+tool in a scratch folder; each run gives the exit code and output fragment that its card states, and at
+least one command example exists. Evidence for `DocDownTool-HelpExamples` and the HelpCards OTS item.
 
 ### The produced package is a RID-agnostic .NET tool named docdown
 

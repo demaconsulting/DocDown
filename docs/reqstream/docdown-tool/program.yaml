@@ -1,9 +1,10 @@
 ---
 # Software Unit Requirements for Program
 #
-# Program is the tool's entry point. It reads the parsed context, dispatches in priority order,
-# prints the banner and help, runs an extraction and reports its outcome, and maps expected
-# faults to a clean non-zero exit. Program is a direct unit of the DemaConsulting.DocDown.Tool system.
+# Program is the tool's entry point. It offers the arguments to the `help` command first, then reads
+# the parsed context, dispatches in priority order, prints the banner and help, runs an extraction
+# and reports its outcome, and maps expected faults to a clean non-zero exit. Program is a direct
+# unit of the DemaConsulting.DocDown.Tool system.
 #
 # SUPERSEDED REQUIREMENT: DocDownTool-Program-ListBackends required each listed backend to report
 # capabilities. The reduced CLI surface now reports only identifier and display name, formats,
@@ -34,6 +35,25 @@ sections:
               The command line is the tool's whole interface, so its help must enumerate the surface
               the parser accepts. A help text that omits an option leaves that option undiscoverable
               except by reading the source.
+            tests:
+              - Program_Run_HelpFlag_WritesUsageAndOptions
+
+          - id: DocDownTool-Program-HelpCommand
+            title: >-
+              Program shall answer the `help` command before the command-line options are parsed and
+              return its exit code.
+            justification: |
+              The `help` command is not an option, so the option parser would reject it. Offering the
+              arguments to the help command first lets `docdown help` work while every other run
+              continues to the option parser unchanged.
+            tests:
+              - Program_Main_HelpVerb_PrintsHelpIndex
+
+          - id: DocDownTool-Program-HelpFooter
+            title: Program shall end its usage information with a pointer to the help command.
+            justification: |
+              The short usage text stays short and still tells a reader where the help topics with
+              worked examples are.
             tests:
               - Program_Run_HelpFlag_WritesUsageAndOptions
 

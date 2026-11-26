@@ -7,6 +7,7 @@ namespace DemaConsulting.DocDown.Tool.Tests.Cli;
 ///     Unit tests for the <c>Context</c> unit: argument parsing and validation, option mapping, and
 ///     the output routing that <c>--silent</c> and <c>--log</c> control.
 /// </summary>
+[Collection("Console")]
 public class ContextTests
 {
     /// <summary>Proves an unrecognized argument is rejected.</summary>
