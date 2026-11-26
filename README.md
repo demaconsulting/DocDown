@@ -34,6 +34,7 @@ content is acceptable.
   Core abstractions
 - 🌐 **Cross-Platform** - Fully managed libraries for .NET 8, 9, 10, and 11; the tool runs on .NET 10 and 11
 - ✅ **Self-Validation** - Built-in qualification tests for regulated environments
+- 📚 **Built-in Help** - `docdown help` topics with runnable examples, for people and AI agents
 
 ## Installation
 
@@ -72,12 +73,15 @@ dotnet docdown --version
 
 ```bash
 docdown --input report.pdf --scratch ./out
+docdown help          # list the help topics
+docdown help pdf      # print one topic, with examples
 ```
 
 The last line of output is the absolute path to the produced `summary.txt`, ready to hand to an
-agent. The tool exits `0` when the output layout was written (even if notes were recorded) and `1`
-when the document was unreadable or an argument was bad. Run `docdown --help` for all options, and
-`docdown --validate` to run self-validation.
+agent. The tool exits `0` when the output layout was written (even if notes were recorded), `1`
+when the document was unreadable or an argument was bad, and `2` for a wrong `help` argument or an
+unknown help topic. Run `docdown --help` for all options, `docdown help` for topics with runnable
+examples, and `docdown --validate` to run self-validation.
 
 ### Library
 

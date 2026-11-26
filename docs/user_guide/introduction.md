@@ -991,6 +991,10 @@ the tool prints the failure explanation and exits `1`.
 
 - `0` — the extraction produced the output layout, even if notes were recorded.
 - `1` — the extraction was unreadable, or an argument was invalid.
+- `2` — the `help` command was given a wrong argument or an unknown topic (see *Built-in help*).
+
+An invalid argument is found before `--silent` and `--log` take effect, so its `Error:` message is always
+printed on standard error, even with `--silent`, and is never written to the log.
 
 ## Options
 
@@ -1017,6 +1021,25 @@ The tool provides the standard DEMA command-line vocabulary plus DocDown's extra
 | `--silent` | Suppress console output |
 | `--log <file>` | Write output to a log file |
 | `--depth <#>` | Heading depth for markdown output (default 1) |
+
+## Built-in help
+
+`docdown --help` prints the short list of options above. `docdown help` prints the help topics, which
+explain each task with examples that you can run:
+
+```bash
+docdown help                          # list the topics
+docdown help getting-started          # print one topic
+docdown help pdf --example extract    # print one example of a topic
+docdown help --search "tracked changes"
+docdown help --json                   # any help answer as JSON, for scripts and AI agents
+```
+
+The topics cover getting started (including installation for CI), the command-line options, the output
+layout, each document format (PDF, Word, Excel, PowerPoint, and Visio), page images, self-validation, and
+troubleshooting. `help` must be the first argument; a file named `help` is still extracted with
+`--input help`. `--silent` and `--log` do not apply to the help command, and no banner is printed. The help
+command exits with `0`, or `2` for a wrong help argument or an unknown topic, as listed under *Exit codes*.
 
 ## Self-validation
 
