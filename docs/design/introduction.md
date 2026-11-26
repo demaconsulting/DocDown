@@ -141,6 +141,7 @@ items, specifically:
     explicit engine registration, extraction and reporting, and the auxiliary commands
   - **Cli (Subsystem)** — Command-line parsing, validation, option mapping, and output routing
     - **Context (Unit)** — The parsed arguments and the silence-aware console and log channels
+    - **HelpCommand (Unit)** — Answers the `docdown help` command from the embedded help cards
   - **SelfTest (Subsystem)** — The `--validate` self-validation
     - **Validation (Unit)** — The validation driver: environment header, in-process command checks,
       the backend self-test union, and TRX/JUnit output
@@ -193,6 +194,8 @@ The following OTS items are also covered:
 - **CanvasNet.Vsdx** — fully-managed Visio rasterization API, the runtime dependency of
   DemaConsulting.DocDown.Visio.Rendering used to rasterize pages; it carries no native assets
 - **FileAssert** — document assertion tool
+- **HelpCards** — built-in help library, a runtime dependency of DemaConsulting.DocDown.Tool that serves
+  `docdown help` from help cards embedded in the tool assembly
 - **Open XML SDK** — managed Open XML reader/writer, a runtime dependency of DemaConsulting.DocDown.Office
   shipped to consumers rather than a build-time tool
 - **Pandoc** — Markdown-to-HTML conversion tool
@@ -205,7 +208,7 @@ The following OTS items are also covered:
 - **SysML2Tools** — architecture model lint and diagram rendering tool
 - **System.IO.Packaging** — managed Open Packaging Conventions container reader, referenced and
   called directly by DemaConsulting.DocDown.Office to open an Office document's container
-- **TestResults** — test-results serialization library, the one runtime dependency of DemaConsulting.DocDown.Tool
+- **TestResults** — test-results serialization library, a runtime dependency of DemaConsulting.DocDown.Tool
 - **VersionMark** — tool-version documentation tool
 - **WeasyPrint** — HTML-to-PDF conversion tool
 - **xUnit** — unit-testing framework
@@ -228,7 +231,8 @@ The following topics are explicitly excluded from this design documentation:
 The software structure is modeled in SysML2 under `docs/sysml2/` and rendered to the
 diagram below by SysML2Tools as part of the build pipeline. AI agents should query the
 SysML2 model directly (see the `sysml2tools-query` skill) rather than parsing this
-diagram or the prose below.
+diagram or the prose below. HelpCards, the one runtime OTS library that is modeled, is described in
+`docs/sysml2/model/ots.sysml` and drawn in the OTS view rather than in the overview below.
 
 ![Software Structure](SoftwareStructureView.svg)
 
@@ -281,8 +285,9 @@ rendering - so it can be published as a single-file executable. Every backend it
 rendering, is fully managed and runtime-identifier agnostic, so both a framework-dependent
 `dotnet tool install -g` and a self-contained single-file publish stay portable across platforms;
 trimming and AOT are still left off as unverified for this dependency graph. It is the only package
-that references the DemaConsulting.TestResults OTS library, which keeps DemaConsulting.DocDown.Core free of
-runtime dependencies.
+that references the DemaConsulting.TestResults and DemaConsulting.HelpCards OTS libraries, which keeps
+DemaConsulting.DocDown.Core free of runtime dependencies. Its built-in `help` command is served from Markdown
+help cards embedded in the tool assembly.
 
 DemaConsulting.DocDown.Office is the Microsoft Office extraction system, and the second family of
 formats after PDF. It is one system holding four format subsystems — Word, Excel, PowerPoint and
@@ -432,6 +437,8 @@ DemaConsulting.DocDown.Tool/
 ├── Program.cs                       — Unit: entry point, priority dispatch, banner/help, extraction and reporting
 ├── Cli/
 │   ├── Context.cs                       — Unit: parsed arguments, option mapping, and silence-aware console/log output
+│   ├── HelpCommand.cs                   — Unit: answers the built-in `help` command from the help cards
+├── Help/                            — Built-in help cards (Markdown with front matter), embedded in the assembly
 ├── SelfTest/
 │   ├── SelfTestAdapter.cs               — Unit: maps Core self-test records into the TestResults model
 │   ├── Validation.cs                    — Unit: the --validate driver: header, in-process checks, self-test union, TRX/JUnit

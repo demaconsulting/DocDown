@@ -45,6 +45,7 @@ includes:
   - docs/reqstream/docdown-tool/program.yaml
   - docs/reqstream/docdown-tool/cli.yaml
   - docs/reqstream/docdown-tool/cli/context.yaml
+  - docs/reqstream/docdown-tool/cli/help-command.yaml
   - docs/reqstream/docdown-tool/self-test.yaml
   - docs/reqstream/docdown-tool/self-test/validation.yaml
   - docs/reqstream/docdown-tool/self-test/self-test-adapter.yaml
@@ -113,6 +114,7 @@ includes:
   - docs/reqstream/ots/canvasnetvsdx.yaml
   - docs/reqstream/ots/canvasnet.yaml
   - docs/reqstream/ots/testresults.yaml
+  - docs/reqstream/ots/help-cards.yaml
   - docs/reqstream/ots/reqstream.yaml
   - docs/reqstream/ots/buildmark.yaml
   - docs/reqstream/ots/versionmark.yaml

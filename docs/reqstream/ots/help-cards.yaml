@@ -1,0 +1,37 @@
+---
+# HelpCards OTS Software Requirements
+#
+# Requirements for the DemaConsulting.HelpCards library, a runtime dependency referenced only by
+# DemaConsulting.DocDown.Tool. It serves the built-in help of the tool from Markdown help cards
+# embedded in the tool assembly. Its evidence comes from the tool's own tests.
+
+sections:
+  - title: OTS Software Requirements
+    sections:
+      - title: HelpCards Requirements
+        requirements:
+          - id: DocDown-OTS-HelpCards-Cli
+            title: >-
+              HelpCards shall answer the help command of a tool from the help cards embedded in the
+              tool assembly.
+            justification: |
+              The tool serves `docdown help` to people and AI agents through the command-line helper
+              of DemaConsulting.HelpCards, whose build targets embed the cards in the assembly so the
+              tool package needs no loose files.
+            tags: [ots]
+            tests:
+              - HelpCommand_TryRun_HelpVerb_PrintsTopicIndexAndReturnsZero
+              - DocDownTool_HelpTopics_HelpVerb_ListsTopics
+
+          - id: DocDown-OTS-HelpCards-Testing
+            title: >-
+              HelpCards shall report defects in help cards, and differences between the stated and the
+              actual results of their command examples, to the tests of a tool.
+            justification: |
+              Help that disagrees with the tool is worse than no help. The validator and the example
+              runner of the package let the test suite fail on a defective card or an example that no
+              longer gives the result its card states.
+            tags: [ots]
+            tests:
+              - HelpCommand_CreateOptions_ShippedCatalog_PassesValidation
+              - DocDownTool_HelpExamples_AllCommandExamples_GiveStatedResults

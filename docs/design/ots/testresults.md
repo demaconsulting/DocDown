@@ -8,7 +8,8 @@ house library for exactly this task — every other DEMA tool emits its self-val
 it — and because it is a lightweight, fully managed, MIT-licensed package with no transitive runtime
 dependencies, so it adds nothing to the tool's dependency graph beyond itself.
 
-It is the one runtime OTS dependency of `DemaConsulting.DocDown.Tool`, and it is referenced by no other package:
+It is one of the two runtime OTS dependencies of `DemaConsulting.DocDown.Tool` (the other is HelpCards, which
+serves the built-in help), and it is referenced by no other package:
 `DemaConsulting.DocDown.Core` and `DemaConsulting.DocDown.Pdf` are free of it, which is what preserves Core's
 zero-runtime-NuGet-dependency posture. MIT is compatible with this repository's MIT license.
 

@@ -86,6 +86,7 @@ constituent software items, specifically:
     explicit engine registration, extraction and reporting, and the auxiliary commands
   - **Cli (Subsystem)** — Command-line parsing, validation, option mapping, and output routing
     - **Context (Unit)** — The parsed arguments and the silence-aware console and log channels
+    - **HelpCommand (Unit)** — Answers the `docdown help` command from the embedded help cards
   - **SelfTest (Subsystem)** — The `--validate` self-validation
     - **Validation (Unit)** — The validation driver: environment header, in-process command checks,
       the backend self-test union, and TRX/JUnit output
@@ -199,6 +200,8 @@ The following OTS items are also covered:
 - **CanvasNet.Vsdx** — fully-managed Visio rasterization API, verified by transitive evidence from the
   DemaConsulting.DocDown.Visio.Rendering render tests rather than from a pipeline stage
 - **FileAssert** — document assertion tool
+- **HelpCards** — built-in help library, verified by integration evidence from the
+  DemaConsulting.DocDown.Tool help tests
 - **Open XML SDK** — managed Open XML reader/writer, verified by transitive evidence from the
   DemaConsulting.DocDown.Office Word, Excel, and PowerPoint extraction tests rather than from a pipeline
   stage

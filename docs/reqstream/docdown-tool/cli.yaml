@@ -3,7 +3,8 @@
 #
 # The Cli subsystem owns the command line: it parses arguments, validates them, projects the
 # extraction flags onto the engine's options, and routes every line the tool emits to the
-# console and an optional log. These requirements decompose into the Context unit via children.
+# console and an optional log, and it answers the built-in `help` command. These requirements
+# decompose into the Context and HelpCommand units via children.
 
 sections:
   - title: DocDownTool Requirements
@@ -60,3 +61,15 @@ sections:
               - DocDownTool-Context-Depth
             tests:
               - Context_Create_UnknownArgument_ThrowsArgumentException
+
+          - id: DocDownTool-Cli-HelpTopics
+            title: The subsystem shall answer the `help` command from built-in help cards.
+            justification: |
+              Users and AI agents need help topics with worked examples from the installed tool,
+              without a network connection or a separate document.
+            children:
+              - DocDownTool-HelpCommand-HelpVerb
+              - DocDownTool-HelpCommand-ValidCards
+              - DocDownTool-HelpCommand-LineWidth
+            tests:
+              - HelpCommand_TryRun_TopicRequested_PrintsTopic

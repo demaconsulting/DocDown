@@ -14,6 +14,7 @@ package DocDownDesignViews {
     private import DocDownPowerPointRendering::*;
     private import DocDownVisioRendering::*;
     private import DocDownTool::*;
+    private import OtsDependencies::*;
 
     // Several systems, so the overview exposes each system's part def: every system draws as a
     // frame with its direct subsystem usages nested inside. Documentation and comments are
@@ -139,5 +140,12 @@ package DocDownDesignViews {
 
     view VisioOpenXmlView : InterconnectionView {
         expose VisioOpenXml::**;
+    }
+
+    // The modeled OTS runtime dependencies (only HelpCards so far). Rendered with the other views
+    // but not embedded in a design document, because one item would not represent the OTS set.
+    view OtsView : GeneralView {
+        expose OtsDependencies::*;
+        filter not (@SysML::Documentation);
     }
 }

@@ -11,15 +11,16 @@ distributed as a RID-agnostic .NET tool invoked by the command name `docdown`.
 
 The system has two subsystems and one direct unit, following the DEMA tool house pattern:
 
-- **Program** *(direct unit)* is the entry point. It reads the parsed context, dispatches in a
-  fixed priority order, prints the banner and help, builds the engine through explicit backend
-  registration, runs an extraction and reports its outcome, exposes the auxiliary `--list-backends`
-  command, and translates expected argument and operation faults into a clean, message-only,
-  non-zero exit.
-- **Cli** *(subsystem)* owns the command line. Its single unit, **Context**, parses and validates
-  the arguments, projects the extraction flags onto the engine's options, and routes every line the
-  tool emits to the console and an optional `--log` file, suppressing the console under `--silent`
-  while always recording an error.
+- **Program** *(direct unit)* is the entry point. It first offers the arguments to the built-in
+  `help` command, then reads the parsed context, dispatches in a fixed priority order, prints the
+  banner and help, builds the engine through explicit backend registration, runs an extraction and
+  reports its outcome, exposes the auxiliary `--list-backends` command, and translates expected
+  argument and operation faults into a clean, message-only, non-zero exit.
+- **Cli** *(subsystem)* owns the command line. **Context** parses and validates the arguments,
+  projects the extraction flags onto the engine's options, and routes every line the tool emits to
+  the console and an optional `--log` file, suppressing the console under `--silent` while always
+  recording an error. **HelpCommand** answers the `docdown help` command from the help cards
+  embedded in the tool assembly, through the HelpCards OTS library.
 - **SelfTest** *(subsystem)* drives `--validate`. **Validation** prints an environment header, runs
   the tool's own functionality in-process and the union of self-test cases every registered backend
   contributes, and writes the outcome as TRX or JUnit. **SelfTestAdapter** maps Core's
@@ -51,12 +52,24 @@ here, on the tool side of the boundary. Neither Core nor the extraction backends
 | Interface | Direction | Format | Constraints |
 | --- | --- | --- | --- |
 | Command line | Inbound, from a user or pipeline | Arguments | DEMA vocabulary plus DocDown extraction flags |
+| Help command | Inbound, from a user or pipeline | Arguments | `docdown help [topic]`; see *Help Command* |
 | Standard output / error | Outbound | Text | Suppressed by `--silent`; an error still sets the exit code |
 | `--log` file | Outbound | Text | Opened with immediate flushing |
 | `--results` file | Outbound | TRX or JUnit XML | Extension selects the serializer |
 | `DocDownEngine` | Inbound, from Core | .NET API | Extraction, backend inventory, and self-test surfaces |
 | `DocDownBuilder` chain | Inbound, from Core and backends | .NET API | Explicit registration only; no discovery |
 | `DemaConsulting.TestResults` | Outbound, from the tool | .NET API | Referenced only here; MIT, zero deps |
+| `DemaConsulting.HelpCards` | Outbound, from the tool | .NET API | Referenced only here; serves the help cards |
+
+### Help Command
+
+`docdown help` prints the topic index and `docdown help <topic>` prints a topic card with its
+examples; HelpCards adds `--example`, `--search`, and `--json`. The command returns exit code 0 for
+success, 2 for a wrong help argument or an unknown topic, and 70 for a defective card catalog.
+`help` must be the first argument: it is answered before the options are parsed, so `--silent` and
+`--log` do not apply and no banner is printed, and a file named `help` is still extracted with
+`--input help`. Errors in the options themselves are also found before `--silent` and `--log` take
+effect: an argument or operation fault is always written to standard error and never logged.
 
 ## Dependencies
 
@@ -77,6 +90,8 @@ here, on the tool side of the boundary. Neither Core nor the extraction backends
   `AddVisioRendering`. See the *DemaConsulting.DocDown.Visio.Rendering System Design*.
 - **DemaConsulting.TestResults** (OTS) — the test-results object model and the TRX/JUnit
   serializers, referenced only by this tool. See *TestResults* under the OTS integration design.
+- **DemaConsulting.HelpCards** (OTS) — loads, validates, and serves the built-in help cards for the
+  `help` command, referenced only by this tool. See *HelpCards* under the OTS integration design.
 
 Every backend reachable from the tool is fully managed and runtime-identifier agnostic, so the
 packaged `.nupkg` carries no native assets at all: `PackAsTool` places every tool asset under the
@@ -118,19 +133,22 @@ metadata.
 
 ## Data Flow
 
-1. `Main` builds a `Context` from the arguments — which parses and validates them and opens the
-   log — then calls `Run` and returns the context's exit code, catching argument and operation
-   faults as expected errors.
-2. `Run` dispatches in priority order: version, then the banner and help, then `--list-backends`,
+1. `Main` offers the arguments to `HelpCommand.Default.TryRun`. When the first argument is `help`,
+   the help command builds the card catalog, writes its answer to the console, and `Main` returns
+   its exit code without creating a `Context`.
+2. Otherwise `Main` builds a `Context` from the arguments — which parses and validates them and
+   opens the log — then calls `Run` and returns the context's exit code, catching argument and
+   operation faults as expected errors.
+3. `Run` dispatches in priority order: version, then the banner and help, then `--list-backends`,
    then `--validate`, then extraction — executing only the highest-priority match.
-3. For `--list-backends`, `Program` builds the engine, reads `GetBackends()`, and prints each
+4. For `--list-backends`, `Program` builds the engine, reads `GetBackends()`, and prints each
    backend as an identifier and display name line, a `formats:` line, and a `status:` line.
-4. For an extraction, `Program` builds the engine, asks `Context` for the mapped options, and runs
+5. For an extraction, `Program` builds the engine, asks `Context` for the mapped options, and runs
    `ExtractAsync`. On `ExtractionOutcome.Unreadable` it writes `Failure.Explanation` to standard
    error and exits non-zero. On `ExtractionOutcome.Produced` it prints `Extraction produced the
    output layout.`, optionally prints the note count, then prints the absolute path to
    `summary.txt`.
-5. For `--validate`, `Program` builds the engine and passes it to `Validation.Run(context, engine)`,
+6. For `--validate`, `Program` builds the engine and passes it to `Validation.Run(context, engine)`,
    which prints the header, runs the tool's own version and help checks
    in-process against a captured log, runs the engine's self-test union, maps each result through
    `SelfTestAdapter`, prints per-test lines, and writes the TRX or JUnit file when requested.

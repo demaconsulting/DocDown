@@ -9,8 +9,8 @@ self-validation CLI flags (where the tool provides a `--validate` or equivalent 
 and pipeline-evidence-based verification (where a passing CI pipeline run, having produced and
 validated the expected output at each stage, constitutes proof that the tool executed correctly).
 
-**PdfPig, the CanvasNet family, the Open XML SDK, and TestResults are verified differently, and
-deliberately so.** None is a pipeline stage. PdfPig is a runtime library on the critical path of every
+**PdfPig, the CanvasNet family, the Open XML SDK, TestResults, and HelpCards are verified differently,
+and deliberately so.** None is a pipeline stage. PdfPig is a runtime library on the critical path of every
 `DemaConsulting.DocDown.Pdf` extraction, so its evidence is transitive from the extraction test suite. CanvasNet.Pdf,
 CanvasNet.Pptx, CanvasNet.Vsdx, and CanvasNet are on the critical path of every rendered page, so their
 evidence is transitive from the Pdf, PowerPoint, and Visio rendering test suites, each of which names the
@@ -22,7 +22,9 @@ exact tests that exercise it. `System.IO.Packaging` is referenced and called dir
 SDK at all — so its evidence comes from the Visio package-reader tests as well as the Word suite.
 TestResults is the library
 `DemaConsulting.DocDown.Tool` uses to serialize its `--validate` results, so its evidence is transitive from the
-tool's own serialization tests. A dedicated OTS test project is required only where no other evidence
+tool's own serialization tests. HelpCards serves the tool's built-in `help` command, so its evidence
+comes from the tool's help tests, which run the real package against the shipped cards. A dedicated
+OTS test project is required only where no other evidence
 is available, which is not the case for any of them; the reasoning is set out in full in each item's
 verification document.
 
@@ -41,6 +43,7 @@ detailed approach and named test scenarios.
 | CanvasNet.Pptx | Transitive evidence from the DemaConsulting.DocDown.PowerPoint.Rendering render tests |
 | CanvasNet.Vsdx | Transitive evidence from the DemaConsulting.DocDown.Visio.Rendering render tests |
 | FileAssert | Self-validation CLI suite plus transitive evidence from document assertions |
+| HelpCards | Integration evidence from the DemaConsulting.DocDown.Tool help tests |
 | Open XML SDK | Transitive evidence from the Word, Excel and PowerPoint test suites |
 | Pandoc | Pipeline evidence: FileAssert assertions on each generated HTML document |
 | PdfPig | Transitive evidence from the DemaConsulting.DocDown.Pdf extraction and unit test suites |

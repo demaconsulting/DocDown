@@ -22,7 +22,9 @@ without a linked requirement.
 - **Framework**: xUnit v3 under the .NET SDK, targeting net10.0 and net11.0, the frameworks the tool ships on
 - **Inputs**: a PDF generated at test time; standard output and error captured with `StringWriter`
   for the `Main` paths
-- **Isolation**: each test owns its temporary folder and captured log
+- **Isolation**: each test owns its temporary folder and captured log. `ProgramTests` and `ContextTests`
+  replace the process-wide console output, so both belong to the `Console` test collection and never
+  run at the same time
 
 ### Acceptance Criteria
 
@@ -33,7 +35,8 @@ input writes the failure explanation; when a missing required option and an unre
 treated as expected errors with a non-zero exit and no stack trace; when a log file that cannot be
 opened is likewise an expected error; and when `--list-backends` reports the PDF backend as an
 identifier and display name line followed by `formats:` and `status:` lines, with no capabilities
-line.
+line; and when `Main` answers the `help` command before the options are parsed and the usage
+information ends with the pointer to the help command.
 
 ### Test Scenarios
 
@@ -48,8 +51,18 @@ Proves the version query prints the assembly's informational version. Evidence f
 
 **Test**: `Program_Run_HelpFlag_WritesUsageAndOptions`
 
-Proves the help text names the usage line, the options heading, and at least the `--input` option, so
-the interface is discoverable. Evidence for `DocDownTool-Program-Help`.
+Proves the help text names the usage line, the options heading, at least the `--input` option, and
+the `docdown help [topic]` usage line, and that it ends with the pointer to the help command, so the
+interface and the help topics are discoverable. Evidence for `DocDownTool-Program-Help` and
+`DocDownTool-Program-HelpFooter`.
+
+#### The help command is answered before the options are parsed
+
+**Test**: `Program_Main_HelpVerb_PrintsHelpIndex`
+
+Proves `Program.Main`, invoked with `["help"]`, which is not an option, prints the help topic index
+and no banner to the captured console output and returns 0. Evidence for
+`DocDownTool-Program-HelpCommand`.
 
 #### Dispatch is priority-ordered
 

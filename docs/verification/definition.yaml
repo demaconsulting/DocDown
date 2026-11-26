@@ -38,6 +38,7 @@ input-files:
   - docs/verification/docdown-tool/program.md
   - docs/verification/docdown-tool/cli.md
   - docs/verification/docdown-tool/cli/context.md
+  - docs/verification/docdown-tool/cli/help-command.md
   - docs/verification/docdown-tool/self-test.md
   - docs/verification/docdown-tool/self-test/validation.md
   - docs/verification/docdown-tool/self-test/self-test-adapter.md
@@ -100,6 +101,7 @@ input-files:
   - docs/verification/ots/canvasnetcharts.md
   - docs/verification/ots/canvasnetvsdx.md
   - docs/verification/ots/fileassert.md
+  - docs/verification/ots/help-cards.md
   - docs/verification/ots/openxml.md
   - docs/verification/ots/pandoc.md
   - docs/verification/ots/pdfpig.md
