@@ -71,7 +71,9 @@ temporary folder that `--validate` uses.
    commit that file; then run it as `dotnet {{tool}}`. In GitHub Actions,
    copy the steps that [[#ci-steps]] prints.
    They set up .NET 10 with `actions/setup-dotnet`, run
-   `dotnet tool restore`, and then run `dotnet {{tool}}`. For one
+   `dotnet tool restore`, and then run `dotnet {{tool}}`. To extract
+   again into committed output, add `--overwrite overwrite`; see
+   [[output-layout]]. For one
    machine, install it globally and run it as `{{tool}}`:
 
    ```bash

@@ -8,6 +8,7 @@ aliases:
   - summary
   - manifest
   - comments
+  - overwrite
 tags:
   - reference
 order: 3
@@ -27,6 +28,12 @@ examples:
     language: shell
     description: Reuse the folder; the earlier extraction is replaced.
     content: '{{tool}} --input report.pdf --scratch memo'
+    expect: 'Extraction produced the output layout.'
+  - name: regenerate
+    kind: command
+    language: shell
+    description: Empty the folder first, then extract into it.
+    content: '{{tool}} --input report.pdf --scratch memo --overwrite overwrite'
     expect: 'Extraction produced the output layout.'
 ---
 Every extraction writes the same layout below `--scratch`, whatever the
@@ -58,9 +65,23 @@ images (`page0001.png` and up). Each folder is created only when
 something is written to it; otherwise *Layout* says
 `not present - none were written`.
 
-**Reusing a folder.** The default `--overwrite clean` deletes only the
-files that the `manifest.json` of an earlier extraction in that folder
-lists, as [[#reuse]] shows, and refuses a folder that holds anything
-else. `--overwrite overwrite` deletes everything in the folder first;
-use it only for a folder that you mean to empty. Prefer a new folder for
+**Reusing a folder.** A new or empty folder is always used. For a
+folder that holds files, `--overwrite` takes one of two modes:
+
+- `--overwrite clean`, the default, deletes only the files that the
+  `manifest.json` of an earlier extraction in that folder lists, as
+  [[#reuse]] shows. It refuses the folder, with exit code 1, when the
+  folder holds any other file or when its `manifest.json` was written
+  for another folder.
+- `--overwrite overwrite` deletes everything in the folder first, as
+  [[#regenerate]] shows. Use it only for a folder that you mean to
+  empty.
+
+**Committed or moved output.** `manifest.json` records the absolute
+path of the folder that it was written in. When the output is
+committed and later extracted again from another checkout or path,
+such as in CI, or when the folder was moved or renamed, the default
+`--overwrite clean` refuses it: the message says that the manifest
+`was written for` another folder. Use `--overwrite overwrite` for that
+folder, or delete the folder first. Otherwise, prefer a new folder for
 each document.

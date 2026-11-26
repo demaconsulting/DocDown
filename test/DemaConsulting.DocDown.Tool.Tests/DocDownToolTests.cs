@@ -30,6 +30,7 @@ namespace DemaConsulting.DocDown.Tool.Tests;
 ///     — so these tests exercise the same explicit, reflection-free registration the shipped tool
 ///     uses.
 /// </remarks>
+[Collection("Console")]
 public class DocDownToolTests : IClassFixture<ValidationRuns>
 {
     /// <summary>The system-level validation runs shared by the scenarios in this class.</summary>
